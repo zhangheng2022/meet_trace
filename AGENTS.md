@@ -17,7 +17,7 @@ Meetily 是两周交付的 Android Alpha，不提供登录或跨设备同步。�
 - `lib/domain/{models,use_cases}/`：业务概念和可复用编排。
 - `lib/data/{models,repositories,services}/`：持久化、HTTP、音频、模型管理和 ASR 适配器。
 
-UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。原生桥接代码放在 `android/`，`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
+UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
 
 ## Forui 优先
 
@@ -25,7 +25,7 @@ UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `As
 
 ## 技能与实现流程
 
-新增功能或重构时使用 `flutter-apply-architecture-best-practices`。行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`，交付前使用 `dart-run-static-analysis`。集成 sherpa-onnx 时遵循 `dart-use-ffigen` 和 `dart-setup-ffi-assets`，必须从头文件生成绑定。变更产品范围或 P0 验收标准前运行 `$grill-me`。活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留活动副本，历史由 Git 保存。
+新增功能或重构时使用 `flutter-apply-architecture-best-practices`。行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`，交付前使用 `dart-run-static-analysis`。sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入。项目不得自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工 `jniLibs`；两个模型只在 data/service 层通过 Dart `AsrEngine` 适配官方 API。若官方包缺少目标能力，先调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。变更产品范围或 P0 验收标准前运行 `$grill-me`。活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留活动副本，历史由 Git 保存。
 
 ## 常用命令与质量门槛
 
