@@ -10,6 +10,7 @@
 
 ## Global Constraints
 
+- Preserve the `AGENTS.md` rule that user communication, documents, plans, explanations, and commit messages prefer Chinese while code identifiers, APIs, commands, paths, and exact technical terms remain in English.
 - Do not add or maintain sherpa-onnx JNI code.
 - Do not write or generate sherpa-onnx C API bindings with ffigen.
 - Do not maintain sherpa-onnx C/C++ sources, CMake builds, private ABI declarations, or manually copied `jniLibs`.
