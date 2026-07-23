@@ -27,7 +27,7 @@
 - 已有 Flutter 工程、Forui 依赖和主题文件。
 - `lib/main.dart` 只有应用壳。
 - 只有 `test/widget_test.dart` 壳层测试。
-- 尚无录音、存储、数据库、模型管理、ASR、FFI、会议页面或总结实现。
+- 尚无录音、存储、数据库、模型管理、ASR、官方 `sherpa_onnx` 包依赖、会议页面或总结实现。
 - 双模型设计已经批准，但仍需 Day 1 真机 Spike 证明可行。
 
 因此 Step 00 和 Step 01 是强制前置，不得把设计文档中的类名误写成“已经存在”。
@@ -42,7 +42,8 @@
 - 会议开始后锁定模型；会中不得切换或混合两个模型。
 - 最终转录来自完整音频，AI 总结只读取激活最终快照。
 - Forui 优先，颜色、字体、圆角和间距来自主题令牌。
-- sherpa-onnx 绑定必须从头文件通过 ffigen 生成。
+- sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入；不得自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工维护原生库。
+- 官方包缺少目标能力时，调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。
 - 行为变更先写测试；交付前运行静态分析和对应测试。
 
 ## 4. 目标依赖关系
@@ -56,7 +57,7 @@ Step 00 工程基线
         ├─ Step 05 内置标准模型
         └─ Step 06 高级模型下载
       → Step 07 可靠录音
-      → Step 08 sherpa-onnx FFI
+      → Step 08 官方 sherpa_onnx Flutter 包
         ├─ Step 09 Paraformer Engine
         └─ Step 10 Qwen Engine
           → Step 11 Factory / 会议模型锁定
@@ -94,9 +95,7 @@ lib/
       models/
       storage/
       summary/
-android/src/main/
-  cpp/
-  jniLibs/
+android/               # 常规 Flutter 平台配置，不放自建 sherpa-onnx 桥接
 assets/models/
 test/                  # 镜像 lib/
 integration_test/
@@ -150,38 +149,37 @@ flutter build apk --debug
 
 **目标**
 
-用最小原型验证两个模型、FFI、资源占用和录音解耦，不做正式 UI。
-
-**技能**
-
-- `dart-use-ffigen`
-- `dart-setup-ffi-assets`
-- `dart-build-cli-app`（仅用于本地评测工具时）
+用官方 `sherpa_onnx` Flutter 包的公开 Dart API 验证两个模型、资源占用和录音解耦，不做正式 UI。
 
 **任务**
 
-1. 固定 sherpa-onnx 版本和 C API 头文件。
-2. 在 `arm64-v8a` 真机分别加载：
+1. 选择并固定一个候选的官方 `sherpa_onnx` Flutter 包版本。
+2. 只通过公开 Dart API 在 `arm64-v8a` 真机分别加载：
    - `sherpa-onnx-paraformer-zh-small-2024-03-09` INT8。
    - `sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25`。
-3. 使用相同 5 分钟会议样本记录 RTF、峰值内存、首字/句后延迟和温控。
-4. 并行运行持续录音写入与故意减速的 ASR，验证音频仍完整。
-5. 记录模型真实文件、字节数、SHA-256、许可和来源。
-6. 将原始数据保存到不含真实会议内容的基准结果文件。
-7. 在技术方案记录任何 ABI、线程或接口修正。
+3. 验证公开 API 能完成模型配置、音频输入、结果读取、资源释放和重复创建。
+4. 使用相同 5 分钟会议样本记录 RTF、峰值内存、首字/句后延迟和温控。
+5. 并行运行持续录音写入与故意减速的 ASR，验证推理不阻塞或终止录音。
+6. 检查 Debug APK 的目标 ABI、重复原生库、体积、许可证和高级模型缺失状态。
+7. 记录模型真实文件、字节数、SHA-256、许可、来源以及官方包/平台包版本。
+8. 将原始数据保存到不含真实会议内容的基准结果文件。
+9. 在技术方案记录任何公开 API、ABI、调度或模型兼容性修正。
 
 **禁止**
 
 - 不提交下载的模型或真实录音。
 - 不以模拟器结果代替真机 Go/No-Go。
 - 不在 Spike 中承诺未验证能力。
+- 不得自建 FFI/JNI/C++ 桥接，也不得把它作为官方包能力不足时的回退。
 
 **验证**
 
 ```text
 两模型均能初始化和转录同一 5 分钟样本
+公开 Dart API 能输入音频、读取结果并正确释放资源
 录音样本数/时长与预期一致
 ASR 故障不终止录音
+Debug APK 的 ABI、原生库和模型内容符合预期
 原始指标和设备信息可追溯
 ```
 
@@ -189,7 +187,7 @@ ASR 故障不终止录音
 
 - Go：两个模型可运行，录音解耦成立，性能风险可量化。
 - Conditional Go：高级模型仅在部分设备可用，但标准模型和仅录音主链成立。
-- No-Go：原生绑定或音频事实链不可行；停止后续 ASR 实现并更新 PRD。
+- No-Go：官方包公开 API 无法支持目标模型，或音频事实链不可行；停止后续 ASR 实现，调整依赖/模型决策并更新 PRD。
 
 ---
 
@@ -382,33 +380,30 @@ flutter analyze
 
 ---
 
-## Step 08：sherpa-onnx FFI 与 Android 资产
+## Step 08：官方 sherpa_onnx Flutter 包集成
 
 **目标**
 
-把 Spike 收敛为可维护、可测试的正式桥接。
-
-**技能**
-
-- `dart-use-ffigen`
-- `dart-setup-ffi-assets`
+把 Spike 验证过的官方包收敛为可维护、可测试的 Dart 应用层适配。
 
 **任务**
 
-1. 固定头文件和原生库版本。
-2. 配置 ffigen 并生成绑定。
-3. 用小型 adapter 封装 handle、buffer 和错误转换。
-4. 打包目标 ABI 原生库，明确 `arm64-v8a`。
-5. 把推理调度到独立 isolate/原生线程。
-6. 实现初始化、释放和重复创建的资源测试。
-7. 在 Debug APK 中检查 `.so` 和 assets。
+1. 在 `pubspec.yaml` 增加并固定 Spike 验证通过的官方 `sherpa_onnx` Flutter 包版本。
+2. 按官方公开 API 在应用启动流程中完成一次性 bindings 初始化。
+3. 在 data/service 层建立小型 Dart adapter，封装识别器配置、初始化、调用、释放和应用级取消。
+4. 把推理调度到不阻塞 UI 和录音写入关键路径的执行链。
+5. 将官方包异常转换为结构化应用错误，不向 UI 暴露第三方类型。
+6. 实现初始化、释放、重复创建和 fake adapter 单元测试。
+7. 在 Debug APK 中检查目标 ABI、重复原生库、高级模型缺失状态、体积和许可证。
+8. 明确禁止在本步骤增加 ffigen、JNI、C/C++、私有 ABI 声明、`DynamicLibrary.open` 或手工 `jniLibs`。
 
 **关键测试**
 
-- 生成绑定可重复生成且 diff 可解释。
-- Engine dispose 后无悬空句柄。
-- 原生错误转换为结构化错误，不穿透到 UI。
-- APK 不包含高级模型文件。
+- 官方 bindings 只初始化一次。
+- Engine dispose 后官方识别器资源可以重复创建。
+- 官方包错误转换为结构化错误，不穿透到 UI。
+- fake adapter 测试不加载原生运行库。
+- APK 包含目标 ABI、无重复原生库且不包含高级模型文件。
 
 ---
 
@@ -734,7 +729,7 @@ flutter build apk --debug
 | Day 1 | Step 00–01 | 双模型 Go/No-Go 和录音解耦证据 |
 | Day 2 | Step 02–04 | 领域接口、状态机、存储和 Manifest |
 | Day 3 | Step 05–07 | 两类模型生命周期、可靠录音 |
-| Day 4 | Step 08–10 | FFI 和两个 Engine |
+| Day 4 | Step 08–10 | 官方 Flutter 包集成和两个 Engine |
 | Day 5 | Step 11–13 | 模型选择、VAD、会中 UI |
 | Day 6–7 | Step 14–15 | 最终快照和说话人降级 |
 | Day 8 | Step 16 | 总结和证据 |
@@ -779,7 +774,7 @@ Codex 完成每一步后必须报告：
 | 05 内置标准模型 | 待开始 | — |
 | 06 高级模型下载 | 待开始 | — |
 | 07 可靠录音 | 待开始 | — |
-| 08 FFI/Android 资产 | 待开始 | — |
+| 08 官方 Flutter 包集成 | 待开始 | — |
 | 09 Paraformer Engine | 待开始 | — |
 | 10 Qwen Engine | 待开始 | — |
 | 11 Factory/模型锁定 | 待开始 | — |
