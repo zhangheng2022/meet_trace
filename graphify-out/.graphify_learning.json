@@ -1,0 +1,80 @@
+{
+  "generated_at": "2026-07-23T10:02:02.383907+00:00",
+  "nodes": {
+    "docs_qwen3_asr_________qwen3_asr_0": {
+      "code_fingerprint": "5d0cb264ac0b7ab7070087611d9172f400fca511482ad9b19aee803ec227e962",
+      "label": "Qwen3-ASR 0.6B INT8",
+      "last": "2026-07-23T10:01:05.885475+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-23T10:01:05.885475+00:00",
+          "outcome": "useful",
+          "q": "根据prd文档以及skill，重新设计AGENTS.md，优先使用forui"
+        }
+      ],
+      "score": 0.999984891,
+      "source_file": "docs/Qwen3-ASR离线转录技术方案.md",
+      "status": "tentative",
+      "uses": 1
+    },
+    "lib_main": {
+      "code_fingerprint": "b3ccbd42748600fd18c45d054443cbd213baa94afbc0e24960a72ceb918997b8",
+      "label": "main.dart",
+      "last": "2026-07-23T10:01:05.885475+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-23T10:01:05.885475+00:00",
+          "outcome": "useful",
+          "q": "根据prd文档以及skill，重新设计AGENTS.md，优先使用forui"
+        },
+        {
+          "date": "2026-07-23T09:54:25.231241+00:00",
+          "outcome": "useful",
+          "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
+        }
+      ],
+      "score": 1.999862648,
+      "source_file": "lib/main.dart",
+      "status": "preferred",
+      "uses": 2
+    },
+    "package_flutter_test_flutter_test_dart": {
+      "code_fingerprint": "",
+      "label": "package:flutter_test/flutter_test.dart",
+      "last": "2026-07-23T09:54:25.231241+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-23T09:54:25.231241+00:00",
+          "outcome": "useful",
+          "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
+        }
+      ],
+      "score": 0.999877757,
+      "source_file": "",
+      "status": "tentative",
+      "uses": 1
+    },
+    "test_widget_test": {
+      "code_fingerprint": "71364aea8639f13eecd389350295e85bfa5d0a57ee55bd7011fd49f4c383f4c3",
+      "label": "widget_test.dart",
+      "last": "2026-07-23T10:01:05.885475+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-23T10:01:05.885475+00:00",
+          "outcome": "useful",
+          "q": "根据prd文档以及skill，重新设计AGENTS.md，优先使用forui"
+        },
+        {
+          "date": "2026-07-23T09:54:25.231241+00:00",
+          "outcome": "useful",
+          "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
+        }
+      ],
+      "score": 1.999862648,
+      "source_file": "test/widget_test.dart",
+      "status": "preferred",
+      "uses": 2
+    }
+  },
+  "version": 1
+}
