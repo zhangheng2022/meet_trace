@@ -18,6 +18,10 @@
 5. [官方 sherpa-onnx Flutter 包集成规格](./superpowers/specs/2026-07-23-official-sherpa-onnx-flutter-integration-design.md)
    2026-07-23 已批准的依赖边界：只使用官方 Flutter/Dart 包，不自建原生桥接。
 
+实施证据：
+
+- [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md)：最低 SDK、目标 ABI、开发设备和待补齐的验收设备。
+
 ## 文档关系
 
 ```text

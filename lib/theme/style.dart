@@ -56,27 +56,68 @@ extension FStyleExtensions on FStyle {
 /// Add your fields below, then implement [copyWith], [lerp], [==], and [hashCode].
 /// See https://api.flutter.dev/flutter/material/ThemeExtension-class.html.
 class AppStyle extends ThemeExtension<AppStyle> {
-  // TODO: add your style fields here:
-  // final double cardRadius;
+  const AppStyle({
+    this.spaceSm = 8,
+    this.spaceMd = 16,
+    this.spaceLg = 24,
+    this.contentMaxWidth = 420,
+    this.emptyIconSize = 48,
+  });
 
-  const AppStyle();
+  final double spaceSm;
+  final double spaceMd;
+  final double spaceLg;
+  final double contentMaxWidth;
+  final double emptyIconSize;
 
   @override
-  AppStyle copyWith() => const AppStyle();
+  AppStyle copyWith({
+    double? spaceSm,
+    double? spaceMd,
+    double? spaceLg,
+    double? contentMaxWidth,
+    double? emptyIconSize,
+  }) => AppStyle(
+    spaceSm: spaceSm ?? this.spaceSm,
+    spaceMd: spaceMd ?? this.spaceMd,
+    spaceLg: spaceLg ?? this.spaceLg,
+    contentMaxWidth: contentMaxWidth ?? this.contentMaxWidth,
+    emptyIconSize: emptyIconSize ?? this.emptyIconSize,
+  );
 
   @override
   AppStyle lerp(covariant AppStyle? other, double t) {
     if (other == null) {
       return this;
     }
-    return const AppStyle();
+    return AppStyle(
+      spaceSm: spaceSm + (other.spaceSm - spaceSm) * t,
+      spaceMd: spaceMd + (other.spaceMd - spaceMd) * t,
+      spaceLg: spaceLg + (other.spaceLg - spaceLg) * t,
+      contentMaxWidth:
+          contentMaxWidth + (other.contentMaxWidth - contentMaxWidth) * t,
+      emptyIconSize: emptyIconSize + (other.emptyIconSize - emptyIconSize) * t,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is AppStyle && runtimeType == other.runtimeType;
+      other is AppStyle &&
+          runtimeType == other.runtimeType &&
+          spaceSm == other.spaceSm &&
+          spaceMd == other.spaceMd &&
+          spaceLg == other.spaceLg &&
+          contentMaxWidth == other.contentMaxWidth &&
+          emptyIconSize == other.emptyIconSize;
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(
+    runtimeType,
+    spaceSm,
+    spaceMd,
+    spaceLg,
+    contentMaxWidth,
+    emptyIconSize,
+  );
 }

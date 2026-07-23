@@ -21,7 +21,7 @@ UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `As
 
 ## Forui 优先
 
-优先使用 Forui 的 `F*` 组件和 `context.theme` 令牌。仅在应用外壳、平台集成或已记录的能力缺口中使用 Material。禁止在功能组件中硬编码颜色、字体、圆角和重复间距；统一扩展 `lib/theme/`。CLI 管理的文件应通过 `dart forui theme create --preset aabbbc` 等命令重新生成。组件测试必须使用真实的 `Application`/`FTheme` 外壳。
+优先使用 Forui 的 `F*` 组件和 `context.theme` 令牌。实现或核对 Forui API 时，优先参考 [Forui LLM 文档](https://forui.dev/docs/reference/llms)。仅在应用外壳、平台集成或已记录的能力缺口中使用 Material。禁止在功能组件中硬编码颜色、字体、圆角和重复间距；统一扩展 `lib/theme/`。CLI 管理的文件应通过 `dart forui theme create --preset aabbbc` 等命令重新生成。组件测试必须使用真实的 `Application`/`FTheme` 外壳。
 
 ## 技能与实现流程
 
