@@ -4,9 +4,9 @@ import 'package:meetily_ai/theme/theme.dart';
 
 /// 会议列表的空白首页。
 class MeetingListView extends StatelessWidget {
-  const MeetingListView({required this.onStartMeeting, super.key});
+  const MeetingListView({this.onStartMeeting, super.key});
 
-  final VoidCallback onStartMeeting;
+  final VoidCallback? onStartMeeting;
 
   @override
   Widget build(BuildContext context) {

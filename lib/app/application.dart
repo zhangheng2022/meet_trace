@@ -27,13 +27,7 @@ class Application extends StatelessWidget {
         child: FTooltipGroup(child: child ?? const SizedBox.shrink()),
       ),
     ),
-    home:
-        home ??
-        MeetingListView(
-          // Step 00 只建立根页面；导航在对应功能步骤接入。
-          onStartMeeting: _ignoreStartMeetingUntilRoutingIsAvailable,
-        ),
+    // Step 00 只建立根页面；开始会议导航在对应功能步骤接入。
+    home: home ?? const MeetingListView(),
   );
 }
-
-void _ignoreStartMeetingUntilRoutingIsAvailable() {}

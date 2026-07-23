@@ -12,6 +12,7 @@ void main() {
     expect(find.byType(FTheme), findsOneWidget);
     expect(find.byType(MeetingListView), findsOneWidget);
     expect(find.text('会议'), findsOneWidget);
+    expect(tester.widget<FButton>(find.byType(FButton)).onPress, isNull);
     expect(tester.takeException(), isNull);
   });
 }
