@@ -1,0 +1,1072 @@
+{
+  "android/app/build.gradle.kts": {
+    "mtime": 1784788526.8542645,
+    "ast_hash": "3bc99a3a15c5a66721f432da933d2032",
+    "semantic_hash": "3bc99a3a15c5a66721f432da933d2032"
+  },
+  "android/app/src/main/kotlin/com/example/meetily_ai/MainActivity.kt": {
+    "mtime": 1784788526.873078,
+    "ast_hash": "d535011ac793d10a136dfce7de96659d",
+    "semantic_hash": "d535011ac793d10a136dfce7de96659d"
+  },
+  "android/build.gradle.kts": {
+    "mtime": 1784788526.873078,
+    "ast_hash": "803fe22651fbe96ed401eb0b66a492d1",
+    "semantic_hash": "803fe22651fbe96ed401eb0b66a492d1"
+  },
+  "android/settings.gradle.kts": {
+    "mtime": 1784788526.8966732,
+    "ast_hash": "087a01c04d081ae02a8e5db89f4bf3f3",
+    "semantic_hash": "087a01c04d081ae02a8e5db89f4bf3f3"
+  },
+  "ios/RunnerTests/RunnerTests.swift": {
+    "mtime": 1784788526.9433496,
+    "ast_hash": "24e5d095048eb86c30423f4e04b6e57b",
+    "semantic_hash": "24e5d095048eb86c30423f4e04b6e57b"
+  },
+  "ios/Runner/AppDelegate.swift": {
+    "mtime": 1784296053.0813954,
+    "ast_hash": "9e1de9c329a3fe4931876063de95132b",
+    "semantic_hash": "9e1de9c329a3fe4931876063de95132b"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1784296053.0823956,
+    "ast_hash": "31a08e429403e265cabfb31b3d65f049",
+    "semantic_hash": "31a08e429403e265cabfb31b3d65f049"
+  },
+  "ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json": {
+    "mtime": 1784296053.0843956,
+    "ast_hash": "b9e927ac17345f2d5f052fe68a3487f9",
+    "semantic_hash": "b9e927ac17345f2d5f052fe68a3487f9"
+  },
+  "ios/Runner/Runner-Bridging-Header.h": {
+    "mtime": 1784296053.0863962,
+    "ast_hash": "7ad7b5cea096132de13ba526b2b9efbe",
+    "semantic_hash": "7ad7b5cea096132de13ba526b2b9efbe"
+  },
+  "ios/Runner/SceneDelegate.swift": {
+    "mtime": 1784296053.0863962,
+    "ast_hash": "0c3e86af131f6a9e547c80b5ed058914",
+    "semantic_hash": "0c3e86af131f6a9e547c80b5ed058914"
+  },
+  "lib/main.dart": {
+    "mtime": 1784798375.6975222,
+    "ast_hash": "edd69672a86553c8e802b9bc151c4192",
+    "semantic_hash": "edd69672a86553c8e802b9bc151c4192"
+  },
+  "linux/flutter/generated_plugin_registrant.cc": {
+    "mtime": 1784788528.768217,
+    "ast_hash": "d07afe003d5837167bdd357d593f20a0",
+    "semantic_hash": "d07afe003d5837167bdd357d593f20a0"
+  },
+  "linux/flutter/generated_plugin_registrant.h": {
+    "mtime": 1784788528.7665286,
+    "ast_hash": "d295462c9da9f7fef22dc86c34492318",
+    "semantic_hash": "d295462c9da9f7fef22dc86c34492318"
+  },
+  "linux/runner/main.cc": {
+    "mtime": 1784296053.0883958,
+    "ast_hash": "539395bcd63dba20afed0838d136189f",
+    "semantic_hash": "539395bcd63dba20afed0838d136189f"
+  },
+  "linux/runner/my_application.cc": {
+    "mtime": 1784788526.951753,
+    "ast_hash": "5d3fa7a5fd77ea65d7a91a11ea66eaec",
+    "semantic_hash": "5d3fa7a5fd77ea65d7a91a11ea66eaec"
+  },
+  "linux/runner/my_application.h": {
+    "mtime": 1784296053.0883958,
+    "ast_hash": "ffa1a7c0a2ad45a2c14a921596516ff8",
+    "semantic_hash": "ffa1a7c0a2ad45a2c14a921596516ff8"
+  },
+  "macos/Flutter/GeneratedPluginRegistrant.swift": {
+    "mtime": 1784788528.7705874,
+    "ast_hash": "c840bc53b61279c2fb631741134c2ed7",
+    "semantic_hash": "c840bc53b61279c2fb631741134c2ed7"
+  },
+  "macos/RunnerTests/RunnerTests.swift": {
+    "mtime": 1784788526.9853919,
+    "ast_hash": "8059f5d27a19c556eeafb49b3f9b7bdd",
+    "semantic_hash": "8059f5d27a19c556eeafb49b3f9b7bdd"
+  },
+  "macos/Runner/AppDelegate.swift": {
+    "mtime": 1784296053.0913956,
+    "ast_hash": "4b52e0b89ebfef9baf45b04548c463d6",
+    "semantic_hash": "4b52e0b89ebfef9baf45b04548c463d6"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json": {
+    "mtime": 1784296053.0913956,
+    "ast_hash": "1d48e925145d4b573a3b5d7960a1c585",
+    "semantic_hash": "1d48e925145d4b573a3b5d7960a1c585"
+  },
+  "macos/Runner/MainFlutterWindow.swift": {
+    "mtime": 1784296053.0943952,
+    "ast_hash": "93c22dae2d93f3dc1402e121901f582b",
+    "semantic_hash": "93c22dae2d93f3dc1402e121901f582b"
+  },
+  "skills-lock.json": {
+    "mtime": 1784798626.8397067,
+    "ast_hash": "75a03b2fffa2e92b1abdc839d7693c94",
+    "semantic_hash": "75a03b2fffa2e92b1abdc839d7693c94"
+  },
+  "test/widget_test.dart": {
+    "mtime": 1784788527.0105407,
+    "ast_hash": "9fa0086dffc56b6d711323828380f679",
+    "semantic_hash": "9fa0086dffc56b6d711323828380f679"
+  },
+  "tools/build_alpha_prd.py": {
+    "mtime": 1784790708.4011133,
+    "ast_hash": "545066dde7cb642becc1a32cf0bac2af",
+    "semantic_hash": "545066dde7cb642becc1a32cf0bac2af"
+  },
+  "web/manifest.json": {
+    "mtime": 1784788526.9942093,
+    "ast_hash": "8a209e792b0a7e0b579d418fe4d10585",
+    "semantic_hash": "8a209e792b0a7e0b579d418fe4d10585"
+  },
+  "windows/flutter/generated_plugin_registrant.cc": {
+    "mtime": 1784788528.7705874,
+    "ast_hash": "a8f91348d8d9090f22ec69d597c41e1f",
+    "semantic_hash": "a8f91348d8d9090f22ec69d597c41e1f"
+  },
+  "windows/flutter/generated_plugin_registrant.h": {
+    "mtime": 1784788528.768217,
+    "ast_hash": "0ea33875f9f8e118f9c2ded03e2e2835",
+    "semantic_hash": "0ea33875f9f8e118f9c2ded03e2e2835"
+  },
+  "windows/runner/flutter_window.cpp": {
+    "mtime": 1784296053.0953705,
+    "ast_hash": "2f463f9b7da67a2d692a012f9ea85e0c",
+    "semantic_hash": "2f463f9b7da67a2d692a012f9ea85e0c"
+  },
+  "windows/runner/flutter_window.h": {
+    "mtime": 1784296053.0984812,
+    "ast_hash": "7defcc89d4a26d56e801241d624d48fb",
+    "semantic_hash": "7defcc89d4a26d56e801241d624d48fb"
+  },
+  "windows/runner/main.cpp": {
+    "mtime": 1784788527.0019927,
+    "ast_hash": "ba3d89bd42a3503f1dfbb75fbbca9e45",
+    "semantic_hash": "ba3d89bd42a3503f1dfbb75fbbca9e45"
+  },
+  "windows/runner/resource.h": {
+    "mtime": 1784296053.0984812,
+    "ast_hash": "1ade5dd15e613479a15e8832ed276f2b",
+    "semantic_hash": "1ade5dd15e613479a15e8832ed276f2b"
+  },
+  "windows/runner/utils.cpp": {
+    "mtime": 1784296053.0984812,
+    "ast_hash": "e18900a4c2c2962ad732d3b83f0396b9",
+    "semantic_hash": "e18900a4c2c2962ad732d3b83f0396b9"
+  },
+  "windows/runner/utils.h": {
+    "mtime": 1784296053.0984812,
+    "ast_hash": "fd81e143f5614eb6fd75efe539002853",
+    "semantic_hash": "fd81e143f5614eb6fd75efe539002853"
+  },
+  "windows/runner/win32_window.cpp": {
+    "mtime": 1784296053.0984812,
+    "ast_hash": "571eb8234dbc2661be03aa5f2a4d2fca",
+    "semantic_hash": "571eb8234dbc2661be03aa5f2a4d2fca"
+  },
+  "windows/runner/win32_window.h": {
+    "mtime": 1784296053.0984812,
+    "ast_hash": "7569387d58711ab975940f4df3b4bcda",
+    "semantic_hash": "7569387d58711ab975940f4df3b4bcda"
+  },
+  ".agents/skills/dart-add-unit-test/SKILL.md": {
+    "mtime": 1784798625.608399,
+    "ast_hash": "0ef1508665d43fe68e4d23ac3e642e9b",
+    "semantic_hash": "0ef1508665d43fe68e4d23ac3e642e9b"
+  },
+  ".agents/skills/dart-build-cli-app/SKILL.md": {
+    "mtime": 1784798625.6094203,
+    "ast_hash": "ffd903b824e1d09605f9c2a8909cd5af",
+    "semantic_hash": "ffd903b824e1d09605f9c2a8909cd5af"
+  },
+  ".agents/skills/dart-collect-coverage/SKILL.md": {
+    "mtime": 1784798625.6099896,
+    "ast_hash": "59005b1ee4dd7f0ed534df04224a554c",
+    "semantic_hash": "59005b1ee4dd7f0ed534df04224a554c"
+  },
+  ".agents/skills/dart-fix-runtime-errors/SKILL.md": {
+    "mtime": 1784798625.6108477,
+    "ast_hash": "07fad7ba9101d7dd53b5816322187786",
+    "semantic_hash": "07fad7ba9101d7dd53b5816322187786"
+  },
+  ".agents/skills/dart-generate-test-mocks/SKILL.md": {
+    "mtime": 1784798625.6115267,
+    "ast_hash": "3fa23db9e8bb46dd7cfd211021f58476",
+    "semantic_hash": "3fa23db9e8bb46dd7cfd211021f58476"
+  },
+  ".agents/skills/dart-migrate-to-checks-package/SKILL.md": {
+    "mtime": 1784798625.612744,
+    "ast_hash": "64a66b41926ad2c076727af92e13214b",
+    "semantic_hash": "64a66b41926ad2c076727af92e13214b"
+  },
+  ".agents/skills/dart-resolve-package-conflicts/SKILL.md": {
+    "mtime": 1784798625.61327,
+    "ast_hash": "e279368d7a6530be60ab443ab165cbc2",
+    "semantic_hash": "e279368d7a6530be60ab443ab165cbc2"
+  },
+  ".agents/skills/dart-run-static-analysis/SKILL.md": {
+    "mtime": 1784798625.6142254,
+    "ast_hash": "a4dfc4c4e2ecdb84a92599bdd16096e0",
+    "semantic_hash": "a4dfc4c4e2ecdb84a92599bdd16096e0"
+  },
+  ".agents/skills/dart-setup-ffi-assets/SKILL.md": {
+    "mtime": 1784798625.6150033,
+    "ast_hash": "0450e6aabfbbb018b32a2e2e81e2296e",
+    "semantic_hash": "0450e6aabfbbb018b32a2e2e81e2296e"
+  },
+  ".agents/skills/dart-use-ffigen/SKILL.md": {
+    "mtime": 1784798625.6156285,
+    "ast_hash": "da29a6d43f48b3ee2364785ca45cd505",
+    "semantic_hash": "da29a6d43f48b3ee2364785ca45cd505"
+  },
+  ".agents/skills/dart-use-pattern-matching/SKILL.md": {
+    "mtime": 1784798625.6168077,
+    "ast_hash": "cd35a5f1683dabd2cc8fca230ad787c1",
+    "semantic_hash": "cd35a5f1683dabd2cc8fca230ad787c1"
+  },
+  ".agents/skills/dart-use-primary-constructors/SKILL.md": {
+    "mtime": 1784798625.6174202,
+    "ast_hash": "c9c69b023c954768792a437de0ff463a",
+    "semantic_hash": "c9c69b023c954768792a437de0ff463a"
+  },
+  ".agents/skills/flutter-add-integration-test/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "5eb8e43c9003b77922fcfee4ef769e5e",
+    "semantic_hash": "5eb8e43c9003b77922fcfee4ef769e5e"
+  },
+  ".agents/skills/flutter-add-widget-preview/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "ed986e89480f34737bf75c684153ea92",
+    "semantic_hash": "ed986e89480f34737bf75c684153ea92"
+  },
+  ".agents/skills/flutter-add-widget-test/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "2f164d9f31c6b986fc05a431f933c642",
+    "semantic_hash": "2f164d9f31c6b986fc05a431f933c642"
+  },
+  ".agents/skills/flutter-apply-architecture-best-practices/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "c475304b95d37c3f58d411ba603e5034",
+    "semantic_hash": "c475304b95d37c3f58d411ba603e5034"
+  },
+  ".agents/skills/flutter-build-responsive-layout/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "e8b3e480ed870a8cd53ffbe507af3c49",
+    "semantic_hash": "e8b3e480ed870a8cd53ffbe507af3c49"
+  },
+  ".agents/skills/flutter-fix-layout-issues/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "c7e786747a5dc7cd564798147a5b4a32",
+    "semantic_hash": "c7e786747a5dc7cd564798147a5b4a32"
+  },
+  ".agents/skills/flutter-implement-json-serialization/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "ad23384ac06d048d63ed1833e72dcb9a",
+    "semantic_hash": "ad23384ac06d048d63ed1833e72dcb9a"
+  },
+  ".agents/skills/flutter-setup-declarative-routing/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "89dbf25c6b248881072d1e5fde1c8ecf",
+    "semantic_hash": "89dbf25c6b248881072d1e5fde1c8ecf"
+  },
+  ".agents/skills/flutter-setup-localization/SKILL.md": {
+    "mtime": 1784797940.4194472,
+    "ast_hash": "8592da5f0e92210344e1a6cec892c34d",
+    "semantic_hash": "8592da5f0e92210344e1a6cec892c34d"
+  },
+  ".agents/skills/flutter-use-http-package/SKILL.md": {
+    "mtime": 1784797940.423217,
+    "ast_hash": "06ccfed6b8e5ad6cc798e1cb65268f57",
+    "semantic_hash": "06ccfed6b8e5ad6cc798e1cb65268f57"
+  },
+  ".agents/skills/grill-me/SKILL.md": {
+    "mtime": 1784788929.1682498,
+    "ast_hash": "6e8d4355ba975fd0c82557ac78170737",
+    "semantic_hash": "6e8d4355ba975fd0c82557ac78170737"
+  },
+  ".agents/skills/grill-me/agents/openai.yaml": {
+    "mtime": 1784788929.1692505,
+    "ast_hash": "4f8d07281108635f083a7984848d404b",
+    "semantic_hash": "4f8d07281108635f083a7984848d404b"
+  },
+  ".agents/skills/hallmark/SKILL.md": {
+    "mtime": 1784798080.1838424,
+    "ast_hash": "d7426dae6b0f801c7a2513f4d31f8154",
+    "semantic_hash": "d7426dae6b0f801c7a2513f4d31f8154"
+  },
+  ".agents/skills/hallmark/references/anti-patterns.md": {
+    "mtime": 1784798080.1878936,
+    "ast_hash": "67eeec57e8fffba833fe63764e2802f7",
+    "semantic_hash": "67eeec57e8fffba833fe63764e2802f7"
+  },
+  ".agents/skills/hallmark/references/assets.md": {
+    "mtime": 1784798080.1878936,
+    "ast_hash": "bb89939f35ef1050c893f2000a4893ac",
+    "semantic_hash": "bb89939f35ef1050c893f2000a4893ac"
+  },
+  ".agents/skills/hallmark/references/color.md": {
+    "mtime": 1784798080.1878936,
+    "ast_hash": "4fa4ce7d67feeaf2ef9cb2e7809ebd74",
+    "semantic_hash": "4fa4ce7d67feeaf2ef9cb2e7809ebd74"
+  },
+  ".agents/skills/hallmark/references/component-cookbook.md": {
+    "mtime": 1784798080.1898985,
+    "ast_hash": "757922ad90573bdff62a5ade37ecba23",
+    "semantic_hash": "757922ad90573bdff62a5ade37ecba23"
+  },
+  ".agents/skills/hallmark/references/components/c1-outlined-chip.md": {
+    "mtime": 1784798080.1898985,
+    "ast_hash": "e0380862ce5f7d9b9d4bff057f7948ba",
+    "semantic_hash": "e0380862ce5f7d9b9d4bff057f7948ba"
+  },
+  ".agents/skills/hallmark/references/components/c2-inline-form-as-cta.md": {
+    "mtime": 1784798080.1898985,
+    "ast_hash": "dfa6ec433c6f459e971c11f00beda8e0",
+    "semantic_hash": "dfa6ec433c6f459e971c11f00beda8e0"
+  },
+  ".agents/skills/hallmark/references/components/c3-typographic-link.md": {
+    "mtime": 1784798080.1898985,
+    "ast_hash": "65b6a6717a99445cdf5b004eb2ab4e71",
+    "semantic_hash": "65b6a6717a99445cdf5b004eb2ab4e71"
+  },
+  ".agents/skills/hallmark/references/components/c4-sticky-bottom-bar.md": {
+    "mtime": 1784798080.1919036,
+    "ast_hash": "ee49dfae4acf741d7eb00f6e13e36368",
+    "semantic_hash": "ee49dfae4acf741d7eb00f6e13e36368"
+  },
+  ".agents/skills/hallmark/references/components/f1-bento-grid.md": {
+    "mtime": 1784798080.1919036,
+    "ast_hash": "56e4ffcc34e1296b896abefe19de12c2",
+    "semantic_hash": "56e4ffcc34e1296b896abefe19de12c2"
+  },
+  ".agents/skills/hallmark/references/components/f2-sticky-scroll-stack.md": {
+    "mtime": 1784798080.1919036,
+    "ast_hash": "cc6e48996ee461bf778c7f6d3539a337",
+    "semantic_hash": "cc6e48996ee461bf778c7f6d3539a337"
+  },
+  ".agents/skills/hallmark/references/components/f3-tabular-spec-sheet.md": {
+    "mtime": 1784798080.1919036,
+    "ast_hash": "d88500b91e7a4c7d5ffc6c89e9373648",
+    "semantic_hash": "d88500b91e7a4c7d5ffc6c89e9373648"
+  },
+  ".agents/skills/hallmark/references/components/f4-step-sequence.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "1fa4053851ee66b3ce330769a4a69831",
+    "semantic_hash": "1fa4053851ee66b3ce330769a4a69831"
+  },
+  ".agents/skills/hallmark/references/components/f5-annotated-screenshot.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "db054b286be958578aa91289c89e523a",
+    "semantic_hash": "db054b286be958578aa91289c89e523a"
+  },
+  ".agents/skills/hallmark/references/components/f6-product-card-grid.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "e6068713ae7b8354e198dab6ebad39c2",
+    "semantic_hash": "e6068713ae7b8354e198dab6ebad39c2"
+  },
+  ".agents/skills/hallmark/references/components/ft1-mast-headed.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "71184d87af98d5be544c87863c48744c",
+    "semantic_hash": "71184d87af98d5be544c87863c48744c"
+  },
+  ".agents/skills/hallmark/references/components/ft2-inline-rule-single-line.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "df1f748ee41d2ca8a8d66ec6a8345e6d",
+    "semantic_hash": "df1f748ee41d2ca8a8d66ec6a8345e6d"
+  },
+  ".agents/skills/hallmark/references/components/ft3-index-style-category-list.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "7d15149ea2a9373a3930bd6f642c24ea",
+    "semantic_hash": "7d15149ea2a9373a3930bd6f642c24ea"
+  },
+  ".agents/skills/hallmark/references/components/ft4-dense-typographic.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "6389a5ffbde587ea61e5271b70bf8e3f",
+    "semantic_hash": "6389a5ffbde587ea61e5271b70bf8e3f"
+  },
+  ".agents/skills/hallmark/references/components/ft5-statement.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "8b519503a163d1a8e5ad48d1792af181",
+    "semantic_hash": "8b519503a163d1a8e5ad48d1792af181"
+  },
+  ".agents/skills/hallmark/references/components/ft6-letter-close.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "d74507deebbba28380536496f4bfa6db",
+    "semantic_hash": "d74507deebbba28380536496f4bfa6db"
+  },
+  ".agents/skills/hallmark/references/components/ft7-newsletter-first.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "38b1fca4ccea18e3c27932068240f1c2",
+    "semantic_hash": "38b1fca4ccea18e3c27932068240f1c2"
+  },
+  ".agents/skills/hallmark/references/components/ft8-marquee-scroll.md": {
+    "mtime": 1784798080.1933,
+    "ast_hash": "23a89edfebfd339a673e30152e94452f",
+    "semantic_hash": "23a89edfebfd339a673e30152e94452f"
+  },
+  ".agents/skills/hallmark/references/components/h1-marquee.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "1004e4c27ce5605675e213a8f478216d",
+    "semantic_hash": "1004e4c27ce5605675e213a8f478216d"
+  },
+  ".agents/skills/hallmark/references/components/h2-split-diptych.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "11a4deca92a0e9934d32b35ef364ef46",
+    "semantic_hash": "11a4deca92a0e9934d32b35ef364ef46"
+  },
+  ".agents/skills/hallmark/references/components/h3-quote-led.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "07d17854c699a43b07253700598d3fb3",
+    "semantic_hash": "07d17854c699a43b07253700598d3fb3"
+  },
+  ".agents/skills/hallmark/references/components/h4-stat-led.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "d0c7aae4da6af4936f33f03841ab6bf9",
+    "semantic_hash": "d0c7aae4da6af4936f33f03841ab6bf9"
+  },
+  ".agents/skills/hallmark/references/components/h5-letter-hero.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "0f035029bfe0c8fab68a452b0c32c176",
+    "semantic_hash": "0f035029bfe0c8fab68a452b0c32c176"
+  },
+  ".agents/skills/hallmark/references/components/h6-photographic-fold.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "128db96850e41b9db1fcbc05a05871e0",
+    "semantic_hash": "128db96850e41b9db1fcbc05a05871e0"
+  },
+  ".agents/skills/hallmark/references/components/h7-demo-video-clipped-by-viewport-edge.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "8a8cc260d84c34fd3d279e2006e3c01f",
+    "semantic_hash": "8a8cc260d84c34fd3d279e2006e3c01f"
+  },
+  ".agents/skills/hallmark/references/components/h8-mockup-split-browser-framed.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "8f9ac1151a4341ec791032e06d8b84a8",
+    "semantic_hash": "8f9ac1151a4341ec791032e06d8b84a8"
+  },
+  ".agents/skills/hallmark/references/components/h9-custom-illustration-centerpiece.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "de05bd5b2506b724ffa199b14be5be0d",
+    "semantic_hash": "de05bd5b2506b724ffa199b14be5be0d"
+  },
+  ".agents/skills/hallmark/references/components/n1-wordmark-2-links.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "3d4646aa3b36217f0b550addfe3ed817",
+    "semantic_hash": "3d4646aa3b36217f0b550addfe3ed817"
+  },
+  ".agents/skills/hallmark/references/components/n10-floating-on-scroll-morph.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "3ad2dd4aff4113c48fec68c8fa13cca2",
+    "semantic_hash": "3ad2dd4aff4113c48fec68c8fa13cca2"
+  },
+  ".agents/skills/hallmark/references/components/n11-mega-menu.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "81fb3453d0aa5d9687632a2aeddf9af7",
+    "semantic_hash": "81fb3453d0aa5d9687632a2aeddf9af7"
+  },
+  ".agents/skills/hallmark/references/components/n12-banner-retract.md": {
+    "mtime": 1784798080.1973248,
+    "ast_hash": "c89fad9144e8b2cdd33441a08657351f",
+    "semantic_hash": "c89fad9144e8b2cdd33441a08657351f"
+  },
+  ".agents/skills/hallmark/references/components/n13-inline-cmdk-pill.md": {
+    "mtime": 1784798080.2016954,
+    "ast_hash": "b1aa6eb494e4ab51be96f14d9c8de386",
+    "semantic_hash": "b1aa6eb494e4ab51be96f14d9c8de386"
+  },
+  ".agents/skills/hallmark/references/components/n1b-saas-three-section.md": {
+    "mtime": 1784798080.2016954,
+    "ast_hash": "a70343a1d13fb9cc92ba9bea0c48cb21",
+    "semantic_hash": "a70343a1d13fb9cc92ba9bea0c48cb21"
+  },
+  ".agents/skills/hallmark/references/components/n2-floating-chip.md": {
+    "mtime": 1784798080.2016954,
+    "ast_hash": "ec75783e88fe4b9f4bf5e94cecc8b364",
+    "semantic_hash": "ec75783e88fe4b9f4bf5e94cecc8b364"
+  },
+  ".agents/skills/hallmark/references/components/n3-side-rail.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "6473551ea9e671948935b5070fe80d01",
+    "semantic_hash": "6473551ea9e671948935b5070fe80d01"
+  },
+  ".agents/skills/hallmark/references/components/n4-hidden-behind-k.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "3477f3a17dc3563707877048a5028b5e",
+    "semantic_hash": "3477f3a17dc3563707877048a5028b5e"
+  },
+  ".agents/skills/hallmark/references/components/n5-floating-pill.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "9f56ea9d0ec4ad0535e4bfc7a6a465ba",
+    "semantic_hash": "9f56ea9d0ec4ad0535e4bfc7a6a465ba"
+  },
+  ".agents/skills/hallmark/references/components/n6-newspaper-masthead.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "a5c1c136fe4430bcdc3a7eef0825895d",
+    "semantic_hash": "a5c1c136fe4430bcdc3a7eef0825895d"
+  },
+  ".agents/skills/hallmark/references/components/n7-brutal-slab.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "f5ac03e718256462a29b7da0e100c57c",
+    "semantic_hash": "f5ac03e718256462a29b7da0e100c57c"
+  },
+  ".agents/skills/hallmark/references/components/n8-terminal-command.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "6ca782b4d324dd487f50afe755fd83ed",
+    "semantic_hash": "6ca782b4d324dd487f50afe755fd83ed"
+  },
+  ".agents/skills/hallmark/references/components/n9-edge-aligned-minimal.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "18a927c6257efa32b2c07c8ff41a08fe",
+    "semantic_hash": "18a927c6257efa32b2c07c8ff41a08fe"
+  },
+  ".agents/skills/hallmark/references/components/s1-left-margin-numbered.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "70cdcbf71bc502371996343403c32529",
+    "semantic_hash": "70cdcbf71bc502371996343403c32529"
+  },
+  ".agents/skills/hallmark/references/components/s2-hanging.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "e37a9648995a657137285d227e9899c7",
+    "semantic_hash": "e37a9648995a657137285d227e9899c7"
+  },
+  ".agents/skills/hallmark/references/components/s3-sticky-pinned.md": {
+    "mtime": 1784798080.2033074,
+    "ast_hash": "516c0418ee63a3441bf317d041b937d2",
+    "semantic_hash": "516c0418ee63a3441bf317d041b937d2"
+  },
+  ".agents/skills/hallmark/references/components/s4-inline-no-break.md": {
+    "mtime": 1784798080.2075434,
+    "ast_hash": "b3f9073862be369d58eb726bd0fa8545",
+    "semantic_hash": "b3f9073862be369d58eb726bd0fa8545"
+  },
+  ".agents/skills/hallmark/references/components/s5-bottom-anchored.md": {
+    "mtime": 1784798080.2075434,
+    "ast_hash": "81facb95d97a3a24c6aead2efe86d9b5",
+    "semantic_hash": "81facb95d97a3a24c6aead2efe86d9b5"
+  },
+  ".agents/skills/hallmark/references/components/t1-pull-quote-with-marginalia.md": {
+    "mtime": 1784798080.2075434,
+    "ast_hash": "d7b2dd85795741f29f37fe61a2a1cd4f",
+    "semantic_hash": "d7b2dd85795741f29f37fe61a2a1cd4f"
+  },
+  ".agents/skills/hallmark/references/components/t2-logo-wall-hairline.md": {
+    "mtime": 1784798080.2075434,
+    "ast_hash": "0627279157e97b08c08b22ba3dd58be8",
+    "semantic_hash": "0627279157e97b08c08b22ba3dd58be8"
+  },
+  ".agents/skills/hallmark/references/components/t3-single-huge-quote.md": {
+    "mtime": 1784798080.2075434,
+    "ast_hash": "08c00825f3c1ad38678a86e4f9b88f81",
+    "semantic_hash": "08c00825f3c1ad38678a86e4f9b88f81"
+  },
+  ".agents/skills/hallmark/references/components/t4-numbered-stat-strip.md": {
+    "mtime": 1784798080.2075434,
+    "ast_hash": "8cd7b7d9f434c8e934d45d3401fc6cbc",
+    "semantic_hash": "8cd7b7d9f434c8e934d45d3401fc6cbc"
+  },
+  ".agents/skills/hallmark/references/contract.md": {
+    "mtime": 1784798080.2095473,
+    "ast_hash": "9f3b43447032e7e91c6f6e9bed5791aa",
+    "semantic_hash": "9f3b43447032e7e91c6f6e9bed5791aa"
+  },
+  ".agents/skills/hallmark/references/copy.md": {
+    "mtime": 1784798080.2095473,
+    "ast_hash": "dc4d146c81a4526bc7546d08188d877d",
+    "semantic_hash": "dc4d146c81a4526bc7546d08188d877d"
+  },
+  ".agents/skills/hallmark/references/custom-craft.md": {
+    "mtime": 1784798080.2095473,
+    "ast_hash": "8a27744c22bb9ea60f9efb31db48c365",
+    "semantic_hash": "8a27744c22bb9ea60f9efb31db48c365"
+  },
+  ".agents/skills/hallmark/references/custom-theme.md": {
+    "mtime": 1784798080.2115524,
+    "ast_hash": "e65a4b69efaf7d04e5acc717ea913ece",
+    "semantic_hash": "e65a4b69efaf7d04e5acc717ea913ece"
+  },
+  ".agents/skills/hallmark/references/design-md.md": {
+    "mtime": 1784798080.2120757,
+    "ast_hash": "ce64319d5ad41f043af85381f5bd2447",
+    "semantic_hash": "ce64319d5ad41f043af85381f5bd2447"
+  },
+  ".agents/skills/hallmark/references/export-formats.md": {
+    "mtime": 1784798080.2120757,
+    "ast_hash": "1a7e5a030956198cafd259c61c586909",
+    "semantic_hash": "1a7e5a030956198cafd259c61c586909"
+  },
+  ".agents/skills/hallmark/references/floating-nav.md": {
+    "mtime": 1784798080.2133603,
+    "ast_hash": "d74fd3531b613fbc2f443c467c1deebe",
+    "semantic_hash": "d74fd3531b613fbc2f443c467c1deebe"
+  },
+  ".agents/skills/hallmark/references/genres/atmospheric.md": {
+    "mtime": 1784798080.2133603,
+    "ast_hash": "a2648c838bab0eb283ec37dbe09ec6cc",
+    "semantic_hash": "a2648c838bab0eb283ec37dbe09ec6cc"
+  },
+  ".agents/skills/hallmark/references/genres/editorial.md": {
+    "mtime": 1784798080.2151804,
+    "ast_hash": "75c137c601e757b4af1e083836b0905a",
+    "semantic_hash": "75c137c601e757b4af1e083836b0905a"
+  },
+  ".agents/skills/hallmark/references/genres/modern-minimal.md": {
+    "mtime": 1784798080.2156868,
+    "ast_hash": "01f60d6af3a3b1aa5e27e4b5df5a8e1a",
+    "semantic_hash": "01f60d6af3a3b1aa5e27e4b5df5a8e1a"
+  },
+  ".agents/skills/hallmark/references/genres/playful.md": {
+    "mtime": 1784798080.2156868,
+    "ast_hash": "b60a67dc7eb6ff775bbfa6a210408877",
+    "semantic_hash": "b60a67dc7eb6ff775bbfa6a210408877"
+  },
+  ".agents/skills/hallmark/references/hero-enrichment.md": {
+    "mtime": 1784798080.2175567,
+    "ast_hash": "96d34ec01b8e8ee56695bc7d402459e4",
+    "semantic_hash": "96d34ec01b8e8ee56695bc7d402459e4"
+  },
+  ".agents/skills/hallmark/references/imagery-kit.md": {
+    "mtime": 1784798080.2183728,
+    "ast_hash": "400397e1db62eeffda9d45bf1f7fc351",
+    "semantic_hash": "400397e1db62eeffda9d45bf1f7fc351"
+  },
+  ".agents/skills/hallmark/references/interaction-and-states.md": {
+    "mtime": 1784798080.2188811,
+    "ast_hash": "2ea4e06fa962e3e467046e1ebefe4bc7",
+    "semantic_hash": "2ea4e06fa962e3e467046e1ebefe4bc7"
+  },
+  ".agents/skills/hallmark/references/layout-and-space.md": {
+    "mtime": 1784798080.2188811,
+    "ast_hash": "609a07d773ca0d2e68a4f15e624c8f11",
+    "semantic_hash": "609a07d773ca0d2e68a4f15e624c8f11"
+  },
+  ".agents/skills/hallmark/references/macrostructures.md": {
+    "mtime": 1784798080.2208867,
+    "ast_hash": "78b38de3bc563d9b50667e4d995af08d",
+    "semantic_hash": "78b38de3bc563d9b50667e4d995af08d"
+  },
+  ".agents/skills/hallmark/references/macrostructures/01-bento-grid.md": {
+    "mtime": 1784798080.2228937,
+    "ast_hash": "9c93daf763834fdbb562def8ed7e54c4",
+    "semantic_hash": "9c93daf763834fdbb562def8ed7e54c4"
+  },
+  ".agents/skills/hallmark/references/macrostructures/02-long-document.md": {
+    "mtime": 1784798080.2237902,
+    "ast_hash": "55b023bdc205aeca31547df532220547",
+    "semantic_hash": "55b023bdc205aeca31547df532220547"
+  },
+  ".agents/skills/hallmark/references/macrostructures/03-marquee-hero.md": {
+    "mtime": 1784798080.2237902,
+    "ast_hash": "dc1f4670d755cb7cc1975f360ab23633",
+    "semantic_hash": "dc1f4670d755cb7cc1975f360ab23633"
+  },
+  ".agents/skills/hallmark/references/macrostructures/04-stat-led.md": {
+    "mtime": 1784798080.2257965,
+    "ast_hash": "18a8d70351f6aec071882bc55aa07478",
+    "semantic_hash": "18a8d70351f6aec071882bc55aa07478"
+  },
+  ".agents/skills/hallmark/references/macrostructures/05-workbench.md": {
+    "mtime": 1784798080.2257965,
+    "ast_hash": "7ea1a98705cf6482c509660b00791f5c",
+    "semantic_hash": "7ea1a98705cf6482c509660b00791f5c"
+  },
+  ".agents/skills/hallmark/references/macrostructures/06-conversational-faq.md": {
+    "mtime": 1784798080.2257965,
+    "ast_hash": "f44b16a06d104c49036ceeff2260530f",
+    "semantic_hash": "f44b16a06d104c49036ceeff2260530f"
+  },
+  ".agents/skills/hallmark/references/macrostructures/07-manifesto.md": {
+    "mtime": 1784798080.2275467,
+    "ast_hash": "b4cb5fa43f6b5dda4844639bcb21b267",
+    "semantic_hash": "b4cb5fa43f6b5dda4844639bcb21b267"
+  },
+  ".agents/skills/hallmark/references/macrostructures/08-photographic.md": {
+    "mtime": 1784798080.2275467,
+    "ast_hash": "6ae5f45f6788fe584c86b22219082ee8",
+    "semantic_hash": "6ae5f45f6788fe584c86b22219082ee8"
+  },
+  ".agents/skills/hallmark/references/macrostructures/09-quote-led.md": {
+    "mtime": 1784798080.2275467,
+    "ast_hash": "1724f51e379d0ec1e6aa1a665790ec8a",
+    "semantic_hash": "1724f51e379d0ec1e6aa1a665790ec8a"
+  },
+  ".agents/skills/hallmark/references/macrostructures/10-specimen.md": {
+    "mtime": 1784798080.2275467,
+    "ast_hash": "32aa0e4d3ed0c4bbf728aef26c7a0a06",
+    "semantic_hash": "32aa0e4d3ed0c4bbf728aef26c7a0a06"
+  },
+  ".agents/skills/hallmark/references/macrostructures/11-catalogue.md": {
+    "mtime": 1784798080.2295535,
+    "ast_hash": "ee5c502e2cbf3265012aca91130b3bbc",
+    "semantic_hash": "ee5c502e2cbf3265012aca91130b3bbc"
+  },
+  ".agents/skills/hallmark/references/macrostructures/12-letter.md": {
+    "mtime": 1784798080.2295535,
+    "ast_hash": "4b6fb196aa6d54e2bb0e287006b86154",
+    "semantic_hash": "4b6fb196aa6d54e2bb0e287006b86154"
+  },
+  ".agents/skills/hallmark/references/macrostructures/13-index-first.md": {
+    "mtime": 1784798080.2295535,
+    "ast_hash": "98db03d735bfa3f4f873f727978d40ef",
+    "semantic_hash": "98db03d735bfa3f4f873f727978d40ef"
+  },
+  ".agents/skills/hallmark/references/macrostructures/14-narrative-workflow.md": {
+    "mtime": 1784798080.2295535,
+    "ast_hash": "cd653a15c7176744e66c00b4c495fea5",
+    "semantic_hash": "cd653a15c7176744e66c00b4c495fea5"
+  },
+  ".agents/skills/hallmark/references/macrostructures/15-split-studio.md": {
+    "mtime": 1784798080.2295535,
+    "ast_hash": "96346ba8bd78142196da2bbdbf882751",
+    "semantic_hash": "96346ba8bd78142196da2bbdbf882751"
+  },
+  ".agents/skills/hallmark/references/macrostructures/16-feature-stack.md": {
+    "mtime": 1784798080.2295535,
+    "ast_hash": "3b56722572870155c4e87aad13e31118",
+    "semantic_hash": "3b56722572870155c4e87aad13e31118"
+  },
+  ".agents/skills/hallmark/references/macrostructures/17-type-specimen.md": {
+    "mtime": 1784798080.2295535,
+    "ast_hash": "0307319e2aaa64f485e7894740963e10",
+    "semantic_hash": "0307319e2aaa64f485e7894740963e10"
+  },
+  ".agents/skills/hallmark/references/macrostructures/18-portfolio-grid.md": {
+    "mtime": 1784798080.2315586,
+    "ast_hash": "6e7a3269193318071e0be6f5aa6ed0c6",
+    "semantic_hash": "6e7a3269193318071e0be6f5aa6ed0c6"
+  },
+  ".agents/skills/hallmark/references/macrostructures/19-map-diagram.md": {
+    "mtime": 1784798080.232503,
+    "ast_hash": "406d97afe91a7cd61cd552cd63814903",
+    "semantic_hash": "406d97afe91a7cd61cd552cd63814903"
+  },
+  ".agents/skills/hallmark/references/macrostructures/20-ecosystem-index.md": {
+    "mtime": 1784798080.232503,
+    "ast_hash": "112545b1fc821abd66964b2349ca2b70",
+    "semantic_hash": "112545b1fc821abd66964b2349ca2b70"
+  },
+  ".agents/skills/hallmark/references/macrostructures/21-component-playground.md": {
+    "mtime": 1784798080.2329614,
+    "ast_hash": "3904363b8c88ee461324c4e17b2df148",
+    "semantic_hash": "3904363b8c88ee461324c4e17b2df148"
+  },
+  ".agents/skills/hallmark/references/microinteractions.md": {
+    "mtime": 1784798080.2329614,
+    "ast_hash": "7ba36c553be66f4f3d47b892a14ea8fa",
+    "semantic_hash": "7ba36c553be66f4f3d47b892a14ea8fa"
+  },
+  ".agents/skills/hallmark/references/motion.md": {
+    "mtime": 1784798080.2340653,
+    "ast_hash": "65b222e75e46fb2a923f002254cc41e2",
+    "semantic_hash": "65b222e75e46fb2a923f002254cc41e2"
+  },
+  ".agents/skills/hallmark/references/preview-examples.md": {
+    "mtime": 1784798080.2340653,
+    "ast_hash": "540a4ece2fb1661fcd328213bbc995a4",
+    "semantic_hash": "540a4ece2fb1661fcd328213bbc995a4"
+  },
+  ".agents/skills/hallmark/references/responsive.md": {
+    "mtime": 1784798080.235067,
+    "ast_hash": "5e0ad8a6ba85daf781453a7e6b8235ea",
+    "semantic_hash": "5e0ad8a6ba85daf781453a7e6b8235ea"
+  },
+  ".agents/skills/hallmark/references/slop-test.md": {
+    "mtime": 1784798080.235067,
+    "ast_hash": "121191d1a0e6b46a8210b61ae2e6dfe1",
+    "semantic_hash": "121191d1a0e6b46a8210b61ae2e6dfe1"
+  },
+  ".agents/skills/hallmark/references/structure.md": {
+    "mtime": 1784798080.2360666,
+    "ast_hash": "38e096d46adc16b8b542bf6ea8eb43e5",
+    "semantic_hash": "38e096d46adc16b8b542bf6ea8eb43e5"
+  },
+  ".agents/skills/hallmark/references/study.md": {
+    "mtime": 1784798080.2370644,
+    "ast_hash": "be0cde229d866e7efe2df3d585ebdc37",
+    "semantic_hash": "be0cde229d866e7efe2df3d585ebdc37"
+  },
+  ".agents/skills/hallmark/references/themes/carnival.md": {
+    "mtime": 1784798080.2380636,
+    "ast_hash": "e98a6708e9def7aed36282632801f8b1",
+    "semantic_hash": "e98a6708e9def7aed36282632801f8b1"
+  },
+  ".agents/skills/hallmark/references/themes/cobalt.md": {
+    "mtime": 1784798080.2380636,
+    "ast_hash": "9a019a8dcac7c7ddc8728f66c0bfd598",
+    "semantic_hash": "9a019a8dcac7c7ddc8728f66c0bfd598"
+  },
+  ".agents/skills/hallmark/references/themes/hum.md": {
+    "mtime": 1784798080.239064,
+    "ast_hash": "b8cbb13e7c79966e4100020595e8188d",
+    "semantic_hash": "b8cbb13e7c79966e4100020595e8188d"
+  },
+  ".agents/skills/hallmark/references/themes/lumen.md": {
+    "mtime": 1784798080.239064,
+    "ast_hash": "f2692e83ac7d03e8f9ca62f6ae239f00",
+    "semantic_hash": "f2692e83ac7d03e8f9ca62f6ae239f00"
+  },
+  ".agents/skills/hallmark/references/typography.md": {
+    "mtime": 1784798080.239064,
+    "ast_hash": "671744da4b214661ee13319e48272d7c",
+    "semantic_hash": "671744da4b214661ee13319e48272d7c"
+  },
+  ".agents/skills/hallmark/references/verbs/audit.md": {
+    "mtime": 1784798080.240064,
+    "ast_hash": "ade1461425029caa8875022a560565b8",
+    "semantic_hash": "ade1461425029caa8875022a560565b8"
+  },
+  ".agents/skills/hallmark/references/verbs/redesign.md": {
+    "mtime": 1784798080.241064,
+    "ast_hash": "d17ada8f7ebe4d63c108e65a1ca5e0cf",
+    "semantic_hash": "d17ada8f7ebe4d63c108e65a1ca5e0cf"
+  },
+  "README.md": {
+    "mtime": 1784788526.9895532,
+    "ast_hash": "e41a71243556f4454f718675076c0c97",
+    "semantic_hash": "e41a71243556f4454f718675076c0c97"
+  },
+  "analysis_options.yaml": {
+    "mtime": 1784788526.8542645,
+    "ast_hash": "9e65f4b9beebb674c0dc252f70a5c177",
+    "semantic_hash": "9e65f4b9beebb674c0dc252f70a5c177"
+  },
+  "docs/Qwen3-ASR\u79bb\u7ebf\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
+    "mtime": 1784797186.088421,
+    "ast_hash": "db0b2ac9cfe512f3f790f859c5469ccd",
+    "semantic_hash": "db0b2ac9cfe512f3f790f859c5469ccd"
+  },
+  "docs/\u4e91\u7aef\u5b9e\u65f6\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
+    "mtime": 1784797186.089422,
+    "ast_hash": "78b90f36246d4e312f0282b4e267318a",
+    "semantic_hash": "78b90f36246d4e312f0282b4e267318a"
+  },
+  "docs/\u7814\u4f1a_AI_Alpha_PRD_\u65e0\u767b\u5f55\u7248.md": {
+    "mtime": 1784797278.6877055,
+    "ast_hash": "39d3bb406d6912f1e49fe73dfd87b932",
+    "semantic_hash": "39d3bb406d6912f1e49fe73dfd87b932"
+  },
+  "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md": {
+    "mtime": 1784296053.0853963,
+    "ast_hash": "f7ee1b402881509d197f34963e569927",
+    "semantic_hash": "f7ee1b402881509d197f34963e569927"
+  },
+  "linux/CMakeLists.txt": {
+    "mtime": 1784788526.947367,
+    "ast_hash": "f514c973216ee105b0dcc6a448d1f535",
+    "semantic_hash": "f514c973216ee105b0dcc6a448d1f535"
+  },
+  "linux/flutter/CMakeLists.txt": {
+    "mtime": 1784296053.0873964,
+    "ast_hash": "2195470ce31675d31db5a37590d011f6",
+    "semantic_hash": "2195470ce31675d31db5a37590d011f6"
+  },
+  "linux/runner/CMakeLists.txt": {
+    "mtime": 1784296053.0873964,
+    "ast_hash": "30cc1614b16214b66c014af09ba699eb",
+    "semantic_hash": "30cc1614b16214b66c014af09ba699eb"
+  },
+  "pubspec.yaml": {
+    "mtime": 1784798172.5535305,
+    "ast_hash": "cc2b189705d2826b8508b898b302946c",
+    "semantic_hash": "cc2b189705d2826b8508b898b302946c"
+  },
+  "web/index.html": {
+    "mtime": 1784788526.9942093,
+    "ast_hash": "6c9c691c18a8e50fde4498d72650c33d",
+    "semantic_hash": "6c9c691c18a8e50fde4498d72650c33d"
+  },
+  "windows/CMakeLists.txt": {
+    "mtime": 1784788526.9976459,
+    "ast_hash": "935e5670f7216c653a6c38663428f0ec",
+    "semantic_hash": "935e5670f7216c653a6c38663428f0ec"
+  },
+  "windows/flutter/CMakeLists.txt": {
+    "mtime": 1784296053.0953705,
+    "ast_hash": "bbf66fed5180bd9ae8198b8d7c4a0001",
+    "semantic_hash": "bbf66fed5180bd9ae8198b8d7c4a0001"
+  },
+  "windows/runner/CMakeLists.txt": {
+    "mtime": 1784296053.0953705,
+    "ast_hash": "028602ab9754bffe716659ada7590d29",
+    "semantic_hash": "028602ab9754bffe716659ada7590d29"
+  },
+  "android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+    "mtime": 1784296053.075393,
+    "ast_hash": "13e9c72ec37fac220397aa819fa1ef2d",
+    "semantic_hash": "13e9c72ec37fac220397aa819fa1ef2d"
+  },
+  "android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+    "mtime": 1784296053.0763962,
+    "ast_hash": "6270344430679711b81476e29878caa7",
+    "semantic_hash": "6270344430679711b81476e29878caa7"
+  },
+  "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+    "mtime": 1784296053.0763962,
+    "ast_hash": "a0a8db5985280b3679d99a820ae2db79",
+    "semantic_hash": "a0a8db5985280b3679d99a820ae2db79"
+  },
+  "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+    "mtime": 1784296053.0763962,
+    "ast_hash": "afe1b655b9f32da22f9a4301bb8e6ba8",
+    "semantic_hash": "afe1b655b9f32da22f9a4301bb8e6ba8"
+  },
+  "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+    "mtime": 1784296053.077396,
+    "ast_hash": "57838d52c318faff743130c3fcfae0c6",
+    "semantic_hash": "57838d52c318faff743130c3fcfae0c6"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png": {
+    "mtime": 1784296092.168927,
+    "ast_hash": "c785f8932297af4acd5f5ccb7630f01c",
+    "semantic_hash": "c785f8932297af4acd5f5ccb7630f01c"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png": {
+    "mtime": 1784296092.1709323,
+    "ast_hash": "a2f8558fb1d42514111fbbb19fb67314",
+    "semantic_hash": "a2f8558fb1d42514111fbbb19fb67314"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png": {
+    "mtime": 1784296092.165412,
+    "ast_hash": "2247a840b6ee72b8a069208af170e5b1",
+    "semantic_hash": "2247a840b6ee72b8a069208af170e5b1"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png": {
+    "mtime": 1784296092.1729388,
+    "ast_hash": "1b3b1538136316263c7092951e923e9d",
+    "semantic_hash": "1b3b1538136316263c7092951e923e9d"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png": {
+    "mtime": 1784296092.1769667,
+    "ast_hash": "be8887071dd7ec39cb754d236aa9584f",
+    "semantic_hash": "be8887071dd7ec39cb754d236aa9584f"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png": {
+    "mtime": 1784296092.1598225,
+    "ast_hash": "043119ef4faa026ff82bd03f241e5338",
+    "semantic_hash": "043119ef4faa026ff82bd03f241e5338"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png": {
+    "mtime": 1784296092.1729388,
+    "ast_hash": "2b1452c4c1bda6177b4fbbb832df217f",
+    "semantic_hash": "2b1452c4c1bda6177b4fbbb832df217f"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png": {
+    "mtime": 1784296092.1618254,
+    "ast_hash": "2247a840b6ee72b8a069208af170e5b1",
+    "semantic_hash": "2247a840b6ee72b8a069208af170e5b1"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png": {
+    "mtime": 1784296092.1769667,
+    "ast_hash": "8245359312aea1b0d2412f79a07b0ca5",
+    "semantic_hash": "8245359312aea1b0d2412f79a07b0ca5"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png": {
+    "mtime": 1784296092.1638234,
+    "ast_hash": "5b3c0902200ce596e9848f22e1f0fe0e",
+    "semantic_hash": "5b3c0902200ce596e9848f22e1f0fe0e"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png": {
+    "mtime": 1784296092.1679225,
+    "ast_hash": "5b3c0902200ce596e9848f22e1f0fe0e",
+    "semantic_hash": "5b3c0902200ce596e9848f22e1f0fe0e"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png": {
+    "mtime": 1784296092.1598225,
+    "ast_hash": "e419d22a37bc40ba185aca1acb6d4ac6",
+    "semantic_hash": "e419d22a37bc40ba185aca1acb6d4ac6"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png": {
+    "mtime": 1784296092.1648228,
+    "ast_hash": "36c0d7a7132bdde18898ffdfcfcdc4d2",
+    "semantic_hash": "36c0d7a7132bdde18898ffdfcfcdc4d2"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png": {
+    "mtime": 1784296092.181015,
+    "ast_hash": "643842917530acf4c5159ae851b0baf2",
+    "semantic_hash": "643842917530acf4c5159ae851b0baf2"
+  },
+  "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png": {
+    "mtime": 1784296092.1729388,
+    "ast_hash": "665cb5e3c5729da6d639d26eff47a503",
+    "semantic_hash": "665cb5e3c5729da6d639d26eff47a503"
+  },
+  "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png": {
+    "mtime": 1784296092.1578236,
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+  },
+  "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png": {
+    "mtime": 1784296092.156817,
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+  },
+  "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png": {
+    "mtime": 1784296092.1543078,
+    "ast_hash": "978c1bee49d7ad5fc1a4d81099b13e18",
+    "semantic_hash": "978c1bee49d7ad5fc1a4d81099b13e18"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png": {
+    "mtime": 1784296092.1513078,
+    "ast_hash": "c9becc9105f8cabce934d20c7bfb6aac",
+    "semantic_hash": "c9becc9105f8cabce934d20c7bfb6aac"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png": {
+    "mtime": 1784296092.14386,
+    "ast_hash": "3ded30823804caaa5ccc944067c54a36",
+    "semantic_hash": "3ded30823804caaa5ccc944067c54a36"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png": {
+    "mtime": 1784296092.1463087,
+    "ast_hash": "8bf511604bc6ed0a6aeb380c5113fdcf",
+    "semantic_hash": "8bf511604bc6ed0a6aeb380c5113fdcf"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png": {
+    "mtime": 1784296092.152313,
+    "ast_hash": "dfe2c93d1536ae02f085cc63faa3430e",
+    "semantic_hash": "dfe2c93d1536ae02f085cc63faa3430e"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png": {
+    "mtime": 1784296092.1483095,
+    "ast_hash": "8e0ae58e362a6636bdfccbc04da2c58c",
+    "semantic_hash": "8e0ae58e362a6636bdfccbc04da2c58c"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png": {
+    "mtime": 1784296092.1453035,
+    "ast_hash": "0ad44039155424738917502c69667699",
+    "semantic_hash": "0ad44039155424738917502c69667699"
+  },
+  "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png": {
+    "mtime": 1784296092.1409578,
+    "ast_hash": "04e7b6ef05346c70b663ca1d97de3ad5",
+    "semantic_hash": "04e7b6ef05346c70b663ca1d97de3ad5"
+  },
+  "web/favicon.png": {
+    "mtime": 1784296053.0953705,
+    "ast_hash": "5dcef449791fa27946b3d35ad8803796",
+    "semantic_hash": "5dcef449791fa27946b3d35ad8803796"
+  },
+  "web/icons/Icon-192.png": {
+    "mtime": 1784296053.0953705,
+    "ast_hash": "ac9a721a12bbc803b44f645561ecb1e1",
+    "semantic_hash": "ac9a721a12bbc803b44f645561ecb1e1"
+  },
+  "web/icons/Icon-512.png": {
+    "mtime": 1784296053.0953705,
+    "ast_hash": "96e752610906ba2a93c65f8abe1645f1",
+    "semantic_hash": "96e752610906ba2a93c65f8abe1645f1"
+  },
+  "web/icons/Icon-maskable-192.png": {
+    "mtime": 1784296092.2647984,
+    "ast_hash": "c457ef57daa1d16f64b27b786ec2ea3c",
+    "semantic_hash": "c457ef57daa1d16f64b27b786ec2ea3c"
+  },
+  "web/icons/Icon-maskable-512.png": {
+    "mtime": 1784296092.2647984,
+    "ast_hash": "301a7604d45b3e739efc881eb04896ea",
+    "semantic_hash": "301a7604d45b3e739efc881eb04896ea"
+  }
+}
