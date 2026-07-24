@@ -46,6 +46,12 @@ abstract interface class ModelInstallationRepository {
   Future<void> save(ModelInstallation installation);
 }
 
+abstract interface class ModelPreferenceRepository {
+  Future<String> getDefaultModelId();
+
+  Future<void> setDefaultModelId(String modelId);
+}
+
 abstract interface class ProcessingTaskRepository {
   Future<ProcessingTask?> getById(String taskId);
 

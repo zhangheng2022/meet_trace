@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 final class AppDatabase {
   AppDatabase({required this.databaseFactory, required this.path});
 
-  static const schemaVersion = 1;
+  static const schemaVersion = 2;
 
   final DatabaseFactory databaseFactory;
   final String path;
@@ -44,6 +44,13 @@ final class AppDatabase {
   }
 
   static Future<void> _createSchema(Database db, int version) async {
+    await _createVersion1Schema(db);
+    if (version >= 2) {
+      await _createVersion2Schema(db);
+    }
+  }
+
+  static Future<void> _createVersion1Schema(Database db) async {
     await db.execute('''
       CREATE TABLE meetings (
         id TEXT PRIMARY KEY,
@@ -173,6 +180,16 @@ final class AppDatabase {
     );
   }
 
+  static Future<void> _createVersion2Schema(Database db) async {
+    await db.execute('''
+      CREATE TABLE app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    ''');
+  }
+
   static Future<void> _upgradeSchema(
     Database db,
     int oldVersion,
@@ -180,6 +197,10 @@ final class AppDatabase {
   ) async {
     if (oldVersion < 1) {
       await _createSchema(db, newVersion);
+      return;
+    }
+    if (oldVersion < 2 && newVersion >= 2) {
+      await _createVersion2Schema(db);
     }
   }
 }

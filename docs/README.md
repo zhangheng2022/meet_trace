@@ -38,7 +38,7 @@ PRD（做什么、为什么、如何验收）
 
 ## 当前实现状态
 
-截至 2026-07-24，Step 00、Step 02 和 Step 03 已完成，Step 01 的外部验收项仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断、模型下载/哈希清单和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02 已加入纯 Dart 领域模型、四组状态机、结构化错误和统一抽象端口；Step 03 已加入 SQLite v1 Schema/迁移、App 私有文件布局、耐久文件提交、五类 Repository 和幂等启动恢复器。50 个自动化测试及静态分析通过。去敏会议样本、低端设备和 Paraformer 分发许可/NOTICE 仍未闭环；正式录音、Registry/Manifest、模型管理、具体双 Engine、会议业务流程和总结生成仍未实现。
+截至 2026-07-24，Step 00、Step 02、Step 03 和 Step 04 已完成，Step 01 的外部验收项仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断、模型下载/哈希清单和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02 已加入纯 Dart 领域模型和统一抽象端口；Step 03 已加入 SQLite v1 事实存储和幂等恢复器；Step 04 已加入双模型 Registry、Manifest v1/兼容性校验、严格文件集/大小/SHA-256 校验、SQLite v2 默认模型设置以及禁止自动回退的本场选择用例。69 个自动化测试及静态分析通过。去敏会议样本、低端设备和 Paraformer 分发许可/NOTICE 仍未闭环；发布 Manifest 本体须等待最终资产、批准下载源与 NOTICE，正式录音、模型安装/下载、具体双 Engine、会议业务流程和总结生成仍未实现。
 
 ## 维护规则
 

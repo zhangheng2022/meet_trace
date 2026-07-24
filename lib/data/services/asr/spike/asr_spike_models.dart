@@ -1,7 +1,9 @@
 import 'dart:io';
 
-const paraformerSpikeModelId = 'sherpa-onnx-paraformer-zh-small-2024-03-09';
-const qwenSpikeModelId = 'sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25';
+import '../../../../domain/models/asr_model_registry.dart';
+
+const paraformerSpikeModelId = paraformerStandardModelId;
+const qwenSpikeModelId = qwenAdvancedModelId;
 
 enum AsrSpikeModelKind { paraformer, qwen3Asr }
 

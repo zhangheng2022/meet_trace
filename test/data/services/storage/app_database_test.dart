@@ -8,7 +8,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 void main() {
   setUpAll(sqfliteFfiInit);
 
-  test('首次创建数据库包含全部 Step 03 表和版本', () async {
+  test('首次创建数据库包含 Step 03 数据表、Step 04 设置表和当前版本', () async {
     final database = AppDatabase(
       databaseFactory: databaseFactoryFfi,
       path: inMemoryDatabasePath,
@@ -33,6 +33,7 @@ void main() {
         'summary_evidence',
         'model_installations',
         'processing_tasks',
+        'app_settings',
       }),
     );
     expect(versionRows.single['user_version'], AppDatabase.schemaVersion);
@@ -51,7 +52,7 @@ void main() {
     expect(rows.single['foreign_keys'], 1);
   });
 
-  test('现有 user_version 0 数据库通过迁移升级到 v1', () async {
+  test('现有 user_version 0 数据库通过迁移升级到当前版本', () async {
     final root = await Directory.systemTemp.createTemp('meetily-migration-');
     addTearDown(() => root.delete(recursive: true));
     final path = p.join(root.path, 'legacy.db');
@@ -71,5 +72,40 @@ void main() {
 
     expect(rows, hasLength(1));
     expect(await db.getVersion(), AppDatabase.schemaVersion);
+  });
+
+  test('现有 v1 数据库升级到 v2 并保留原表', () async {
+    final root = await Directory.systemTemp.createTemp('meetily-v1-');
+    addTearDown(() => root.delete(recursive: true));
+    final path = p.join(root.path, 'v1.db');
+    final legacy = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 1,
+        onCreate: (db, _) async {
+          await db.execute(
+            'CREATE TABLE legacy_marker (id INTEGER PRIMARY KEY)',
+          );
+          await db.insert('legacy_marker', {'id': 1});
+        },
+      ),
+    );
+    await legacy.close();
+
+    final database = AppDatabase(
+      databaseFactory: databaseFactoryFfi,
+      path: path,
+    );
+    addTearDown(database.close);
+    final db = await database.open();
+    final settings = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'app_settings'",
+    );
+    final marker = await db.query('legacy_marker');
+
+    expect(settings, hasLength(1));
+    expect(marker.single['id'], 1);
+    expect(await db.getVersion(), 2);
   });
 }

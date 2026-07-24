@@ -26,15 +26,16 @@
 
 - 已有独立 `Application`、Forui 主题和会议列表空页面。
 - 已有通用 `ViewState`，并启用严格类型分析。
-- 已有 50 个应用壳、组件、Step 01、领域层和本地存储自动化测试。
+- 已有 69 个应用壳、组件、Step 01、领域层、本地存储和模型 Registry 自动化测试。
 - 已固定 Android API 24 最低版本，并记录 `arm64-v8a` 必验设备矩阵。
 - 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；这些不是正式 `AsrEngine`。
 - 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口；尚无具体 Engine 或 Repository 实现。
 - 已完成 Step 03 的 SQLite v1 Schema/迁移、App 私有文件布局、耐久文件提交、五类 Sqflite Repository 和幂等启动恢复器。
-- 尚无正式录音 Service、Registry/Manifest、模型管理、具体双 Engine、会议业务流程或总结生成实现。
+- 已完成 Step 04 的双模型 `AsrModelRegistry`、Manifest v1 解析与兼容校验、严格文件集/SHA-256 校验、SQLite v2 默认模型设置和显式本场覆盖解析。
+- 尚无正式录音 Service、内置/下载模型安装流程、具体双 Engine、会议业务流程或总结生成实现。
 - 双模型设计已经批准；APK 静态检查、录音并发断言和双模型各两次真机识别已有证据。最终合并复跑通过，录音完整率 99.54%；Qwen3-ASR 峰值 RSS 约 2.92 GiB、首结果约 18～20 秒，当前为预备 Conditional Go。Paraformer 的 30 秒窗口空结果已通过 15 秒窗口复测关闭，两轮均为 20/20 可读；仍待会议样本、低端设备和许可闭环。
 
-Step 00、Step 02、Step 03 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和许可闭环仍在进行中。不得把 Spike 或抽象接口误写成正式 ASR 能力。
+Step 00、Step 02、Step 03、Step 04 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和许可闭环仍在进行中。不得把 Spike、Registry 或抽象接口误写成正式 ASR 能力。
 
 ## 3. 不可破坏的工程规则
 
@@ -284,6 +285,14 @@ flutter analyze
 - Manifest 重复 ID、非法哈希、缺文件和不兼容 schema 被拒绝。
 - 本场覆盖不修改全局默认值。
 - 会议创建后模型选择不可变。
+
+**实现状态（2026-07-24）**
+
+- `AsrModelRegistry.alpha` 是标准/高级模型 ID、版本、层级、安装类型、运行必需字节数和能力的单一入口；标准 Paraformer 是唯一初始默认模型。
+- Manifest v1 要求 `schemaVersion`、`minAppVersion`、逐模型文件、64 位 SHA-256、来源 URL 和许可/NOTICE 字段；拒绝重复 ID、占位符、路径穿越、非 HTTPS 下载源以及与 Registry 不一致的元数据。
+- `ModelFileVerifier` 严格核对文件集、字节数和 SHA-256，并返回缺失、大小错误、哈希错误和多余文件四类结构化结果。
+- SQLite v2 增加 `app_settings`，全局默认模型可持久化；本场覆盖由纯领域用例解析，不修改全局值，也不允许未确认的自动回退。
+- Step 04 新增 19 项测试；69 项全量测试和 `flutter analyze` 通过。发布 Manifest 本体仍须在 Step 05/06 使用最终资产、批准下载源和许可 NOTICE 生成，不提交占位版本。
 
 **验证**
 
@@ -776,7 +785,7 @@ Codex 完成每一步后必须报告：
 | 01 双模型 Spike | 进行中 | [Step 01 报告](./quality/Step_01_双模型真机_Spike.md)：静态检查、13 个测试、Debug APK/ABI、录音并发及双模型各两轮合并复跑通过；Paraformer 15 秒窗口两轮 20/20 可读，预备 Conditional Go，待会议样本、低端设备和许可闭环 |
 | 02 领域模型 | 已完成 | 26 项 `test/domain` 测试：模型锁定、显式回退、合法/非法迁移、快照激活、总结输入、模型安装及抽象端口；`flutter analyze` 通过 |
 | 03 本地存储 | 已完成 | 11 项存储测试：SQLite v1/迁移、外键、文件提交故障、事务快照激活、级联删除、Repository 往返和四类幂等启动恢复；50 项全量测试及 `flutter analyze` 通过 |
-| 04 Registry/Manifest | 待开始 | — |
+| 04 Registry/Manifest | 已完成 | 双模型 Registry、Manifest v1/兼容性、严格文件集/大小/SHA-256 校验、SQLite v2 默认模型设置、显式本场覆盖；19 项新增测试、69 项全量测试及 `flutter analyze` 通过 |
 | 05 内置标准模型 | 待开始 | — |
 | 06 高级模型下载 | 待开始 | — |
 | 07 可靠录音 | 待开始 | — |
