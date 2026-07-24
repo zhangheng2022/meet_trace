@@ -1,7 +1,6 @@
 import '../../../domain/models/app_failure.dart';
 import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/asr_model_registry.dart';
-import '../../../domain/models/model_installation.dart';
 import '../../repositories/repository_contracts.dart';
 import 'asr_engine.dart';
 import 'paraformer_standard_asr_engine.dart';

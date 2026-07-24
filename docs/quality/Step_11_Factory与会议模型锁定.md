@@ -60,6 +60,11 @@ flutter build apk --debug --no-pub
 - Debug APK：构建通过。
 - 构建仍提示 `flutter_foreground_task` 与 `storage_space` 使用旧式 Kotlin Gradle Plugin；这是 Step 07 已记录的既有警告。
 
+### 2026-07-24 后续维护
+
+- `storage_space` 已替换为 `disk_space_2` 1.0.13，磁盘容量读取统一收口到 `DeviceFreeSpaceService`。
+- Android 根工程中针对旧插件的全局 `compileSdk` 覆盖已移除；当前构建只保留 `flutter_foreground_task` 的上游 Kotlin 插件兼容警告。
+
 ## 后续边界
 
 - Step 12 将实现 VAD、积压恢复和有界预览队列。

@@ -129,6 +129,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.14"
+  disk_space_2:
+    dependency: "direct main"
+    description:
+      name: disk_space_2
+      sha256: "7e9952cd5142dccf8a177ad8ae08a58788864625058bd3fa1bf0870e0ef02827"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.13"
   fake_async:
     dependency: transitive
     description:
@@ -713,14 +721,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.12.1"
-  storage_space:
-    dependency: "direct main"
-    description:
-      name: storage_space
-      sha256: "8a3fbc61c20ce3b926b663b4ae77064e2bc5351a49756a41fa415e302f4063cd"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   stream_channel:
     dependency: transitive
     description:

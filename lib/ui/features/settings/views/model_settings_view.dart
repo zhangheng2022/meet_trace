@@ -4,7 +4,6 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../domain/models/asr_model.dart';
-import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/asr_model_option.dart';
 import '../view_models/model_settings_view_model.dart';

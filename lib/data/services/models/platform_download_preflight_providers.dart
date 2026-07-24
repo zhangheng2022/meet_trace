@@ -1,20 +1,18 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:storage_space/storage_space.dart';
 
+import '../storage/device_free_space_service.dart';
 import 'downloadable_model_service.dart';
 
 final class DeviceStorageCapacityProvider
     implements ModelStorageCapacityProvider {
-  const DeviceStorageCapacityProvider();
+  const DeviceStorageCapacityProvider({
+    this.freeSpace = const DeviceFreeSpaceService(),
+  });
+
+  final DeviceFreeSpaceService freeSpace;
 
   @override
-  Future<int> getFreeBytes() async {
-    final storage = await getStorageSpace(
-      lowOnSpaceThreshold: minimumAdvancedModelFreeBytes,
-      fractionDigits: 1,
-    );
-    return storage.free;
-  }
+  Future<int> getFreeBytes() => freeSpace.getFreeBytes();
 }
 
 final class ConnectivityDownloadNetworkStatusProvider
