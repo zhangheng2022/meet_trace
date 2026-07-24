@@ -1,0 +1,33 @@
+Meetily Android Alpha - bundled Paraformer model notice
+
+Artifact:
+  sherpa-onnx-paraformer-zh-small-2024-03-09
+
+Bundled runtime files:
+  model.int8.onnx
+  tokens.txt
+
+Distribution archive:
+  https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-paraformer-zh-small-2024-03-09.tar.bz2
+  bytes: 77920048
+  sha256: da92b3db5218c5be53aad53e57d1b6e63e7fc98a0e054fbdd6dbe18e9c6b1450
+
+Conversion source identified by sherpa-onnx:
+  https://www.modelscope.cn/models/crazyant/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-onnx/summary
+
+Original upstream model:
+  https://www.modelscope.cn/models/iic/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1/summary
+
+License status reviewed on 2026-07-24:
+  The exact converted-weight publisher does not declare License,
+  LicenseName, or LicenseLink in its ModelScope metadata, and the sherpa-onnx
+  distribution archive contains no separate model LICENSE file. The original
+  upstream model metadata identifies Apache-2.0, while FunASR publishes a
+  separate MODEL_LICENSE. These references do not establish the license of the
+  converted-weight archive.
+
+Bundling decision:
+  The product owner explicitly approved bundling these weights into the
+  Android Alpha APK on 2026-07-24. This notice records provenance and the
+  unresolved license status; it is not a legal conclusion. Distribution
+  permission must be confirmed before a public release.

@@ -1,0 +1,2 @@
+assets/models/** -text
+assets/models/**/*.onnx binary

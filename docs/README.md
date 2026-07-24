@@ -38,7 +38,7 @@ PRD（做什么、为什么、如何验收）
 
 ## 当前实现状态
 
-截至 2026-07-24，Step 00、Step 02、Step 03 和 Step 04 已完成，Step 01 的外部验收项仍在执行，Step 05 进行中。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断、模型下载/哈希清单和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02～04 已建立领域契约、事实存储、双模型 Registry、Manifest/文件校验、默认模型设置和显式选择规则；Step 05 已实现 Flutter asset 读取、临时复制、flush、严格校验、原子安装、状态持久化、进度和失败重试。77 个自动化测试及静态分析通过。精确 Paraformer 上游的许可字段为空，因此真实权重、发布 Manifest 和 APK 检查仍被许可/NOTICE 阻塞；正式录音、高级模型下载、具体双 Engine、会议业务流程和总结生成尚未实现。
+截至 2026-07-24，Step 00、Step 02、Step 03、Step 04 和 Step 05 已完成，Step 01 的外部验收项仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断、模型下载/哈希清单和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02～04 已建立领域契约、事实存储、双模型 Registry、Manifest/文件校验、默认模型设置和显式选择规则；Step 05 已把 `81,904,027` 字节的 Paraformer INT8 运行文件及来源 NOTICE 纳入 APK，并实现 Flutter asset 读取、临时复制、flush、严格校验、原子安装、状态持久化、进度和失败重试。78 个自动化测试及静态分析通过。精确转换权重上游的许可字段仍为空，产品负责人已批准用于 Android Alpha APK，但公开分发前仍须完成许可确认；正式录音、高级模型下载、具体双 Engine、会议业务流程和总结生成尚未实现。
 
 ## 维护规则
 
@@ -48,7 +48,7 @@ PRD（做什么、为什么、如何验收）
 - 每次文档变更检查相对链接、模型 ID、日期和术语。
 - 活动文档不保留“旧版”“备选版”并列副本；历史内容从 Git 查看。
 - DOCX/PDF 如需交付，必须从当前 Markdown 基线生成，不作为独立事实源。
-- 下载模型、真实录音、评测语料、密钥、`build/` 和 `coverage/` 不得提交。
+- 除 PRD 指定随 APK 内置并带完整 Manifest/NOTICE 的标准模型外，下载模型、真实录音、评测语料、密钥、`build/` 和 `coverage/` 不得提交。
 
 ## 已清理的旧基线
 

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "minAppVersion": "1.0.0",
+  "models": [
+    {
+      "modelId": "sherpa-onnx-paraformer-zh-small-2024-03-09",
+      "version": "2024-03-09",
+      "tier": "standard",
+      "installationType": "bundled",
+      "requiredBytes": 81904027,
+      "files": [
+        {
+          "path": "model.int8.onnx",
+          "bytes": 81828675,
+          "sha256": "3ef6c19369b912f7caf3cef8e545c5ccd1a33d9d7ec792a46668dc41c4b229ec",
+          "url": "asset://assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx"
+        },
+        {
+          "path": "tokens.txt",
+          "bytes": 75352,
+          "sha256": "4b2d964e18b9cf139b473003b6698fb2ed9a2a5ec55b93daa677b28f578897aa",
+          "url": "asset://assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt"
+        }
+      ],
+      "license": {
+        "name": "Exact converted-weight archive does not declare a license",
+        "noticePath": "assets/licenses/paraformer-small-NOTICE.txt"
+      }
+    }
+  ]
+}

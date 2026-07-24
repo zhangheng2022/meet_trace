@@ -24,8 +24,21 @@ $duplicates = $nativeLibraries |
     ForEach-Object { [System.IO.Path]::GetFileName($_) } |
     Group-Object |
     Where-Object { $_.Count -gt $abis.Count }
-$unexpectedModels = $entries | Where-Object {
-    $_ -match 'qwen3-asr|encoder\.int8\.onnx|decoder\.int8\.onnx|model\.int8\.onnx'
+$expectedBundledAssets = @(
+    'assets/flutter_assets/assets/licenses/paraformer-small-NOTICE.txt',
+    'assets/flutter_assets/assets/models/manifest.json',
+    'assets/flutter_assets/assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx',
+    'assets/flutter_assets/assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt'
+)
+$bundledModelEntries = $entries | Where-Object {
+    $_ -match '^assets/flutter_assets/assets/(models|licenses)/'
+}
+$missingBundledAssets = $expectedBundledAssets | Where-Object {
+    $_ -notin $entries
+}
+$unexpectedModelEntries = $entries | Where-Object {
+    ($_ -match '(?i)qwen3-asr|encoder\.int8\.onnx|decoder\.int8\.onnx|\.onnx$') -and
+    ($_ -notin $expectedBundledAssets)
 }
 
 $report = [ordered]@{
@@ -35,9 +48,17 @@ $report = [ordered]@{
     abis = @($abis)
     nativeLibraries = @($nativeLibraries)
     suspiciousDuplicateLibraries = @($duplicates | ForEach-Object { $_.Name })
-    unexpectedModelEntries = @($unexpectedModels)
+    bundledModelEntries = @($bundledModelEntries)
+    missingBundledAssets = @($missingBundledAssets)
+    unexpectedModelEntries = @($unexpectedModelEntries)
 }
 $output = Join-Path $repoRoot '.spike\results\apk-inspection.json'
 New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($output)) | Out-Null
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $output -Encoding utf8
 Write-Host "APK 检查结果：$output"
+
+if ($duplicates.Count -gt 0 -or
+    $missingBundledAssets.Count -gt 0 -or
+    $unexpectedModelEntries.Count -gt 0) {
+    throw 'APK 模型资产或原生库检查失败，请查看检查报告。'
+}

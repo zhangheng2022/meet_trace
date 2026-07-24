@@ -69,6 +69,12 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  assets:
+    - assets/models/manifest.json
+    - assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx
+    - assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt
+    - assets/licenses/paraformer-small-NOTICE.txt
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

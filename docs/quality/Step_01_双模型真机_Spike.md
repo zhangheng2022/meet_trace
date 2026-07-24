@@ -51,7 +51,7 @@
 - Qwen3-ASR 上游仓库声明 Apache-2.0。
 - Paraformer 原始上游模型的 ModelScope 元数据标记为 Apache-2.0；sherpa-onnx 下载归档指向的转换模型上传页未填写 License 字段，归档也没有独立 LICENSE。
 - FunASR 当前仓库代码采用 MIT，同时另有独立 `MODEL_LICENSE`。发布前必须确认转换归档适用的模型条款，随 APK 保存来源、许可证和 NOTICE；本项仍未关闭。
-- 2026-07-24 再次通过 ModelScope API 复核精确转换来源：`License`、`LicenseName`、`LicenseLink` 均为空。sherpa-onnx 文档确认转换来源和下载归档，但不能替代权重许可，因此 Step 05 不提交真实资产。
+- 2026-07-24 再次通过 ModelScope API 复核精确转换来源：`License`、`LicenseName`、`LicenseLink` 均为空。sherpa-onnx 文档确认转换来源和下载归档，但不能替代权重许可。产品负责人随后明确批准把权重纳入 Android Alpha APK；仓库用 NOTICE 记录来源、归档哈希和未决许可状态，公开分发前仍须确认再分发许可。
 
 证据链接：[sherpa-onnx LICENSE](https://github.com/k2-fsa/sherpa-onnx/blob/master/LICENSE)、[Paraformer 原始上游模型](https://www.modelscope.cn/models/iic/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1/summary)、[转换模型上传页](https://www.modelscope.cn/models/crazyant/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-onnx/summary)、[FunASR MODEL_LICENSE](https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE)。
 
@@ -61,13 +61,13 @@
 
 | 项目 | 结果 |
 |---|---|
-| APK 字节数 | 236,352,699 |
+| APK 字节数 | 230,793,067；SHA-256 `44862d38c692df4a48bdbf482a3a65535c52b86acbdce02bd6d53490f388ec58` |
 | ABI | `arm64-v8a`、`armeabi-v7a`、`x86_64` |
 | sherpa-onnx / ONNX Runtime | 每个 ABI 各一份对应库，未发现可疑重复 |
-| 模型文件 | 未包含 Paraformer 或 Qwen3-ASR 模型，符合 Step 01/Step 05 尚未内置模型的当前阶段 |
-| 高级模型 | APK 中不存在 |
+| 标准模型 | 包含 `model.int8.onnx`（81,828,675 B）和 `tokens.txt`（75,352 B），并包含发布 Manifest 与来源 NOTICE |
+| 高级模型 | APK 中不存在 Qwen3-ASR 或其他 ONNX 模型变体 |
 
-通用 Debug APK 体积不是 Alpha 发布体积；Step 05 内置标准模型、Step 18 确定 ABI 拆分后必须重测。
+当前是包含标准模型的通用 Debug APK，不代表 Alpha 最终发布体积；Step 18 确定 ABI 拆分后必须重测。
 
 ## 5. 双模型真机指标
 

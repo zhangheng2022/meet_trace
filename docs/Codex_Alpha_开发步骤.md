@@ -26,17 +26,17 @@
 
 - 已有独立 `Application`、Forui 主题和会议列表空页面。
 - 已有通用 `ViewState`，并启用严格类型分析。
-- 已有 77 个应用壳、组件、Step 01、领域层、本地存储和模型生命周期自动化测试。
+- 已有 78 个应用壳、组件、Step 01、领域层、本地存储和模型生命周期自动化测试。
 - 已固定 Android API 24 最低版本，并记录 `arm64-v8a` 必验设备矩阵。
 - 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；这些不是正式 `AsrEngine`。
 - 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口；尚无具体 Engine 或 Repository 实现。
 - 已完成 Step 03 的 SQLite v1 Schema/迁移、App 私有文件布局、耐久文件提交、五类 Sqflite Repository 和幂等启动恢复器。
 - 已完成 Step 04 的双模型 `AsrModelRegistry`、Manifest v1 解析与兼容校验、严格文件集/SHA-256 校验、SQLite v2 默认模型设置和显式本场覆盖解析。
-- Step 05 已实现可测试的 Flutter asset 读取、临时目录复制、严格校验、原子目录切换、安装状态持久化、进度、失败重试和孤儿目录收养；精确上游许可字段为空，因此真实 Paraformer 资产、发布 Manifest 和 APK 检查尚未执行。
+- 已完成 Step 05：`81,904,027` 字节 Paraformer INT8 运行文件、发布 Manifest 和来源 NOTICE 已进入 APK；Flutter asset 读取、临时目录复制、严格校验、原子目录切换、安装状态持久化、进度、失败重试和孤儿目录收养均已实现。
 - 尚无正式录音 Service、高级模型下载、具体双 Engine、会议业务流程或总结生成实现。
 - 双模型设计已经批准；APK 静态检查、录音并发断言和双模型各两次真机识别已有证据。最终合并复跑通过，录音完整率 99.54%；Qwen3-ASR 峰值 RSS 约 2.92 GiB、首结果约 18～20 秒，当前为预备 Conditional Go。Paraformer 的 30 秒窗口空结果已通过 15 秒窗口复测关闭，两轮均为 20/20 可读；仍待会议样本、低端设备和许可闭环。
 
-Step 00、Step 02、Step 03、Step 04 已完成，Step 05 进行中；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和许可闭环仍在进行中。不得把 Spike、Registry、准备器或抽象接口误写成正式 ASR 能力。
+Step 00、Step 02、Step 03、Step 04、Step 05 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。不得把 Spike、Registry、准备器或抽象接口误写成正式 ASR 能力。
 
 ## 3. 不可破坏的工程规则
 
@@ -337,8 +337,9 @@ flutter analyze
 - 已实现 `FlutterModelAssetSource` 和 `BundledModelPreparationService`：只接受 `bundled + asset://`，按版本写入私有临时目录，逐文件 flush，严格校验后原子重命名，最后保存 `installed`。
 - 已实现检查、复制、校验、提交和就绪进度；正确安装时不重复读取 asset；数据库提交失败时保留已校验目录，下次重试可直接收养。
 - 已安装文件损坏可转为 `failed` 并重新校验；哈希不符、文件集错误或复制失败不会形成最终安装记录。内置模型禁止删除的领域约束继续生效。
-- 新增 8 项测试，77 项全量测试和 `flutter analyze` 通过。
-- 阻塞项：精确来源 `crazyant/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-onnx` 的 ModelScope API 返回空 `License`、`LicenseName` 和 `LicenseLink`。在许可/NOTICE 明确前，不把 82 MB 权重加入 `assets/models/`，不生成发布 Manifest，也不把 Step 05 标为完成。
+- `model.int8.onnx` 与 `tokens.txt` 合计 `81,904,027` 字节，已按精确大小和 SHA-256 写入 `assets/models/manifest.json`；APK 同时包含来源与许可状态 NOTICE，且不包含 Qwen3-ASR 或其他模型变体。
+- 新增真实资产一致性测试；共新增 9 项测试，78 项全量测试和 `flutter analyze` 通过。
+- Debug APK 已构建并通过资产检查。精确转换来源的 ModelScope `License`、`LicenseName` 和 `LicenseLink` 仍为空；产品负责人已明确批准用于 Android Alpha APK，公开分发前仍须确认权重再分发许可。
 
 ---
 
@@ -795,7 +796,7 @@ Codex 完成每一步后必须报告：
 | 02 领域模型 | 已完成 | 26 项 `test/domain` 测试：模型锁定、显式回退、合法/非法迁移、快照激活、总结输入、模型安装及抽象端口；`flutter analyze` 通过 |
 | 03 本地存储 | 已完成 | 11 项存储测试：SQLite v1/迁移、外键、文件提交故障、事务快照激活、级联删除、Repository 往返和四类幂等启动恢复；50 项全量测试及 `flutter analyze` 通过 |
 | 04 Registry/Manifest | 已完成 | 双模型 Registry、Manifest v1/兼容性、严格文件集/大小/SHA-256 校验、SQLite v2 默认模型设置、显式本场覆盖；19 项新增测试、69 项全量测试及 `flutter analyze` 通过 |
-| 05 内置标准模型 | 进行中 | asset 读取、临时复制、flush、严格校验、原子切换、状态持久化、进度、失败重试和孤儿目录收养已完成；8 项新增测试、77 项全量测试及 `flutter analyze` 通过；真实资产、许可/NOTICE、发布 Manifest 和 APK 检查待闭环 |
+| 05 内置标准模型 | 已完成 | `81,904,027` 字节运行资产、发布 Manifest、来源 NOTICE、asset 读取、原子准备、状态持久化、失败重试和孤儿目录收养已完成；9 项新增测试、78 项全量测试、`flutter analyze`、Debug APK 构建及资产检查通过；公开分发许可仍属 Step 01/18 发布门槛 |
 | 06 高级模型下载 | 待开始 | — |
 | 07 可靠录音 | 待开始 | — |
 | 08 官方 Flutter 包集成 | 待开始 | — |
