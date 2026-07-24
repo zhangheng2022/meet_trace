@@ -1,6 +1,6 @@
 # Step 10 Qwen Advanced Engine
 
-> 状态：代码与自动化测试已完成；正式 Engine 的 Mi 10 复测待设备允许 USB 安装
+> 状态：代码、自动化测试及 Android x86_64 模拟器正式 Engine 复测通过；Mi 10 正式 Engine 复测仍待设备允许 USB 安装
 >
 > 日期：2026-07-24
 >
@@ -8,7 +8,7 @@
 
 ## 结论
 
-Step 10 已实现 `QwenAdvancedAsrEngine`。高级 Engine 只通过 Step 08 的官方 `sherpa_onnx` Dart adapter 调用 Qwen3-ASR，不包含自建 JNI、FFI/C API、C/C++ 构建链或手工 `jniLibs`。初始化或推理失败只返回高级模型结构化错误，不会自动创建或切换到 Paraformer。
+Step 10 已实现 `QwenAdvancedAsrEngine`。高级 Engine 只通过 Step 08 的官方 `sherpa_onnx` Dart adapter 调用 Qwen3-ASR，不包含自建 JNI、FFI/C API、C/C++ 构建链或手工 `jniLibs`。初始化或推理失败只返回高级模型结构化错误，不会自动创建或切换到 Paraformer。正式 Engine 已在 Android 16 x86_64 模拟器使用真实固定 Qwen 权重连续通过两轮集成测试。
 
 ## 关键设计
 
@@ -41,13 +41,18 @@ Step 10 已实现 `QwenAdvancedAsrEngine`。高级 Engine 只通过 Step 08 的�
 
 Step 01 已在 Mi 10（Android 11、`arm64-v8a`）使用相同官方 Qwen3-ASR 配置完成两轮真实初始化、15/30 秒窗口推理、结果读取和释放：RTF 为 0.688/0.707，峰值 RSS 约 2.92 GiB。
 
-本步骤新增 `integration_test/qwen_advanced_asr_engine_test.dart`，会用真实 Qwen active version、SQLite 安装/租约仓库和正式 Engine 完成 1 秒窗口识别后释放。2026-07-24 本轮已重新下载并校验官方固定归档，APK 构建通过，但 Mi 10 连续两次返回：
+本步骤新增 `integration_test/qwen_advanced_asr_engine_test.dart`，会用真实 Qwen active version、SQLite 安装/租约仓库和正式 Engine 完成 1 秒窗口识别后释放。2026-07-24 本轮已重新下载并校验官方固定归档。Mi 10 的普通 Debug APK 曾成功安装，但 Flutter 集成测试运行器再次安装测试应用时仍返回：
 
 ```text
 INSTALL_FAILED_USER_RESTRICTED: Install canceled by user
 ```
 
-因此本轮不能声称正式 Engine 的 Android 集成测试已通过。推送到 `/data/local/tmp/meetily-step10-qwen-20260724-01` 的约 1 GB 临时模型已验证路径后删除；主机 `.spike/step10-qwen` 模型被 Git 忽略，可在设备允许 USB 安装后直接复测。
+用户随后切换到 `sdk_gphone64_x86_64` 模拟器（Android 16、API 36、`x86_64`）。APK 包含 x86_64 的官方 sherpa-onnx 和 ONNX Runtime 原生库；设备准备了 Registry 要求的六个运行文件，共 `987,015,347` 字节。正式 Engine 连续两轮通过：
+
+- 首轮包含 120 秒模型准备窗口，总耗时 2 分 15 秒。
+- 无等待复跑的设备内测试耗时 9 秒；包含构建、安装和测试的主机总耗时 35.289 秒。
+
+两轮均完成活动版本读取、SQLite 安装记录、使用租约、官方 worker 初始化、1 秒窗口识别、指标断言、worker 释放和租约释放。因此可以确认正式 Engine 的 Android 集成测试已在模拟器通过，但不能把它表述为 Mi 10 真机正式 Engine 已通过。Mi 10 与模拟器的 `/data/local/tmp` 中转目录及应用私有测试模型均已清理；主机 `.spike/step10-qwen` 模型被 Git 忽略，可在 Mi 10 允许测试应用安装后继续复测。
 
 ## 已运行验证
 
@@ -57,6 +62,7 @@ flutter analyze
 flutter test --no-pub
 flutter build apk --debug --no-pub
 flutter test --no-pub integration_test/qwen_advanced_asr_engine_test.dart -d 3f842cd0 ...
+flutter test --no-pub integration_test/qwen_advanced_asr_engine_test.dart -d emulator-5554 --no-uninstall ...
 ```
 
 - 静态分析：0 issue。
@@ -64,7 +70,8 @@ flutter test --no-pub integration_test/qwen_advanced_asr_engine_test.dart -d 3f8
 - Paraformer 回归：9/9 通过。
 - 全量自动化测试：134/134 通过。
 - Debug APK：构建通过。
-- Mi 10 正式 Engine 复测：设备安装策略阻塞，未通过也未伪报通过。
+- Android 16 x86_64 模拟器正式 Engine 复测：2/2 通过。
+- Mi 10 正式 Engine 复测：测试应用安装策略仍阻塞，未通过也未伪报通过。
 
 ## 已知风险
 

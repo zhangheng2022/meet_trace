@@ -525,7 +525,7 @@ flutter analyze
 - 双 Engine 复用 `SherpaOnnxAsrEngine` 公共 Dart 核心，使用相同 15 秒窗口、全局时间轴事件、最终快照、诊断、RTF、进度和取消协议；模型特有文件配置留在各自薄封装内。
 - `AsrDeviceRiskState`/`AsrDeviceRiskMonitor` 表达 supported/constrained/unsupported、内存压力和温控状态；临界风险只阻止高级模型推理并返回结构化错误，不触发自动模型切换。
 - Qwen 推理失败期间可靠录音继续写入并封存完整事实 PCM16；10 项新增单元测试和 134 项全量自动化测试通过。
-- Step 01 已在 Mi 10 使用相同官方 Qwen 配置完成两轮真实初始化、推理和释放；本步骤新增正式 Engine 真机测试入口，当前复测因设备拒绝 USB 安装而待补，详见 [Step 10 报告](./quality/Step_10_Qwen_Advanced_Engine.md)。
+- Step 01 已在 Mi 10 使用相同官方 Qwen 配置完成两轮真实初始化、推理和释放；本步骤正式 Engine 已在 Android 16 x86_64 模拟器使用真实固定权重连续通过两轮集成测试，Mi 10 正式 Engine 复测仍因测试应用安装被拒而待补，详见 [Step 10 报告](./quality/Step_10_Qwen_Advanced_Engine.md)。
 
 ---
 
@@ -852,7 +852,7 @@ Codex 完成每一步后必须报告：
 | 07 可靠录音 | 已完成 | 官方 `record` PCM16、公开 Android 麦克风前台服务、逐块 durable checkpoint、非阻塞预览、暂停/恢复、原子封存和异常启动恢复；10 项新增测试、105 项全量测试、`flutter analyze`、Debug APK 及 Mi 10 后台真机测试通过，详见 [Step 07 报告](./quality/Step_07_可靠录音与崩溃恢复.md) |
 | 08 官方 Flutter 包集成 | 已完成 | 官方 `sherpa_onnx` 1.13.4 一次性 bindings、独立 isolate worker、纯 Dart 双模型配置、串行推理、释放/重复创建、应用级取消和结构化错误；10 项新增测试、115 项全量测试、静态分析、Debug APK/许可证检查及 Mi 10 两轮真实 Paraformer worker 测试通过，详见 [Step 08 报告](./quality/Step_08_官方_sherpa-onnx_Flutter_包集成.md) |
 | 09 Paraformer Engine | 已完成 | Registry/已验证安装约束、15 秒窗口、全局时间轴事件、完整 PCM16 切窗、最终快照、逐窗诊断、RTF、进度和取消；9 项新增测试、124 项全量测试、静态分析及 Mi 10 真实模型集成测试通过，详见 [Step 09 报告](./quality/Step_09_Paraformer_Standard_Engine.md) |
-| 10 Qwen Engine | 已完成 | 活动已验证版本、owner 租约冲突/续租/释放、统一双 Engine 核心、设备支持/内存/温控风险、禁止自动切换及录音解耦；10 项新增测试、134 项全量测试和静态分析通过，真实 Qwen 的 Step 01 Mi 10 证据有效，本轮正式 Engine 复测待设备允许 USB 安装，详见 [Step 10 报告](./quality/Step_10_Qwen_Advanced_Engine.md) |
+| 10 Qwen Engine | 已完成 | 活动已验证版本、owner 租约冲突/续租/释放、统一双 Engine 核心、设备支持/内存/温控风险、禁止自动切换及录音解耦；10 项新增测试、134 项全量测试和静态分析通过，正式 Engine 在 Android 16 x86_64 模拟器使用真实固定权重 2/2 通过；Step 01 Mi 10 真实模型证据有效，但 Mi 10 正式 Engine 复测仍受测试应用安装策略阻塞，详见 [Step 10 报告](./quality/Step_10_Qwen_Advanced_Engine.md) |
 | 11 Factory/模型锁定 | 待开始 | — |
 | 12 VAD/预览队列 | 待开始 | — |
 | 13 会中 UI | 待开始 | — |
