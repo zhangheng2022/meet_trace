@@ -1,7 +1,7 @@
 # Meetily 文档索引
 
 > 状态：当前文档入口
-> 更新日期：2026-07-23
+> 更新日期：2026-07-24
 
 ## 活动文档
 
@@ -21,6 +21,7 @@
 实施证据：
 
 - [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md)：最低 SDK、目标 ABI、开发设备和待补齐的验收设备。
+- [Step 01 双模型真机 Spike](./quality/Step_01_双模型真机_Spike.md)：官方包、模型文件、APK、录音解耦和真机复测状态。
 
 ## 文档关系
 
@@ -35,7 +36,7 @@ PRD（做什么、为什么、如何验收）
 
 ## 当前实现状态
 
-截至 2026-07-23，Step 00 工程基线已完成：仓库已有独立 `Application`、Forui 会议列表空页面、通用 `ViewState`、严格分析选项和 3 个自动化测试，并已在 Mi 10 真机安装启动。开始会议按钮尚未接入业务流程；录音、数据库、模型管理、双 ASR Engine 和总结均未实现。下一步是 Step 01 双模型真机 Spike，它是继续 ASR 主链的 Go/No-Go。
+截至 2026-07-24，Step 00、Step 02 和 Step 03 已完成，Step 01 的外部验收项仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断、模型下载/哈希清单和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02 已加入纯 Dart 领域模型、四组状态机、结构化错误和统一抽象端口；Step 03 已加入 SQLite v1 Schema/迁移、App 私有文件布局、耐久文件提交、五类 Repository 和幂等启动恢复器。50 个自动化测试及静态分析通过。去敏会议样本、低端设备和 Paraformer 分发许可/NOTICE 仍未闭环；正式录音、Registry/Manifest、模型管理、具体双 Engine、会议业务流程和总结生成仍未实现。
 
 ## 维护规则
 

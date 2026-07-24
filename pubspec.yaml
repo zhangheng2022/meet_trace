@@ -35,10 +35,19 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   forui: ^0.24.2
+  path: 1.9.1
+  path_provider: 2.1.6
+  record: 7.1.1
+  sherpa_onnx: 1.13.4
+  sqflite: 2.4.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
+  sqlite3: 2.9.4
+  sqflite_common_ffi: 2.3.7
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

@@ -33,6 +33,9 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Step 01 真机 Spike 的本地模型、去敏音频和原始运行输出
+/.spike/
+
 # Symbolication related
 app.*.symbols
 
