@@ -104,6 +104,21 @@ void main() {
     expect(completed.audioPath, '/private/meetings/meeting-1/audio/fact.pcm');
     expect(completed.audioDurationMs, 1800000);
   });
+
+  test('录音失败时记录稳定错误码和结束时间', () {
+    final recording = _meeting().startRecording(
+      startedAt: DateTime.utc(2026, 7, 24, 3),
+    );
+
+    final failed = recording.fail(
+      errorCode: 'recording.permission_denied',
+      endedAt: DateTime.utc(2026, 7, 24, 3, 1),
+    );
+
+    expect(failed.status, MeetingState.failed);
+    expect(failed.lastErrorCode, 'recording.permission_denied');
+    expect(failed.endedAt, DateTime.utc(2026, 7, 24, 3, 1));
+  });
 }
 
 Meeting _meeting({

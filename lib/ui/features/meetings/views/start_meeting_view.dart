@@ -9,10 +9,16 @@ import '../view_models/start_meeting_view_model.dart';
 import 'locked_recording_model_view.dart';
 
 final class StartMeetingView extends StatefulWidget {
-  const StartMeetingView({required this.viewModel, this.onStarted, super.key});
+  const StartMeetingView({
+    required this.viewModel,
+    this.onStarted,
+    this.onBack,
+    super.key,
+  });
 
   final StartMeetingViewModel viewModel;
   final ValueChanged<StartedMeetingSession>? onStarted;
+  final VoidCallback? onBack;
 
   @override
   State<StartMeetingView> createState() => _StartMeetingViewState();
@@ -30,7 +36,18 @@ final class _StartMeetingViewState extends State<StartMeetingView> {
     return ListenableBuilder(
       listenable: widget.viewModel,
       builder: (context, _) => FScaffold(
-        header: const FHeader(title: Text('开始会议')),
+        header: FHeader.nested(
+          title: const Text('开始会议'),
+          prefixes: [
+            FHeaderAction(
+              icon: context.theme.icons.arrowLeft(
+                context,
+                semanticsLabel: '返回会议列表',
+              ),
+              onPress: widget.onBack,
+            ),
+          ],
+        ),
         child: _body(context),
       ),
     );

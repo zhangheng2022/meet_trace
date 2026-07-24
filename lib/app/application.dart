@@ -27,7 +27,7 @@ class Application extends StatelessWidget {
         child: FTooltipGroup(child: child ?? const SizedBox.shrink()),
       ),
     ),
-    // Step 00 只建立根页面；开始会议导航在对应功能步骤接入。
+    // 测试保留轻量默认首页；生产入口注入完整 MeetilyBootstrap。
     home: home ?? const MeetingListView(),
   );
 }

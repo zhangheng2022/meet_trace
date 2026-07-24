@@ -15,7 +15,20 @@ const defaultPreviewHighWaterMs = 15000;
 const defaultPreviewLowWaterMs = 5000;
 const _timelineRetentionMs = 20000;
 
-final class AsrPreviewCoordinator implements RecordingPreviewSink {
+abstract interface class AsrPreviewSession {
+  Stream<TranscriptEvent> get events;
+
+  Stream<AsrPreviewMetrics> get metricsChanges;
+
+  AsrPreviewMetrics get metrics;
+
+  Future<void> flush();
+
+  Future<void> dispose();
+}
+
+final class AsrPreviewCoordinator
+    implements RecordingPreviewSink, AsrPreviewSession {
   AsrPreviewCoordinator({
     required this.vad,
     required this.engine,
@@ -68,9 +81,12 @@ final class AsrPreviewCoordinator implements RecordingPreviewSink {
   int _coveredThroughMs = 0;
   String? _lastErrorCode;
 
+  @override
   Stream<TranscriptEvent> get events => _events.stream;
+  @override
   Stream<AsrPreviewMetrics> get metricsChanges => _metricsChanges.stream;
 
+  @override
   AsrPreviewMetrics get metrics => AsrPreviewMetrics(
     state: _state,
     vadSegmentCount: _vadSegmentCount,
@@ -115,6 +131,7 @@ final class AsrPreviewCoordinator implements RecordingPreviewSink {
     return Future<void>.value();
   }
 
+  @override
   Future<void> flush() async {
     if (_state == AsrPreviewState.recordingOnly ||
         _state == AsrPreviewState.disposed) {
@@ -132,6 +149,7 @@ final class AsrPreviewCoordinator implements RecordingPreviewSink {
     }
   }
 
+  @override
   Future<void> dispose() async {
     if (_state == AsrPreviewState.disposed) {
       return;

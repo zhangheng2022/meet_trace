@@ -26,7 +26,21 @@ final class ReliableRecordingException implements Exception {
   String toString() => 'ReliableRecordingException($code, $message)';
 }
 
-final class ReliableRecordingService {
+abstract interface class RecordingSessionService {
+  RecordingState get state;
+
+  Duration get duration;
+
+  Future<void> start({required String meetingId});
+
+  Future<void> pause();
+
+  Future<void> resume();
+
+  Future<RecordingArtifact> stop();
+}
+
+final class ReliableRecordingService implements RecordingSessionService {
   ReliableRecordingService({
     required this.capture,
     required this.layout,
@@ -70,11 +84,14 @@ final class ReliableRecordingService {
   bool _userPaused = false;
   int _persistedBytes = 0;
 
+  @override
   RecordingState get state => _state;
   int get persistedBytes => _persistedBytes;
+  @override
   Duration get duration => recordingDurationForBytes(_persistedBytes);
   int get droppedPreviewChunks => _preview.droppedChunks;
 
+  @override
   Future<void> start({required String meetingId}) async {
     if (_state != RecordingState.idle) {
       throw StateError('录音实例只能启动一次');
@@ -141,6 +158,7 @@ final class ReliableRecordingService {
     }
   }
 
+  @override
   Future<void> pause() async {
     if (_state != RecordingState.recording) {
       throw StateError('当前状态不能暂停录音：${_state.name}');
@@ -158,6 +176,7 @@ final class ReliableRecordingService {
     await foreground.setPaused(true);
   }
 
+  @override
   Future<void> resume() async {
     if (_state != RecordingState.paused) {
       throw StateError('当前状态不能恢复录音：${_state.name}');
@@ -183,6 +202,7 @@ final class ReliableRecordingService {
     await _saveCheckpoint(checkpointState);
   }
 
+  @override
   Future<RecordingArtifact> stop() async {
     if (_state != RecordingState.recording && _state != RecordingState.paused) {
       throw StateError('当前状态不能结束录音：${_state.name}');

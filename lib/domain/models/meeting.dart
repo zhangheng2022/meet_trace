@@ -108,6 +108,15 @@ final class Meeting {
     );
   }
 
+  Meeting fail({required String errorCode, DateTime? endedAt}) {
+    _requireText(errorCode, 'errorCode');
+    return _copyWith(
+      status: status.transitionTo(MeetingState.failed),
+      endedAt: endedAt,
+      lastErrorCode: errorCode,
+    );
+  }
+
   Meeting activateFinalTranscript(TranscriptSnapshot snapshot) {
     if (snapshot.meetingId != id) {
       throw const DomainInvariantViolation('不能激活其他会议的转录快照');
@@ -133,6 +142,7 @@ final class Meeting {
     Object? modelFallbackReason = _notProvided,
     Object? activeTranscriptSnapshotId = _notProvided,
     Object? activeSummaryId = _notProvided,
+    Object? lastErrorCode = _notProvided,
   }) {
     return Meeting(
       id: id,
@@ -157,7 +167,9 @@ final class Meeting {
       activeSummaryId: identical(activeSummaryId, _notProvided)
           ? this.activeSummaryId
           : activeSummaryId as String?,
-      lastErrorCode: lastErrorCode,
+      lastErrorCode: identical(lastErrorCode, _notProvided)
+          ? this.lastErrorCode
+          : lastErrorCode as String?,
     );
   }
 }

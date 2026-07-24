@@ -61,6 +61,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
     this.spaceMd = 16,
     this.spaceLg = 24,
     this.contentMaxWidth = 420,
+    this.wideContentMaxWidth = 960,
+    this.wideLayoutMinWidth = 720,
     this.emptyIconSize = 48,
   });
 
@@ -68,6 +70,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
   final double spaceMd;
   final double spaceLg;
   final double contentMaxWidth;
+  final double wideContentMaxWidth;
+  final double wideLayoutMinWidth;
   final double emptyIconSize;
 
   @override
@@ -76,12 +80,16 @@ class AppStyle extends ThemeExtension<AppStyle> {
     double? spaceMd,
     double? spaceLg,
     double? contentMaxWidth,
+    double? wideContentMaxWidth,
+    double? wideLayoutMinWidth,
     double? emptyIconSize,
   }) => AppStyle(
     spaceSm: spaceSm ?? this.spaceSm,
     spaceMd: spaceMd ?? this.spaceMd,
     spaceLg: spaceLg ?? this.spaceLg,
     contentMaxWidth: contentMaxWidth ?? this.contentMaxWidth,
+    wideContentMaxWidth: wideContentMaxWidth ?? this.wideContentMaxWidth,
+    wideLayoutMinWidth: wideLayoutMinWidth ?? this.wideLayoutMinWidth,
     emptyIconSize: emptyIconSize ?? this.emptyIconSize,
   );
 
@@ -96,6 +104,12 @@ class AppStyle extends ThemeExtension<AppStyle> {
       spaceLg: spaceLg + (other.spaceLg - spaceLg) * t,
       contentMaxWidth:
           contentMaxWidth + (other.contentMaxWidth - contentMaxWidth) * t,
+      wideContentMaxWidth:
+          wideContentMaxWidth +
+          (other.wideContentMaxWidth - wideContentMaxWidth) * t,
+      wideLayoutMinWidth:
+          wideLayoutMinWidth +
+          (other.wideLayoutMinWidth - wideLayoutMinWidth) * t,
       emptyIconSize: emptyIconSize + (other.emptyIconSize - emptyIconSize) * t,
     );
   }
@@ -109,6 +123,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
           spaceMd == other.spaceMd &&
           spaceLg == other.spaceLg &&
           contentMaxWidth == other.contentMaxWidth &&
+          wideContentMaxWidth == other.wideContentMaxWidth &&
+          wideLayoutMinWidth == other.wideLayoutMinWidth &&
           emptyIconSize == other.emptyIconSize;
 
   @override
@@ -118,6 +134,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
     spaceMd,
     spaceLg,
     contentMaxWidth,
+    wideContentMaxWidth,
+    wideLayoutMinWidth,
     emptyIconSize,
   );
 }

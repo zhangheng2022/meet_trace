@@ -30,6 +30,7 @@
 - [Step 10 Qwen Advanced Engine](./quality/Step_10_Qwen_Advanced_Engine.md)：活动版本、使用租约、设备风险、统一输出协议、录音解耦和 Android x86_64 模拟器真实模型证据。
 - [Step 11 Factory 与会议模型锁定](./quality/Step_11_Factory与会议模型锁定.md)：精确 ID/版本 Engine 创建、全局默认、本场覆盖、显式回退、会议锁定和 Forui 组件证据。
 - [Step 12 Silero VAD 与预览队列](./quality/Step_12_Silero_VAD与预览队列.md)：统一时间轴、15 秒重叠切窗、音频时长水位、积压丢弃、确定性文本修订和仅录音降级证据。
+- [Step 13 会议主链与会中 UI](./quality/Step_13_会议主链与会中_UI.md)：生产依赖装配、会议列表、开始会议、事实录音、会中降级状态、响应式布局和 Android 端到端证据。
 
 ## 文档关系
 
@@ -44,7 +45,9 @@ PRD（做什么、为什么、如何验收）
 
 ## 当前实现状态
 
-截至 2026-07-24，Step 00、Step 02～12 已完成，Step 01 的外部验收项仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02～04 已建立领域契约、事实存储、双模型 Registry、Manifest/文件校验、默认模型设置和显式选择规则；Step 05 已把 `81,904,027` 字节 Paraformer INT8 运行文件纳入 APK。Step 06 已实现 Qwen3-ASR 六文件按需下载、2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、严格校验、SQLite v3 原子活动版本、持久化租约和安全删除；高级权重不进入 APK。Step 07 已通过官方 `record` 和公开前台服务插件实现可靠事实录音。Step 08 已把官方包收敛为应用启动 bindings、独立 isolate worker、串行识别、资源释放、应用级取消和结构化错误边界。Step 09/10 已实现可互换的标准 Paraformer Engine 与高级 Qwen Engine，共用 15 秒窗口、全局时间轴事件、完整事实 PCM16 切窗、最终快照、诊断、RTF、进度和取消协议；高级 Engine 额外强制活动已验证版本、使用租约、内存/温控/设备支持风险，并且失败后不自动切换模型。Step 11 已实现只按确认 ID/版本创建 Engine 的 Factory、设置默认模型、本场覆盖、显式回退记录和录音态模型锁定组件。Step 12 已完成官方 Silero VAD、`212,860` 字节 INT8 权重及 Manifest/NOTICE、私有目录原子准备、统一时间轴、前后文、15 秒重叠切窗、按音频时长限流、积压丢弃、指标和仅录音降级；主导航、真实录音协调和会中状态属于 Step 13。磁盘容量插件已替换为 `disk_space_2` 1.0.13，旧 `storage_space` Kotlin 插件警告已消除；当前仅剩 `flutter_foreground_task` 的上游兼容警告。173 个自动化测试、静态分析、Debug APK 构建和 VAD 包内哈希检查通过；真实 VAD 与 Qwen 正式 Engine 均已在 Android 16 x86_64 模拟器使用固定权重完成集成测试。Mi 10 正式 Engine 复测仍因测试应用安装被拒而待补。精确转换权重的镜像许可元数据仍为空，来源 NOTICE 已记录上游 Apache-2.0 与转换来源；公开分发前仍须完成许可确认。总结生成尚未实现。
+截至 2026-07-24，Step 00、Step 02～13 已完成，Step 01 的外部语料、低端设备和公开分发许可闭环仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4；标准 Paraformer、按需下载 Qwen3-ASR、可靠事实录音、双 Engine、模型锁定、Silero VAD、有界预览队列和前半段会议主链均已落地。生产入口已装配 SQLite、内置模型、Factory、VAD、可靠录音和预览协调器；会议列表、开始会议、录音、暂停/恢复、结束、会中四类状态和处理详情可运行。
+
+当前全量 184 项测试、静态分析和 Debug APK 通过。Android 16 x86_64 模拟器已走通 21 秒真实录音、暂停/恢复、`696,320` 字节 PCM 封存和列表处理态；Mi 10 已有 99.54% 录音完整率和双模型 Spike 证据，但正式 Qwen Engine 复测仍受 USB 安装策略阻塞。磁盘容量插件已替换为 `disk_space_2`，当前仅剩 `flutter_foreground_task` 的 Built-in Kotlin 上游兼容警告。最终转录、总结、实体设备 30 分钟回归和许可确认仍属于后续步骤。
 
 ## 维护规则
 
