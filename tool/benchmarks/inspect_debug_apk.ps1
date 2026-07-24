@@ -41,24 +41,34 @@ $unexpectedModelEntries = $entries | Where-Object {
     ($_ -match '(?i)qwen3-asr|encoder\.int8\.onnx|decoder\.int8\.onnx|\.onnx$') -and
     ($_ -notin $expectedBundledAssets)
 }
+$requiredAbi = 'arm64-v8a'
+$hasRequiredAbi = $requiredAbi -in $abis
+$flutterNoticesEntry = 'assets/flutter_assets/NOTICES.Z'
+$hasFlutterNotices = $flutterNoticesEntry -in $entries
 
 $report = [ordered]@{
     capturedAtUtc = [DateTimeOffset]::UtcNow.ToString('O')
     apkPath = $ApkPath
     apkBytes = (Get-Item -LiteralPath $ApkPath).Length
+    requiredAbi = $requiredAbi
+    hasRequiredAbi = $hasRequiredAbi
     abis = @($abis)
     nativeLibraries = @($nativeLibraries)
     suspiciousDuplicateLibraries = @($duplicates | ForEach-Object { $_.Name })
     bundledModelEntries = @($bundledModelEntries)
     missingBundledAssets = @($missingBundledAssets)
     unexpectedModelEntries = @($unexpectedModelEntries)
+    flutterNoticesEntry = $flutterNoticesEntry
+    hasFlutterNotices = $hasFlutterNotices
 }
 $output = Join-Path $repoRoot '.spike\results\apk-inspection.json'
 New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($output)) | Out-Null
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $output -Encoding utf8
 Write-Host "APK 检查结果：$output"
 
-if ($duplicates.Count -gt 0 -or
+if (-not $hasRequiredAbi -or
+    -not $hasFlutterNotices -or
+    $duplicates.Count -gt 0 -or
     $missingBundledAssets.Count -gt 0 -or
     $unexpectedModelEntries.Count -gt 0) {
     throw 'APK 模型资产或原生库检查失败，请查看检查报告。'
