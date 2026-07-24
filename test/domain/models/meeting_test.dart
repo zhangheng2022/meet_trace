@@ -87,6 +87,23 @@ void main() {
       expect(meeting.activeTranscriptSnapshotId, 'old');
     });
   });
+
+  test('事实音频封存后记录结束时间、路径和时长并进入待处理', () {
+    final recording = _meeting().startRecording(
+      startedAt: DateTime.utc(2026, 7, 24, 3),
+    );
+
+    final completed = recording.finishRecording(
+      endedAt: DateTime.utc(2026, 7, 24, 3, 30),
+      audioPath: '/private/meetings/meeting-1/audio/fact.pcm',
+      audioDurationMs: 1800000,
+    );
+
+    expect(completed.status, MeetingState.processing);
+    expect(completed.endedAt, DateTime.utc(2026, 7, 24, 3, 30));
+    expect(completed.audioPath, '/private/meetings/meeting-1/audio/fact.pcm');
+    expect(completed.audioDurationMs, 1800000);
+  });
 }
 
 Meeting _meeting({

@@ -92,6 +92,22 @@ final class Meeting {
     );
   }
 
+  Meeting finishRecording({
+    required DateTime endedAt,
+    required String audioPath,
+    required int audioDurationMs,
+  }) {
+    if (audioPath.trim().isEmpty) {
+      throw ArgumentError.value(audioPath, 'audioPath', '不能为空');
+    }
+    return _copyWith(
+      status: status.transitionTo(MeetingState.processing),
+      endedAt: endedAt,
+      audioPath: audioPath,
+      audioDurationMs: audioDurationMs,
+    );
+  }
+
   Meeting activateFinalTranscript(TranscriptSnapshot snapshot) {
     if (snapshot.meetingId != id) {
       throw const DomainInvariantViolation('不能激活其他会议的转录快照');
@@ -108,7 +124,10 @@ final class Meeting {
 
   Meeting _copyWith({
     DateTime? startedAt,
+    DateTime? endedAt,
     MeetingState? status,
+    String? audioPath,
+    int? audioDurationMs,
     String? recordingModelId,
     String? recordingModelVersion,
     Object? modelFallbackReason = _notProvided,
@@ -120,10 +139,10 @@ final class Meeting {
       title: title,
       createdAt: createdAt,
       startedAt: startedAt ?? this.startedAt,
-      endedAt: endedAt,
+      endedAt: endedAt ?? this.endedAt,
       status: status ?? this.status,
-      audioPath: audioPath,
-      audioDurationMs: audioDurationMs,
+      audioPath: audioPath ?? this.audioPath,
+      audioDurationMs: audioDurationMs ?? this.audioDurationMs,
       requestedModelId: requestedModelId,
       recordingModelId: recordingModelId ?? this.recordingModelId,
       recordingModelVersion:

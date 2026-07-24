@@ -36,6 +36,18 @@ final class AppFileLayout {
     return p.join(meetingAudioDirectory(meetingId), 'fact.pcm');
   }
 
+  String meetingAudioCheckpointPath(String meetingId) {
+    return p.join(meetingAudioDirectory(meetingId), 'checkpoint.json');
+  }
+
+  String meetingAudioCheckpointNextPath(String meetingId) {
+    return p.join(meetingAudioDirectory(meetingId), 'checkpoint.json.next');
+  }
+
+  String meetingAudioCheckpointPreviousPath(String meetingId) {
+    return p.join(meetingAudioDirectory(meetingId), 'checkpoint.json.previous');
+  }
+
   String modelTempDirectory(String modelId, String version) {
     return p.join(
       modelTempRoot,

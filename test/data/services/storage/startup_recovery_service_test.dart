@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meetily_ai/data/repositories/sqflite_meeting_repository.dart';
 import 'package:meetily_ai/data/repositories/sqflite_processing_task_repository.dart';
 import 'package:meetily_ai/data/repositories/sqflite_transcript_repository.dart';
+import 'package:meetily_ai/data/services/audio/recording_checkpoint_store.dart';
 import 'package:meetily_ai/data/services/storage/app_database.dart';
 import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
 import 'package:meetily_ai/data/services/storage/startup_recovery_service.dart';
@@ -60,7 +61,15 @@ void main() {
     await meetings.save(recordingMeeting);
     final tempAudio = File(layout.meetingAudioTempPath(recordingMeeting.id));
     await tempAudio.parent.create(recursive: true);
-    await tempAudio.writeAsBytes([1, 2, 3], flush: true);
+    await tempAudio.writeAsBytes(List<int>.filled(32001, 1), flush: true);
+    await JsonRecordingCheckpointStore(layout).save(
+      RecordingCheckpoint(
+        meetingId: recordingMeeting.id,
+        state: RecordingCheckpointState.recording,
+        persistedBytes: 32000,
+        updatedAt: now.subtract(const Duration(minutes: 1)),
+      ),
+    );
 
     await tasks.save(
       ProcessingTask(
@@ -109,6 +118,14 @@ void main() {
     );
     expect(recoveredMeeting.activeTranscriptSnapshotId, snapshot.id);
     expect(await File(recoveredMeeting.audioPath!).exists(), true);
+    expect(await File(recoveredMeeting.audioPath!).length(), 32000);
+    expect(recoveredMeeting.audioDurationMs, 1000);
+    expect(
+      (await JsonRecordingCheckpointStore(
+        layout,
+      ).load(recordingMeeting.id))?.state,
+      RecordingCheckpointState.finalized,
+    );
     expect((await tasks.getById('task-1'))!.state, ProcessingState.queued);
     expect(await modelTemp.exists(), false);
   });

@@ -26,7 +26,7 @@
 
 - 已有独立 `Application`、Forui 主题和会议列表空页面。
 - 已有通用 `ViewState`，并启用严格类型分析。
-- 已有 95 个应用壳、组件、Step 01、领域层、本地存储和模型生命周期自动化测试。
+- 已有 105 个应用壳、组件、Step 01、领域层、本地存储、模型生命周期和可靠录音自动化测试。
 - 已固定 Android API 24 最低版本，并记录 `arm64-v8a` 必验设备矩阵。
 - 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；这些不是正式 `AsrEngine`。
 - 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口；尚无具体 Engine 或 Repository 实现。
@@ -34,10 +34,11 @@
 - 已完成 Step 04 的双模型 `AsrModelRegistry`、Manifest v1 解析与兼容校验、严格文件集/SHA-256 校验、SQLite v2 默认模型设置和显式本场覆盖解析。
 - 已完成 Step 05：`81,904,027` 字节 Paraformer INT8 运行文件、发布 Manifest 和来源 NOTICE 已进入 APK；Flutter asset 读取、临时目录复制、严格校验、原子目录切换、安装状态持久化、进度、失败重试和孤儿目录收养均已实现。
 - 已完成 Step 06：Qwen3-ASR 六文件发布 Manifest、2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、临时目录、严格校验、SQLite v3 原子活动版本、持久化使用租约和高级模型安全删除均已实现；高级权重不进入 APK。
-- 尚无正式录音 Service、具体双 Engine、会议业务流程或总结生成实现。
+- 已完成 Step 07：官方 `record` 采集 16 kHz 单声道 PCM16，公开 `flutter_foreground_task` 维持 Android 麦克风前台生命周期；事实文件逐块 flush 并持久化双代 checkpoint 后才投递有界预览，支持暂停/恢复、原子封存和启动恢复。
+- 尚无具体双 Engine、会议业务流程或总结生成实现。
 - 双模型设计已经批准；APK 静态检查、录音并发断言和双模型各两次真机识别已有证据。最终合并复跑通过，录音完整率 99.54%；Qwen3-ASR 峰值 RSS 约 2.92 GiB、首结果约 18～20 秒，当前为预备 Conditional Go。Paraformer 的 30 秒窗口空结果已通过 15 秒窗口复测关闭，两轮均为 20/20 可读；仍待会议样本、低端设备和许可闭环。
 
-Step 00、Step 02～06 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。不得把 Spike、Registry、模型管理器或抽象接口误写成正式 ASR 能力。
+Step 00、Step 02～07 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。不得把 Spike、Registry、模型管理器或抽象接口误写成正式 ASR 能力。
 
 ## 3. 不可破坏的工程规则
 
@@ -410,6 +411,15 @@ flutter analyze
 - FR-003
 - FR-010
 - AT-02 至 AT-06
+
+**完成证据**
+
+- 官方 `record` 7.1.1 适配器固定请求 16 kHz、单声道、PCM16，并使用 `AudioInterruptionMode.pauseResume` 响应来电/音频焦点中断。
+- `ReliableRecordingService` 按“写入并 flush → 双代 checkpoint → 非阻塞 preview”顺序处理每个块；preview 阻塞、失败或满载不回滚事实音频。
+- `StartupRecoveryService` 对异常退出遗留 PCM16 截断不完整尾样本，原子封存后写入真实时长并转入处理态。
+- 30 分钟合成事实 PCM 共 `57,600,000` 字节，文件完整率 100%；105 项全量自动化测试通过。
+- Mi 10（Android 11）切到后台后持续录制 30 秒，写入 `960,000` 字节，持久化率 100%，采集完整率约 99.96%。
+- 详见 [Step 07 质量报告](./quality/Step_07_可靠录音与崩溃恢复.md)。
 
 ---
 
@@ -808,7 +818,7 @@ Codex 完成每一步后必须报告：
 | 04 Registry/Manifest | 已完成 | 双模型 Registry、Manifest v1/兼容性、严格文件集/大小/SHA-256 校验、SQLite v2 默认模型设置、显式本场覆盖；19 项新增测试、69 项全量测试及 `flutter analyze` 通过 |
 | 05 内置标准模型 | 已完成 | `81,904,027` 字节运行资产、发布 Manifest、来源 NOTICE、asset 读取、原子准备、状态持久化、失败重试和孤儿目录收养已完成；9 项新增测试、78 项全量测试、`flutter analyze`、Debug APK 构建及资产检查通过；公开分发许可仍属 Step 01/18 发布门槛 |
 | 06 高级模型下载 | 已完成 | 2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、六文件严格校验、SQLite v3 原子活动版本、持久化租约和安全删除；17 项新增测试、95 项全量测试、`flutter analyze`、Debug APK 构建和高级权重缺失检查通过 |
-| 07 可靠录音 | 待开始 | — |
+| 07 可靠录音 | 已完成 | 官方 `record` PCM16、公开 Android 麦克风前台服务、逐块 durable checkpoint、非阻塞预览、暂停/恢复、原子封存和异常启动恢复；10 项新增测试、105 项全量测试、`flutter analyze`、Debug APK 及 Mi 10 后台真机测试通过，详见 [Step 07 报告](./quality/Step_07_可靠录音与崩溃恢复.md) |
 | 08 官方 Flutter 包集成 | 待开始 | — |
 | 09 Paraformer Engine | 待开始 | — |
 | 10 Qwen Engine | 待开始 | — |

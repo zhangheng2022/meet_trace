@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 
+import '../../../domain/models/recording.dart';
 import '../../../domain/models/workflow_states.dart';
+import '../audio/recording_checkpoint_store.dart';
 import 'app_database.dart';
 import 'app_file_layout.dart';
 import 'durable_file_committer.dart';
@@ -35,14 +37,17 @@ final class StartupRecoveryService {
     required this.database,
     required this.layout,
     this.fileCommitter = const DurableFileCommitter(),
-  });
+    RecordingCheckpointStore? recordingCheckpoints,
+  }) : recordingCheckpoints =
+           recordingCheckpoints ?? JsonRecordingCheckpointStore(layout);
 
   final AppDatabase database;
   final AppFileLayout layout;
   final DurableFileCommitter fileCommitter;
+  final RecordingCheckpointStore recordingCheckpoints;
 
   Future<RecoveryReport> recover({required DateTime now}) async {
-    final recoveredRecordings = await _recoverRecordings();
+    final recoveredRecordings = await _recoverRecordings(now);
     final resetExpiredTasks = await _resetExpiredTasks(now);
     final removedModelTempDirectories =
         await _removeIncompleteModelDirectories();
@@ -57,7 +62,9 @@ final class StartupRecoveryService {
     );
   }
 
-  Future<({int successes, int failures})> _recoverRecordings() async {
+  Future<({int successes, int failures})> _recoverRecordings(
+    DateTime now,
+  ) async {
     final db = await database.open();
     final rows = await db.query(
       'meetings',
@@ -71,15 +78,28 @@ final class StartupRecoveryService {
     for (final row in rows) {
       final meetingId = row['id']! as String;
       try {
+        await _alignRecoverablePcm(meetingId);
         await fileCommitter.commit(
           tempPath: layout.meetingAudioTempPath(meetingId),
           finalPath: layout.meetingAudioPath(meetingId),
           persistReference: (finalPath) async {
+            final persistedBytes = await File(finalPath).length();
+            await recordingCheckpoints.save(
+              RecordingCheckpoint(
+                meetingId: meetingId,
+                state: RecordingCheckpointState.finalized,
+                persistedBytes: persistedBytes,
+                updatedAt: now.toUtc(),
+              ),
+            );
             await db.transaction((txn) async {
               final updated = await txn.update(
                 'meetings',
                 {
                   'audio_path': finalPath,
+                  'audio_duration_ms': recordingDurationForBytes(
+                    persistedBytes,
+                  ).inMilliseconds,
                   'status': MeetingState.processing.name,
                   'last_error_code': null,
                 },
@@ -107,6 +127,30 @@ final class StartupRecoveryService {
       }
     }
     return (successes: successes, failures: failures);
+  }
+
+  Future<void> _alignRecoverablePcm(String meetingId) async {
+    final finalFile = File(layout.meetingAudioPath(meetingId));
+    final tempFile = File(layout.meetingAudioTempPath(meetingId));
+    final source = await finalFile.exists() ? finalFile : tempFile;
+    if (!await source.exists()) {
+      return;
+    }
+    final length = await source.length();
+    final alignedLength = length - (length % recordingBytesPerSample);
+    if (alignedLength <= 0) {
+      throw DurableFileCommitException('恢复音频没有完整 PCM16 样本：${source.path}');
+    }
+    if (alignedLength == length) {
+      return;
+    }
+    final handle = await source.open(mode: FileMode.append);
+    try {
+      await handle.truncate(alignedLength);
+      await handle.flush();
+    } finally {
+      await handle.close();
+    }
   }
 
   Future<int> _resetExpiredTasks(DateTime now) async {
