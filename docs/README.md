@@ -13,9 +13,11 @@
    将 PRD 约束落实为录音、模型管理、官方 sherpa-onnx Flutter 包、双 ASR Engine、存储和降级架构。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)
    当前仓库从应用壳到双模型 Alpha 的执行顺序、测试要求和完成看板。
-4. [双模型设计规格](./superpowers/specs/2026-07-23-dual-asr-model-design.md)
+4. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)
+   Alpha 步骤分支、隔离 worktree、合并和安全清理规则。
+5. [双模型设计规格](./superpowers/specs/2026-07-23-dual-asr-model-design.md)
    2026-07-23 已批准决策的审计记录；若与当前 PRD 冲突，以 PRD 为准并同步修订规格。
-5. [官方 sherpa-onnx Flutter 包集成规格](./superpowers/specs/2026-07-23-official-sherpa-onnx-flutter-integration-design.md)
+6. [官方 sherpa-onnx Flutter 包集成规格](./superpowers/specs/2026-07-23-official-sherpa-onnx-flutter-integration-design.md)
    2026-07-23 已批准的依赖边界：只使用官方 Flutter/Dart 包，不自建原生桥接。
 
 实施证据：

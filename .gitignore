@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/.worktrees/
 
 # Step 01 真机 Spike 的本地模型、去敏音频和原始运行输出
 /.spike/
