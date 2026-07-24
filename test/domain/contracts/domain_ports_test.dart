@@ -71,6 +71,25 @@ final class _FakeAsrEngine implements AsrEngine {
   Stream<TranscriptEvent> get events => const Stream.empty();
 
   @override
+  Stream<AsrFinalizationProgress> get finalizationProgress =>
+      const Stream.empty();
+
+  @override
+  List<AsrWindowDiagnostic> get diagnostics => const [];
+
+  @override
+  AsrEngineMetrics get metrics => AsrEngineMetrics(
+    modelId: descriptor.modelId,
+    modelVersion: descriptor.version,
+    totalWindowCount: 0,
+    recognizedWindowCount: 0,
+    emptyWindowCount: 0,
+    failedWindowCount: 0,
+    totalAudioDuration: Duration.zero,
+    totalInferenceDuration: Duration.zero,
+  );
+
+  @override
   Future<void> acceptAudio(
     Float32List samples, {
     required int sampleRate,
@@ -81,12 +100,18 @@ final class _FakeAsrEngine implements AsrEngine {
   Future<void> dispose() async {}
 
   @override
-  Future<TranscriptSnapshot> finalizeMeeting(AudioSource source) {
+  Future<TranscriptSnapshot> finalizeMeeting(
+    AudioSource source, {
+    required String meetingId,
+  }) {
     throw UnimplementedError('本测试只验证接口形状');
   }
 
   @override
   Future<void> initialize() async {}
+
+  @override
+  void cancel() {}
 }
 
 final class _InMemoryMeetingRepository implements MeetingRepository {

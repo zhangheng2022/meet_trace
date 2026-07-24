@@ -26,6 +26,7 @@
 - [Step 01 双模型真机 Spike](./quality/Step_01_双模型真机_Spike.md)：官方包、模型文件、APK、录音解耦和真机复测状态。
 - [Step 07 可靠录音与崩溃恢复](./quality/Step_07_可靠录音与崩溃恢复.md)：事实 PCM、检查点、原子封存、异常恢复和 Mi 10 后台录音证据。
 - [Step 08 官方 sherpa-onnx Flutter 包集成](./quality/Step_08_官方_sherpa-onnx_Flutter_包集成.md)：一次性 bindings、isolate worker、结构化错误、重复创建和 APK 审计证据。
+- [Step 09 Paraformer Standard Engine](./quality/Step_09_Paraformer_Standard_Engine.md)：15 秒窗口、全局时间轴、完整 PCM16 处理、诊断/RTF、取消和 Mi 10 真实模型证据。
 
 ## 文档关系
 
@@ -40,7 +41,7 @@ PRD（做什么、为什么、如何验收）
 
 ## 当前实现状态
 
-截至 2026-07-24，Step 00、Step 02～08 已完成，Step 01 的外部验收项仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02～04 已建立领域契约、事实存储、双模型 Registry、Manifest/文件校验、默认模型设置和显式选择规则；Step 05 已把 `81,904,027` 字节 Paraformer INT8 运行文件纳入 APK。Step 06 已实现 Qwen3-ASR 六文件按需下载、2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、严格校验、SQLite v3 原子活动版本、持久化租约和安全删除；高级权重不进入 APK。Step 07 已通过官方 `record` 和公开前台服务插件实现可靠事实录音。Step 08 已把官方包收敛为应用启动 bindings、独立 isolate worker、串行识别、资源释放、应用级取消和结构化错误边界；Mi 10 使用真实内置 Paraformer 完成两轮初始化、1 秒 PCM 推理、释放和重建。115 个自动化测试、静态分析、Debug APK、APK 内容检查和真机集成测试通过。精确转换权重的镜像许可元数据仍为空，来源 NOTICE 已记录上游 Apache-2.0 与转换来源；公开分发前仍须完成许可确认。具体双 Engine、会议业务流程和总结生成尚未实现。
+截至 2026-07-24，Step 00、Step 02～09 已完成，Step 01 的外部验收项仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4，加入双模型 Spike、录音连续性探针、逐窗口诊断和 APK 检查脚本；Mi 10 录音完整率 99.54%，Paraformer 15 秒窗口两轮均为 20/20 可读、RTF 约 0.0214，Qwen3-ASR 峰值 RSS 约 2.92 GiB且首结果约 18～20 秒，因此 Step 01 当前为预备 Conditional Go。Step 02～04 已建立领域契约、事实存储、双模型 Registry、Manifest/文件校验、默认模型设置和显式选择规则；Step 05 已把 `81,904,027` 字节 Paraformer INT8 运行文件纳入 APK。Step 06 已实现 Qwen3-ASR 六文件按需下载、2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、严格校验、SQLite v3 原子活动版本、持久化租约和安全删除；高级权重不进入 APK。Step 07 已通过官方 `record` 和公开前台服务插件实现可靠事实录音。Step 08 已把官方包收敛为应用启动 bindings、独立 isolate worker、串行识别、资源释放、应用级取消和结构化错误边界。Step 09 已实现标准 Paraformer Engine：只接受 Registry 标准模型与已验证安装记录，执行 15 秒窗口上限、全局时间轴事件、完整事实 PCM16 切窗、最终快照、逐窗诊断、RTF、进度和取消；Mi 10 真实模型集成测试通过。124 个自动化测试和静态分析通过。精确转换权重的镜像许可元数据仍为空，来源 NOTICE 已记录上游 Apache-2.0 与转换来源；公开分发前仍须完成许可确认。Qwen Engine、会议业务流程和总结生成尚未实现。
 
 ## 维护规则
 

@@ -26,20 +26,21 @@
 
 - 已有独立 `Application`、Forui 主题和会议列表空页面。
 - 已有通用 `ViewState`，并启用严格类型分析。
-- 已有 115 个应用壳、组件、Step 01、领域层、本地存储、模型生命周期、可靠录音和官方 ASR adapter 自动化测试。
+- 已有 124 个应用壳、组件、Step 01、领域层、本地存储、模型生命周期、可靠录音、官方 ASR adapter 和标准 Paraformer Engine 自动化测试。
 - 已固定 Android API 24 最低版本，并记录 `arm64-v8a` 必验设备矩阵。
-- 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；这些不是正式 `AsrEngine`。
-- 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口；尚无具体 Engine 或 Repository 实现。
+- 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；Spike 不是正式 `AsrEngine`。
+- 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口。
 - 已完成 Step 03 的 SQLite v1 Schema/迁移、App 私有文件布局、耐久文件提交、五类 Sqflite Repository 和幂等启动恢复器。
 - 已完成 Step 04 的双模型 `AsrModelRegistry`、Manifest v1 解析与兼容校验、严格文件集/SHA-256 校验、SQLite v2 默认模型设置和显式本场覆盖解析。
 - 已完成 Step 05：`81,904,027` 字节 Paraformer INT8 运行文件、发布 Manifest 和来源 NOTICE 已进入 APK；Flutter asset 读取、临时目录复制、严格校验、原子目录切换、安装状态持久化、进度、失败重试和孤儿目录收养均已实现。
 - 已完成 Step 06：Qwen3-ASR 六文件发布 Manifest、2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、临时目录、严格校验、SQLite v3 原子活动版本、持久化使用租约和高级模型安全删除均已实现；高级权重不进入 APK。
 - 已完成 Step 07：官方 `record` 采集 16 kHz 单声道 PCM16，公开 `flutter_foreground_task` 维持 Android 麦克风前台生命周期；事实文件逐块 flush 并持久化双代 checkpoint 后才投递有界预览，支持暂停/恢复、原子封存和启动恢复。
 - 已完成 Step 08：应用启动时一次性初始化官方 bindings；data/service 层以独立 isolate 持有官方识别器，封装双模型纯 Dart 配置、串行推理、资源释放、应用级取消和结构化错误。
-- 尚无具体双 Engine、会议业务流程或总结生成实现。
+- 已完成 Step 09：标准 Paraformer Engine 只接受 Registry 标准模型与已验证安装记录，支持不超过 15 秒的窗口、外部全局时间轴事件、完整事实 PCM16 切窗、最终快照、逐窗诊断、RTF、进度和取消。
+- 尚无 Qwen Engine、会议业务流程或总结生成实现。
 - 双模型设计已经批准；APK 静态检查、录音并发断言和双模型各两次真机识别已有证据。最终合并复跑通过，录音完整率 99.54%；Qwen3-ASR 峰值 RSS 约 2.92 GiB、首结果约 18～20 秒，当前为预备 Conditional Go。Paraformer 的 30 秒窗口空结果已通过 15 秒窗口复测关闭，两轮均为 20/20 可读；仍待会议样本、低端设备和许可闭环。
 
-Step 00、Step 02～08 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。不得把 Spike、Registry、模型管理器或抽象接口误写成正式 ASR 能力。
+Step 00、Step 02～09 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。当前只有标准 Paraformer Engine 属于正式 ASR Engine；不得把 Spike、Registry、模型管理器或抽象接口误写成高级模型能力。
 
 ## 3. 不可破坏的工程规则
 
@@ -484,6 +485,15 @@ flutter analyze
 - 初始化失败可恢复，不影响录音服务。
 - 处理同一窗口结果顺序确定。
 
+**完成证据**
+
+- `ParaformerStandardAsrEngine` 从 Registry 固定取得标准模型，仅接受模型 ID、版本、安装类型和已验证状态完全匹配的 `ModelInstallation`。
+- 预览与最终处理均通过 Step 08 官方 adapter；单窗口硬上限为 15 秒，事件保留外部全局区间、模型 ID 和版本，不假设词级时间戳。
+- 完整事实 PCM16 文件按最多 15 秒流式读取，成功后生成同一模型版本的最终快照；任一窗口失败时不会返回伪完成快照。
+- `AsrEngine` 统一暴露最终处理进度、逐窗空结果/错误诊断、RTF、取消和结构化异常；初始化失败可在原 Engine 上重试。
+- 9 项新增单元测试和 124 项全量自动化测试通过；Mi 10 使用真实内置 Paraformer 完成 1 秒窗口识别和事实 PCM16 最终处理。
+- 详见 [Step 09 报告](./quality/Step_09_Paraformer_Standard_Engine.md)。
+
 ---
 
 ## Step 10：QwenAdvancedAsrEngine
@@ -831,7 +841,7 @@ Codex 完成每一步后必须报告：
 | 06 高级模型下载 | 已完成 | 2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、六文件严格校验、SQLite v3 原子活动版本、持久化租约和安全删除；17 项新增测试、95 项全量测试、`flutter analyze`、Debug APK 构建和高级权重缺失检查通过 |
 | 07 可靠录音 | 已完成 | 官方 `record` PCM16、公开 Android 麦克风前台服务、逐块 durable checkpoint、非阻塞预览、暂停/恢复、原子封存和异常启动恢复；10 项新增测试、105 项全量测试、`flutter analyze`、Debug APK 及 Mi 10 后台真机测试通过，详见 [Step 07 报告](./quality/Step_07_可靠录音与崩溃恢复.md) |
 | 08 官方 Flutter 包集成 | 已完成 | 官方 `sherpa_onnx` 1.13.4 一次性 bindings、独立 isolate worker、纯 Dart 双模型配置、串行推理、释放/重复创建、应用级取消和结构化错误；10 项新增测试、115 项全量测试、静态分析、Debug APK/许可证检查及 Mi 10 两轮真实 Paraformer worker 测试通过，详见 [Step 08 报告](./quality/Step_08_官方_sherpa-onnx_Flutter_包集成.md) |
-| 09 Paraformer Engine | 待开始 | — |
+| 09 Paraformer Engine | 已完成 | Registry/已验证安装约束、15 秒窗口、全局时间轴事件、完整 PCM16 切窗、最终快照、逐窗诊断、RTF、进度和取消；9 项新增测试、124 项全量测试、静态分析及 Mi 10 真实模型集成测试通过，详见 [Step 09 报告](./quality/Step_09_Paraformer_Standard_Engine.md) |
 | 10 Qwen Engine | 待开始 | — |
 | 11 Factory/模型锁定 | 待开始 | — |
 | 12 VAD/预览队列 | 待开始 | — |
