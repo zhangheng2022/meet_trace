@@ -89,5 +89,20 @@ void main() {
         throwsA(isA<InvalidStateTransitionException>()),
       );
     });
+
+    test('已安装文件损坏后可以进入 failed 并重试校验', () {
+      expect(
+        ModelInstallationState.installed.transitionTo(
+          ModelInstallationState.failed,
+        ),
+        ModelInstallationState.failed,
+      );
+      expect(
+        ModelInstallationState.failed.transitionTo(
+          ModelInstallationState.checking,
+        ),
+        ModelInstallationState.checking,
+      );
+    });
   });
 }

@@ -172,6 +172,7 @@ extension ModelInstallationStateTransition on ModelInstallationState {
       ModelInstallationState.installed => {
         ModelInstallationState.updateAvailable,
         ModelInstallationState.deleting,
+        ModelInstallationState.failed,
       }.contains(next),
       ModelInstallationState.updateAvailable => {
         ModelInstallationState.checking,

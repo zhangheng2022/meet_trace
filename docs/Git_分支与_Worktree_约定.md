@@ -29,6 +29,9 @@
 
 .worktrees/alpha-step-04-model-registry
   └─ codex/alpha-step-04-model-registry
+
+.worktrees/alpha-step-05-bundled-paraformer
+  └─ codex/alpha-step-05-bundled-paraformer
 ```
 
 ## 标准流程

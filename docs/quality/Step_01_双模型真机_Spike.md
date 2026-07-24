@@ -51,6 +51,7 @@
 - Qwen3-ASR 上游仓库声明 Apache-2.0。
 - Paraformer 原始上游模型的 ModelScope 元数据标记为 Apache-2.0；sherpa-onnx 下载归档指向的转换模型上传页未填写 License 字段，归档也没有独立 LICENSE。
 - FunASR 当前仓库代码采用 MIT，同时另有独立 `MODEL_LICENSE`。发布前必须确认转换归档适用的模型条款，随 APK 保存来源、许可证和 NOTICE；本项仍未关闭。
+- 2026-07-24 再次通过 ModelScope API 复核精确转换来源：`License`、`LicenseName`、`LicenseLink` 均为空。sherpa-onnx 文档确认转换来源和下载归档，但不能替代权重许可，因此 Step 05 不提交真实资产。
 
 证据链接：[sherpa-onnx LICENSE](https://github.com/k2-fsa/sherpa-onnx/blob/master/LICENSE)、[Paraformer 原始上游模型](https://www.modelscope.cn/models/iic/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-tensorflow1/summary)、[转换模型上传页](https://www.modelscope.cn/models/crazyant/speech_paraformer_asr_nat-zh-cn-16k-common-vocab8358-onnx/summary)、[FunASR MODEL_LICENSE](https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE)。
 
