@@ -78,8 +78,12 @@ flutter:
     - assets/models/manifest.json
     - assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx
     - assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt
+    - assets/models/silero-vad-manifest.json
+    - assets/models/silero-vad-int8-2025-07-11/silero_vad.int8.onnx
     - assets/licenses/paraformer-small-NOTICE.txt
     - assets/licenses/qwen3-asr-NOTICE.txt
+    - assets/licenses/silero-vad-NOTICE.txt
+    - assets/licenses/silero-vad-LICENSE.txt
 
   # To add assets to your application, add an assets section, like this:
   # assets:

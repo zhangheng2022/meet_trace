@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "modelId": "silero-vad-int8",
+  "version": "2025-07-11",
+  "sampleRate": 16000,
+  "windowSize": 512,
+  "requiredBytes": 212860,
+  "files": [
+    {
+      "path": "silero_vad.int8.onnx",
+      "bytes": 212860,
+      "sha256": "c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20",
+      "url": "asset://assets/models/silero-vad-int8-2025-07-11/silero_vad.int8.onnx"
+    }
+  ],
+  "source": {
+    "documentationUrl": "https://k2-fsa.github.io/sherpa/onnx/vad/silero-vad.html",
+    "downloadUrl": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.int8.onnx",
+    "releaseAssetId": 271935990,
+    "releaseAssetUpdatedAt": "2025-07-11T07:04:39Z"
+  },
+  "license": {
+    "name": "MIT upstream; k2-fsa export distributed from Apache-2.0 project",
+    "noticePath": "assets/licenses/silero-vad-NOTICE.txt",
+    "licensePath": "assets/licenses/silero-vad-LICENSE.txt"
+  }
+}

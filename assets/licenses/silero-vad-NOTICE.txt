@@ -1,0 +1,38 @@
+Meetily Android Alpha - bundled Silero VAD model notice
+
+Artifact:
+  silero-vad-int8
+  version: 2025-07-11
+
+Bundled runtime file:
+  silero_vad.int8.onnx
+  bytes: 212860
+  sha256: c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20
+
+Official sherpa-onnx documentation:
+  https://k2-fsa.github.io/sherpa/onnx/vad/silero-vad.html
+
+Official k2-fsa release asset:
+  https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.int8.onnx
+  GitHub release asset id: 271935990
+  asset updated at: 2025-07-11T07:04:39Z
+
+Upstream project:
+  https://github.com/snakers4/silero-vad
+  license: MIT
+  bundled license text: assets/licenses/silero-vad-LICENSE.txt
+
+Exporter/runtime project:
+  https://github.com/k2-fsa/sherpa-onnx
+  license: Apache-2.0
+
+Distribution note reviewed on 2026-07-24:
+  The sherpa-onnx documentation identifies this 16 kHz INT8 file as exported
+  and maintained by k2-fsa. The exact release asset is pinned by byte length,
+  SHA-256, GitHub asset id, and update timestamp. The upstream Silero project
+  publishes under MIT, while sherpa-onnx publishes under Apache-2.0. This
+  provenance record is not a legal conclusion.
+
+Bundling decision:
+  The product owner approved adding this official VAD weight to the Android
+  Alpha APK on 2026-07-24.

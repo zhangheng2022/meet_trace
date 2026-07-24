@@ -601,13 +601,15 @@ flutter analyze
 - AT-04
 - AT-15
 
-**实施进展（2026-07-24）**
+**实施结果（2026-07-24）**
 
 - 已通过官方 `sherpa_onnx` Dart API 实现 `SileroVadSegmenter`，固定 16 kHz、512 样本窗口和 15 秒最大语音段，不新增原生桥接。
+- 已将官方 `silero_vad.int8.onnx`（`212,860` 字节）纳入 APK，以独立 Manifest 固定 SHA-256、GitHub release asset ID、来源时间戳、NOTICE 和 MIT 许可文本。
+- 已实现内置 VAD 权重的应用私有目录准备：临时复制、严格文件校验、原子切换和已验证版本复用。
 - 已实现默认前后各 200 ms、15 秒最大窗口和 500 ms 重叠切分；重叠文本使用稳定片段 ID 确定性修订。
 - 已实现按排队音频时长计量的 Coordinator：30 秒容量、15 秒高水位、5 秒低水位、丢最旧待处理预览、恢复和完整指标。
 - VAD/Engine 失败进入 `recordingOnly`，不向可靠录音写入链传播异常；两个模型使用同一 Coordinator 生成的区间。
-- 新增 11 项测试，全量 168 项测试、静态分析和 Debug APK 构建通过。Silero 权重尚未入库，固定资产、NOTICE/Manifest 和 Android 真机验证完成前，本步骤保持进行中。详见 [Step 12 报告](./quality/Step_12_Silero_VAD与预览队列.md)。
+- 新增 16 项单元测试，全量 173 项测试、静态分析、Debug APK/包内哈希检查通过；Android 16 x86_64 模拟器使用真实内置权重完成两轮初始化、连续输入、flush、释放和复用。详见 [Step 12 报告](./quality/Step_12_Silero_VAD与预览队列.md)。
 
 ---
 
@@ -871,7 +873,7 @@ Codex 完成每一步后必须报告：
 | 09 Paraformer Engine | 已完成 | Registry/已验证安装约束、15 秒窗口、全局时间轴事件、完整 PCM16 切窗、最终快照、逐窗诊断、RTF、进度和取消；9 项新增测试、124 项全量测试、静态分析及 Mi 10 真实模型集成测试通过，详见 [Step 09 报告](./quality/Step_09_Paraformer_Standard_Engine.md) |
 | 10 Qwen Engine | 已完成 | 活动已验证版本、owner 租约冲突/续租/释放、统一双 Engine 核心、设备支持/内存/温控风险、禁止自动切换及录音解耦；10 项新增测试、134 项全量测试和静态分析通过，正式 Engine 在 Android 16 x86_64 模拟器使用真实固定权重 2/2 通过；Step 01 Mi 10 真实模型证据有效，但 Mi 10 正式 Engine 复测仍受测试应用安装策略阻塞，详见 [Step 10 报告](./quality/Step_10_Qwen_Advanced_Engine.md) |
 | 11 Factory/模型锁定 | 已完成 | 精确 ID/版本 Factory、设置默认、本场覆盖、显式回退、录音态锁定与 Forui 状态组件；20 项新增测试、154 项全量测试、静态分析和 Debug APK 构建通过，详见 [Step 11 报告](./quality/Step_11_Factory与会议模型锁定.md) |
-| 12 VAD/预览队列 | 进行中 | 官方 Silero Dart API、统一时间轴、200 ms 前后文、15 秒/500 ms 重叠切窗、30/15/5 秒容量与水位、确定性文本修订、指标及仅录音降级已完成；11 项新增测试、168 项全量测试、静态分析和 Debug APK 通过，权重入库与 Android 真机验证待批准，详见 [Step 12 报告](./quality/Step_12_Silero_VAD与预览队列.md) |
+| 12 VAD/预览队列 | 已完成 | 官方 Silero Dart API、内置 INT8 权重及独立 Manifest/NOTICE、私有目录原子准备、统一时间轴、200 ms 前后文、15 秒/500 ms 重叠切窗、30/15/5 秒容量与水位、确定性文本修订、指标及仅录音降级；16 项新增单元测试、173 项全量测试、静态分析、Debug APK/包内哈希和 Android 模拟器真实权重测试通过，详见 [Step 12 报告](./quality/Step_12_Silero_VAD与预览队列.md) |
 | 13 会中 UI | 待开始 | — |
 | 14 最终转录 | 待开始 | — |
 | 15 说话人分离 | 待开始 | — |
