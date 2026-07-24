@@ -75,6 +75,12 @@ final class _FakeAsrEngine implements AsrEngine {
       const Stream.empty();
 
   @override
+  AsrDeviceRiskState get deviceRisk => const AsrDeviceRiskState.supported();
+
+  @override
+  Stream<AsrDeviceRiskState> get deviceRisks => const Stream.empty();
+
+  @override
   List<AsrWindowDiagnostic> get diagnostics => const [];
 
   @override
