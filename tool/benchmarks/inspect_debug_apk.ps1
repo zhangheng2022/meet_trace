@@ -26,6 +26,7 @@ $duplicates = $nativeLibraries |
     Where-Object { $_.Count -gt $abis.Count }
 $expectedBundledAssets = @(
     'assets/flutter_assets/assets/licenses/paraformer-small-NOTICE.txt',
+    'assets/flutter_assets/assets/licenses/qwen3-asr-NOTICE.txt',
     'assets/flutter_assets/assets/models/manifest.json',
     'assets/flutter_assets/assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/model.int8.onnx',
     'assets/flutter_assets/assets/models/sherpa-onnx-paraformer-zh-small-2024-03-09/tokens.txt'

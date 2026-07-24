@@ -61,11 +61,11 @@
 
 | 项目 | 结果 |
 |---|---|
-| APK 字节数 | 230,793,067；SHA-256 `44862d38c692df4a48bdbf482a3a65535c52b86acbdce02bd6d53490f388ec58` |
+| APK 字节数 | 231,459,827；SHA-256 `ad85ef44aebbef62a4e9f009e41b5e754f1488e844b9f5b949a7b3ed206c6e81` |
 | ABI | `arm64-v8a`、`armeabi-v7a`、`x86_64` |
-| sherpa-onnx / ONNX Runtime | 每个 ABI 各一份对应库，未发现可疑重复 |
+| 原生库 | 当前应用入口尚未引用正式 sherpa-onnx adapter，因此产物只包含 Flutter/调试库且无可疑重复；Step 08 接入正式 adapter 后重查 sherpa-onnx / ONNX Runtime |
 | 标准模型 | 包含 `model.int8.onnx`（81,828,675 B）和 `tokens.txt`（75,352 B），并包含发布 Manifest 与来源 NOTICE |
-| 高级模型 | APK 中不存在 Qwen3-ASR 或其他 ONNX 模型变体 |
+| 高级模型 | 只包含固定下载 Manifest 和来源 NOTICE；APK 中不存在 Qwen3-ASR 权重或其他 ONNX 模型变体 |
 
 当前是包含标准模型的通用 Debug APK，不代表 Alpha 最终发布体积；Step 18 确定 ABI 拆分后必须重测。
 

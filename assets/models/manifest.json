@@ -26,6 +26,55 @@
         "name": "Exact converted-weight archive does not declare a license",
         "noticePath": "assets/licenses/paraformer-small-NOTICE.txt"
       }
+    },
+    {
+      "modelId": "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25",
+      "version": "2026-03-25",
+      "tier": "advanced",
+      "installationType": "downloadable",
+      "requiredBytes": 987015347,
+      "files": [
+        {
+          "path": "conv_frontend.onnx",
+          "bytes": 44148281,
+          "sha256": "d22dc4423e0940e49884e903d2ea2f7e5567c14fc1aed97e4e26d6b8f208ef9e",
+          "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/conv_frontend.onnx?download=true"
+        },
+        {
+          "path": "encoder.int8.onnx",
+          "bytes": 182491662,
+          "sha256": "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9",
+          "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/encoder.int8.onnx?download=true"
+        },
+        {
+          "path": "decoder.int8.onnx",
+          "bytes": 755914231,
+          "sha256": "4f6885be5959ae26af3089d38ee7972c5fafbeeb1cf8d5e76eab6d8b61ca5771",
+          "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/decoder.int8.onnx?download=true"
+        },
+        {
+          "path": "tokenizer/merges.txt",
+          "bytes": 1671853,
+          "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+          "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/merges.txt?download=true"
+        },
+        {
+          "path": "tokenizer/tokenizer_config.json",
+          "bytes": 12487,
+          "sha256": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c",
+          "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/tokenizer_config.json?download=true"
+        },
+        {
+          "path": "tokenizer/vocab.json",
+          "bytes": 2776833,
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/tokenizer/vocab.json?download=true"
+        }
+      ],
+      "license": {
+        "name": "Apache-2.0 upstream; exported mirror metadata undeclared",
+        "noticePath": "assets/licenses/qwen3-asr-NOTICE.txt"
+      }
     }
   ]
 }

@@ -16,7 +16,9 @@ void main() {
       registry: AsrModelRegistry.alpha,
       currentAppVersion: '1.0.0',
     ).parse(manifestSource);
-    final entry = manifest.models.single;
+    final entry = manifest.models.singleWhere(
+      (model) => model.modelId == paraformerStandardModelId,
+    );
 
     final result = await const ModelFileVerifier().verifyDirectory(
       directoryPath: p.join(

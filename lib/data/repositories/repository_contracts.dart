@@ -1,5 +1,6 @@
 import '../../domain/models/meeting.dart';
 import '../../domain/models/model_installation.dart';
+import '../../domain/models/model_usage_lease.dart';
 import '../../domain/models/processing_task.dart';
 import '../../domain/models/summary.dart';
 import '../../domain/models/transcript.dart';
@@ -44,6 +45,32 @@ abstract interface class ModelInstallationRepository {
   Stream<List<ModelInstallation>> watchAll();
 
   Future<void> save(ModelInstallation installation);
+}
+
+abstract interface class ActiveModelInstallationRepository
+    implements ModelInstallationRepository {
+  Future<String?> getActiveVersion(String modelId);
+
+  Future<void> saveInstalledAndActivate(ModelInstallation installation);
+
+  Future<void> deleteAndDeactivate({
+    required String modelId,
+    required String version,
+  });
+}
+
+abstract interface class ModelUsageLeaseRepository {
+  Future<void> save(ModelUsageLease lease);
+
+  Future<void> release(String leaseId);
+
+  Future<List<ModelUsageLease>> listActive({
+    required String modelId,
+    required String version,
+    required DateTime now,
+  });
+
+  Future<int> deleteExpired(DateTime now);
 }
 
 abstract interface class ModelPreferenceRepository {

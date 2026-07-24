@@ -32,6 +32,9 @@
 
 .worktrees/alpha-step-05-bundled-paraformer
   └─ codex/alpha-step-05-bundled-paraformer
+
+.worktrees/alpha-step-06-qwen-download
+  └─ codex/alpha-step-06-qwen-download
 ```
 
 ## 标准流程

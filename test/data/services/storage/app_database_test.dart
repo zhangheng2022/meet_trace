@@ -8,7 +8,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 void main() {
   setUpAll(sqfliteFfiInit);
 
-  test('首次创建数据库包含 Step 03 数据表、Step 04 设置表和当前版本', () async {
+  test('首次创建数据库包含模型活动版本、租约表和当前版本', () async {
     final database = AppDatabase(
       databaseFactory: databaseFactoryFfi,
       path: inMemoryDatabasePath,
@@ -34,6 +34,8 @@ void main() {
         'model_installations',
         'processing_tasks',
         'app_settings',
+        'active_model_versions',
+        'model_usage_leases',
       }),
     );
     expect(versionRows.single['user_version'], AppDatabase.schemaVersion);
@@ -74,7 +76,7 @@ void main() {
     expect(await db.getVersion(), AppDatabase.schemaVersion);
   });
 
-  test('现有 v1 数据库升级到 v2 并保留原表', () async {
+  test('现有 v1 数据库升级到当前版本并保留原表', () async {
     final root = await Directory.systemTemp.createTemp('meetily-v1-');
     addTearDown(() => root.delete(recursive: true));
     final path = p.join(root.path, 'v1.db');
@@ -106,6 +108,6 @@ void main() {
 
     expect(settings, hasLength(1));
     expect(marker.single['id'], 1);
-    expect(await db.getVersion(), 2);
+    expect(await db.getVersion(), AppDatabase.schemaVersion);
   });
 }

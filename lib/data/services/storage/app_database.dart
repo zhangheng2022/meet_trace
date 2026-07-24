@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 final class AppDatabase {
   AppDatabase({required this.databaseFactory, required this.path});
 
-  static const schemaVersion = 2;
+  static const schemaVersion = 3;
 
   final DatabaseFactory databaseFactory;
   final String path;
@@ -47,6 +47,9 @@ final class AppDatabase {
     await _createVersion1Schema(db);
     if (version >= 2) {
       await _createVersion2Schema(db);
+    }
+    if (version >= 3) {
+      await _createVersion3Schema(db);
     }
   }
 
@@ -190,6 +193,34 @@ final class AppDatabase {
     ''');
   }
 
+  static Future<void> _createVersion3Schema(Database db) async {
+    await db.execute('''
+      CREATE TABLE active_model_versions (
+        model_id TEXT PRIMARY KEY,
+        version TEXT NOT NULL,
+        FOREIGN KEY(model_id, version)
+          REFERENCES model_installations(model_id, version) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE model_usage_leases (
+        lease_id TEXT PRIMARY KEY,
+        model_id TEXT NOT NULL,
+        version TEXT NOT NULL,
+        owner_id TEXT NOT NULL,
+        acquired_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        FOREIGN KEY(model_id, version)
+          REFERENCES model_installations(model_id, version) ON DELETE CASCADE,
+        CHECK(expires_at > acquired_at)
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_model_usage_leases_active '
+      'ON model_usage_leases(model_id, version, expires_at)',
+    );
+  }
+
   static Future<void> _upgradeSchema(
     Database db,
     int oldVersion,
@@ -201,6 +232,9 @@ final class AppDatabase {
     }
     if (oldVersion < 2 && newVersion >= 2) {
       await _createVersion2Schema(db);
+    }
+    if (oldVersion < 3 && newVersion >= 3) {
+      await _createVersion3Schema(db);
     }
   }
 }

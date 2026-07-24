@@ -1,0 +1,114 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+
+import 'downloadable_model_service.dart';
+
+final class HttpModelFileDownloader implements ModelFileDownloader {
+  HttpModelFileDownloader({
+    HttpClient Function()? clientFactory,
+    this.requireHttps = true,
+  }) : _clientFactory = clientFactory ?? HttpClient.new;
+
+  final HttpClient Function() _clientFactory;
+  final bool requireHttps;
+
+  @override
+  Future<ModelFileDownloadResult> download({
+    required Uri source,
+    required String destinationPath,
+    required int resumeFrom,
+    required int expectedBytes,
+    required ModelDownloadCancellationToken cancellation,
+    required void Function(int absoluteFileBytes) onProgress,
+  }) async {
+    if (requireHttps && source.scheme != 'https') {
+      throw const DownloadableModelException(
+        code: 'model.download.url',
+        message: '模型下载只允许 HTTPS',
+      );
+    }
+    if (resumeFrom < 0 || resumeFrom > expectedBytes) {
+      throw ArgumentError.value(resumeFrom, 'resumeFrom', '超出文件范围');
+    }
+
+    cancellation.throwIfCanceled();
+    await Directory(p.dirname(destinationPath)).create(recursive: true);
+    final client = _clientFactory()
+      ..connectionTimeout = const Duration(seconds: 30)
+      ..idleTimeout = const Duration(seconds: 60);
+    void cancelRequest() => client.close(force: true);
+    cancellation.addCancelListener(cancelRequest);
+
+    RandomAccessFile? output;
+    try {
+      final request = await client.getUrl(source);
+      request.headers.set(
+        HttpHeaders.userAgentHeader,
+        'Meetily-Android-Alpha/1.0',
+      );
+      if (resumeFrom > 0) {
+        request.headers.set(HttpHeaders.rangeHeader, 'bytes=$resumeFrom-');
+      }
+      final response = await request.close();
+      cancellation.throwIfCanceled();
+
+      final acceptedResume =
+          resumeFrom > 0 && response.statusCode == HttpStatus.partialContent;
+      if (response.statusCode != HttpStatus.ok && !acceptedResume) {
+        throw DownloadableModelException(
+          code: 'model.download.http.${response.statusCode}',
+          message: '模型文件下载失败：HTTP ${response.statusCode}',
+        );
+      }
+      if (acceptedResume) {
+        final contentRange = response.headers.value(
+          HttpHeaders.contentRangeHeader,
+        );
+        if (contentRange == null ||
+            !contentRange.startsWith('bytes $resumeFrom-')) {
+          throw const DownloadableModelException(
+            code: 'model.download.range',
+            message: '服务器返回了不兼容的续传范围',
+          );
+        }
+      }
+
+      final effectiveStart = acceptedResume ? resumeFrom : 0;
+      output = await File(
+        destinationPath,
+      ).open(mode: acceptedResume ? FileMode.append : FileMode.write);
+      var written = effectiveStart;
+      onProgress(written);
+      await for (final chunk in response) {
+        cancellation.throwIfCanceled();
+        await output.writeFrom(chunk);
+        written += chunk.length;
+        if (written > expectedBytes) {
+          throw const DownloadableModelException(
+            code: 'model.download.size',
+            message: '服务器返回的模型文件超过 Manifest 大小',
+          );
+        }
+        onProgress(written);
+      }
+      await output.flush();
+      return ModelFileDownloadResult(
+        finalBytes: written,
+        resumed: acceptedResume,
+      );
+    } catch (error, stackTrace) {
+      if (cancellation.isCanceled && error is! ModelDownloadCanceledException) {
+        Error.throwWithStackTrace(
+          const ModelDownloadCanceledException(),
+          stackTrace,
+        );
+      }
+      rethrow;
+    } finally {
+      cancellation.removeCancelListener(cancelRequest);
+      await output?.close();
+      client.close(force: true);
+    }
+  }
+}

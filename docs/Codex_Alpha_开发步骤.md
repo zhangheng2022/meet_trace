@@ -26,17 +26,18 @@
 
 - 已有独立 `Application`、Forui 主题和会议列表空页面。
 - 已有通用 `ViewState`，并启用严格类型分析。
-- 已有 78 个应用壳、组件、Step 01、领域层、本地存储和模型生命周期自动化测试。
+- 已有 95 个应用壳、组件、Step 01、领域层、本地存储和模型生命周期自动化测试。
 - 已固定 Android API 24 最低版本，并记录 `arm64-v8a` 必验设备矩阵。
 - 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；这些不是正式 `AsrEngine`。
 - 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口；尚无具体 Engine 或 Repository 实现。
 - 已完成 Step 03 的 SQLite v1 Schema/迁移、App 私有文件布局、耐久文件提交、五类 Sqflite Repository 和幂等启动恢复器。
 - 已完成 Step 04 的双模型 `AsrModelRegistry`、Manifest v1 解析与兼容校验、严格文件集/SHA-256 校验、SQLite v2 默认模型设置和显式本场覆盖解析。
 - 已完成 Step 05：`81,904,027` 字节 Paraformer INT8 运行文件、发布 Manifest 和来源 NOTICE 已进入 APK；Flutter asset 读取、临时目录复制、严格校验、原子目录切换、安装状态持久化、进度、失败重试和孤儿目录收养均已实现。
-- 尚无正式录音 Service、高级模型下载、具体双 Engine、会议业务流程或总结生成实现。
+- 已完成 Step 06：Qwen3-ASR 六文件发布 Manifest、2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、临时目录、严格校验、SQLite v3 原子活动版本、持久化使用租约和高级模型安全删除均已实现；高级权重不进入 APK。
+- 尚无正式录音 Service、具体双 Engine、会议业务流程或总结生成实现。
 - 双模型设计已经批准；APK 静态检查、录音并发断言和双模型各两次真机识别已有证据。最终合并复跑通过，录音完整率 99.54%；Qwen3-ASR 峰值 RSS 约 2.92 GiB、首结果约 18～20 秒，当前为预备 Conditional Go。Paraformer 的 30 秒窗口空结果已通过 15 秒窗口复测关闭，两轮均为 20/20 可读；仍待会议样本、低端设备和许可闭环。
 
-Step 00、Step 02、Step 03、Step 04、Step 05 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。不得把 Spike、Registry、准备器或抽象接口误写成正式 ASR 能力。
+Step 00、Step 02～06 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。不得把 Spike、Registry、模型管理器或抽象接口误写成正式 ASR 能力。
 
 ## 3. 不可破坏的工程规则
 
@@ -293,7 +294,7 @@ flutter analyze
 - Manifest v1 要求 `schemaVersion`、`minAppVersion`、逐模型文件、64 位 SHA-256、来源 URL 和许可/NOTICE 字段；拒绝重复 ID、占位符、路径穿越、非 HTTPS 下载源以及与 Registry 不一致的元数据。
 - `ModelFileVerifier` 严格核对文件集、字节数和 SHA-256，并返回缺失、大小错误、哈希错误和多余文件四类结构化结果。
 - SQLite v2 增加 `app_settings`，全局默认模型可持久化；本场覆盖由纯领域用例解析，不修改全局值，也不允许未确认的自动回退。
-- Step 04 新增 19 项测试；69 项全量测试和 `flutter analyze` 通过。发布 Manifest 本体仍须在 Step 05/06 使用最终资产、批准下载源和许可 NOTICE 生成，不提交占位版本。
+- Step 04 新增 19 项测试；69 项全量测试和 `flutter analyze` 通过。最终双模型发布 Manifest 已分别在 Step 05/06 使用真实资产和固定版本下载源补齐，不含占位条目。
 
 **验证**
 
@@ -370,6 +371,15 @@ flutter analyze
 
 - FR-021
 - AT-13
+
+**实现状态（2026-07-24）**
+
+- `DownloadableModelService` 只接受 Registry/Manifest 一致的 downloadable 模型；下载前检查至少 2 GiB 空间，无网络直接失败，移动或未知网络必须由调用方显式确认。
+- `HttpModelFileDownloader` 只允许 HTTPS，支持 HTTP Range 续传、进度、应用级取消和响应大小上限；取消保留版本化临时文件，重试按已有字节继续。
+- 六个 Qwen3-ASR 运行文件固定到 Hugging Face revision `68818b2313fe77bd06f6a7c5068ff3ef59d02b8a`，总计 `987,015,347` 字节，大小和 SHA-256 写入发布 Manifest；APK 只包含 Manifest/NOTICE，不包含高级权重。
+- 全部文件严格校验后才把临时目录原子重命名为版本目录，并在 SQLite v3 事务中写入安装记录和 `active_model_versions`；新版本失败不会切换旧活动版本。
+- `model_usage_leases` 持久化活动占用者与过期时间；有效租约阻止删除并返回 owner，删除成功仅移除对应版本目录、安装记录和活动指针。
+- Step 06 新增 17 项测试；95 项全量测试、`flutter analyze`、Debug APK 构建和高级权重缺失检查通过。
 
 ---
 
@@ -797,7 +807,7 @@ Codex 完成每一步后必须报告：
 | 03 本地存储 | 已完成 | 11 项存储测试：SQLite v1/迁移、外键、文件提交故障、事务快照激活、级联删除、Repository 往返和四类幂等启动恢复；50 项全量测试及 `flutter analyze` 通过 |
 | 04 Registry/Manifest | 已完成 | 双模型 Registry、Manifest v1/兼容性、严格文件集/大小/SHA-256 校验、SQLite v2 默认模型设置、显式本场覆盖；19 项新增测试、69 项全量测试及 `flutter analyze` 通过 |
 | 05 内置标准模型 | 已完成 | `81,904,027` 字节运行资产、发布 Manifest、来源 NOTICE、asset 读取、原子准备、状态持久化、失败重试和孤儿目录收养已完成；9 项新增测试、78 项全量测试、`flutter analyze`、Debug APK 构建及资产检查通过；公开分发许可仍属 Step 01/18 发布门槛 |
-| 06 高级模型下载 | 待开始 | — |
+| 06 高级模型下载 | 已完成 | 2 GiB 空间预检、网络确认、HTTPS Range 续传、取消/重试、六文件严格校验、SQLite v3 原子活动版本、持久化租约和安全删除；17 项新增测试、95 项全量测试、`flutter analyze`、Debug APK 构建和高级权重缺失检查通过 |
 | 07 可靠录音 | 待开始 | — |
 | 08 官方 Flutter 包集成 | 待开始 | — |
 | 09 Paraformer Engine | 待开始 | — |
