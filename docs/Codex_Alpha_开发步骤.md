@@ -26,7 +26,7 @@
 
 - 已有独立 `Application`、Forui 主题和会议列表空页面。
 - 已有通用 `ViewState`，并启用严格类型分析。
-- 已有 134 个应用壳、组件、Step 01、领域层、本地存储、模型生命周期、可靠录音、官方 ASR adapter 和双 Engine 自动化测试。
+- 已有 154 个应用壳、组件、Step 01、领域层、本地存储、模型生命周期、可靠录音、官方 ASR adapter、双 Engine、Factory 和模型锁定自动化测试。
 - 已固定 Android API 24 最低版本，并记录 `arm64-v8a` 必验设备矩阵。
 - 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；Spike 不是正式 `AsrEngine`。
 - 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口。
@@ -38,10 +38,11 @@
 - 已完成 Step 08：应用启动时一次性初始化官方 bindings；data/service 层以独立 isolate 持有官方识别器，封装双模型纯 Dart 配置、串行推理、资源释放、应用级取消和结构化错误。
 - 已完成 Step 09：标准 Paraformer Engine 只接受 Registry 标准模型与已验证安装记录，支持不超过 15 秒的窗口、外部全局时间轴事件、完整事实 PCM16 切窗、最终快照、逐窗诊断、RTF、进度和取消。
 - 已完成 Step 10：高级 Qwen Engine 只从活动已验证版本创建，持有可续期模型租约，复用统一窗口/事件/快照协议，暴露设备支持、内存和温控风险，失败不自动切换模型。
-- 尚无会议业务流程或总结生成实现。
+- 已完成 Step 11：Factory 只按确认的 Registry ID/版本创建具体 Engine；设置页、开始会议页和录音态锁定组件覆盖全局默认、本场覆盖、显式回退记录和开始后不可切换。
+- 主导航、真实录音协调、会中状态和总结生成尚未实现。
 - 双模型设计已经批准；APK 静态检查、录音并发断言和双模型各两次真机识别已有证据。最终合并复跑通过，录音完整率 99.54%；Qwen3-ASR 峰值 RSS 约 2.92 GiB、首结果约 18～20 秒，当前为预备 Conditional Go。Paraformer 的 30 秒窗口空结果已通过 15 秒窗口复测关闭，两轮均为 20/20 可读；仍待会议样本、低端设备和许可闭环。
 
-Step 00、Step 02～10 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。当前双 Engine 均已实现；不得把尚未实现的 Factory、会议协调器或 UI 误写为完整会议能力。
+Step 00、Step 02～11 已完成；Step 01 的代码与 Mi 10 技术验证已完成，但外部语料、低端设备和公开分发许可闭环仍在进行中。当前双 Engine、Factory 和模型选择/锁定组件已实现；不得把尚未接入的真实录音协调、主导航或会中 UI 误写为完整会议能力。
 
 ## 3. 不可破坏的工程规则
 
@@ -562,6 +563,14 @@ flutter analyze
 - AT-14
 - AT-15
 
+**实施结果（2026-07-24）**
+
+- `SherpaOnnxAsrEngineFactory` 精确校验 Registry ID/版本，仅创建已确认的标准或高级 Engine，不读取默认值、不自动回退。
+- 设置页覆盖标准已安装，以及高级未下载、下载中、校验中、已安装、失败和空间不足状态；只有已安装模型能成为后续会议默认值。
+- 开始会议页继承全局默认并允许本场覆盖；高级模型不可用时提供下载、改用标准模型或取消，只有显式确认才记录回退原因并创建会议。
+- 会议进入 `recording` 后，领域模型、ViewModel 和录音态组件均不再提供模型切换入口；主导航与真实录音服务装配留在 Step 13。
+- 新增 20 项测试，全量 154 项测试、静态分析和 Debug APK 构建通过。详见 [Step 11 报告](./quality/Step_11_Factory与会议模型锁定.md)。
+
 ---
 
 ## Step 12：Silero VAD 与有界预览队列
@@ -853,7 +862,7 @@ Codex 完成每一步后必须报告：
 | 08 官方 Flutter 包集成 | 已完成 | 官方 `sherpa_onnx` 1.13.4 一次性 bindings、独立 isolate worker、纯 Dart 双模型配置、串行推理、释放/重复创建、应用级取消和结构化错误；10 项新增测试、115 项全量测试、静态分析、Debug APK/许可证检查及 Mi 10 两轮真实 Paraformer worker 测试通过，详见 [Step 08 报告](./quality/Step_08_官方_sherpa-onnx_Flutter_包集成.md) |
 | 09 Paraformer Engine | 已完成 | Registry/已验证安装约束、15 秒窗口、全局时间轴事件、完整 PCM16 切窗、最终快照、逐窗诊断、RTF、进度和取消；9 项新增测试、124 项全量测试、静态分析及 Mi 10 真实模型集成测试通过，详见 [Step 09 报告](./quality/Step_09_Paraformer_Standard_Engine.md) |
 | 10 Qwen Engine | 已完成 | 活动已验证版本、owner 租约冲突/续租/释放、统一双 Engine 核心、设备支持/内存/温控风险、禁止自动切换及录音解耦；10 项新增测试、134 项全量测试和静态分析通过，正式 Engine 在 Android 16 x86_64 模拟器使用真实固定权重 2/2 通过；Step 01 Mi 10 真实模型证据有效，但 Mi 10 正式 Engine 复测仍受测试应用安装策略阻塞，详见 [Step 10 报告](./quality/Step_10_Qwen_Advanced_Engine.md) |
-| 11 Factory/模型锁定 | 待开始 | — |
+| 11 Factory/模型锁定 | 已完成 | 精确 ID/版本 Factory、设置默认、本场覆盖、显式回退、录音态锁定与 Forui 状态组件；20 项新增测试、154 项全量测试、静态分析和 Debug APK 构建通过，详见 [Step 11 报告](./quality/Step_11_Factory与会议模型锁定.md) |
 | 12 VAD/预览队列 | 待开始 | — |
 | 13 会中 UI | 待开始 | — |
 | 14 最终转录 | 待开始 | — |
