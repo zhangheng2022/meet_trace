@@ -55,6 +55,13 @@ $vadExpectedSha256 = 'c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58
 $vadActualBytes = $null
 $vadActualSha256 = $null
 $vadIntegrityMatches = $false
+$forbiddenUserDataEntries = @($entries | Where-Object {
+    $_ -match '(?i)\.(wav|pcm|m4a|aac|mp3|ogg|flac|sqlite|sqlite3|db)$'
+})
+$suspiciousSecretEntries = @()
+$secretPattern =
+    '(?i)(sk-[a-z0-9_-]{20,}|AIza[0-9a-z_-]{30,}|AKIA[0-9A-Z]{16}|' +
+    '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)'
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::OpenRead($ApkPath)
@@ -75,6 +82,36 @@ try {
         $vadIntegrityMatches =
             $vadActualBytes -eq $vadExpectedBytes -and
             $vadActualSha256 -eq $vadExpectedSha256
+    }
+
+    foreach ($entry in $archive.Entries) {
+        $isSecretScanCandidate =
+            $entry.FullName -match '^classes[^/]*\.dex$' -or
+            $entry.FullName -match '^lib/[^/]+/libapp\.so$' -or
+            ($entry.FullName -match '^assets/flutter_assets/' -and
+                $entry.FullName -notmatch '^assets/flutter_assets/NOTICES\.Z$' -and
+                $entry.FullName -notmatch '\.onnx$')
+        if (-not $isSecretScanCandidate -or
+            $entry.Length -eq 0 -or
+            $entry.Length -gt 20MB) {
+            continue
+        }
+        $entryStream = $entry.Open()
+        $reader = New-Object System.IO.StreamReader(
+            $entryStream,
+            [System.Text.Encoding]::UTF8,
+            $true,
+            4096,
+            $false
+        )
+        try {
+            if ($reader.ReadToEnd() -match $secretPattern) {
+                $suspiciousSecretEntries += $entry.FullName
+            }
+        }
+        finally {
+            $reader.Dispose()
+        }
     }
 }
 finally {
@@ -101,6 +138,8 @@ $report = [ordered]@{
     vadExpectedSha256 = $vadExpectedSha256
     vadActualSha256 = $vadActualSha256
     vadIntegrityMatches = $vadIntegrityMatches
+    forbiddenUserDataEntries = @($forbiddenUserDataEntries)
+    suspiciousSecretEntries = @($suspiciousSecretEntries)
 }
 $output = Join-Path $repoRoot '.spike\results\apk-inspection.json'
 New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($output)) | Out-Null
@@ -112,6 +151,8 @@ if (-not $hasRequiredAbi -or
     -not $vadIntegrityMatches -or
     $duplicates.Count -gt 0 -or
     $missingBundledAssets.Count -gt 0 -or
-    $unexpectedModelEntries.Count -gt 0) {
+    $unexpectedModelEntries.Count -gt 0 -or
+    $forbiddenUserDataEntries.Count -gt 0 -or
+    $suspiciousSecretEntries.Count -gt 0) {
     throw 'APK model asset or native library inspection failed.'
 }

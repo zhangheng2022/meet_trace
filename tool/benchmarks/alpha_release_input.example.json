@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "rawMetricsRef": null,
+  "corpus": {
+    "id": null,
+    "sampleCount": null,
+    "deidentified": null
+  },
+  "environment": {
+    "deviceId": null,
+    "sameCorpusForBothModels": null,
+    "sameDeviceForBothModels": null,
+    "lowEndArm64DeviceTested": null
+  },
+  "standardModel": {
+    "resourceBytes": 81904027,
+    "rtfSamples": null,
+    "sentenceLatencyMs": null,
+    "finalTranscriptionDurationMs": null,
+    "recordingCompletenessRatio": null,
+    "sustainedSevereOrCriticalThermal": null,
+    "keyFactRecallRatio": null
+  },
+  "energy": {
+    "standardWh": null,
+    "advancedWh": null
+  },
+  "advancedModel": {
+    "rtfSamples": null,
+    "sentenceLatencyMs": null,
+    "finalTranscriptionDurationMs": null
+  },
+  "acceptanceEvidence": null,
+  "release": {
+    "apkAuditPassed": null,
+    "paraformerRedistributionConfirmed": null
+  }
+}
