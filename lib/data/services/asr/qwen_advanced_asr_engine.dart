@@ -227,8 +227,13 @@ final class QwenAdvancedAsrEngine implements AsrEngine {
   Future<TranscriptSnapshot> finalizeMeeting(
     AudioSource source, {
     required String meetingId,
+    String? snapshotId,
   }) {
-    return _core.finalizeMeeting(source, meetingId: meetingId);
+    return _core.finalizeMeeting(
+      source,
+      meetingId: meetingId,
+      snapshotId: snapshotId,
+    );
   }
 
   @override

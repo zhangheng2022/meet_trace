@@ -117,7 +117,31 @@ final class Meeting {
     );
   }
 
+  Meeting beginFinalTranscription() {
+    final nextStatus = switch (status) {
+      MeetingState.processing => MeetingState.processing,
+      MeetingState.completed ||
+      MeetingState.failed => status.transitionTo(MeetingState.processing),
+      _ => throw InvalidStateTransitionException(
+        machine: 'finalTranscription',
+        from: status,
+        to: MeetingState.processing,
+      ),
+    };
+    if (audioPath?.trim().isEmpty != false || audioDurationMs <= 0) {
+      throw const DomainInvariantViolation('最终转录必须基于已封存的完整事实音频');
+    }
+    return _copyWith(status: nextStatus, lastErrorCode: null);
+  }
+
   Meeting activateFinalTranscript(TranscriptSnapshot snapshot) {
+    if (status != MeetingState.processing) {
+      throw InvalidStateTransitionException(
+        machine: 'finalTranscription',
+        from: status,
+        to: MeetingState.completed,
+      );
+    }
     if (snapshot.meetingId != id) {
       throw const DomainInvariantViolation('不能激活其他会议的转录快照');
     }
@@ -126,8 +150,10 @@ final class Meeting {
       throw const DomainInvariantViolation('只能激活已完成的最终转录快照');
     }
     return _copyWith(
+      status: status.transitionTo(MeetingState.completed),
       activeTranscriptSnapshotId: snapshot.id,
       activeSummaryId: null,
+      lastErrorCode: null,
     );
   }
 

@@ -41,7 +41,7 @@ void main() {
   tearDown(() => database.close());
 
   test('失败的新最终快照不会覆盖旧活动快照', () async {
-    await meetings.save(_meeting('meeting-1'));
+    await meetings.save(_meeting('meeting-1', status: MeetingState.processing));
     final oldSnapshot = _snapshot(
       id: 'old',
       meetingId: 'meeting-1',
@@ -70,6 +70,32 @@ void main() {
       'old',
     );
     expect(await transcripts.getById('failed'), isNull);
+  });
+
+  test('成功激活最终快照时原子完成会议并使旧摘要失效', () async {
+    await meetings.save(
+      _meeting(
+        'meeting-1',
+        status: MeetingState.processing,
+        activeSummaryId: 'old-summary',
+      ),
+    );
+    final snapshot = _snapshot(
+      id: 'snapshot-1',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.complete,
+    );
+
+    await transcripts.saveFinalAndActivate(
+      snapshot: snapshot,
+      expectedActiveSnapshotId: null,
+    );
+
+    final completed = (await meetings.getById('meeting-1'))!;
+    expect(completed.status, MeetingState.completed);
+    expect(completed.activeTranscriptSnapshotId, snapshot.id);
+    expect(completed.activeSummaryId, isNull);
+    expect(completed.lastErrorCode, isNull);
   });
 
   test('删除会议只级联删除目标会议派生数据', () async {
@@ -183,16 +209,21 @@ void main() {
   });
 }
 
-Meeting _meeting(String id) {
+Meeting _meeting(
+  String id, {
+  MeetingState status = MeetingState.created,
+  String? activeSummaryId,
+}) {
   return Meeting(
     id: id,
     title: '会议',
     createdAt: DateTime.utc(2026, 7, 24),
-    status: MeetingState.created,
+    status: status,
     audioDurationMs: 0,
     requestedModelId: 'paraformer',
     recordingModelId: 'paraformer',
     recordingModelVersion: '1',
+    activeSummaryId: activeSummaryId,
   );
 }
 

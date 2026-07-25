@@ -226,7 +226,12 @@ final class StartupRecoveryService {
     for (final row in rows) {
       activated += await db.update(
         'meetings',
-        {'active_transcript_snapshot_id': row['id'], 'active_summary_id': null},
+        {
+          'active_transcript_snapshot_id': row['id'],
+          'active_summary_id': null,
+          'status': MeetingState.completed.name,
+          'last_error_code': null,
+        },
         where: 'id = ? AND active_transcript_snapshot_id IS NOT ?',
         whereArgs: [row['meeting_id'], row['id']],
       );

@@ -7,8 +7,10 @@ import '../data/repositories/sqflite_meeting_repository.dart';
 import '../data/repositories/sqflite_model_installation_repository.dart';
 import '../data/repositories/sqflite_model_preference_repository.dart';
 import '../data/repositories/sqflite_model_usage_lease_repository.dart';
+import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/asr/android_proc_asr_device_risk_monitor.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
+import '../data/services/asr/final_transcription_service.dart';
 import '../data/services/asr/sherpa_onnx_asr_engine_factory.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/flutter_foreground_recording_lifecycle.dart';
@@ -25,7 +27,9 @@ import '../data/services/storage/startup_recovery_service.dart';
 import '../data/services/vad/bundled_silero_vad_model.dart';
 import '../data/services/vad/silero_vad_segmenter.dart';
 import '../domain/models/asr_model_registry.dart';
+import '../domain/models/meeting.dart';
 import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
+import '../ui/features/meetings/view_models/meeting_detail_view_model.dart';
 import '../ui/features/meetings/view_models/recording_session_view_model.dart';
 import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
 
@@ -34,18 +38,22 @@ final class MeetilyDependencies {
     required this.database,
     required this.fileLayout,
     required this.meetings,
+    required this.transcripts,
     required this.installations,
     required this.preferences,
     required this.engineFactory,
+    required this.finalTranscription,
     required this.vadModelPath,
   });
 
   final AppDatabase database;
   final AppFileLayout fileLayout;
   final SqfliteMeetingRepository meetings;
+  final SqfliteTranscriptRepository transcripts;
   final SqfliteModelInstallationRepository installations;
   final SqfliteModelPreferenceRepository preferences;
   final SherpaOnnxAsrEngineFactory engineFactory;
+  final FinalTranscriptionService finalTranscription;
   final String vadModelPath;
 
   static Future<MeetilyDependencies> create() async {
@@ -62,6 +70,10 @@ final class MeetilyDependencies {
     ).recover(now: DateTime.now());
 
     final meetings = SqfliteMeetingRepository(database);
+    final transcripts = SqfliteTranscriptRepository(
+      database,
+      onMeetingChanged: meetings.notifyChanged,
+    );
     final installations = SqfliteModelInstallationRepository(database);
     final preferences = SqfliteModelPreferenceRepository(
       database,
@@ -101,19 +113,37 @@ final class MeetilyDependencies {
       riskMonitor: AndroidProcAsrDeviceRiskMonitor(),
       ownerId: 'meetily-app',
     );
+    final finalTranscription = FinalTranscriptionService(
+      meetings: meetings,
+      transcripts: transcripts,
+      engineFactory: engineFactory,
+      now: DateTime.now,
+    );
     return MeetilyDependencies._(
       database: database,
       fileLayout: fileLayout,
       meetings: meetings,
+      transcripts: transcripts,
       installations: installations,
       preferences: preferences,
       engineFactory: engineFactory,
+      finalTranscription: finalTranscription,
       vadModelPath: vad.modelPath,
     );
   }
 
   MeetingListViewModel createMeetingListViewModel() {
     return MeetingListViewModel(meetings: meetings);
+  }
+
+  MeetingDetailViewModel createMeetingDetailViewModel(Meeting meeting) {
+    return MeetingDetailViewModel(
+      meeting: meeting,
+      meetings: meetings,
+      transcripts: transcripts,
+      installations: installations,
+      transcription: finalTranscription,
+    );
   }
 
   StartMeetingViewModel createStartMeetingViewModel() {

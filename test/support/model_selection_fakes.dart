@@ -227,6 +227,7 @@ final class TestAsrEngine implements AsrEngine {
   Future<TranscriptSnapshot> finalizeMeeting(
     AudioSource source, {
     required String meetingId,
+    String? snapshotId,
   }) {
     throw UnimplementedError();
   }

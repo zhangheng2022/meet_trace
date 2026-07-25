@@ -58,6 +58,7 @@ void main() {
   group('最终快照激活', () {
     test('完成的最终快照可以成为活动快照', () {
       final meeting = _meeting(
+        status: MeetingState.processing,
         activeTranscriptSnapshotId: 'old',
         activeSummaryId: 'old-summary',
       );
@@ -70,11 +71,15 @@ void main() {
 
       expect(updated.activeTranscriptSnapshotId, 'new');
       expect(updated.activeSummaryId, isNull);
+      expect(updated.status, MeetingState.completed);
       expect(meeting.activeTranscriptSnapshotId, 'old');
     });
 
     test('新最终快照失败时旧活动快照保持不变', () {
-      final meeting = _meeting(activeTranscriptSnapshotId: 'old');
+      final meeting = _meeting(
+        status: MeetingState.processing,
+        activeTranscriptSnapshotId: 'old',
+      );
       final failed = _snapshot(
         id: 'failed',
         status: TranscriptSnapshotStatus.failed,
@@ -86,6 +91,31 @@ void main() {
       );
       expect(meeting.activeTranscriptSnapshotId, 'old');
     });
+  });
+
+  test('重新转录进入 processing 时保留旧快照、旧摘要和事实音频', () {
+    final meeting = Meeting(
+      id: 'meeting-1',
+      title: '周会',
+      createdAt: DateTime.utc(2026, 7, 24),
+      startedAt: DateTime.utc(2026, 7, 24, 3),
+      endedAt: DateTime.utc(2026, 7, 24, 3, 30),
+      status: MeetingState.completed,
+      audioPath: '/private/meetings/meeting-1/audio/fact.pcm',
+      audioDurationMs: 1800000,
+      requestedModelId: 'paraformer',
+      recordingModelId: 'paraformer',
+      recordingModelVersion: '1',
+      activeTranscriptSnapshotId: 'old',
+      activeSummaryId: 'old-summary',
+    );
+
+    final processing = meeting.beginFinalTranscription();
+
+    expect(processing.status, MeetingState.processing);
+    expect(processing.activeTranscriptSnapshotId, 'old');
+    expect(processing.activeSummaryId, 'old-summary');
+    expect(processing.audioPath, meeting.audioPath);
   });
 
   test('事实音频封存后记录结束时间、路径和时长并进入待处理', () {
@@ -127,12 +157,13 @@ Meeting _meeting({
   String? modelFallbackReason,
   String? activeTranscriptSnapshotId,
   String? activeSummaryId,
+  MeetingState status = MeetingState.created,
 }) {
   return Meeting(
     id: 'meeting-1',
     title: '周会',
     createdAt: DateTime.utc(2026, 7, 24),
-    status: MeetingState.created,
+    status: status,
     audioDurationMs: 0,
     requestedModelId: requestedModelId,
     recordingModelId: recordingModelId,

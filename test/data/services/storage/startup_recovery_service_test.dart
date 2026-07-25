@@ -111,7 +111,7 @@ void main() {
     expect(second.totalChanges, 0);
 
     final recoveredMeeting = (await meetings.getById(recordingMeeting.id))!;
-    expect(recoveredMeeting.status, MeetingState.processing);
+    expect(recoveredMeeting.status, MeetingState.completed);
     expect(
       recoveredMeeting.audioPath,
       layout.meetingAudioPath(recordingMeeting.id),

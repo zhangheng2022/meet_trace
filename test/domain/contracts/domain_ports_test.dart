@@ -109,6 +109,7 @@ final class _FakeAsrEngine implements AsrEngine {
   Future<TranscriptSnapshot> finalizeMeeting(
     AudioSource source, {
     required String meetingId,
+    String? snapshotId,
   }) {
     throw UnimplementedError('本测试只验证接口形状');
   }

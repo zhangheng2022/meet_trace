@@ -6,6 +6,7 @@ import 'package:forui/forui.dart';
 import '../domain/models/meeting.dart';
 import '../theme/theme.dart';
 import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
+import '../ui/features/meetings/view_models/meeting_detail_view_model.dart';
 import '../ui/features/meetings/view_models/recording_session_view_model.dart';
 import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
 import '../ui/features/meetings/views/meeting_detail_view.dart';
@@ -72,7 +73,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
       .createMeetingListViewModel();
   StartMeetingViewModel? _startMeeting;
   RecordingSessionViewModel? _recording;
-  Meeting? _selectedMeeting;
+  MeetingDetailViewModel? _meetingDetail;
   _MeetilyPage _page = _MeetilyPage.meetings;
 
   @override
@@ -100,7 +101,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
           onFinished: _openMeeting,
         ),
         _MeetilyPage.detail => MeetingDetailView(
-          meeting: _selectedMeeting!,
+          viewModel: _meetingDetail!,
           onBack: _back,
         ),
       },
@@ -126,8 +127,11 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
   }
 
   void _openMeeting(Meeting meeting) {
+    _meetingDetail?.dispose();
     setState(() {
-      _selectedMeeting = meeting;
+      _meetingDetail = widget.dependencies.createMeetingDetailViewModel(
+        meeting,
+      );
       _page = _MeetilyPage.detail;
     });
   }
@@ -136,8 +140,12 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
     if (_page == _MeetilyPage.recording) {
       return;
     }
+    if (_page == _MeetilyPage.detail && _meetingDetail?.isProcessing == true) {
+      return;
+    }
+    _meetingDetail?.dispose();
     setState(() {
-      _selectedMeeting = null;
+      _meetingDetail = null;
       _page = _MeetilyPage.meetings;
     });
   }
@@ -147,6 +155,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
     _meetingList.dispose();
     _startMeeting?.dispose();
     _recording?.dispose();
+    _meetingDetail?.dispose();
     super.dispose();
   }
 }

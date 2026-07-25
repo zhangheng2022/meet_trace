@@ -174,8 +174,12 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
   Future<TranscriptSnapshot> finalizeMeeting(
     AudioSource source, {
     required String meetingId,
+    String? snapshotId,
   }) async {
     _requireText(meetingId, 'meetingId');
+    if (snapshotId != null) {
+      _requireText(snapshotId, 'snapshotId');
+    }
     await _prepareOperation(stage: FailureStage.finalTranscription);
     _validateAudioSource(source);
     if (_finalizing) {
@@ -208,7 +212,8 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
       _finalizationTotalSamples = byteLength ~/ 2;
       _emitProgress(AsrFinalizationPhase.processing);
       input = await file.open();
-      final snapshotId = 'final-$meetingId-${_now().microsecondsSinceEpoch}';
+      final resolvedSnapshotId =
+          snapshotId ?? 'final-$meetingId-${_now().microsecondsSinceEpoch}';
       final segments = <TranscriptSegment>[];
       var segmentSequence = 0;
 
@@ -233,7 +238,7 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
         final samples = _decodePcm16(bytes);
         final startMs =
             (_finalizationCompletedSamples * 1000) ~/ sherpaOnnxAsrSampleRate;
-        final segmentId = '$snapshotId-segment-${segmentSequence + 1}';
+        final segmentId = '$resolvedSnapshotId-segment-${segmentSequence + 1}';
         final result = await _recognizeWindow(
           samples,
           sampleRate: sherpaOnnxAsrSampleRate,
@@ -245,7 +250,7 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
           segments.add(
             TranscriptSegment(
               id: segmentId,
-              snapshotId: snapshotId,
+              snapshotId: resolvedSnapshotId,
               startMs: result.startMs,
               endMs: result.endMs,
               text: result.text,
@@ -260,7 +265,7 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
 
       _emitProgress(AsrFinalizationPhase.completed);
       return TranscriptSnapshot(
-        id: snapshotId,
+        id: resolvedSnapshotId,
         meetingId: meetingId,
         kind: TranscriptSnapshotKind.finalTranscript,
         actualModelId: descriptor.modelId,

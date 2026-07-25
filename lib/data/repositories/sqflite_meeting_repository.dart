@@ -51,5 +51,11 @@ final class SqfliteMeetingRepository implements MeetingRepository {
     _changes.add(null);
   }
 
+  void notifyChanged() {
+    if (!_changes.isClosed) {
+      _changes.add(null);
+    }
+  }
+
   Future<void> dispose() => _changes.close();
 }

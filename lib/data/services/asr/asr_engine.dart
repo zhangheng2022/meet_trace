@@ -156,6 +156,7 @@ abstract interface class AsrEngine {
   Future<TranscriptSnapshot> finalizeMeeting(
     AudioSource source, {
     required String meetingId,
+    String? snapshotId,
   });
 
   void cancel();

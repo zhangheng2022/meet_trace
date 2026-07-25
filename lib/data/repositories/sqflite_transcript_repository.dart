@@ -6,9 +6,10 @@ import '../services/storage/app_database.dart';
 import 'repository_contracts.dart';
 
 final class SqfliteTranscriptRepository implements TranscriptRepository {
-  SqfliteTranscriptRepository(this._appDatabase);
+  SqfliteTranscriptRepository(this._appDatabase, {this.onMeetingChanged});
 
   final AppDatabase _appDatabase;
+  final void Function()? onMeetingChanged;
 
   @override
   Future<TranscriptSnapshot?> getById(String snapshotId) async {
@@ -65,6 +66,8 @@ final class SqfliteTranscriptRepository implements TranscriptRepository {
         {
           'active_transcript_snapshot_id': snapshot.id,
           'active_summary_id': null,
+          'status': 'completed',
+          'last_error_code': null,
         },
         where: expectedActiveSnapshotId == null
             ? 'id = ? AND active_transcript_snapshot_id IS NULL'
@@ -77,6 +80,7 @@ final class SqfliteTranscriptRepository implements TranscriptRepository {
         throw const DomainInvariantViolation('活动快照已变化，拒绝覆盖并回滚新快照');
       }
     });
+    onMeetingChanged?.call();
   }
 }
 
