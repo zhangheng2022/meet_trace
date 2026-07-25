@@ -66,6 +66,12 @@ final class Meeting {
 
   bool get isRecordingModelLocked => status != MeetingState.created;
 
+  Meeting rename(String value) {
+    final normalized = value.trim();
+    _requireText(normalized, 'title');
+    return _copyWith(title: normalized);
+  }
+
   Meeting changeRecordingModel({
     required String recordingModelId,
     required String recordingModelVersion,
@@ -158,6 +164,7 @@ final class Meeting {
   }
 
   Meeting _copyWith({
+    String? title,
     DateTime? startedAt,
     DateTime? endedAt,
     MeetingState? status,
@@ -172,7 +179,7 @@ final class Meeting {
   }) {
     return Meeting(
       id: id,
-      title: title,
+      title: title ?? this.title,
       createdAt: createdAt,
       startedAt: startedAt ?? this.startedAt,
       endedAt: endedAt ?? this.endedAt,

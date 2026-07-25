@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart' hide Summary;
 import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../data/services/asr/asr_engine.dart';
 import '../../../../data/services/asr/final_transcription_service.dart';
+import '../../../../data/services/audio/pcm_evidence_playback_service.dart';
 import '../../../../data/services/diarization/speaker_diarization_coordinator.dart';
+import '../../../../data/services/sharing/text_share_service.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
@@ -16,6 +18,9 @@ import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/use_cases/generate_summary.dart';
+import '../../../../domain/use_cases/build_meeting_share.dart';
+import '../../../../domain/use_cases/delete_meeting.dart';
+import '../../../../domain/use_cases/revise_final_transcript.dart';
 
 final class MeetingDetailViewModel extends ChangeNotifier {
   MeetingDetailViewModel({
@@ -29,6 +34,11 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     this.processingTasks,
     this.summaries,
     this.summaryGeneration,
+    this.transcriptRevision,
+    this.sharing,
+    this.deletion,
+    this.playback,
+    this.shareBuilder = const BuildMeetingShareUseCase(),
     AsrModelRegistry? registry,
   }) : _meeting = meeting,
        registry = registry ?? AsrModelRegistry.alpha,
@@ -43,6 +53,11 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   final ProcessingTaskRepository? processingTasks;
   final SummaryRepository? summaries;
   final GenerateSummaryUseCase? summaryGeneration;
+  final ReviseFinalTranscriptUseCase? transcriptRevision;
+  final TextShareService? sharing;
+  final DeleteMeetingUseCase? deletion;
+  final EvidencePlaybackService? playback;
+  final BuildMeetingShareUseCase shareBuilder;
   final AsrModelRegistry registry;
 
   Meeting _meeting;
@@ -51,10 +66,12 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   TranscriptSnapshot? _processingAttempt;
   List<AsrModelDescriptor> _installedModels = const [];
   StreamSubscription<List<ModelInstallation>>? _installationSubscription;
+  StreamSubscription<EvidencePlaybackState>? _playbackSubscription;
   Future<void>? _loading;
   Future<void>? _operation;
   Future<void>? _diarizationOperation;
   Future<void>? _summaryOperation;
+  Future<void>? _resultOperation;
   double _progress = 0;
   String? _errorMessage;
   String _selectedModelId;
@@ -66,6 +83,12 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   String? _diarizationMessage;
   Summary? _summary;
   String? _summaryMessage;
+  String? _resultMessage;
+  EvidencePlaybackState _playbackState = const EvidencePlaybackState(
+    status: EvidencePlaybackStatus.idle,
+  );
+  String? _selectedEvidenceSegmentId;
+  bool _deleted = false;
   bool _disposed = false;
 
   Meeting get meeting => _meeting;
@@ -79,7 +102,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   bool get isProcessing =>
       _operation != null ||
       _diarizationOperation != null ||
-      _summaryOperation != null;
+      _summaryOperation != null ||
+      _resultOperation != null;
   bool get isTranscribing => _operation != null;
   bool get isDiarizing => _diarizationOperation != null;
   bool get diarizationEnabled => _diarizationEnabled;
@@ -96,6 +120,16 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   bool get isGeneratingSummary => _summaryOperation != null;
   bool get summaryAvailable =>
       summaryGeneration?.capability.isAvailable == true;
+  String? get resultMessage => _resultMessage;
+  EvidencePlaybackState get playbackState => _playbackState;
+  String? get selectedEvidenceSegmentId => _selectedEvidenceSegmentId;
+  bool get isDeleted => _deleted;
+  bool get canShare =>
+      sharing != null &&
+      _snapshot?.isEligibleForSummary(
+            activeSnapshotId: _meeting.activeTranscriptSnapshotId,
+          ) ==
+          true;
   bool get canGenerateSummary {
     final snapshot = _snapshot;
     return summaryAvailable &&
@@ -184,9 +218,25 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   Future<void> generateSummary() => _runSummaryGeneration();
 
   Future<void> renameSpeaker(String? currentSpeakerId, String newLabel) async {
-    final runner = diarization;
     final snapshot = _snapshot;
-    if (runner == null || snapshot == null || isProcessing) {
+    if (snapshot == null || isProcessing) {
+      return;
+    }
+    final revision = transcriptRevision;
+    if (revision != null) {
+      return reviseTranscript([
+        for (final segment in snapshot.segments)
+          TranscriptSegmentRevision(
+            segmentId: segment.id,
+            text: segment.text,
+            speakerLabel: segment.speakerId == currentSpeakerId
+                ? newLabel
+                : segment.speakerId,
+          ),
+      ]);
+    }
+    final runner = diarization;
+    if (runner == null) {
       return;
     }
     try {
@@ -204,10 +254,143 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> reviseTranscript(List<TranscriptSegmentRevision> revisions) =>
+      _runResultOperation(() async {
+        final useCase = transcriptRevision;
+        if (useCase == null) {
+          return;
+        }
+        final previousSummaryId = _meeting.activeSummaryId;
+        final result = await useCase.execute(
+          meetingId: _meeting.id,
+          revisions: revisions,
+        );
+        _meeting = result.meeting;
+        _snapshot = result.snapshot;
+        _summary = previousSummaryId == null
+            ? null
+            : await summaries?.getById(previousSummaryId);
+        _resultMessage = '转录修订已保存为新版本；原 AI 总结已标记为过期';
+      }, failureMessage: '转录修订保存失败，请检查内容后重试');
+
+  Future<void> renameMeeting(String title) => _runResultOperation(() async {
+    final renamed = _meeting.rename(title);
+    await meetings.save(renamed);
+    _meeting = renamed;
+    _resultMessage = '会议名称已保存';
+  }, failureMessage: '会议名称保存失败，请重试');
+
+  Future<void> share(MeetingShareFormat format) =>
+      _runResultOperation(() async {
+        final service = sharing;
+        final snapshot = _snapshot;
+        if (service == null || snapshot == null) {
+          return;
+        }
+        final document = shareBuilder.execute(
+          meeting: _meeting,
+          snapshot: snapshot,
+          summary: _summary,
+          format: format,
+        );
+        await service.share(document);
+        _resultMessage = '已打开系统分享面板，内容不包含原始音频';
+      }, failureMessage: '分享失败，请重试');
+
+  Future<void> deleteMeeting() => _runResultOperation(() async {
+    final useCase = deletion;
+    if (useCase == null) {
+      return;
+    }
+    await playback?.stop();
+    await useCase.execute(meetingId: _meeting.id);
+    _deleted = true;
+    _resultMessage = '会议及其本地派生数据已删除';
+  }, failureMessage: '会议删除未完成，请重试');
+
+  Future<void> playEvidence(SummaryEvidence evidence) async {
+    final service = playback;
+    final snapshot = _snapshot;
+    final audioPath = _meeting.audioPath;
+    if (service == null || snapshot == null || audioPath == null) {
+      _resultMessage = '事实音频不可用';
+      _notify();
+      return;
+    }
+    final valid = snapshot.segments.any(
+      (segment) =>
+          segment.id == evidence.segmentId &&
+          evidence.startMs >= segment.startMs &&
+          evidence.endMs <= segment.endMs &&
+          segment.text.contains(evidence.quote),
+    );
+    if (!valid) {
+      _resultMessage = '证据与当前最终转录不一致，已拒绝播放';
+      _notify();
+      return;
+    }
+    _selectedEvidenceSegmentId = evidence.segmentId;
+    _notify();
+    try {
+      await service.play(
+        audioPath: audioPath,
+        startMs: evidence.startMs,
+        endMs: evidence.endMs,
+      );
+    } on Object {
+      _resultMessage = '证据音频播放失败';
+      _notify();
+    }
+  }
+
+  Future<void> playFullAudio() async {
+    final service = playback;
+    final audioPath = _meeting.audioPath;
+    if (service == null || audioPath == null || _meeting.audioDurationMs <= 0) {
+      return;
+    }
+    try {
+      await service.play(
+        audioPath: audioPath,
+        startMs: 0,
+        endMs: _meeting.audioDurationMs,
+      );
+    } on Object {
+      _resultMessage = '事实音频播放失败';
+      _notify();
+    }
+  }
+
+  Future<void> stopPlayback() => playback?.stop() ?? Future.value();
+
+  Future<void> _runResultOperation(
+    Future<void> Function() body, {
+    required String failureMessage,
+  }) {
+    final current = _resultOperation;
+    if (current != null || isProcessing) {
+      return current ?? Future.value();
+    }
+    _resultMessage = null;
+    final operation = body().catchError((Object _) {
+      _resultMessage = failureMessage;
+    });
+    _resultOperation = operation;
+    _notify();
+    return operation.whenComplete(() {
+      _resultOperation = null;
+      _notify();
+    });
+  }
+
   Future<void> _load() async {
     _errorMessage = null;
     _notify();
     try {
+      _playbackSubscription ??= playback?.states.listen((state) {
+        _playbackState = state;
+        _notify();
+      });
       _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? false;
       await _loadInstalledModels();
       await _refreshSnapshots();
@@ -553,6 +736,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     unawaited(_installationSubscription?.cancel());
+    unawaited(_playbackSubscription?.cancel());
+    unawaited(playback?.dispose());
     super.dispose();
   }
 }

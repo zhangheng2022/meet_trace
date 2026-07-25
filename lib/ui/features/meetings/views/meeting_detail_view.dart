@@ -3,10 +3,13 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
+import '../../../../data/services/audio/pcm_evidence_playback_service.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/speaker_diarization.dart';
 import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
+import '../../../../domain/use_cases/build_meeting_share.dart';
+import '../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../theme/theme.dart';
 import '../view_models/meeting_detail_view_model.dart';
 
@@ -14,11 +17,13 @@ final class MeetingDetailView extends StatefulWidget {
   const MeetingDetailView({
     required this.viewModel,
     required this.onBack,
+    this.onDeleted,
     super.key,
   });
 
   final MeetingDetailViewModel viewModel;
   final VoidCallback onBack;
+  final VoidCallback? onDeleted;
 
   @override
   State<MeetingDetailView> createState() => _MeetingDetailViewState();
@@ -84,27 +89,28 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
               if (viewModel.errorMessage case final message?)
                 _FailureCard(message: message, viewModel: viewModel),
               if (viewModel.snapshot case final snapshot?)
-                _TranscriptCard(snapshot: snapshot, viewModel: viewModel),
+                _TranscriptCard(
+                  key: ValueKey('transcript-${snapshot.id}'),
+                  snapshot: snapshot,
+                  viewModel: viewModel,
+                ),
               if (viewModel.snapshot != null) ...[
                 SizedBox(height: appStyle.spaceMd),
                 _DiarizationCard(viewModel: viewModel),
                 SizedBox(height: appStyle.spaceMd),
                 _SummaryCard(viewModel: viewModel),
+                SizedBox(height: appStyle.spaceMd),
+                _AudioCard(viewModel: viewModel),
+                SizedBox(height: appStyle.spaceMd),
+                _ResultActionsCard(
+                  viewModel: viewModel,
+                  onDeleted: widget.onDeleted,
+                ),
               ],
               if (viewModel.canRetranscribe) ...[
                 SizedBox(height: appStyle.spaceMd),
                 _RetranscriptionCard(viewModel: viewModel),
               ],
-              SizedBox(height: appStyle.spaceMd),
-              FCard(
-                child: Padding(
-                  padding: EdgeInsets.all(appStyle.spaceMd),
-                  child: Text(
-                    '事实音频：${viewModel.meeting.audioPath ?? '尚未生成'}',
-                    style: theme.typography.body.sm,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -167,11 +173,39 @@ final class _FailureCard extends StatelessWidget {
   }
 }
 
-final class _TranscriptCard extends StatelessWidget {
-  const _TranscriptCard({required this.snapshot, required this.viewModel});
+final class _TranscriptCard extends StatefulWidget {
+  const _TranscriptCard({
+    required this.snapshot,
+    required this.viewModel,
+    super.key,
+  });
 
   final TranscriptSnapshot snapshot;
   final MeetingDetailViewModel viewModel;
+
+  @override
+  State<_TranscriptCard> createState() => _TranscriptCardState();
+}
+
+final class _TranscriptCardState extends State<_TranscriptCard> {
+  late final Map<String, TextEditingController> _texts = {
+    for (final segment in widget.snapshot.segments)
+      segment.id: TextEditingController(text: segment.text),
+  };
+  late final Map<String, TextEditingController> _speakers = {
+    for (final segment in widget.snapshot.segments)
+      segment.id: TextEditingController(
+        text: displaySpeakerLabel(segment.speakerId),
+      ),
+  };
+
+  @override
+  void dispose() {
+    for (final controller in [..._texts.values, ..._speakers.values]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,10 +219,15 @@ final class _TranscriptCard extends StatelessWidget {
           children: [
             Text('最终转录', style: theme.typography.display.md),
             SizedBox(height: appStyle.spaceMd),
-            if (snapshot.segments.isEmpty)
+            if (widget.snapshot.segments.isEmpty)
               const Text('未识别到可显示的语音内容。')
             else
-              for (final segment in snapshot.segments) ...[
+              for (final segment in widget.snapshot.segments) ...[
+                if (widget.viewModel.selectedEvidenceSegmentId == segment.id)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FBadge(child: const Text('证据定位')),
+                  ),
                 Text(
                   '${displaySpeakerLabel(segment.speakerId)} · '
                   '${_timestamp(segment.startMs)}',
@@ -197,9 +236,41 @@ final class _TranscriptCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: appStyle.spaceSm),
-                Text(segment.text, style: theme.typography.body.md),
+                FTextField(
+                  key: ValueKey('segment-speaker-${segment.id}'),
+                  control: FTextFieldControl.managed(
+                    controller: _speakers[segment.id]!,
+                  ),
+                  label: const Text('说话人'),
+                ),
                 SizedBox(height: appStyle.spaceSm),
+                FTextField(
+                  key: ValueKey('segment-text-${segment.id}'),
+                  control: FTextFieldControl.managed(
+                    controller: _texts[segment.id]!,
+                  ),
+                  label: const Text('转录内容'),
+                  maxLines: 4,
+                ),
+                SizedBox(height: appStyle.spaceMd),
               ],
+            if (widget.snapshot.segments.isNotEmpty)
+              FButton(
+                key: const ValueKey('save-transcript-revision'),
+                onPress: widget.viewModel.isProcessing
+                    ? null
+                    : () => unawaited(
+                        widget.viewModel.reviseTranscript([
+                          for (final segment in widget.snapshot.segments)
+                            TranscriptSegmentRevision(
+                              segmentId: segment.id,
+                              text: _texts[segment.id]!.text,
+                              speakerLabel: _speakers[segment.id]!.text,
+                            ),
+                        ]),
+                      ),
+                child: const Text('保存转录修订'),
+              ),
           ],
         ),
       ),
@@ -409,9 +480,17 @@ final class _SummaryCard extends StatelessWidget {
               SizedBox(height: appStyle.spaceSm),
               Text(summary!.overview, style: theme.typography.body.md),
               if (summary.keyPoints.isNotEmpty)
-                _SummarySection(title: '关键结论', items: summary.keyPoints),
+                _SummarySection(
+                  title: '关键结论',
+                  items: summary.keyPoints,
+                  viewModel: viewModel,
+                ),
               if (summary.actionItems.isNotEmpty)
-                _SummarySection(title: '行动项', items: summary.actionItems),
+                _SummarySection(
+                  title: '行动项',
+                  items: summary.actionItems,
+                  viewModel: viewModel,
+                ),
             ],
             if (viewModel.canGenerateSummary) ...[
               SizedBox(height: appStyle.spaceMd),
@@ -435,10 +514,15 @@ final class _SummaryCard extends StatelessWidget {
 }
 
 final class _SummarySection extends StatelessWidget {
-  const _SummarySection({required this.title, required this.items});
+  const _SummarySection({
+    required this.title,
+    required this.items,
+    required this.viewModel,
+  });
 
   final String title;
   final List<SummaryItem> items;
+  final MeetingDetailViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -454,7 +538,7 @@ final class _SummarySection extends StatelessWidget {
           for (final item in items)
             Padding(
               padding: EdgeInsets.only(bottom: appStyle.spaceMd),
-              child: _SummaryItemView(item: item),
+              child: _SummaryItemView(item: item, viewModel: viewModel),
             ),
         ],
       ),
@@ -463,9 +547,10 @@ final class _SummarySection extends StatelessWidget {
 }
 
 final class _SummaryItemView extends StatelessWidget {
-  const _SummaryItemView({required this.item});
+  const _SummaryItemView({required this.item, required this.viewModel});
 
   final SummaryItem item;
+  final MeetingDetailViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -486,15 +571,174 @@ final class _SummaryItemView extends StatelessWidget {
         ] else
           for (final evidence in item.evidence) ...[
             SizedBox(height: appStyle.spaceSm),
-            Text(
-              '证据 ${_timestamp(evidence.startMs)}–'
-              '${_timestamp(evidence.endMs)}：${evidence.quote}',
-              style: theme.typography.body.sm.copyWith(
-                color: theme.colors.mutedForeground,
+            GestureDetector(
+              key: ValueKey(
+                'play-evidence-${evidence.segmentId}-${evidence.startMs}',
+              ),
+              onTap: () => unawaited(viewModel.playEvidence(evidence)),
+              child: Text(
+                '证据 ${_timestamp(evidence.startMs)}–'
+                '${_timestamp(evidence.endMs)}：${evidence.quote}',
+                style: theme.typography.body.sm.copyWith(
+                  color: theme.colors.primary,
+                ),
               ),
             ),
           ],
       ],
+    );
+  }
+}
+
+final class _AudioCard extends StatelessWidget {
+  const _AudioCard({required this.viewModel});
+
+  final MeetingDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final playing =
+        viewModel.playbackState.status == EvidencePlaybackStatus.playing;
+    return FCard(
+      child: Padding(
+        padding: EdgeInsets.all(appStyle.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('本地录音', style: theme.typography.display.md),
+            SizedBox(height: appStyle.spaceSm),
+            Text(
+              '时长 ${_duration(viewModel.meeting.audioDurationMs)}；音频路径不会显示或分享。',
+            ),
+            SizedBox(height: appStyle.spaceMd),
+            FButton(
+              key: const ValueKey('toggle-audio-playback'),
+              onPress: viewModel.meeting.audioPath == null
+                  ? null
+                  : () => unawaited(
+                      playing
+                          ? viewModel.stopPlayback()
+                          : viewModel.playFullAudio(),
+                    ),
+              child: Text(playing ? '停止播放' : '播放完整录音'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _ResultActionsCard extends StatefulWidget {
+  const _ResultActionsCard({required this.viewModel, required this.onDeleted});
+
+  final MeetingDetailViewModel viewModel;
+  final VoidCallback? onDeleted;
+
+  @override
+  State<_ResultActionsCard> createState() => _ResultActionsCardState();
+}
+
+final class _ResultActionsCardState extends State<_ResultActionsCard> {
+  late final TextEditingController _title = TextEditingController(
+    text: widget.viewModel.meeting.title,
+  );
+  bool _confirmingDelete = false;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final viewModel = widget.viewModel;
+    return FCard(
+      child: Padding(
+        padding: EdgeInsets.all(appStyle.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('结果与数据', style: theme.typography.display.md),
+            SizedBox(height: appStyle.spaceMd),
+            FTextField(
+              key: const ValueKey('meeting-title'),
+              control: FTextFieldControl.managed(controller: _title),
+              label: const Text('会议名称'),
+            ),
+            SizedBox(height: appStyle.spaceSm),
+            FButton(
+              onPress: viewModel.isProcessing
+                  ? null
+                  : () => unawaited(viewModel.renameMeeting(_title.text)),
+              child: const Text('保存会议名称'),
+            ),
+            SizedBox(height: appStyle.spaceMd),
+            FButton(
+              key: const ValueKey('share-plain-text'),
+              onPress: viewModel.canShare && !viewModel.isProcessing
+                  ? () =>
+                        unawaited(viewModel.share(MeetingShareFormat.plainText))
+                  : null,
+              child: const Text('分享纯文本'),
+            ),
+            SizedBox(height: appStyle.spaceSm),
+            FButton(
+              key: const ValueKey('share-markdown'),
+              onPress: viewModel.canShare && !viewModel.isProcessing
+                  ? () =>
+                        unawaited(viewModel.share(MeetingShareFormat.markdown))
+                  : null,
+              child: const Text('分享 Markdown'),
+            ),
+            if (viewModel.resultMessage case final message?) ...[
+              SizedBox(height: appStyle.spaceMd),
+              FAlert(title: Text(message)),
+            ],
+            SizedBox(height: appStyle.spaceMd),
+            if (!_confirmingDelete)
+              FButton(
+                key: const ValueKey('request-delete-meeting'),
+                onPress: viewModel.isProcessing
+                    ? null
+                    : () => setState(() => _confirmingDelete = true),
+                child: const Text('删除本场会议'),
+              )
+            else
+              FAlert(
+                variant: FAlertVariant.destructive,
+                title: const Text('确认永久删除？'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('将删除本场录音、转录、总结和处理记录，无法撤销。'),
+                    SizedBox(height: appStyle.spaceMd),
+                    FButton(
+                      key: const ValueKey('confirm-delete-meeting'),
+                      onPress: () async {
+                        await viewModel.deleteMeeting();
+                        if (viewModel.isDeleted) {
+                          widget.onDeleted?.call();
+                        }
+                      },
+                      child: const Text('确认删除全部数据'),
+                    ),
+                    SizedBox(height: appStyle.spaceSm),
+                    FButton(
+                      onPress: () => setState(() => _confirmingDelete = false),
+                      child: const Text('取消'),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -545,5 +789,12 @@ String _timestamp(int milliseconds) {
   final value = Duration(milliseconds: milliseconds);
   final minutes = value.inMinutes.toString().padLeft(2, '0');
   final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return '$minutes:$seconds';
+}
+
+String _duration(int milliseconds) {
+  final duration = Duration(milliseconds: milliseconds);
+  final minutes = duration.inMinutes.toString().padLeft(2, '0');
+  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
   return '$minutes:$seconds';
 }

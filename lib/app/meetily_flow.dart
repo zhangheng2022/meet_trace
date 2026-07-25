@@ -13,6 +13,9 @@ import '../ui/features/meetings/views/meeting_detail_view.dart';
 import '../ui/features/meetings/views/meeting_list_view.dart';
 import '../ui/features/meetings/views/recording_session_view.dart';
 import '../ui/features/meetings/views/start_meeting_view.dart';
+import '../ui/features/settings/view_models/data_controls_view_model.dart';
+import '../ui/features/settings/view_models/model_settings_view_model.dart';
+import '../ui/features/settings/views/model_settings_view.dart';
 import 'application.dart';
 import 'meetily_dependencies.dart';
 
@@ -58,7 +61,7 @@ final class _MeetilyBootstrapState extends State<MeetilyBootstrap> {
   }
 }
 
-enum _MeetilyPage { meetings, start, recording, detail }
+enum _MeetilyPage { meetings, start, recording, detail, settings }
 
 final class MeetilyFlow extends StatefulWidget {
   const MeetilyFlow({required this.dependencies, super.key});
@@ -75,6 +78,8 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
   StartMeetingViewModel? _startMeeting;
   RecordingSessionViewModel? _recording;
   MeetingDetailViewModel? _meetingDetail;
+  ModelSettingsViewModel? _modelSettings;
+  DataControlsViewModel? _dataControls;
   _MeetilyPage _page = _MeetilyPage.meetings;
 
   @override
@@ -91,6 +96,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
           viewModel: _meetingList,
           onStartMeeting: _openStartMeeting,
           onOpenMeeting: _openMeeting,
+          onOpenSettings: _openSettings,
         ),
         _MeetilyPage.start => StartMeetingView(
           viewModel: _startMeeting!,
@@ -103,6 +109,12 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
         ),
         _MeetilyPage.detail => MeetingDetailView(
           viewModel: _meetingDetail!,
+          onBack: _back,
+          onDeleted: _back,
+        ),
+        _MeetilyPage.settings => ModelSettingsView(
+          viewModel: _modelSettings!,
+          dataControls: _dataControls,
           onBack: _back,
         ),
       },
@@ -137,6 +149,16 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
     });
   }
 
+  void _openSettings() {
+    _modelSettings?.dispose();
+    _dataControls?.dispose();
+    setState(() {
+      _modelSettings = widget.dependencies.createModelSettingsViewModel();
+      _dataControls = widget.dependencies.createDataControlsViewModel();
+      _page = _MeetilyPage.settings;
+    });
+  }
+
   void _back() {
     if (_page == _MeetilyPage.recording) {
       return;
@@ -145,8 +167,12 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
       return;
     }
     _meetingDetail?.dispose();
+    _modelSettings?.dispose();
+    _dataControls?.dispose();
     setState(() {
       _meetingDetail = null;
+      _modelSettings = null;
+      _dataControls = null;
       _page = _MeetilyPage.meetings;
     });
   }
@@ -157,6 +183,8 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
     _startMeeting?.dispose();
     _recording?.dispose();
     _meetingDetail?.dispose();
+    _modelSettings?.dispose();
+    _dataControls?.dispose();
     super.dispose();
   }
 }

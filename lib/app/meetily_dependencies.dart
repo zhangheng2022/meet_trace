@@ -22,23 +22,36 @@ import '../data/services/audio/flutter_foreground_recording_lifecycle.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
 import '../data/services/audio/recording_checkpoint_store.dart';
 import '../data/services/audio/reliable_recording_service.dart';
+import '../data/services/audio/pcm_evidence_playback_service.dart';
 import '../data/services/models/bundled_model_preparation_service.dart';
 import '../data/services/models/flutter_model_asset_source.dart';
 import '../data/services/models/model_file_verifier.dart';
 import '../data/services/models/model_manifest_parser.dart';
+import '../data/services/models/downloadable_model_service.dart';
+import '../data/services/models/http_model_file_downloader.dart';
+import '../data/services/models/platform_download_preflight_providers.dart';
+import '../data/services/sharing/text_share_service.dart';
 import '../data/services/storage/app_database.dart';
 import '../data/services/storage/app_file_layout.dart';
 import '../data/services/storage/startup_recovery_service.dart';
+import '../data/services/storage/local_data_control_service.dart';
+import '../data/services/storage/meeting_directory_deletion_service.dart';
 import '../data/services/summary/summary_generation_service.dart';
 import '../data/services/vad/bundled_silero_vad_model.dart';
 import '../data/services/vad/silero_vad_segmenter.dart';
 import '../domain/models/asr_model_registry.dart';
 import '../domain/models/meeting.dart';
+import '../domain/models/model_manifest.dart';
+import '../domain/use_cases/delete_meeting.dart';
 import '../domain/use_cases/generate_summary.dart';
+import '../domain/use_cases/revise_final_transcript.dart';
+import '../ui/core/asr_model_option.dart';
 import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
 import '../ui/features/meetings/view_models/meeting_detail_view_model.dart';
 import '../ui/features/meetings/view_models/recording_session_view_model.dart';
 import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
+import '../ui/features/settings/view_models/data_controls_view_model.dart';
+import '../ui/features/settings/view_models/model_settings_view_model.dart';
 
 final class MeetilyDependencies {
   MeetilyDependencies._({
@@ -55,6 +68,9 @@ final class MeetilyDependencies {
     required this.finalTranscription,
     required this.diarization,
     required this.summaryGeneration,
+    required this.registry,
+    required this.modelManifest,
+    required this.modelDownloads,
     required this.vadModelPath,
   });
 
@@ -71,6 +87,9 @@ final class MeetilyDependencies {
   final FinalTranscriptionService finalTranscription;
   final SpeakerDiarizationCoordinator diarization;
   final GenerateSummaryUseCase summaryGeneration;
+  final AsrModelRegistry registry;
+  final ModelManifest modelManifest;
+  final DownloadableModelService modelDownloads;
   final String vadModelPath;
 
   static Future<MeetilyDependencies> create() async {
@@ -129,9 +148,10 @@ final class MeetilyDependencies {
       fileLayout: fileLayout,
       assetSource: assetSource,
     ).prepare();
+    final leases = SqfliteModelUsageLeaseRepository(database);
     final engineFactory = SherpaOnnxAsrEngineFactory(
       installations: installations,
-      leases: SqfliteModelUsageLeaseRepository(database),
+      leases: leases,
       riskMonitor: AndroidProcAsrDeviceRiskMonitor(),
       ownerId: 'meetily-app',
     );
@@ -156,6 +176,15 @@ final class MeetilyDependencies {
       service: const UnavailableSummaryGenerationService(),
       now: DateTime.now,
     );
+    final modelDownloads = DownloadableModelService(
+      fileLayout: fileLayout,
+      installations: installations,
+      leases: leases,
+      capacity: const DeviceStorageCapacityProvider(),
+      network: ConnectivityDownloadNetworkStatusProvider(),
+      downloader: HttpModelFileDownloader(),
+      verifier: const ModelFileVerifier(),
+    );
     return MeetilyDependencies._(
       database: database,
       fileLayout: fileLayout,
@@ -170,6 +199,9 @@ final class MeetilyDependencies {
       finalTranscription: finalTranscription,
       diarization: diarization,
       summaryGeneration: summaryGeneration,
+      registry: registry,
+      modelManifest: manifest,
+      modelDownloads: modelDownloads,
       vadModelPath: vad.modelPath,
     );
   }
@@ -179,6 +211,7 @@ final class MeetilyDependencies {
   }
 
   MeetingDetailViewModel createMeetingDetailViewModel(Meeting meeting) {
+    final sharing = const SharePlusTextShareService();
     return MeetingDetailViewModel(
       meeting: meeting,
       meetings: meetings,
@@ -190,6 +223,69 @@ final class MeetilyDependencies {
       processingTasks: processingTasks,
       summaries: summaries,
       summaryGeneration: summaryGeneration,
+      transcriptRevision: ReviseFinalTranscriptUseCase(
+        meetings: meetings,
+        transcripts: transcripts,
+        now: DateTime.now,
+      ),
+      sharing: sharing,
+      deletion: DeleteMeetingUseCase(
+        meetings: meetings,
+        files: MeetingDirectoryDeletionService(layout: fileLayout),
+      ),
+      playback: PcmEvidencePlaybackService(
+        output: AudioplayersDeviceAudioOutput(),
+        temporaryDirectory: fileLayout.rootPath,
+      ),
+    );
+  }
+
+  ModelSettingsViewModel createModelSettingsViewModel() {
+    final advanced = registry.requireById(qwenAdvancedModelId);
+    final manifest = modelManifest.models.singleWhere(
+      (entry) => entry.modelId == advanced.modelId,
+    );
+    ModelDownloadCancellationToken? cancellation;
+
+    Future<void> download() async {
+      cancellation = ModelDownloadCancellationToken();
+      try {
+        await modelDownloads.download(
+          descriptor: advanced,
+          manifest: manifest,
+          cancellation: cancellation,
+        );
+      } finally {
+        cancellation = null;
+      }
+    }
+
+    return ModelSettingsViewModel(
+      preferences: preferences,
+      installations: installations,
+      registry: registry,
+      actions: AdvancedModelActions(
+        download: download,
+        cancel: () => cancellation?.cancel(),
+        retry: download,
+        delete: () async {
+          await modelDownloads.delete(descriptor: advanced);
+          if (await preferences.getDefaultModelId() == advanced.modelId) {
+            await preferences.setDefaultModelId(registry.defaultModelId);
+          }
+        },
+      ),
+    );
+  }
+
+  DataControlsViewModel createDataControlsViewModel() {
+    return DataControlsViewModel(
+      dataControl: LocalDataControlService(
+        layout: fileLayout,
+        meetings: meetings,
+        installations: installations,
+      ),
+      sharing: const SharePlusTextShareService(),
     );
   }
 

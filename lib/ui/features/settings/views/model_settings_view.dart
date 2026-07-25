@@ -7,11 +7,19 @@ import '../../../../domain/models/asr_model.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/asr_model_option.dart';
 import '../view_models/model_settings_view_model.dart';
+import '../view_models/data_controls_view_model.dart';
 
 final class ModelSettingsView extends StatefulWidget {
-  const ModelSettingsView({required this.viewModel, super.key});
+  const ModelSettingsView({
+    required this.viewModel,
+    this.dataControls,
+    this.onBack,
+    super.key,
+  });
 
   final ModelSettingsViewModel viewModel;
+  final DataControlsViewModel? dataControls;
+  final VoidCallback? onBack;
 
   @override
   State<ModelSettingsView> createState() => _ModelSettingsViewState();
@@ -22,6 +30,7 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
   void initState() {
     super.initState();
     unawaited(widget.viewModel.load());
+    unawaited(widget.dataControls?.load());
   }
 
   @override
@@ -29,7 +38,20 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
     return ListenableBuilder(
       listenable: widget.viewModel,
       builder: (context, _) => FScaffold(
-        header: const FHeader(title: Text('设置')),
+        header: widget.onBack == null
+            ? const FHeader(title: Text('设置'))
+            : FHeader.nested(
+                title: const Text('设置'),
+                prefixes: [
+                  FHeaderAction(
+                    icon: context.theme.icons.arrowLeft(
+                      context,
+                      semanticsLabel: '返回会议列表',
+                    ),
+                    onPress: widget.onBack,
+                  ),
+                ],
+              ),
         child: _body(context),
       ),
     );
@@ -91,12 +113,79 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
                 ),
                 SizedBox(height: appStyle.spaceMd),
               ],
+              if (widget.dataControls case final controls?) ...[
+                ListenableBuilder(
+                  listenable: controls,
+                  builder: (context, _) =>
+                      _DataControlsCard(viewModel: controls),
+                ),
+                SizedBox(height: appStyle.spaceMd),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+}
+
+final class _DataControlsCard extends StatelessWidget {
+  const _DataControlsCard({required this.viewModel});
+
+  final DataControlsViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final usage = viewModel.usage;
+    return FCard(
+      child: Padding(
+        padding: EdgeInsets.all(appStyle.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('存储与隐私', style: theme.typography.display.md),
+            SizedBox(height: appStyle.spaceSm),
+            const Text('会议录音、转录与模型只保存在本机；卸载应用可能永久删除这些数据。'),
+            SizedBox(height: appStyle.spaceMd),
+            if (viewModel.isLoading)
+              const FProgress(semanticsLabel: '正在读取本地存储用量')
+            else if (usage != null) ...[
+              Text('会议数据：${_byteLabel(usage.meetingBytes)}'),
+              Text('模型数据：${_byteLabel(usage.modelBytes)}'),
+              Text('数据库：${_byteLabel(usage.databaseBytes)}'),
+              Text('应用总计：${_byteLabel(usage.totalBytes)}'),
+              Text('设备可用：${_byteLabel(usage.freeBytes)}'),
+            ],
+            SizedBox(height: appStyle.spaceMd),
+            const Text('诊断信息仅包含状态计数、存储指标、模型版本和错误码；不包含会议标题、转录、音频或本地路径。'),
+            SizedBox(height: appStyle.spaceMd),
+            FButton(
+              key: const ValueKey('export-diagnostics'),
+              onPress: viewModel.isBusy
+                  ? null
+                  : () => unawaited(viewModel.exportDiagnostics()),
+              child: const Text('查看并分享诊断信息'),
+            ),
+            if (viewModel.message case final message?) ...[
+              SizedBox(height: appStyle.spaceMd),
+              FAlert(title: Text(message)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _byteLabel(int bytes) {
+  const mib = 1024 * 1024;
+  const gib = 1024 * mib;
+  if (bytes >= gib) {
+    return '${(bytes / gib).toStringAsFixed(2)} GiB';
+  }
+  return '${(bytes / mib).toStringAsFixed(1)} MiB';
 }
 
 final class _ModelSettingsCard extends StatelessWidget {
@@ -186,7 +275,7 @@ final class _ModelSettingsCard extends StatelessWidget {
     AsrModelUiStatus.downloading =>
       onCancel == null
           ? null
-          : FButton(onPress: busy ? null : onCancel, child: const Text('取消下载')),
+          : FButton(onPress: onCancel, child: const Text('取消下载')),
     AsrModelUiStatus.paused ||
     AsrModelUiStatus.failed ||
     AsrModelUiStatus.insufficientStorage =>

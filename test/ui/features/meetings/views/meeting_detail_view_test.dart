@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meetily_ai/app/application.dart';
 import 'package:meetily_ai/data/repositories/repository_contracts.dart';
 import 'package:meetily_ai/data/services/asr/final_transcription_service.dart';
+import 'package:meetily_ai/data/services/audio/pcm_evidence_playback_service.dart';
 import 'package:meetily_ai/data/services/diarization/speaker_diarization_coordinator.dart';
 import 'package:meetily_ai/data/services/summary/summary_generation_service.dart';
 import 'package:meetily_ai/domain/models/asr_model_registry.dart';
@@ -258,6 +259,37 @@ void main() {
     expect(find.text('待核对：未找到有效原文证据'), findsOneWidget);
     await fixture.dispose();
   });
+
+  testWidgets('点击证据只播放当前片段的准确时间区间', (tester) async {
+    final active = _snapshot(id: 'active');
+    final summary = _summary(id: 'summary-active', snapshot: active);
+    final playback = _Playback();
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+        activeSummaryId: summary.id,
+      ),
+      active: active,
+      summary: summary,
+      playback: playback,
+    );
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final evidence = find.text('证据 00:00–00:01：最终事实文本');
+    await tester.ensureVisible(evidence);
+    await tester.tap(evidence);
+    await tester.pump();
+
+    expect(playback.calls, [('/audio/fact.pcm', 0, 1000)]);
+    expect(fixture.viewModel.selectedEvidenceSegmentId, 'active-segment');
+    await fixture.dispose();
+  });
 }
 
 _Fixture _fixture(
@@ -268,6 +300,7 @@ _Fixture _fixture(
   bool diarizationEnabled = false,
   Summary? summary,
   SummaryGenerationService? summaryService,
+  EvidencePlaybackService? playback,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
@@ -326,8 +359,31 @@ _Fixture _fixture(
       processingTasks: summaryTasks,
       summaries: summaries,
       summaryGeneration: summaryGeneration,
+      playback: playback,
     ),
   );
+}
+
+final class _Playback implements EvidencePlaybackService {
+  final List<(String, int, int)> calls = [];
+
+  @override
+  Stream<EvidencePlaybackState> get states => const Stream.empty();
+
+  @override
+  Future<void> play({
+    required String audioPath,
+    required int startMs,
+    required int endMs,
+  }) async {
+    calls.add((audioPath, startMs, endMs));
+  }
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> dispose() async {}
 }
 
 final class _Fixture {

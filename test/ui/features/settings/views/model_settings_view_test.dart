@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meetily_ai/app/application.dart';
@@ -93,6 +95,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(downloadCalls, 1);
+    viewModel.dispose();
+    await installations.dispose();
+  });
+
+  testWidgets('高级模型下载进行中仍可取消', (tester) async {
+    final download = Completer<void>();
+    var cancelCalls = 0;
+    final installations = TestActiveInstallations();
+    final registry = AsrModelRegistry.alpha;
+    installations.install(
+      installations.installed(registry.requireById(paraformerStandardModelId)),
+      active: true,
+    );
+    final viewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(paraformerStandardModelId),
+      installations: installations,
+      actions: AdvancedModelActions(
+        download: () => download.future,
+        cancel: () {
+          cancelCalls++;
+          download.complete();
+        },
+      ),
+    );
+    await tester.pumpWidget(
+      Application(home: ModelSettingsView(viewModel: viewModel)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('下载高级模型'));
+    installations.install(
+      _qwenState(ModelInstallationState.downloading),
+      notify: true,
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('取消下载'));
+    await tester.pumpAndSettle();
+
+    expect(cancelCalls, 1);
     viewModel.dispose();
     await installations.dispose();
   });

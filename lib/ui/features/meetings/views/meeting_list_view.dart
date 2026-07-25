@@ -12,12 +12,14 @@ final class MeetingListView extends StatefulWidget {
     this.viewModel,
     this.onStartMeeting,
     this.onOpenMeeting,
+    this.onOpenSettings,
     super.key,
   });
 
   final MeetingListViewModel? viewModel;
   final VoidCallback? onStartMeeting;
   final ValueChanged<Meeting>? onOpenMeeting;
+  final VoidCallback? onOpenSettings;
 
   @override
   State<MeetingListView> createState() => _MeetingListViewState();
@@ -37,6 +39,10 @@ final class _MeetingListViewState extends State<MeetingListView> {
       header: FHeader(
         title: const Text('会议'),
         suffixes: [
+          FHeaderAction(
+            icon: const Icon(FLucideIcons.settings, semanticLabel: '打开设置'),
+            onPress: widget.onOpenSettings,
+          ),
           FHeaderAction(
             icon: context.theme.icons.calendar(context, semanticsLabel: '开始会议'),
             onPress: widget.onStartMeeting,
