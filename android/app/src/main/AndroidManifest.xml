@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="meetily_ai"
+        android:label="研会 AI"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

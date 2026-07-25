@@ -3,6 +3,8 @@ import 'package:forui/forui.dart';
 import 'package:meetily_ai/theme/theme.dart';
 import 'package:meetily_ai/ui/features/meetings/views/meeting_list_view.dart';
 
+const appDisplayName = '研会 AI';
+
 /// Meetily 的应用外壳。
 ///
 /// 这里仅负责主题、本地化和根页面组装，不承载业务逻辑。
@@ -14,6 +16,7 @@ class Application extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
+    title: appDisplayName,
     debugShowCheckedModeBanner: false,
     supportedLocales: FLocalizations.supportedLocales,
     localizationsDelegates: const [...FLocalizations.localizationsDelegates],

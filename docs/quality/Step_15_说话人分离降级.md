@@ -47,7 +47,7 @@ flutter build apk --debug --no-pub
 
 - 全量 212 项测试通过。
 - `flutter analyze --no-pub`：No issues found。
-- Debug APK 构建通过，大小 `310,798,558` 字节。
+- Debug APK 构建通过，大小 `334,376,185` 字节。
 - 构建只剩 `flutter_foreground_task` 上游 Built-in Kotlin 兼容警告。
 
 ## Android 端到端证据
@@ -59,6 +59,7 @@ flutter build apk --debug --no-pub
 3. 结束会议后由本场锁定的标准 Paraformer 生成已完成最终快照，详情页显示来源模型、带时间戳原文和“说话人 1”。
 4. 自动开关明确显示“当前构建未配置已验证的本地说话人模型，可继续手工标注”，没有静默加载未知权重或切换其他模型。
 5. 页面提供按说话人聚合的人工标签输入和保存动作，保存后显示“说话人标签已保存”；进程保持存活，日志无 `GeneratedPluginRegistrant`、Flutter 或 AndroidRuntime 崩溃。
+6. 覆盖安装后，APK 清单、Android 桌面名称、应用标题、启动页和录音通知统一使用“研会 AI”；`adb install -r` 保留既有测试数据。
 
 ## 已知风险与下一步
 

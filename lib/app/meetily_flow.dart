@@ -13,6 +13,7 @@ import '../ui/features/meetings/views/meeting_detail_view.dart';
 import '../ui/features/meetings/views/meeting_list_view.dart';
 import '../ui/features/meetings/views/recording_session_view.dart';
 import '../ui/features/meetings/views/start_meeting_view.dart';
+import 'application.dart';
 import 'meetily_dependencies.dart';
 
 final class MeetilyBootstrap extends StatefulWidget {
@@ -165,7 +166,7 @@ final class _BootstrapLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const FScaffold(
-    header: FHeader(title: Text('Meetily')),
+    header: FHeader(title: Text(appDisplayName)),
     child: Center(child: FProgress(semanticsLabel: '正在准备本地模型和数据')),
   );
 }
@@ -179,7 +180,7 @@ final class _BootstrapError extends StatelessWidget {
   Widget build(BuildContext context) {
     final appStyle = context.theme.style.app;
     return FScaffold(
-      header: const FHeader(title: Text('Meetily')),
+      header: const FHeader(title: Text(appDisplayName)),
       child: Center(
         child: Padding(
           padding: EdgeInsets.all(appStyle.spaceMd),
