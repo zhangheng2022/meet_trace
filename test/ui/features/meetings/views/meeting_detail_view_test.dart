@@ -4,11 +4,14 @@ import 'package:meetily_ai/app/application.dart';
 import 'package:meetily_ai/data/repositories/repository_contracts.dart';
 import 'package:meetily_ai/data/services/asr/final_transcription_service.dart';
 import 'package:meetily_ai/data/services/diarization/speaker_diarization_coordinator.dart';
+import 'package:meetily_ai/data/services/summary/summary_generation_service.dart';
 import 'package:meetily_ai/domain/models/asr_model_registry.dart';
 import 'package:meetily_ai/domain/models/meeting.dart';
 import 'package:meetily_ai/domain/models/speaker_diarization.dart';
+import 'package:meetily_ai/domain/models/summary.dart';
 import 'package:meetily_ai/domain/models/transcript.dart';
 import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meetily_ai/domain/use_cases/generate_summary.dart';
 import 'package:meetily_ai/ui/features/meetings/view_models/meeting_detail_view_model.dart';
 import 'package:meetily_ai/ui/features/meetings/views/meeting_detail_view.dart';
 
@@ -203,6 +206,58 @@ void main() {
     expect(find.textContaining('最终转录不受影响'), findsOneWidget);
     await fixture.dispose();
   });
+
+  testWidgets('未配置安全网关时中文说明总结已关闭且最终转录可见', (tester) async {
+    final active = _snapshot(id: 'active');
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      summaryService: const UnavailableSummaryGenerationService(),
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('最终事实文本'), findsOneWidget);
+    expect(find.text('安全总结网关未配置'), findsOneWidget);
+    expect(find.textContaining('不会上传音频或会中临时文本'), findsOneWidget);
+    expect(find.byKey(const ValueKey('generate-summary')), findsNothing);
+    await fixture.dispose();
+  });
+
+  testWidgets('已完成总结显示本地原文证据并标记待核对项', (tester) async {
+    final active = _snapshot(id: 'active');
+    final summary = _summary(id: 'summary-active', snapshot: active);
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+        activeSummaryId: summary.id,
+      ),
+      active: active,
+      summary: summary,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('会议概览'), findsOneWidget);
+    expect(find.text('关键结论'), findsOneWidget);
+    expect(find.text('证据 00:00–00:01：最终事实文本'), findsOneWidget);
+    expect(find.text('待核对：未找到有效原文证据'), findsOneWidget);
+    await fixture.dispose();
+  });
 }
 
 _Fixture _fixture(
@@ -211,12 +266,29 @@ _Fixture _fixture(
   bool installQwen = false,
   SpeakerDiarizationRunner? diarization,
   bool diarizationEnabled = false,
+  Summary? summary,
+  SummaryGenerationService? summaryService,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
   if (active != null) {
     transcripts.records[active.id] = active;
   }
+  final summaries = DetailSummaryRepository(meetings);
+  if (summary != null) {
+    summaries.records[summary.id] = summary;
+  }
+  final summaryTasks = DetailProcessingTaskRepository();
+  final summaryGeneration = summaryService == null
+      ? null
+      : GenerateSummaryUseCase(
+          meetings: meetings,
+          transcripts: transcripts,
+          summaries: summaries,
+          tasks: summaryTasks,
+          service: summaryService,
+          now: () => DateTime.utc(2026, 7, 25, 4),
+        );
   final installations = TestActiveInstallations();
   final registry = AsrModelRegistry.alpha;
   installations.install(
@@ -241,6 +313,8 @@ _Fixture _fixture(
     transcripts: transcripts,
     installations: installations,
     runner: runner,
+    summaries: summaries,
+    summaryTasks: summaryTasks,
     viewModel: MeetingDetailViewModel(
       meeting: meeting,
       meetings: meetings,
@@ -249,6 +323,9 @@ _Fixture _fixture(
       transcription: runner,
       diarization: diarization,
       diarizationPreferences: _DiarizationPreference(diarizationEnabled),
+      processingTasks: summaryTasks,
+      summaries: summaries,
+      summaryGeneration: summaryGeneration,
     ),
   );
 }
@@ -259,6 +336,8 @@ final class _Fixture {
     required this.transcripts,
     required this.installations,
     required this.runner,
+    required this.summaries,
+    required this.summaryTasks,
     required this.viewModel,
   });
 
@@ -266,6 +345,8 @@ final class _Fixture {
   final DetailTranscriptRepository transcripts;
   final TestActiveInstallations installations;
   final DetailTranscriptionRunner runner;
+  final DetailSummaryRepository summaries;
+  final DetailProcessingTaskRepository summaryTasks;
   final MeetingDetailViewModel viewModel;
 
   Future<void> dispose() async {
@@ -277,6 +358,7 @@ final class _Fixture {
 Meeting _meeting({
   MeetingState status = MeetingState.processing,
   String? activeTranscriptSnapshotId,
+  String? activeSummaryId,
 }) {
   return Meeting(
     id: 'meeting-1',
@@ -291,6 +373,7 @@ Meeting _meeting({
     recordingModelId: paraformerStandardModelId,
     recordingModelVersion: '2024-03-09',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
+    activeSummaryId: activeSummaryId,
   );
 }
 
@@ -324,6 +407,35 @@ TranscriptSnapshot _snapshot({
             ),
           ]
         : const [],
+  );
+}
+
+Summary _summary({required String id, required TranscriptSnapshot snapshot}) {
+  final segment = snapshot.segments.single;
+  return Summary(
+    id: id,
+    meetingId: snapshot.meetingId,
+    transcriptSnapshotId: snapshot.id,
+    provider: 'test-provider',
+    model: 'test-model',
+    createdAt: DateTime.utc(2026, 7, 25, 3),
+    overview: '会议概览',
+    keyPoints: [
+      SummaryItem(
+        id: '$id-key-point-1',
+        text: '已确认结论',
+        evidence: [
+          SummaryEvidence(
+            segmentId: segment.id,
+            startMs: segment.startMs,
+            endMs: segment.endMs,
+            quote: segment.text,
+          ),
+        ],
+      ),
+    ],
+    actionItems: [SummaryItem(id: '$id-action-item-1', text: '待核对行动项')],
+    status: SummaryStatus.complete,
   );
 }
 

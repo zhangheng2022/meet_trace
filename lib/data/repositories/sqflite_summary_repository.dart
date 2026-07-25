@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../../domain/models/domain_exception.dart';
 import '../../domain/models/summary.dart';
 import '../services/storage/app_database.dart';
 import 'repository_contracts.dart';
@@ -41,34 +42,109 @@ final class SqfliteSummaryRepository implements SummaryRepository {
   Future<void> save(Summary summary) async {
     final db = await _appDatabase.open();
     await db.transaction((txn) async {
-      final row = <String, Object?>{
-        'id': summary.id,
-        'meeting_id': summary.meetingId,
-        'transcript_snapshot_id': summary.transcriptSnapshotId,
-        'provider': summary.provider,
-        'model': summary.model,
-        'created_at': summary.createdAt.millisecondsSinceEpoch,
-        'overview': summary.overview,
-        'status': summary.status.name,
-      };
-      final updated = await txn.update(
-        'summaries',
-        row,
-        where: 'id = ?',
-        whereArgs: [summary.id],
-      );
-      if (updated == 0) {
-        await txn.insert('summaries', row);
-      }
-      await txn.delete(
-        'summary_items',
-        where: 'summary_id = ?',
-        whereArgs: [summary.id],
-      );
-      await _insertItems(txn, summary.id, 'keyPoint', summary.keyPoints);
-      await _insertItems(txn, summary.id, 'actionItem', summary.actionItems);
+      await _saveSummary(txn, summary);
     });
   }
+
+  @override
+  Future<void> saveAndActivate({
+    required Summary summary,
+    required String expectedTranscriptSnapshotId,
+  }) async {
+    if (summary.status != SummaryStatus.complete ||
+        summary.transcriptSnapshotId != expectedTranscriptSnapshotId) {
+      throw const DomainInvariantViolation('只能激活当前最终快照的已完成摘要');
+    }
+    final db = await _appDatabase.open();
+    await db.transaction((txn) async {
+      final snapshots = await txn.query(
+        'transcript_snapshots',
+        columns: const ['id'],
+        where: 'id = ? AND meeting_id = ? AND kind = ? AND status = ?',
+        whereArgs: [
+          expectedTranscriptSnapshotId,
+          summary.meetingId,
+          'finalTranscript',
+          'complete',
+        ],
+        limit: 1,
+      );
+      if (snapshots.isEmpty) {
+        throw const DomainInvariantViolation('摘要来源必须是已完成的最终转录快照');
+      }
+      await _validateEvidence(txn, summary);
+      await _saveSummary(txn, summary);
+      final updated = await txn.update(
+        'meetings',
+        {'active_summary_id': summary.id},
+        where: 'id = ? AND status = ? AND active_transcript_snapshot_id = ?',
+        whereArgs: [
+          summary.meetingId,
+          'completed',
+          expectedTranscriptSnapshotId,
+        ],
+      );
+      if (updated != 1) {
+        throw const DomainInvariantViolation('最终转录已变化，摘要不能激活');
+      }
+    });
+  }
+}
+
+Future<void> _validateEvidence(
+  DatabaseExecutor executor,
+  Summary summary,
+) async {
+  for (final item in [...summary.keyPoints, ...summary.actionItems]) {
+    for (final evidence in item.evidence) {
+      final segments = await executor.query(
+        'transcript_segments',
+        columns: const ['snapshot_id', 'start_ms', 'end_ms', 'text'],
+        where: 'id = ?',
+        whereArgs: [evidence.segmentId],
+        limit: 1,
+      );
+      if (segments.isEmpty) {
+        throw const DomainInvariantViolation('摘要证据必须引用本地最终转录片段');
+      }
+      final segment = segments.single;
+      if (segment['snapshot_id'] != summary.transcriptSnapshotId ||
+          segment['start_ms'] != evidence.startMs ||
+          segment['end_ms'] != evidence.endMs ||
+          segment['text'] != evidence.quote) {
+        throw const DomainInvariantViolation('摘要证据必须与本地最终转录原文完全一致');
+      }
+    }
+  }
+}
+
+Future<void> _saveSummary(DatabaseExecutor executor, Summary summary) async {
+  final row = <String, Object?>{
+    'id': summary.id,
+    'meeting_id': summary.meetingId,
+    'transcript_snapshot_id': summary.transcriptSnapshotId,
+    'provider': summary.provider,
+    'model': summary.model,
+    'created_at': summary.createdAt.millisecondsSinceEpoch,
+    'overview': summary.overview,
+    'status': summary.status.name,
+  };
+  final updated = await executor.update(
+    'summaries',
+    row,
+    where: 'id = ?',
+    whereArgs: [summary.id],
+  );
+  if (updated == 0) {
+    await executor.insert('summaries', row);
+  }
+  await executor.delete(
+    'summary_items',
+    where: 'summary_id = ?',
+    whereArgs: [summary.id],
+  );
+  await _insertItems(executor, summary.id, 'keyPoint', summary.keyPoints);
+  await _insertItems(executor, summary.id, 'actionItem', summary.actionItems);
 }
 
 Future<void> _insertItems(

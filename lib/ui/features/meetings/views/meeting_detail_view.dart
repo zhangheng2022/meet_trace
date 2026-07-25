@@ -5,6 +5,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/speaker_diarization.dart';
+import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../theme/theme.dart';
 import '../view_models/meeting_detail_view_model.dart';
@@ -78,7 +79,8 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
                 ),
               ),
               SizedBox(height: appStyle.spaceMd),
-              if (viewModel.isProcessing) _ProcessingCard(viewModel: viewModel),
+              if (viewModel.isTranscribing)
+                _ProcessingCard(viewModel: viewModel),
               if (viewModel.errorMessage case final message?)
                 _FailureCard(message: message, viewModel: viewModel),
               if (viewModel.snapshot case final snapshot?)
@@ -86,6 +88,8 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
               if (viewModel.snapshot != null) ...[
                 SizedBox(height: appStyle.spaceMd),
                 _DiarizationCard(viewModel: viewModel),
+                SizedBox(height: appStyle.spaceMd),
+                _SummaryCard(viewModel: viewModel),
               ],
               if (viewModel.canRetranscribe) ...[
                 SizedBox(height: appStyle.spaceMd),
@@ -336,6 +340,160 @@ final class _SpeakerLabelEditorState extends State<_SpeakerLabelEditor> {
                 ),
           child: const Text('保存标签'),
         ),
+      ],
+    );
+  }
+}
+
+final class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.viewModel});
+
+  final MeetingDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final summary = viewModel.summary;
+    return FCard(
+      child: Padding(
+        padding: EdgeInsets.all(appStyle.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('AI 总结', style: theme.typography.display.md),
+            SizedBox(height: appStyle.spaceSm),
+            Text(
+              '只基于当前最终转录生成；不会上传音频或会中临时文本。',
+              style: theme.typography.body.sm.copyWith(
+                color: theme.colors.mutedForeground,
+              ),
+            ),
+            if (!viewModel.summaryAvailable) ...[
+              SizedBox(height: appStyle.spaceMd),
+              const FAlert(
+                title: Text('安全总结网关未配置'),
+                subtitle: Text('当前构建已关闭云端总结，最终转录仍保留在本机且可正常查看。'),
+              ),
+            ],
+            if (viewModel.isGeneratingSummary ||
+                summary?.status == SummaryStatus.processing) ...[
+              SizedBox(height: appStyle.spaceMd),
+              const FProgress(semanticsLabel: 'AI 总结生成中'),
+            ],
+            if (viewModel.summaryMessage case final message?) ...[
+              SizedBox(height: appStyle.spaceMd),
+              FAlert(
+                variant: summary?.status == SummaryStatus.failed
+                    ? FAlertVariant.destructive
+                    : FAlertVariant.primary,
+                title: Text(
+                  summary?.status == SummaryStatus.failed
+                      ? 'AI 总结生成失败'
+                      : 'AI 总结状态',
+                ),
+                subtitle: Text(message),
+              ),
+            ],
+            if (summary?.status == SummaryStatus.stale) ...[
+              SizedBox(height: appStyle.spaceMd),
+              const FAlert(
+                variant: FAlertVariant.destructive,
+                title: Text('AI 总结已过期'),
+                subtitle: Text('最终转录版本已变化，请基于当前版本重新生成总结。'),
+              ),
+            ],
+            if (summary?.status == SummaryStatus.complete) ...[
+              SizedBox(height: appStyle.spaceMd),
+              Text('概览', style: theme.typography.display.sm),
+              SizedBox(height: appStyle.spaceSm),
+              Text(summary!.overview, style: theme.typography.body.md),
+              if (summary.keyPoints.isNotEmpty)
+                _SummarySection(title: '关键结论', items: summary.keyPoints),
+              if (summary.actionItems.isNotEmpty)
+                _SummarySection(title: '行动项', items: summary.actionItems),
+            ],
+            if (viewModel.canGenerateSummary) ...[
+              SizedBox(height: appStyle.spaceMd),
+              FButton(
+                key: const ValueKey('generate-summary'),
+                onPress: () => unawaited(viewModel.generateSummary()),
+                child: Text(
+                  summary == null
+                      ? '生成 AI 总结'
+                      : summary.status == SummaryStatus.failed
+                      ? '重试 AI 总结'
+                      : '重新生成 AI 总结',
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _SummarySection extends StatelessWidget {
+  const _SummarySection({required this.title, required this.items});
+
+  final String title;
+  final List<SummaryItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return Padding(
+      padding: EdgeInsets.only(top: appStyle.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: theme.typography.display.sm),
+          SizedBox(height: appStyle.spaceSm),
+          for (final item in items)
+            Padding(
+              padding: EdgeInsets.only(bottom: appStyle.spaceMd),
+              child: _SummaryItemView(item: item),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _SummaryItemView extends StatelessWidget {
+  const _SummaryItemView({required this.item});
+
+  final SummaryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('• ${item.text}', style: theme.typography.body.md),
+        if (item.isPendingReview) ...[
+          SizedBox(height: appStyle.spaceSm),
+          Text(
+            '待核对：未找到有效原文证据',
+            style: theme.typography.body.sm.copyWith(
+              color: theme.colors.destructive,
+            ),
+          ),
+        ] else
+          for (final evidence in item.evidence) ...[
+            SizedBox(height: appStyle.spaceSm),
+            Text(
+              '证据 ${_timestamp(evidence.startMs)}–'
+              '${_timestamp(evidence.endMs)}：${evidence.quote}',
+              style: theme.typography.body.sm.copyWith(
+                color: theme.colors.mutedForeground,
+              ),
+            ),
+          ],
       ],
     );
   }

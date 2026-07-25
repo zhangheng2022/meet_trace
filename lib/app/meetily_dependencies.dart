@@ -9,6 +9,7 @@ import '../data/repositories/sqflite_model_installation_repository.dart';
 import '../data/repositories/sqflite_model_preference_repository.dart';
 import '../data/repositories/sqflite_model_usage_lease_repository.dart';
 import '../data/repositories/sqflite_processing_task_repository.dart';
+import '../data/repositories/sqflite_summary_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/asr/android_proc_asr_device_risk_monitor.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
@@ -28,10 +29,12 @@ import '../data/services/models/model_manifest_parser.dart';
 import '../data/services/storage/app_database.dart';
 import '../data/services/storage/app_file_layout.dart';
 import '../data/services/storage/startup_recovery_service.dart';
+import '../data/services/summary/summary_generation_service.dart';
 import '../data/services/vad/bundled_silero_vad_model.dart';
 import '../data/services/vad/silero_vad_segmenter.dart';
 import '../domain/models/asr_model_registry.dart';
 import '../domain/models/meeting.dart';
+import '../domain/use_cases/generate_summary.dart';
 import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
 import '../ui/features/meetings/view_models/meeting_detail_view_model.dart';
 import '../ui/features/meetings/view_models/recording_session_view_model.dart';
@@ -47,9 +50,11 @@ final class MeetilyDependencies {
     required this.preferences,
     required this.diarizationPreferences,
     required this.processingTasks,
+    required this.summaries,
     required this.engineFactory,
     required this.finalTranscription,
     required this.diarization,
+    required this.summaryGeneration,
     required this.vadModelPath,
   });
 
@@ -61,9 +66,11 @@ final class MeetilyDependencies {
   final SqfliteModelPreferenceRepository preferences;
   final SqfliteDiarizationPreferenceRepository diarizationPreferences;
   final SqfliteProcessingTaskRepository processingTasks;
+  final SqfliteSummaryRepository summaries;
   final SherpaOnnxAsrEngineFactory engineFactory;
   final FinalTranscriptionService finalTranscription;
   final SpeakerDiarizationCoordinator diarization;
+  final GenerateSummaryUseCase summaryGeneration;
   final String vadModelPath;
 
   static Future<MeetilyDependencies> create() async {
@@ -93,6 +100,7 @@ final class MeetilyDependencies {
       database,
     );
     final processingTasks = SqfliteProcessingTaskRepository(database);
+    final summaries = SqfliteSummaryRepository(database);
     final assetSource = FlutterModelAssetSource(rootBundle);
     final manifest = ModelManifestParser(
       registry: registry,
@@ -140,6 +148,14 @@ final class MeetilyDependencies {
       service: const UnavailableSpeakerDiarizationService(),
       now: DateTime.now,
     );
+    final summaryGeneration = GenerateSummaryUseCase(
+      meetings: meetings,
+      transcripts: transcripts,
+      summaries: summaries,
+      tasks: processingTasks,
+      service: const UnavailableSummaryGenerationService(),
+      now: DateTime.now,
+    );
     return MeetilyDependencies._(
       database: database,
       fileLayout: fileLayout,
@@ -149,9 +165,11 @@ final class MeetilyDependencies {
       preferences: preferences,
       diarizationPreferences: diarizationPreferences,
       processingTasks: processingTasks,
+      summaries: summaries,
       engineFactory: engineFactory,
       finalTranscription: finalTranscription,
       diarization: diarization,
+      summaryGeneration: summaryGeneration,
       vadModelPath: vad.modelPath,
     );
   }
@@ -170,6 +188,8 @@ final class MeetilyDependencies {
       diarization: diarization,
       diarizationPreferences: diarizationPreferences,
       processingTasks: processingTasks,
+      summaries: summaries,
+      summaryGeneration: summaryGeneration,
     );
   }
 

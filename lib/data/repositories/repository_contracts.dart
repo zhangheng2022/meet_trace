@@ -39,6 +39,11 @@ abstract interface class SummaryRepository {
   Future<List<Summary>> listByMeeting(String meetingId);
 
   Future<void> save(Summary summary);
+
+  Future<void> saveAndActivate({
+    required Summary summary,
+    required String expectedTranscriptSnapshotId,
+  });
 }
 
 abstract interface class ModelInstallationRepository {

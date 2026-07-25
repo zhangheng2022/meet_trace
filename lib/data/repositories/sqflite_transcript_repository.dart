@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../../domain/models/domain_exception.dart';
+import '../../domain/models/summary.dart';
 import '../../domain/models/transcript.dart';
 import '../services/storage/app_database.dart';
 import 'repository_contracts.dart';
@@ -79,6 +80,16 @@ final class SqfliteTranscriptRepository implements TranscriptRepository {
       if (updated != 1) {
         throw const DomainInvariantViolation('活动快照已变化，拒绝覆盖并回滚新快照');
       }
+      await txn.update(
+        'summaries',
+        {'status': SummaryStatus.stale.name},
+        where: 'meeting_id = ? AND transcript_snapshot_id <> ? AND status = ?',
+        whereArgs: [
+          snapshot.meetingId,
+          snapshot.id,
+          SummaryStatus.complete.name,
+        ],
+      );
     });
     onMeetingChanged?.call();
   }

@@ -207,6 +207,154 @@ void main() {
     );
     expect(restoredInstallation!.installedPath, '/models/qwen/1');
   });
+
+  test('已完成摘要与当前最终快照在同一事务中激活', () async {
+    await meetings.save(_meeting('meeting-1'));
+    final snapshot = _snapshot(
+      id: 'snapshot-1',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.complete,
+      withSegment: true,
+    );
+    await transcripts.saveFinalAndActivate(
+      snapshot: snapshot,
+      expectedActiveSnapshotId: null,
+    );
+    final summary = _summary(
+      id: 'summary-1',
+      meetingId: 'meeting-1',
+      snapshotId: snapshot.id,
+    );
+
+    await summaries.saveAndActivate(
+      summary: summary,
+      expectedTranscriptSnapshotId: snapshot.id,
+    );
+
+    expect((await meetings.getById('meeting-1'))!.activeSummaryId, summary.id);
+    expect(
+      (await summaries.getById(summary.id))!.status,
+      SummaryStatus.complete,
+    );
+  });
+
+  test('伪造的证据时间或引文不能写入并激活', () async {
+    await meetings.save(_meeting('meeting-1'));
+    final snapshot = _snapshot(
+      id: 'snapshot-1',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.complete,
+      withSegment: true,
+    );
+    await transcripts.saveFinalAndActivate(
+      snapshot: snapshot,
+      expectedActiveSnapshotId: null,
+    );
+    final summary = Summary(
+      id: 'summary-forged',
+      meetingId: 'meeting-1',
+      transcriptSnapshotId: snapshot.id,
+      provider: 'test-provider',
+      model: 'test-model',
+      createdAt: DateTime.utc(2026, 7, 25),
+      overview: '概览',
+      keyPoints: [
+        SummaryItem(
+          id: 'summary-forged-point-1',
+          text: '结论',
+          evidence: [
+            SummaryEvidence(
+              segmentId: 'segment-1',
+              startMs: 0,
+              endMs: 1000,
+              quote: '被篡改的引文',
+            ),
+          ],
+        ),
+      ],
+      actionItems: const [],
+      status: SummaryStatus.complete,
+    );
+
+    await expectLater(
+      summaries.saveAndActivate(
+        summary: summary,
+        expectedTranscriptSnapshotId: snapshot.id,
+      ),
+      throwsA(isA<DomainInvariantViolation>()),
+    );
+
+    expect(await summaries.getById(summary.id), isNull);
+    expect((await meetings.getById('meeting-1'))!.activeSummaryId, isNull);
+  });
+
+  test('最终快照已变化时摘要写入和激活一起回滚', () async {
+    await meetings.save(_meeting('meeting-1'));
+    final snapshot = _snapshot(
+      id: 'snapshot-1',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.complete,
+      withSegment: true,
+    );
+    await transcripts.saveFinalAndActivate(
+      snapshot: snapshot,
+      expectedActiveSnapshotId: null,
+    );
+    final summary = _summary(
+      id: 'summary-1',
+      meetingId: 'meeting-1',
+      snapshotId: snapshot.id,
+    );
+
+    await expectLater(
+      summaries.saveAndActivate(
+        summary: summary,
+        expectedTranscriptSnapshotId: 'other-snapshot',
+      ),
+      throwsA(isA<DomainInvariantViolation>()),
+    );
+
+    expect(await summaries.getById(summary.id), isNull);
+    expect((await meetings.getById('meeting-1'))!.activeSummaryId, isNull);
+  });
+
+  test('激活新最终转录时旧摘要标记为过期', () async {
+    await meetings.save(_meeting('meeting-1'));
+    final first = _snapshot(
+      id: 'snapshot-1',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.complete,
+      withSegment: true,
+    );
+    await transcripts.saveFinalAndActivate(
+      snapshot: first,
+      expectedActiveSnapshotId: null,
+    );
+    final summary = _summary(
+      id: 'summary-1',
+      meetingId: 'meeting-1',
+      snapshotId: first.id,
+    );
+    await summaries.saveAndActivate(
+      summary: summary,
+      expectedTranscriptSnapshotId: first.id,
+    );
+    final second = _snapshot(
+      id: 'snapshot-2',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.complete,
+    );
+
+    await transcripts.saveFinalAndActivate(
+      snapshot: second,
+      expectedActiveSnapshotId: first.id,
+    );
+
+    expect((await summaries.getById(summary.id))!.status, SummaryStatus.stale);
+    final meeting = (await meetings.getById('meeting-1'))!;
+    expect(meeting.activeTranscriptSnapshotId, second.id);
+    expect(meeting.activeSummaryId, isNull);
+  });
 }
 
 Meeting _meeting(
@@ -255,5 +403,37 @@ TranscriptSnapshot _snapshot({
             ),
           ]
         : const [],
+  );
+}
+
+Summary _summary({
+  required String id,
+  required String meetingId,
+  required String snapshotId,
+}) {
+  return Summary(
+    id: id,
+    meetingId: meetingId,
+    transcriptSnapshotId: snapshotId,
+    provider: 'test-provider',
+    model: 'test-model',
+    createdAt: DateTime.utc(2026, 7, 25),
+    overview: '概览',
+    keyPoints: [
+      SummaryItem(
+        id: '$id-point-1',
+        text: '结论',
+        evidence: [
+          SummaryEvidence(
+            segmentId: 'segment-1',
+            startMs: 0,
+            endMs: 1000,
+            quote: '测试',
+          ),
+        ],
+      ),
+    ],
+    actionItems: const [],
+    status: SummaryStatus.complete,
   );
 }

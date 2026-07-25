@@ -2,6 +2,8 @@ import 'package:meetily_ai/data/repositories/repository_contracts.dart';
 import 'package:meetily_ai/data/services/asr/asr_engine.dart';
 import 'package:meetily_ai/data/services/asr/final_transcription_service.dart';
 import 'package:meetily_ai/domain/models/meeting.dart';
+import 'package:meetily_ai/domain/models/processing_task.dart';
+import 'package:meetily_ai/domain/models/summary.dart';
 import 'package:meetily_ai/domain/models/transcript.dart';
 
 final class DetailMeetingRepository implements MeetingRepository {
@@ -89,6 +91,72 @@ final class DetailTranscriptRepository implements TranscriptRepository {
     );
     records[snapshotId] = updated;
     return updated;
+  }
+}
+
+final class DetailSummaryRepository implements SummaryRepository {
+  DetailSummaryRepository(this.meetings);
+
+  final DetailMeetingRepository meetings;
+  final Map<String, Summary> records = {};
+
+  @override
+  Future<Summary?> getById(String summaryId) async => records[summaryId];
+
+  @override
+  Future<List<Summary>> listByMeeting(String meetingId) async => records.values
+      .where((summary) => summary.meetingId == meetingId)
+      .toList();
+
+  @override
+  Future<void> save(Summary summary) async {
+    records[summary.id] = summary;
+  }
+
+  @override
+  Future<void> saveAndActivate({
+    required Summary summary,
+    required String expectedTranscriptSnapshotId,
+  }) async {
+    final meeting = meetings.value;
+    if (meeting == null ||
+        meeting.activeTranscriptSnapshotId != expectedTranscriptSnapshotId) {
+      throw StateError('最终转录已变化');
+    }
+    records[summary.id] = summary;
+    meetings.value = Meeting(
+      id: meeting.id,
+      title: meeting.title,
+      createdAt: meeting.createdAt,
+      startedAt: meeting.startedAt,
+      endedAt: meeting.endedAt,
+      status: meeting.status,
+      audioPath: meeting.audioPath,
+      audioDurationMs: meeting.audioDurationMs,
+      requestedModelId: meeting.requestedModelId,
+      recordingModelId: meeting.recordingModelId,
+      recordingModelVersion: meeting.recordingModelVersion,
+      modelFallbackReason: meeting.modelFallbackReason,
+      activeTranscriptSnapshotId: meeting.activeTranscriptSnapshotId,
+      activeSummaryId: summary.id,
+      lastErrorCode: meeting.lastErrorCode,
+    );
+  }
+}
+
+final class DetailProcessingTaskRepository implements ProcessingTaskRepository {
+  final Map<String, ProcessingTask> records = {};
+
+  @override
+  Future<ProcessingTask?> getById(String taskId) async => records[taskId];
+
+  @override
+  Future<List<ProcessingTask>> listByMeeting(String meetingId) async =>
+      records.values.where((task) => task.meetingId == meetingId).toList();
+
+  @override
+  Future<void> save(ProcessingTask task) async {
+    records[task.id] = task;
   }
 }
 

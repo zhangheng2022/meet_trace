@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide Summary;
 
 import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../data/services/asr/asr_engine.dart';
@@ -12,8 +12,10 @@ import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/model_installation.dart';
 import '../../../../domain/models/processing_task.dart';
 import '../../../../domain/models/speaker_diarization.dart';
+import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
+import '../../../../domain/use_cases/generate_summary.dart';
 
 final class MeetingDetailViewModel extends ChangeNotifier {
   MeetingDetailViewModel({
@@ -25,6 +27,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     this.diarization,
     this.diarizationPreferences,
     this.processingTasks,
+    this.summaries,
+    this.summaryGeneration,
     AsrModelRegistry? registry,
   }) : _meeting = meeting,
        registry = registry ?? AsrModelRegistry.alpha,
@@ -37,6 +41,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   final SpeakerDiarizationRunner? diarization;
   final DiarizationPreferenceRepository? diarizationPreferences;
   final ProcessingTaskRepository? processingTasks;
+  final SummaryRepository? summaries;
+  final GenerateSummaryUseCase? summaryGeneration;
   final AsrModelRegistry registry;
 
   Meeting _meeting;
@@ -48,6 +54,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   Future<void>? _loading;
   Future<void>? _operation;
   Future<void>? _diarizationOperation;
+  Future<void>? _summaryOperation;
   double _progress = 0;
   String? _errorMessage;
   String _selectedModelId;
@@ -57,6 +64,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   SpeakerDiarizationStatus _diarizationStatus =
       SpeakerDiarizationStatus.disabled;
   String? _diarizationMessage;
+  Summary? _summary;
+  String? _summaryMessage;
   bool _disposed = false;
 
   Meeting get meeting => _meeting;
@@ -67,7 +76,11 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String get selectedModelId => _selectedModelId;
   bool get isLoading => _isLoading;
-  bool get isProcessing => _operation != null || _diarizationOperation != null;
+  bool get isProcessing =>
+      _operation != null ||
+      _diarizationOperation != null ||
+      _summaryOperation != null;
+  bool get isTranscribing => _operation != null;
   bool get isDiarizing => _diarizationOperation != null;
   bool get diarizationEnabled => _diarizationEnabled;
   bool get diarizationAvailable => diarization?.capability.isAvailable == true;
@@ -78,6 +91,21 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       _snapshot?.status == TranscriptSnapshotStatus.complete;
   SpeakerDiarizationStatus get diarizationStatus => _diarizationStatus;
   String? get diarizationMessage => _diarizationMessage;
+  Summary? get summary => _summary;
+  String? get summaryMessage => _summaryMessage;
+  bool get isGeneratingSummary => _summaryOperation != null;
+  bool get summaryAvailable =>
+      summaryGeneration?.capability.isAvailable == true;
+  bool get canGenerateSummary {
+    final snapshot = _snapshot;
+    return summaryAvailable &&
+        !isProcessing &&
+        snapshot != null &&
+        snapshot.isEligibleForSummary(
+          activeSnapshotId: _meeting.activeTranscriptSnapshotId,
+        );
+  }
+
   List<SpeakerLabelGroup> get speakerGroups {
     final groups = <String?, int>{};
     for (final segment in _snapshot?.segments ?? const <TranscriptSegment>[]) {
@@ -153,6 +181,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
 
   Future<void> retryDiarization() => _runDiarization();
 
+  Future<void> generateSummary() => _runSummaryGeneration();
+
   Future<void> renameSpeaker(String? currentSpeakerId, String newLabel) async {
     final runner = diarization;
     final snapshot = _snapshot;
@@ -182,6 +212,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       await _loadInstalledModels();
       await _refreshSnapshots();
       await _refreshDiarizationTask();
+      await _refreshSummary();
+      await _refreshSummaryTask();
       if (_meeting.status == MeetingState.processing &&
           _snapshot?.status != TranscriptSnapshotStatus.complete) {
         final pending = _processingAttempt;
@@ -292,6 +324,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       _failedAttempt = null;
       _processingAttempt = null;
       _progress = 1;
+      _summary = null;
+      _summaryMessage = null;
       await _runDiarizationIfNeeded();
     } on Object {
       _errorMessage = '最终转录失败，事实音频和旧结果均已保留';
@@ -356,6 +390,41 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     } on Object {
       _diarizationStatus = SpeakerDiarizationStatus.degraded;
       _diarizationMessage = '说话人分离失败，最终转录仍可查看；可稍后重试';
+    } finally {
+      _notify();
+    }
+  }
+
+  Future<void> _runSummaryGeneration() {
+    final current = _summaryOperation;
+    if (current != null) {
+      return current;
+    }
+    final useCase = summaryGeneration;
+    if (useCase == null || !canGenerateSummary) {
+      return Future.value();
+    }
+    final operation = _generateSummary(useCase);
+    _summaryOperation = operation;
+    _notify();
+    return operation.whenComplete(() {
+      _summaryOperation = null;
+      _notify();
+    });
+  }
+
+  Future<void> _generateSummary(GenerateSummaryUseCase useCase) async {
+    _summaryMessage = null;
+    _notify();
+    try {
+      final result = await useCase.execute(meetingId: _meeting.id);
+      _meeting = result.meeting;
+      _summary = result.summary;
+      _summaryMessage = 'AI 总结已生成，结论均可查看原文证据';
+    } on Object {
+      await _refreshMeeting();
+      await _refreshSummary();
+      _summaryMessage = 'AI 总结生成失败，最终转录不受影响；可稍后重试';
     } finally {
       _notify();
     }
@@ -436,6 +505,41 @@ final class MeetingDetailViewModel extends ChangeNotifier {
           ProcessingState.running ||
           ProcessingState.canceled:
         break;
+    }
+  }
+
+  Future<void> _refreshSummary() async {
+    final repository = summaries;
+    final snapshot = _snapshot;
+    if (repository == null || snapshot == null) {
+      _summary = null;
+      return;
+    }
+    final activeSummaryId = _meeting.activeSummaryId;
+    if (activeSummaryId != null) {
+      _summary = await repository.getById(activeSummaryId);
+      return;
+    }
+    final records =
+        (await repository.listByMeeting(_meeting.id))
+            .where((summary) => summary.transcriptSnapshotId == snapshot.id)
+            .toList()
+          ..sort((left, right) {
+            final byDate = right.createdAt.compareTo(left.createdAt);
+            return byDate != 0 ? byDate : right.id.compareTo(left.id);
+          });
+    _summary = records.isEmpty ? null : records.first;
+  }
+
+  Future<void> _refreshSummaryTask() async {
+    final repository = processingTasks;
+    final snapshot = _snapshot;
+    if (repository == null || snapshot == null) {
+      return;
+    }
+    final task = await repository.getById('summary-generation-${snapshot.id}');
+    if (task?.state == ProcessingState.failed) {
+      _summaryMessage = 'AI 总结生成失败，最终转录不受影响；可稍后重试';
     }
   }
 
