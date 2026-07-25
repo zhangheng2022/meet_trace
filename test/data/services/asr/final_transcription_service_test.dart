@@ -285,6 +285,14 @@ final class _TranscriptRepository implements TranscriptRepository {
     expectedActiveIds.add(expectedActiveSnapshotId);
     activeSnapshotId = snapshot.id;
   }
+
+  @override
+  Future<TranscriptSnapshot> updateSpeakerLabels({
+    required String snapshotId,
+    required Map<String, String?> labelsBySegmentId,
+  }) async {
+    return records[snapshotId]!;
+  }
 }
 
 typedef _ResultBuilder =

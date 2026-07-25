@@ -1,8 +1,12 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meetily_ai/app/application.dart';
+import 'package:meetily_ai/data/repositories/repository_contracts.dart';
 import 'package:meetily_ai/data/services/asr/final_transcription_service.dart';
+import 'package:meetily_ai/data/services/diarization/speaker_diarization_coordinator.dart';
 import 'package:meetily_ai/domain/models/asr_model_registry.dart';
 import 'package:meetily_ai/domain/models/meeting.dart';
+import 'package:meetily_ai/domain/models/speaker_diarization.dart';
 import 'package:meetily_ai/domain/models/transcript.dart';
 import 'package:meetily_ai/domain/models/workflow_states.dart';
 import 'package:meetily_ai/ui/features/meetings/view_models/meeting_detail_view_model.dart';
@@ -57,9 +61,13 @@ void main() {
     expect(find.text('标准模型（Paraformer）'), findsOneWidget);
     expect(find.text('高级模型（Qwen3-ASR）'), findsOneWidget);
 
-    await tester.tap(find.text('高级模型（Qwen3-ASR）'));
+    final advanced = find.text('高级模型（Qwen3-ASR）');
+    await tester.ensureVisible(advanced);
+    await tester.tap(advanced);
     await tester.pump();
-    await tester.tap(find.text('使用所选模型重新转录'));
+    final retranscribe = find.text('使用所选模型重新转录');
+    await tester.ensureVisible(retranscribe);
+    await tester.tap(retranscribe);
     await tester.pumpAndSettle();
 
     expect(fixture.runner.calls.single.modelId, qwenAdvancedModelId);
@@ -121,12 +129,88 @@ void main() {
     expect(find.textContaining('重试后的最终文本'), findsOneWidget);
     await fixture.dispose();
   });
+
+  testWidgets('未配置分离模型时仍可手工保存说话人标签', (tester) async {
+    final active = _snapshot(id: 'active', speakerId: 'speaker-1');
+    final diarization = _DiarizationRunner(
+      result: SpeakerDiarizationResult(
+        snapshot: active,
+        status: SpeakerDiarizationStatus.disabled,
+      ),
+      available: false,
+    );
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      diarization: diarization,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('当前构建未配置已验证'), findsOneWidget);
+    expect(find.textContaining('说话人 1 · 00:00'), findsOneWidget);
+
+    final field = find.byKey(const ValueKey('speaker-label-speaker-1'));
+    await tester.ensureVisible(field);
+    await tester.enterText(field, '张三');
+    final save = find.byKey(const ValueKey('save-speaker-label-speaker-1'));
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    expect(diarization.renameCalls.single, ('speaker-1', '张三'));
+    expect(find.textContaining('张三 · 00:00'), findsOneWidget);
+    expect(find.text('说话人标签已保存'), findsOneWidget);
+    await fixture.dispose();
+  });
+
+  testWidgets('分离失败提示降级但继续显示最终转录', (tester) async {
+    final active = _snapshot(id: 'active');
+    final degraded = _snapshot(id: 'active', speakerId: 'speaker-1');
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      diarization: _DiarizationRunner(
+        result: SpeakerDiarizationResult(
+          snapshot: degraded,
+          status: SpeakerDiarizationStatus.degraded,
+          errorCode: 'speaker_diarization.timeout',
+        ),
+      ),
+      diarizationEnabled: true,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('最终事实文本'), findsOneWidget);
+    expect(find.text('说话人分离已降级'), findsOneWidget);
+    expect(find.textContaining('最终转录不受影响'), findsOneWidget);
+    await fixture.dispose();
+  });
 }
 
 _Fixture _fixture(
   Meeting meeting, {
   TranscriptSnapshot? active,
   bool installQwen = false,
+  SpeakerDiarizationRunner? diarization,
+  bool diarizationEnabled = false,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
@@ -163,6 +247,8 @@ _Fixture _fixture(
       transcripts: transcripts,
       installations: installations,
       transcription: runner,
+      diarization: diarization,
+      diarizationPreferences: _DiarizationPreference(diarizationEnabled),
     ),
   );
 }
@@ -214,6 +300,7 @@ TranscriptSnapshot _snapshot({
   String modelId = paraformerStandardModelId,
   String modelVersion = '2024-03-09',
   String text = '最终事实文本',
+  String? speakerId,
 }) {
   return TranscriptSnapshot(
     id: id,
@@ -231,10 +318,89 @@ TranscriptSnapshot _snapshot({
               startMs: 0,
               endMs: 1000,
               text: text,
+              speakerId: speakerId,
               modelId: modelId,
               modelVersion: modelVersion,
             ),
           ]
         : const [],
   );
+}
+
+final class _DiarizationPreference implements DiarizationPreferenceRepository {
+  _DiarizationPreference(this.enabled);
+
+  bool enabled;
+
+  @override
+  Future<bool> getEnabled() async => enabled;
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    this.enabled = enabled;
+  }
+}
+
+final class _DiarizationRunner implements SpeakerDiarizationRunner {
+  _DiarizationRunner({required this.result, this.available = true});
+
+  SpeakerDiarizationResult result;
+  final bool available;
+  final List<(String?, String)> renameCalls = [];
+
+  @override
+  SpeakerDiarizationCapability get capability => available
+      ? const SpeakerDiarizationCapability.available()
+      : const SpeakerDiarizationCapability.unavailable(
+          reasonCode: 'speaker_diarization.model_unavailable',
+        );
+
+  @override
+  Future<SpeakerDiarizationResult> process({
+    required String meetingId,
+    required String snapshotId,
+    required bool enabled,
+  }) async {
+    return result;
+  }
+
+  @override
+  Future<TranscriptSnapshot> renameSpeaker({
+    required String meetingId,
+    required String snapshotId,
+    required String? currentSpeakerId,
+    required String newLabel,
+  }) async {
+    renameCalls.add((currentSpeakerId, newLabel));
+    final source = result.snapshot;
+    final updated = TranscriptSnapshot(
+      id: source.id,
+      meetingId: source.meetingId,
+      kind: source.kind,
+      actualModelId: source.actualModelId,
+      actualModelVersion: source.actualModelVersion,
+      createdAt: source.createdAt,
+      status: source.status,
+      segments: [
+        for (final segment in source.segments)
+          TranscriptSegment(
+            id: segment.id,
+            snapshotId: segment.snapshotId,
+            startMs: segment.startMs,
+            endMs: segment.endMs,
+            text: segment.text,
+            speakerId: newLabel.trim(),
+            confidence: segment.confidence,
+            modelId: segment.modelId,
+            modelVersion: segment.modelVersion,
+          ),
+      ],
+    );
+    result = SpeakerDiarizationResult(
+      snapshot: updated,
+      status: result.status,
+      errorCode: result.errorCode,
+    );
+    return updated;
+  }
 }

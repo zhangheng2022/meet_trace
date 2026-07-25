@@ -55,6 +55,41 @@ final class DetailTranscriptRepository implements TranscriptRepository {
   }) async {
     records[snapshot.id] = snapshot;
   }
+
+  @override
+  Future<TranscriptSnapshot> updateSpeakerLabels({
+    required String snapshotId,
+    required Map<String, String?> labelsBySegmentId,
+  }) async {
+    final snapshot = records[snapshotId]!;
+    final updated = TranscriptSnapshot(
+      id: snapshot.id,
+      meetingId: snapshot.meetingId,
+      kind: snapshot.kind,
+      actualModelId: snapshot.actualModelId,
+      actualModelVersion: snapshot.actualModelVersion,
+      createdAt: snapshot.createdAt,
+      status: snapshot.status,
+      segments: [
+        for (final segment in snapshot.segments)
+          TranscriptSegment(
+            id: segment.id,
+            snapshotId: segment.snapshotId,
+            startMs: segment.startMs,
+            endMs: segment.endMs,
+            text: segment.text,
+            speakerId: labelsBySegmentId.containsKey(segment.id)
+                ? labelsBySegmentId[segment.id]
+                : segment.speakerId,
+            confidence: segment.confidence,
+            modelId: segment.modelId,
+            modelVersion: segment.modelVersion,
+          ),
+      ],
+    );
+    records[snapshotId] = updated;
+    return updated;
+  }
 }
 
 typedef DetailTranscriptionCall =

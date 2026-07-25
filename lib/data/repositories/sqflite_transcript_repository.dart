@@ -82,6 +82,56 @@ final class SqfliteTranscriptRepository implements TranscriptRepository {
     });
     onMeetingChanged?.call();
   }
+
+  @override
+  Future<TranscriptSnapshot> updateSpeakerLabels({
+    required String snapshotId,
+    required Map<String, String?> labelsBySegmentId,
+  }) async {
+    for (final label in labelsBySegmentId.values) {
+      if (label != null && (label.trim().isEmpty || label.trim().length > 80)) {
+        throw const DomainInvariantViolation('说话人标签必须为 1 到 80 个字符');
+      }
+    }
+    final db = await _appDatabase.open();
+    return db.transaction((txn) async {
+      final snapshotRows = await txn.query(
+        'transcript_snapshots',
+        where: 'id = ?',
+        whereArgs: [snapshotId],
+        limit: 1,
+      );
+      if (snapshotRows.isEmpty ||
+          snapshotRows.single['kind'] !=
+              TranscriptSnapshotKind.finalTranscript.name ||
+          snapshotRows.single['status'] !=
+              TranscriptSnapshotStatus.complete.name) {
+        throw const DomainInvariantViolation('只能更新已完成最终快照的说话人标签');
+      }
+      final segmentRows = await txn.query(
+        'transcript_segments',
+        columns: const ['id'],
+        where: 'snapshot_id = ?',
+        whereArgs: [snapshotId],
+      );
+      final segmentIds = segmentRows.map((row) => row['id']! as String).toSet();
+      if (!segmentIds.containsAll(labelsBySegmentId.keys)) {
+        throw const DomainInvariantViolation('说话人标签包含不属于目标快照的片段');
+      }
+      for (final entry in labelsBySegmentId.entries) {
+        final updated = await txn.update(
+          'transcript_segments',
+          {'speaker_id': entry.value?.trim()},
+          where: 'id = ? AND snapshot_id = ?',
+          whereArgs: [entry.key, snapshotId],
+        );
+        if (updated != 1) {
+          throw const DomainInvariantViolation('说话人标签更新失败');
+        }
+      }
+      return _snapshotFromRow(txn, snapshotRows.single);
+    });
+  }
 }
 
 Future<void> _saveSnapshot(

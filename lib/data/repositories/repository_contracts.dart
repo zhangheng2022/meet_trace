@@ -26,6 +26,11 @@ abstract interface class TranscriptRepository {
     required TranscriptSnapshot snapshot,
     required String? expectedActiveSnapshotId,
   });
+
+  Future<TranscriptSnapshot> updateSpeakerLabels({
+    required String snapshotId,
+    required Map<String, String?> labelsBySegmentId,
+  });
 }
 
 abstract interface class SummaryRepository {
@@ -77,6 +82,12 @@ abstract interface class ModelPreferenceRepository {
   Future<String> getDefaultModelId();
 
   Future<void> setDefaultModelId(String modelId);
+}
+
+abstract interface class DiarizationPreferenceRepository {
+  Future<bool> getEnabled();
+
+  Future<void> setEnabled(bool enabled);
 }
 
 abstract interface class ProcessingTaskRepository {

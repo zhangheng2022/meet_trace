@@ -5,10 +5,13 @@ import 'package:flutter/foundation.dart';
 import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../data/services/asr/asr_engine.dart';
 import '../../../../data/services/asr/final_transcription_service.dart';
+import '../../../../data/services/diarization/speaker_diarization_coordinator.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/model_installation.dart';
+import '../../../../domain/models/processing_task.dart';
+import '../../../../domain/models/speaker_diarization.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
 
@@ -19,6 +22,9 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     required this.transcripts,
     required this.installations,
     required this.transcription,
+    this.diarization,
+    this.diarizationPreferences,
+    this.processingTasks,
     AsrModelRegistry? registry,
   }) : _meeting = meeting,
        registry = registry ?? AsrModelRegistry.alpha,
@@ -28,6 +34,9 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   final TranscriptRepository transcripts;
   final ModelInstallationRepository installations;
   final FinalTranscriptionRunner transcription;
+  final SpeakerDiarizationRunner? diarization;
+  final DiarizationPreferenceRepository? diarizationPreferences;
+  final ProcessingTaskRepository? processingTasks;
   final AsrModelRegistry registry;
 
   Meeting _meeting;
@@ -38,11 +47,16 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   StreamSubscription<List<ModelInstallation>>? _installationSubscription;
   Future<void>? _loading;
   Future<void>? _operation;
+  Future<void>? _diarizationOperation;
   double _progress = 0;
   String? _errorMessage;
   String _selectedModelId;
   String? _operationModelId;
   bool _isLoading = true;
+  bool _diarizationEnabled = false;
+  SpeakerDiarizationStatus _diarizationStatus =
+      SpeakerDiarizationStatus.disabled;
+  String? _diarizationMessage;
   bool _disposed = false;
 
   Meeting get meeting => _meeting;
@@ -53,7 +67,32 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String get selectedModelId => _selectedModelId;
   bool get isLoading => _isLoading;
-  bool get isProcessing => _operation != null;
+  bool get isProcessing => _operation != null || _diarizationOperation != null;
+  bool get isDiarizing => _diarizationOperation != null;
+  bool get diarizationEnabled => _diarizationEnabled;
+  bool get diarizationAvailable => diarization?.capability.isAvailable == true;
+  bool get canRetryDiarization =>
+      _diarizationEnabled &&
+      diarizationAvailable &&
+      !isProcessing &&
+      _snapshot?.status == TranscriptSnapshotStatus.complete;
+  SpeakerDiarizationStatus get diarizationStatus => _diarizationStatus;
+  String? get diarizationMessage => _diarizationMessage;
+  List<SpeakerLabelGroup> get speakerGroups {
+    final groups = <String?, int>{};
+    for (final segment in _snapshot?.segments ?? const <TranscriptSegment>[]) {
+      groups.update(segment.speakerId, (count) => count + 1, ifAbsent: () => 1);
+    }
+    return List.unmodifiable([
+      for (final entry in groups.entries)
+        SpeakerLabelGroup(
+          speakerId: entry.key,
+          displayLabel: displaySpeakerLabel(entry.key),
+          segmentCount: entry.value,
+        ),
+    ]);
+  }
+
   bool get canRetry => !isProcessing && _failedAttempt != null;
   bool get canRetranscribe =>
       !isProcessing &&
@@ -95,12 +134,54 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     return _run(modelId: descriptor.modelId, modelVersion: descriptor.version);
   }
 
+  Future<void> setDiarizationEnabled(bool enabled) async {
+    final preferences = diarizationPreferences;
+    if (preferences == null ||
+        (enabled && !diarizationAvailable) ||
+        isProcessing) {
+      return;
+    }
+    _diarizationEnabled = enabled;
+    _diarizationStatus = SpeakerDiarizationStatus.disabled;
+    _diarizationMessage = null;
+    _notify();
+    await preferences.setEnabled(enabled);
+    if (enabled) {
+      await _runDiarization();
+    }
+  }
+
+  Future<void> retryDiarization() => _runDiarization();
+
+  Future<void> renameSpeaker(String? currentSpeakerId, String newLabel) async {
+    final runner = diarization;
+    final snapshot = _snapshot;
+    if (runner == null || snapshot == null || isProcessing) {
+      return;
+    }
+    try {
+      _snapshot = await runner.renameSpeaker(
+        meetingId: _meeting.id,
+        snapshotId: snapshot.id,
+        currentSpeakerId: currentSpeakerId,
+        newLabel: newLabel,
+      );
+      _diarizationMessage = '说话人标签已保存';
+    } on Object {
+      _diarizationMessage = '说话人标签保存失败，请重试';
+    } finally {
+      _notify();
+    }
+  }
+
   Future<void> _load() async {
     _errorMessage = null;
     _notify();
     try {
+      _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? false;
       await _loadInstalledModels();
       await _refreshSnapshots();
+      await _refreshDiarizationTask();
       if (_meeting.status == MeetingState.processing &&
           _snapshot?.status != TranscriptSnapshotStatus.complete) {
         final pending = _processingAttempt;
@@ -109,6 +190,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
           modelVersion: pending?.actualModelVersion,
           retrySnapshotId: pending?.id,
         );
+      } else {
+        await _runDiarizationIfNeeded();
       }
     } on Object {
       _errorMessage ??= '最终转录状态加载失败，请重试';
@@ -209,10 +292,70 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       _failedAttempt = null;
       _processingAttempt = null;
       _progress = 1;
+      await _runDiarizationIfNeeded();
     } on Object {
       _errorMessage = '最终转录失败，事实音频和旧结果均已保留';
       await _refreshMeeting();
       await _refreshSnapshots();
+    } finally {
+      _notify();
+    }
+  }
+
+  Future<void> _runDiarizationIfNeeded() {
+    final snapshot = _snapshot;
+    if (!_diarizationEnabled ||
+        snapshot == null ||
+        snapshot.status != TranscriptSnapshotStatus.complete ||
+        snapshot.segments.any((segment) => segment.speakerId != null)) {
+      return Future.value();
+    }
+    return _runDiarization();
+  }
+
+  Future<void> _runDiarization() {
+    final current = _diarizationOperation;
+    if (current != null) {
+      return current;
+    }
+    final runner = diarization;
+    final snapshot = _snapshot;
+    if (runner == null ||
+        snapshot == null ||
+        snapshot.status != TranscriptSnapshotStatus.complete) {
+      return Future.value();
+    }
+    final operation = _processDiarization(runner, snapshot);
+    _diarizationOperation = operation;
+    _notify();
+    return operation.whenComplete(() {
+      _diarizationOperation = null;
+      _notify();
+    });
+  }
+
+  Future<void> _processDiarization(
+    SpeakerDiarizationRunner runner,
+    TranscriptSnapshot snapshot,
+  ) async {
+    _diarizationMessage = null;
+    _notify();
+    try {
+      final result = await runner.process(
+        meetingId: _meeting.id,
+        snapshotId: snapshot.id,
+        enabled: _diarizationEnabled,
+      );
+      _snapshot = result.snapshot;
+      _diarizationStatus = result.status;
+      _diarizationMessage = switch (result.status) {
+        SpeakerDiarizationStatus.disabled => null,
+        SpeakerDiarizationStatus.completed => '说话人分离已完成',
+        SpeakerDiarizationStatus.degraded => '说话人分离失败，已按单一说话人显示；最终转录不受影响',
+      };
+    } on Object {
+      _diarizationStatus = SpeakerDiarizationStatus.degraded;
+      _diarizationMessage = '说话人分离失败，最终转录仍可查看；可稍后重试';
     } finally {
       _notify();
     }
@@ -263,6 +406,39 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     _processingAttempt = processing.isEmpty ? null : processing.first;
   }
 
+  Future<void> _refreshDiarizationTask() async {
+    final repository = processingTasks;
+    final snapshot = _snapshot;
+    if (repository == null || snapshot == null) {
+      return;
+    }
+    final records = await repository.listByMeeting(_meeting.id);
+    ProcessingTask? task;
+    for (final record in records) {
+      if (record.kind == ProcessingTaskKind.speakerDiarization &&
+          record.id == 'speaker-diarization-${snapshot.id}') {
+        task = record;
+        break;
+      }
+    }
+    if (task == null) {
+      return;
+    }
+    switch (task.state) {
+      case ProcessingState.completed:
+        _diarizationStatus = SpeakerDiarizationStatus.completed;
+        _diarizationMessage = '说话人分离已完成';
+      case ProcessingState.failed:
+        _diarizationStatus = SpeakerDiarizationStatus.degraded;
+        _diarizationMessage = '说话人分离失败，已按单一说话人显示；最终转录不受影响';
+      case ProcessingState.idle ||
+          ProcessingState.queued ||
+          ProcessingState.running ||
+          ProcessingState.canceled:
+        break;
+    }
+  }
+
   void _notify() {
     if (!_disposed) {
       notifyListeners();
@@ -275,4 +451,27 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     unawaited(_installationSubscription?.cancel());
     super.dispose();
   }
+}
+
+final class SpeakerLabelGroup {
+  const SpeakerLabelGroup({
+    required this.speakerId,
+    required this.displayLabel,
+    required this.segmentCount,
+  });
+
+  final String? speakerId;
+  final String displayLabel;
+  final int segmentCount;
+}
+
+String displaySpeakerLabel(String? speakerId) {
+  if (speakerId == null || speakerId == 'speaker-1') {
+    return '说话人 1';
+  }
+  final numeric = RegExp(r'^speaker-(\d+)$').firstMatch(speakerId);
+  if (numeric != null) {
+    return '说话人 ${numeric.group(1)}';
+  }
+  return speakerId;
 }

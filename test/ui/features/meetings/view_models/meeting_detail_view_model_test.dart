@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meetily_ai/data/repositories/repository_contracts.dart';
 import 'package:meetily_ai/data/services/asr/final_transcription_service.dart';
+import 'package:meetily_ai/data/services/diarization/speaker_diarization_coordinator.dart';
 import 'package:meetily_ai/domain/models/asr_model_registry.dart';
 import 'package:meetily_ai/domain/models/meeting.dart';
+import 'package:meetily_ai/domain/models/processing_task.dart';
+import 'package:meetily_ai/domain/models/speaker_diarization.dart';
 import 'package:meetily_ai/domain/models/transcript.dart';
 import 'package:meetily_ai/domain/models/workflow_states.dart';
 import 'package:meetily_ai/ui/features/meetings/view_models/meeting_detail_view_model.dart';
@@ -174,12 +178,116 @@ void main() {
     expect(resumed.modelVersion, '2026-03-25');
     await fixture.dispose();
   });
+
+  test('说话人服务失败后最终转录仍可用并显示独立降级状态', () async {
+    final active = _snapshot(id: 'active');
+    final diarization = _DiarizationRunner(
+      result: SpeakerDiarizationResult(
+        snapshot: _snapshot(id: 'active', speakerId: 'speaker-1'),
+        status: SpeakerDiarizationStatus.degraded,
+        errorCode: 'speaker_diarization.timeout',
+      ),
+    );
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      diarization: diarization,
+      diarizationEnabled: true,
+    );
+
+    await fixture.viewModel.load();
+
+    expect(diarization.processCalls, 1);
+    expect(
+      fixture.viewModel.snapshot?.status,
+      TranscriptSnapshotStatus.complete,
+    );
+    expect(
+      fixture.viewModel.diarizationStatus,
+      SpeakerDiarizationStatus.degraded,
+    );
+    expect(fixture.viewModel.diarizationMessage, contains('单一说话人'));
+    expect(fixture.viewModel.errorMessage, isNull);
+    await fixture.dispose();
+  });
+
+  test('人工修改说话人标签后刷新最终快照', () async {
+    final active = _snapshot(id: 'active', speakerId: 'speaker-a');
+    final diarization = _DiarizationRunner(
+      result: SpeakerDiarizationResult(
+        snapshot: active,
+        status: SpeakerDiarizationStatus.disabled,
+      ),
+    );
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      diarization: diarization,
+    );
+    await fixture.viewModel.load();
+
+    await fixture.viewModel.renameSpeaker('speaker-a', ' 张三 ');
+
+    expect(diarization.renameCalls.single, ('speaker-a', ' 张三 '));
+    expect(fixture.viewModel.snapshot?.segments.single.speakerId, '张三');
+    await fixture.dispose();
+  });
+
+  test('重新打开页面会从持久化失败任务恢复降级提示且不重复运行', () async {
+    final active = _snapshot(id: 'active', speakerId: 'speaker-1');
+    final diarization = _DiarizationRunner(
+      result: SpeakerDiarizationResult(
+        snapshot: active,
+        status: SpeakerDiarizationStatus.degraded,
+      ),
+    );
+    final tasks = _TaskRepository([
+      ProcessingTask(
+        id: 'speaker-diarization-active',
+        kind: ProcessingTaskKind.speakerDiarization,
+        meetingId: 'meeting-1',
+        state: ProcessingState.failed,
+        createdAt: DateTime.utc(2026, 7, 25, 3),
+        updatedAt: DateTime.utc(2026, 7, 25, 3),
+        lastErrorCode: 'speaker_diarization.timeout',
+      ),
+    ]);
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      diarization: diarization,
+      diarizationEnabled: true,
+      processingTasks: tasks,
+    );
+
+    await fixture.viewModel.load();
+
+    expect(diarization.processCalls, 0);
+    expect(
+      fixture.viewModel.diarizationStatus,
+      SpeakerDiarizationStatus.degraded,
+    );
+    expect(fixture.viewModel.diarizationMessage, contains('最终转录不受影响'));
+    await fixture.dispose();
+  });
 }
 
 _Fixture _fixture(
   Meeting meeting, {
   TranscriptSnapshot? active,
   bool installQwen = false,
+  SpeakerDiarizationRunner? diarization,
+  bool diarizationEnabled = false,
+  ProcessingTaskRepository? processingTasks,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
@@ -217,6 +325,9 @@ _Fixture _fixture(
       transcripts: transcripts,
       installations: installations,
       transcription: runner,
+      diarization: diarization,
+      diarizationPreferences: _DiarizationPreference(diarizationEnabled),
+      processingTasks: processingTasks,
     ),
   );
 }
@@ -267,6 +378,7 @@ TranscriptSnapshot _snapshot({
   TranscriptSnapshotStatus status = TranscriptSnapshotStatus.complete,
   String modelId = paraformerStandardModelId,
   String modelVersion = '2024-03-09',
+  String? speakerId,
 }) {
   return TranscriptSnapshot(
     id: id,
@@ -284,10 +396,113 @@ TranscriptSnapshot _snapshot({
               startMs: 0,
               endMs: 1000,
               text: '最终事实文本',
+              speakerId: speakerId,
               modelId: modelId,
               modelVersion: modelVersion,
             ),
           ]
         : const [],
   );
+}
+
+final class _DiarizationPreference implements DiarizationPreferenceRepository {
+  _DiarizationPreference(this.enabled);
+
+  bool enabled;
+
+  @override
+  Future<bool> getEnabled() async => enabled;
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    this.enabled = enabled;
+  }
+}
+
+final class _DiarizationRunner implements SpeakerDiarizationRunner {
+  _DiarizationRunner({required this.result});
+
+  SpeakerDiarizationResult result;
+  int processCalls = 0;
+  final List<(String?, String)> renameCalls = [];
+
+  @override
+  SpeakerDiarizationCapability get capability =>
+      const SpeakerDiarizationCapability.available();
+
+  @override
+  Future<SpeakerDiarizationResult> process({
+    required String meetingId,
+    required String snapshotId,
+    required bool enabled,
+  }) async {
+    processCalls++;
+    return result;
+  }
+
+  @override
+  Future<TranscriptSnapshot> renameSpeaker({
+    required String meetingId,
+    required String snapshotId,
+    required String? currentSpeakerId,
+    required String newLabel,
+  }) async {
+    renameCalls.add((currentSpeakerId, newLabel));
+    final source = result.snapshot;
+    final updated = TranscriptSnapshot(
+      id: source.id,
+      meetingId: source.meetingId,
+      kind: source.kind,
+      actualModelId: source.actualModelId,
+      actualModelVersion: source.actualModelVersion,
+      createdAt: source.createdAt,
+      status: source.status,
+      segments: [
+        for (final segment in source.segments)
+          TranscriptSegment(
+            id: segment.id,
+            snapshotId: segment.snapshotId,
+            startMs: segment.startMs,
+            endMs: segment.endMs,
+            text: segment.text,
+            speakerId: newLabel.trim(),
+            confidence: segment.confidence,
+            modelId: segment.modelId,
+            modelVersion: segment.modelVersion,
+          ),
+      ],
+    );
+    result = SpeakerDiarizationResult(
+      snapshot: updated,
+      status: result.status,
+      errorCode: result.errorCode,
+    );
+    return updated;
+  }
+}
+
+final class _TaskRepository implements ProcessingTaskRepository {
+  _TaskRepository(this.records);
+
+  final List<ProcessingTask> records;
+
+  @override
+  Future<ProcessingTask?> getById(String taskId) async {
+    for (final task in records) {
+      if (task.id == taskId) {
+        return task;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<List<ProcessingTask>> listByMeeting(String meetingId) async =>
+      records.where((task) => task.meetingId == meetingId).toList();
+
+  @override
+  Future<void> save(ProcessingTask task) async {
+    records.removeWhere((record) => record.id == task.id);
+    records.add(task);
+  }
 }

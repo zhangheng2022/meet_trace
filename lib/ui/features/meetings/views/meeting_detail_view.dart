@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../domain/models/asr_model.dart';
+import '../../../../domain/models/speaker_diarization.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../theme/theme.dart';
 import '../view_models/meeting_detail_view_model.dart';
@@ -81,7 +82,11 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
               if (viewModel.errorMessage case final message?)
                 _FailureCard(message: message, viewModel: viewModel),
               if (viewModel.snapshot case final snapshot?)
-                _TranscriptCard(snapshot: snapshot),
+                _TranscriptCard(snapshot: snapshot, viewModel: viewModel),
+              if (viewModel.snapshot != null) ...[
+                SizedBox(height: appStyle.spaceMd),
+                _DiarizationCard(viewModel: viewModel),
+              ],
               if (viewModel.canRetranscribe) ...[
                 SizedBox(height: appStyle.spaceMd),
                 _RetranscriptionCard(viewModel: viewModel),
@@ -159,9 +164,10 @@ final class _FailureCard extends StatelessWidget {
 }
 
 final class _TranscriptCard extends StatelessWidget {
-  const _TranscriptCard({required this.snapshot});
+  const _TranscriptCard({required this.snapshot, required this.viewModel});
 
   final TranscriptSnapshot snapshot;
+  final MeetingDetailViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -180,14 +186,157 @@ final class _TranscriptCard extends StatelessWidget {
             else
               for (final segment in snapshot.segments) ...[
                 Text(
-                  '${_timestamp(segment.startMs)}  ${segment.text}',
-                  style: theme.typography.body.md,
+                  '${displaySpeakerLabel(segment.speakerId)} · '
+                  '${_timestamp(segment.startMs)}',
+                  style: theme.typography.body.sm.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
                 ),
+                SizedBox(height: appStyle.spaceSm),
+                Text(segment.text, style: theme.typography.body.md),
                 SizedBox(height: appStyle.spaceSm),
               ],
           ],
         ),
       ),
+    );
+  }
+}
+
+final class _DiarizationCard extends StatelessWidget {
+  const _DiarizationCard({required this.viewModel});
+
+  final MeetingDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return FCard(
+      child: Padding(
+        padding: EdgeInsets.all(appStyle.spaceMd),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('说话人', style: theme.typography.display.md),
+            SizedBox(height: appStyle.spaceMd),
+            FSwitch(
+              key: const ValueKey('speaker-diarization-switch'),
+              value: viewModel.diarizationEnabled,
+              enabled:
+                  viewModel.diarizationAvailable && !viewModel.isProcessing,
+              onChange: (enabled) =>
+                  unawaited(viewModel.setDiarizationEnabled(enabled)),
+              label: const Text('自动说话人分离'),
+              description: Text(
+                viewModel.diarizationAvailable
+                    ? '可随时关闭；失败时自动按单一说话人显示。'
+                    : '当前构建未配置已验证的本地说话人模型，可继续手工标注。',
+              ),
+            ),
+            if (viewModel.isDiarizing) ...[
+              SizedBox(height: appStyle.spaceMd),
+              const FProgress(semanticsLabel: '说话人分离处理中'),
+            ],
+            if (viewModel.diarizationMessage case final message?) ...[
+              SizedBox(height: appStyle.spaceMd),
+              FAlert(
+                variant:
+                    viewModel.diarizationStatus ==
+                        SpeakerDiarizationStatus.degraded
+                    ? FAlertVariant.destructive
+                    : FAlertVariant.primary,
+                title: Text(
+                  viewModel.diarizationStatus ==
+                          SpeakerDiarizationStatus.degraded
+                      ? '说话人分离已降级'
+                      : '说话人标签',
+                ),
+                subtitle: Text(message),
+              ),
+            ],
+            if (viewModel.diarizationStatus ==
+                    SpeakerDiarizationStatus.degraded &&
+                viewModel.canRetryDiarization) ...[
+              SizedBox(height: appStyle.spaceMd),
+              FButton(
+                onPress: () => unawaited(viewModel.retryDiarization()),
+                child: const Text('重试说话人分离'),
+              ),
+            ],
+            if (viewModel.speakerGroups.isNotEmpty) ...[
+              SizedBox(height: appStyle.spaceMd),
+              const Text('人工标签'),
+              SizedBox(height: appStyle.spaceSm),
+              for (final group in viewModel.speakerGroups)
+                Padding(
+                  padding: EdgeInsets.only(bottom: appStyle.spaceMd),
+                  child: _SpeakerLabelEditor(
+                    key: ValueKey('speaker-editor-${group.speakerId}'),
+                    group: group,
+                    viewModel: viewModel,
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _SpeakerLabelEditor extends StatefulWidget {
+  const _SpeakerLabelEditor({
+    required this.group,
+    required this.viewModel,
+    super.key,
+  });
+
+  final SpeakerLabelGroup group;
+  final MeetingDetailViewModel viewModel;
+
+  @override
+  State<_SpeakerLabelEditor> createState() => _SpeakerLabelEditorState();
+}
+
+final class _SpeakerLabelEditorState extends State<_SpeakerLabelEditor> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.group.displayLabel,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appStyle = context.theme.style.app;
+    final keyId = widget.group.speakerId ?? 'unlabeled';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FTextField(
+          key: ValueKey('speaker-label-$keyId'),
+          control: FTextFieldControl.managed(controller: _controller),
+          label: Text('${widget.group.segmentCount} 个片段'),
+          hint: '输入说话人名称',
+        ),
+        SizedBox(height: appStyle.spaceSm),
+        FButton(
+          key: ValueKey('save-speaker-label-$keyId'),
+          onPress: widget.viewModel.isProcessing
+              ? null
+              : () => unawaited(
+                  widget.viewModel.renameSpeaker(
+                    widget.group.speakerId,
+                    _controller.text,
+                  ),
+                ),
+          child: const Text('保存标签'),
+        ),
+      ],
     );
   }
 }

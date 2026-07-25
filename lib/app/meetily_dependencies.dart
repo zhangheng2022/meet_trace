@@ -4,14 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../data/repositories/sqflite_meeting_repository.dart';
+import '../data/repositories/sqflite_diarization_preference_repository.dart';
 import '../data/repositories/sqflite_model_installation_repository.dart';
 import '../data/repositories/sqflite_model_preference_repository.dart';
 import '../data/repositories/sqflite_model_usage_lease_repository.dart';
+import '../data/repositories/sqflite_processing_task_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/asr/android_proc_asr_device_risk_monitor.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
 import '../data/services/asr/final_transcription_service.dart';
 import '../data/services/asr/sherpa_onnx_asr_engine_factory.dart';
+import '../data/services/diarization/speaker_diarization_coordinator.dart';
+import '../data/services/diarization/speaker_diarization_service.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/flutter_foreground_recording_lifecycle.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
@@ -41,8 +45,11 @@ final class MeetilyDependencies {
     required this.transcripts,
     required this.installations,
     required this.preferences,
+    required this.diarizationPreferences,
+    required this.processingTasks,
     required this.engineFactory,
     required this.finalTranscription,
+    required this.diarization,
     required this.vadModelPath,
   });
 
@@ -52,8 +59,11 @@ final class MeetilyDependencies {
   final SqfliteTranscriptRepository transcripts;
   final SqfliteModelInstallationRepository installations;
   final SqfliteModelPreferenceRepository preferences;
+  final SqfliteDiarizationPreferenceRepository diarizationPreferences;
+  final SqfliteProcessingTaskRepository processingTasks;
   final SherpaOnnxAsrEngineFactory engineFactory;
   final FinalTranscriptionService finalTranscription;
+  final SpeakerDiarizationCoordinator diarization;
   final String vadModelPath;
 
   static Future<MeetilyDependencies> create() async {
@@ -79,6 +89,10 @@ final class MeetilyDependencies {
       database,
       registry: registry,
     );
+    final diarizationPreferences = SqfliteDiarizationPreferenceRepository(
+      database,
+    );
+    final processingTasks = SqfliteProcessingTaskRepository(database);
     final assetSource = FlutterModelAssetSource(rootBundle);
     final manifest = ModelManifestParser(
       registry: registry,
@@ -119,6 +133,13 @@ final class MeetilyDependencies {
       engineFactory: engineFactory,
       now: DateTime.now,
     );
+    final diarization = SpeakerDiarizationCoordinator(
+      meetings: meetings,
+      transcripts: transcripts,
+      tasks: processingTasks,
+      service: const UnavailableSpeakerDiarizationService(),
+      now: DateTime.now,
+    );
     return MeetilyDependencies._(
       database: database,
       fileLayout: fileLayout,
@@ -126,8 +147,11 @@ final class MeetilyDependencies {
       transcripts: transcripts,
       installations: installations,
       preferences: preferences,
+      diarizationPreferences: diarizationPreferences,
+      processingTasks: processingTasks,
       engineFactory: engineFactory,
       finalTranscription: finalTranscription,
+      diarization: diarization,
       vadModelPath: vad.modelPath,
     );
   }
@@ -143,6 +167,9 @@ final class MeetilyDependencies {
       transcripts: transcripts,
       installations: installations,
       transcription: finalTranscription,
+      diarization: diarization,
+      diarizationPreferences: diarizationPreferences,
+      processingTasks: processingTasks,
     );
   }
 
