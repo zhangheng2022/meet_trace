@@ -1,4 +1,4 @@
-Meetily Android Alpha - bundled Paraformer model notice
+MeetTrace Android Alpha - bundled Paraformer model notice
 
 Artifact:
   sherpa-onnx-paraformer-zh-small-2024-03-09

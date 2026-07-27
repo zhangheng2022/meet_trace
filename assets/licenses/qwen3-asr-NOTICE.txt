@@ -1,4 +1,4 @@
-Meetily Android Alpha - downloadable Qwen3-ASR model notice
+MeetTrace Android Alpha - downloadable Qwen3-ASR model notice
 
 Artifact:
   sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25

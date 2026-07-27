@@ -1,11 +1,11 @@
 {
-    "name": "meetily_ai",
-    "short_name": "meetily_ai",
+    "name": "会迹 · MeetTrace",
+    "short_name": "MeetTrace",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "本地优先的会议录音、端侧转录与证据化总结应用。",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

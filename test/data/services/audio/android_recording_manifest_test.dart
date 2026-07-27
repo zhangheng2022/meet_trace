@@ -14,7 +14,7 @@ void main() {
     );
     expect(manifest, contains('android.permission.RECORD_AUDIO'));
     expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
-    expect(manifest, contains('android:label="研会 AI"'));
+    expect(manifest, contains('android:label="会迹 · MeetTrace"'));
     expect(
       manifest,
       contains('com.pravera.flutter_foreground_task.service.ForegroundService'),

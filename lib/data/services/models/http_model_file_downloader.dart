@@ -45,7 +45,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
       final request = await client.getUrl(source);
       request.headers.set(
         HttpHeaders.userAgentHeader,
-        'Meetily-Android-Alpha/1.0',
+        'MeetTrace-Android-Alpha/1.0',
       );
       if (resumeFrom > 0) {
         request.headers.set(HttpHeaders.rangeHeader, 'bytes=$resumeFrom-');

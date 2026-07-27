@@ -1,4 +1,4 @@
-# Meetily 文档索引
+# 会迹 · MeetTrace 文档索引
 
 > 状态：当前文档入口
 > 更新日期：2026-07-26
@@ -7,13 +7,13 @@
 
 按优先级阅读：
 
-1. [研会 AI Android Alpha PRD V0.5](./研会_AI_Alpha_PRD_无登录版.md)
+1. [会迹 · MeetTrace Android Alpha PRD V0.5](./研会_AI_Alpha_PRD_无登录版.md)
    产品范围、用户流程、功能需求、质量门槛和 AT-01～AT-16 的唯一事实源。
 2. [端侧双模型转录技术方案](./端侧双模型转录技术方案.md)
    将 PRD 约束落实为录音、模型管理、官方 sherpa-onnx Flutter 包、双 ASR Engine、存储和降级架构。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)
    当前仓库从应用壳到双模型 Alpha 的执行顺序、测试要求和完成看板。
-4. [研会 AI 交互与视觉系统](../design.md)
+4. [会迹 · MeetTrace 交互与视觉系统](../design.md)
    锁定多页面 UI 的结构、色彩、排版、间距、响应式、交互状态和页面契约。
 5. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)
    Alpha 步骤分支、隔离 worktree、合并和安全清理规则。

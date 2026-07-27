@@ -1,17 +1,12 @@
-# meetily_ai
+# 会迹 · MeetTrace
 
-A new Flutter project.
+本地优先的 Android 会议录音、端侧转录与证据化总结应用。
 
-## Getting Started
+- 本地事实音频优先，实时转录变慢或失败时录音继续。
+- 内置标准模型，并支持按需下载高级模型。
+- AI 总结只基于最终转录，关键结论保留时间戳证据。
+- Android Alpha 不提供登录或跨设备同步。
 
-This project is a starting point for a Flutter application.
+项目文档入口：[docs/README.md](docs/README.md)
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+交互与视觉规范：[design.md](design.md)

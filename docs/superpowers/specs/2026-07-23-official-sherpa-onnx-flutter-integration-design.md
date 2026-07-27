@@ -6,7 +6,7 @@
 
 ## 1. 目标
 
-Meetily 通过官方 `sherpa_onnx` Flutter/Dart 包接入 Paraformer 标准模型和 Qwen3-ASR 高级模型。项目不自建或维护 sherpa-onnx 原生桥接。
+会迹 · MeetTrace 通过官方 `sherpa_onnx` Flutter/Dart 包接入 Paraformer 标准模型和 Qwen3-ASR 高级模型。项目不自建或维护 sherpa-onnx 原生桥接。
 
 ## 2. 强制约束
 
@@ -19,7 +19,7 @@ Meetily 通过官方 `sherpa_onnx` Flutter/Dart 包接入 Paraformer 标准模�
 - 手工把 sherpa-onnx 原生库放入项目 `jniLibs`。
 - 因官方 Flutter API 缺少能力而绕过本决策增加私有原生接口。
 
-官方 Flutter 包内部仍会使用原生运行库；“不自建原生桥接”是指该边界由官方包提供和维护，Meetily 不复制这部分职责。
+官方 Flutter 包内部仍会使用原生运行库；“不自建原生桥接”是指该边界由官方包提供和维护，会迹 · MeetTrace 不复制这部分职责。
 
 ## 3. 依赖与版本
 
@@ -27,7 +27,7 @@ Meetily 通过官方 `sherpa_onnx` Flutter/Dart 包接入 Paraformer 标准模�
 - 版本必须固定到 Day 1 真机 Spike 验证通过的版本，不使用无上限的浮动依赖。
 - 原生 Android 运行库由官方 Flutter 包及其平台包提供。
 - 构建产物仍需检查目标 ABI、原生库重复项、APK 体积和许可证。
-- 模型文件继续由 Meetily 的 ModelManager 管理，不交给依赖包决定产品生命周期。
+- 模型文件继续由会迹 · MeetTrace 的 ModelManager 管理，不交给依赖包决定产品生命周期。
 
 ## 4. 应用层边界
 
@@ -45,7 +45,7 @@ View / ViewModel
           官方包维护的原生运行时
 ```
 
-Meetily 自己实现的两个 Engine 只是 Dart 业务适配器，负责：
+会迹 · MeetTrace 自己实现的两个 Engine 只是 Dart 业务适配器，负责：
 
 - 将 `AsrModelDescriptor` 转换为官方包的识别器配置。
 - 从 ModelManager 获取已校验模型路径。

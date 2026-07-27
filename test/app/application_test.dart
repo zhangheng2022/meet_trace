@@ -9,7 +9,10 @@ void main() {
     await tester.pumpWidget(const Application());
 
     expect(find.byType(MaterialApp), findsOneWidget);
-    expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).title, '研会 AI');
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
+      '会迹 · MeetTrace',
+    );
     expect(find.byType(FTheme), findsOneWidget);
     expect(find.byType(MeetingListView), findsOneWidget);
     expect(find.text('会议'), findsOneWidget);

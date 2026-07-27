@@ -53,7 +53,7 @@ final class FlutterForegroundRecordingLifecycle
       FlutterForegroundTask.startService(
         serviceId: _recordingServiceId,
         serviceTypes: const [ForegroundServiceTypes.microphone],
-        notificationTitle: '研会 AI 正在录音',
+        notificationTitle: '会迹 · MeetTrace 正在录音',
         notificationText: '事实音频正在安全保存',
         callback: meetilyRecordingForegroundCallback,
       ),
@@ -68,7 +68,9 @@ final class FlutterForegroundRecordingLifecycle
     }
     await _requireSuccess(
       FlutterForegroundTask.updateService(
-        notificationTitle: paused ? '研会 AI 录音已暂停' : '研会 AI 正在录音',
+        notificationTitle: paused
+            ? '会迹 · MeetTrace 录音已暂停'
+            : '会迹 · MeetTrace 正在录音',
         notificationText: paused ? '点击返回会议并继续录音' : '事实音频正在安全保存',
       ),
     );

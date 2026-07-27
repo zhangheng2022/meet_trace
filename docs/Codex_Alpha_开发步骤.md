@@ -1,9 +1,9 @@
-# Meetily Android Alpha — Codex 开发步骤
+# 会迹 · MeetTrace Android Alpha — Codex 开发步骤
 
 > 版本：V1.0
 > 状态：当前执行计划
 > 更新日期：2026-07-25
-> PRD：[研会 AI Android Alpha PRD V0.5](./研会_AI_Alpha_PRD_无登录版.md)
+> PRD：[会迹 · MeetTrace Android Alpha PRD V0.5](./研会_AI_Alpha_PRD_无登录版.md)
 > 技术基线：[端侧双模型转录技术方案](./端侧双模型转录技术方案.md)
 
 ## 1. 使用方式
@@ -727,7 +727,7 @@ flutter run -d <device-id>
 - 全局能力开关保存到 `app_settings`，稳定 `speaker-diarization-<snapshotId>` 任务保存完成/失败和错误码；重开页面可恢复降级提示且不会重复处理。
 - 超时、空结果、资源不足、服务异常或能力不可用统一回退 `speaker-1`，最终转录继续保持 `complete`；Forui 详情页明确展示降级状态并允许批量修改同一说话人标签。
 - 当前 PRD、Registry 和 Manifest 没有批准独立说话人权重，生产装配使用显式不可用适配器；未来实现必须继续走纯 Dart 端口，不得自建 JNI/FFI 原生桥接。
-- 新增 15 项 Repository、编排、ViewModel 和组件测试；全量 212 项测试、静态分析和 `334,376,185` 字节 Debug APK 通过。Android 16 x86_64 模拟器走通冷启动、录音、最终转录、能力不可用提示、单一说话人展示和人工标签保存；桌面名称、应用标题、启动页和录音通知统一显示“研会 AI”，详见 [Step 15 报告](./quality/Step_15_说话人分离降级.md)。
+- 新增 15 项 Repository、编排、ViewModel 和组件测试；全量 212 项测试、静态分析和 `334,376,185` 字节 Debug APK 通过。Android 16 x86_64 模拟器走通冷启动、录音、最终转录、能力不可用提示、单一说话人展示和人工标签保存；桌面名称、应用标题、启动页和录音通知统一显示“会迹 · MeetTrace”，详见 [Step 15 报告](./quality/Step_15_说话人分离降级.md)。
 
 ---
 

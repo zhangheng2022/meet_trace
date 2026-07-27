@@ -3,7 +3,7 @@ import 'package:forui/forui.dart';
 
 import '../../theme/theme.dart';
 
-/// 研会 AI 的内容驱动窗口尺寸类。
+/// 会迹 · MeetTrace 的内容驱动窗口尺寸类。
 enum AppWindowSizeClass {
   compact,
   medium,

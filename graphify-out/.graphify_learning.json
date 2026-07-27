@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T03:37:37.610874+00:00",
+  "generated_at": "2026-07-27T04:15:03.042642+00:00",
   "nodes": {
     "_agents_skills_flutter_add_widget_test_skill_writing_flutter_widget_tests": {
       "code_fingerprint": "ecc36bea2093a9f4f004f86f09aa9601930edd8321160a7dd3748af6e7ef9479",
@@ -12,10 +12,31 @@
           "q": "改为中文"
         }
       ],
-      "score": 0.917381177,
+      "score": 0.916830484,
       "source_file": ".agents/skills/flutter-add-widget-test/SKILL.md",
       "status": "tentative",
       "uses": 1
+    },
+    "lib_domain_models_meeting_meeting": {
+      "code_fingerprint": "d90a9ac4b1c3d8532fbc81e30f536300e65e0ba64cfd535d1921414b4255ba26",
+      "label": "Meeting",
+      "last": "2026-07-27T04:11:34.349530+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:11:34.349530+00:00",
+          "outcome": "useful",
+          "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
+        },
+        {
+          "date": "2026-07-27T03:41:29.976039+00:00",
+          "outcome": "useful",
+          "q": "重构所有ui设计部分,先给我方案"
+        }
+      ],
+      "score": 1.999406008,
+      "source_file": "lib/domain/models/meeting.dart",
+      "status": "preferred",
+      "uses": 2
     },
     "lib_main": {
       "code_fingerprint": "843c747895acba3a9d9bcc88a182235277fbf15b84355820d8aee4853a1ceed5",
@@ -33,10 +54,84 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.834600618,
+      "score": 1.833499329,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
+    },
+    "lib_theme_theme": {
+      "code_fingerprint": "d2890470d1c1d6b7b9f003716c310c00c8bfe02a09a15d4f08d582a920a2f485",
+      "label": "theme.dart",
+      "last": "2026-07-27T04:11:34.349530+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:11:34.349530+00:00",
+          "outcome": "useful",
+          "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
+        },
+        {
+          "date": "2026-07-27T03:41:29.976039+00:00",
+          "outcome": "useful",
+          "q": "重构所有ui设计部分,先给我方案"
+        }
+      ],
+      "score": 1.999406008,
+      "source_file": "lib/theme/theme.dart",
+      "status": "preferred",
+      "uses": 2
+    },
+    "lib_ui_core_app_page_body_apppagebody": {
+      "code_fingerprint": "42fac7034c6bba4835603b9b8ab2cb4fb1ceb3d83bb975857905877c795377e2",
+      "label": "AppPageBody",
+      "last": "2026-07-27T03:41:29.976039+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T03:41:29.976039+00:00",
+          "outcome": "useful",
+          "q": "重构所有ui设计部分,先给我方案"
+        }
+      ],
+      "score": 0.999461815,
+      "source_file": "lib/ui/core/app_page_body.dart",
+      "status": "tentative",
+      "uses": 1
+    },
+    "lib_ui_core_view_state_viewstate": {
+      "code_fingerprint": "639e681574decffe3bc4d6d7204738b1235512242c04f826d4e11a611b43ebb1",
+      "label": "ViewState",
+      "last": "2026-07-27T04:11:34.349530+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:11:34.349530+00:00",
+          "outcome": "useful",
+          "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
+        },
+        {
+          "date": "2026-07-27T03:41:29.976039+00:00",
+          "outcome": "useful",
+          "q": "重构所有ui设计部分,先给我方案"
+        }
+      ],
+      "score": 1.999406008,
+      "source_file": "lib/ui/core/view_state.dart",
+      "status": "preferred",
+      "uses": 2
+    },
+    "lib_ui_features_settings_views_model_settings_view": {
+      "code_fingerprint": "be735c92e5a6c67ea1cd818cedf8d3abad2cda0f6c272697fcae890b44ef5328",
+      "label": "model_settings_view.dart",
+      "last": "2026-07-27T04:11:34.349530+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:11:34.349530+00:00",
+          "outcome": "useful",
+          "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
+        }
+      ],
+      "score": 0.999944193,
+      "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
+      "status": "tentative",
+      "uses": 1
     },
     "package_flutter_test_flutter_test_dart": {
       "code_fingerprint": "",
@@ -49,7 +144,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.917251168,
+      "score": 0.916700553,
       "source_file": "",
       "status": "tentative",
       "uses": 1

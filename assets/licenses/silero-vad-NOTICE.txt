@@ -1,4 +1,4 @@
-Meetily Android Alpha - bundled Silero VAD model notice
+MeetTrace Android Alpha - bundled Silero VAD model notice
 
 Artifact:
   silero-vad-int8

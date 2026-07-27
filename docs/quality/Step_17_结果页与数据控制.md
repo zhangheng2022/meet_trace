@@ -90,7 +90,7 @@ flutter install -d emulator-5554 --use-application-binary ...
 - 设置页显示标准 Paraformer、高级 Qwen3-ASR 和中文状态；
 - 存储与隐私卡显示会议/模型/数据库/总计/设备可用空间；
 - “查看并分享诊断信息”成功调起 Android 系统分享面板；
-- 分享预览为“研会 AI 诊断信息”的白名单 JSON。
+- 分享预览为“会迹 · MeetTrace 诊断信息”的白名单 JSON。
 
 新模拟器没有可用会议事实录音，因此本轮未把实体录音播放列为已验证项；PCM 字节区间、WAV 封装和播放器调用边界由自动化测试验证，实体设备实录播放并入 Step 18。
 
