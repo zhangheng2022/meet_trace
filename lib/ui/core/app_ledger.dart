@@ -5,14 +5,28 @@ import '../../theme/theme.dart';
 
 /// 事实账本的连续表面。相邻记录共享外边界，不形成悬浮卡片网格。
 final class AppLedgerSurface extends StatelessWidget {
-  const AppLedgerSurface({required this.children, super.key});
+  const AppLedgerSurface({
+    required this.children,
+    this.framed = true,
+    super.key,
+  });
 
   final List<Widget> children;
+  final bool framed;
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
+    if (!framed) {
+      return ColoredBox(
+        color: theme.colors.card,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
+        ),
+      );
+    }
     return ClipRRect(
       borderRadius: BorderRadius.circular(appStyle.cardRadius),
       child: DecoratedBox(
@@ -43,6 +57,7 @@ final class AppLedgerRow extends StatelessWidget {
     this.dateLabel,
     this.metaLabel,
     this.emphasized = false,
+    this.selected = false,
     this.showDivider = true,
     this.onPress,
     this.semanticsLabel,
@@ -57,6 +72,7 @@ final class AppLedgerRow extends StatelessWidget {
   final IconData statusIcon;
   final String? metaLabel;
   final bool emphasized;
+  final bool selected;
   final bool showDivider;
   final VoidCallback? onPress;
   final String? semanticsLabel;
@@ -68,7 +84,9 @@ final class AppLedgerRow extends StatelessWidget {
     final appStyle = theme.style.app;
     final content = DecoratedBox(
       decoration: BoxDecoration(
-        color: emphasized ? theme.colors.secondary : theme.colors.card,
+        color: emphasized || selected
+            ? theme.colors.secondary
+            : theme.colors.card,
         border: showDivider
             ? Border(
                 bottom: BorderSide(
@@ -81,113 +99,220 @@ final class AppLedgerRow extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: appStyle.spaceMd,
-          vertical: appStyle.spaceMd,
+          vertical: appStyle.spaceSm,
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                width: appStyle.ledgerTimeColumnWidth,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (dateLabel case final date?)
-                      Text(
-                        date,
-                        maxLines: 1,
-                        style: theme.typography.body.xs.copyWith(
-                          color: theme.colors.mutedForeground,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: appStyle.ledgerTimeColumnWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (dateLabel case final date?)
                     Text(
-                      timeLabel,
+                      date,
                       maxLines: 1,
-                      style: theme.typography.body.sm.copyWith(
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                width: emphasized
-                    ? appStyle.strongBorderWidth
-                    : appStyle.dividerWidth,
-                margin: EdgeInsetsDirectional.only(end: appStyle.spaceMd),
-                color: emphasized
-                    ? theme.colors.foreground
-                    : theme.colors.border,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.display.md,
+                  Text(
+                    timeLabel,
+                    maxLines: 1,
+                    style: theme.typography.body.sm.copyWith(
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
-                    if (metaLabel case final meta?) ...[
-                      SizedBox(height: appStyle.space2Xs),
-                      Text(
-                        meta,
-                        style: theme.typography.body.xs.copyWith(
-                          color: theme.colors.mutedForeground,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                    SizedBox(height: appStyle.spaceXs),
-                    Row(
-                      children: [
-                        Icon(
-                          statusIcon,
-                          size: 16,
-                          color: emphasized
-                              ? theme.colors.foreground
-                              : theme.colors.mutedForeground,
-                        ),
-                        SizedBox(width: appStyle.spaceXs),
-                        Expanded(
-                          child: Text(
-                            statusLabel,
-                            maxLines: 2,
-                            style: theme.typography.body.xs.copyWith(
-                              color: emphasized
-                                  ? theme.colors.foreground
-                                  : theme.colors.mutedForeground,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: appStyle.spaceMd,
+              height: 52,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Center(
+                    child: Container(
+                      width: emphasized
+                          ? appStyle.strongBorderWidth
+                          : appStyle.dividerWidth,
+                      color: emphasized
+                          ? theme.colors.foreground
+                          : theme.colors.border,
+                    ),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: emphasized
+                          ? theme.colors.foreground
+                          : theme.colors.app.borderStrong,
+                      shape: BoxShape.circle,
+                    ),
+                    child: SizedBox.square(dimension: emphasized ? 8 : 6),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: appStyle.spaceSm),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final statusCanTrail =
+                      !emphasized &&
+                      constraints.maxWidth >= 260 &&
+                      title.runes.length <= 8 &&
+                      statusLabel.runes.length <= 10;
+                  final details = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.display.md,
                             ),
                           ),
-                        ),
-                        if (onPress != null)
-                          Icon(
-                            FLucideIcons.chevronRight,
-                            size: 18,
+                          if (emphasized) ...[
+                            SizedBox(width: appStyle.spaceXs),
+                            _LedgerStatusBadge(label: statusLabel),
+                          ],
+                        ],
+                      ),
+                      if (metaLabel case final meta?) ...[
+                        SizedBox(height: appStyle.space2Xs),
+                        Text(
+                          meta,
+                          style: theme.typography.body.xs.copyWith(
                             color: theme.colors.mutedForeground,
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
+                        ),
                       ],
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+
+                  if (statusCanTrail) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(child: details),
+                        SizedBox(width: appStyle.spaceSm),
+                        _LedgerStatus(icon: statusIcon, label: statusLabel),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      details,
+                      if (!emphasized) ...[
+                        SizedBox(height: appStyle.spaceXs),
+                        _LedgerStatus(icon: statusIcon, label: statusLabel),
+                      ],
+                    ],
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
 
-    if (onPress == null) {
-      return content;
-    }
-    return FTappable(
-      semanticsLabel: semanticsLabel,
-      semanticsHint: semanticsHint,
-      excludeSemantics: semanticsLabel != null,
-      onPress: onPress,
-      child: content,
+    final result = onPress == null
+        ? content
+        : FTappable(
+            semanticsLabel: semanticsLabel,
+            semanticsHint: semanticsHint,
+            excludeSemantics: semanticsLabel != null,
+            onPress: onPress,
+            child: content,
+          );
+    return Semantics(selected: selected, child: result);
+  }
+}
+
+final class _LedgerStatus extends StatelessWidget {
+  const _LedgerStatus({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: theme.colors.mutedForeground),
+        SizedBox(width: appStyle.space2Xs),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.body.xs.copyWith(
+              color: theme.colors.mutedForeground,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+final class _LedgerStatusBadge extends StatelessWidget {
+  const _LedgerStatusBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colors.foreground,
+        borderRadius: BorderRadius.circular(appStyle.cardRadius / 2),
+      ),
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(
+          appStyle.spaceXs,
+          appStyle.space2Xs,
+          appStyle.spaceXs,
+          appStyle.space2Xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: theme.colors.background,
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox.square(dimension: 7),
+            ),
+            SizedBox(width: appStyle.space2Xs),
+            Text(
+              label,
+              maxLines: 1,
+              style: theme.typography.body.xs.copyWith(
+                color: theme.colors.background,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

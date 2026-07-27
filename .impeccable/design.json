@@ -1,49 +1,152 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-27T10:30:00.000Z",
-  "title": "Design System: 会迹（MeetTrace）",
+  "generatedAt": "2026-07-27T11:03:48.515Z",
+  "title": "Design System: 会迹 · MeetTrace",
   "extensions": {
     "colorMeta": {
-      "background": {
+      "paper": {
         "role": "neutral",
         "displayName": "账本纸面",
         "canonical": "#F7F7F5",
-        "tonalRamp": ["#111111", "#282826", "#52524E", "#8B8B85", "#B7B7B0", "#D8D8D3", "#EFEFEC", "#F7F7F5"]
+        "tonalRamp": ["#171716", "#2E2E2C", "#4B4B48", "#70706B", "#9B9B95", "#C5C5BF", "#E4E4DF", "#F7F7F5"]
       },
-      "foreground": {
+      "ink": {
         "role": "primary",
         "displayName": "事实墨色",
         "canonical": "#111111",
-        "tonalRamp": ["#111111", "#282826", "#3F3F3C", "#52524E", "#8B8B85", "#B7B7B0", "#D8D8D3", "#F4F4F1"]
+        "tonalRamp": ["#111111", "#282826", "#3F3F3C", "#52524E", "#777772", "#A0A09A", "#CECEC8", "#F4F4F1"]
       },
       "sheet": {
         "role": "neutral",
         "displayName": "记录白页",
         "canonical": "#FFFFFF",
-        "tonalRamp": ["#151515", "#202020", "#343432", "#777772", "#B7B7B0", "#D8D8D3", "#F4F4F1", "#FFFFFF"]
+        "tonalRamp": ["#151515", "#2A2A29", "#484846", "#6F6F6A", "#9B9B95", "#C7C7C1", "#E8E8E4", "#FFFFFF"]
       },
-      "border": {
+      "ink-inverse": {
         "role": "neutral",
-        "displayName": "账本分隔线",
+        "displayName": "反白纸墨",
+        "canonical": "#FAFAF8",
+        "tonalRamp": ["#171716", "#2E2E2C", "#4B4B48", "#70706B", "#9B9B95", "#C5C5BF", "#E8E8E4", "#FAFAF8"]
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "静默灰面",
+        "canonical": "#EFEFEC",
+        "tonalRamp": ["#161615", "#2C2C2A", "#484845", "#6C6C68", "#92928C", "#B9B9B3", "#DADAD5", "#EFEFEC"]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "注释墨色",
+        "canonical": "#52524E",
+        "tonalRamp": ["#141413", "#242422", "#373735", "#52524E", "#777772", "#A1A19B", "#CECEC8", "#F3F3F0"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "账本细线",
         "canonical": "#D8D8D3",
-        "tonalRamp": ["#111111", "#343432", "#52524E", "#8B8B85", "#B7B7B0", "#D8D8D3", "#EFEFEC", "#FFFFFF"]
+        "tonalRamp": ["#171716", "#30302E", "#4B4B48", "#70706B", "#989892", "#BDBDB7", "#D8D8D3", "#F5F5F2"]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "仪器强线",
+        "canonical": "#8B8B85",
+        "tonalRamp": ["#171716", "#2B2B29", "#444441", "#62625E", "#8B8B85", "#B0B0AA", "#D2D2CD", "#F4F4F1"]
+      },
+      "night-paper": {
+        "role": "neutral",
+        "displayName": "夜间纸面",
+        "canonical": "#0D0D0D",
+        "tonalRamp": ["#0D0D0D", "#252524", "#3E3E3C", "#5D5D59", "#85857F", "#AEAEA8", "#D5D5D0", "#F4F4F1"]
+      },
+      "night-ink": {
+        "role": "primary",
+        "displayName": "夜间事实墨色",
+        "canonical": "#F4F4F1",
+        "tonalRamp": ["#121211", "#292928", "#434340", "#63635F", "#8A8A84", "#B2B2AC", "#D8D8D3", "#F4F4F1"]
+      },
+      "night-sheet": {
+        "role": "neutral",
+        "displayName": "夜间记录页",
+        "canonical": "#151515",
+        "tonalRamp": ["#151515", "#2B2B2A", "#454543", "#646460", "#898984", "#B0B0AA", "#D5D5D0", "#F4F4F1"]
+      },
+      "night-surface-muted": {
+        "role": "neutral",
+        "displayName": "夜间静默灰面",
+        "canonical": "#202020",
+        "tonalRamp": ["#111111", "#202020", "#393937", "#575753", "#7E7E78", "#A7A7A1", "#D0D0CA", "#F3F3F0"]
+      },
+      "night-ink-muted": {
+        "role": "neutral",
+        "displayName": "夜间注释墨色",
+        "canonical": "#B7B7B0",
+        "tonalRamp": ["#151514", "#2A2A28", "#454542", "#656561", "#898984", "#B7B7B0", "#D8D8D3", "#F4F4F1"]
+      },
+      "night-rule": {
+        "role": "neutral",
+        "displayName": "夜间账本细线",
+        "canonical": "#343432",
+        "tonalRamp": ["#111111", "#252524", "#343432", "#555551", "#7B7B76", "#A5A59F", "#CECEC8", "#F3F3F0"]
+      },
+      "night-rule-strong": {
+        "role": "neutral",
+        "displayName": "夜间仪器强线",
+        "canonical": "#777772",
+        "tonalRamp": ["#141413", "#292927", "#41413F", "#5C5C58", "#777772", "#A0A09A", "#CACAC4", "#F2F2EF"]
       }
     },
     "typographyMeta": {
-      "display": {"displayName": "Display", "purpose": "页面主标题和关键结果。"},
-      "title": {"displayName": "Title", "purpose": "区段与记录标题。"},
-      "body": {"displayName": "Body", "purpose": "表单、转录和说明。"},
-      "label": {"displayName": "Label", "purpose": "时间、状态、来源与度量。"},
-      "time": {"displayName": "Recorder Time", "purpose": "录音页唯一的大号数字角色。"}
+      "display": {
+        "displayName": "Display",
+        "purpose": "页面主标题和最高层级结果。"
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "区段标题与工作区标题。"
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "会议标题、列表主信息和状态标题。"
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "表单、转录、详情和事实说明。"
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "时间、日期、状态、来源和度量。"
+      },
+      "recorder-time": {
+        "displayName": "Recorder Time",
+        "purpose": "录音页唯一的超大动态数字角色。"
+      }
     },
     "shadows": [],
     "motion": [
-      {"name": "state-change", "value": "120ms ease-out", "purpose": "按下、选择与状态切换，不用于循环装饰。"}
+      {
+        "name": "state-change",
+        "value": "120ms ease-out",
+        "purpose": "按下、选择和状态切换。"
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0ms",
+        "purpose": "系统要求减少动态效果时立即呈现最终状态。"
+      }
     ],
     "breakpoints": [
-      {"name": "medium", "value": "600px"},
-      {"name": "expanded", "value": "840px"},
-      {"name": "wide-checkpoint", "value": "1024px"}
+      {
+        "name": "medium",
+        "value": "600px"
+      },
+      {
+        "name": "expanded",
+        "value": "840px"
+      },
+      {
+        "name": "wide-checkpoint",
+        "value": "1024px"
+      }
     ]
   },
   "components": [
@@ -52,79 +155,154 @@
       "kind": "button",
       "refersTo": "button-primary",
       "description": "当前页面唯一的最高优先级操作。",
-      "html": "<button class=\"ds-button-primary\">开始会议</button>",
-      "css": ".ds-button-primary{min-height:48px;padding:0 16px;border:1px solid #111;border-radius:8px;background:#111;color:#fafaf8;font:600 16px/1.55 system-ui,sans-serif}.ds-button-primary:hover{background:#282826}.ds-button-primary:active{transform:scale(.985)}.ds-button-primary:focus-visible{outline:2px solid #111;outline-offset:3px}"
+      "html": "<button class=\"ds-button-primary\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Zm-7 10a7 7 0 0 0 14 0M12 19v3M8 22h8\"/></svg><span>开始会议</span></button>",
+      "css": ".ds-button-primary{box-sizing:border-box;display:inline-flex;min-height:48px;align-items:center;justify-content:center;gap:12px;padding:12px 16px;border:1px solid #111111;border-radius:8px;background:#111111;color:#FAFAF8;font:600 16px/1.55 system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif;transition:background 120ms ease-out,transform 120ms ease-out}.ds-button-primary svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}.ds-button-primary:hover{background:#282826}.ds-button-primary:active{transform:scale(.985)}.ds-button-primary:focus-visible{outline:2px solid #111111;outline-offset:3px}"
     },
     {
       "name": "Outline Button",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "暂停、取消和其他次级操作。",
+      "description": "暂停、恢复、取消和其他次级操作。",
       "html": "<button class=\"ds-button-outline\">暂停录音</button>",
-      "css": ".ds-button-outline{min-height:48px;padding:0 16px;border:1px solid #8b8b85;border-radius:8px;background:#fff;color:#111;font:600 16px/1.55 system-ui,sans-serif}.ds-button-outline:hover{background:#efefec}.ds-button-outline:active{border-color:#111}.ds-button-outline:focus-visible{outline:2px solid #111;outline-offset:3px}"
+      "css": ".ds-button-outline{box-sizing:border-box;display:inline-flex;min-height:48px;align-items:center;justify-content:center;padding:12px 16px;border:1px solid #8B8B85;border-radius:8px;background:#FFFFFF;color:#111111;font:600 16px/1.55 system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif;transition:background 120ms ease-out,border-color 120ms ease-out,transform 120ms ease-out}.ds-button-outline:hover{background:#EFEFEC}.ds-button-outline:active{border-color:#111111;transform:scale(.985)}.ds-button-outline:focus-visible{outline:2px solid #111111;outline-offset:3px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "会议标题、说话人名称和转录修订的有标签输入。",
+      "html": "<label class=\"ds-field\"><span>会议标题</span><input value=\"产品评审会\" aria-label=\"会议标题\"></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:#111111;font:500 13px/1.35 system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif}.ds-field input{box-sizing:border-box;min-height:48px;width:100%;padding:12px;border:1px solid #8B8B85;border-radius:6px;background:#FFFFFF;color:#111111;font:400 16px/1.55 system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif;transition:border-color 120ms ease-out,background 120ms ease-out}.ds-field input:hover{background:#F7F7F5}.ds-field input:focus-visible{outline:2px solid #111111;outline-offset:2px}.ds-field input:disabled{border-color:#D8D8D3;background:#EFEFEC;color:#52524E}"
     },
     {
       "name": "Ledger Row",
       "kind": "custom",
       "refersTo": "ledger-row",
       "description": "会议、转录和证据共享的连续时间记录条。",
-      "html": "<article class=\"ds-ledger-row\"><time>09:30</time><span class=\"ds-rail\"></span><div><strong>产品评审会</strong><p>01:12:48 · 事实音频已保存</p></div></article>",
-      "css": ".ds-ledger-row{display:grid;grid-template-columns:64px 1px 1fr;gap:16px;align-items:start;padding:16px 0;border-bottom:1px solid #d8d8d3;background:#fff;color:#111;font:400 16px/1.55 system-ui,sans-serif}.ds-ledger-row time{font-size:13px;font-variant-numeric:tabular-nums;color:#52524e}.ds-ledger-row .ds-rail{align-self:stretch;background:#d8d8d3}.ds-ledger-row strong{font-weight:600}.ds-ledger-row p{margin:4px 0 0;color:#52524e;font-size:13px}"
+      "html": "<button class=\"ds-ledger-row\"><span class=\"ds-ledger-time\"><small>05-20</small><b>09:41</b></span><span class=\"ds-ledger-track\"><i></i></span><span class=\"ds-ledger-copy\"><strong>产品评审会</strong><small>00:24:17</small></span><span class=\"ds-ledger-status\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m5 12 4 4L19 6\"/></svg>事实音频已保存</span></button>",
+      "css": ".ds-ledger-row{box-sizing:border-box;display:grid;width:100%;grid-template-columns:64px 16px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 16px;border:0;border-bottom:1px solid #D8D8D3;background:#FFFFFF;color:#111111;text-align:left;font-family:system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif;transition:background 120ms ease-out}.ds-ledger-row:hover,.ds-ledger-row:active{background:#EFEFEC}.ds-ledger-row:focus-visible{outline:2px solid #111111;outline-offset:-2px}.ds-ledger-time,.ds-ledger-copy{display:grid;gap:4px}.ds-ledger-time small,.ds-ledger-copy small,.ds-ledger-status{color:#52524E;font-size:13px;line-height:1.35}.ds-ledger-time b{font-size:15px;font-weight:400;font-variant-numeric:tabular-nums}.ds-ledger-copy strong{font-size:18px;line-height:1.35;font-weight:600}.ds-ledger-copy small{font-variant-numeric:tabular-nums}.ds-ledger-track{position:relative;height:52px}.ds-ledger-track::before{content:\"\";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#D8D8D3}.ds-ledger-track i{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:#8B8B85;transform:translate(-50%,-50%)}.ds-ledger-status{display:flex;align-items:center;gap:4px}.ds-ledger-status svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}@media(max-width:520px){.ds-ledger-row{grid-template-columns:64px 16px minmax(0,1fr)}.ds-ledger-status{grid-column:3}}"
     },
     {
-      "name": "Status Rail",
+      "name": "Status Notice",
       "kind": "custom",
-      "refersTo": "status-rail",
-      "description": "以轨道、图标和事实文案共同表达状态。",
-      "html": "<section class=\"ds-status\"><i></i><div><strong>事实音频正在安全写入</strong><p>实时转录变慢不会影响录音。</p></div></section>",
-      "css": ".ds-status{display:grid;grid-template-columns:3px 1fr;gap:12px;padding:12px 16px;border:1px solid #d8d8d3;border-radius:6px;background:#fff;color:#111;font:400 16px/1.55 system-ui,sans-serif}.ds-status i{width:3px;background:#111;border-radius:999px}.ds-status strong{font-weight:600}.ds-status p{margin:4px 0 0;color:#52524e;font-size:13px}"
+      "refersTo": "status-notice",
+      "description": "以轨道、图标和事实文案共同表达运行状态。",
+      "html": "<section class=\"ds-status\"><i></i><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v5M12 16h.01\"/></svg><div><strong>实时转录已暂停</strong><p>事实音频仍在本机持续写入。</p></div></section>",
+      "css": ".ds-status{box-sizing:border-box;display:grid;grid-template-columns:3px 20px minmax(0,1fr);gap:12px;width:100%;padding:12px;border:1px solid #D8D8D3;border-radius:8px;background:#FFFFFF;color:#111111;font-family:system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif}.ds-status i{width:3px;border-radius:3px;background:#8B8B85}.ds-status svg{width:20px;height:20px;margin-top:4px;fill:none;stroke:#8B8B85;stroke-width:1.8;stroke-linecap:round}.ds-status strong{font-size:16px;line-height:1.35;font-weight:600}.ds-status p{margin:4px 0 0;color:#52524E;font-size:15px;line-height:1.5}"
     },
     {
-      "name": "Text Field",
-      "kind": "input",
-      "refersTo": "input",
-      "description": "会议标题、说话人和转录修订输入。",
-      "html": "<label class=\"ds-field\"><span>会议标题</span><input placeholder=\"例如：产品周会\"></label>",
-      "css": ".ds-field{display:grid;gap:8px;color:#111;font:500 13px/1.35 system-ui,sans-serif}.ds-field input{min-height:48px;padding:0 12px;border:1px solid #8b8b85;border-radius:6px;background:#fff;color:#111;font:400 16px/1.55 system-ui,sans-serif}.ds-field input:focus{outline:2px solid #111;outline-offset:1px}"
-    },
-    {
-      "name": "Recorder",
+      "name": "Recorder Instrument",
       "kind": "custom",
-      "refersTo": "status-rail",
-      "description": "稳定展示计时、事实音频状态和录音控制。",
-      "html": "<section class=\"ds-recorder\"><span>录音中 · 实时转录仅供参考</span><strong>01:23:45</strong><div class=\"ds-ruler\"></div><p>事实音频已保存至本机</p></section>",
-      "css": ".ds-recorder{padding:24px;border:1px solid #8b8b85;border-radius:12px;background:#fff;color:#111;font-family:system-ui,sans-serif}.ds-recorder span,.ds-recorder p{font-size:13px;color:#52524e}.ds-recorder strong{display:block;margin:28px 0 18px;font-size:56px;font-weight:400;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.ds-ruler{height:12px;border-top:1px solid #111;background:repeating-linear-gradient(90deg,#111 0 1px,transparent 1px 12px)}"
+      "refersTo": "recorder-instrument",
+      "description": "稳定展示计时、事实音频状态和录音控制的核心仪器。",
+      "html": "<section class=\"ds-recorder\"><span class=\"ds-recorder-state\">● 录音中 · 实时转录仅供参考</span><h3>产品评审会</h3><strong>01:23:45</strong><div class=\"ds-ruler\" aria-hidden=\"true\"></div><p>事实音频正在本机持续写入</p></section>",
+      "css": ".ds-recorder{box-sizing:border-box;width:100%;padding:24px;border:1px solid #8B8B85;border-radius:12px;background:#FFFFFF;color:#111111;font-family:system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif}.ds-recorder-state,.ds-recorder p{color:#52524E;font-size:13px;line-height:1.35}.ds-recorder h3{margin:16px 0 0;font-size:20px;line-height:1.25;font-weight:600}.ds-recorder strong{display:block;margin:28px 0 18px;font-size:56px;font-weight:400;line-height:1;letter-spacing:-1.8px;font-variant-numeric:tabular-nums}.ds-ruler{height:28px;background:repeating-linear-gradient(90deg,#8B8B85 0 1px,transparent 1px 12px);mask:linear-gradient(transparent 7px,#000 7px 21px,transparent 21px);border-top:1px solid #111111}.ds-recorder p{margin:18px 0 0}"
+    },
+    {
+      "name": "Bottom Action Bar",
+      "kind": "nav",
+      "refersTo": "bottom-action-bar",
+      "description": "贴合安全区并稳定承载当前流程的关键操作。",
+      "html": "<footer class=\"ds-bottom-bar\"><p>结束后将基于完整本地音频生成最终转录。</p><button>结束并保存</button></footer>",
+      "css": ".ds-bottom-bar{box-sizing:border-box;width:100%;padding:12px 16px 16px;border-top:1px solid #D8D8D3;background:#FFFFFF;color:#111111;font-family:system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif}.ds-bottom-bar p{margin:0 0 12px;color:#52524E;font-size:15px;line-height:1.5}.ds-bottom-bar button{box-sizing:border-box;width:100%;min-height:48px;padding:12px 16px;border:1px solid #111111;border-radius:8px;background:#111111;color:#FAFAF8;font:600 16px/1.55 system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif;transition:background 120ms ease-out,transform 120ms ease-out}.ds-bottom-bar button:hover{background:#282826}.ds-bottom-bar button:active{transform:scale(.99)}.ds-bottom-bar button:focus-visible{outline:2px solid #111111;outline-offset:3px}"
+    },
+    {
+      "name": "Scaffold Header",
+      "kind": "nav",
+      "refersTo": "scaffold-header",
+      "description": "直接、左对齐且仅保留必要页面动作的原生页面标题区。",
+      "html": "<header class=\"ds-header\"><h1>会迹</h1><button aria-label=\"设置\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z\"/></svg></button></header>",
+      "css": ".ds-header{box-sizing:border-box;display:flex;width:100%;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid #D8D8D3;background:#F7F7F5;color:#111111;font-family:system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif}.ds-header h1{margin:0;font-size:32px;line-height:1.1;font-weight:600;letter-spacing:-.8px}.ds-header button{display:grid;width:48px;height:48px;place-items:center;border:0;border-radius:8px;background:transparent;color:#111111;transition:background 120ms ease-out}.ds-header button:hover,.ds-header button:active{background:#EFEFEC}.ds-header button:focus-visible{outline:2px solid #111111;outline-offset:2px}.ds-header svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}"
     }
   ],
   "narrative": {
-    "northStar": "事实账本 / Evidence Ledger",
-    "overview": "会迹把会议呈现为持续写入、可追溯的事实账本。纸面、时间轨道和专业录音设备的秩序感取代通用卡片仪表盘；品牌识别来自账本结构，而不是装饰色。",
+    "northStar": "安静的事实账本 / The Quiet Evidence Ledger",
+    "overview": "会迹把会议呈现为一本正在持续写入、可以逐层回溯的事实账本。纸面、时间轨道与专业录音设备的秩序感构成品牌识别；界面不靠品牌色或 AI 装饰制造“智能感”，而是让用户先确认录音是否安全，再阅读实时预览，最后回到最终转录与证据。\n\n这套系统的气质是冷静、明确、可靠、低噪声。信息密度接近原生记录工具：手机保持克制单列，平板将会议索引与事实详情并置；动效只确认操作与状态变化，不承担装饰。已确认的反向参照是卡片仪表盘、装饰性波形、彩色状态、渐变、玻璃、发光、漂浮阴影和虚构 AI 可视化。",
     "keyCharacteristics": [
       "连续记录条取代卡片网格，时间轨道贯穿会议、转录与证据。",
-      "纯灰阶语义，状态通过图标、文字、边界和填充共同编码。",
-      "录音计时器使用等宽数字，事实音频状态始终紧邻计时与控制。",
-      "低曲率、细分隔线、零装饰阴影。",
-      "手机单列、平板事实栏与证据工作区。"
+      "纯灰阶语义，状态通过文字、图标、边界、位置和填充共同编码。",
+      "录音计时器是唯一允许占据超大字号的动态数字。",
+      "低曲率、细分隔线、静止状态零阴影。",
+      "手机单列直达任务，平板使用索引与事实工作区的主从布局。",
+      "Android 与 iOS 共享视觉令牌，但保留各自原生导航、手势、安全区和辅助技术语义。"
     ],
     "rules": [
-      {"name": "The Achromatic State Rule", "body": "状态颜色全部来自灰阶；任何状态都必须同时有图标和明确文字。", "section": "colors"},
-      {"name": "The Ink Block Rule", "body": "实心墨色只用于当前最重要的动作或状态，同一视口最多出现两个大面积墨块。", "section": "colors"},
-      {"name": "The Instrument Number Rule", "body": "大号数字只属于正在变化的录音时间；普通统计不得竞争这一层级。", "section": "typography"},
-      {"name": "The Continuous Ledger Rule", "body": "同类记录属于一张连续表面，不为每一行制造独立悬浮卡片。", "section": "layout"},
-      {"name": "The Stable Fact Rule", "body": "ASR 降级、错误或新文本不得移动计时器、事实音频状态和结束操作。", "section": "layout"},
-      {"name": "The Zero Resting Shadow Rule", "body": "页面、列表行、状态栏和内容分区在静止状态下阴影为零。", "section": "elevation"}
+      {
+        "name": "The Achromatic State Rule",
+        "body": "所有语义状态都来自灰阶；录音、成功、警告和错误必须同时具有明确文字与非颜色线索。",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Block Rule",
+        "body": "实心墨色只属于当前页面最重要的动作或状态；同一视口最多出现两个大面积墨块。",
+        "section": "colors"
+      },
+      {
+        "name": "The Warm Paper Rule",
+        "body": "大面积背景优先使用略暖的账本纸面，纯白只留给承载事实内容的记录表面。",
+        "section": "colors"
+      },
+      {
+        "name": "The Instrument Number Rule",
+        "body": "大号数字只属于正在变化的录音时间；普通时长、统计、模型信息和容量不得与计时器竞争。",
+        "section": "typography"
+      },
+      {
+        "name": "The Three-Weight Rule",
+        "body": "全局只使用 400、500、600 三档字重，避免用粗细噪声代替信息层级。",
+        "section": "typography"
+      },
+      {
+        "name": "The Continuous Ledger Rule",
+        "body": "同类记录属于同一张连续表面，以分隔线和时间轨组织；不得为每条记录制造独立圆角卡片。",
+        "section": "layout"
+      },
+      {
+        "name": "The Stable Fact Rule",
+        "body": "ASR 变慢、失败、恢复或产生新文本时，不得移动计时器、事实音频状态、暂停和结束操作。",
+        "section": "layout"
+      },
+      {
+        "name": "The Content-Driven Breakpoint Rule",
+        "body": "响应式变化只由可用宽度决定，不读取设备型号、方向或平台字符串。",
+        "section": "layout"
+      },
+      {
+        "name": "The Zero Resting Shadow Rule",
+        "body": "页面、列表行、状态栏、卡片和内容分区在静止状态下阴影为零。",
+        "section": "elevation"
+      },
+      {
+        "name": "The Structural Depth Rule",
+        "body": "先使用边界、纸面差与空间关系表达层级，只有系统覆盖层可以获得临时悬浮语义。",
+        "section": "elevation"
+      },
+      {
+        "name": "The Low-Curvature Rule",
+        "body": "圆角只表达组件边界，不承担亲和力装饰；禁止胶囊式大圆角卡片与任意半径。",
+        "section": "shapes"
+      },
+      {
+        "name": "The Shared-Edge Rule",
+        "body": "同一数据集合中的相邻记录共享边界，避免卡片套卡片和重复轮廓。",
+        "section": "shapes"
+      }
     ],
     "dos": [
       "Do 把会议、转录和证据组织到时间轨道，而不是创建新的卡片类型。",
-      "Do 让事实音频状态、计时和结束操作永远先于实时转录。",
-      "Do 使用文字、图标、边界和位置共同编码所有状态。",
-      "Do 使用 context.theme 与 AppStyle 令牌。"
+      "Do 让事实音频状态、计时和结束操作永远先于实时转录与 AI 派生内容。",
+      "Do 使用文字、图标、边界、位置和填充共同编码所有状态。",
+      "Do 使用 Forui、`context.theme` 与 `AppStyle` 令牌实现组件。",
+      "Do 保留 Android 与 iOS 原生返回、手势、安全区、字体缩放和辅助技术行为。",
+      "Do 在紧凑手机、平板、浅色、深色和 2.0 字体缩放下验证真实内容与长文案。"
     ],
     "donts": [
       "Don't 使用红、黄、绿、品牌蓝、渐变、玻璃、发光或 AI 装饰色。",
-      "Don't 使用悬浮卡片网格、卡片套卡片或装饰性波形。",
-      "Don't 从概念图引入未规划功能或虚构数据。",
-      "Don't 覆盖平台原生返回、手势、安全区和辅助技术行为。"
+      "Don't 使用悬浮卡片网格、卡片套卡片、装饰性波形或虚构音量动画。",
+      "Don't 用颜色单独表达录音、成功、警告、失败或模型状态。",
+      "Don't 引入登录、同步、云端录音、虚构容量、虚构转录或未规划功能。",
+      "Don't 在录音开始后暗中切换模型，或让派生处理状态干扰事实录音控制。",
+      "Don't 为追求跨平台像素一致而覆盖 Android 与 iOS 的原生交互。"
     ]
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
 import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/ui/core/app_ledger.dart';
@@ -37,7 +38,7 @@ void main() {
     expect(startMeetingRequested, isTrue);
   });
 
-  testWidgets('显示处理中和失败会议，并在宽屏保持连续账本', (WidgetTester tester) async {
+  testWidgets('平板使用会议账本和事实预览主从布局', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1000, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -64,15 +65,40 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('meeting-ledger')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meeting-home-master-detail')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('meeting-preview-processing')),
+      findsOneWidget,
+    );
     expect(find.byType(AppLedgerSurface), findsOneWidget);
     expect(find.byType(AppLedgerRow), findsNWidgets(2));
     expect(find.text('处理中'), findsOneWidget);
-    expect(find.text('失败 · 打开查看原因和事实音频状态'), findsOneWidget);
-    expect(find.byIcon(FLucideIcons.audioLines), findsOneWidget);
-    expect(find.byIcon(FLucideIcons.circleAlert), findsOneWidget);
+    expect(find.text('失败 · 打开查看事实音频状态'), findsOneWidget);
+    expect(find.text('标准模型（Paraformer） · 2024-03-09'), findsOneWidget);
+    expect(find.byIcon(FLucideIcons.audioLines), findsWidgets);
+    expect(find.byIcon(FLucideIcons.circleAlert), findsWidgets);
     expect(find.text('开始会议'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('meeting-processing'))).height,
+      lessThan(90),
+    );
+    expect(
+      tester.getTopLeft(find.text('失败 · 打开查看事实音频状态')).dy,
+      greaterThanOrEqualTo(tester.getBottomLeft(find.text('失败会议')).dy),
+    );
 
     await tester.tap(find.byKey(const ValueKey('meeting-failed')));
+    await tester.pumpAndSettle();
+    expect(opened, isNull);
+    expect(
+      find.byKey(const ValueKey('meeting-preview-failed')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('open-selected-meeting')));
     await tester.pumpAndSettle();
     expect(opened?.id, 'failed');
     viewModel.dispose();
@@ -120,6 +146,10 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('meeting-ledger')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meeting-home-master-detail')),
+      findsNothing,
+    );
     expect(find.text('开始会议'), findsOneWidget);
     expect(find.text('录音中'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -157,8 +187,8 @@ Meeting _meeting(String id, String title, MeetingState state) => Meeting(
   createdAt: DateTime.utc(2026, 7, 24),
   status: state,
   audioDurationMs: 12000,
-  requestedModelId: 'paraformer',
-  recordingModelId: 'paraformer',
-  recordingModelVersion: '1',
+  requestedModelId: paraformerStandardModelId,
+  recordingModelId: paraformerStandardModelId,
+  recordingModelVersion: '2024-03-09',
   lastErrorCode: state == MeetingState.failed ? 'processing.failed' : null,
 );

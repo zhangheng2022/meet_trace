@@ -1,338 +1,321 @@
 ---
 name: 会迹 · MeetTrace
-description: 以时间刻度组织事实音频的黑白会议记录系统
+description: 以连续时间账本守护本地事实音频的黑白会议记录系统
 colors:
-  background: "#F7F7F5"
-  foreground: "#111111"
+  paper: "#F7F7F5"
+  ink: "#111111"
   sheet: "#FFFFFF"
+  ink-inverse: "#FAFAF8"
   surface-muted: "#EFEFEC"
-  muted-foreground: "#52524E"
-  border: "#D8D8D3"
-  border-strong: "#8B8B85"
-  focus-ring: "#111111"
-  dark-background: "#0D0D0D"
-  dark-foreground: "#F4F4F1"
-  dark-sheet: "#151515"
-  dark-surface-muted: "#202020"
-  dark-muted-foreground: "#B7B7B0"
-  dark-border: "#343432"
-  dark-border-strong: "#777772"
+  ink-muted: "#52524E"
+  rule: "#D8D8D3"
+  rule-strong: "#8B8B85"
+  night-paper: "#0D0D0D"
+  night-ink: "#F4F4F1"
+  night-sheet: "#151515"
+  night-surface-muted: "#202020"
+  night-ink-muted: "#B7B7B0"
+  night-rule: "#343432"
+  night-rule-strong: "#777772"
 typography:
-  family: "system-ui, Roboto, 'Noto Sans SC', sans-serif"
-  display: "600 32px/1.2"
-  title: "600 20px/1.35"
-  body: "400 16px/1.55"
-  label: "500 13px/1.35"
-  recorder-time: "400 56px/1.0 tabular-nums"
-radii:
+  display:
+    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', sans-serif"
+    fontSize: "32px"
+    fontWeight: 600
+    lineHeight: 1.1
+    letterSpacing: "-0.8px"
+  headline:
+    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', sans-serif"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "-0.2px"
+  title:
+    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', sans-serif"
+    fontSize: "18px"
+    fontWeight: 600
+    lineHeight: 1.35
+    letterSpacing: "-0.1px"
+  body:
+    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', sans-serif"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: 1.55
+    letterSpacing: "normal"
+  label:
+    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', sans-serif"
+    fontSize: "13px"
+    fontWeight: 500
+    lineHeight: 1.35
+    letterSpacing: "0.1px"
+    fontFeature: "tabular-nums"
+  recorder-time:
+    fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', 'PingFang SC', sans-serif"
+    fontSize: "56px"
+    fontWeight: 400
+    lineHeight: 1
+    letterSpacing: "-1.8px"
+    fontFeature: "tabular-nums"
+rounded:
   xs: "4px"
   sm: "6px"
   md: "8px"
   lg: "12px"
 spacing:
-  2xs: "4px"
+  "2xs": "4px"
   xs: "8px"
   sm: "12px"
   md: "16px"
   lg: "24px"
   xl: "32px"
-  2xl: "48px"
-breakpoints:
-  medium: "600px"
-  expanded: "840px"
-  wide-checkpoint: "1024px"
-content-widths:
-  compact: "520px"
-  reading: "760px"
-  wide: "1280px"
+  "2xl": "48px"
+components:
+  button-primary:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.ink-inverse}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: "12px 16px"
+    height: "48px"
+  button-outline:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: "12px 16px"
+    height: "48px"
+  text-field:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.sm}"
+    padding: "12px"
+    height: "48px"
+  ledger-surface:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
+    width: "100%"
+  ledger-row:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "0"
+    padding: "12px 16px"
+    width: "100%"
+  ledger-row-selected:
+    backgroundColor: "{colors.surface-muted}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "0"
+    padding: "12px 16px"
+    width: "100%"
+  status-notice:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.md}"
+    padding: "12px"
+    width: "100%"
+  recorder-instrument:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "24px"
+    width: "100%"
+  bottom-action-bar:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    padding: "12px 16px 16px"
+    width: "100%"
+  scaffold-header:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    typography: "{typography.display}"
+    padding: "16px"
+    width: "100%"
 ---
 
-# 会迹 · MeetTrace 设计系统
+# Design System: 会迹 · MeetTrace
 
-> 版本：2026-07-27
->
-> 设计方向：事实账本 / Evidence Ledger
->
-> 目标平台：Android + iOS，自适应手机与平板
->
-> 设计事实：本地音频是唯一事实源；实时转录是可降级预览；AI 总结只基于最终转录。
+## Overview
 
-<!--
-方向契约：
-1. World：一本持续写入、可回溯的会议事实账本。
-2. Signature：贯穿会议、转录与证据的时间轨道。
-3. Hero：录音页唯一的大号等宽计时器与真实时间刻度。
-4. Density：手机克制单列；平板采用事实栏 + 证据工作区。
-5. Rejection：拒绝卡片仪表盘、装饰性波形、彩色状态、渐变、玻璃、发光和虚构 AI 可视化。
--->
+**Creative North Star: "安静的事实账本 / The Quiet Evidence Ledger"**
 
-## 1. 北极星：事实账本
+会迹把会议呈现为一本正在持续写入、可以逐层回溯的事实账本。纸面、时间轨道与专业录音设备的秩序感构成品牌识别；界面不靠品牌色或 AI 装饰制造“智能感”，而是让用户先确认录音是否安全，再阅读实时预览，最后回到最终转录与证据。
 
-会迹不是通用效率工具，也不是“AI 卡片仪表盘”。它把每场会议呈现为持续写入、可追溯的事实记录：用户先确认录音是否安全，再阅读实时预览，最后基于封存音频获得最终转录与证据。
+这套系统的气质是冷静、明确、可靠、低噪声。信息密度接近原生记录工具：手机保持克制单列，平板将会议索引与事实详情并置；动效只确认操作与状态变化，不承担装饰。已确认的反向参照是卡片仪表盘、装饰性波形、彩色状态、渐变、玻璃、发光、漂浮阴影和虚构 AI 可视化。
 
-品牌识别来自三种结构，而不是品牌色：
+**Key Characteristics:**
 
-- 连续的时间记录条；
-- 细而稳定的事实轨道；
-- 像专业录音设备一样克制的计时与控制。
+- 连续记录条取代卡片网格，时间轨道贯穿会议、转录与证据。
+- 纯灰阶语义，状态通过文字、图标、边界、位置和填充共同编码。
+- 录音计时器是唯一允许占据超大字号的动态数字。
+- 低曲率、细分隔线、静止状态零阴影。
+- 手机单列直达任务，平板使用索引与事实工作区的主从布局。
+- Android 与 iOS 共享视觉令牌，但保留各自原生导航、手势、安全区和辅助技术语义。
 
-三个页面方向组合如下：
+## Colors
 
-- 首页使用“时间账本”：会议按时间连续排列，不使用独立悬浮卡片网格。
-- 录音页使用“录音仪器”：计时、事实音频状态和结束操作拥有最高稳定性。
-- 平板详情使用“证据工作台”：左侧事实栏固定来源信息，右侧承载转录、总结与证据。
+配色是带轻微暖度的黑、白与中性灰；浅色主题像耐看的账本纸，深色主题像低反光录音设备面板。
 
-## 2. 设计原则
+### Primary
 
-### 2.1 The Achromatic State Rule
+- **事实墨色（Fact Ink）** (#111111): 承载标题、主要文字、焦点环、最高优先级操作和需要强确认的状态。
+- **反白纸墨（Inverse Paper Ink）** (#FAFAF8): 用于事实墨色之上的按钮文字、图标与状态标记。
 
-所有语义状态使用黑、白和中性灰。录音、成功、警告、错误不能只依赖颜色，必须同时提供图标、明确文字、边界或填充差异。
+### Neutral
 
-### 2.2 The Ink Block Rule
+- **账本纸面（Ledger Paper）** (#F7F7F5): 应用的浅色背景，和纯白记录表面形成轻微层次。
+- **记录白页（Record Sheet）** (#FFFFFF): 列表、表单、状态通知和工作区的主要内容表面。
+- **静默灰面（Quiet Surface）** (#EFEFEC): 选中、按下、弱分区与次级控件背景。
+- **注释墨色（Annotation Ink）** (#52524E): 时间、来源、时长、解释和次级事实。
+- **账本细线（Ledger Rule）** (#D8D8D3): 连续记录行、内容区与底部操作栏的常规分隔。
+- **仪器强线（Instrument Rule）** (#8B8B85): 关键事实边界、输入边界和需要增强区分的状态轨。
+- **夜间纸面（Night Ledger Paper）** (#0D0D0D): 深色主题的应用背景。
+- **夜间事实墨色（Night Fact Ink）** (#F4F4F1): 深色主题的标题、主要文字与强状态。
+- **夜间记录页（Night Record Sheet）** (#151515): 深色主题的事实内容表面。
+- **夜间静默灰面（Night Quiet Surface）** (#202020): 深色主题的选中、按下和弱分区背景。
+- **夜间注释墨色（Night Annotation Ink）** (#B7B7B0): 深色主题的时间、来源与解释。
+- **夜间账本细线（Night Ledger Rule）** (#343432): 深色主题的常规分隔。
+- **夜间仪器强线（Night Instrument Rule）** (#777772): 深色主题的关键边界与状态轨。
 
-实心墨色仅用于当前页面最重要的动作或状态。同一视口最多出现两个大面积黑色块，避免操作优先级互相竞争。
+### Named Rules
 
-### 2.3 The Instrument Number Rule
+**The Achromatic State Rule.** 所有语义状态都来自灰阶；录音、成功、警告和错误必须同时具有明确文字与非颜色线索。
 
-大号数字只属于正在变化的录音时间。普通时长、统计和模型信息使用正文或标签层级，不得与计时器竞争。
+**The Ink Block Rule.** 实心墨色只属于当前页面最重要的动作或状态；同一视口最多出现两个大面积墨块。
 
-### 2.4 The Continuous Ledger Rule
+**The Warm Paper Rule.** 大面积背景优先使用略暖的账本纸面，纯白只留给承载事实内容的记录表面。
 
-同类记录属于同一张连续表面。列表行以分隔线和时间轨组织，不为每条记录制造独立圆角卡片。
+## Typography
 
-### 2.5 The Stable Fact Rule
+**Display Font:** 平台系统无衬线体（Android：Roboto / Noto Sans SC；iOS：SF Pro / PingFang SC）
 
-ASR 变慢、失败、恢复或产生新文本时，不得移动计时器、事实音频状态、暂停和结束操作。推理可降级，录音控制面不能抖动。
+**Body Font:** 同一平台系统无衬线体
 
-### 2.6 The Zero Resting Shadow Rule
+**Label/Mono Font:** 标签沿用系统字体；时间、时长和计时器启用等宽数字特性
 
-页面、列表行、状态栏和内容分区静止时不使用阴影。层级依靠纸面差、边界、间距和排版表达。
+**Character:** 字体保持原生、克制和高度可读。层级依靠字号、字重与留白，而不是全大写、装饰字体或过多字重；中文、数字和必要英文术语应在同一行中保持稳定节奏。
 
-## 3. 视觉令牌
+### Hierarchy
 
-### 3.1 色彩
+- **Display** (600, 32px, line-height 1.1): 页面主标题和最高层级结果；手机与平板都保持明确但不过度品牌化。
+- **Headline** (600, 20px, line-height 1.25): 区段标题、工作区标题和重要分组。
+- **Title** (600, 18px, line-height 1.35): 会议标题、列表主信息和状态标题。
+- **Body** (400, 16px, line-height 1.55): 表单、说明、转录和详情正文；长文本阅读区最大宽度为 760px。
+- **Label** (500, 13px, line-height 1.35): 时间、日期、状态、来源和度量；数字启用 tabular figures。
+- **Recorder Time** (400, 56px, line-height 1.0): 录音页唯一的超大数字角色；紧凑手机可降至 40px，平板最大 64px。
 
-浅色主题：
+### Named Rules
 
-| 角色 | 值 | 用途 |
-|---|---:|---|
-| 账本纸面 | `#F7F7F5` | 应用背景 |
-| 记录白页 | `#FFFFFF` | 列表、面板、输入表面 |
-| 事实墨色 | `#111111` | 标题、主要操作、强状态 |
-| 次要文字 | `#52524E` | 时间、说明、来源 |
-| 弱表面 | `#EFEFEC` | 选中、按下、弱分区 |
-| 分隔线 | `#D8D8D3` | 连续账本行、常规边界 |
-| 强边界 | `#8B8B85` | 录音仪器、输入和关键事实栏 |
+**The Instrument Number Rule.** 大号数字只属于正在变化的录音时间；普通时长、统计、模型信息和容量不得与计时器竞争。
 
-深色主题使用 `#0D0D0D` 背景、`#151515` 白页替代表面、`#F4F4F1` 事实墨色、`#343432` 分隔线。不得添加红、黄、绿、品牌蓝或状态渐变。
+**The Three-Weight Rule.** 全局只使用 400、500、600 三档字重，避免用粗细噪声代替信息层级。
 
-### 3.2 排版
+## Layout
 
-- 字体采用平台系统字体；Android 优先 Roboto / Noto Sans SC，iOS 优先 SF Pro / PingFang SC。
-- 字重只使用 400、500、600。
-- 页面主标题 32px；区段标题 20px；正文 16px；标签 13px。
-- 录音时间手机 40–56px、平板最大 64px，使用等宽数字。
-- 正文行高 1.55；长转录阅读宽度不超过 760px。
+布局建立在 4pt 节奏上，复用 4、8、12、16、24、32、48 的间距级别。页面默认水平留白为 16px；紧凑表单最大宽度 520px，长文本阅读区最大宽度 760px，扩展工作台最大宽度 1280px。触控目标以 48×48 为共享下限，并在 iOS 上保留至少 44pt 的原生要求。
 
-### 3.3 间距、边界与曲率
+小于 600px 使用单列，关键操作固定在底部安全区，会议行点击后直接进入详情。600–839px 仍保持单一阅读顺序，只增加留白和内容宽度。840px 起允许主从布局：首页左侧为约 400–480px 的会议账本，右侧为事实预览；会议详情采用 280px 事实栏与证据工作区。1024px 是强制视觉检查点，不是另一套视觉语言。
 
-- 使用 4pt 基础节奏：4、8、12、16、24、32、48。
-- 触控目标最小 48 × 48。
-- 圆角只使用 4、6、8、12；不得使用胶囊式大圆角容器。
-- 常规边界 1px，关键事实边界 2px，状态轨 3px。
-- 时间列手机宽 64px；平板事实栏宽 280px。
+列表、状态和转录按内容自然增高，不用固定高度裁切文本。必须在 320、375、414、768、1024 宽度以及 2.0 字体缩放下保持关键事实与操作可见，不产生横向溢出。
 
-### 3.4 动效
+### Named Rules
 
-- 按下、选择和状态切换使用约 `120ms ease-out`。
-- 允许轻微缩放反馈，但不得循环呼吸、漂浮或用动画假装录音可靠。
-- 减少动态效果开启时，所有信息和操作仍完整可用。
+**The Continuous Ledger Rule.** 同类记录属于同一张连续表面，以分隔线和时间轨组织；不得为每条记录制造独立圆角卡片。
 
-## 4. 核心组件
+**The Stable Fact Rule.** ASR 变慢、失败、恢复或产生新文本时，不得移动计时器、事实音频状态、暂停和结束操作。
 
-### 4.1 Primary Button
+**The Content-Driven Breakpoint Rule.** 响应式变化只由可用宽度决定，不读取设备型号、方向或平台字符串。
 
-黑底白字、48px 高、8px 圆角。每个页面只保留一个主操作，例如“开始会议”或“结束并保存”。
+## Elevation & Depth
 
-### 4.2 Outline Button
+系统静止时不使用阴影。层级由账本纸面与记录白页的轻微明度差、1px 分隔线、2px 强边界、3px 状态轨、间距和排版建立；弹窗与平台覆盖层仍遵循 Forui 和系统原生语义，但不得把阴影扩散为全局装饰。
 
-白页底、强灰边界、黑字，用于暂停、恢复、取消和次级操作。危险操作必须有明确动词与二次确认，不依赖红色。
+### Named Rules
 
-### 4.3 Ledger Surface / Ledger Row
+**The Zero Resting Shadow Rule.** 页面、列表行、状态栏、卡片和内容分区在静止状态下阴影为零。
 
-一组会议共享连续白页表面。每行包含：
+**The Structural Depth Rule.** 先使用边界、纸面差与空间关系表达层级，只有系统覆盖层可以获得临时悬浮语义。
 
-1. 64px 时间列；
-2. 1px 事实轨；
-3. 标题、时长、状态与来源；
-4. 必要时的尾部操作。
+## Shapes
 
-当前录音可用更强事实轨和浅灰填充强调，但不得造成彩色“直播”效果。
+形状语言接近 shadcn/ui 的克制几何：小而一致的圆角、清晰边界、没有软糖式胶囊容器。4px 用于微型标记，6px 用于输入和小控件，8px 用于按钮、状态通知和常规容器，12px 只用于录音仪器、空状态图标框和需要更完整包裹感的面板。
 
-### 4.4 Status Rail
+常规边界为 1px，关键事实边界为 2px，状态轨为 3px。连续账本内部行保持直角，只允许整张表面的外缘圆角；全宽首页账本可以移除外框，让页面本身成为表面。
 
-由 3px 竖轨、图标、标题和事实说明组成。标准文案结构：
+### Named Rules
 
-- 标题说明发生了什么；
-- 正文说明对事实音频和下一步的真实影响。
+**The Low-Curvature Rule.** 圆角只表达组件边界，不承担亲和力装饰；禁止胶囊式大圆角卡片与任意半径。
 
-示例：“实时转录已暂停。事实音频仍在本机持续写入。”
+**The Shared-Edge Rule.** 同一数据集合中的相邻记录共享边界，避免卡片套卡片和重复轮廓。
 
-### 4.5 Recorder Instrument
+## Components
 
-录音仪器包含固定顺序：
+组件优先使用 Forui 的 `F*` 原语，通过 `context.theme` 与 `AppStyle` 取得令牌。Material 只负责应用外壳、平台集成或已记录的能力缺口。
 
-1. 录音状态与“实时转录仅供参考”；
-2. 会议标题；
-3. 大号计时器；
-4. 真实时间刻度，不使用伪波形；
-5. 事实音频保存状态；
-6. 锁定模型；
-7. 暂停 / 恢复与结束操作。
+### Buttons
 
-### 4.6 Text Field
+- **Shape:** 克制圆角（8px），最小高度 48px。
+- **Primary:** 事实墨色底与反白文字，正文层级 600 字重；每个页面只保留一个主操作。
+- **Outline:** 记录白页底、仪器强线边界和事实墨色文字，用于暂停、恢复、取消和次级操作。
+- **Ghost:** 无常驻容器，用于低优先级、局部且可撤销的操作。
+- **Hover / Focus / Pressed:** 约 120ms ease-out；按下可轻微缩放或切换静默灰面，焦点必须有清晰的 2px 事实墨色轮廓。减少动态效果时立即切换状态。
 
-标签位于输入框上方，输入高度至少 48px。用于会议标题、说话人名称和转录修订；不得以占位符代替标签。
+### Cards / Containers
 
-## 5. 页面内容与 Stitch 设计清单
+- **Corner Style:** 常规容器 8px，完整面板 12px，连续账本行 0px。
+- **Background:** 记录白页；选中与按下使用静默灰面。
+- **Shadow Strategy:** 静止状态无阴影，使用边界与纸面差。
+- **Border:** 常规 1px 账本细线；关键事实和错误可增至 2px。
+- **Internal Padding:** 默认 16px；紧凑行和状态通知使用 12px；录音仪器使用 24px。
 
-以下页面必须基于真实产品能力设计。不要加入登录、同步、搜索、收藏、云端录音、截图、虚构容量或未规划的 AI 功能。
+### Inputs / Fields
 
-### UI-01 首页 / 会议账本
+- **Style:** 标签始终位于输入框上方；记录白页底、6px 圆角、1px 仪器强线边界，最小高度 48px。
+- **Focus:** 2px 事实墨色焦点轮廓，并保留足够偏移避免覆盖边界。
+- **Error / Disabled:** 使用明确文案、图标和边界变化；不依赖红色，也不以占位符代替标签。
 
-核心内容：
+### Navigation
 
-- 顶部品牌“会迹”和设置入口；
-- “本地事实记录”提示；
-- 会议时间账本；
-- 空状态“还没有会议”；
-- 主操作“开始会议”。
+- **Style:** `FScaffold` 提供页面结构，标题直接、左对齐，页面级动作数量保持克制。
+- **Android:** 保留系统预测返回、Material 导航语义与 Android 安全区。
+- **iOS:** 保留边缘返回手势、Dynamic Type、VoiceOver 与 iOS 安全区。
+- **Tablet:** 首页账本行负责选择，右侧“打开完整记录”负责进入详情；手机账本行直接进入详情。
 
-列表行字段：开始时间、会议标题、持续时长、事实音频状态、处理状态。正在录音的会议必须出现在账本中并可安全返回。
+### Ledger Surface / Ledger Row
 
-状态：加载、空、已有记录、录音中、处理中、处理失败。
+会议、转录和证据共用的签名组件。每行包含 64px 时间列、连续事实轨、标题与时长、状态图标和事实文案；普通行垂直内边距为 12px。正在录音或被选中的行使用静默灰面，录音状态使用墨色徽标与文字，不使用彩色直播效果。长标题或长状态必须纵向堆叠，不能与尾部状态碰撞。
 
-### UI-02 开始会议
+### Status Notice
 
-核心内容：
+状态通知由 3px 竖轨、Lucide 图标、标题和事实说明组成。标题说明发生了什么，正文说明对事实音频的影响以及用户下一步；错误状态可使用 2px 外边界，但保持灰阶。
 
-- 会议标题；
-- 当前全局默认模型；
-- 可折叠的“本场模型”覆盖选择；
-- 模型未安装、空间不足或设备不支持时的事实说明；
-- 主操作“开始录音”。
+### Recorder Instrument
 
-规则：录音开始后模型锁定；不得自动回退或混合模型输出。
+录音仪器按固定顺序展示：录音状态与“实时转录仅供参考”、会议标题、大号计时器、真实时间刻度、事实音频保存状态、锁定模型、暂停/恢复与“结束并保存”。时间刻度只表达经过时间，不模拟音量或生成装饰性波形。
 
-### UI-03 录音会话
+### Bottom Action Bar
 
-核心内容：
+底部操作栏贴合安全区，以记录白页和顶部细分隔线与内容区分离。主按钮占满可用宽度；辅助文案位于按钮上方，直接说明动作的事实影响。首页允许将整个底栏作为事实墨色主操作面。
 
-- Recorder Instrument；
-- 事实音频持续写入状态；
-- 锁定模型；
-- 实时转录预览并明确标注“仅供参考”；
-- 积压、仅录音、权限或存储异常；
-- 暂停 / 恢复；
-- “结束并保存”与确认流程。
+## Do's and Don'ts
 
-规则：状态变化不得移动计时与关键控制；实时预览队列可以降级，事实音频不可丢失。
+### Do:
 
-### UI-04 会议详情 / 证据工作台
+- **Do** 把会议、转录和证据组织到时间轨道，而不是创建新的卡片类型。
+- **Do** 让事实音频状态、计时和结束操作永远先于实时转录与 AI 派生内容。
+- **Do** 使用文字、图标、边界、位置和填充共同编码所有状态。
+- **Do** 使用 Forui、`context.theme` 与 `AppStyle` 令牌实现组件。
+- **Do** 保留 Android 与 iOS 原生返回、手势、安全区、字体缩放和辅助技术行为。
+- **Do** 在紧凑手机、平板、浅色、深色和 2.0 字体缩放下验证真实内容与长文案。
 
-手机：单列展示事实信息、转录和总结。
+### Don't:
 
-平板：左侧 280px 事实栏，右侧为证据工作区。
-
-事实栏字段：
-
-- 会议标题；
-- 录音时长；
-- 事实音频已保存状态；
-- 本场锁定模型及版本；
-- 最终处理状态。
-
-工作区内容：
-
-- 最终转录；
-- AI 总结；
-- 带时间戳的原文证据；
-- 说话人标签编辑；
-- 重新转录、分享和删除入口。
-
-状态：处理中、最终转录完成、处理失败、摘要关闭、摘要生成中、摘要失败、说话人分离降级。
-
-### UI-05 模型设置
-
-核心内容：
-
-- 全局默认模型；
-- 内置标准模型状态；
-- 高级模型下载、暂停、继续、校验、删除；
-- 存储与设备风险提示；
-- 说明“设置仅影响下一场会议”。
-
-### UI-06 权限与恢复
-
-核心内容：
-
-- 麦克风权限说明和重新授权入口；
-- 空间不足提示；
-- 非正常退出后的录音恢复；
-- 明确告知哪些事实音频已经安全写入。
-
-## 6. Android、iOS 与响应式规则
-
-### 6.1 手机
-
-- 小于 600px 使用单列；
-- 页面水平留白至少 16px；
-- 底部关键操作遵守安全区；
-- 320px 宽度和 2.0 字体缩放下不得横向溢出。
-
-### 6.2 中等宽度
-
-- 600–839px 增加内容留白，但仍保持单一阅读顺序；
-- 不为填满空间而创建卡片网格；
-- 表单最大宽度 520px，阅读区最大 760px。
-
-### 6.3 平板与大屏
-
-- 840px 起，会议详情可使用“事实栏 + 证据工作区”；
-- 1024px 是强制检查点，不是另一套视觉语言；
-- 整体工作台最大宽度 1280px；
-- 两栏变化只能改变排布，不能隐藏手机已有事实或操作。
-
-### 6.4 平台行为
-
-- Android 与 iOS 保留各自的返回图形、系统手势、状态栏和安全区；
-- 文本、日期、时间、键盘和辅助技术遵循平台惯例；
-- 视觉令牌共享，导航行为不强行同质化。
-
-## 7. 文案、状态与无障碍
-
-- 优先陈述事实：“事实音频仍在保存”，不要只说“发生错误”。
-- 明确区分“实时预览”“最终转录”“AI 总结”和“原文证据”。
-- 状态不得只依赖颜色或图形；图标必须有语义标签。
-- 所有可点击行和按钮最小 48px，并提供清晰焦点轮廓。
-- 支持系统字体缩放；文本不得以固定高度裁切。
-- 录音持续时间和证据时间戳使用可读语义，而不仅是视觉刻度。
-- 删除、结束录音和云端文本上传前必须明确对象、影响和下一步。
-
-## 8. 交付验收
-
-设计或实现完成前逐项核对：
-
-- [ ] 首页使用连续会议账本，不是卡片网格。
-- [ ] 录音页以计时、事实音频和控制为稳定中心。
-- [ ] 详情页在 840px 以上切换为事实栏 + 证据工作区。
-- [ ] 浅色与深色主题都只使用中性灰阶。
-- [ ] 所有状态同时具有文字和非颜色线索。
-- [ ] 没有装饰性波形、渐变、玻璃、发光和悬浮阴影。
-- [ ] 没有引入登录、同步或其他未规划能力。
-- [ ] Android 与 iOS 的返回、手势和安全区保持原生。
-- [ ] 320、375、414、768、1024 宽度均无横向溢出。
-- [ ] 录音降级时，事实音频状态和结束操作不移动。
-- [ ] UI 使用 Forui 组件、`context.theme` 与 `AppStyle` 令牌。
-
-机器可读组件与令牌镜像位于 `.impeccable/design.json`；两者共同构成当前设计权威。
+- **Don't** 使用红、黄、绿、品牌蓝、渐变、玻璃、发光或 AI 装饰色。
+- **Don't** 使用悬浮卡片网格、卡片套卡片、装饰性波形或虚构音量动画。
+- **Don't** 用颜色单独表达录音、成功、警告、失败或模型状态。
+- **Don't** 引入登录、同步、云端录音、虚构容量、虚构转录或未规划功能。
+- **Don't** 在录音开始后暗中切换模型，或让派生处理状态干扰事实录音控制。
+- **Don't** 为追求跨平台像素一致而覆盖 Android 与 iOS 的原生交互。
