@@ -444,31 +444,48 @@ final class _StartMeetingControl extends StatelessWidget {
     final theme = context.theme;
     final appStyle = theme.style.app;
     return FTappable(
+      key: const ValueKey('start-meeting-control'),
+      style: const FTappableStyleDelta.delta(
+        pressedEnterDuration: Duration.zero,
+        pressedExitDuration: Duration.zero,
+        motion: FTappableMotion.none,
+      ),
       semanticsLabel: '开始会议',
       onPress: onPress,
-      child: ColoredBox(
-        color: theme.colors.primary,
-        child: SafeArea(
-          top: false,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: appStyle.controlHeight + appStyle.spaceMd,
-            ),
-            child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(FLucideIcons.mic, color: theme.colors.primaryForeground),
-                  SizedBox(width: appStyle.spaceSm),
-                  Text(
-                    '开始会议',
-                    style: theme.typography.body.lg.copyWith(
-                      color: theme.colors.primaryForeground,
-                      fontWeight: FontWeight.w600,
-                    ),
+      builder: (context, variants, child) {
+        final pressed = variants.contains(FTappableVariant.pressed);
+        return AnimatedContainer(
+          key: const ValueKey('start-meeting-control-surface'),
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          color: Color.lerp(
+            theme.colors.primary,
+            theme.colors.primaryForeground,
+            pressed ? 0.12 : 0,
+          ),
+          child: child,
+        );
+      },
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: appStyle.controlHeight + appStyle.spaceMd,
+          ),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(FLucideIcons.mic, color: theme.colors.primaryForeground),
+                SizedBox(width: appStyle.spaceSm),
+                Text(
+                  '开始会议',
+                  style: theme.typography.body.lg.copyWith(
+                    color: theme.colors.primaryForeground,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

@@ -257,5 +257,13 @@
   "255": "Windows Project Build Configuration",
   "256": "Windows Flutter Build Rules",
   "257": "windows flutter generated plugin registrant",
-  "258": "Windows Runner Build Rules"
+  "258": "Windows Runner Build Rules",
+  "259": "hashCode",
+  "260": "lerp",
+  "261": "operator",
+  "262": "icons",
+  "263": "style",
+  "264": "_typography",
+  "265": "bool?",
+  "266": "String?"
 }

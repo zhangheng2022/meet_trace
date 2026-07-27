@@ -38,6 +38,43 @@ void main() {
     expect(startMeetingRequested, isTrue);
   });
 
+  testWidgets('开始会议按下时保持全宽底栏几何稳定', (WidgetTester tester) async {
+    var startMeetingRequested = false;
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(
+          onStartMeeting: () => startMeetingRequested = true,
+        ),
+      ),
+    );
+
+    final control = find.byKey(const ValueKey('start-meeting-control'));
+    final surface = find.byKey(const ValueKey('start-meeting-control-surface'));
+    final restingDecoration =
+        tester.widget<AnimatedContainer>(surface).decoration as BoxDecoration;
+    final tappable = tester.widget<FTappable>(control);
+    final tappableStyle = tappable.style(
+      tester.element(control).theme.tappableStyle,
+    );
+    final gesture = await tester.startGesture(tester.getCenter(control));
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(tappableStyle.motion.bounceTween.transform(1), 1);
+    expect(
+      tester.widget<AnimatedContainer>(surface).decoration,
+      isNot(restingDecoration),
+    );
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<AnimatedContainer>(surface).decoration,
+      restingDecoration,
+    );
+    expect(startMeetingRequested, isTrue);
+  });
+
   testWidgets('平板使用会议账本和事实预览主从布局', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1000, 800);
     tester.view.devicePixelRatio = 1;
