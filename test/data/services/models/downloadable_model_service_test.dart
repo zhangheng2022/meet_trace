@@ -4,15 +4,15 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/models/downloadable_model_service.dart';
-import 'package:meetily_ai/data/services/models/model_file_verifier.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/model_manifest.dart';
-import 'package:meetily_ai/domain/models/model_usage_lease.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/models/downloadable_model_service.dart';
+import 'package:meettrace/data/services/models/model_file_verifier.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/model_manifest.dart';
+import 'package:meettrace/domain/models/model_usage_lease.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -26,7 +26,7 @@ void main() {
   late DownloadableModelService service;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-model-download-');
+    root = await Directory.systemTemp.createTemp('meettrace-model-download-');
     layout = AppFileLayout(rootPath: root.path);
     installations = _MemoryInstallations();
     leases = _MemoryLeases();

@@ -69,7 +69,7 @@ final class SherpaOnnxSpikeRunner {
           repeatCount: repeatCount,
           validation: validation,
         ),
-        debugName: 'meetily-asr-spike-${spec.kind.name}',
+        debugName: 'meettrace-asr-spike-${spec.kind.name}',
       );
     } finally {
       memoryTimer.cancel();

@@ -4,7 +4,7 @@ import 'package:record/record.dart';
 
 import 'recording_ports.dart';
 
-const meetilyPcmRecordConfig = RecordConfig(
+const meettracePcmRecordConfig = RecordConfig(
   encoder: AudioEncoder.pcm16bits,
   sampleRate: 16000,
   numChannels: 1,
@@ -27,7 +27,7 @@ final class RecordPcmAudioCapture implements PcmAudioCapture {
 
   @override
   Future<Stream<Uint8List>> start() {
-    return _recorder.startStream(meetilyPcmRecordConfig);
+    return _recorder.startStream(meettracePcmRecordConfig);
   }
 
   @override

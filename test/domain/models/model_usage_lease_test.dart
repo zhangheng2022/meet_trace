@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/model_usage_lease.dart';
+import 'package:meettrace/domain/models/model_usage_lease.dart';
 
 void main() {
   test('租约只在 expiresAt 之前有效', () {

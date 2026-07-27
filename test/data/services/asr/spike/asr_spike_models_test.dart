@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/asr/spike/asr_spike_models.dart';
-import 'package:meetily_ai/data/services/asr/spike/sherpa_onnx_spike_runner.dart';
+import 'package:meettrace/data/services/asr/spike/asr_spike_models.dart';
+import 'package:meettrace/data/services/asr/spike/sherpa_onnx_spike_runner.dart';
 
 void main() {
   group('AsrSpikeModelSpec', () {
@@ -28,7 +28,7 @@ void main() {
     });
 
     test('缺失模型文件时返回精确相对路径', () async {
-      final root = await Directory.systemTemp.createTemp('meetily-spike-');
+      final root = await Directory.systemTemp.createTemp('meettrace-spike-');
       addTearDown(() => root.delete(recursive: true));
       await File(
         '${root.path}${Platform.pathSeparator}model.int8.onnx',
@@ -120,7 +120,7 @@ void main() {
 
   group('SherpaOnnxSpikeRunner', () {
     test('模型文件不完整时不加载原生运行库', () async {
-      final root = await Directory.systemTemp.createTemp('meetily-spike-');
+      final root = await Directory.systemTemp.createTemp('meettrace-spike-');
       addTearDown(() => root.delete(recursive: true));
       final runner = SherpaOnnxSpikeRunner();
 

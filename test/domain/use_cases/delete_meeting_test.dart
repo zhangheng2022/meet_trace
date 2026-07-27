@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/domain/use_cases/delete_meeting.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 
 void main() {
   test('先暂存会议文件再删除数据库并最终清理文件', () async {

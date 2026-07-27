@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/models/bundled_model_preparation_service.dart';
-import 'package:meetily_ai/data/services/models/model_file_verifier.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/data/services/vad/bundled_silero_vad_model.dart';
+import 'package:meettrace/data/services/models/bundled_model_preparation_service.dart';
+import 'package:meettrace/data/services/models/model_file_verifier.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/vad/bundled_silero_vad_model.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -27,7 +27,9 @@ void main() {
         bundledSileroVadModelFileName,
       ]),
     ).readAsBytes();
-    outputRoot = await Directory.systemTemp.createTemp('meetily-bundled-vad-');
+    outputRoot = await Directory.systemTemp.createTemp(
+      'meettrace-bundled-vad-',
+    );
   });
 
   tearDown(() async {

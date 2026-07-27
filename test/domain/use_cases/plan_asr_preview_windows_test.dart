@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/asr_preview.dart';
-import 'package:meetily_ai/domain/use_cases/plan_asr_preview_windows.dart';
+import 'package:meettrace/domain/models/asr_preview.dart';
+import 'package:meettrace/domain/use_cases/plan_asr_preview_windows.dart';
 
 void main() {
   group('AsrPreviewWindowPlanner', () {

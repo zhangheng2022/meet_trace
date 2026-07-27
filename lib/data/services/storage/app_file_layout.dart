@@ -11,11 +11,11 @@ final class AppFileLayout {
 
   static Future<AppFileLayout> forApplication() async {
     final supportDirectory = await getApplicationSupportDirectory();
-    return AppFileLayout(rootPath: p.join(supportDirectory.path, 'meetily'));
+    return AppFileLayout(rootPath: p.join(supportDirectory.path, 'meettrace'));
   }
 
   String get databaseDirectory => p.join(rootPath, 'database');
-  String get databasePath => p.join(databaseDirectory, 'meetily.db');
+  String get databasePath => p.join(databaseDirectory, 'meettrace.db');
   String get meetingsRoot => p.join(rootPath, 'meetings');
   String get modelsRoot => p.join(rootPath, 'models');
   String get modelTempRoot => p.join(modelsRoot, '.tmp');

@@ -2,15 +2,15 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/asr/asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/final_transcription_service.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/audio_source.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/data/services/asr/final_transcription_service.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/audio_source.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   late _MeetingRepository meetings;

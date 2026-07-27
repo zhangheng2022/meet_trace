@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/ui/core/app_responsive.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/ui/core/app_responsive.dart';
 
 void main() {
   for (final testCase in <(double, AppWindowSizeClass)>[

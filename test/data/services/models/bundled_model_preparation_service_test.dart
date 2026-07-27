@@ -3,14 +3,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/models/bundled_model_preparation_service.dart';
-import 'package:meetily_ai/data/services/models/model_file_verifier.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/model_manifest.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/models/bundled_model_preparation_service.dart';
+import 'package:meettrace/data/services/models/model_file_verifier.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/model_manifest.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -21,7 +21,7 @@ void main() {
   late BundledModelPreparationService service;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-bundled-model-');
+    root = await Directory.systemTemp.createTemp('meettrace-bundled-model-');
     layout = AppFileLayout(rootPath: root.path);
     repository = _MemoryInstallationRepository();
     assets = _FakeAssetSource({

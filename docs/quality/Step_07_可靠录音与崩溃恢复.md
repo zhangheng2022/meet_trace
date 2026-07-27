@@ -59,7 +59,7 @@ dart format lib test integration_test
 flutter analyze --no-pub
 flutter test --no-pub
 flutter build apk --debug --no-pub
-flutter test --no-pub integration_test/reliable_recording_test.dart -d 3f842cd0 --dart-define=MEETILY_RECORDING_SECONDS=30
+flutter test --no-pub integration_test/reliable_recording_test.dart -d 3f842cd0 --dart-define=MEETTRACE_RECORDING_SECONDS=30
 ```
 
 - 格式化：通过。

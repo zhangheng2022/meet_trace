@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/theme/theme.dart';
-import 'package:meetily_ai/ui/core/app_status_notice.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/theme/theme.dart';
+import 'package:meettrace/ui/core/app_status_notice.dart';
 
 void main() {
   for (final tone in AppStatusTone.values) {

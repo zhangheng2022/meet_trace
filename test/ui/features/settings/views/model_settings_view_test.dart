@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/ui/core/asr_model_option.dart';
-import 'package:meetily_ai/ui/features/settings/view_models/model_settings_view_model.dart';
-import 'package:meetily_ai/ui/features/settings/views/model_settings_view.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/ui/core/asr_model_option.dart';
+import 'package:meettrace/ui/features/settings/view_models/model_settings_view_model.dart';
+import 'package:meettrace/ui/features/settings/views/model_settings_view.dart';
 
 import '../../../../support/model_selection_fakes.dart';
 

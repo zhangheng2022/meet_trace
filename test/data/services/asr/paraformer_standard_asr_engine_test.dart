@@ -3,14 +3,14 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/asr/asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/paraformer_standard_asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/audio_source.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/data/services/asr/paraformer_standard_asr_engine.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/audio_source.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -18,7 +18,7 @@ void main() {
 
   setUp(() async {
     tempDirectory = await Directory.systemTemp.createTemp(
-      'meetily-paraformer-engine-',
+      'meettrace-paraformer-engine-',
     );
   });
 

@@ -3,21 +3,21 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:meetily_ai/data/repositories/sqflite_model_installation_repository.dart';
-import 'package:meetily_ai/data/repositories/sqflite_model_usage_lease_repository.dart';
-import 'package:meetily_ai/data/services/asr/asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/qwen_advanced_asr_engine.dart';
-import 'package:meetily_ai/data/services/storage/app_database.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/sqflite_model_installation_repository.dart';
+import 'package:meettrace/data/repositories/sqflite_model_usage_lease_repository.dart';
+import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/data/services/asr/qwen_advanced_asr_engine.dart';
+import 'package:meettrace/data/services/storage/app_database.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-const _modelRoot = String.fromEnvironment('MEETILY_QWEN_MODEL_ROOT');
+const _modelRoot = String.fromEnvironment('MEETTRACE_QWEN_MODEL_ROOT');
 const _prepareDelaySeconds = int.fromEnvironment(
-  'MEETILY_QWEN_PREPARE_DELAY_SECONDS',
+  'MEETTRACE_QWEN_PREPARE_DELAY_SECONDS',
 );
 
 void main() {
@@ -33,12 +33,12 @@ void main() {
       final root = Directory(
         p.join(
           temporary.path,
-          'meetily-step10-${DateTime.now().microsecondsSinceEpoch}',
+          'meettrace-step10-${DateTime.now().microsecondsSinceEpoch}',
         ),
       );
       final database = AppDatabase(
         databaseFactory: databaseFactory,
-        path: p.join(root.path, 'meetily.db'),
+        path: p.join(root.path, 'meettrace.db'),
       );
       final installations = SqfliteModelInstallationRepository(database);
       final leases = SqfliteModelUsageLeaseRepository(database);

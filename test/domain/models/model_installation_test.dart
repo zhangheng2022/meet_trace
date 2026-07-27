@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
-import 'package:meetily_ai/domain/models/domain_exception.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/domain_exception.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   test('installed 状态必须包含安装路径和校验时间', () {

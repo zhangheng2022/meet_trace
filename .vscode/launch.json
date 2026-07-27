@@ -6,18 +6,18 @@
     "configurations": [
         
         {
-            "name": "meetily_ai",
+            "name": "meettrace",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "meetily_ai (profile mode)",
+            "name": "meettrace (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "meetily_ai (release mode)",
+            "name": "meettrace (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

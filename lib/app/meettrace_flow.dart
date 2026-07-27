@@ -17,29 +17,29 @@ import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
 import '../ui/features/settings/views/model_settings_view.dart';
 import 'application.dart';
-import 'meetily_dependencies.dart';
+import 'meettrace_dependencies.dart';
 
-final class MeetilyBootstrap extends StatefulWidget {
-  const MeetilyBootstrap({super.key});
+final class MeetTraceBootstrap extends StatefulWidget {
+  const MeetTraceBootstrap({super.key});
 
   @override
-  State<MeetilyBootstrap> createState() => _MeetilyBootstrapState();
+  State<MeetTraceBootstrap> createState() => _MeetTraceBootstrapState();
 }
 
-final class _MeetilyBootstrapState extends State<MeetilyBootstrap> {
-  late Future<MeetilyDependencies> _loading = MeetilyDependencies.create();
-  MeetilyDependencies? _dependencies;
+final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
+  late Future<MeetTraceDependencies> _loading = MeetTraceDependencies.create();
+  MeetTraceDependencies? _dependencies;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<MeetilyDependencies>(
+    return FutureBuilder<MeetTraceDependencies>(
       future: _loading,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _BootstrapError(
             onRetry: () {
               setState(() {
-                _loading = MeetilyDependencies.create();
+                _loading = MeetTraceDependencies.create();
               });
             },
           );
@@ -49,7 +49,7 @@ final class _MeetilyBootstrapState extends State<MeetilyBootstrap> {
           return const _BootstrapLoading();
         }
         _dependencies ??= dependencies;
-        return MeetilyFlow(dependencies: dependencies);
+        return MeetTraceFlow(dependencies: dependencies);
       },
     );
   }
@@ -61,18 +61,18 @@ final class _MeetilyBootstrapState extends State<MeetilyBootstrap> {
   }
 }
 
-enum _MeetilyPage { meetings, start, recording, detail, settings }
+enum _MeetTracePage { meetings, start, recording, detail, settings }
 
-final class MeetilyFlow extends StatefulWidget {
-  const MeetilyFlow({required this.dependencies, super.key});
+final class MeetTraceFlow extends StatefulWidget {
+  const MeetTraceFlow({required this.dependencies, super.key});
 
-  final MeetilyDependencies dependencies;
+  final MeetTraceDependencies dependencies;
 
   @override
-  State<MeetilyFlow> createState() => _MeetilyFlowState();
+  State<MeetTraceFlow> createState() => _MeetTraceFlowState();
 }
 
-final class _MeetilyFlowState extends State<MeetilyFlow> {
+final class _MeetTraceFlowState extends State<MeetTraceFlow> {
   late final MeetingListViewModel _meetingList = widget.dependencies
       .createMeetingListViewModel();
   StartMeetingViewModel? _startMeeting;
@@ -80,39 +80,39 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
   MeetingDetailViewModel? _meetingDetail;
   ModelSettingsViewModel? _modelSettings;
   DataControlsViewModel? _dataControls;
-  _MeetilyPage _page = _MeetilyPage.meetings;
+  _MeetTracePage _page = _MeetTracePage.meetings;
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _page == _MeetilyPage.meetings,
+      canPop: _page == _MeetTracePage.meetings,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
           _back();
         }
       },
       child: switch (_page) {
-        _MeetilyPage.meetings => MeetingListView(
+        _MeetTracePage.meetings => MeetingListView(
           viewModel: _meetingList,
           onStartMeeting: _openStartMeeting,
           onOpenMeeting: _openMeeting,
           onOpenSettings: _openSettings,
         ),
-        _MeetilyPage.start => StartMeetingView(
+        _MeetTracePage.start => StartMeetingView(
           viewModel: _startMeeting!,
           onBack: _back,
           onStarted: _openRecording,
         ),
-        _MeetilyPage.recording => RecordingSessionView(
+        _MeetTracePage.recording => RecordingSessionView(
           viewModel: _recording!,
           onFinished: _openMeeting,
         ),
-        _MeetilyPage.detail => MeetingDetailView(
+        _MeetTracePage.detail => MeetingDetailView(
           viewModel: _meetingDetail!,
           onBack: _back,
           onDeleted: _back,
         ),
-        _MeetilyPage.settings => ModelSettingsView(
+        _MeetTracePage.settings => ModelSettingsView(
           viewModel: _modelSettings!,
           dataControls: _dataControls,
           onBack: _back,
@@ -125,7 +125,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
     _startMeeting?.dispose();
     setState(() {
       _startMeeting = widget.dependencies.createStartMeetingViewModel();
-      _page = _MeetilyPage.start;
+      _page = _MeetTracePage.start;
     });
   }
 
@@ -135,7 +135,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
     setState(() {
       _startMeeting = null;
       _recording = widget.dependencies.createRecordingSessionViewModel(session);
-      _page = _MeetilyPage.recording;
+      _page = _MeetTracePage.recording;
     });
   }
 
@@ -145,7 +145,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
       _meetingDetail = widget.dependencies.createMeetingDetailViewModel(
         meeting,
       );
-      _page = _MeetilyPage.detail;
+      _page = _MeetTracePage.detail;
     });
   }
 
@@ -155,15 +155,16 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
     setState(() {
       _modelSettings = widget.dependencies.createModelSettingsViewModel();
       _dataControls = widget.dependencies.createDataControlsViewModel();
-      _page = _MeetilyPage.settings;
+      _page = _MeetTracePage.settings;
     });
   }
 
   void _back() {
-    if (_page == _MeetilyPage.recording) {
+    if (_page == _MeetTracePage.recording) {
       return;
     }
-    if (_page == _MeetilyPage.detail && _meetingDetail?.isProcessing == true) {
+    if (_page == _MeetTracePage.detail &&
+        _meetingDetail?.isProcessing == true) {
       return;
     }
     _meetingDetail?.dispose();
@@ -173,7 +174,7 @@ final class _MeetilyFlowState extends State<MeetilyFlow> {
       _meetingDetail = null;
       _modelSettings = null;
       _dataControls = null;
-      _page = _MeetilyPage.meetings;
+      _page = _MeetTracePage.meetings;
     });
   }
 

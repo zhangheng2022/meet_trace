@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/summary/summary_generation_service.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/processing_task.dart';
-import 'package:meetily_ai/domain/models/summary.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/domain/use_cases/generate_summary.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/summary/summary_generation_service.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/processing_task.dart';
+import 'package:meettrace/domain/models/summary.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/generate_summary.dart';
 
 void main() {
   test('只把最终文本和最小片段元数据发送给生成服务', () async {

@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/asr/android_proc_asr_device_risk_monitor.dart';
-import 'package:meetily_ai/data/services/asr/asr_engine.dart';
+import 'package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart';
+import 'package:meettrace/data/services/asr/asr_engine.dart';
 
 void main() {
   test('从 procfs 内存和 thermal zone 生成支持设备快照', () async {

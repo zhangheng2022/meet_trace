@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/summary.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/domain/use_cases/build_meeting_share.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/summary.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/build_meeting_share.dart';
 
 void main() {
   test('纯文本分享包含最终转录和 AI 标识但不含音频或本地路径', () {

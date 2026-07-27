@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/transcript.dart';
 
 void main() {
   group('TranscriptSegment', () {

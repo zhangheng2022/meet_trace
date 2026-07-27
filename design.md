@@ -1,13 +1,13 @@
 <!-- Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 -->
 
-# DESIGN.md — 会迹 · MeetTrace
+# DESIGN.md — 会迹（MeetTrace）
 
 > 状态：Android Alpha 多页面 UI 的唯一设计源
 > 更新日期：2026-07-27
 > 适用范围：会议列表、开始会议、录音、处理、结果与设置
 > 设计交付：Google Stitch 静态高保真画板 → Flutter / Forui 实现
 
-本文件锁定会迹 · MeetTrace 的交互与视觉系统。后续页面实现必须先读取本文件；
+本文件锁定会迹（MeetTrace）的交互与视觉系统。后续页面实现必须先读取本文件；
 需要新增视觉语义时先更新本文件和 `lib/theme/`，不得在功能页面临时硬编码。
 
 ## 给 Google Stitch 的使用方式
@@ -26,7 +26,8 @@
 ### 可直接粘贴到 Stitch 的全局提示词
 
 ```text
-Design a production-ready Android productivity app named “会迹 · MeetTrace”.
+Design a production-ready Android productivity app named “MeetTrace”, with the
+Chinese product name “会迹”.
 It is a local-first meeting recorder and transcription workbench, not a SaaS
 dashboard, social app, AI chatbot, or marketing page.
 

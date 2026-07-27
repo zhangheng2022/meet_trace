@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/summary.dart';
+import 'package:meettrace/domain/models/summary.dart';
 
 void main() {
   test('没有证据的总结项自动标记为待核对', () {

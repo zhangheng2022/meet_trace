@@ -1,4 +1,4 @@
-# 会迹 · MeetTrace
+# 会迹（MeetTrace）
 
 本地优先的 Android 会议录音、端侧转录与证据化总结应用。
 

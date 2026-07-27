@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
 
 void main() {
   group('AsrModelDescriptor', () {

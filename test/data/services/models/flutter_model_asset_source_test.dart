@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/models/flutter_model_asset_source.dart';
+import 'package:meettrace/data/services/models/flutter_model_asset_source.dart';
 
 void main() {
   test('asset URL 映射为 Flutter asset key', () async {

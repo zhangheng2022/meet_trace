@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/ui/core/app_page_body.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/ui/core/app_page_body.dart';
 
 void main() {
   for (final width in [320.0, 375.0, 414.0, 768.0, 1024.0]) {

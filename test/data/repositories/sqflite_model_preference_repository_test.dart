@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/sqflite_model_preference_repository.dart';
-import 'package:meetily_ai/data/services/storage/app_database.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
+import 'package:meettrace/data/repositories/sqflite_model_preference_repository.dart';
+import 'package:meettrace/data/services/storage/app_database.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/audio/spike/recording_continuity_metrics.dart';
+import 'package:meettrace/data/services/audio/spike/recording_continuity_metrics.dart';
 
 void main() {
   group('RecordingContinuityMetrics', () {

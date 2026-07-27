@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/ui/core/app_state_panel.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/ui/core/app_state_panel.dart';
 
 void main() {
   testWidgets('加载状态提供明确语义且不显示操作', (WidgetTester tester) async {

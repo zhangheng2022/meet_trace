@@ -408,7 +408,7 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
     final isolate = await Isolate.spawn<List<Object?>>(
       _sherpaOnnxWorkerMain,
       [responses.sendPort, config.toMessage()],
-      debugName: 'meetily-sherpa-${config.kind.name}',
+      debugName: 'meettrace-sherpa-${config.kind.name}',
       onExit: exits.sendPort,
     );
     try {

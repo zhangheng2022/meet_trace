@@ -1,17 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/sqflite_meeting_repository.dart';
-import 'package:meetily_ai/data/repositories/sqflite_processing_task_repository.dart';
-import 'package:meetily_ai/data/repositories/sqflite_transcript_repository.dart';
-import 'package:meetily_ai/data/services/audio/recording_checkpoint_store.dart';
-import 'package:meetily_ai/data/services/storage/app_database.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/data/services/storage/startup_recovery_service.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/processing_task.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/sqflite_meeting_repository.dart';
+import 'package:meettrace/data/repositories/sqflite_processing_task_repository.dart';
+import 'package:meettrace/data/repositories/sqflite_transcript_repository.dart';
+import 'package:meettrace/data/services/audio/recording_checkpoint_store.dart';
+import 'package:meettrace/data/services/storage/app_database.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/storage/startup_recovery_service.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/processing_task.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -26,7 +26,7 @@ void main() {
   late StartupRecoveryService recovery;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-recovery-');
+    root = await Directory.systemTemp.createTemp('meettrace-recovery-');
     layout = AppFileLayout(rootPath: root.path);
     database = AppDatabase(
       databaseFactory: databaseFactoryFfi,

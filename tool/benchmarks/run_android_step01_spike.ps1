@@ -49,7 +49,7 @@ if ([string]::IsNullOrWhiteSpace($AndroidSdkRoot)) {
 $ModelRoot = [System.IO.Path]::GetFullPath($ModelRoot)
 $SampleWave = [System.IO.Path]::GetFullPath($SampleWave)
 $adb = Join-Path $AndroidSdkRoot 'platform-tools\adb.exe'
-$packageName = 'com.example.meetily_ai'
+$packageName = 'com.example.meettrace'
 $modelIds = switch ($ModelFilter) {
     'paraformer' { @('sherpa-onnx-paraformer-zh-small-2024-03-09') }
     'qwen' { @('sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25') }
@@ -89,7 +89,7 @@ try {
     }
 
     $stamp = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
-    $remoteTemp = "/data/local/tmp/meetily-step01-$stamp"
+    $remoteTemp = "/data/local/tmp/meettrace-step01-$stamp"
     & $adb -s $DeviceId shell mkdir -p "$remoteTemp/models"
     foreach ($modelId in $modelIds) {
         & $adb -s $DeviceId push (Join-Path $ModelRoot $modelId) "$remoteTemp/models/"
@@ -124,11 +124,11 @@ try {
         'test',
         'integration_test/asr_spike_test.dart',
         '-d', $DeviceId,
-        "--dart-define=MEETILY_SPIKE_MODEL_ROOT=$deviceModelRoot",
-        "--dart-define=MEETILY_SPIKE_SAMPLE_WAV=$deviceSample",
-        "--dart-define=MEETILY_SPIKE_OUTPUT_ROOT=$deviceOutput",
-        "--dart-define=MEETILY_SPIKE_RECORDING_SECONDS=$RecordingSeconds",
-        "--dart-define=MEETILY_SPIKE_MODEL_FILTER=$ModelFilter"
+        "--dart-define=MEETTRACE_SPIKE_MODEL_ROOT=$deviceModelRoot",
+        "--dart-define=MEETTRACE_SPIKE_SAMPLE_WAV=$deviceSample",
+        "--dart-define=MEETTRACE_SPIKE_OUTPUT_ROOT=$deviceOutput",
+        "--dart-define=MEETTRACE_SPIKE_RECORDING_SECONDS=$RecordingSeconds",
+        "--dart-define=MEETTRACE_SPIKE_MODEL_FILTER=$ModelFilter"
     )
     $process = Start-Process -FilePath $flutter -ArgumentList $arguments `
         -WorkingDirectory $repoRoot -WindowStyle Hidden -PassThru `
@@ -159,8 +159,8 @@ try {
     $process.WaitForExit()
     $stdout = Read-SharedText -Path $stdoutLog
     $reportPatterns = [ordered]@{
-        'asr-results.json' = 'MEETILY_ASR_REPORT:(\{[^\r\n]+\})'
-        'recording-continuity.json' = 'MEETILY_RECORDING_REPORT:(\{[^\r\n]+\})'
+        'asr-results.json' = 'MEETTRACE_ASR_REPORT:(\{[^\r\n]+\})'
+        'recording-continuity.json' = 'MEETTRACE_RECORDING_REPORT:(\{[^\r\n]+\})'
     }
     foreach ($entry in $reportPatterns.GetEnumerator()) {
         $match = [regex]::Match($stdout, $entry.Value)
@@ -193,7 +193,7 @@ try {
 } finally {
     if (
         -not [string]::IsNullOrWhiteSpace($remoteTemp) -and
-        $remoteTemp.StartsWith('/data/local/tmp/meetily-step01-')
+        $remoteTemp.StartsWith('/data/local/tmp/meettrace-step01-')
     ) {
         & $adb -s $DeviceId shell rm -rf -- $remoteTemp
         if ($LASTEXITCODE -ne 0) {

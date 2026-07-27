@@ -1,4 +1,4 @@
-package com.example.meetily_ai
+package com.example.meettrace
 
 import io.flutter.embedding.android.FlutterActivity
 

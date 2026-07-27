@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/ui/features/meetings/view_models/meeting_list_view_model.dart';
-import 'package:meetily_ai/ui/features/meetings/views/meeting_list_view.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/ui/features/meetings/view_models/meeting_list_view_model.dart';
+import 'package:meettrace/ui/features/meetings/views/meeting_list_view.dart';
 
 void main() {
   testWidgets('空会议列表使用 Forui 并触发开始会议操作', (WidgetTester tester) async {

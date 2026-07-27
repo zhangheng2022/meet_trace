@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/data/services/storage/durable_file_committer.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/storage/durable_file_committer.dart';
 
 void main() {
   late Directory root;
@@ -10,7 +10,7 @@ void main() {
   late DurableFileCommitter committer;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-storage-');
+    root = await Directory.systemTemp.createTemp('meettrace-storage-');
     layout = AppFileLayout(rootPath: root.path);
     committer = const DurableFileCommitter();
   });

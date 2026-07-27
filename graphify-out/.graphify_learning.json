@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T04:15:03.042642+00:00",
+  "generated_at": "2026-07-27T04:26:52.244215+00:00",
   "nodes": {
     "_agents_skills_flutter_add_widget_test_skill_writing_flutter_widget_tests": {
       "code_fingerprint": "ecc36bea2093a9f4f004f86f09aa9601930edd8321160a7dd3748af6e7ef9479",
@@ -12,8 +12,40 @@
           "q": "改为中文"
         }
       ],
-      "score": 0.916830484,
+      "score": 0.91665662,
       "source_file": ".agents/skills/flutter-add-widget-test/SKILL.md",
+      "status": "tentative",
+      "uses": 1
+    },
+    "lib_app_application_application": {
+      "code_fingerprint": "edec095929a9ffc54742c18f8f6a2082620b9c4cf4c2c7d8641707224ee83a09",
+      "label": "Application",
+      "last": "2026-07-27T04:20:13.745608+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:20:13.745608+00:00",
+          "outcome": "useful",
+          "q": "修改项目名称为：会迹 · MeetTrace"
+        }
+      ],
+      "score": 0.99989344,
+      "source_file": "lib/app/application.dart",
+      "status": "tentative",
+      "uses": 1
+    },
+    "lib_data_services_vad_bundled_silero_vad_model_manifest": {
+      "code_fingerprint": "43d8136d9e6f30ca9810c4a9107cc4eb740677833fe73b7b10499a6410263d0d",
+      "label": "manifest",
+      "last": "2026-07-27T04:20:13.745608+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:20:13.745608+00:00",
+          "outcome": "useful",
+          "q": "修改项目名称为：会迹 · MeetTrace"
+        }
+      ],
+      "score": 0.99989344,
+      "source_file": "lib/data/services/vad/bundled_silero_vad_model.dart",
       "status": "tentative",
       "uses": 1
     },
@@ -33,7 +65,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.999406008,
+      "score": 1.99902685,
       "source_file": "lib/domain/models/meeting.dart",
       "status": "preferred",
       "uses": 2
@@ -54,7 +86,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.833499329,
+      "score": 1.833151633,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
@@ -75,7 +107,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.999406008,
+      "score": 1.99902685,
       "source_file": "lib/theme/theme.dart",
       "status": "preferred",
       "uses": 2
@@ -91,7 +123,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 0.999461815,
+      "score": 0.999272282,
       "source_file": "lib/ui/core/app_page_body.dart",
       "status": "tentative",
       "uses": 1
@@ -112,7 +144,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.999406008,
+      "score": 1.99902685,
       "source_file": "lib/ui/core/view_state.dart",
       "status": "preferred",
       "uses": 2
@@ -128,8 +160,24 @@
           "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
         }
       ],
-      "score": 0.999944193,
+      "score": 0.999754569,
       "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
+      "status": "tentative",
+      "uses": 1
+    },
+    "linux_runner_main_main": {
+      "code_fingerprint": "905b4dfa4eab584c1eb6244899b7d5ef56d0bceaf3bffb5ea335ed7e0ba3c549",
+      "label": "main()",
+      "last": "2026-07-27T04:20:13.745608+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:20:13.745608+00:00",
+          "outcome": "useful",
+          "q": "修改项目名称为：会迹 · MeetTrace"
+        }
+      ],
+      "score": 0.99989344,
+      "source_file": "linux/runner/main.cc",
       "status": "tentative",
       "uses": 1
     },
@@ -144,7 +192,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.916700553,
+      "score": 0.916526715,
       "source_file": "",
       "status": "tentative",
       "uses": 1

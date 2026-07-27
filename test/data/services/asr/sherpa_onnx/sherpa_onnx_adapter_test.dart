@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
-import 'package:meetily_ai/domain/models/app_failure.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
+import 'package:meettrace/domain/models/app_failure.dart';
 
 void main() {
   final config = SherpaOnnxRecognizerConfig.paraformer(

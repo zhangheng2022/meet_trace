@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/storage/app_database.dart';
+import 'package:meettrace/data/services/storage/app_database.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -55,7 +55,7 @@ void main() {
   });
 
   test('现有 user_version 0 数据库通过迁移升级到当前版本', () async {
-    final root = await Directory.systemTemp.createTemp('meetily-migration-');
+    final root = await Directory.systemTemp.createTemp('meettrace-migration-');
     addTearDown(() => root.delete(recursive: true));
     final path = p.join(root.path, 'legacy.db');
     final legacy = await databaseFactoryFfi.openDatabase(path);
@@ -77,7 +77,7 @@ void main() {
   });
 
   test('现有 v1 数据库升级到当前版本并保留原表', () async {
-    final root = await Directory.systemTemp.createTemp('meetily-v1-');
+    final root = await Directory.systemTemp.createTemp('meettrace-v1-');
     addTearDown(() => root.delete(recursive: true));
     final path = p.join(root.path, 'v1.db');
     final legacy = await databaseFactoryFfi.openDatabase(

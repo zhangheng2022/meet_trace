@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/audio/device_recording_storage_capacity.dart';
-import 'package:meetily_ai/data/services/models/platform_download_preflight_providers.dart';
-import 'package:meetily_ai/data/services/storage/device_free_space_service.dart';
+import 'package:meettrace/data/services/audio/device_recording_storage_capacity.dart';
+import 'package:meettrace/data/services/models/platform_download_preflight_providers.dart';
+import 'package:meettrace/data/services/storage/device_free_space_service.dart';
 
 void main() {
   group('DeviceFreeSpaceService', () {

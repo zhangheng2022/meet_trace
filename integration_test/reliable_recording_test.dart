@@ -4,18 +4,18 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:meetily_ai/data/services/audio/device_recording_storage_capacity.dart';
-import 'package:meetily_ai/data/services/audio/flutter_foreground_recording_lifecycle.dart';
-import 'package:meetily_ai/data/services/audio/record_pcm_audio_capture.dart';
-import 'package:meetily_ai/data/services/audio/recording_checkpoint_store.dart';
-import 'package:meetily_ai/data/services/audio/reliable_recording_service.dart';
-import 'package:meetily_ai/data/services/audio/spike/recording_continuity_metrics.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/audio/device_recording_storage_capacity.dart';
+import 'package:meettrace/data/services/audio/flutter_foreground_recording_lifecycle.dart';
+import 'package:meettrace/data/services/audio/record_pcm_audio_capture.dart';
+import 'package:meettrace/data/services/audio/recording_checkpoint_store.dart';
+import 'package:meettrace/data/services/audio/reliable_recording_service.dart';
+import 'package:meettrace/data/services/audio/spike/recording_continuity_metrics.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 const _recordingSeconds = int.fromEnvironment(
-  'MEETILY_RECORDING_SECONDS',
+  'MEETTRACE_RECORDING_SECONDS',
   defaultValue: 30,
 );
 
@@ -27,7 +27,7 @@ void main() {
     final root = Directory(
       p.join(
         temporary.path,
-        'meetily-step07-${DateTime.now().microsecondsSinceEpoch}',
+        'meettrace-step07-${DateTime.now().microsecondsSinceEpoch}',
       ),
     );
     final layout = AppFileLayout(rootPath: root.path);
@@ -72,7 +72,7 @@ void main() {
         'droppedPreviewChunks': service.droppedPreviewChunks,
       };
       debugPrintSynchronously(
-        'MEETILY_STEP07_RECORDING:${jsonEncode(report)}',
+        'MEETTRACE_STEP07_RECORDING:${jsonEncode(report)}',
         wrapWidth: null,
       );
     } finally {

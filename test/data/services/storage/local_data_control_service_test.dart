@@ -1,21 +1,21 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/data/services/storage/device_free_space_service.dart';
-import 'package:meetily_ai/data/services/storage/local_data_control_service.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/storage/device_free_space_service.dart';
+import 'package:meettrace/data/services/storage/local_data_control_service.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   late Directory temporary;
   late AppFileLayout layout;
 
   setUp(() async {
-    temporary = await Directory.systemTemp.createTemp('meetily-diagnostics-');
+    temporary = await Directory.systemTemp.createTemp('meettrace-diagnostics-');
     layout = AppFileLayout(rootPath: temporary.path);
     await layout.createBaseDirectories();
     await File(

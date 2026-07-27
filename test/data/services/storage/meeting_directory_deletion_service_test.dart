@@ -1,15 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/data/services/storage/meeting_directory_deletion_service.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/storage/meeting_directory_deletion_service.dart';
 
 void main() {
   late Directory temporary;
   late AppFileLayout layout;
 
   setUp(() async {
-    temporary = await Directory.systemTemp.createTemp('meetily-delete-');
+    temporary = await Directory.systemTemp.createTemp('meettrace-delete-');
     layout = AppFileLayout(rootPath: temporary.path);
     await layout.createBaseDirectories();
   });

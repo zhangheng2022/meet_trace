@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:meetily_ai/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
-import 'package:meetily_ai/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -28,7 +28,7 @@ void main() {
       final root = Directory(
         p.join(
           temporary.path,
-          'meetily-step08-${DateTime.now().microsecondsSinceEpoch}',
+          'meettrace-step08-${DateTime.now().microsecondsSinceEpoch}',
         ),
       );
       final modelPath = p.join(root.path, 'model.int8.onnx');

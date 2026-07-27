@@ -1,15 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/models/downloadable_model_service.dart';
-import 'package:meetily_ai/data/services/models/http_model_file_downloader.dart';
+import 'package:meettrace/data/services/models/downloadable_model_service.dart';
+import 'package:meettrace/data/services/models/http_model_file_downloader.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
   late Directory root;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-http-download-');
+    root = await Directory.systemTemp.createTemp('meettrace-http-download-');
   });
 
   tearDown(() => root.delete(recursive: true));

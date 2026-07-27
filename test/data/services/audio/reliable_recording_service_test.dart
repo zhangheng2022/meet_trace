@@ -3,11 +3,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/audio/recording_checkpoint_store.dart';
-import 'package:meetily_ai/data/services/audio/recording_ports.dart';
-import 'package:meetily_ai/data/services/audio/reliable_recording_service.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/domain/models/recording.dart';
+import 'package:meettrace/data/services/audio/recording_checkpoint_store.dart';
+import 'package:meettrace/data/services/audio/recording_ports.dart';
+import 'package:meettrace/data/services/audio/reliable_recording_service.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/domain/models/recording.dart';
 
 void main() {
   late Directory root;
@@ -17,7 +17,7 @@ void main() {
   late FakeRecordingForegroundLifecycle foreground;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-recording-');
+    root = await Directory.systemTemp.createTemp('meettrace-recording-');
     layout = AppFileLayout(rootPath: root.path);
     checkpoints = JsonRecordingCheckpointStore(layout);
     capture = FakePcmAudioCapture();

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/asr/spike/asr_spike_models.dart';
-import 'package:meetily_ai/data/services/asr/spike/sherpa_onnx_spike_config.dart';
+import 'package:meettrace/data/services/asr/spike/asr_spike_models.dart';
+import 'package:meettrace/data/services/asr/spike/sherpa_onnx_spike_config.dart';
 
 void main() {
   group('SherpaOnnxSpikeConfigFactory', () {

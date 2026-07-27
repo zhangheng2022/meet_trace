@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/diarization/speaker_diarization_coordinator.dart';
-import 'package:meetily_ai/data/services/diarization/speaker_diarization_service.dart';
-import 'package:meetily_ai/domain/models/audio_source.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/processing_task.dart';
-import 'package:meetily_ai/domain/models/speaker_diarization.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart';
+import 'package:meettrace/data/services/diarization/speaker_diarization_service.dart';
+import 'package:meettrace/domain/models/audio_source.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/processing_task.dart';
+import 'package:meettrace/domain/models/speaker_diarization.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   test('成功映射只更新说话人且保留原文、时间轴和模型归属', () async {

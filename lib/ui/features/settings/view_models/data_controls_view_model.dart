@@ -47,9 +47,9 @@ final class DataControlsViewModel extends ChangeNotifier {
       final report = await dataControl.buildDiagnostics();
       await sharing.share(
         MeetingShareDocument(
-          subject: '会迹 · MeetTrace 诊断信息',
+          subject: '会迹诊断信息',
           text: report.toJsonText(),
-          fileName: 'meetily-diagnostics.json',
+          fileName: 'meettrace-diagnostics.json',
         ),
       );
       _message = '已打开系统分享面板；诊断信息不含标题、转录、音频或本地路径';

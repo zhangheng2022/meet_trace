@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/app_failure.dart';
+import 'package:meettrace/domain/models/app_failure.dart';
 
 void main() {
   test('结构化错误保留阶段、恢复性、用户动作和只读诊断上下文', () {

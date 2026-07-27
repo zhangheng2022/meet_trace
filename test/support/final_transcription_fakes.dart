@@ -1,10 +1,10 @@
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/asr/asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/final_transcription_service.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/processing_task.dart';
-import 'package:meetily_ai/domain/models/summary.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/data/services/asr/final_transcription_service.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/processing_task.dart';
+import 'package:meettrace/domain/models/summary.dart';
+import 'package:meettrace/domain/models/transcript.dart';
 
 final class DetailMeetingRepository implements MeetingRepository {
   DetailMeetingRepository(this.value);

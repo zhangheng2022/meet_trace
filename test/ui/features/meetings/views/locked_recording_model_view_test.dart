@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/ui/features/meetings/views/locked_recording_model_view.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/ui/features/meetings/views/locked_recording_model_view.dart';
 
 void main() {
   testWidgets('录音态只显示锁定模型且没有切换入口', (tester) async {

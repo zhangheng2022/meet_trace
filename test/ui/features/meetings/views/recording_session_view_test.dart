@@ -2,18 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/data/services/asr/asr_preview_coordinator.dart';
-import 'package:meetily_ai/data/services/audio/reliable_recording_service.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/asr_preview.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/recording.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/ui/features/meetings/view_models/recording_session_view_model.dart';
-import 'package:meetily_ai/ui/features/meetings/view_models/start_meeting_view_model.dart';
-import 'package:meetily_ai/ui/features/meetings/views/recording_session_view.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/data/services/asr/asr_preview_coordinator.dart';
+import 'package:meettrace/data/services/audio/reliable_recording_service.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/asr_preview.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/recording.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/ui/features/meetings/view_models/recording_session_view_model.dart';
+import 'package:meettrace/ui/features/meetings/view_models/start_meeting_view_model.dart';
+import 'package:meettrace/ui/features/meetings/views/recording_session_view.dart';
 
 import '../../../../support/model_selection_fakes.dart';
 

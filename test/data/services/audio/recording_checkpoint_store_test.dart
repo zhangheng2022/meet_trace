@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/audio/recording_checkpoint_store.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/audio/recording_checkpoint_store.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
 
 void main() {
   late Directory root;
@@ -10,7 +10,7 @@ void main() {
   late JsonRecordingCheckpointStore store;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-checkpoint-');
+    root = await Directory.systemTemp.createTemp('meettrace-checkpoint-');
     layout = AppFileLayout(rootPath: root.path);
     store = JsonRecordingCheckpointStore(layout);
   });

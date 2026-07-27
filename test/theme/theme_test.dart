@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/theme/theme.dart';
+import 'package:meettrace/theme/theme.dart';
 
 void main() {
   test('浅色和深色主题提供完整语义颜色', () {

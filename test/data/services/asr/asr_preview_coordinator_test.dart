@@ -3,17 +3,17 @@ import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/asr/asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/asr_preview_coordinator.dart';
-import 'package:meetily_ai/data/services/vad/silero_vad_segmenter.dart';
-import 'package:meetily_ai/domain/models/app_failure.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/asr_preview.dart';
-import 'package:meetily_ai/domain/models/audio_source.dart';
-import 'package:meetily_ai/domain/models/recording.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/use_cases/plan_asr_preview_windows.dart';
+import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/data/services/asr/asr_preview_coordinator.dart';
+import 'package:meettrace/data/services/vad/silero_vad_segmenter.dart';
+import 'package:meettrace/domain/models/app_failure.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/asr_preview.dart';
+import 'package:meettrace/domain/models/audio_source.dart';
+import 'package:meettrace/domain/models/recording.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/use_cases/plan_asr_preview_windows.dart';
 
 void main() {
   test('两个模型使用完全相同的 VAD 全局区间', () async {

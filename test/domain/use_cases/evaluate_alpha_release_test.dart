@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/use_cases/evaluate_alpha_release.dart';
+import 'package:meettrace/domain/use_cases/evaluate_alpha_release.dart';
 
 void main() {
   group('EvaluateAlphaReleaseUseCase', () {

@@ -2,13 +2,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/audio/pcm_evidence_playback_service.dart';
+import 'package:meettrace/data/services/audio/pcm_evidence_playback_service.dart';
 
 void main() {
   late Directory root;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-playback-');
+    root = await Directory.systemTemp.createTemp('meettrace-playback-');
   });
 
   tearDown(() => root.delete(recursive: true));

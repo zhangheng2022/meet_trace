@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/sqflite_diarization_preference_repository.dart';
-import 'package:meetily_ai/data/repositories/sqflite_meeting_repository.dart';
-import 'package:meetily_ai/data/repositories/sqflite_transcript_repository.dart';
-import 'package:meetily_ai/data/services/storage/app_database.dart';
-import 'package:meetily_ai/domain/models/domain_exception.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/sqflite_diarization_preference_repository.dart';
+import 'package:meettrace/data/repositories/sqflite_meeting_repository.dart';
+import 'package:meettrace/data/repositories/sqflite_transcript_repository.dart';
+import 'package:meettrace/data/services/storage/app_database.dart';
+import 'package:meettrace/domain/models/domain_exception.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {

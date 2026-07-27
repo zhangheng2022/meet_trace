@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/theme/theme.dart';
-import 'package:meetily_ai/ui/features/meetings/views/meeting_list_view.dart';
+import 'package:meettrace/theme/theme.dart';
+import 'package:meettrace/ui/features/meetings/views/meeting_list_view.dart';
 
-const appDisplayName = '会迹 · MeetTrace';
+const appDisplayName = '会迹';
 
-/// 会迹 · MeetTrace 的应用外壳。
+/// 会迹（MeetTrace）的应用外壳。
 ///
 /// 这里仅负责主题、本地化和根页面组装，不承载业务逻辑。
 class Application extends StatelessWidget {
@@ -30,7 +30,7 @@ class Application extends StatelessWidget {
         child: FTooltipGroup(child: child ?? const SizedBox.shrink()),
       ),
     ),
-    // 测试保留轻量默认首页；生产入口注入完整 MeetilyBootstrap。
+    // 测试保留轻量默认首页；生产入口注入完整 MeetTraceBootstrap。
     home: home ?? const MeetingListView(),
   );
 }

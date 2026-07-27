@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/ui/core/app_bottom_action_bar.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/ui/core/app_bottom_action_bar.dart';
 
 void main() {
   testWidgets('底部关键操作遵守安全区并响应点击', (WidgetTester tester) async {

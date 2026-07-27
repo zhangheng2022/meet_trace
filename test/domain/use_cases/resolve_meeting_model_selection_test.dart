@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/domain_exception.dart';
-import 'package:meetily_ai/domain/use_cases/resolve_meeting_model_selection.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/domain_exception.dart';
+import 'package:meettrace/domain/use_cases/resolve_meeting_model_selection.dart';
 
 void main() {
   late ResolveMeetingModelSelection resolver;

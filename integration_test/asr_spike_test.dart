@@ -4,19 +4,19 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:meetily_ai/data/services/asr/spike/asr_spike_models.dart';
-import 'package:meetily_ai/data/services/asr/spike/sherpa_onnx_spike_runner.dart';
-import 'package:meetily_ai/data/services/audio/spike/recording_continuity_probe.dart';
+import 'package:meettrace/data/services/asr/spike/asr_spike_models.dart';
+import 'package:meettrace/data/services/asr/spike/sherpa_onnx_spike_runner.dart';
+import 'package:meettrace/data/services/audio/spike/recording_continuity_probe.dart';
 
-const _modelRoot = String.fromEnvironment('MEETILY_SPIKE_MODEL_ROOT');
-const _sampleWave = String.fromEnvironment('MEETILY_SPIKE_SAMPLE_WAV');
-const _outputRoot = String.fromEnvironment('MEETILY_SPIKE_OUTPUT_ROOT');
+const _modelRoot = String.fromEnvironment('MEETTRACE_SPIKE_MODEL_ROOT');
+const _sampleWave = String.fromEnvironment('MEETTRACE_SPIKE_SAMPLE_WAV');
+const _outputRoot = String.fromEnvironment('MEETTRACE_SPIKE_OUTPUT_ROOT');
 const _recordingSeconds = int.fromEnvironment(
-  'MEETILY_SPIKE_RECORDING_SECONDS',
+  'MEETTRACE_SPIKE_RECORDING_SECONDS',
   defaultValue: 30,
 );
 const _modelFilter = String.fromEnvironment(
-  'MEETILY_SPIKE_MODEL_FILTER',
+  'MEETTRACE_SPIKE_MODEL_FILTER',
   defaultValue: 'all',
 );
 
@@ -58,7 +58,7 @@ void main() {
         flush: true,
       );
       debugPrintSynchronously(
-        'MEETILY_RECORDING_REPORT:${jsonEncode(report)}',
+        'MEETTRACE_RECORDING_REPORT:${jsonEncode(report)}',
         wrapWidth: null,
       );
     },
@@ -95,7 +95,7 @@ void main() {
           runs.add(run);
           // 只输出指标，不输出转录正文，供主机在测试失败时回收证据。
           debugPrintSynchronously(
-            'MEETILY_ASR_RUN:${jsonEncode(run)}',
+            'MEETTRACE_ASR_RUN:${jsonEncode(run)}',
             wrapWidth: null,
           );
         }
@@ -108,7 +108,7 @@ void main() {
         flush: true,
       );
       debugPrintSynchronously(
-        'MEETILY_ASR_REPORT:${jsonEncode(report)}',
+        'MEETTRACE_ASR_REPORT:${jsonEncode(report)}',
         wrapWidth: null,
       );
       expect(runs.every((run) => run['resultWasReadable'] == true), isTrue);

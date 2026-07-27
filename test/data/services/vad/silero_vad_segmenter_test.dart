@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/vad/silero_vad_segmenter.dart';
+import 'package:meettrace/data/services/vad/silero_vad_segmenter.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 void main() {
   test('官方配置固定 16 kHz、512 样本窗口和 15 秒上限', () async {
-    final directory = await Directory.systemTemp.createTemp('meetily-vad-');
+    final directory = await Directory.systemTemp.createTemp('meettrace-vad-');
     final model = File('${directory.path}${Platform.pathSeparator}silero.onnx');
     await model.writeAsBytes(const [1]);
     sherpa.VadModelConfig? capturedConfig;

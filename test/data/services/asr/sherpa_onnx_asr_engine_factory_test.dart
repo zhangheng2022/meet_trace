@@ -1,16 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/data/services/asr/asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/paraformer_standard_asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/qwen_advanced_asr_engine.dart';
-import 'package:meetily_ai/data/services/asr/sherpa_onnx_asr_engine_factory.dart';
-import 'package:meetily_ai/domain/models/asr_model.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/domain/models/model_installation.dart';
-import 'package:meetily_ai/domain/models/model_usage_lease.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/data/services/asr/paraformer_standard_asr_engine.dart';
+import 'package:meettrace/data/services/asr/qwen_advanced_asr_engine.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx_asr_engine_factory.dart';
+import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/model_installation.dart';
+import 'package:meettrace/domain/models/model_usage_lease.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   late _MemoryInstallations installations;

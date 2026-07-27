@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
-import 'package:meetily_ai/app/application.dart';
-import 'package:meetily_ai/domain/models/asr_model_registry.dart';
-import 'package:meetily_ai/ui/core/asr_model_option.dart';
-import 'package:meetily_ai/ui/features/meetings/view_models/start_meeting_view_model.dart';
-import 'package:meetily_ai/ui/features/meetings/views/start_meeting_view.dart';
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/ui/core/asr_model_option.dart';
+import 'package:meettrace/ui/features/meetings/view_models/start_meeting_view_model.dart';
+import 'package:meettrace/ui/features/meetings/views/start_meeting_view.dart';
 
 import '../../../../support/model_selection_fakes.dart';
 

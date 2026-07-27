@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   group('MeetingStateMachine', () {

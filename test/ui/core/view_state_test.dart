@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/ui/core/view_state.dart';
+import 'package:meettrace/ui/core/view_state.dart';
 
 void main() {
   test('ViewState 表达加载、数据和错误状态', () {

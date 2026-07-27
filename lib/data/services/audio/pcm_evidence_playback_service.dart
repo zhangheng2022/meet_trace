@@ -73,7 +73,7 @@ final class PcmEvidencePlaybackService implements EvidencePlaybackService {
   bool _disposed = false;
 
   String get _previewPath =>
-      p.join(temporaryDirectory, 'meetily-evidence-preview.wav');
+      p.join(temporaryDirectory, 'meettrace-evidence-preview.wav');
 
   @override
   Stream<EvidencePlaybackState> get states => _states.stream;

@@ -7,7 +7,7 @@ import 'recording_ports.dart';
 const _recordingServiceId = 7001;
 
 @pragma('vm:entry-point')
-void meetilyRecordingForegroundCallback() {
+void meetTraceRecordingForegroundCallback() {
   FlutterForegroundTask.setTaskHandler(_RecordingKeepAliveTaskHandler());
 }
 
@@ -19,7 +19,7 @@ final class FlutterForegroundRecordingLifecycle
   Future<void> start({required String meetingId}) async {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'meetily_recording',
+        channelId: 'meettrace_recording',
         channelName: '会议录音',
         channelDescription: '录音进行时保持麦克风采集和事实音频写入',
         onlyAlertOnce: true,
@@ -53,9 +53,9 @@ final class FlutterForegroundRecordingLifecycle
       FlutterForegroundTask.startService(
         serviceId: _recordingServiceId,
         serviceTypes: const [ForegroundServiceTypes.microphone],
-        notificationTitle: '会迹 · MeetTrace 正在录音',
+        notificationTitle: '会迹正在录音',
         notificationText: '事实音频正在安全保存',
-        callback: meetilyRecordingForegroundCallback,
+        callback: meetTraceRecordingForegroundCallback,
       ),
     );
     _started = true;
@@ -68,9 +68,7 @@ final class FlutterForegroundRecordingLifecycle
     }
     await _requireSuccess(
       FlutterForegroundTask.updateService(
-        notificationTitle: paused
-            ? '会迹 · MeetTrace 录音已暂停'
-            : '会迹 · MeetTrace 正在录音',
+        notificationTitle: paused ? '会迹录音已暂停' : '会迹正在录音',
         notificationText: paused ? '点击返回会议并继续录音' : '事实音频正在安全保存',
       ),
     );

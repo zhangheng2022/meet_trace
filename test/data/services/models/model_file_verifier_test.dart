@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/models/model_file_verifier.dart';
-import 'package:meetily_ai/domain/models/model_manifest.dart';
+import 'package:meettrace/data/services/models/model_file_verifier.dart';
+import 'package:meettrace/domain/models/model_manifest.dart';
 import 'package:path/path.dart' as p;
 
 void main() {
@@ -10,7 +10,7 @@ void main() {
   late ModelManifestEntry entry;
 
   setUp(() async {
-    root = await Directory.systemTemp.createTemp('meetily-model-verify-');
+    root = await Directory.systemTemp.createTemp('meettrace-model-verify-');
     entry = _entry();
   });
 

@@ -59,7 +59,7 @@ String _plainText(String title, TranscriptSnapshot snapshot, Summary? summary) {
   _writePlainSummary(buffer, summary);
   buffer
     ..writeln()
-    ..writeln('由会迹 · MeetTrace 从本机最终转录导出；不包含原始音频。');
+    ..writeln('由会迹从本机最终转录导出；不包含原始音频。');
   return buffer.toString().trimRight();
 }
 
@@ -78,7 +78,7 @@ String _markdown(String title, TranscriptSnapshot snapshot, Summary? summary) {
   _writeMarkdownSummary(buffer, summary);
   buffer
     ..writeln()
-    ..writeln('> 由会迹 · MeetTrace 从本机最终转录导出；不包含原始音频。');
+    ..writeln('> 由会迹从本机最终转录导出；不包含原始音频。');
   return buffer.toString().trimRight();
 }
 

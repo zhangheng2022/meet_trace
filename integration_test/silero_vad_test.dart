@@ -4,11 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:meetily_ai/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
-import 'package:meetily_ai/data/services/models/flutter_model_asset_source.dart';
-import 'package:meetily_ai/data/services/storage/app_file_layout.dart';
-import 'package:meetily_ai/data/services/vad/bundled_silero_vad_model.dart';
-import 'package:meetily_ai/data/services/vad/silero_vad_segmenter.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
+import 'package:meettrace/data/services/models/flutter_model_asset_source.dart';
+import 'package:meettrace/data/services/storage/app_file_layout.dart';
+import 'package:meettrace/data/services/vad/bundled_silero_vad_model.dart';
+import 'package:meettrace/data/services/vad/silero_vad_segmenter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -25,7 +25,7 @@ void main() {
       final root = Directory(
         p.join(
           temporary.path,
-          'meetily-step12-vad-${DateTime.now().microsecondsSinceEpoch}',
+          'meettrace-step12-vad-${DateTime.now().microsecondsSinceEpoch}',
         ),
       );
       final service = BundledSileroVadModelService(

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/transcript.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/domain/use_cases/revise_final_transcript.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/revise_final_transcript.dart';
 
 void main() {
   test('编辑文本和说话人生成新最终快照并保留旧版本', () async {

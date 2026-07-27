@@ -53,8 +53,8 @@ import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
 
-final class MeetilyDependencies {
-  MeetilyDependencies._({
+final class MeetTraceDependencies {
+  MeetTraceDependencies._({
     required this.database,
     required this.fileLayout,
     required this.meetings,
@@ -92,7 +92,7 @@ final class MeetilyDependencies {
   final DownloadableModelService modelDownloads;
   final String vadModelPath;
 
-  static Future<MeetilyDependencies> create() async {
+  static Future<MeetTraceDependencies> create() async {
     final registry = AsrModelRegistry.alpha;
     final fileLayout = await AppFileLayout.forApplication();
     await fileLayout.createBaseDirectories();
@@ -153,7 +153,7 @@ final class MeetilyDependencies {
       installations: installations,
       leases: leases,
       riskMonitor: AndroidProcAsrDeviceRiskMonitor(),
-      ownerId: 'meetily-app',
+      ownerId: 'meettrace-app',
     );
     final finalTranscription = FinalTranscriptionService(
       meetings: meetings,
@@ -185,7 +185,7 @@ final class MeetilyDependencies {
       downloader: HttpModelFileDownloader(),
       verifier: const ModelFileVerifier(),
     );
-    return MeetilyDependencies._(
+    return MeetTraceDependencies._(
       database: database,
       fileLayout: fileLayout,
       meetings: meetings,

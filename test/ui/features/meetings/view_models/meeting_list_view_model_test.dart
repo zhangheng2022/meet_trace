@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/repositories/repository_contracts.dart';
-import 'package:meetily_ai/domain/models/meeting.dart';
-import 'package:meetily_ai/domain/models/workflow_states.dart';
-import 'package:meetily_ai/ui/core/view_state.dart';
-import 'package:meetily_ai/ui/features/meetings/view_models/meeting_list_view_model.dart';
+import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/ui/core/view_state.dart';
+import 'package:meettrace/ui/features/meetings/view_models/meeting_list_view_model.dart';
 
 void main() {
   test('先显示加载，再响应本地会议流的正常与失败状态', () async {

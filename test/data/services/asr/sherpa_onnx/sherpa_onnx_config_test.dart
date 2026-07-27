@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meetily_ai/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
 
 void main() {
   test('Paraformer 与 Qwen3-ASR 配置只包含可跨 isolate 传输的应用数据', () {
