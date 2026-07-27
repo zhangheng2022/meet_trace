@@ -18,7 +18,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(FAlert), findsOneWidget);
+      expect(find.byType(AppStatusNotice), findsOneWidget);
       expect(find.byType(Icon), findsOneWidget);
       expect(find.text('状态标题'), findsOneWidget);
       expect(find.text('事实音频仍然安全。'), findsOneWidget);
@@ -39,7 +39,7 @@ void main() {
     expect(context.theme.colors.brightness, Brightness.dark);
     expect(
       context.theme.colors.app.success.toARGB32(),
-      const Color(0xFF4ADE80).toARGB32(),
+      const Color(0xFFF4F4F1).toARGB32(),
     );
   });
 }

@@ -1,168 +1,49 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-27T09:48:20.5926678Z",
+  "generatedAt": "2026-07-27T10:30:00.000Z",
   "title": "Design System: 会迹（MeetTrace）",
   "extensions": {
     "colorMeta": {
       "background": {
         "role": "neutral",
-        "displayName": "控制台白",
-        "canonical": "#FFFFFF",
-        "tonalRamp": [
-          "#0A0A0A",
-          "#171717",
-          "#262626",
-          "#404040",
-          "#737373",
-          "#A3A3A3",
-          "#E5E5E5",
-          "#FFFFFF"
-        ]
+        "displayName": "账本纸面",
+        "canonical": "#F7F7F5",
+        "tonalRamp": ["#111111", "#282826", "#52524E", "#8B8B85", "#B7B7B0", "#D8D8D3", "#EFEFEC", "#F7F7F5"]
       },
       "foreground": {
-        "role": "neutral",
-        "displayName": "墨黑正文",
-        "canonical": "#0A0A0A",
-        "tonalRamp": [
-          "#0A0A0A",
-          "#171717",
-          "#262626",
-          "#404040",
-          "#737373",
-          "#A3A3A3",
-          "#E5E5E5",
-          "#FAFAFA"
-        ]
-      },
-      "primary": {
         "role": "primary",
-        "displayName": "控制台黑",
-        "canonical": "#171717",
-        "tonalRamp": [
-          "#0A0A0A",
-          "#171717",
-          "#262626",
-          "#404040",
-          "#737373",
-          "#A3A3A3",
-          "#E5E5E5",
-          "#FAFAFA"
-        ]
+        "displayName": "事实墨色",
+        "canonical": "#111111",
+        "tonalRamp": ["#111111", "#282826", "#3F3F3C", "#52524E", "#8B8B85", "#B7B7B0", "#D8D8D3", "#F4F4F1"]
       },
-      "secondary": {
+      "sheet": {
         "role": "neutral",
-        "displayName": "静音灰面",
-        "canonical": "#F5F5F5",
-        "tonalRamp": [
-          "#0A0A0A",
-          "#171717",
-          "#262626",
-          "#404040",
-          "#737373",
-          "#A3A3A3",
-          "#E5E5E5",
-          "#F5F5F5"
-        ]
+        "displayName": "记录白页",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#151515", "#202020", "#343432", "#777772", "#B7B7B0", "#D8D8D3", "#F4F4F1", "#FFFFFF"]
       },
-      "recording": {
-        "role": "tertiary",
-        "displayName": "事实录音红",
-        "canonical": "#DC2626",
-        "tonalRamp": [
-          "#450A0A",
-          "#7F1D1D",
-          "#991B1B",
-          "#DC2626",
-          "#EF4444",
-          "#F87171",
-          "#FECACA",
-          "#FEF2F2"
-        ]
-      },
-      "warning": {
-        "role": "tertiary",
-        "displayName": "负载琥珀",
-        "canonical": "#B45309",
-        "tonalRamp": [
-          "#451A03",
-          "#78350F",
-          "#92400E",
-          "#B45309",
-          "#D97706",
-          "#F59E0B",
-          "#FDE68A",
-          "#FFFBEB"
-        ]
-      },
-      "success": {
-        "role": "tertiary",
-        "displayName": "完整性绿",
-        "canonical": "#15803D",
-        "tonalRamp": [
-          "#052E16",
-          "#14532D",
-          "#166534",
-          "#15803D",
-          "#16A34A",
-          "#4ADE80",
-          "#BBF7D0",
-          "#F0FDF4"
-        ]
-      },
-      "dark-background": {
+      "border": {
         "role": "neutral",
-        "displayName": "控制台黑",
-        "canonical": "#0A0A0A",
-        "tonalRamp": [
-          "#0A0A0A",
-          "#171717",
-          "#262626",
-          "#404040",
-          "#737373",
-          "#A3A3A3",
-          "#E5E5E5",
-          "#FAFAFA"
-        ]
+        "displayName": "账本分隔线",
+        "canonical": "#D8D8D3",
+        "tonalRamp": ["#111111", "#343432", "#52524E", "#8B8B85", "#B7B7B0", "#D8D8D3", "#EFEFEC", "#FFFFFF"]
       }
     },
     "typographyMeta": {
-      "display": {
-        "displayName": "Display",
-        "purpose": "页面区段标题和空白状态标题。"
-      },
-      "title": {
-        "displayName": "Title",
-        "purpose": "卡片标题、状态标题和页面次级标题。"
-      },
-      "body": {
-        "displayName": "Body",
-        "purpose": "主要说明、转录和表单内容。"
-      },
-      "label": {
-        "displayName": "Label",
-        "purpose": "时间、状态、辅助说明和紧凑控件标签。"
-      }
+      "display": {"displayName": "Display", "purpose": "页面主标题和关键结果。"},
+      "title": {"displayName": "Title", "purpose": "区段与记录标题。"},
+      "body": {"displayName": "Body", "purpose": "表单、转录和说明。"},
+      "label": {"displayName": "Label", "purpose": "时间、状态、来源与度量。"},
+      "time": {"displayName": "Recorder Time", "purpose": "录音页唯一的大号数字角色。"}
     },
-    "shadows": [
-      {
-        "name": "结构微影",
-        "value": "0 1px 2px rgba(0, 0, 0, 0.05)",
-        "purpose": "卡片和浮层的最低限度空间分离。"
-      }
+    "shadows": [],
+    "motion": [
+      {"name": "state-change", "value": "120ms ease-out", "purpose": "按下、选择与状态切换，不用于循环装饰。"}
     ],
     "breakpoints": [
-      {
-        "name": "medium",
-        "value": "600px"
-      },
-      {
-        "name": "expanded",
-        "value": "840px"
-      },
-      {
-        "name": "ultra-wide-checkpoint",
-        "value": "1024px"
-      }
+      {"name": "medium", "value": "600px"},
+      {"name": "expanded", "value": "840px"},
+      {"name": "wide-checkpoint", "value": "1024px"}
     ]
   },
   "components": [
@@ -170,156 +51,80 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "用于当前页面最明确、最高优先级的操作。",
-      "html": "<button class=\"ds-btn-primary\">开始录音</button>",
-      "css": ".ds-btn-primary { min-width: 120px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: #171717; color: #fafafa; font: 400 16px/1.5 Inter, Roboto, sans-serif; transition: background-color 140ms ease-out, transform 100ms ease-out; } .ds-btn-primary:hover { background: #262626; } .ds-btn-primary:active { background: #404040; transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #525252; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; } @media (prefers-color-scheme: dark) { .ds-btn-primary { background: #e5e5e5; color: #171717; } .ds-btn-primary:hover { background: #fafafa; } .ds-btn-primary:focus-visible { outline-color: #d4d4d4; } }"
+      "description": "当前页面唯一的最高优先级操作。",
+      "html": "<button class=\"ds-button-primary\">开始会议</button>",
+      "css": ".ds-button-primary{min-height:48px;padding:0 16px;border:1px solid #111;border-radius:8px;background:#111;color:#fafaf8;font:600 16px/1.55 system-ui,sans-serif}.ds-button-primary:hover{background:#282826}.ds-button-primary:active{transform:scale(.985)}.ds-button-primary:focus-visible{outline:2px solid #111;outline-offset:3px}"
     },
     {
       "name": "Outline Button",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "用于暂停、取消和其他需要保留但不应抢夺主操作的动作。",
-      "html": "<button class=\"ds-btn-outline\">暂停录音</button>",
-      "css": ".ds-btn-outline { min-width: 120px; min-height: 44px; padding: 0 12px; border: 1px solid #e5e5e5; border-radius: 10px; background: #fff; color: #171717; font: 400 16px/1.5 Inter, Roboto, sans-serif; transition: background-color 140ms ease-out, transform 100ms ease-out; } .ds-btn-outline:hover { background: #f5f5f5; } .ds-btn-outline:active { background: #e5e5e5; transform: scale(0.98); } .ds-btn-outline:focus-visible { outline: 2px solid #525252; outline-offset: 2px; } @media (prefers-color-scheme: dark) { .ds-btn-outline { border-color: rgba(255,255,255,0.10); background: #171717; color: #fafafa; } .ds-btn-outline:hover { background: #262626; } .ds-btn-outline:focus-visible { outline-color: #d4d4d4; } }"
+      "description": "暂停、取消和其他次级操作。",
+      "html": "<button class=\"ds-button-outline\">暂停录音</button>",
+      "css": ".ds-button-outline{min-height:48px;padding:0 16px;border:1px solid #8b8b85;border-radius:8px;background:#fff;color:#111;font:600 16px/1.55 system-ui,sans-serif}.ds-button-outline:hover{background:#efefec}.ds-button-outline:active{border-color:#111}.ds-button-outline:focus-visible{outline:2px solid #111;outline-offset:3px}"
     },
     {
-      "name": "Ghost Button",
-      "kind": "button",
-      "refersTo": "button-outline",
-      "description": "用于低强调的文字操作和工具栏动作。",
-      "html": "<button class=\"ds-btn-ghost\">取消</button>",
-      "css": ".ds-btn-ghost { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: #171717; font: 400 16px/1.5 Inter, Roboto, sans-serif; transition: background-color 140ms ease-out, transform 100ms ease-out; } .ds-btn-ghost:hover { background: #f5f5f5; } .ds-btn-ghost:active { background: #e5e5e5; transform: scale(0.98); } .ds-btn-ghost:focus-visible { outline: 2px solid #525252; outline-offset: 2px; } @media (prefers-color-scheme: dark) { .ds-btn-ghost { color: #fafafa; } .ds-btn-ghost:hover { background: #262626; } .ds-btn-ghost:focus-visible { outline-color: #d4d4d4; } }"
+      "name": "Ledger Row",
+      "kind": "custom",
+      "refersTo": "ledger-row",
+      "description": "会议、转录和证据共享的连续时间记录条。",
+      "html": "<article class=\"ds-ledger-row\"><time>09:30</time><span class=\"ds-rail\"></span><div><strong>产品评审会</strong><p>01:12:48 · 事实音频已保存</p></div></article>",
+      "css": ".ds-ledger-row{display:grid;grid-template-columns:64px 1px 1fr;gap:16px;align-items:start;padding:16px 0;border-bottom:1px solid #d8d8d3;background:#fff;color:#111;font:400 16px/1.55 system-ui,sans-serif}.ds-ledger-row time{font-size:13px;font-variant-numeric:tabular-nums;color:#52524e}.ds-ledger-row .ds-rail{align-self:stretch;background:#d8d8d3}.ds-ledger-row strong{font-weight:600}.ds-ledger-row p{margin:4px 0 0;color:#52524e;font-size:13px}"
+    },
+    {
+      "name": "Status Rail",
+      "kind": "custom",
+      "refersTo": "status-rail",
+      "description": "以轨道、图标和事实文案共同表达状态。",
+      "html": "<section class=\"ds-status\"><i></i><div><strong>事实音频正在安全写入</strong><p>实时转录变慢不会影响录音。</p></div></section>",
+      "css": ".ds-status{display:grid;grid-template-columns:3px 1fr;gap:12px;padding:12px 16px;border:1px solid #d8d8d3;border-radius:6px;background:#fff;color:#111;font:400 16px/1.55 system-ui,sans-serif}.ds-status i{width:3px;background:#111;border-radius:999px}.ds-status strong{font-weight:600}.ds-status p{margin:4px 0 0;color:#52524e;font-size:13px}"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "用于会议标题、说话人和转录修订等显式编辑。",
-      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">会议标题</span><input class=\"ds-input\" placeholder=\"例如：产品周会\" /></label>",
-      "css": ".ds-field { display: grid; gap: 8px; color: #0a0a0a; font: 400 14px/1.25 Inter, Roboto, sans-serif; } .ds-input { min-height: 44px; padding: 0 12px; border: 1px solid #e5e5e5; border-radius: 10px; background: #fff; color: #0a0a0a; font: 400 16px/1.5 Inter, Roboto, sans-serif; outline: none; } .ds-input::placeholder { color: #525252; } .ds-input:hover { border-color: #a3a3a3; } .ds-input:focus { border-color: #525252; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #525252; } @media (prefers-color-scheme: dark) { .ds-field { color: #fafafa; } .ds-input { border-color: rgba(255,255,255,0.15); background: #171717; color: #fafafa; } .ds-input::placeholder { color: #a3a3a3; } .ds-input:focus { border-color: #d4d4d4; box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #d4d4d4; } }"
+      "description": "会议标题、说话人和转录修订输入。",
+      "html": "<label class=\"ds-field\"><span>会议标题</span><input placeholder=\"例如：产品周会\"></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:#111;font:500 13px/1.35 system-ui,sans-serif}.ds-field input{min-height:48px;padding:0 12px;border:1px solid #8b8b85;border-radius:6px;background:#fff;color:#111;font:400 16px/1.55 system-ui,sans-serif}.ds-field input:focus{outline:2px solid #111;outline-offset:1px}"
     },
     {
-      "name": "Card",
-      "kind": "card",
-      "refersTo": "card",
-      "description": "用于真实的信息分组、会议条目和设置分区。",
-      "html": "<article class=\"ds-card\"><h3>产品 Alpha 评审</h3><p>事实音频已安全保存</p></article>",
-      "css": ".ds-card { display: grid; gap: 8px; padding: 16px; border-radius: 14px; background: #fff; color: #0a0a0a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font: 400 16px/1.5 Inter, Roboto, sans-serif; } .ds-card h3, .ds-card p { margin: 0; } .ds-card h3 { font-size: 18px; line-height: 1.75; } .ds-card p { color: #525252; } .ds-card:focus-within { outline: 2px solid #525252; outline-offset: 2px; } @media (prefers-color-scheme: dark) { .ds-card { background: #171717; color: #fafafa; box-shadow: none; } .ds-card p { color: #a3a3a3; } .ds-card:focus-within { outline-color: #d4d4d4; } }"
-    },
-    {
-      "name": "Header Navigation",
-      "kind": "nav",
-      "refersTo": "card",
-      "description": "保持页面上下文稳定，并承载返回或单个次级入口。",
-      "html": "<header class=\"ds-header\"><h2>会议</h2><button aria-label=\"打开设置\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.04.08V20h-4v-.08A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H4v-4h.08A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6V4h4v.08a1.7 1.7 0 0 0 1 .52 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.14.37.35.7.6 1h.08v4H20c-.25.3-.46.63-.6 1Z\"/></svg></button></header>",
-      "css": ".ds-header { display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 16px; background: #fff; color: #0a0a0a; font-family: Inter, Roboto, sans-serif; } .ds-header h2 { margin: 0; font-size: 20px; font-weight: 400; line-height: 1.75; } .ds-header button { display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 10px; background: transparent; color: inherit; } .ds-header button:hover { background: #f5f5f5; } .ds-header button:active { background: #e5e5e5; } .ds-header button:focus-visible { outline: 2px solid #525252; outline-offset: 2px; } .ds-header svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } @media (prefers-color-scheme: dark) { .ds-header { background: #0a0a0a; color: #fafafa; } .ds-header button:hover { background: #262626; } .ds-header button:focus-visible { outline-color: #d4d4d4; } }"
-    },
-    {
-      "name": "Status Badge",
-      "kind": "chip",
-      "refersTo": "status-notice",
-      "description": "用明确文字标记短状态，不承担主要操作。",
-      "html": "<span class=\"ds-badge\">已安装</span>",
-      "css": ".ds-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; border-radius: 100px; background: #f5f5f5; color: #171717; font: 400 14px/1.25 Inter, Roboto, sans-serif; } .ds-badge:hover { background: #e5e5e5; } .ds-badge:focus-visible { outline: 2px solid #525252; outline-offset: 2px; } @media (prefers-color-scheme: dark) { .ds-badge { background: #262626; color: #fafafa; } .ds-badge:focus-visible { outline-color: #d4d4d4; } }"
-    },
-    {
-      "name": "Recording Status Notice",
+      "name": "Recorder",
       "kind": "custom",
-      "refersTo": "status-notice",
-      "description": "同时用图标、标题和说明表达事实录音状态。",
-      "html": "<section class=\"ds-status\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14\"/></svg><div><strong>事实音频正在安全写入</strong><p>实时转录变慢不会影响录音。</p></div></section>",
-      "css": ".ds-status { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 10px; background: #fff; color: #0a0a0a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font: 400 16px/1.5 Inter, Roboto, sans-serif; } .ds-status svg { flex: none; width: 20px; height: 20px; color: #dc2626; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-status strong { font-weight: 500; } .ds-status p { margin: 4px 0 0; color: #525252; } .ds-status:focus-within { outline: 2px solid #525252; outline-offset: 2px; } @media (prefers-color-scheme: dark) { .ds-status { background: #171717; color: #fafafa; box-shadow: none; } .ds-status svg { color: #ff6467; } .ds-status p { color: #a3a3a3; } .ds-status:focus-within { outline-color: #d4d4d4; } }"
+      "refersTo": "status-rail",
+      "description": "稳定展示计时、事实音频状态和录音控制。",
+      "html": "<section class=\"ds-recorder\"><span>录音中 · 实时转录仅供参考</span><strong>01:23:45</strong><div class=\"ds-ruler\"></div><p>事实音频已保存至本机</p></section>",
+      "css": ".ds-recorder{padding:24px;border:1px solid #8b8b85;border-radius:12px;background:#fff;color:#111;font-family:system-ui,sans-serif}.ds-recorder span,.ds-recorder p{font-size:13px;color:#52524e}.ds-recorder strong{display:block;margin:28px 0 18px;font-size:56px;font-weight:400;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}.ds-ruler{height:12px;border-top:1px solid #111;background:repeating-linear-gradient(90deg,#111 0 1px,transparent 1px 12px)}"
     }
   ],
   "narrative": {
-    "northStar": "安静的录音控制台",
-    "overview": "会迹是一套以操作为中心的 Android + iOS 自适应工作台：它像一台始终在场、从不喧哗的录音控制台，优先让用户确认事实音频是否安全、会议处于什么状态、下一步能做什么。界面不借助品牌蓝、渐变或装饰性图形制造“智能感”，而是依靠黑白明度、稳定结构、准确文案与稀少的语义色建立可信度。\n\n视觉基础采用 shadcn/ui Neutral 的语义关系，并映射到 Flutter/Forui。浅色主题是清晰的白色工作面，深色主题是独立设计的近黑控制台；两者都让正文和主操作保持高对比。录音红、警告琥珀与成功绿只用于真实状态，而且始终与图标和文字共同出现。\n\n组件保持紧凑、稳定、可预期。Android 触控区域符合 48 dp 基线，iOS 符合 44 pt 基线；控件使用 Forui 的 superellipse 圆角，反馈就地发生，不通过大幅位移、庆祝动画或布局重排争夺注意力。",
+    "northStar": "事实账本 / Evidence Ledger",
+    "overview": "会迹把会议呈现为持续写入、可追溯的事实账本。纸面、时间轨道和专业录音设备的秩序感取代通用卡片仪表盘；品牌识别来自账本结构，而不是装饰色。",
     "keyCharacteristics": [
-      "shadcn/ui Neutral 黑白语义体系，浅色与深色分别编排。",
-      "事实状态先于 AI 能力，录音安全信息始终拥有最高视觉优先级。",
-      "主操作使用近黑或近白，不把语义颜色消费在普通操作上。",
-      "4 pt 间距节奏、紧凑圆角、极浅结构阴影与清晰边界。",
-      "中文真实文案、平台自适应返回图形、非颜色单一编码。"
+      "连续记录条取代卡片网格，时间轨道贯穿会议、转录与证据。",
+      "纯灰阶语义，状态通过图标、文字、边界和填充共同编码。",
+      "录音计时器使用等宽数字，事实音频状态始终紧邻计时与控制。",
+      "低曲率、细分隔线、零装饰阴影。",
+      "手机单列、平板事实栏与证据工作区。"
     ],
     "rules": [
-      {
-        "name": "The Black-and-White First Rule",
-        "body": "普通操作、选择和页面层级先使用黑白灰；语义色不能成为装饰。",
-        "section": "colors"
-      },
-      {
-        "name": "The Factual Red Rule",
-        "body": "红色只表示正在录音、不可恢复的危险或明确错误，并且必须同时显示图标或文字。",
-        "section": "colors"
-      },
-      {
-        "name": "The Composed Dark Rule",
-        "body": "深色主题使用独立的表面和文本关系，不对浅色值做自动反相。",
-        "section": "colors"
-      },
-      {
-        "name": "The Quiet Type Rule",
-        "body": "同一页面使用尽可能少的字号角色；强调先调整信息结构，再考虑增加字重或字号。",
-        "section": "typography"
-      },
-      {
-        "name": "The Real Copy Rule",
-        "body": "控件使用明确中文动词，错误说明发生了什么、事实音频是否安全以及下一步操作。",
-        "section": "typography"
-      },
-      {
-        "name": "The Constraint-Driven Rule",
-        "body": "响应式只依据可用宽度，不读取设备型号、方向或平台字符串。",
-        "section": "layout"
-      },
-      {
-        "name": "The Stable Fact Rule",
-        "body": "ASR 降级、新转录或错误提示不得移动计时、事实音频状态和主要操作的位置。",
-        "section": "layout"
-      },
-      {
-        "name": "The Native Platform Rule",
-        "body": "共享业务结构，但导航、返回手势、系统反馈、触控门槛和字体分别遵循 Android 与 iOS 原生惯例。",
-        "section": "layout"
-      },
-      {
-        "name": "The Flat-by-Default Rule",
-        "body": "静止页面保持平面；只有真正高于当前表面的组件才能使用阴影。",
-        "section": "elevation"
-      },
-      {
-        "name": "The One-Depth-Signal Rule",
-        "body": "同一组件优先选择边界或阴影中的一种，不叠加宽阴影与明显边框。",
-        "section": "elevation"
-      },
-      {
-        "name": "The Compact Curve Rule",
-        "body": "常规操作控件保持 8–10 px 紧凑曲率，禁止把普通按钮做成胶囊。",
-        "section": "shapes"
-      },
-      {
-        "name": "The Container Restraint Rule",
-        "body": "卡片只用于真实分组或可交互条目，不把连续阅读内容切成嵌套卡片。",
-        "section": "shapes"
-      }
+      {"name": "The Achromatic State Rule", "body": "状态颜色全部来自灰阶；任何状态都必须同时有图标和明确文字。", "section": "colors"},
+      {"name": "The Ink Block Rule", "body": "实心墨色只用于当前最重要的动作或状态，同一视口最多出现两个大面积墨块。", "section": "colors"},
+      {"name": "The Instrument Number Rule", "body": "大号数字只属于正在变化的录音时间；普通统计不得竞争这一层级。", "section": "typography"},
+      {"name": "The Continuous Ledger Rule", "body": "同类记录属于一张连续表面，不为每一行制造独立悬浮卡片。", "section": "layout"},
+      {"name": "The Stable Fact Rule", "body": "ASR 降级、错误或新文本不得移动计时器、事实音频状态和结束操作。", "section": "layout"},
+      {"name": "The Zero Resting Shadow Rule", "body": "页面、列表行、状态栏和内容分区在静止状态下阴影为零。", "section": "elevation"}
     ],
     "dos": [
-      "**Do** 使用 shadcn/ui Neutral 语义关系映射 Forui，而不是在功能页面硬编码黑白灰。",
-      "**Do** 让事实音频状态、计时和主要操作先于实时转录与 AI 辅助信息。",
-      "**Do** 使用 4 pt 间距、480/720/1200 px 内容宽度和 600/840/1024 px 响应式检查点。",
-      "**Do** 同时使用文字、图标和位置表达录音、错误、积压与完成状态。",
-      "**Do** 为两端浅色、深色、手机/平板/多任务宽度和 2.0 字体缩放保留真实测试。",
-      "**Do** 分别验证 Android 系统返回与 iOS 边缘返回、Dynamic Type 和 VoiceOver。",
-      "**Do** 使用明确中文动词，并在失败文案中说明事实音频是否安全。"
+      "Do 把会议、转录和证据组织到时间轨道，而不是创建新的卡片类型。",
+      "Do 让事实音频状态、计时和结束操作永远先于实时转录。",
+      "Do 使用文字、图标、边界和位置共同编码所有状态。",
+      "Do 使用 context.theme 与 AppStyle 令牌。"
     ],
     "donts": [
-      "**Don't** 使用品牌蓝、渐变、玻璃拟态、发光描边或装饰性彩色背景制造“AI 感”。",
-      "**Don't** 把红、琥珀或绿用于普通按钮、装饰图标或无状态含义的强调。",
-      "**Don't** 使用卡片套卡片、同尺寸功能卡矩阵或把连续转录拆成大量独立容器。",
-      "**Don't** 使用装饰性波形、循环呼吸动画、滚动揭示或会延迟高频操作的动效。",
-      "**Don't** 只靠颜色区分状态，也不要用模糊的 toast 替代页面内事实说明。",
-      "**Don't** 在功能组件中硬编码颜色、圆角、字号、断点或重复间距。",
-      "**Don't** 把 Android 前台服务、返回图形和导航转场原样移植到 iOS，反之亦然。"
+      "Don't 使用红、黄、绿、品牌蓝、渐变、玻璃、发光或 AI 装饰色。",
+      "Don't 使用悬浮卡片网格、卡片套卡片或装饰性波形。",
+      "Don't 从概念图引入未规划功能或虚构数据。",
+      "Don't 覆盖平台原生返回、手势、安全区和辅助技术行为。"
     ]
   }
 }

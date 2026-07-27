@@ -6,21 +6,21 @@ part of 'theme.dart';
 final FColors lightColors = FColors(
   brightness: .light,
   systemOverlayStyle: .dark,
-  barrier: Color(0x660A0A0A),
-  background: Color(0xFFFFFFFF),
-  foreground: Color(0xFF0A0A0A),
-  primary: Color(0xFF171717),
-  primaryForeground: Color(0xFFFAFAFA),
-  secondary: Color(0xFFF5F5F5),
-  secondaryForeground: Color(0xFF171717),
-  muted: Color(0xFFF5F5F5),
-  mutedForeground: Color(0xFF525252),
-  destructive: Color(0xFFDC2626),
-  destructiveForeground: Color(0xFFFAFAFA),
-  error: Color(0xFFDC2626),
-  errorForeground: Color(0xFFFAFAFA),
+  barrier: Color(0x66111111),
+  background: Color(0xFFF7F7F5),
+  foreground: Color(0xFF111111),
+  primary: Color(0xFF111111),
+  primaryForeground: Color(0xFFFAFAF8),
+  secondary: Color(0xFFEFEFEC),
+  secondaryForeground: Color(0xFF111111),
+  muted: Color(0xFFEFEFEC),
+  mutedForeground: Color(0xFF52524E),
+  destructive: Color(0xFF111111),
+  destructiveForeground: Color(0xFFFAFAF8),
+  error: Color(0xFF111111),
+  errorForeground: Color(0xFFFAFAF8),
   card: Color(0xFFFFFFFF),
-  border: Color(0xFFE5E5E5),
+  border: Color(0xFFD8D8D3),
   extensions: const [AppColors.light()],
 );
 
@@ -28,20 +28,20 @@ final FColors darkColors = FColors(
   brightness: .dark,
   systemOverlayStyle: .light,
   barrier: Color(0xB3000000),
-  background: Color(0xFF0A0A0A),
-  foreground: Color(0xFFFAFAFA),
-  primary: Color(0xFFE5E5E5),
-  primaryForeground: Color(0xFF171717),
-  secondary: Color(0xFF262626),
-  secondaryForeground: Color(0xFFFAFAFA),
-  muted: Color(0xFF262626),
-  mutedForeground: Color(0xFFA3A3A3),
-  destructive: Color(0xFFFF6467),
-  destructiveForeground: Color(0xFF171717),
-  error: Color(0xFFFF6467),
-  errorForeground: Color(0xFF171717),
-  card: Color(0xFF171717),
-  border: Color(0x1AFFFFFF),
+  background: Color(0xFF0D0D0D),
+  foreground: Color(0xFFF4F4F1),
+  primary: Color(0xFFF4F4F1),
+  primaryForeground: Color(0xFF111111),
+  secondary: Color(0xFF202020),
+  secondaryForeground: Color(0xFFF4F4F1),
+  muted: Color(0xFF202020),
+  mutedForeground: Color(0xFFB7B7B0),
+  destructive: Color(0xFFF4F4F1),
+  destructiveForeground: Color(0xFF111111),
+  error: Color(0xFFF4F4F1),
+  errorForeground: Color(0xFF111111),
+  card: Color(0xFF151515),
+  border: Color(0xFF343432),
   extensions: const [AppColors.dark()],
 );
 
@@ -74,29 +74,32 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.success,
     required this.successForeground,
     required this.focusRing,
+    required this.borderStrong,
   });
 
   const AppColors.light()
-    : surfaceRaised = const Color(0xFFFAFAFA),
-      inkSecondary = const Color(0xFF404040),
-      recording = const Color(0xFFDC2626),
-      recordingForeground = const Color(0xFFFAFAFA),
-      warning = const Color(0xFFB45309),
-      warningForeground = const Color(0xFFFAFAFA),
-      success = const Color(0xFF15803D),
-      successForeground = const Color(0xFFFAFAFA),
-      focusRing = const Color(0xFF525252);
+    : surfaceRaised = const Color(0xFFFFFFFF),
+      inkSecondary = const Color(0xFF52524E),
+      recording = const Color(0xFF111111),
+      recordingForeground = const Color(0xFFFAFAF8),
+      warning = const Color(0xFF3F3F3C),
+      warningForeground = const Color(0xFFFAFAF8),
+      success = const Color(0xFF111111),
+      successForeground = const Color(0xFFFAFAF8),
+      focusRing = const Color(0xFF111111),
+      borderStrong = const Color(0xFF8B8B85);
 
   const AppColors.dark()
-    : surfaceRaised = const Color(0xFF171717),
-      inkSecondary = const Color(0xFFD4D4D4),
-      recording = const Color(0xFFFF6467),
-      recordingForeground = const Color(0xFF171717),
-      warning = const Color(0xFFFBBF24),
-      warningForeground = const Color(0xFF171717),
-      success = const Color(0xFF4ADE80),
-      successForeground = const Color(0xFF171717),
-      focusRing = const Color(0xFFD4D4D4);
+    : surfaceRaised = const Color(0xFF151515),
+      inkSecondary = const Color(0xFFB7B7B0),
+      recording = const Color(0xFFF4F4F1),
+      recordingForeground = const Color(0xFF111111),
+      warning = const Color(0xFFB7B7B0),
+      warningForeground = const Color(0xFF111111),
+      success = const Color(0xFFF4F4F1),
+      successForeground = const Color(0xFF111111),
+      focusRing = const Color(0xFFF4F4F1),
+      borderStrong = const Color(0xFF777772);
 
   final Color surfaceRaised;
   final Color inkSecondary;
@@ -107,6 +110,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color success;
   final Color successForeground;
   final Color focusRing;
+  final Color borderStrong;
 
   @override
   AppColors copyWith({
@@ -119,6 +123,7 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? success,
     Color? successForeground,
     Color? focusRing,
+    Color? borderStrong,
   }) => AppColors(
     surfaceRaised: surfaceRaised ?? this.surfaceRaised,
     inkSecondary: inkSecondary ?? this.inkSecondary,
@@ -129,6 +134,7 @@ class AppColors extends ThemeExtension<AppColors> {
     success: success ?? this.success,
     successForeground: successForeground ?? this.successForeground,
     focusRing: focusRing ?? this.focusRing,
+    borderStrong: borderStrong ?? this.borderStrong,
   );
 
   @override
@@ -158,6 +164,7 @@ class AppColors extends ThemeExtension<AppColors> {
         t,
       )!,
       focusRing: Color.lerp(focusRing, other.focusRing, t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
     );
   }
 
@@ -174,7 +181,8 @@ class AppColors extends ThemeExtension<AppColors> {
           warningForeground == other.warningForeground &&
           success == other.success &&
           successForeground == other.successForeground &&
-          focusRing == other.focusRing;
+          focusRing == other.focusRing &&
+          borderStrong == other.borderStrong;
 
   @override
   int get hashCode => Object.hash(
@@ -188,5 +196,6 @@ class AppColors extends ThemeExtension<AppColors> {
     success,
     successForeground,
     focusRing,
+    borderStrong,
   );
 }

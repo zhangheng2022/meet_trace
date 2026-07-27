@@ -1,6 +1,6 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · page: meeting-list · macrostructure: Workbench · theme: Shadcn Neutral
-// States: loading · empty · error · list · two-column-expanded
+// Impeccable · page: meeting-list · world: Evidence Ledger
+// Composition A: continuous chronological ledger on phone and tablet.
 
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
@@ -9,9 +9,10 @@ import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_bottom_action_bar.dart';
+import '../../../core/app_ledger.dart';
 import '../../../core/app_page_body.dart';
-import '../../../core/app_responsive.dart';
 import '../../../core/app_state_panel.dart';
+import '../../../core/app_status_notice.dart';
 import '../../../core/view_state.dart';
 import '../view_models/meeting_list_view_model.dart';
 
@@ -63,7 +64,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
     return FScaffold(
       childPad: false,
       header: FHeader(
-        title: const Text('会议'),
+        title: const Text('会迹'),
         suffixes: [
           if (widget.onOpenSettings != null)
             FHeaderAction(
@@ -113,18 +114,49 @@ final class MeetingListContent extends StatelessWidget {
       actionLabel: retry == null ? null : '重试加载',
       onAction: retry,
     ),
-    ViewData(:final value) when value.isEmpty => AppStatePanel.empty(
-      icon: FLucideIcons.calendar,
-      title: '还没有会议',
-      message: '开始录音后，会议会安全地保存在这台设备上。',
-      actionLabel: onStartMeeting == null ? null : '开始会议',
-      onAction: onStartMeeting,
+    ViewData(:final value) when value.isEmpty => _EmptyMeetingLedger(
+      onStartMeeting: onStartMeeting,
     ),
     ViewData(:final value) => _MeetingCollection(
       meetings: value,
       onOpenMeeting: onOpenMeeting,
     ),
   };
+}
+
+final class _EmptyMeetingLedger extends StatelessWidget {
+  const _EmptyMeetingLedger({required this.onStartMeeting});
+
+  final VoidCallback? onStartMeeting;
+
+  @override
+  Widget build(BuildContext context) {
+    final appStyle = context.theme.style.app;
+    return AppPageBody(
+      width: AppPageWidth.wide,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const AppStatusNotice(
+            tone: AppStatusTone.info,
+            title: '本地事实记录',
+            message: '会议与事实音频只保存在这台设备上。',
+            liveRegion: false,
+          ),
+          SizedBox(height: appStyle.spaceLg),
+          Expanded(
+            child: AppStatePanel.empty(
+              icon: FLucideIcons.calendar,
+              title: '还没有会议',
+              message: '开始录音后，会议会安全地保存在这台设备上。',
+              actionLabel: onStartMeeting == null ? null : '开始会议',
+              onAction: onStartMeeting,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 final class _MeetingCollection extends StatelessWidget {
@@ -141,208 +173,83 @@ final class _MeetingCollection extends StatelessWidget {
     final appStyle = context.theme.style.app;
     return AppPageBody(
       width: AppPageWidth.wide,
-      child: AppResponsiveBuilder(
-        builder: (context, sizeClass, constraints) =>
-            sizeClass == AppWindowSizeClass.expanded
-            ? _MeetingGrid(meetings: meetings, onOpenMeeting: onOpenMeeting)
-            : ListView.separated(
-                key: const ValueKey('meeting-list'),
-                itemCount: meetings.length,
-                separatorBuilder: (_, _) => SizedBox(height: appStyle.spaceMd),
-                itemBuilder: (_, index) => _MeetingCard(
-                  meeting: meetings[index],
-                  onPress: onOpenMeeting,
-                ),
-              ),
-      ),
-    );
-  }
-}
-
-final class _MeetingGrid extends StatelessWidget {
-  const _MeetingGrid({required this.meetings, required this.onOpenMeeting});
-
-  final List<Meeting> meetings;
-  final ValueChanged<Meeting>? onOpenMeeting;
-
-  @override
-  Widget build(BuildContext context) {
-    final gap = context.theme.style.app.spaceMd;
-    return ListView.separated(
-      key: const ValueKey('meeting-grid'),
-      itemCount: (meetings.length / 2).ceil(),
-      separatorBuilder: (_, _) => SizedBox(height: gap),
-      itemBuilder: (context, rowIndex) {
-        final firstIndex = rowIndex * 2;
-        final secondIndex = firstIndex + 1;
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: ListView(
+        key: const ValueKey('meeting-ledger'),
+        children: [
+          Row(
             children: [
               Expanded(
-                child: _MeetingCard(
-                  meeting: meetings[firstIndex],
-                  onPress: onOpenMeeting,
-                ),
+                child: Text('会议', style: context.theme.typography.display.lg),
               ),
-              SizedBox(width: gap),
-              Expanded(
-                child: secondIndex < meetings.length
-                    ? _MeetingCard(
-                        meeting: meetings[secondIndex],
-                        onPress: onOpenMeeting,
-                      )
-                    : const SizedBox(),
+              Text(
+                '共 ${meetings.length} 场',
+                style: context.theme.typography.body.xs.copyWith(
+                  color: context.theme.colors.mutedForeground,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ],
           ),
-        );
-      },
+          SizedBox(height: appStyle.spaceMd),
+          AppLedgerSurface(
+            children: [
+              for (var index = 0; index < meetings.length; index++)
+                _MeetingLedgerRow(
+                  meeting: meetings[index],
+                  onPress: onOpenMeeting,
+                  showDivider: index < meetings.length - 1,
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-final class _MeetingCard extends StatelessWidget {
-  const _MeetingCard({required this.meeting, required this.onPress});
+final class _MeetingLedgerRow extends StatelessWidget {
+  const _MeetingLedgerRow({
+    required this.meeting,
+    required this.onPress,
+    required this.showDivider,
+  });
 
   final Meeting meeting;
   final ValueChanged<Meeting>? onPress;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    final status = _meetingStatusVisual(theme, meeting.status);
-    final card = FCard(
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: EdgeInsets.all(appStyle.spaceMd),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              meeting.title,
-              style: theme.typography.display.md,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: appStyle.spaceSm),
-            Row(
-              children: [
-                Icon(status.icon, color: status.color),
-                SizedBox(width: appStyle.spaceXs),
-                Expanded(
-                  child: Text(
-                    _meetingStatusLabel(meeting.status),
-                    style: theme.typography.body.md.copyWith(
-                      color: status.color,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: appStyle.spaceSm),
-            Column(
-              children: [
-                _MeetingMetadata(
-                  icon: FLucideIcons.calendarDays,
-                  label: _dateTimeLabel(meeting.createdAt),
-                ),
-                SizedBox(height: appStyle.spaceXs),
-                _MeetingMetadata(
-                  icon: FLucideIcons.clock3,
-                  label:
-                      '时长 ${_durationLabel(Duration(milliseconds: meeting.audioDurationMs))}',
-                ),
-              ],
-            ),
-            if (meeting.status == MeetingState.failed) ...[
-              SizedBox(height: appStyle.spaceSm),
-              Text(
-                '打开会议查看失败原因',
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.error,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-
-    if (onPress == null) {
-      return KeyedSubtree(key: ValueKey('meeting-${meeting.id}'), child: card);
-    }
-    return FTappable(
+    return AppLedgerRow(
       key: ValueKey('meeting-${meeting.id}'),
+      dateLabel: _dateLabel(meeting.createdAt),
+      timeLabel: _timeLabel(meeting.createdAt),
+      title: meeting.title,
+      metaLabel:
+          '时长 ${_durationLabel(Duration(milliseconds: meeting.audioDurationMs))}',
+      statusIcon: _meetingStatusIcon(meeting.status),
+      statusLabel: meeting.status == MeetingState.failed
+          ? '失败 · 打开查看原因和事实音频状态'
+          : _meetingStatusLabel(meeting.status),
+      emphasized: meeting.status == MeetingState.recording,
+      showDivider: showDivider,
       semanticsLabel:
           '打开会议：${meeting.title}，${_meetingStatusLabel(meeting.status)}',
       semanticsHint: meeting.status == MeetingState.failed
           ? '查看失败原因和事实音频状态'
           : '查看会议详情',
-      excludeSemantics: true,
-      onPress: () => onPress!(meeting),
-      child: card,
+      onPress: onPress == null ? null : () => onPress!(meeting),
     );
   }
 }
 
-final class _MeetingMetadata extends StatelessWidget {
-  const _MeetingMetadata({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    final style = theme.typography.body.sm.copyWith(
-      color: theme.colors.mutedForeground,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
-    return Row(
-      children: [
-        Icon(icon, color: theme.colors.mutedForeground),
-        SizedBox(width: appStyle.spaceXs),
-        Expanded(child: Text(label, style: style)),
-      ],
-    );
-  }
-}
-
-_MeetingStatusVisual _meetingStatusVisual(
-  FThemeData theme,
-  MeetingState state,
-) => switch (state) {
-  MeetingState.created => _MeetingStatusVisual(
-    icon: FLucideIcons.circleDashed,
-    color: theme.colors.mutedForeground,
-  ),
-  MeetingState.recording => _MeetingStatusVisual(
-    icon: FLucideIcons.radio,
-    color: theme.colors.app.recording,
-  ),
-  MeetingState.processing => _MeetingStatusVisual(
-    icon: FLucideIcons.audioLines,
-    color: theme.colors.primary,
-  ),
-  MeetingState.completed => _MeetingStatusVisual(
-    icon: FLucideIcons.circleCheck,
-    color: theme.colors.app.success,
-  ),
-  MeetingState.failed => _MeetingStatusVisual(
-    icon: FLucideIcons.circleAlert,
-    color: theme.colors.error,
-  ),
+IconData _meetingStatusIcon(MeetingState state) => switch (state) {
+  MeetingState.created => FLucideIcons.circleDashed,
+  MeetingState.recording => FLucideIcons.square,
+  MeetingState.processing => FLucideIcons.audioLines,
+  MeetingState.completed => FLucideIcons.circleCheck,
+  MeetingState.failed => FLucideIcons.circleAlert,
 };
-
-final class _MeetingStatusVisual {
-  const _MeetingStatusVisual({required this.icon, required this.color});
-
-  final IconData icon;
-  final Color color;
-}
 
 String _meetingStatusLabel(MeetingState state) => switch (state) {
   MeetingState.created => '准备中',
@@ -352,10 +259,13 @@ String _meetingStatusLabel(MeetingState state) => switch (state) {
   MeetingState.failed => '失败',
 };
 
-String _dateTimeLabel(DateTime value) {
+String _dateLabel(DateTime value) =>
+    '${value.month.toString().padLeft(2, '0')}-'
+    '${value.day.toString().padLeft(2, '0')}';
+
+String _timeLabel(DateTime value) {
   String two(int number) => number.toString().padLeft(2, '0');
-  return '${value.year}年${value.month}月${value.day}日 '
-      '${two(value.hour)}:${two(value.minute)}';
+  return '${two(value.hour)}:${two(value.minute)}';
 }
 
 String _durationLabel(Duration value) {

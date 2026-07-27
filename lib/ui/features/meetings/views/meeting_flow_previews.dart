@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · previews: UI-02 meeting flow · macrostructure: Workbench
+// Hallmark · previews: UI-02 meeting flow · macrostructure: Evidence ledger
 
 import 'dart:async';
 

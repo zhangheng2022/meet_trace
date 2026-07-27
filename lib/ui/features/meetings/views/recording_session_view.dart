@@ -1,5 +1,6 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · page: recording-workbench · macrostructure: Workbench · theme: Shadcn Neutral
+// Impeccable · page: recording-workbench · world: Evidence Ledger
+// Composition B: the stable recorder instrument owns the first viewport.
 // States: starting · recording · paused · backlogged · recording-only · finalizing · failed
 
 import 'dart:async';
@@ -14,6 +15,7 @@ import '../../../../domain/models/workflow_states.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_bottom_action_bar.dart';
 import '../../../core/app_back_icon.dart';
+import '../../../core/app_ledger.dart';
 import '../../../core/app_page_body.dart';
 import '../../../core/app_status_notice.dart';
 import '../view_models/recording_session_view_model.dart';
@@ -182,54 +184,91 @@ final class _RecordingFactsPanel extends StatelessWidget {
     final model = AsrModelRegistry.alpha.findById(
       viewModel.meeting.recordingModelId,
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(viewModel.meeting.title, style: theme.typography.display.lg),
-        SizedBox(height: appStyle.spaceMd),
-        Text(
-          _durationLabel(viewModel.duration),
-          key: const ValueKey('recording-duration'),
-          style: theme.typography.display.xl.copyWith(
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colors.card,
+        border: Border.all(
+          color: theme.colors.app.borderStrong,
+          width: appStyle.dividerWidth,
         ),
-        SizedBox(height: appStyle.spaceXs),
-        Row(
+        borderRadius: BorderRadius.circular(appStyle.panelRadius),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(appStyle.spaceLg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(FLucideIcons.lockKeyhole, color: theme.colors.mutedForeground),
-            SizedBox(width: appStyle.spaceXs),
-            Expanded(
-              child: Text(
-                '${model?.displayName ?? '本场模型'} · 本场已锁定',
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.mutedForeground,
+            Row(
+              children: [
+                Icon(
+                  viewModel.recordingState == RecordingState.recording
+                      ? FLucideIcons.square
+                      : FLucideIcons.circle,
+                  size: 16,
                 ),
+                SizedBox(width: appStyle.spaceXs),
+                Expanded(
+                  child: Text(
+                    '${_recordingLabel(viewModel.recordingState)} · 实时转录仅供参考',
+                    style: theme.typography.body.xs,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: appStyle.spaceLg),
+            Text(viewModel.meeting.title, style: theme.typography.display.lg),
+            SizedBox(height: appStyle.spaceMd),
+            Text(
+              _durationLabel(viewModel.duration),
+              key: const ValueKey('recording-duration'),
+              style: theme.typography.display.xl4.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
+            SizedBox(height: appStyle.spaceMd),
+            AppTimeRuler(elapsed: viewModel.duration),
+            SizedBox(height: appStyle.spaceMd),
+            Row(
+              children: [
+                Icon(
+                  FLucideIcons.lockKeyhole,
+                  color: theme.colors.mutedForeground,
+                  size: 18,
+                ),
+                SizedBox(width: appStyle.spaceXs),
+                Expanded(
+                  child: Text(
+                    '${model?.displayName ?? '本场模型'} · 本场已锁定',
+                    style: theme.typography.body.xs.copyWith(
+                      color: theme.colors.mutedForeground,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: appStyle.spaceLg),
+            AppStatusNotice(
+              tone: _recordingTone(viewModel.recordingState),
+              title: _recordingLabel(viewModel.recordingState),
+              message: _recordingDescription(viewModel.recordingState),
+            ),
+            SizedBox(height: appStyle.spaceMd),
+            AppStatusNotice(
+              tone: _previewTone(viewModel),
+              title: _previewLabel(viewModel),
+              message: _previewDescription(viewModel),
+            ),
+            if (viewModel.errorMessage case final message?) ...[
+              SizedBox(height: appStyle.spaceMd),
+              AppStatusNotice(
+                tone: AppStatusTone.error,
+                title: message,
+                message: '请保留应用数据，并按当前可用操作继续。事实音频状态以上方提示为准。',
+              ),
+            ],
           ],
         ),
-        SizedBox(height: appStyle.spaceLg),
-        AppStatusNotice(
-          tone: _recordingTone(viewModel.recordingState),
-          title: _recordingLabel(viewModel.recordingState),
-          message: _recordingDescription(viewModel.recordingState),
-        ),
-        SizedBox(height: appStyle.spaceMd),
-        AppStatusNotice(
-          tone: _previewTone(viewModel),
-          title: _previewLabel(viewModel),
-          message: _previewDescription(viewModel),
-        ),
-        if (viewModel.errorMessage case final message?) ...[
-          SizedBox(height: appStyle.spaceMd),
-          AppStatusNotice(
-            tone: AppStatusTone.error,
-            title: message,
-            message: '请保留应用数据，并按当前可用操作继续。事实音频状态以上方提示为准。',
-          ),
-        ],
-      ],
+      ),
     );
   }
 }
@@ -310,7 +349,19 @@ final class _LiveTranscriptPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('实时转录', style: theme.typography.display.md),
+            Row(
+              children: [
+                Expanded(
+                  child: Text('实时转录', style: theme.typography.display.md),
+                ),
+                Text(
+                  '仅供参考',
+                  style: theme.typography.body.xs.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
             SizedBox(height: appStyle.spaceXs),
             Text(
               '仅供会中参考，结束后会基于本场锁定模型生成最终转录。',

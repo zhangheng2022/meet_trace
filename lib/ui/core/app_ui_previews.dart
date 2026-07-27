@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
-// Hallmark · preview: UI-01 shared foundations · theme: Shadcn Neutral
+// Hallmark · preview: UI-01 shared foundations · world: Evidence Ledger
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter/widget_previews.dart';

@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
-// Hallmark · component: status-notice · genre: modern-minimal · theme: Shadcn Neutral
+// Impeccable · component: status-rail · world: Evidence Ledger
 // States: info · recording · warning · error · success · contrast: token-locked
 
 import 'package:flutter/widgets.dart';
@@ -31,23 +31,78 @@ final class AppStatusNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
+    final appStyle = theme.style.app;
     final visual = _visual(theme);
-    final baseStyle = theme.alertStyles.primary;
+    final borderWidth = tone == AppStatusTone.error
+        ? appStyle.strongBorderWidth
+        : appStyle.dividerWidth;
 
-    return FAlert(
+    return Semantics(
+      container: true,
       liveRegion: liveRegion,
-      icon: Icon(visual.icon),
-      title: Text(title),
-      subtitle: message == null ? null : Text(message!),
-      style: baseStyle.copyWith(
-        iconStyle: IconThemeDataDelta.delta(color: visual.color),
+      label: message == null ? title : '$title。$message',
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colors.card,
+            border: Border.all(
+              color: tone == AppStatusTone.error
+                  ? theme.colors.foreground
+                  : theme.colors.border,
+              width: borderWidth,
+            ),
+            borderRadius: BorderRadius.circular(appStyle.cardRadius),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(appStyle.spaceSm),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    width: appStyle.statusRailWidth,
+                    decoration: BoxDecoration(
+                      color: visual.color,
+                      borderRadius: BorderRadius.circular(
+                        appStyle.statusRailWidth,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: appStyle.spaceSm),
+                  Padding(
+                    padding: EdgeInsets.only(top: appStyle.space2Xs),
+                    child: Icon(visual.icon, color: visual.color, size: 20),
+                  ),
+                  SizedBox(width: appStyle.spaceSm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: theme.typography.display.sm),
+                        if (message case final message?) ...[
+                          SizedBox(height: appStyle.space2Xs),
+                          Text(
+                            message,
+                            style: theme.typography.body.sm.copyWith(
+                              color: theme.colors.mutedForeground,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
   _AppStatusVisual _visual(FThemeData theme) => switch (tone) {
     AppStatusTone.info => _AppStatusVisual(
-      color: theme.colors.primary,
+      color: theme.colors.mutedForeground,
       icon: FLucideIcons.info,
     ),
     AppStatusTone.recording => _AppStatusVisual(
@@ -55,15 +110,15 @@ final class AppStatusNotice extends StatelessWidget {
       icon: FLucideIcons.radio,
     ),
     AppStatusTone.warning => _AppStatusVisual(
-      color: theme.colors.app.warning,
+      color: theme.colors.app.borderStrong,
       icon: FLucideIcons.triangleAlert,
     ),
     AppStatusTone.error => _AppStatusVisual(
-      color: theme.colors.error,
+      color: theme.colors.foreground,
       icon: FLucideIcons.circleAlert,
     ),
     AppStatusTone.success => _AppStatusVisual(
-      color: theme.colors.app.success,
+      color: theme.colors.foreground,
       icon: FLucideIcons.circleCheck,
     ),
   };

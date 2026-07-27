@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · previews: UI-03 recording workbench · macrostructure: Workbench
+// Hallmark · previews: UI-03 recording flow · macrostructure: Recorder instrument
 
 import 'dart:async';
 

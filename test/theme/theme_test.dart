@@ -7,21 +7,23 @@ void main() {
     final light = lightTheme.colors;
     final dark = darkTheme.colors;
 
-    expect(light.background.toARGB32(), 0xFFFFFFFF);
-    expect(light.foreground.toARGB32(), 0xFF0A0A0A);
-    expect(light.primary.toARGB32(), 0xFF171717);
-    expect(light.app.recording.toARGB32(), 0xFFDC2626);
-    expect(light.app.warning.toARGB32(), 0xFFB45309);
-    expect(light.app.success.toARGB32(), 0xFF15803D);
-    expect(light.app.focusRing.toARGB32(), 0xFF525252);
+    expect(light.background.toARGB32(), 0xFFF7F7F5);
+    expect(light.foreground.toARGB32(), 0xFF111111);
+    expect(light.primary.toARGB32(), 0xFF111111);
+    expect(light.app.recording.toARGB32(), 0xFF111111);
+    expect(light.app.warning.toARGB32(), 0xFF3F3F3C);
+    expect(light.app.success.toARGB32(), 0xFF111111);
+    expect(light.app.focusRing.toARGB32(), 0xFF111111);
+    expect(light.app.borderStrong.toARGB32(), 0xFF8B8B85);
 
-    expect(dark.background.toARGB32(), 0xFF0A0A0A);
-    expect(dark.foreground.toARGB32(), 0xFFFAFAFA);
-    expect(dark.primary.toARGB32(), 0xFFE5E5E5);
-    expect(dark.app.recording.toARGB32(), 0xFFFF6467);
-    expect(dark.app.warning.toARGB32(), 0xFFFBBF24);
-    expect(dark.app.success.toARGB32(), 0xFF4ADE80);
-    expect(dark.app.focusRing.toARGB32(), 0xFFD4D4D4);
+    expect(dark.background.toARGB32(), 0xFF0D0D0D);
+    expect(dark.foreground.toARGB32(), 0xFFF4F4F1);
+    expect(dark.primary.toARGB32(), 0xFFF4F4F1);
+    expect(dark.app.recording.toARGB32(), 0xFFF4F4F1);
+    expect(dark.app.warning.toARGB32(), 0xFFB7B7B0);
+    expect(dark.app.success.toARGB32(), 0xFFF4F4F1);
+    expect(dark.app.focusRing.toARGB32(), 0xFFF4F4F1);
+    expect(dark.app.borderStrong.toARGB32(), 0xFF777772);
   });
 
   test('AppStyle 固定 4pt 间距、触控尺寸和响应式断点', () {
@@ -44,8 +46,13 @@ void main() {
     expect(style.mediumLayoutMinWidth, 600);
     expect(style.wideLayoutMinWidth, 840);
     expect(style.ultraWideLayoutMinWidth, 1024);
-    expect(style.readingContentMaxWidth, 720);
-    expect(style.wideContentMaxWidth, 1200);
+    expect(style.readingContentMaxWidth, 760);
+    expect(style.wideContentMaxWidth, 1280);
+    expect(style.ledgerTimeColumnWidth, 64);
+    expect(style.factRailWidth, 280);
+    expect(style.statusRailWidth, 3);
+    expect(style.dividerWidth, 1);
+    expect(style.strongBorderWidth, 2);
   });
 
   test('主题正文和语义色对比度达到设计门槛', () {

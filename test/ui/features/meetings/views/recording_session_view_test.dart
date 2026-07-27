@@ -14,6 +14,7 @@ import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/ui/features/meetings/view_models/recording_session_view_model.dart';
 import 'package:meettrace/ui/features/meetings/view_models/start_meeting_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/recording_session_view.dart';
+import 'package:meettrace/ui/core/app_ledger.dart';
 
 import '../../../../support/model_selection_fakes.dart';
 
@@ -143,6 +144,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('recording-wide-layout')), findsOneWidget);
+    expect(find.byType(AppTimeRuler), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('实时转录'), findsOneWidget);
     expect(tester.takeException(), isNull);

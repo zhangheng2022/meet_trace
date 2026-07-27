@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
-// Hallmark · component: state-panel · genre: modern-minimal · theme: Shadcn Neutral
+// Impeccable · component: state-panel · world: Evidence Ledger
 // States: loading · empty · error · action-enabled · action-absent
 
 import 'package:flutter/widgets.dart';
@@ -104,11 +104,28 @@ final class AppStatePanel extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: appStyle.emptyIconSize,
-                color: theme.colors.mutedForeground,
-                semanticLabel: title,
+              Semantics(
+                label: title,
+                child: ExcludeSemantics(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: theme.colors.card,
+                      border: Border.all(
+                        color: theme.colors.border,
+                        width: appStyle.dividerWidth,
+                      ),
+                      borderRadius: BorderRadius.circular(appStyle.panelRadius),
+                    ),
+                    child: SizedBox.square(
+                      dimension: appStyle.emptyIconSize,
+                      child: Icon(
+                        icon,
+                        size: theme.typography.display.lg.fontSize,
+                        color: theme.colors.foreground,
+                      ),
+                    ),
+                  ),
+                ),
               ),
               SizedBox(height: appStyle.spaceLg),
               Text(

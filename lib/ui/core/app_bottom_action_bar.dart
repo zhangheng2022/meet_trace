@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · component: bottom-action-bar · genre: modern-minimal · theme: Shadcn Neutral
+// Impeccable · component: bottom-action-bar · world: Evidence Ledger
 // Responsive: compact · medium · expanded · safe-area: enforced
 
 import 'package:flutter/widgets.dart';
@@ -35,37 +35,48 @@ final class AppBottomActionBar extends StatelessWidget {
       AppPageWidth.wide => appStyle.wideContentMaxWidth,
     };
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsetsDirectional.fromSTEB(
-          appStyle.spaceMd,
-          appStyle.spaceSm,
-          appStyle.spaceMd,
-          appStyle.spaceMd,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colors.card,
+        border: Border(
+          top: BorderSide(
+            color: theme.colors.border,
+            width: appStyle.dividerWidth,
+          ),
         ),
-        child: Align(
-          alignment: Alignment.topCenter,
-          heightFactor: 1,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (supportingText case final text?) ...[
-                    Text(
-                      text,
-                      style: theme.typography.body.sm.copyWith(
-                        color: theme.colors.mutedForeground,
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(
+            appStyle.spaceMd,
+            appStyle.spaceSm,
+            appStyle.spaceMd,
+            appStyle.spaceMd,
+          ),
+          child: Align(
+            alignment: Alignment.topCenter,
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: SizedBox(
+                width: double.infinity,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (supportingText case final text?) ...[
+                      Text(
+                        text,
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: appStyle.spaceSm),
+                      SizedBox(height: appStyle.spaceSm),
+                    ],
+                    child,
                   ],
-                  child,
-                ],
+                ),
               ),
             ),
           ),

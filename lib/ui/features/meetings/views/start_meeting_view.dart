@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · page: start-meeting · macrostructure: Workbench · theme: Shadcn Neutral
+// Hallmark · page: start-meeting · macrostructure: Evidence intake
 // States: loading · ready · busy · advanced-unavailable · locked · error
 
 import 'dart:async';

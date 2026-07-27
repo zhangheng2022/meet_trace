@@ -443,6 +443,10 @@ void main() {
 
       expect(find.textContaining('最终事实文本'), findsOneWidget);
       expect(find.byKey(const ValueKey('meeting-result-tabs')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('meeting-detail-evidence-workbench')),
+        width >= 840 ? findsOneWidget : findsNothing,
+      );
       expect(tester.takeException(), isNull);
       await fixture.dispose();
     });

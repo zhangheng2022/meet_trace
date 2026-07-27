@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/app/application.dart';
+import 'package:meettrace/theme/theme.dart';
 import 'package:meettrace/ui/core/app_page_body.dart';
 
 void main() {
@@ -27,7 +28,7 @@ void main() {
     });
   }
 
-  testWidgets('wide 内容在超宽窗口限制为 1200', (WidgetTester tester) async {
+  testWidgets('wide 内容在超宽窗口限制为事实工作台宽度', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -42,6 +43,9 @@ void main() {
       ),
     );
 
-    expect(tester.getSize(find.byKey(const ValueKey('content'))).width, 1200);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('content'))).width,
+      const AppStyle().wideContentMaxWidth,
+    );
   });
 }

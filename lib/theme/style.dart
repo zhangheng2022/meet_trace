@@ -10,7 +10,16 @@ FStyle _style({
   required FTypography typography,
   required bool touch,
 }) {
-  const borderRadius = FBorderRadius();
+  const borderRadius = FBorderRadius(
+    xs2: BorderRadius.all(Radius.circular(4)),
+    xs: BorderRadius.all(Radius.circular(4)),
+    sm: BorderRadius.all(Radius.circular(6)),
+    md: BorderRadius.all(Radius.circular(8)),
+    lg: BorderRadius.all(Radius.circular(12)),
+    xl: BorderRadius.all(Radius.circular(12)),
+    xl2: BorderRadius.all(Radius.circular(12)),
+    xl3: BorderRadius.all(Radius.circular(12)),
+  );
   return FStyle(
     formFieldStyle: .inherit(
       colors: colors,
@@ -29,10 +38,8 @@ FStyle _style({
     tappableStyle: FTappableStyle(),
     borderRadius: const FBorderRadius(),
     borderWidth: 1,
-    pagePadding: const .symmetric(vertical: 12, horizontal: 16),
-    shadow: const [
-      BoxShadow(color: Color(0x0d000000), offset: Offset(0, 1), blurRadius: 2),
-    ],
+    pagePadding: const .symmetric(vertical: 16, horizontal: 16),
+    shadow: const [],
     extensions: const [AppStyle()],
   );
 }
@@ -64,16 +71,22 @@ class AppStyle extends ThemeExtension<AppStyle> {
     this.spaceLg = 24,
     this.spaceXl = 32,
     this.space2Xl = 48,
-    this.contentMaxWidth = 480,
-    this.readingContentMaxWidth = 720,
-    this.wideContentMaxWidth = 1200,
+    this.contentMaxWidth = 520,
+    this.readingContentMaxWidth = 760,
+    this.wideContentMaxWidth = 1280,
     this.mediumLayoutMinWidth = 600,
     this.wideLayoutMinWidth = 840,
     this.ultraWideLayoutMinWidth = 1024,
     this.emptyIconSize = 48,
     this.minimumTouchTarget = 48,
     this.controlHeight = 48,
-    this.cardRadius = 10,
+    this.cardRadius = 8,
+    this.panelRadius = 12,
+    this.ledgerTimeColumnWidth = 64,
+    this.factRailWidth = 280,
+    this.statusRailWidth = 3,
+    this.dividerWidth = 1,
+    this.strongBorderWidth = 2,
   });
 
   final double space2Xs;
@@ -93,6 +106,12 @@ class AppStyle extends ThemeExtension<AppStyle> {
   final double minimumTouchTarget;
   final double controlHeight;
   final double cardRadius;
+  final double panelRadius;
+  final double ledgerTimeColumnWidth;
+  final double factRailWidth;
+  final double statusRailWidth;
+  final double dividerWidth;
+  final double strongBorderWidth;
 
   @override
   AppStyle copyWith({
@@ -113,6 +132,12 @@ class AppStyle extends ThemeExtension<AppStyle> {
     double? minimumTouchTarget,
     double? controlHeight,
     double? cardRadius,
+    double? panelRadius,
+    double? ledgerTimeColumnWidth,
+    double? factRailWidth,
+    double? statusRailWidth,
+    double? dividerWidth,
+    double? strongBorderWidth,
   }) => AppStyle(
     space2Xs: space2Xs ?? this.space2Xs,
     spaceXs: spaceXs ?? this.spaceXs,
@@ -133,6 +158,12 @@ class AppStyle extends ThemeExtension<AppStyle> {
     minimumTouchTarget: minimumTouchTarget ?? this.minimumTouchTarget,
     controlHeight: controlHeight ?? this.controlHeight,
     cardRadius: cardRadius ?? this.cardRadius,
+    panelRadius: panelRadius ?? this.panelRadius,
+    ledgerTimeColumnWidth: ledgerTimeColumnWidth ?? this.ledgerTimeColumnWidth,
+    factRailWidth: factRailWidth ?? this.factRailWidth,
+    statusRailWidth: statusRailWidth ?? this.statusRailWidth,
+    dividerWidth: dividerWidth ?? this.dividerWidth,
+    strongBorderWidth: strongBorderWidth ?? this.strongBorderWidth,
   );
 
   @override
@@ -171,6 +202,16 @@ class AppStyle extends ThemeExtension<AppStyle> {
           (other.minimumTouchTarget - minimumTouchTarget) * t,
       controlHeight: controlHeight + (other.controlHeight - controlHeight) * t,
       cardRadius: cardRadius + (other.cardRadius - cardRadius) * t,
+      panelRadius: panelRadius + (other.panelRadius - panelRadius) * t,
+      ledgerTimeColumnWidth:
+          ledgerTimeColumnWidth +
+          (other.ledgerTimeColumnWidth - ledgerTimeColumnWidth) * t,
+      factRailWidth: factRailWidth + (other.factRailWidth - factRailWidth) * t,
+      statusRailWidth:
+          statusRailWidth + (other.statusRailWidth - statusRailWidth) * t,
+      dividerWidth: dividerWidth + (other.dividerWidth - dividerWidth) * t,
+      strongBorderWidth:
+          strongBorderWidth + (other.strongBorderWidth - strongBorderWidth) * t,
     );
   }
 
@@ -195,10 +236,16 @@ class AppStyle extends ThemeExtension<AppStyle> {
           emptyIconSize == other.emptyIconSize &&
           minimumTouchTarget == other.minimumTouchTarget &&
           controlHeight == other.controlHeight &&
-          cardRadius == other.cardRadius;
+          cardRadius == other.cardRadius &&
+          panelRadius == other.panelRadius &&
+          ledgerTimeColumnWidth == other.ledgerTimeColumnWidth &&
+          factRailWidth == other.factRailWidth &&
+          statusRailWidth == other.statusRailWidth &&
+          dividerWidth == other.dividerWidth &&
+          strongBorderWidth == other.strongBorderWidth;
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     space2Xs,
     spaceXs,
@@ -217,5 +264,11 @@ class AppStyle extends ThemeExtension<AppStyle> {
     minimumTouchTarget,
     controlHeight,
     cardRadius,
-  );
+    panelRadius,
+    ledgerTimeColumnWidth,
+    factRailWidth,
+    statusRailWidth,
+    dividerWidth,
+    strongBorderWidth,
+  ]);
 }

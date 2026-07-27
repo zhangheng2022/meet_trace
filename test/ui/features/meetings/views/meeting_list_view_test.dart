@@ -7,6 +7,7 @@ import 'package:meettrace/app/application.dart';
 import 'package:meettrace/data/repositories/repository_contracts.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/ui/core/app_ledger.dart';
 import 'package:meettrace/ui/features/meetings/view_models/meeting_list_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/meeting_list_view.dart';
 
@@ -36,7 +37,7 @@ void main() {
     expect(startMeetingRequested, isTrue);
   });
 
-  testWidgets('显示处理中和失败会议，并在宽屏切换网格布局', (WidgetTester tester) async {
+  testWidgets('显示处理中和失败会议，并在宽屏保持连续账本', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1000, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -62,12 +63,13 @@ void main() {
     ]);
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('meeting-grid')), findsOneWidget);
+    expect(find.byKey(const ValueKey('meeting-ledger')), findsOneWidget);
+    expect(find.byType(AppLedgerSurface), findsOneWidget);
+    expect(find.byType(AppLedgerRow), findsNWidgets(2));
     expect(find.text('处理中'), findsOneWidget);
-    expect(find.text('失败'), findsOneWidget);
+    expect(find.text('失败 · 打开查看原因和事实音频状态'), findsOneWidget);
     expect(find.byIcon(FLucideIcons.audioLines), findsOneWidget);
     expect(find.byIcon(FLucideIcons.circleAlert), findsOneWidget);
-    expect(find.text('打开会议查看失败原因'), findsOneWidget);
     expect(find.text('开始会议'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('meeting-failed')));
@@ -117,7 +119,7 @@ void main() {
     ]);
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('meeting-list')), findsOneWidget);
+    expect(find.byKey(const ValueKey('meeting-ledger')), findsOneWidget);
     expect(find.text('开始会议'), findsOneWidget);
     expect(find.text('录音中'), findsOneWidget);
     expect(tester.takeException(), isNull);
