@@ -6,43 +6,43 @@ part of 'theme.dart';
 final FColors lightColors = FColors(
   brightness: .light,
   systemOverlayStyle: .dark,
-  barrier: Color(0x33000000),
-  background: Color(0xFFFFFFFF),
-  foreground: Color(0xFF0A0A0A),
-  primary: Color(0xFF171717),
-  primaryForeground: Color(0xFFFAFAFA),
-  secondary: Color(0xFFF5F5F5),
-  secondaryForeground: Color(0xFF171717),
-  muted: Color(0xFFF5F5F5),
-  mutedForeground: Color(0xFF737373),
-  destructive: Color(0xFFE7000B),
-  destructiveForeground: Color(0xFFFAFAFA),
-  error: Color(0xFFE7000B),
-  errorForeground: Color(0xFFFAFAFA),
-  card: Color(0xFFFFFFFF),
-  border: Color(0xFFE5E5E5),
-  extensions: const [AppColors()],
+  barrier: Color(0x66192029),
+  background: Color(0xFFF8FAFD),
+  foreground: Color(0xFF192029),
+  primary: Color(0xFF006FE6),
+  primaryForeground: Color(0xFFF8FAFD),
+  secondary: Color(0xFFF0F4F9),
+  secondaryForeground: Color(0xFF192029),
+  muted: Color(0xFFE7ECF0),
+  mutedForeground: Color(0xFF4C535D),
+  destructive: Color(0xFFD02B31),
+  destructiveForeground: Color(0xFFF8FAFD),
+  error: Color(0xFFD02B31),
+  errorForeground: Color(0xFFF8FAFD),
+  card: Color(0xFFF8FAFD),
+  border: Color(0xFFD2D8DF),
+  extensions: const [AppColors.light()],
 );
 
 final FColors darkColors = FColors(
   brightness: .dark,
   systemOverlayStyle: .light,
-  barrier: Color(0x7A000000),
-  background: Color(0xFF0A0A0A),
-  foreground: Color(0xFFFAFAFA),
-  primary: Color(0xFFE5E5E5),
-  primaryForeground: Color(0xFF171717),
-  secondary: Color(0xFF262626),
-  secondaryForeground: Color(0xFFFAFAFA),
-  muted: Color(0xFF262626),
-  mutedForeground: Color(0xFFA1A1A1),
-  destructive: Color(0xFFFF6467),
-  destructiveForeground: Color(0xFFFAFAFA),
-  error: Color(0xFFFF6467),
-  errorForeground: Color(0xFFFAFAFA),
-  card: Color(0xFF171717),
-  border: Color(0x1AFFFFFF),
-  extensions: const [AppColors()],
+  barrier: Color(0xB3080B10),
+  background: Color(0xFF080B10),
+  foreground: Color(0xFFE7ECF0),
+  primary: Color(0xFF569FFF),
+  primaryForeground: Color(0xFF080B10),
+  secondary: Color(0xFF171B21),
+  secondaryForeground: Color(0xFFE7ECF0),
+  muted: Color(0xFF171B21),
+  mutedForeground: Color(0xFF999FA6),
+  destructive: Color(0xFFF2716A),
+  destructiveForeground: Color(0xFF080B10),
+  error: Color(0xFFF2716A),
+  errorForeground: Color(0xFF080B10),
+  card: Color(0xFF10141A),
+  border: Color(0xFF2F3339),
+  extensions: const [AppColors.dark()],
 );
 
 /// Provides convenient access to theme extensions on [FColors].
@@ -64,27 +64,129 @@ extension FColorsExtensions on FColors {
 /// Add your fields below, then implement [copyWith], [lerp], [==], and [hashCode].
 /// See https://api.flutter.dev/flutter/material/ThemeExtension-class.html.
 class AppColors extends ThemeExtension<AppColors> {
-  // TODO: add your color fields here:
-  // final Color accent;
+  const AppColors({
+    required this.surfaceRaised,
+    required this.inkSecondary,
+    required this.recording,
+    required this.recordingForeground,
+    required this.warning,
+    required this.warningForeground,
+    required this.success,
+    required this.successForeground,
+    required this.focusRing,
+  });
 
-  const AppColors();
+  const AppColors.light()
+    : surfaceRaised = const Color(0xFFF0F4F9),
+      inkSecondary = const Color(0xFF323841),
+      recording = const Color(0xFFD02B31),
+      recordingForeground = const Color(0xFFF8FAFD),
+      warning = const Color(0xFFDA950B),
+      warningForeground = const Color(0xFF192029),
+      success = const Color(0xFF0A7E3A),
+      successForeground = const Color(0xFFF8FAFD),
+      focusRing = const Color(0xFF192029);
+
+  const AppColors.dark()
+    : surfaceRaised = const Color(0xFF10141A),
+      inkSecondary = const Color(0xFFB9BEC4),
+      recording = const Color(0xFFF2716A),
+      recordingForeground = const Color(0xFF080B10),
+      warning = const Color(0xFFE4AC59),
+      warningForeground = const Color(0xFF080B10),
+      success = const Color(0xFF6FB880),
+      successForeground = const Color(0xFF080B10),
+      focusRing = const Color(0xFFE7ECF0);
+
+  final Color surfaceRaised;
+  final Color inkSecondary;
+  final Color recording;
+  final Color recordingForeground;
+  final Color warning;
+  final Color warningForeground;
+  final Color success;
+  final Color successForeground;
+  final Color focusRing;
 
   @override
-  AppColors copyWith() => const AppColors();
+  AppColors copyWith({
+    Color? surfaceRaised,
+    Color? inkSecondary,
+    Color? recording,
+    Color? recordingForeground,
+    Color? warning,
+    Color? warningForeground,
+    Color? success,
+    Color? successForeground,
+    Color? focusRing,
+  }) => AppColors(
+    surfaceRaised: surfaceRaised ?? this.surfaceRaised,
+    inkSecondary: inkSecondary ?? this.inkSecondary,
+    recording: recording ?? this.recording,
+    recordingForeground: recordingForeground ?? this.recordingForeground,
+    warning: warning ?? this.warning,
+    warningForeground: warningForeground ?? this.warningForeground,
+    success: success ?? this.success,
+    successForeground: successForeground ?? this.successForeground,
+    focusRing: focusRing ?? this.focusRing,
+  );
 
   @override
   AppColors lerp(covariant AppColors? other, double t) {
     if (other == null) {
       return this;
     }
-    return const AppColors();
+    return AppColors(
+      surfaceRaised: Color.lerp(surfaceRaised, other.surfaceRaised, t)!,
+      inkSecondary: Color.lerp(inkSecondary, other.inkSecondary, t)!,
+      recording: Color.lerp(recording, other.recording, t)!,
+      recordingForeground: Color.lerp(
+        recordingForeground,
+        other.recordingForeground,
+        t,
+      )!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      warningForeground: Color.lerp(
+        warningForeground,
+        other.warningForeground,
+        t,
+      )!,
+      success: Color.lerp(success, other.success, t)!,
+      successForeground: Color.lerp(
+        successForeground,
+        other.successForeground,
+        t,
+      )!,
+      focusRing: Color.lerp(focusRing, other.focusRing, t)!,
+    );
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is AppColors && runtimeType == other.runtimeType;
+      other is AppColors &&
+          runtimeType == other.runtimeType &&
+          surfaceRaised == other.surfaceRaised &&
+          inkSecondary == other.inkSecondary &&
+          recording == other.recording &&
+          recordingForeground == other.recordingForeground &&
+          warning == other.warning &&
+          warningForeground == other.warningForeground &&
+          success == other.success &&
+          successForeground == other.successForeground &&
+          focusRing == other.focusRing;
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(
+    runtimeType,
+    surfaceRaised,
+    inkSecondary,
+    recording,
+    recordingForeground,
+    warning,
+    warningForeground,
+    success,
+    successForeground,
+    focusRing,
+  );
 }

@@ -1,9 +1,13 @@
+// Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
+// Hallmark · page: UI-04 meeting result · genre: modern-minimal
+// Theme: Cobalt · macrostructure: Workbench · contrast: token-locked
+
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
-import '../../../../data/services/audio/pcm_evidence_playback_service.dart';
+import '../../../../data/services/audio/evidence_playback_service.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/speaker_diarization.dart';
 import '../../../../domain/models/summary.dart';
@@ -11,7 +15,12 @@ import '../../../../domain/models/transcript.dart';
 import '../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../theme/theme.dart';
+import '../../../core/app_page_body.dart';
+import '../../../core/app_state_panel.dart';
+import '../../../core/app_status_notice.dart';
 import '../view_models/meeting_detail_view_model.dart';
+
+enum MeetingResultSection { transcript, summary, recording }
 
 final class MeetingDetailView extends StatefulWidget {
   const MeetingDetailView({
@@ -30,6 +39,9 @@ final class MeetingDetailView extends StatefulWidget {
 }
 
 final class _MeetingDetailViewState extends State<MeetingDetailView> {
+  MeetingResultSection _section = MeetingResultSection.transcript;
+  bool _editingTranscript = false;
+
   @override
   void initState() {
     super.initState();
@@ -62,57 +74,82 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
   }
 
   Widget _body(BuildContext context, MeetingDetailViewModel viewModel) {
-    if (viewModel.isLoading) {
-      return const Center(child: FProgress(semanticsLabel: '加载最终转录'));
+    if (viewModel.isLoading && !viewModel.isTranscribing) {
+      return const AppStatePanel.loading(label: '加载会议结果');
     }
+
+    if (viewModel.isTranscribing) {
+      return _ProcessingView(viewModel: viewModel);
+    }
+
+    if (viewModel.snapshot == null) {
+      final message = viewModel.errorMessage;
+      if (message != null) {
+        return AppPageBody(
+          width: AppPageWidth.reading,
+          child: _FailureCard(message: message, viewModel: viewModel),
+        );
+      }
+      return const AppStatePanel.empty(
+        icon: FLucideIcons.fileAudio,
+        title: '暂无最终转录',
+        message: '事实录音仍保存在本机，可稍后返回继续处理。',
+      );
+    }
+
+    return _ResultView(
+      viewModel: viewModel,
+      section: _section,
+      editingTranscript: _editingTranscript,
+      onSectionChanged: (section) {
+        setState(() {
+          _section = section;
+          if (section != MeetingResultSection.transcript) {
+            _editingTranscript = false;
+          }
+        });
+      },
+      onEditingChanged: (editing) {
+        setState(() => _editingTranscript = editing);
+      },
+      onEvidence: (evidence) {
+        setState(() {
+          _section = MeetingResultSection.transcript;
+          _editingTranscript = false;
+        });
+        unawaited(viewModel.playEvidence(evidence));
+      },
+      onDeleted: widget.onDeleted,
+    );
+  }
+}
+
+final class _ProcessingView extends StatelessWidget {
+  const _ProcessingView({required this.viewModel});
+
+  final MeetingDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
     return SingleChildScrollView(
-      padding: EdgeInsets.all(appStyle.spaceMd),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: appStyle.contentMaxWidth),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(viewModel.meeting.title, style: theme.typography.display.lg),
-              SizedBox(height: appStyle.spaceSm),
-              Text(
-                '来源模型：${viewModel.sourceModel.displayName}',
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.mutedForeground,
-                ),
+      child: AppPageBody(
+        width: AppPageWidth.reading,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(viewModel.meeting.title, style: theme.typography.display.lg),
+            SizedBox(height: appStyle.spaceSm),
+            Text(
+              '正在整理会议结果',
+              style: theme.typography.body.md.copyWith(
+                color: theme.colors.mutedForeground,
               ),
-              SizedBox(height: appStyle.spaceMd),
-              if (viewModel.isTranscribing)
-                _ProcessingCard(viewModel: viewModel),
-              if (viewModel.errorMessage case final message?)
-                _FailureCard(message: message, viewModel: viewModel),
-              if (viewModel.snapshot case final snapshot?)
-                _TranscriptCard(
-                  key: ValueKey('transcript-${snapshot.id}'),
-                  snapshot: snapshot,
-                  viewModel: viewModel,
-                ),
-              if (viewModel.snapshot != null) ...[
-                SizedBox(height: appStyle.spaceMd),
-                _DiarizationCard(viewModel: viewModel),
-                SizedBox(height: appStyle.spaceMd),
-                _SummaryCard(viewModel: viewModel),
-                SizedBox(height: appStyle.spaceMd),
-                _AudioCard(viewModel: viewModel),
-                SizedBox(height: appStyle.spaceMd),
-                _ResultActionsCard(
-                  viewModel: viewModel,
-                  onDeleted: widget.onDeleted,
-                ),
-              ],
-              if (viewModel.canRetranscribe) ...[
-                SizedBox(height: appStyle.spaceMd),
-                _RetranscriptionCard(viewModel: viewModel),
-              ],
-            ],
-          ),
+            ),
+            SizedBox(height: appStyle.spaceLg),
+            _ProcessingCard(viewModel: viewModel),
+          ],
         ),
       ),
     );
@@ -127,18 +164,220 @@ final class _ProcessingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appStyle = context.theme.style.app;
-    final percent = (viewModel.progress * 100).round();
-    return FAlert(
-      title: const Text('完整音频转录中'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('正在使用本场锁定模型重新读取事实音频，不会拼接会中临时文本。'),
-          SizedBox(height: appStyle.spaceMd),
-          FProgress(semanticsLabel: '最终转录进度 $percent%'),
-          SizedBox(height: appStyle.spaceSm),
-          Text('$percent%'),
-        ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const AppStatusNotice(
+          tone: AppStatusTone.info,
+          title: '正在生成最终转录',
+          message: '录音已经安全保存在本机。处理变慢或失败都不会影响事实音频。',
+        ),
+        SizedBox(height: appStyle.spaceMd),
+        FCard(
+          child: Padding(
+            padding: EdgeInsets.all(appStyle.spaceLg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ProcessingStage(
+                  status: _ProcessingStageStatus.running,
+                  title: '最终转录',
+                  detail: '使用本场锁定模型完整读取事实录音',
+                ),
+                SizedBox(height: appStyle.spaceMd),
+                _ProcessingStage(
+                  status: _ProcessingStageStatus.waiting,
+                  title: '说话人整理',
+                  detail: viewModel.diarizationAvailable
+                      ? '最终转录完成后尝试区分说话人'
+                      : '当前未配置本地分离模型，可稍后手工标注',
+                ),
+                SizedBox(height: appStyle.spaceMd),
+                _ProcessingStage(
+                  status: _ProcessingStageStatus.waiting,
+                  title: 'AI 总结',
+                  detail: viewModel.summaryAvailable
+                      ? '最终转录完成后可由你主动生成'
+                      : '当前未配置安全总结网关',
+                ),
+                SizedBox(height: appStyle.spaceLg),
+                Text(
+                  '来源模型：${viewModel.sourceModel.displayName}',
+                  style: context.theme.typography.body.sm.copyWith(
+                    color: context.theme.colors.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+enum _ProcessingStageStatus { waiting, running }
+
+final class _ProcessingStage extends StatelessWidget {
+  const _ProcessingStage({
+    required this.status,
+    required this.title,
+    required this.detail,
+  });
+
+  final _ProcessingStageStatus status;
+  final String title;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final running = status == _ProcessingStageStatus.running;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox.square(
+          dimension: appStyle.minimumTouchTarget,
+          child: Center(
+            child: running
+                ? const SizedBox.square(
+                    dimension: 24,
+                    child: FProgress(semanticsLabel: '正在处理'),
+                  )
+                : Icon(
+                    FLucideIcons.circle,
+                    size: 20,
+                    color: theme.colors.mutedForeground,
+                  ),
+          ),
+        ),
+        SizedBox(width: appStyle.spaceSm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.typography.body.lg),
+              SizedBox(height: appStyle.space2Xs),
+              Text(
+                detail,
+                style: theme.typography.body.sm.copyWith(
+                  color: theme.colors.mutedForeground,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+final class _ResultView extends StatelessWidget {
+  const _ResultView({
+    required this.viewModel,
+    required this.section,
+    required this.editingTranscript,
+    required this.onSectionChanged,
+    required this.onEditingChanged,
+    required this.onEvidence,
+    required this.onDeleted,
+  });
+
+  final MeetingDetailViewModel viewModel;
+  final MeetingResultSection section;
+  final bool editingTranscript;
+  final ValueChanged<MeetingResultSection> onSectionChanged;
+  final ValueChanged<bool> onEditingChanged;
+  final ValueChanged<SummaryEvidence> onEvidence;
+  final VoidCallback? onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final snapshot = viewModel.snapshot!;
+    return SingleChildScrollView(
+      child: AppPageBody(
+        width: AppPageWidth.reading,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(viewModel.meeting.title, style: theme.typography.display.lg),
+            SizedBox(height: appStyle.spaceSm),
+            Text(
+              '来源模型：${viewModel.sourceModel.displayName} · '
+              '${_duration(viewModel.meeting.audioDurationMs)}',
+              style: theme.typography.body.sm.copyWith(
+                color: theme.colors.mutedForeground,
+              ),
+            ),
+            SizedBox(height: appStyle.spaceLg),
+            if (viewModel.errorMessage case final message?) ...[
+              AppStatusNotice(
+                tone: AppStatusTone.error,
+                title: '最近一次处理未完成',
+                message: message,
+              ),
+              SizedBox(height: appStyle.spaceMd),
+            ],
+            FTabs(
+              key: const ValueKey('meeting-result-tabs'),
+              control: FTabControl.lifted(
+                index: section.index,
+                onChange: (index) =>
+                    onSectionChanged(MeetingResultSection.values[index]),
+              ),
+              children: [
+                FTabEntry(
+                  label: const Text('转录'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TranscriptCard(
+                        key: ValueKey('transcript-${snapshot.id}'),
+                        snapshot: snapshot,
+                        viewModel: viewModel,
+                        editing: editingTranscript,
+                        onEditingChanged: onEditingChanged,
+                      ),
+                      SizedBox(height: appStyle.spaceMd),
+                      _DiarizationCard(
+                        viewModel: viewModel,
+                        editing: editingTranscript,
+                      ),
+                    ],
+                  ),
+                ),
+                FTabEntry(
+                  label: const Text('总结'),
+                  child: _SummaryCard(
+                    viewModel: viewModel,
+                    onEvidence: onEvidence,
+                  ),
+                ),
+                FTabEntry(
+                  label: const Text('录音'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _AudioCard(viewModel: viewModel),
+                      SizedBox(height: appStyle.spaceMd),
+                      _ResultActionsCard(
+                        viewModel: viewModel,
+                        onDeleted: onDeleted,
+                      ),
+                      if (viewModel.canRetranscribe) ...[
+                        SizedBox(height: appStyle.spaceMd),
+                        _RetranscriptionCard(viewModel: viewModel),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -177,11 +416,15 @@ final class _TranscriptCard extends StatefulWidget {
   const _TranscriptCard({
     required this.snapshot,
     required this.viewModel,
+    required this.editing,
+    required this.onEditingChanged,
     super.key,
   });
 
   final TranscriptSnapshot snapshot;
   final MeetingDetailViewModel viewModel;
+  final bool editing;
+  final ValueChanged<bool> onEditingChanged;
 
   @override
   State<_TranscriptCard> createState() => _TranscriptCardState();
@@ -198,6 +441,10 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
         text: displaySpeakerLabel(segment.speakerId),
       ),
   };
+  late final Map<String, GlobalKey> _evidenceKeys = {
+    for (final segment in widget.snapshot.segments) segment.id: GlobalKey(),
+  };
+  String? _lastLocatedEvidenceId;
 
   @override
   void dispose() {
@@ -211,13 +458,43 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
+    _scheduleEvidenceLocation();
     return FCard(
       child: Padding(
         padding: EdgeInsets.all(appStyle.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('最终转录', style: theme.typography.display.md),
+            Row(
+              children: [
+                Expanded(
+                  child: Text('最终转录', style: theme.typography.display.md),
+                ),
+                if (widget.snapshot.segments.isNotEmpty)
+                  FButton(
+                    key: ValueKey(
+                      widget.editing
+                          ? 'cancel-transcript-edit'
+                          : 'edit-transcript',
+                    ),
+                    variant: FButtonVariant.ghost,
+                    mainAxisSize: MainAxisSize.min,
+                    onPress: widget.viewModel.isProcessing
+                        ? null
+                        : () => widget.onEditingChanged(!widget.editing),
+                    child: Text(widget.editing ? '取消编辑' : '编辑转录'),
+                  ),
+              ],
+            ),
+            SizedBox(height: appStyle.spaceSm),
+            Text(
+              widget.editing
+                  ? '保存后会生成新的最终转录版本，已有 AI 总结将标记为过期。'
+                  : '以下内容来自完整事实录音；点击“编辑转录”后才会进入修改状态。',
+              style: theme.typography.body.sm.copyWith(
+                color: theme.colors.mutedForeground,
+              ),
+            ),
             SizedBox(height: appStyle.spaceMd),
             if (widget.snapshot.segments.isEmpty)
               const Text('未识别到可显示的语音内容。')
@@ -225,6 +502,7 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
               for (final segment in widget.snapshot.segments) ...[
                 if (widget.viewModel.selectedEvidenceSegmentId == segment.id)
                   Align(
+                    key: _evidenceKeys[segment.id],
                     alignment: Alignment.centerLeft,
                     child: FBadge(child: const Text('证据定位')),
                   ),
@@ -236,39 +514,45 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
                   ),
                 ),
                 SizedBox(height: appStyle.spaceSm),
-                FTextField(
-                  key: ValueKey('segment-speaker-${segment.id}'),
-                  control: FTextFieldControl.managed(
-                    controller: _speakers[segment.id]!,
+                if (widget.editing) ...[
+                  FTextField(
+                    key: ValueKey('segment-speaker-${segment.id}'),
+                    control: FTextFieldControl.managed(
+                      controller: _speakers[segment.id]!,
+                    ),
+                    label: const Text('说话人'),
                   ),
-                  label: const Text('说话人'),
-                ),
-                SizedBox(height: appStyle.spaceSm),
-                FTextField(
-                  key: ValueKey('segment-text-${segment.id}'),
-                  control: FTextFieldControl.managed(
-                    controller: _texts[segment.id]!,
+                  SizedBox(height: appStyle.spaceSm),
+                  FTextField(
+                    key: ValueKey('segment-text-${segment.id}'),
+                    control: FTextFieldControl.managed(
+                      controller: _texts[segment.id]!,
+                    ),
+                    label: const Text('转录内容'),
+                    maxLines: 4,
                   ),
-                  label: const Text('转录内容'),
-                  maxLines: 4,
-                ),
+                ] else
+                  Text(segment.text, style: theme.typography.body.lg),
                 SizedBox(height: appStyle.spaceMd),
               ],
-            if (widget.snapshot.segments.isNotEmpty)
+            if (widget.snapshot.segments.isNotEmpty && widget.editing)
               FButton(
                 key: const ValueKey('save-transcript-revision'),
                 onPress: widget.viewModel.isProcessing
                     ? null
-                    : () => unawaited(
-                        widget.viewModel.reviseTranscript([
+                    : () async {
+                        await widget.viewModel.reviseTranscript([
                           for (final segment in widget.snapshot.segments)
                             TranscriptSegmentRevision(
                               segmentId: segment.id,
                               text: _texts[segment.id]!.text,
                               speakerLabel: _speakers[segment.id]!.text,
                             ),
-                        ]),
-                      ),
+                        ]);
+                        if (mounted) {
+                          widget.onEditingChanged(false);
+                        }
+                      },
                 child: const Text('保存转录修订'),
               ),
           ],
@@ -276,12 +560,36 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
       ),
     );
   }
+
+  void _scheduleEvidenceLocation() {
+    final selected = widget.viewModel.selectedEvidenceSegmentId;
+    if (selected == null || selected == _lastLocatedEvidenceId) {
+      return;
+    }
+    _lastLocatedEvidenceId = selected;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final targetContext = _evidenceKeys[selected]?.currentContext;
+      if (targetContext != null) {
+        unawaited(
+          Scrollable.ensureVisible(
+            targetContext,
+            duration: Duration.zero,
+            alignment: 0.18,
+          ),
+        );
+      }
+    });
+  }
 }
 
 final class _DiarizationCard extends StatelessWidget {
-  const _DiarizationCard({required this.viewModel});
+  const _DiarizationCard({required this.viewModel, required this.editing});
 
   final MeetingDetailViewModel viewModel;
+  final bool editing;
 
   @override
   Widget build(BuildContext context) {
@@ -339,9 +647,22 @@ final class _DiarizationCard extends StatelessWidget {
                 child: const Text('重试说话人分离'),
               ),
             ],
-            if (viewModel.speakerGroups.isNotEmpty) ...[
+            if (viewModel.speakerGroups.isNotEmpty && !editing) ...[
               SizedBox(height: appStyle.spaceMd),
-              const Text('人工标签'),
+              Text('当前标签', style: theme.typography.display.sm),
+              SizedBox(height: appStyle.spaceSm),
+              for (final group in viewModel.speakerGroups)
+                Padding(
+                  padding: EdgeInsets.only(bottom: appStyle.spaceSm),
+                  child: Text(
+                    '${group.displayLabel} · ${group.segmentCount} 个片段',
+                    style: theme.typography.body.md,
+                  ),
+                ),
+            ],
+            if (viewModel.speakerGroups.isNotEmpty && editing) ...[
+              SizedBox(height: appStyle.spaceMd),
+              Text('人工标签', style: theme.typography.display.sm),
               SizedBox(height: appStyle.spaceSm),
               for (final group in viewModel.speakerGroups)
                 Padding(
@@ -417,9 +738,10 @@ final class _SpeakerLabelEditorState extends State<_SpeakerLabelEditor> {
 }
 
 final class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.viewModel});
+  const _SummaryCard({required this.viewModel, required this.onEvidence});
 
   final MeetingDetailViewModel viewModel;
+  final ValueChanged<SummaryEvidence> onEvidence;
 
   @override
   Widget build(BuildContext context) {
@@ -440,7 +762,7 @@ final class _SummaryCard extends StatelessWidget {
                 color: theme.colors.mutedForeground,
               ),
             ),
-            if (!viewModel.summaryAvailable) ...[
+            if (!viewModel.summaryAvailable && summary == null) ...[
               SizedBox(height: appStyle.spaceMd),
               const FAlert(
                 title: Text('安全总结网关未配置'),
@@ -483,13 +805,13 @@ final class _SummaryCard extends StatelessWidget {
                 _SummarySection(
                   title: '关键结论',
                   items: summary.keyPoints,
-                  viewModel: viewModel,
+                  onEvidence: onEvidence,
                 ),
               if (summary.actionItems.isNotEmpty)
                 _SummarySection(
                   title: '行动项',
                   items: summary.actionItems,
-                  viewModel: viewModel,
+                  onEvidence: onEvidence,
                 ),
             ],
             if (viewModel.canGenerateSummary) ...[
@@ -517,12 +839,12 @@ final class _SummarySection extends StatelessWidget {
   const _SummarySection({
     required this.title,
     required this.items,
-    required this.viewModel,
+    required this.onEvidence,
   });
 
   final String title;
   final List<SummaryItem> items;
-  final MeetingDetailViewModel viewModel;
+  final ValueChanged<SummaryEvidence> onEvidence;
 
   @override
   Widget build(BuildContext context) {
@@ -538,7 +860,7 @@ final class _SummarySection extends StatelessWidget {
           for (final item in items)
             Padding(
               padding: EdgeInsets.only(bottom: appStyle.spaceMd),
-              child: _SummaryItemView(item: item, viewModel: viewModel),
+              child: _SummaryItemView(item: item, onEvidence: onEvidence),
             ),
         ],
       ),
@@ -547,10 +869,10 @@ final class _SummarySection extends StatelessWidget {
 }
 
 final class _SummaryItemView extends StatelessWidget {
-  const _SummaryItemView({required this.item, required this.viewModel});
+  const _SummaryItemView({required this.item, required this.onEvidence});
 
   final SummaryItem item;
-  final MeetingDetailViewModel viewModel;
+  final ValueChanged<SummaryEvidence> onEvidence;
 
   @override
   Widget build(BuildContext context) {
@@ -571,16 +893,41 @@ final class _SummaryItemView extends StatelessWidget {
         ] else
           for (final evidence in item.evidence) ...[
             SizedBox(height: appStyle.spaceSm),
-            GestureDetector(
-              key: ValueKey(
-                'play-evidence-${evidence.segmentId}-${evidence.startMs}',
-              ),
-              onTap: () => unawaited(viewModel.playEvidence(evidence)),
-              child: Text(
-                '证据 ${_timestamp(evidence.startMs)}–'
-                '${_timestamp(evidence.endMs)}：${evidence.quote}',
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.primary,
+            Semantics(
+              button: true,
+              label:
+                  '播放证据 ${_timestamp(evidence.startMs)} 到 '
+                  '${_timestamp(evidence.endMs)}',
+              child: GestureDetector(
+                key: ValueKey(
+                  'play-evidence-${evidence.segmentId}-${evidence.startMs}',
+                ),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onEvidence(evidence),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: appStyle.minimumTouchTarget,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        FLucideIcons.play,
+                        size: 18,
+                        color: theme.colors.primary,
+                      ),
+                      SizedBox(width: appStyle.spaceXs),
+                      Expanded(
+                        child: Text(
+                          '证据 ${_timestamp(evidence.startMs)}–'
+                          '${_timestamp(evidence.endMs)}：${evidence.quote}',
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -18,7 +18,7 @@ FStyle _style({
       touch: touch,
     ),
     focusedOutlineStyle: FFocusedOutlineStyle(
-      color: colors.primary,
+      color: colors.app.focusRing,
       borderRadius: borderRadius.md,
     ),
     sizes: FSizes.inherit(touch: touch),
@@ -29,7 +29,7 @@ FStyle _style({
     tappableStyle: FTappableStyle(),
     borderRadius: const FBorderRadius(),
     borderWidth: 1,
-    pagePadding: const .symmetric(vertical: 8, horizontal: 12),
+    pagePadding: const .symmetric(vertical: 12, horizontal: 16),
     shadow: const [
       BoxShadow(color: Color(0x0d000000), offset: Offset(0, 1), blurRadius: 2),
     ],
@@ -57,40 +57,82 @@ extension FStyleExtensions on FStyle {
 /// See https://api.flutter.dev/flutter/material/ThemeExtension-class.html.
 class AppStyle extends ThemeExtension<AppStyle> {
   const AppStyle({
-    this.spaceSm = 8,
+    this.space2Xs = 4,
+    this.spaceXs = 8,
+    this.spaceSm = 12,
     this.spaceMd = 16,
     this.spaceLg = 24,
-    this.contentMaxWidth = 420,
-    this.wideContentMaxWidth = 960,
-    this.wideLayoutMinWidth = 720,
+    this.spaceXl = 32,
+    this.space2Xl = 48,
+    this.contentMaxWidth = 480,
+    this.readingContentMaxWidth = 720,
+    this.wideContentMaxWidth = 1200,
+    this.mediumLayoutMinWidth = 600,
+    this.wideLayoutMinWidth = 840,
+    this.ultraWideLayoutMinWidth = 1024,
     this.emptyIconSize = 48,
+    this.minimumTouchTarget = 48,
+    this.controlHeight = 48,
+    this.cardRadius = 10,
   });
 
+  final double space2Xs;
+  final double spaceXs;
   final double spaceSm;
   final double spaceMd;
   final double spaceLg;
+  final double spaceXl;
+  final double space2Xl;
   final double contentMaxWidth;
+  final double readingContentMaxWidth;
   final double wideContentMaxWidth;
+  final double mediumLayoutMinWidth;
   final double wideLayoutMinWidth;
+  final double ultraWideLayoutMinWidth;
   final double emptyIconSize;
+  final double minimumTouchTarget;
+  final double controlHeight;
+  final double cardRadius;
 
   @override
   AppStyle copyWith({
+    double? space2Xs,
+    double? spaceXs,
     double? spaceSm,
     double? spaceMd,
     double? spaceLg,
+    double? spaceXl,
+    double? space2Xl,
     double? contentMaxWidth,
+    double? readingContentMaxWidth,
     double? wideContentMaxWidth,
+    double? mediumLayoutMinWidth,
     double? wideLayoutMinWidth,
+    double? ultraWideLayoutMinWidth,
     double? emptyIconSize,
+    double? minimumTouchTarget,
+    double? controlHeight,
+    double? cardRadius,
   }) => AppStyle(
+    space2Xs: space2Xs ?? this.space2Xs,
+    spaceXs: spaceXs ?? this.spaceXs,
     spaceSm: spaceSm ?? this.spaceSm,
     spaceMd: spaceMd ?? this.spaceMd,
     spaceLg: spaceLg ?? this.spaceLg,
+    spaceXl: spaceXl ?? this.spaceXl,
+    space2Xl: space2Xl ?? this.space2Xl,
     contentMaxWidth: contentMaxWidth ?? this.contentMaxWidth,
+    readingContentMaxWidth:
+        readingContentMaxWidth ?? this.readingContentMaxWidth,
     wideContentMaxWidth: wideContentMaxWidth ?? this.wideContentMaxWidth,
+    mediumLayoutMinWidth: mediumLayoutMinWidth ?? this.mediumLayoutMinWidth,
     wideLayoutMinWidth: wideLayoutMinWidth ?? this.wideLayoutMinWidth,
+    ultraWideLayoutMinWidth:
+        ultraWideLayoutMinWidth ?? this.ultraWideLayoutMinWidth,
     emptyIconSize: emptyIconSize ?? this.emptyIconSize,
+    minimumTouchTarget: minimumTouchTarget ?? this.minimumTouchTarget,
+    controlHeight: controlHeight ?? this.controlHeight,
+    cardRadius: cardRadius ?? this.cardRadius,
   );
 
   @override
@@ -99,18 +141,36 @@ class AppStyle extends ThemeExtension<AppStyle> {
       return this;
     }
     return AppStyle(
+      space2Xs: space2Xs + (other.space2Xs - space2Xs) * t,
+      spaceXs: spaceXs + (other.spaceXs - spaceXs) * t,
       spaceSm: spaceSm + (other.spaceSm - spaceSm) * t,
       spaceMd: spaceMd + (other.spaceMd - spaceMd) * t,
       spaceLg: spaceLg + (other.spaceLg - spaceLg) * t,
+      spaceXl: spaceXl + (other.spaceXl - spaceXl) * t,
+      space2Xl: space2Xl + (other.space2Xl - space2Xl) * t,
       contentMaxWidth:
           contentMaxWidth + (other.contentMaxWidth - contentMaxWidth) * t,
+      readingContentMaxWidth:
+          readingContentMaxWidth +
+          (other.readingContentMaxWidth - readingContentMaxWidth) * t,
       wideContentMaxWidth:
           wideContentMaxWidth +
           (other.wideContentMaxWidth - wideContentMaxWidth) * t,
+      mediumLayoutMinWidth:
+          mediumLayoutMinWidth +
+          (other.mediumLayoutMinWidth - mediumLayoutMinWidth) * t,
       wideLayoutMinWidth:
           wideLayoutMinWidth +
           (other.wideLayoutMinWidth - wideLayoutMinWidth) * t,
+      ultraWideLayoutMinWidth:
+          ultraWideLayoutMinWidth +
+          (other.ultraWideLayoutMinWidth - ultraWideLayoutMinWidth) * t,
       emptyIconSize: emptyIconSize + (other.emptyIconSize - emptyIconSize) * t,
+      minimumTouchTarget:
+          minimumTouchTarget +
+          (other.minimumTouchTarget - minimumTouchTarget) * t,
+      controlHeight: controlHeight + (other.controlHeight - controlHeight) * t,
+      cardRadius: cardRadius + (other.cardRadius - cardRadius) * t,
     );
   }
 
@@ -119,23 +179,43 @@ class AppStyle extends ThemeExtension<AppStyle> {
       identical(this, other) ||
       other is AppStyle &&
           runtimeType == other.runtimeType &&
+          space2Xs == other.space2Xs &&
+          spaceXs == other.spaceXs &&
           spaceSm == other.spaceSm &&
           spaceMd == other.spaceMd &&
           spaceLg == other.spaceLg &&
+          spaceXl == other.spaceXl &&
+          space2Xl == other.space2Xl &&
           contentMaxWidth == other.contentMaxWidth &&
+          readingContentMaxWidth == other.readingContentMaxWidth &&
           wideContentMaxWidth == other.wideContentMaxWidth &&
+          mediumLayoutMinWidth == other.mediumLayoutMinWidth &&
           wideLayoutMinWidth == other.wideLayoutMinWidth &&
-          emptyIconSize == other.emptyIconSize;
+          ultraWideLayoutMinWidth == other.ultraWideLayoutMinWidth &&
+          emptyIconSize == other.emptyIconSize &&
+          minimumTouchTarget == other.minimumTouchTarget &&
+          controlHeight == other.controlHeight &&
+          cardRadius == other.cardRadius;
 
   @override
   int get hashCode => Object.hash(
     runtimeType,
+    space2Xs,
+    spaceXs,
     spaceSm,
     spaceMd,
     spaceLg,
+    spaceXl,
+    space2Xl,
     contentMaxWidth,
+    readingContentMaxWidth,
     wideContentMaxWidth,
+    mediumLayoutMinWidth,
     wideLayoutMinWidth,
+    ultraWideLayoutMinWidth,
     emptyIconSize,
+    minimumTouchTarget,
+    controlHeight,
+    cardRadius,
   );
 }

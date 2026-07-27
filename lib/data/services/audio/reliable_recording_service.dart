@@ -8,37 +8,11 @@ import '../storage/app_file_layout.dart';
 import '../storage/durable_file_committer.dart';
 import 'recording_checkpoint_store.dart';
 import 'recording_ports.dart';
+import 'recording_session_service.dart';
+
+export 'recording_session_service.dart';
 
 const minimumRecordingFreeBytes = 128 * 1024 * 1024;
-
-final class ReliableRecordingException implements Exception {
-  const ReliableRecordingException({
-    required this.code,
-    required this.message,
-    this.cause,
-  });
-
-  final String code;
-  final String message;
-  final Object? cause;
-
-  @override
-  String toString() => 'ReliableRecordingException($code, $message)';
-}
-
-abstract interface class RecordingSessionService {
-  RecordingState get state;
-
-  Duration get duration;
-
-  Future<void> start({required String meetingId});
-
-  Future<void> pause();
-
-  Future<void> resume();
-
-  Future<RecordingArtifact> stop();
-}
 
 final class ReliableRecordingService implements RecordingSessionService {
   ReliableRecordingService({

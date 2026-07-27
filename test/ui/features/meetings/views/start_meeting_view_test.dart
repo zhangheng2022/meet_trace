@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meetily_ai/app/application.dart';
@@ -19,7 +20,9 @@ void main() {
 
     expect(find.byType(FScaffold), findsOneWidget);
     expect(find.text('开始会议'), findsWidgets);
+    expect(find.text('事实音频优先保存在本机'), findsOneWidget);
     expect(find.textContaining('转录模型：标准模型'), findsOneWidget);
+    expect(find.textContaining('使用全局默认'), findsOneWidget);
     expect(find.text('高级模型（Qwen3-ASR）').hitTestable(), findsNothing);
 
     await tester.tap(find.textContaining('转录模型：标准模型'));
@@ -56,18 +59,44 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('下载高级模型'), findsOneWidget);
-    expect(find.text('改用标准模型'), findsOneWidget);
-    expect(find.text('取消'), findsOneWidget);
+    expect(find.text('改用标准模型并开始'), findsOneWidget);
+    expect(find.text('取消本次选择'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('下载高级模型'));
     await tester.tap(find.text('下载高级模型'));
     await tester.pumpAndSettle();
     expect(downloadCalls, 1);
 
-    await tester.tap(find.text('改用标准模型'));
+    await tester.ensureVisible(find.text('改用标准模型并开始'));
+    await tester.tap(find.text('改用标准模型并开始'));
     await tester.pumpAndSettle();
     expect(started, isNotNull);
     expect(started!.meeting.modelFallbackReason, advancedModelFallbackReason);
     expect(fixture.preferences.setCalls, isEmpty);
+    await fixture.dispose();
+  });
+
+  testWidgets('320 宽度和 2.0 字体缩放下主操作不遮挡内容', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final fixture = _fixture();
+
+    await tester.pumpWidget(
+      Application(home: StartMeetingView(viewModel: fixture.viewModel)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('start-recording-action')),
+      findsOneWidget,
+    );
+    expect(find.text('开始录音'), findsOneWidget);
+    expect(find.text('事实音频优先保存在本机'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
 }

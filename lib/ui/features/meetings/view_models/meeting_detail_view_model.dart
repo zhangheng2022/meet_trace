@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart' hide Summary;
 import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../data/services/asr/asr_engine.dart';
 import '../../../../data/services/asr/final_transcription_service.dart';
-import '../../../../data/services/audio/pcm_evidence_playback_service.dart';
+import '../../../../data/services/audio/evidence_playback_service.dart';
 import '../../../../data/services/diarization/speaker_diarization_coordinator.dart';
 import '../../../../data/services/sharing/text_share_service.dart';
 import '../../../../domain/models/asr_model.dart';

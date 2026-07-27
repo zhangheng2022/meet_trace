@@ -43,10 +43,15 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _MeetingRepository();
     final viewModel = MeetingListViewModel(meetings: repository);
+    Meeting? opened;
 
     await tester.pumpWidget(
       Application(
-        home: MeetingListView(viewModel: viewModel, onOpenMeeting: (_) {}),
+        home: MeetingListView(
+          viewModel: viewModel,
+          onStartMeeting: () {},
+          onOpenMeeting: (meeting) => opened = meeting,
+        ),
       ),
     );
     expect(find.byType(FProgress), findsOneWidget);
@@ -60,6 +65,14 @@ void main() {
     expect(find.byKey(const ValueKey('meeting-grid')), findsOneWidget);
     expect(find.text('处理中'), findsOneWidget);
     expect(find.text('失败'), findsOneWidget);
+    expect(find.byIcon(FLucideIcons.audioLines), findsOneWidget);
+    expect(find.byIcon(FLucideIcons.circleAlert), findsOneWidget);
+    expect(find.text('打开会议查看失败原因'), findsOneWidget);
+    expect(find.text('开始会议'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('meeting-failed')));
+    await tester.pumpAndSettle();
+    expect(opened?.id, 'failed');
     viewModel.dispose();
     await repository.dispose();
   });
@@ -75,7 +88,39 @@ void main() {
     await tester.pump();
 
     expect(find.text('会议加载失败'), findsOneWidget);
-    expect(find.text('重试'), findsOneWidget);
+    expect(find.text('重试加载'), findsOneWidget);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('320 宽度和 2.0 字体缩放下保留文本主操作且无溢出', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(meetings: repository);
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(
+          viewModel: viewModel,
+          onStartMeeting: () {},
+          onOpenMeeting: (_) {},
+        ),
+      ),
+    );
+    repository.emit([
+      _meeting('recording', '跨团队产品研究进展同步', MeetingState.recording),
+    ]);
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('meeting-list')), findsOneWidget);
+    expect(find.text('开始会议'), findsOneWidget);
+    expect(find.text('录音中'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     viewModel.dispose();
     await repository.dispose();
   });

@@ -5,47 +5,15 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path/path.dart' as p;
 
+import 'evidence_playback_service.dart';
+
+export 'evidence_playback_service.dart';
+
 const _sampleRate = 16000;
 const _channels = 1;
 const _bitsPerSample = 16;
 const _bytesPerSample = _bitsPerSample ~/ 8;
 const _bytesPerMillisecond = _sampleRate * _channels * _bytesPerSample ~/ 1000;
-
-enum EvidencePlaybackStatus { idle, playing, completed, failed }
-
-final class EvidencePlaybackState {
-  const EvidencePlaybackState({
-    required this.status,
-    this.startMs,
-    this.endMs,
-    this.errorCode,
-  });
-
-  final EvidencePlaybackStatus status;
-  final int? startMs;
-  final int? endMs;
-  final String? errorCode;
-}
-
-final class EvidencePlaybackException implements Exception {
-  const EvidencePlaybackException(this.code);
-
-  final String code;
-}
-
-abstract interface class EvidencePlaybackService {
-  Stream<EvidencePlaybackState> get states;
-
-  Future<void> play({
-    required String audioPath,
-    required int startMs,
-    required int endMs,
-  });
-
-  Future<void> stop();
-
-  Future<void> dispose();
-}
 
 abstract interface class DeviceAudioOutput {
   Stream<void> get onCompleted;

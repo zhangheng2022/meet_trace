@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meetily_ai/app/application.dart';
@@ -62,6 +64,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('最终事实文本'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('segment-text-old-segment')),
+      findsNothing,
+    );
+    await tester.tap(find.text('录音'));
+    await tester.pumpAndSettle();
     expect(find.text('标准模型（Paraformer）'), findsOneWidget);
     expect(find.text('高级模型（Qwen3-ASR）'), findsOneWidget);
 
@@ -76,8 +84,13 @@ void main() {
 
     expect(fixture.runner.calls.single.modelId, qwenAdvancedModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
+    final transcriptTab = find.text('转录');
+    await tester.ensureVisible(transcriptTab);
+    await tester.pumpAndSettle();
+    await tester.tap(transcriptTab);
+    await tester.pumpAndSettle();
     expect(find.textContaining('高级模型最终文本'), findsOneWidget);
-    expect(find.text('来源模型：高级模型（Qwen3-ASR）'), findsOneWidget);
+    expect(find.textContaining('来源模型：高级模型（Qwen3-ASR）'), findsOneWidget);
     await fixture.dispose();
   });
 
@@ -162,6 +175,8 @@ void main() {
     expect(find.textContaining('当前构建未配置已验证'), findsOneWidget);
     expect(find.textContaining('说话人 1 · 00:00'), findsOneWidget);
 
+    await tester.tap(find.byKey(const ValueKey('edit-transcript')));
+    await tester.pumpAndSettle();
     final field = find.byKey(const ValueKey('speaker-label-speaker-1'));
     await tester.ensureVisible(field);
     await tester.enterText(field, '张三');
@@ -227,6 +242,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('最终事实文本'), findsOneWidget);
+    await tester.tap(find.text('总结'));
+    await tester.pumpAndSettle();
     expect(find.text('安全总结网关未配置'), findsOneWidget);
     expect(find.textContaining('不会上传音频或会中临时文本'), findsOneWidget);
     expect(find.byKey(const ValueKey('generate-summary')), findsNothing);
@@ -253,6 +270,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('总结'));
+    await tester.pumpAndSettle();
     expect(find.text('会议概览'), findsOneWidget);
     expect(find.text('关键结论'), findsOneWidget);
     expect(find.text('证据 00:00–00:01：最终事实文本'), findsOneWidget);
@@ -281,6 +300,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('总结'));
+    await tester.pumpAndSettle();
     final evidence = find.text('证据 00:00–00:01：最终事实文本');
     await tester.ensureVisible(evidence);
     await tester.tap(evidence);
@@ -288,8 +309,144 @@ void main() {
 
     expect(playback.calls, [('/audio/fact.pcm', 0, 1000)]);
     expect(fixture.viewModel.selectedEvidenceSegmentId, 'active-segment');
+    expect(find.textContaining('最终事实文本'), findsOneWidget);
+    expect(find.text('证据定位'), findsOneWidget);
     await fixture.dispose();
   });
+
+  testWidgets('处理中只显示真实阶段，不伪造百分比进度', (tester) async {
+    final fixture = _fixture(_meeting());
+    final completion = Completer<FinalTranscriptionResult>();
+    fixture.runner.onCall =
+        ({
+          required meetingId,
+          required modelId,
+          required modelVersion,
+          required retrySnapshotId,
+          required onProgress,
+        }) => completion.future;
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('正在生成最终转录'), findsOneWidget);
+    expect(find.text('最终转录'), findsOneWidget);
+    expect(find.text('说话人整理'), findsOneWidget);
+    expect(find.text('AI 总结'), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.textContaining('事实音频'), findsWidgets);
+
+    final snapshot = _snapshot(id: 'completed');
+    final meeting = fixture.meetings.value!.activateFinalTranscript(snapshot);
+    fixture.meetings.value = meeting;
+    completion.complete(
+      FinalTranscriptionResult(meeting: meeting, snapshot: snapshot),
+    );
+    await tester.pumpAndSettle();
+    await fixture.dispose();
+  });
+
+  testWidgets('转录默认只读，用户主动进入编辑后才显示输入框', (tester) async {
+    final active = _snapshot(id: 'active', speakerId: 'speaker-1');
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('最终事实文本'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('segment-text-active-segment')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('speaker-label-speaker-1')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('edit-transcript')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('segment-text-active-segment')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('speaker-label-speaker-1')),
+      findsOneWidget,
+    );
+    await fixture.dispose();
+  });
+
+  testWidgets('320 宽度和 2.0 字体缩放下结果三视图不溢出', (tester) async {
+    tester.view.physicalSize = const Size(320, 760);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final active = _snapshot(id: 'active');
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('转录'), findsWidgets);
+    expect(find.text('总结'), findsOneWidget);
+    expect(find.text('录音'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await fixture.dispose();
+  });
+
+  for (final width in [375.0, 414.0, 768.0, 1024.0]) {
+    testWidgets('${width.round()} 宽度下结果阅读视图不溢出', (tester) async {
+      tester.view.physicalSize = Size(width, 760);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final active = _snapshot(id: 'active');
+      final fixture = _fixture(
+        _meeting(
+          status: MeetingState.completed,
+          activeTranscriptSnapshotId: active.id,
+        ),
+        active: active,
+      );
+
+      await tester.pumpWidget(
+        Application(
+          home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('最终事实文本'), findsOneWidget);
+      expect(find.byKey(const ValueKey('meeting-result-tabs')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await fixture.dispose();
+    });
+  }
 }
 
 _Fixture _fixture(

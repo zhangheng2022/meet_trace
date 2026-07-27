@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meetily_ai/app/application.dart';
 import 'package:meetily_ai/data/services/asr/asr_preview_coordinator.dart';
@@ -17,68 +18,76 @@ import 'package:meetily_ai/ui/features/meetings/views/recording_session_view.dar
 import '../../../../support/model_selection_fakes.dart';
 
 void main() {
-  testWidgets('显示时长、暂停/恢复、仅录音降级并结束会议', (WidgetTester tester) async {
-    final meetings = TestMeetingRepository();
-    final recording = _RecordingService();
-    final preview = _PreviewSession();
-    final descriptor = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
-    );
-    final meeting = Meeting(
-      id: 'meeting-1',
-      title: '产品评审',
-      createdAt: DateTime.utc(2026, 7, 24),
-      startedAt: DateTime.utc(2026, 7, 24, 1),
-      status: MeetingState.recording,
-      audioDurationMs: 0,
-      requestedModelId: descriptor.modelId,
-      recordingModelId: descriptor.modelId,
-      recordingModelVersion: descriptor.version,
-    );
-    final viewModel = RecordingSessionViewModel(
-      session: StartedMeetingSession(
-        meeting: meeting,
-        engine: TestAsrEngine(descriptor),
-      ),
-      meetings: meetings,
-      recording: recording,
-      preview: preview,
-      now: () => DateTime.utc(2026, 7, 24, 1, 30),
-      tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
-    );
+  testWidgets('显示事实音频、锁定模型、暂停恢复和仅录音降级', (WidgetTester tester) async {
+    final fixture = _fixture();
     Meeting? finished;
 
     await tester.pumpWidget(
       Application(
         home: RecordingSessionView(
-          viewModel: viewModel,
+          viewModel: fixture.viewModel,
           onFinished: (meeting) => finished = meeting,
         ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 200));
-    recording.durationValue = const Duration(seconds: 12);
-    viewModel.refreshDuration();
+    fixture.recording.durationValue = const Duration(seconds: 12);
+    fixture.viewModel.refreshDuration();
     await tester.pump();
 
     expect(find.text('00:00:12'), findsOneWidget);
+    expect(find.textContaining('标准模型（Paraformer） · 本场已锁定'), findsOneWidget);
+    expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('实时转录正常'), findsOneWidget);
 
     await tester.tap(find.text('暂停录音'));
     await tester.pumpAndSettle();
-    expect(find.text('录音已暂停'), findsOneWidget);
-    expect(find.text('转录已暂停'), findsOneWidget);
+    expect(find.text('事实录音已暂停'), findsOneWidget);
+    expect(find.text('实时转录已随录音暂停'), findsOneWidget);
 
     await tester.tap(find.text('恢复录音'));
     await tester.pumpAndSettle();
-    preview.emit(AsrPreviewState.recordingOnly);
+    fixture.preview.emit(AsrPreviewState.recordingOnly);
     await tester.pump();
-    expect(find.text('仅录音模式'), findsOneWidget);
-    expect(find.textContaining('不会中断录音'), findsOneWidget);
-    expect(viewModel.recordingState, RecordingState.recording);
-    expect(viewModel.canStop, isTrue);
+    expect(find.text('实时转录已停止，录音仍在继续'), findsOneWidget);
+    expect(find.textContaining('事实音频仍在安全写入'), findsOneWidget);
+    expect(fixture.viewModel.recordingState, RecordingState.recording);
+    expect(fixture.viewModel.canStop, isTrue);
+    expect(finished, isNull);
+    await fixture.dispose();
+  });
 
-    await tester.tap(find.text('结束会议'));
+  testWidgets('返回键和结束按钮进入同一确认流程，确认后封存会议', (WidgetTester tester) async {
+    final fixture = _fixture();
+    Meeting? finished;
+
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (meeting) => finished = meeting,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    fixture.recording.durationValue = const Duration(seconds: 12);
+    fixture.viewModel.refreshDuration();
+    await tester.pump();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('结束并保存会议？'), findsOneWidget);
+    expect(find.text('继续录音'), findsOneWidget);
+    expect(finished, isNull);
+
+    await tester.tap(find.text('继续录音'));
+    await tester.pumpAndSettle();
+    expect(find.text('结束并保存会议？'), findsNothing);
+
+    await tester.tap(find.text('结束并保存').last);
+    await tester.pumpAndSettle();
+    expect(find.text('结束并保存会议？'), findsOneWidget);
+    await tester.tap(find.text('结束并保存').last);
     await tester.runAsync(() async {
       for (var attempt = 0; attempt < 20 && finished == null; attempt++) {
         await Future<void>.delayed(const Duration(milliseconds: 1));
@@ -86,10 +95,115 @@ void main() {
     });
     await tester.pump(const Duration(milliseconds: 200));
     expect(finished?.status, MeetingState.processing);
-    expect(meetings.saved.last.audioDurationMs, 12000);
+    expect(fixture.meetings.saved.last.audioDurationMs, 12000);
+    await fixture.dispose();
+  });
+
+  testWidgets('320 宽度和 2.0 字体缩放下关键状态与操作不溢出', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(320, 760);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final fixture = _fixture();
+
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('事实音频正在安全写入'), findsOneWidget);
+    expect(find.text('暂停录音'), findsOneWidget);
+    expect(find.text('结束并保存'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await fixture.dispose();
+  });
+
+  testWidgets('1024 宽度下事实状态与实时转录使用双列工作台', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1024, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final fixture = _fixture();
+
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('recording-wide-layout')), findsOneWidget);
+    expect(find.text('事实音频正在安全写入'), findsOneWidget);
+    expect(find.text('实时转录'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await fixture.dispose();
+  });
+}
+
+_Fixture _fixture() {
+  final meetings = TestMeetingRepository();
+  final recording = _RecordingService();
+  final preview = _PreviewSession();
+  final descriptor = AsrModelRegistry.alpha.requireById(
+    paraformerStandardModelId,
+  );
+  final meeting = Meeting(
+    id: 'meeting-1',
+    title: '产品评审',
+    createdAt: DateTime.utc(2026, 7, 24),
+    startedAt: DateTime.utc(2026, 7, 24, 1),
+    status: MeetingState.recording,
+    audioDurationMs: 0,
+    requestedModelId: descriptor.modelId,
+    recordingModelId: descriptor.modelId,
+    recordingModelVersion: descriptor.version,
+  );
+  final viewModel = RecordingSessionViewModel(
+    session: StartedMeetingSession(
+      meeting: meeting,
+      engine: TestAsrEngine(descriptor),
+    ),
+    meetings: meetings,
+    recording: recording,
+    preview: preview,
+    now: () => DateTime.utc(2026, 7, 24, 1, 30),
+    tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
+  );
+  return _Fixture(
+    meetings: meetings,
+    recording: recording,
+    preview: preview,
+    viewModel: viewModel,
+  );
+}
+
+final class _Fixture {
+  const _Fixture({
+    required this.meetings,
+    required this.recording,
+    required this.preview,
+    required this.viewModel,
+  });
+
+  final TestMeetingRepository meetings;
+  final _RecordingService recording;
+  final _PreviewSession preview;
+  final RecordingSessionViewModel viewModel;
+
+  Future<void> dispose() async {
     viewModel.dispose();
     await preview.close();
-  });
+  }
 }
 
 final class _RecordingService implements RecordingSessionService {

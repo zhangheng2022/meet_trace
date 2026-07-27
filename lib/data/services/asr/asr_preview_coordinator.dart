@@ -9,23 +9,14 @@ import '../../../domain/use_cases/plan_asr_preview_windows.dart';
 import '../audio/recording_ports.dart';
 import '../vad/silero_vad_segmenter.dart';
 import 'asr_engine.dart';
+import 'asr_preview_session.dart';
+
+export 'asr_preview_session.dart';
 
 const defaultMaximumQueuedPreviewAudioMs = 30000;
 const defaultPreviewHighWaterMs = 15000;
 const defaultPreviewLowWaterMs = 5000;
 const _timelineRetentionMs = 20000;
-
-abstract interface class AsrPreviewSession {
-  Stream<TranscriptEvent> get events;
-
-  Stream<AsrPreviewMetrics> get metricsChanges;
-
-  AsrPreviewMetrics get metrics;
-
-  Future<void> flush();
-
-  Future<void> dispose();
-}
 
 final class AsrPreviewCoordinator
     implements RecordingPreviewSink, AsrPreviewSession {

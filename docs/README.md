@@ -1,7 +1,7 @@
 # Meetily 文档索引
 
 > 状态：当前文档入口
-> 更新日期：2026-07-25
+> 更新日期：2026-07-26
 
 ## 活动文档
 
@@ -13,11 +13,13 @@
    将 PRD 约束落实为录音、模型管理、官方 sherpa-onnx Flutter 包、双 ASR Engine、存储和降级架构。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)
    当前仓库从应用壳到双模型 Alpha 的执行顺序、测试要求和完成看板。
-4. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)
+4. [研会 AI 交互与视觉系统](../design.md)
+   锁定多页面 UI 的结构、色彩、排版、间距、响应式、交互状态和页面契约。
+5. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)
    Alpha 步骤分支、隔离 worktree、合并和安全清理规则。
-5. [双模型设计规格](./superpowers/specs/2026-07-23-dual-asr-model-design.md)
+6. [双模型设计规格](./superpowers/specs/2026-07-23-dual-asr-model-design.md)
    2026-07-23 已批准决策的审计记录；若与当前 PRD 冲突，以 PRD 为准并同步修订规格。
-6. [官方 sherpa-onnx Flutter 包集成规格](./superpowers/specs/2026-07-23-official-sherpa-onnx-flutter-integration-design.md)
+7. [官方 sherpa-onnx Flutter 包集成规格](./superpowers/specs/2026-07-23-official-sherpa-onnx-flutter-integration-design.md)
    2026-07-23 已批准的依赖边界：只使用官方 Flutter/Dart 包，不自建原生桥接。
 
 实施证据：
@@ -52,7 +54,7 @@ PRD（做什么、为什么、如何验收）
 
 截至 2026-07-25，Step 00、Step 02～17 已完成，Step 01 的外部语料、低端设备和公开分发许可闭环仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4；标准 Paraformer、按需下载 Qwen3-ASR、可靠事实录音、双 Engine、模型锁定、Silero VAD、有界预览队列、会议主链、完整音频最终转录、说话人降级、AI 总结证据链和会后数据控制均已落地。处理详情会自动使用本场锁定模型生成最终快照，失败时保留事实音频和旧活动结果；用户也可选择当前已安装模型生成独立重转录快照。
 
-当前全量 246 项测试、静态分析和 315,775,937 字节 Debug APK 通过。Step 18 已增加三态发布门禁，缺少证据时输出 `blocked`，明确不达标时输出 `noGo`，只有全部 PRD 门槛通过才输出 `go`。Android 16 x86_64 模拟器已复测包内 Paraformer、官方 sherpa-onnx adapter、Silero VAD 和 30 秒事实录音；APK 审计确认 ABI、模型、VAD、NOTICE 和哈希完整，且不包含高级权重、用户事实数据或疑似永久密钥。Mi 10 历史 Spike 仍有效，但相同 20 段语料、最低目标 arm64 真机、30 分钟实体设备回归、AT-01～AT-16 完整证据和 Paraformer 再分发许可尚未闭环，因此 Step 18 与 Alpha 发布仍为阻塞状态。当前构建只剩 `flutter_foreground_task` 的 Built-in Kotlin 上游兼容警告。
+当前全量 285 项测试、静态分析和 315,775,937 字节 Debug APK 通过。UI-00～UI-04 已建立 Cobalt 设计令牌、共享页面组件、会议入口、录音工作台以及处理/结果三视图；结果页已覆盖诚实处理阶段、转录默认只读、显式编辑、总结证据定位播放、Widget Preview 源码、320～1024 px 与 2.0 字体缩放。Step 18 已增加三态发布门禁，缺少证据时输出 `blocked`，明确不达标时输出 `noGo`，只有全部 PRD 门槛通过才输出 `go`。Android 16 x86_64 模拟器已复测包内 Paraformer、官方 sherpa-onnx adapter、Silero VAD 和 30 秒事实录音；APK 审计确认 ABI、模型、VAD、NOTICE 和哈希完整，且不包含高级权重、用户事实数据或疑似永久密钥。Mi 10 历史 Spike 仍有效，但相同 20 段语料、最低目标 arm64 真机、30 分钟实体设备回归、AT-01～AT-16 完整证据和 Paraformer 再分发许可尚未闭环，因此 Step 18 与 Alpha 发布仍为阻塞状态。当前构建只剩 `flutter_foreground_task` 的 Built-in Kotlin 上游兼容警告。
 
 ## 维护规则
 

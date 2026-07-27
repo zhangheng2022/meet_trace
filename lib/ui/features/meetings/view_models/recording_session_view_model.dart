@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../../data/repositories/repository_contracts.dart';
-import '../../../../data/services/asr/asr_preview_coordinator.dart';
-import '../../../../data/services/audio/reliable_recording_service.dart';
+import '../../../../data/services/asr/asr_preview_session.dart';
+import '../../../../data/services/audio/recording_session_service.dart';
 import '../../../../domain/models/asr_preview.dart';
 import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/transcript.dart';
