@@ -139,12 +139,6 @@
       "skillPath": "skills/productivity/grill-me/SKILL.md",
       "computedHash": "7edd436132b43ea2973710f0c28a9879c9b0910651eb89a991a7e98cb6dbbacb"
     },
-    "hallmark": {
-      "source": "nutlope/hallmark",
-      "sourceType": "github",
-      "skillPath": "skills/hallmark/SKILL.md",
-      "computedHash": "d3a20aae61e43793d74932c92b63bcad5882e73ec1c8545b858910fd95b25136"
-    },
     "using-git-worktrees": {
       "source": "obra/superpowers",
       "sourceType": "github",
