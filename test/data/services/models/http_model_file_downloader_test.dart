@@ -19,6 +19,10 @@ void main() {
     addTearDown(() => server.close(force: true));
     final requestHandled = server.first.then((request) async {
       expect(request.headers.value(HttpHeaders.rangeHeader), 'bytes=2-');
+      expect(
+        request.headers.value(HttpHeaders.userAgentHeader),
+        'MeetTrace-Mobile-Alpha/1.0',
+      );
       request.response
         ..statusCode = HttpStatus.partialContent
         ..headers.set(HttpHeaders.contentRangeHeader, 'bytes 2-4/5')

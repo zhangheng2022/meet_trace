@@ -1,5 +1,5 @@
 name: meettrace
-description: "会迹（MeetTrace）— 本地优先的 Android 会议录音与转录应用。"
+description: "会迹（MeetTrace）— 本地优先的 Android + iOS 会议录音与转录应用。"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

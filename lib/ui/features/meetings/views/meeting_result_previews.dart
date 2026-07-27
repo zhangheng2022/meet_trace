@@ -99,7 +99,7 @@ TranscriptSnapshot _previewSnapshot() => TranscriptSnapshot(
       snapshotId: 'preview-snapshot',
       startMs: 125000,
       endMs: 137000,
-      text: '本周先完成 Android Alpha 的会议结果页和端侧回归。',
+      text: '本周先完成 Android + iOS Alpha 的会议结果页和端侧回归。',
       speakerId: '陈工',
       modelId: paraformerStandardModelId,
       modelVersion: AsrModelRegistry.alpha.defaultModel.version,
@@ -140,7 +140,7 @@ Summary _previewSummary(TranscriptSnapshot snapshot) => Summary(
     ),
   ],
   actionItems: [
-    SummaryItem(id: 'preview-action', text: '完成 Android Alpha 结果页回归。'),
+    SummaryItem(id: 'preview-action', text: '完成 Android + iOS Alpha 结果页回归。'),
   ],
   status: SummaryStatus.complete,
 );

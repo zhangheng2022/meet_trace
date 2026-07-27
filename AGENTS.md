@@ -6,7 +6,7 @@
 
 ## 产品边界
 
-会迹（MeetTrace）是两周交付的 Android Alpha，不提供登录或跨设备同步。本地音频是唯一事实源；推理变慢或失败时，录音必须继续。端侧 ASR 使用 sherpa-onnx 双模型：内置标准模型 `sherpa-onnx-paraformer-zh-small-2024-03-09` INT8，高级模型 `sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25` 按需下载。设置保存全局默认，开始会议可覆盖本场选择；录音开始后模型锁定，所选模型同时负责会中和最终转录，不得自动切换或混合输出。AI 总结只能基于最终转录；使用云端 AI 时仅上传最终文本，并为关键结论保留带时间戳的原文证据。说话人分离属于可降级能力。扩展 P0 前必须先更新 PRD。
+会迹（MeetTrace）是 Android + iOS 自适应 Alpha，不提供登录或跨设备同步。双平台排期以 PRD 门槛确认后的评估为准，不继承原 Android 两周交付假设。本地音频是唯一事实源；推理变慢或失败时，录音必须继续。端侧 ASR 使用 sherpa-onnx 双模型：内置标准模型 `sherpa-onnx-paraformer-zh-small-2024-03-09` INT8，高级模型 `sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25` 按需下载。设置保存全局默认，开始会议可覆盖本场选择；录音开始后模型锁定，所选模型同时负责会中和最终转录，不得自动切换或混合输出。AI 总结只能基于最终转录；使用云端 AI 时仅上传最终文本，并为关键结论保留带时间戳的原文证据。说话人分离属于可降级能力。扩展 P0 前必须先更新 PRD。
 
 ## 架构与项目结构
 
@@ -30,12 +30,13 @@ UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `As
 ## 常用命令与质量门槛
 
 - `flutter pub get`：解析依赖。
-- `flutter run -d <device-id>`：在 Android 设备上运行。
+- `flutter run -d <device-id>`：在 Android 或 iOS 设备上运行。
 - `dart format lib test integration_test`：格式化 Dart 源码。
 - `flutter analyze`：执行 `flutter_lints` 静态检查。
 - `flutter test`：运行单元测试和组件测试。
 - `flutter test integration_test`：运行支持的设备流程。
 - `flutter build apk --debug`：构建 Alpha 调试 APK。
+- `flutter build ios --debug --no-codesign`：在 macOS/Xcode 环境构建 iOS Alpha 调试产物。
 
 测试文件使用 `*_test.dart`。优先覆盖录音连续性、模型校验、会议模型锁定、积压恢复、转录排序、快照原子切换、证据映射，以及 Forui 的加载、空白和错误状态。双模型必须在相同语料与设备上对比 RTF、延迟、内存、能耗、温控和关键事实召回率。
 

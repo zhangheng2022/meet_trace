@@ -1,6 +1,6 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
 // Hallmark · page: UI-04 meeting result · genre: modern-minimal
-// Theme: Cobalt · macrostructure: Workbench · contrast: token-locked
+// Theme: Shadcn Neutral · macrostructure: Workbench · contrast: token-locked
 
 import 'dart:async';
 
@@ -16,6 +16,7 @@ import '../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_page_body.dart';
+import '../../../core/app_back_icon.dart';
 import '../../../core/app_state_panel.dart';
 import '../../../core/app_status_notice.dart';
 import '../view_models/meeting_detail_view_model.dart';
@@ -54,20 +55,20 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
       listenable: widget.viewModel,
       builder: (context, _) {
         final viewModel = widget.viewModel;
-        return FScaffold(
-          header: FHeader.nested(
-            title: const Text('会议详情'),
-            prefixes: [
-              FHeaderAction(
-                icon: context.theme.icons.arrowLeft(
-                  context,
-                  semanticsLabel: '返回会议列表',
+        return PopScope(
+          canPop: !viewModel.isProcessing,
+          child: FScaffold(
+            header: FHeader.nested(
+              title: const Text('会议详情'),
+              prefixes: [
+                FHeaderAction(
+                  icon: const AppBackIcon(semanticsLabel: '返回会议列表'),
+                  onPress: viewModel.isProcessing ? null : widget.onBack,
                 ),
-                onPress: viewModel.isProcessing ? null : widget.onBack,
-              ),
-            ],
+              ],
+            ),
+            child: _body(context, viewModel),
           ),
-          child: _body(context, viewModel),
         );
       },
     );

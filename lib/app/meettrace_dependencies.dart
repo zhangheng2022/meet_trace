@@ -11,14 +11,14 @@ import '../data/repositories/sqflite_model_usage_lease_repository.dart';
 import '../data/repositories/sqflite_processing_task_repository.dart';
 import '../data/repositories/sqflite_summary_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
-import '../data/services/asr/android_proc_asr_device_risk_monitor.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
 import '../data/services/asr/final_transcription_service.dart';
+import '../data/services/asr/platform_asr_device_risk_monitor.dart';
 import '../data/services/asr/sherpa_onnx_asr_engine_factory.dart';
 import '../data/services/diarization/speaker_diarization_coordinator.dart';
 import '../data/services/diarization/speaker_diarization_service.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
-import '../data/services/audio/flutter_foreground_recording_lifecycle.dart';
+import '../data/services/audio/platform_recording_foreground_lifecycle.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
 import '../data/services/audio/recording_checkpoint_store.dart';
 import '../data/services/audio/reliable_recording_service.dart';
@@ -152,7 +152,7 @@ final class MeetTraceDependencies {
     final engineFactory = SherpaOnnxAsrEngineFactory(
       installations: installations,
       leases: leases,
-      riskMonitor: AndroidProcAsrDeviceRiskMonitor(),
+      riskMonitor: createPlatformAsrDeviceRiskMonitor(),
       ownerId: 'meettrace-app',
     );
     final finalTranscription = FinalTranscriptionService(
@@ -313,7 +313,7 @@ final class MeetTraceDependencies {
       layout: fileLayout,
       checkpoints: JsonRecordingCheckpointStore(fileLayout),
       storageCapacity: const DeviceRecordingStorageCapacityProvider(),
-      foreground: FlutterForegroundRecordingLifecycle(),
+      foreground: createRecordingForegroundLifecycle(),
       previewSink: preview,
     );
     return RecordingSessionViewModel(

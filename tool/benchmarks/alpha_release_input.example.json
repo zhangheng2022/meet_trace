@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "rawMetricsRef": null,
   "corpus": {
     "id": null,
@@ -10,7 +10,11 @@
     "deviceId": null,
     "sameCorpusForBothModels": null,
     "sameDeviceForBothModels": null,
-    "lowEndArm64DeviceTested": null
+    "lowEndArm64DeviceTested": null,
+    "iosArm64DeviceTested": null,
+    "iosBackgroundRecordingPassed": null,
+    "iosInterruptionRecoveryPassed": null,
+    "adaptiveNavigationAccessibilityPassed": null
   },
   "standardModel": {
     "resourceBytes": 81904027,
@@ -33,6 +37,7 @@
   "acceptanceEvidence": null,
   "release": {
     "apkAuditPassed": null,
+    "iosBuildAuditPassed": null,
     "paraformerRedistributionConfirmed": null
   }
 }

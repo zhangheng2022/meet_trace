@@ -51,6 +51,22 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.blocked);
     });
 
+    test('Android 证据完整但 iOS 后台录音未通过时双平台发布 No-Go', () {
+      final report = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(iosBackgroundRecordingPassed: false),
+      );
+
+      expect(
+        report.gates
+            .singleWhere(
+              (gate) => gate.id == 'environment.iosBackgroundRecording',
+            )
+            .status,
+        ReleaseGateStatus.failed,
+      );
+      expect(report.decision, AlphaReleaseDecision.noGo);
+    });
+
     test('缺少真机、语料、许可或验收证据时阻塞发布而非伪造失败值', () {
       const input = AlphaReleaseEvaluationInput();
 
@@ -105,6 +121,10 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   sameCorpusForBothModels: true,
   sameDeviceForBothModels: true,
   lowEndArm64DeviceTested: true,
+  iosArm64DeviceTested: true,
+  iosBackgroundRecordingPassed: true,
+  iosInterruptionRecoveryPassed: true,
+  adaptiveNavigationAccessibilityPassed: true,
   standardModelResourceBytes: 99 * 1024 * 1024,
   standardRtfSamples: [
     for (var index = 1; index <= 18; index++) index / 100,
@@ -126,9 +146,10 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   advancedFinalTranscriptionDurationMs: 600000,
   keyFactRecallRatio: 0.85,
   acceptanceEvidence: {
-    for (var index = 1; index <= 16; index++)
+    for (var index = 1; index <= 20; index++)
       'AT-${index.toString().padLeft(2, '0')}': 'evidence/AT-$index.json',
   },
   apkAuditPassed: true,
+  iosBuildAuditPassed: true,
   paraformerRedistributionConfirmed: true,
 );

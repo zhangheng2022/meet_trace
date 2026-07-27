@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
-// Hallmark · component: state-panel · genre: modern-minimal · theme: Cobalt
+// Hallmark · component: state-panel · genre: modern-minimal · theme: Shadcn Neutral
 // States: loading · empty · error · action-enabled · action-absent
 
 import 'package:flutter/widgets.dart';

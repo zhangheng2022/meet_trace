@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · component: bottom-action-bar · genre: modern-minimal · theme: Cobalt
+// Hallmark · component: bottom-action-bar · genre: modern-minimal · theme: Shadcn Neutral
 // Responsive: compact · medium · expanded · safe-area: enforced
 
 import 'package:flutter/widgets.dart';

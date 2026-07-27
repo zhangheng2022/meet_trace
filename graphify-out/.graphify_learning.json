@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T04:26:52.244215+00:00",
+  "generated_at": "2026-07-27T09:37:05.819575+00:00",
   "nodes": {
     "_agents_skills_flutter_add_widget_test_skill_writing_flutter_widget_tests": {
       "code_fingerprint": "ecc36bea2093a9f4f004f86f09aa9601930edd8321160a7dd3748af6e7ef9479",
@@ -12,24 +12,61 @@
           "q": "改为中文"
         }
       ],
-      "score": 0.91665662,
+      "score": 0.912105204,
       "source_file": ".agents/skills/flutter-add-widget-test/SKILL.md",
       "status": "tentative",
       "uses": 1
     },
     "lib_app_application_application": {
-      "code_fingerprint": "edec095929a9ffc54742c18f8f6a2082620b9c4cf4c2c7d8641707224ee83a09",
+      "code_fingerprint": "45d96549f4732ddf7eb5540c293adcaf47d7d01279ad7bf87072fc1e4981653d",
       "label": "Application",
-      "last": "2026-07-27T04:20:13.745608+00:00",
+      "last": "2026-07-27T04:37:06.417622+00:00",
       "provenance": [
+        {
+          "date": "2026-07-27T04:37:06.417622+00:00",
+          "outcome": "useful",
+          "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
+        },
         {
           "date": "2026-07-27T04:20:13.745608+00:00",
           "outcome": "useful",
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.99989344,
+      "score": 1.990126937,
       "source_file": "lib/app/application.dart",
+      "status": "preferred",
+      "uses": 2
+    },
+    "lib_data_services_storage_app_database_appdatabase": {
+      "code_fingerprint": "31132029870f100675e4bee71e2349f245123779a6e33a253ff1a1808aa8f13c",
+      "label": "AppDatabase",
+      "last": "2026-07-27T04:37:06.417622+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:37:06.417622+00:00",
+          "outcome": "useful",
+          "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
+        }
+      ],
+      "score": 0.995198204,
+      "source_file": "lib/data/services/storage/app_database.dart",
+      "status": "tentative",
+      "uses": 1
+    },
+    "lib_data_services_storage_app_file_layout_appfilelayout": {
+      "code_fingerprint": "cc9b929e762cadbadbf2b09765099ba18620054a259981ab0a62b87f608b1440",
+      "label": "AppFileLayout",
+      "last": "2026-07-27T04:37:06.417622+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:37:06.417622+00:00",
+          "outcome": "useful",
+          "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
+        }
+      ],
+      "score": 0.995198204,
+      "source_file": "lib/data/services/storage/app_file_layout.dart",
       "status": "tentative",
       "uses": 1
     },
@@ -44,7 +81,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.99989344,
+      "score": 0.994928734,
       "source_file": "lib/data/services/vad/bundled_silero_vad_model.dart",
       "status": "tentative",
       "uses": 1
@@ -65,13 +102,13 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.99902685,
+      "score": 1.989101212,
       "source_file": "lib/domain/models/meeting.dart",
       "status": "preferred",
       "uses": 2
     },
     "lib_main": {
-      "code_fingerprint": "843c747895acba3a9d9bcc88a182235277fbf15b84355820d8aee4853a1ceed5",
+      "code_fingerprint": "37b825af5ca99103cce2d51efab3e4098f13aa66e742117f5dcc667da4933452",
       "label": "main.dart",
       "last": "2026-07-23T10:01:05.885475+00:00",
       "provenance": [
@@ -86,7 +123,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.833151633,
+      "score": 1.824049604,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
@@ -107,13 +144,13 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.99902685,
+      "score": 1.989101212,
       "source_file": "lib/theme/theme.dart",
       "status": "preferred",
       "uses": 2
     },
     "lib_ui_core_app_page_body_apppagebody": {
-      "code_fingerprint": "42fac7034c6bba4835603b9b8ab2cb4fb1ceb3d83bb975857905877c795377e2",
+      "code_fingerprint": "fedba3076737ee2c22c8bd6535c849a98481992a73a9750864c9185249807427",
       "label": "AppPageBody",
       "last": "2026-07-27T03:41:29.976039+00:00",
       "provenance": [
@@ -123,7 +160,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 0.999272282,
+      "score": 0.99431066,
       "source_file": "lib/ui/core/app_page_body.dart",
       "status": "tentative",
       "uses": 1
@@ -144,7 +181,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.99902685,
+      "score": 1.989101212,
       "source_file": "lib/ui/core/view_state.dart",
       "status": "preferred",
       "uses": 2
@@ -160,7 +197,7 @@
           "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
         }
       ],
-      "score": 0.999754569,
+      "score": 0.994790552,
       "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
       "status": "tentative",
       "uses": 1
@@ -168,18 +205,23 @@
     "linux_runner_main_main": {
       "code_fingerprint": "905b4dfa4eab584c1eb6244899b7d5ef56d0bceaf3bffb5ea335ed7e0ba3c549",
       "label": "main()",
-      "last": "2026-07-27T04:20:13.745608+00:00",
+      "last": "2026-07-27T04:37:06.417622+00:00",
       "provenance": [
+        {
+          "date": "2026-07-27T04:37:06.417622+00:00",
+          "outcome": "useful",
+          "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
+        },
         {
           "date": "2026-07-27T04:20:13.745608+00:00",
           "outcome": "useful",
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.99989344,
+      "score": 1.990126937,
       "source_file": "linux/runner/main.cc",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "package_flutter_test_flutter_test_dart": {
       "code_fingerprint": "",
@@ -192,8 +234,24 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.916526715,
+      "score": 0.911975944,
       "source_file": "",
+      "status": "tentative",
+      "uses": 1
+    },
+    "web_manifest": {
+      "code_fingerprint": "923f337da7f8edc638ae000ffc84d026a6a1802ff1d9c09c5edb76a17a084af5",
+      "label": "web/manifest.json",
+      "last": "2026-07-27T04:37:06.417622+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T04:37:06.417622+00:00",
+          "outcome": "useful",
+          "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
+        }
+      ],
+      "score": 0.995198204,
+      "source_file": "web/manifest.json",
       "status": "tentative",
       "uses": 1
     }

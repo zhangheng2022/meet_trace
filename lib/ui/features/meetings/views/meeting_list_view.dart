@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · page: meeting-list · macrostructure: Workbench · theme: Cobalt
+// Hallmark · page: meeting-list · macrostructure: Workbench · theme: Shadcn Neutral
 // States: loading · empty · error · list · two-column-expanded
 
 import 'package:flutter/widgets.dart';

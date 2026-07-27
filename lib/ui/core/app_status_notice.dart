@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4
-// Hallmark · component: status-notice · genre: modern-minimal · theme: Cobalt
+// Hallmark · component: status-notice · genre: modern-minimal · theme: Shadcn Neutral
 // States: info · recording · warning · error · success · contrast: token-locked
 
 import 'package:flutter/widgets.dart';

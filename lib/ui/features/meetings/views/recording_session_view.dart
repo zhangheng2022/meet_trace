@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · page: recording-workbench · macrostructure: Workbench · theme: Cobalt
+// Hallmark · page: recording-workbench · macrostructure: Workbench · theme: Shadcn Neutral
 // States: starting · recording · paused · backlogged · recording-only · finalizing · failed
 
 import 'dart:async';
@@ -13,6 +13,7 @@ import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_bottom_action_bar.dart';
+import '../../../core/app_back_icon.dart';
 import '../../../core/app_page_body.dart';
 import '../../../core/app_status_notice.dart';
 import '../view_models/recording_session_view_model.dart';
@@ -57,8 +58,8 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
             header: FHeader.nested(
               title: const Text('会议录音'),
               prefixes: [
-                FHeaderAction.back(
-                  semanticsLabel: '结束会议并返回',
+                FHeaderAction(
+                  icon: const AppBackIcon(semanticsLabel: '结束会议并返回'),
                   onPress: active ? () => unawaited(_requestEnd()) : null,
                 ),
               ],

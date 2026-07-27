@@ -1,19 +1,19 @@
 # 会迹（MeetTrace）文档索引
 
 > 状态：当前文档入口
-> 更新日期：2026-07-26
+> 更新日期：2026-07-27
 
 ## 活动文档
 
 按优先级阅读：
 
-1. [会迹（MeetTrace）Android Alpha PRD V0.5](./会迹_MeetTrace_Alpha_PRD_无登录版.md)
-   产品范围、用户流程、功能需求、质量门槛和 AT-01～AT-16 的唯一事实源。
+1. [会迹（MeetTrace）Android + iOS Alpha PRD V0.6](./会迹_MeetTrace_Alpha_PRD_无登录版.md)
+   双平台产品范围、用户流程、功能需求、质量门槛和 AT-01～AT-20 的唯一事实源。
 2. [端侧双模型转录技术方案](./端侧双模型转录技术方案.md)
    将 PRD 约束落实为录音、模型管理、官方 sherpa-onnx Flutter 包、双 ASR Engine、存储和降级架构。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)
    当前仓库从应用壳到双模型 Alpha 的执行顺序、测试要求和完成看板。
-4. [会迹（MeetTrace）交互与视觉系统](../design.md)
+4. [会迹（MeetTrace）交互与视觉系统](../DESIGN.md)
    锁定多页面 UI 的结构、色彩、排版、间距、响应式、交互状态和页面契约。
 5. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)
    Alpha 步骤分支、隔离 worktree、合并和安全清理规则。
@@ -25,6 +25,8 @@
 实施证据：
 
 - [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md)：最低 SDK、目标 ABI、开发设备和待补齐的验收设备。
+- [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md)：最低系统、arm64、iPhone/iPad、
+  后台录音、双模型和无障碍待验门槛；未闭环前双平台发布保持 `blocked`。
 - [Step 01 双模型真机 Spike](./quality/Step_01_双模型真机_Spike.md)：官方包、模型文件、APK、录音解耦和真机复测状态。
 - [Step 07 可靠录音与崩溃恢复](./quality/Step_07_可靠录音与崩溃恢复.md)：事实 PCM、检查点、原子封存、异常恢复和 Mi 10 后台录音证据。
 - [Step 08 官方 sherpa-onnx Flutter 包集成](./quality/Step_08_官方_sherpa-onnx_Flutter_包集成.md)：一次性 bindings、isolate worker、结构化错误、重复创建和 APK 审计证据。
@@ -52,9 +54,9 @@ PRD（做什么、为什么、如何验收）
 
 ## 当前实现状态
 
-截至 2026-07-25，Step 00、Step 02～17 已完成，Step 01 的外部语料、低端设备和公开分发许可闭环仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4；标准 Paraformer、按需下载 Qwen3-ASR、可靠事实录音、双 Engine、模型锁定、Silero VAD、有界预览队列、会议主链、完整音频最终转录、说话人降级、AI 总结证据链和会后数据控制均已落地。处理详情会自动使用本场锁定模型生成最终快照，失败时保留事实音频和旧活动结果；用户也可选择当前已安装模型生成独立重转录快照。
+截至 2026-07-27，Android 侧 Step 00、Step 02～17 已完成，Step 01 的外部语料、低端设备和公开分发许可闭环仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4；标准 Paraformer、按需下载 Qwen3-ASR、可靠事实录音、双 Engine、模型锁定、Silero VAD、有界预览队列、会议主链、完整音频最终转录、说话人降级、AI 总结证据链和会后数据控制均已落地。iOS 已纳入 P0 并完成工程权限、音频后台模式、平台装配与原生返回导航基线，但尚未形成等价的真机、模型、后台生命周期和安装包审计证据。处理详情会自动使用本场锁定模型生成最终快照，失败时保留事实音频和旧活动结果；用户也可选择当前已安装模型生成独立重转录快照。
 
-当前全量 285 项测试、静态分析和 315,775,937 字节 Debug APK 通过。UI-00～UI-04 已建立 Cobalt 设计令牌、共享页面组件、会议入口、录音工作台以及处理/结果三视图；结果页已覆盖诚实处理阶段、转录默认只读、显式编辑、总结证据定位播放、Widget Preview 源码、320～1024 px 与 2.0 字体缩放。Step 18 已增加三态发布门禁，缺少证据时输出 `blocked`，明确不达标时输出 `noGo`，只有全部 PRD 门槛通过才输出 `go`。Android 16 x86_64 模拟器已复测包内 Paraformer、官方 sherpa-onnx adapter、Silero VAD 和 30 秒事实录音；APK 审计确认 ABI、模型、VAD、NOTICE 和哈希完整，且不包含高级权重、用户事实数据或疑似永久密钥。Mi 10 历史 Spike 仍有效，但相同 20 段语料、最低目标 arm64 真机、30 分钟实体设备回归、AT-01～AT-16 完整证据和 Paraformer 再分发许可尚未闭环，因此 Step 18 与 Alpha 发布仍为阻塞状态。当前构建只剩 `flutter_foreground_task` 的 Built-in Kotlin 上游兼容警告。
+Android 侧既有 285 项测试、静态分析和 315,775,937 字节 Debug APK 证据仍有效。UI-00～UI-04 已建立 shadcn/ui Neutral 黑白语义令牌、共享页面组件、会议入口、录音工作台以及处理/结果三视图；结果页已覆盖诚实处理阶段、转录默认只读、显式编辑、总结证据定位播放、Widget Preview 源码、320～1024 px 与 2.0 字体缩放。Step 18 的三态门禁仍保持：证据缺失为 `blocked`，明确不达标为 `noGo`，只有两端适用门槛全部通过才为 `go`。Android 16 x86_64 模拟器和 Mi 10 历史证据不能替代 iOS arm64 真机验证；iOS 设备矩阵、30 分钟后台录音、双模型、系统中断、Dynamic Type/VoiceOver 和安装包审计均未闭环，因此双平台 Alpha 发布为阻塞状态。
 
 ## 维护规则
 
@@ -64,7 +66,7 @@ PRD（做什么、为什么、如何验收）
 - 每次文档变更检查相对链接、模型 ID、日期和术语。
 - 活动文档不保留“旧版”“备选版”并列副本；历史内容从 Git 查看。
 - DOCX/PDF 如需交付，必须从当前 Markdown 基线生成，不作为独立事实源。
-- 除 PRD 指定随 APK 内置并带完整 Manifest/NOTICE 的标准模型外，下载模型、真实录音、评测语料、密钥、`build/` 和 `coverage/` 不得提交。
+- 除 PRD 指定随平台安装包内置并带完整 Manifest/NOTICE 的标准模型外，下载模型、真实录音、评测语料、密钥、`build/` 和 `coverage/` 不得提交。
 
 ## 已清理的旧基线
 

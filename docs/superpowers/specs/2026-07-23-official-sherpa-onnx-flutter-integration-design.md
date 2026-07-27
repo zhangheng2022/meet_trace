@@ -3,6 +3,7 @@
 > 状态：已批准
 > 日期：2026-07-23
 > 决策：方案 A
+> 双平台修订：2026-07-27
 
 ## 1. 目标
 
@@ -25,8 +26,8 @@
 
 - `pubspec.yaml` 直接依赖官方 `sherpa_onnx` Flutter 包。
 - 版本必须固定到 Day 1 真机 Spike 验证通过的版本，不使用无上限的浮动依赖。
-- 原生 Android 运行库由官方 Flutter 包及其平台包提供。
-- 构建产物仍需检查目标 ABI、原生库重复项、APK 体积和许可证。
+- Android 与 iOS 原生运行库均由官方 Flutter 包及其平台包提供。
+- 构建产物分别检查 Android ABI、iOS arm64/xcframework、重复原生库、安装包体积和许可证。
 - 模型文件继续由会迹（MeetTrace）的 ModelManager 管理，不交给依赖包决定产品生命周期。
 
 ## 4. 应用层边界
@@ -58,14 +59,14 @@ Engine 不得包含 `DynamicLibrary.open`、C 指针管理、JNI 调用或自定
 
 ## 5. Day 1 Go/No-Go
 
-在继续正式 ASR 实现前，必须用官方 Flutter 包在目标 Android 真机验证：
+在继续正式 ASR 实现前，必须用官方 Flutter 包分别在目标 Android 与 iOS 真机验证：
 
 1. Paraformer 标准模型可以初始化并处理 5 分钟样本。
 2. Qwen3-ASR 0.6B INT8 高级模型可以初始化并处理同一份样本。
 3. 官方 API 能满足模型配置、音频输入、结果读取和资源释放。
 4. 应用可把推理放到不阻塞 UI 和录音写入的执行链。
-5. Debug APK 包含正确目标 ABI，且没有重复原生库。
-6. 记录官方包版本、平台包版本、设备、ABI、RTF、内存和异常。
+5. Android Debug APK 与 iOS Debug 构建包含正确目标架构，且没有重复原生库。
+6. 按平台记录官方包版本、平台包版本、设备、架构、RTF、内存和异常。
 
 ## 6. 官方包能力不足时
 
@@ -82,7 +83,7 @@ Engine 不得包含 `DynamicLibrary.open`、C 指针管理、JNI 调用或自定
 
 - 用 fake adapter 测试两个 Engine 的业务转换，不在普通单元测试加载原生库。
 - 用真机集成测试验证官方包初始化、识别、释放和重复创建。
-- 对官方包升级执行两个模型的完整回归和 APK 内容检查。
+- 对官方包升级分别执行两个模型的完整回归和 Android/iOS 安装包内容检查。
 - 故障注入证明第三方包异常不会终止录音。
 - 版本验证结果进入双模型评测记录。
 

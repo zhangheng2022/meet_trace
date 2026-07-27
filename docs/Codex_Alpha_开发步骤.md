@@ -1,14 +1,16 @@
-# 会迹（MeetTrace）Android Alpha — Codex 开发步骤
+# 会迹（MeetTrace）Android + iOS Alpha — Codex 开发步骤
 
-> 版本：V1.0
+> 版本：V1.1
 > 状态：当前执行计划
-> 更新日期：2026-07-25
-> PRD：[会迹（MeetTrace）Android Alpha PRD V0.5](./会迹_MeetTrace_Alpha_PRD_无登录版.md)
+> 更新日期：2026-07-27
+> PRD：[会迹（MeetTrace）Android + iOS Alpha PRD V0.6](./会迹_MeetTrace_Alpha_PRD_无登录版.md)
 > 技术基线：[端侧双模型转录技术方案](./端侧双模型转录技术方案.md)
 
 ## 1. 使用方式
 
-本文把两周 Alpha 拆成可独立验收的 Codex 任务。每次只执行一个步骤；开始前读取 PRD、技术方案、`AGENTS.md` 和该步骤，结束时运行该步骤的验证命令并更新状态。
+本文把 Alpha 拆成可独立验收的 Codex 任务。Step 00～18 保留原 Android 两周基线及其历史证据，
+Step 19 承担 iOS 对等能力与双平台发布门禁；双平台排期在 Step 19 设备门槛确认后重新评估。
+每次只执行一个步骤；开始前读取 PRD、技术方案、`AGENTS.md` 和该步骤，结束时运行该步骤的验证命令并更新状态。
 
 推荐指令：
 
@@ -22,12 +24,14 @@
 
 ## 2. 当前仓库基线
 
-截至 2026-07-25：
+截至 2026-07-27：
 
 - 已有独立 `Application`、Forui 主题和会议列表空页面。
 - 已有通用 `ViewState`，并启用严格类型分析。
 - 已有 228 个应用壳、组件、Step 01、领域层、本地存储、模型生命周期、可靠录音、官方 ASR adapter、双 Engine、Factory、VAD、会议主链、最终转录、说话人降级和 AI 总结证据链自动化测试。
 - 已固定 Android API 24 最低版本，并记录 `arm64-v8a` 必验设备矩阵。
+- iOS 工程最低版本为 13.0，已纳入麦克风用途、audio 后台模式、平台风险监测装配和
+  原生路由返回基线；iOS 真机、双模型、后台生命周期和安装包审计尚未闭环。
 - 已固定官方 `sherpa_onnx` 1.13.4，并建立只用于 Step 01 的双模型真机 Spike、录音连续性探针和可重复执行脚本；Spike 不是正式 `AsrEngine`。
 - 已完成 Step 02 的纯 Dart 领域模型、会议/录音/处理/模型安装状态机、结构化错误、统一 `AsrEngine`/Factory 和 Repository 抽象端口。
 - 已完成 Step 03 的 SQLite v1 Schema/迁移、App 私有文件布局、耐久文件提交、五类 Sqflite Repository 和幂等启动恢复器。
@@ -83,7 +87,8 @@ Step 00 工程基线
                 → Step 15 说话人分离
                 → Step 16 AI 总结与证据
                   → Step 17 结果、分享与删除
-                    → Step 18 双模型对比评测与发布门槛
+                    → Step 18 Android 双模型对比评测与发布门槛
+                      → Step 19 iOS 对等能力与双平台发布门槛
 ```
 
 Step 03、04、07 可在 Step 02 后并行准备，但同一工作区内提交时必须保持可构建。
@@ -873,7 +878,65 @@ flutter build apk --debug
 
 ---
 
-## 6. 两周排期建议
+## Step 19：iOS 对等能力与双平台发布门槛
+
+**目标**
+
+在不复制业务层或私建原生 ASR 桥接的前提下，使 iOS 达到与 Android 相同的事实音频、
+双模型、结果和数据控制语义，并完成 PRD AT-17～AT-20。
+
+**前置**
+
+- Step 18 保持 `blocked` 也可以开始，但不得把 Android 证据外推到 iOS。
+- 需要 macOS、Xcode、至少一台最低目标 iPhone 和一台 iPad/多任务窗口测试设备。
+- 官方 `sherpa_onnx` 1.13.4 iOS arm64/xcframework、模型许可和 App Store 分发约束可验证。
+
+**任务**
+
+1. 建立 iOS 设备矩阵、最低系统版本、目标架构和签名/无签名构建策略。
+2. 验证 `record` PCM16 流、麦克风权限、AVAudioSession、锁屏、切后台、系统音频中断、
+   来电恢复和用户强制结束边界。
+3. 验证标准模型随 iOS 安装包准备、两个 Engine 初始化/释放、VAD、会中预览和最终转录。
+4. 使用与 Android 相同的 20 段语料记录 iOS RTF、延迟、RSS、温控、能耗和事实召回率；
+   指标按设备独立判定。
+5. 验证高级模型下载、空间预检、校验、租约、删除和设备受限提示。
+6. 验证 iOS 原生 push/返回边缘手势、Dynamic Type、VoiceOver、浅/深色、安全区、
+   横竖屏和 iPad Split View；Android 同时回归系统返回和预测返回。
+7. 审计 iOS 构建产物中的标准模型、官方原生库、NOTICE/隐私清单、高级权重缺失、
+   用户数据缺失和永久密钥缺失。
+8. 将 AT-01～AT-20 的适用结果送入三态发布门禁；任一平台缺证据即 `blocked`。
+
+**验证**
+
+```bash
+dart format lib test integration_test
+flutter analyze
+flutter test
+flutter test integration_test -d <android-device-id>
+flutter test integration_test -d <ios-device-id>
+flutter build apk --debug
+flutter build ios --debug --no-codesign
+```
+
+**完成标准**
+
+- Android 与 iOS 的适用 AT-01～AT-20 均有可追溯证据。
+- 两个平台 30 分钟事实录音完整率均为 100%，iOS 强制结束边界被准确呈现。
+- 两个平台安装包审计通过，双模型指标按设备可追溯。
+- 发布门禁仅在两端全部达标时输出 `go`。
+
+**当前进度**
+
+- 已更新双平台 PRD/技术基线、iOS 麦克风用途和 audio 后台模式。
+- 已增加平台录音生命周期与 ASR 风险监测装配；Android 使用前台服务，iOS 依赖
+  AVAudioSession/audio 后台模式并保守显示设备风险。
+- 页面导航改用 Flutter 原生 route，使 Android/iOS 获得各自转场和返回手势基础。
+- macOS/Xcode 构建、iOS 真机、双模型、后台生命周期、无障碍和安装包审计未执行；
+  Step 19 与双平台发布均为 `阻塞`。
+
+---
+
+## 6. 原 Android 两周基线与双平台增量
 
 | 时间 | 主线 | 必须输出 |
 |---|---|---|
@@ -885,9 +948,11 @@ flutter build apk --debug
 | Day 6–7 | Step 14–15 | 最终快照和说话人降级 |
 | Day 8 | Step 16 | 总结和证据 |
 | Day 9 | Step 17 | 结果、分享、删除和诊断 |
-| Day 10 | Step 18 | 双模型评测、30 分钟回归、APK |
+| Day 10 | Step 18 | Android 双模型评测、30 分钟回归、APK |
+| 待重估 | Step 19 | iOS 对等能力、真机证据与双平台发布门禁 |
 
-如果 Day 1 Spike 或可靠录音晚于 Day 3，优先砍掉说话人分离和云端总结，不得压缩录音连续性、最终转录和双模型评测。
+上表 Day 1～10 只描述已执行的 Android 基线，不再作为双平台承诺。Step 19 的时间必须在
+iOS 设备矩阵、官方包构建和后台录音 Spike 后重估；不得压缩录音连续性、最终转录和双模型评测。
 
 ## 7. 每步统一交付模板
 
@@ -936,5 +1001,6 @@ Codex 完成每一步后必须报告：
 | 16 总结/证据 | 已完成 | 最终活动快照资格、最小请求 schema、本地证据校验、SQLite 原子激活、摘要过期、失败重试和安全网关关闭；16 项新增测试、228 项全量测试、静态分析、Debug APK 和 Android 16 模拟器验证通过，详见 [Step 16 报告](./quality/Step_16_AI总结与证据链.md) |
 | 17 结果/数据控制 | 已完成 | 新版本修订、证据区间 WAV、无音频分享、可回滚会议删除、独立模型删除、存储/隐私和诊断白名单；13 项新增测试、241 项全量测试、静态分析、Debug APK 和 Android 16 模拟器系统分享通过，详见 [Step 17 报告](./quality/Step_17_结果页与数据控制.md) |
 | 18 评测/发布 | 阻塞 | 三态发布门禁、5 项新增测试、246 项全量测试、静态分析、Android 16 x86_64 模拟器 Paraformer/adapter/VAD/30 秒录音和 APK 审计通过；缺相同 20 段语料、最低目标 arm64 真机、30 分钟回归、AT-01～AT-16 完整证据及 Paraformer 再分发许可，详见 [Step 18 报告](./quality/Step_18_双模型评测与发布门槛.md) |
+| 19 iOS/双平台发布 | 阻塞 | 双平台 PRD、iOS 权限与 audio 后台模式、平台装配和原生 route 基线已落地；缺 macOS/Xcode 构建、iOS 设备矩阵、真机双模型、30 分钟后台录音、系统中断、Dynamic Type/VoiceOver、AT-17～AT-20 和安装包审计 |
 
 状态只允许：`待开始`、`进行中`、`已完成`、`阻塞`。标记“已完成”时必须在证据列填写测试、报告或提交。

@@ -1,20 +1,16 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 
 import '../domain/models/meeting.dart';
 import '../theme/theme.dart';
 import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
-import '../ui/features/meetings/view_models/meeting_detail_view_model.dart';
-import '../ui/features/meetings/view_models/recording_session_view_model.dart';
 import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
 import '../ui/features/meetings/views/meeting_detail_view.dart';
 import '../ui/features/meetings/views/meeting_list_view.dart';
 import '../ui/features/meetings/views/recording_session_view.dart';
 import '../ui/features/meetings/views/start_meeting_view.dart';
-import '../ui/features/settings/view_models/data_controls_view_model.dart';
-import '../ui/features/settings/view_models/model_settings_view_model.dart';
 import '../ui/features/settings/views/model_settings_view.dart';
 import 'application.dart';
 import 'meettrace_dependencies.dart';
@@ -61,8 +57,6 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
   }
 }
 
-enum _MeetTracePage { meetings, start, recording, detail, settings }
-
 final class MeetTraceFlow extends StatefulWidget {
   const MeetTraceFlow({required this.dependencies, super.key});
 
@@ -75,117 +69,92 @@ final class MeetTraceFlow extends StatefulWidget {
 final class _MeetTraceFlowState extends State<MeetTraceFlow> {
   late final MeetingListViewModel _meetingList = widget.dependencies
       .createMeetingListViewModel();
-  StartMeetingViewModel? _startMeeting;
-  RecordingSessionViewModel? _recording;
-  MeetingDetailViewModel? _meetingDetail;
-  ModelSettingsViewModel? _modelSettings;
-  DataControlsViewModel? _dataControls;
-  _MeetTracePage _page = _MeetTracePage.meetings;
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: _page == _MeetTracePage.meetings,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
-          _back();
-        }
-      },
-      child: switch (_page) {
-        _MeetTracePage.meetings => MeetingListView(
-          viewModel: _meetingList,
-          onStartMeeting: _openStartMeeting,
-          onOpenMeeting: _openMeeting,
-          onOpenSettings: _openSettings,
-        ),
-        _MeetTracePage.start => StartMeetingView(
-          viewModel: _startMeeting!,
-          onBack: _back,
-          onStarted: _openRecording,
-        ),
-        _MeetTracePage.recording => RecordingSessionView(
-          viewModel: _recording!,
-          onFinished: _openMeeting,
-        ),
-        _MeetTracePage.detail => MeetingDetailView(
-          viewModel: _meetingDetail!,
-          onBack: _back,
-          onDeleted: _back,
-        ),
-        _MeetTracePage.settings => ModelSettingsView(
-          viewModel: _modelSettings!,
-          dataControls: _dataControls,
-          onBack: _back,
-        ),
-      },
+    return MeetingListView(
+      viewModel: _meetingList,
+      onStartMeeting: _openStartMeeting,
+      onOpenMeeting: _openMeeting,
+      onOpenSettings: _openSettings,
     );
   }
 
   void _openStartMeeting() {
-    _startMeeting?.dispose();
-    setState(() {
-      _startMeeting = widget.dependencies.createStartMeetingViewModel();
-      _page = _MeetTracePage.start;
-    });
+    final viewModel = widget.dependencies.createStartMeetingViewModel();
+    unawaited(
+      Navigator.of(context)
+          .push<void>(
+            MaterialPageRoute(
+              builder: (_) => StartMeetingView(
+                viewModel: viewModel,
+                onBack: () => Navigator.of(context).maybePop(),
+                onStarted: _openRecording,
+              ),
+            ),
+          )
+          .whenComplete(viewModel.dispose),
+    );
   }
 
   void _openRecording(StartedMeetingSession session) {
-    _recording?.dispose();
-    _startMeeting?.dispose();
-    setState(() {
-      _startMeeting = null;
-      _recording = widget.dependencies.createRecordingSessionViewModel(session);
-      _page = _MeetTracePage.recording;
-    });
+    final viewModel = widget.dependencies.createRecordingSessionViewModel(
+      session,
+    );
+    unawaited(
+      Navigator.of(context)
+          .pushReplacement<void, void>(
+            MaterialPageRoute(
+              builder: (_) => RecordingSessionView(
+                viewModel: viewModel,
+                onFinished: (meeting) =>
+                    _openMeeting(meeting, replaceCurrent: true),
+              ),
+            ),
+          )
+          .whenComplete(viewModel.dispose),
+    );
   }
 
-  void _openMeeting(Meeting meeting) {
-    _meetingDetail?.dispose();
-    setState(() {
-      _meetingDetail = widget.dependencies.createMeetingDetailViewModel(
-        meeting,
-      );
-      _page = _MeetTracePage.detail;
-    });
+  void _openMeeting(Meeting meeting, {bool replaceCurrent = false}) {
+    final viewModel = widget.dependencies.createMeetingDetailViewModel(meeting);
+    final route = MaterialPageRoute<void>(
+      builder: (_) => MeetingDetailView(
+        viewModel: viewModel,
+        onBack: () => Navigator.of(context).maybePop(),
+        onDeleted: () => Navigator.of(context).maybePop(),
+      ),
+    );
+    final navigation = replaceCurrent
+        ? Navigator.of(context).pushReplacement<void, void>(route)
+        : Navigator.of(context).push<void>(route);
+    unawaited(navigation.whenComplete(viewModel.dispose));
   }
 
   void _openSettings() {
-    _modelSettings?.dispose();
-    _dataControls?.dispose();
-    setState(() {
-      _modelSettings = widget.dependencies.createModelSettingsViewModel();
-      _dataControls = widget.dependencies.createDataControlsViewModel();
-      _page = _MeetTracePage.settings;
-    });
-  }
-
-  void _back() {
-    if (_page == _MeetTracePage.recording) {
-      return;
-    }
-    if (_page == _MeetTracePage.detail &&
-        _meetingDetail?.isProcessing == true) {
-      return;
-    }
-    _meetingDetail?.dispose();
-    _modelSettings?.dispose();
-    _dataControls?.dispose();
-    setState(() {
-      _meetingDetail = null;
-      _modelSettings = null;
-      _dataControls = null;
-      _page = _MeetTracePage.meetings;
-    });
+    final modelSettings = widget.dependencies.createModelSettingsViewModel();
+    final dataControls = widget.dependencies.createDataControlsViewModel();
+    unawaited(
+      Navigator.of(context)
+          .push<void>(
+            MaterialPageRoute(
+              builder: (_) => ModelSettingsView(
+                viewModel: modelSettings,
+                dataControls: dataControls,
+                onBack: () => Navigator.of(context).maybePop(),
+              ),
+            ),
+          )
+          .whenComplete(() {
+            modelSettings.dispose();
+            dataControls.dispose();
+          }),
+    );
   }
 
   @override
   void dispose() {
     _meetingList.dispose();
-    _startMeeting?.dispose();
-    _recording?.dispose();
-    _meetingDetail?.dispose();
-    _modelSettings?.dispose();
-    _dataControls?.dispose();
     super.dispose();
   }
 }

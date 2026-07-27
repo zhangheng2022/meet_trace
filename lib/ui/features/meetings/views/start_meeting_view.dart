@@ -1,5 +1,5 @@
 // Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Hallmark · page: start-meeting · macrostructure: Workbench · theme: Cobalt
+// Hallmark · page: start-meeting · macrostructure: Workbench · theme: Shadcn Neutral
 // States: loading · ready · busy · advanced-unavailable · locked · error
 
 import 'dart:async';
@@ -10,6 +10,7 @@ import 'package:forui/forui.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_bottom_action_bar.dart';
+import '../../../core/app_back_icon.dart';
 import '../../../core/app_page_body.dart';
 import '../../../core/app_state_panel.dart';
 import '../../../core/app_status_notice.dart';
@@ -48,10 +49,7 @@ final class _StartMeetingViewState extends State<StartMeetingView> {
           title: const Text('开始会议'),
           prefixes: [
             FHeaderAction(
-              icon: context.theme.icons.arrowLeft(
-                context,
-                semanticsLabel: '返回会议列表',
-              ),
+              icon: const AppBackIcon(semanticsLabel: '返回会议列表'),
               onPress: widget.onBack,
             ),
           ],

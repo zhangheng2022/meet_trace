@@ -39,7 +39,7 @@ void main() {
     expect(context.theme.colors.brightness, Brightness.dark);
     expect(
       context.theme.colors.app.success.toARGB32(),
-      const Color(0xFF6FB880).toARGB32(),
+      const Color(0xFF4ADE80).toARGB32(),
     );
   });
 }

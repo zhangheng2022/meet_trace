@@ -6,6 +6,7 @@ import 'package:forui/forui.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/asr_model_option.dart';
+import '../../../core/app_back_icon.dart';
 import '../view_models/model_settings_view_model.dart';
 import '../view_models/data_controls_view_model.dart';
 
@@ -44,10 +45,7 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
                 title: const Text('设置'),
                 prefixes: [
                   FHeaderAction(
-                    icon: context.theme.icons.arrowLeft(
-                      context,
-                      semanticsLabel: '返回会议列表',
-                    ),
+                    icon: const AppBackIcon(semanticsLabel: '返回会议列表'),
                     onPress: widget.onBack,
                   ),
                 ],

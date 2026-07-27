@@ -7,21 +7,21 @@ void main() {
     final light = lightTheme.colors;
     final dark = darkTheme.colors;
 
-    expect(light.background.toARGB32(), 0xFFF8FAFD);
-    expect(light.foreground.toARGB32(), 0xFF192029);
-    expect(light.primary.toARGB32(), 0xFF006FE6);
-    expect(light.app.recording.toARGB32(), 0xFFD02B31);
-    expect(light.app.warning.toARGB32(), 0xFFDA950B);
-    expect(light.app.success.toARGB32(), 0xFF0A7E3A);
-    expect(light.app.focusRing.toARGB32(), 0xFF192029);
+    expect(light.background.toARGB32(), 0xFFFFFFFF);
+    expect(light.foreground.toARGB32(), 0xFF0A0A0A);
+    expect(light.primary.toARGB32(), 0xFF171717);
+    expect(light.app.recording.toARGB32(), 0xFFDC2626);
+    expect(light.app.warning.toARGB32(), 0xFFB45309);
+    expect(light.app.success.toARGB32(), 0xFF15803D);
+    expect(light.app.focusRing.toARGB32(), 0xFF525252);
 
-    expect(dark.background.toARGB32(), 0xFF080B10);
-    expect(dark.foreground.toARGB32(), 0xFFE7ECF0);
-    expect(dark.primary.toARGB32(), 0xFF569FFF);
-    expect(dark.app.recording.toARGB32(), 0xFFF2716A);
-    expect(dark.app.warning.toARGB32(), 0xFFE4AC59);
-    expect(dark.app.success.toARGB32(), 0xFF6FB880);
-    expect(dark.app.focusRing.toARGB32(), 0xFFE7ECF0);
+    expect(dark.background.toARGB32(), 0xFF0A0A0A);
+    expect(dark.foreground.toARGB32(), 0xFFFAFAFA);
+    expect(dark.primary.toARGB32(), 0xFFE5E5E5);
+    expect(dark.app.recording.toARGB32(), 0xFFFF6467);
+    expect(dark.app.warning.toARGB32(), 0xFFFBBF24);
+    expect(dark.app.success.toARGB32(), 0xFF4ADE80);
+    expect(dark.app.focusRing.toARGB32(), 0xFFD4D4D4);
   });
 
   test('AppStyle 固定 4pt 间距、触控尺寸和响应式断点', () {

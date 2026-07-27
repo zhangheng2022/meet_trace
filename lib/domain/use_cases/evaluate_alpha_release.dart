@@ -14,6 +14,10 @@ final class AlphaReleaseEvaluationInput {
     this.sameCorpusForBothModels,
     this.sameDeviceForBothModels,
     this.lowEndArm64DeviceTested,
+    this.iosArm64DeviceTested,
+    this.iosBackgroundRecordingPassed,
+    this.iosInterruptionRecoveryPassed,
+    this.adaptiveNavigationAccessibilityPassed,
     this.standardModelResourceBytes,
     this.standardRtfSamples,
     this.standardSentenceLatencyMs,
@@ -28,6 +32,7 @@ final class AlphaReleaseEvaluationInput {
     this.keyFactRecallRatio,
     this.acceptanceEvidence,
     this.apkAuditPassed,
+    this.iosBuildAuditPassed,
     this.paraformerRedistributionConfirmed,
   });
 
@@ -53,6 +58,16 @@ final class AlphaReleaseEvaluationInput {
       lowEndArm64DeviceTested: _boolean(
         environment?['lowEndArm64DeviceTested'],
       ),
+      iosArm64DeviceTested: _boolean(environment?['iosArm64DeviceTested']),
+      iosBackgroundRecordingPassed: _boolean(
+        environment?['iosBackgroundRecordingPassed'],
+      ),
+      iosInterruptionRecoveryPassed: _boolean(
+        environment?['iosInterruptionRecoveryPassed'],
+      ),
+      adaptiveNavigationAccessibilityPassed: _boolean(
+        environment?['adaptiveNavigationAccessibilityPassed'],
+      ),
       standardModelResourceBytes: _integer(standard?['resourceBytes']),
       standardRtfSamples: _numbers(standard?['rtfSamples']),
       standardSentenceLatencyMs: _numbers(standard?['sentenceLatencyMs']),
@@ -75,6 +90,7 @@ final class AlphaReleaseEvaluationInput {
       keyFactRecallRatio: _number(standard?['keyFactRecallRatio']),
       acceptanceEvidence: _strings(json['acceptanceEvidence']),
       apkAuditPassed: _boolean(release?['apkAuditPassed']),
+      iosBuildAuditPassed: _boolean(release?['iosBuildAuditPassed']),
       paraformerRedistributionConfirmed: _boolean(
         release?['paraformerRedistributionConfirmed'],
       ),
@@ -89,6 +105,10 @@ final class AlphaReleaseEvaluationInput {
   final bool? sameCorpusForBothModels;
   final bool? sameDeviceForBothModels;
   final bool? lowEndArm64DeviceTested;
+  final bool? iosArm64DeviceTested;
+  final bool? iosBackgroundRecordingPassed;
+  final bool? iosInterruptionRecoveryPassed;
+  final bool? adaptiveNavigationAccessibilityPassed;
   final int? standardModelResourceBytes;
   final List<double>? standardRtfSamples;
   final List<double>? standardSentenceLatencyMs;
@@ -103,11 +123,17 @@ final class AlphaReleaseEvaluationInput {
   final double? keyFactRecallRatio;
   final Map<String, String>? acceptanceEvidence;
   final bool? apkAuditPassed;
+  final bool? iosBuildAuditPassed;
   final bool? paraformerRedistributionConfirmed;
 
   AlphaReleaseEvaluationInput copyWith({
     List<double>? standardRtfSamples,
     String? rawMetricsRef,
+    bool? iosArm64DeviceTested,
+    bool? iosBackgroundRecordingPassed,
+    bool? iosInterruptionRecoveryPassed,
+    bool? adaptiveNavigationAccessibilityPassed,
+    bool? iosBuildAuditPassed,
   }) => AlphaReleaseEvaluationInput(
     corpusId: corpusId,
     deviceId: deviceId,
@@ -117,6 +143,14 @@ final class AlphaReleaseEvaluationInput {
     sameCorpusForBothModels: sameCorpusForBothModels,
     sameDeviceForBothModels: sameDeviceForBothModels,
     lowEndArm64DeviceTested: lowEndArm64DeviceTested,
+    iosArm64DeviceTested: iosArm64DeviceTested ?? this.iosArm64DeviceTested,
+    iosBackgroundRecordingPassed:
+        iosBackgroundRecordingPassed ?? this.iosBackgroundRecordingPassed,
+    iosInterruptionRecoveryPassed:
+        iosInterruptionRecoveryPassed ?? this.iosInterruptionRecoveryPassed,
+    adaptiveNavigationAccessibilityPassed:
+        adaptiveNavigationAccessibilityPassed ??
+        this.adaptiveNavigationAccessibilityPassed,
     standardModelResourceBytes: standardModelResourceBytes,
     standardRtfSamples: standardRtfSamples ?? this.standardRtfSamples,
     standardSentenceLatencyMs: standardSentenceLatencyMs,
@@ -131,11 +165,12 @@ final class AlphaReleaseEvaluationInput {
     keyFactRecallRatio: keyFactRecallRatio,
     acceptanceEvidence: acceptanceEvidence,
     apkAuditPassed: apkAuditPassed,
+    iosBuildAuditPassed: iosBuildAuditPassed ?? this.iosBuildAuditPassed,
     paraformerRedistributionConfirmed: paraformerRedistributionConfirmed,
   );
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'rawMetricsRef': rawMetricsRef,
     'corpus': {
       'id': corpusId,
@@ -147,6 +182,11 @@ final class AlphaReleaseEvaluationInput {
       'sameCorpusForBothModels': sameCorpusForBothModels,
       'sameDeviceForBothModels': sameDeviceForBothModels,
       'lowEndArm64DeviceTested': lowEndArm64DeviceTested,
+      'iosArm64DeviceTested': iosArm64DeviceTested,
+      'iosBackgroundRecordingPassed': iosBackgroundRecordingPassed,
+      'iosInterruptionRecoveryPassed': iosInterruptionRecoveryPassed,
+      'adaptiveNavigationAccessibilityPassed':
+          adaptiveNavigationAccessibilityPassed,
     },
     'standardModel': {
       'resourceBytes': standardModelResourceBytes,
@@ -166,6 +206,7 @@ final class AlphaReleaseEvaluationInput {
     'acceptanceEvidence': acceptanceEvidence,
     'release': {
       'apkAuditPassed': apkAuditPassed,
+      'iosBuildAuditPassed': iosBuildAuditPassed,
       'paraformerRedistributionConfirmed': paraformerRedistributionConfirmed,
     },
   };
@@ -272,8 +313,28 @@ final class EvaluateAlphaReleaseUseCase {
       _textGate('environment.deviceId', '评测设备必须具有可追溯标识', input.deviceId),
       _boolGate(
         'environment.lowEndArm64',
-        '已在最低目标 arm64 实体设备验证',
+        '已在最低目标 Android arm64 实体设备验证',
         input.lowEndArm64DeviceTested,
+      ),
+      _boolGate(
+        'environment.iosArm64',
+        '已在最低目标 iOS arm64 实体设备验证',
+        input.iosArm64DeviceTested,
+      ),
+      _boolGate(
+        'environment.iosBackgroundRecording',
+        'iOS 30 分钟后台录音完整率为 100%',
+        input.iosBackgroundRecordingPassed,
+      ),
+      _boolGate(
+        'environment.iosInterruptionRecovery',
+        'iOS 系统音频中断可恢复且强制结束边界准确',
+        input.iosInterruptionRecoveryPassed,
+      ),
+      _boolGate(
+        'environment.adaptiveNavigationAccessibility',
+        'Android/iOS 原生返回、字体缩放和辅助技术验收通过',
+        input.adaptiveNavigationAccessibilityPassed,
       ),
       _referenceGate(
         'evidence.rawMetrics',
@@ -346,15 +407,20 @@ final class EvaluateAlphaReleaseUseCase {
         (value) => value >= 0,
       ),
       _thresholdGate(
-        'acceptance.AT01-AT16',
-        'AT-01 至 AT-16 均有非空证据引用',
+        'acceptance.AT01-AT20',
+        'AT-01 至 AT-20 均有非空证据引用',
         acceptanceCount,
-        (value) => value == 16,
+        (value) => value == 20,
       ),
       _boolGate(
         'release.apkAudit',
-        'APK 的 ABI、模型、密钥、许可和体积审计通过',
+        'Android APK 的 ABI、模型、密钥、许可和体积审计通过',
         input.apkAuditPassed,
+      ),
+      _boolGate(
+        'release.iosBuildAudit',
+        'iOS 构建的 arm64、模型、密钥、许可和体积审计通过',
+        input.iosBuildAuditPassed,
       ),
       _boolGate(
         'license.paraformer',
@@ -536,7 +602,7 @@ int? _acceptanceEvidenceCount(Map<String, String>? evidence) {
     return null;
   }
   return [
-    for (var index = 1; index <= 16; index++)
+    for (var index = 1; index <= 20; index++)
       'AT-${index.toString().padLeft(2, '0')}',
   ].where((id) => evidence[id]?.trim().isNotEmpty == true).length;
 }
