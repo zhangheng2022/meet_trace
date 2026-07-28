@@ -58,7 +58,24 @@ final class AppStatePanel extends StatelessWidget {
           container: true,
           liveRegion: true,
           label: title,
-          child: FProgress(semanticsLabel: title),
+          child: ExcludeSemantics(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const FCircularProgress(
+                  key: ValueKey('app-state-loading-progress'),
+                  size: FCircularProgressSizeVariant.lg,
+                ),
+                SizedBox(width: appStyle.spaceSm),
+                Text(
+                  title,
+                  style: theme.typography.body.md.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }

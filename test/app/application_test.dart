@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
-import 'package:meettrace/ui/features/meetings/views/meeting_list_view.dart';
+import 'package:meettrace/ui/features/meetings/views/list/meeting_list_view.dart';
 
 void main() {
   testWidgets('使用真实主题显示会议列表首页', (WidgetTester tester) async {

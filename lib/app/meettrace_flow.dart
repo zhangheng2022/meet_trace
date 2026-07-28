@@ -6,12 +6,10 @@ import 'package:forui/forui.dart';
 import '../domain/models/meeting.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../theme/theme.dart';
-import '../ui/core/app_state_panel.dart';
-import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
-import '../ui/features/meetings/view_models/recording_session_view_model.dart';
-import '../ui/features/meetings/views/meeting_detail_view.dart';
-import '../ui/features/meetings/views/meeting_list_view.dart';
-import '../ui/features/meetings/views/recording_session_view.dart';
+import '../ui/features/meetings/view_models/list/meeting_list_view_model.dart';
+import '../ui/features/meetings/views/detail/meeting_detail_view.dart';
+import '../ui/features/meetings/views/list/meeting_list_view.dart';
+import '../ui/features/meetings/views/recording/recording_bootstrap_view.dart';
 import '../ui/features/settings/views/model_settings_view.dart';
 import '../ui/features/startup/views/meettrace_startup_view.dart';
 import 'meettrace_dependencies.dart';
@@ -170,7 +168,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
     unawaited(
       Navigator.of(context).push<void>(
         MaterialPageRoute(
-          builder: (_) => _DeferredRecordingSessionView(
+          builder: (_) => RecordingBootstrapView(
             createViewModel: () =>
                 widget.dependencies.createRecordingSessionViewModel(session),
             onFinished: (meeting) =>
@@ -222,93 +220,6 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _meetingList.dispose();
-    super.dispose();
-  }
-}
-
-/// 先完成页面转场，再在静态准备页上创建原生 VAD，避免阻塞路由动画。
-final class _DeferredRecordingSessionView extends StatefulWidget {
-  const _DeferredRecordingSessionView({
-    required this.createViewModel,
-    required this.onFinished,
-  });
-
-  final RecordingSessionViewModel Function() createViewModel;
-  final ValueChanged<Meeting> onFinished;
-
-  @override
-  State<_DeferredRecordingSessionView> createState() =>
-      _DeferredRecordingSessionViewState();
-}
-
-final class _DeferredRecordingSessionViewState
-    extends State<_DeferredRecordingSessionView> {
-  Animation<double>? _routeAnimation;
-  RecordingSessionViewModel? _viewModel;
-  bool _initializationScheduled = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final animation = ModalRoute.of(context)?.animation;
-    if (identical(animation, _routeAnimation)) {
-      return;
-    }
-    _routeAnimation?.removeStatusListener(_handleRouteAnimation);
-    _routeAnimation = animation;
-    animation?.addStatusListener(_handleRouteAnimation);
-    if (animation == null || animation.status == AnimationStatus.completed) {
-      _scheduleInitialization();
-    }
-  }
-
-  void _handleRouteAnimation(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      _scheduleInitialization();
-    }
-  }
-
-  void _scheduleInitialization() {
-    if (_initializationScheduled || _viewModel != null) {
-      return;
-    }
-    _initializationScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      final viewModel = widget.createViewModel();
-      if (!mounted) {
-        viewModel.dispose();
-        return;
-      }
-      setState(() => _viewModel = viewModel);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = _viewModel;
-    if (viewModel != null) {
-      return RecordingSessionView(
-        viewModel: viewModel,
-        onFinished: widget.onFinished,
-      );
-    }
-    return const PopScope(
-      canPop: false,
-      child: FScaffold(
-        childPad: false,
-        header: FHeader.nested(title: Text('会迹')),
-        child: AppStatePanel.loading(label: '正在启动录音'),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _routeAnimation?.removeStatusListener(_handleRouteAnimation);
-    _viewModel?.dispose();
     super.dispose();
   }
 }

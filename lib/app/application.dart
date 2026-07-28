@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/theme/theme.dart';
-import 'package:meettrace/ui/features/meetings/views/meeting_list_view.dart';
+import 'package:meettrace/ui/features/meetings/views/list/meeting_list_view.dart';
 
 const appDisplayName = '会迹';
 

@@ -50,10 +50,10 @@ import '../domain/use_cases/run_final_transcription.dart';
 import '../domain/use_cases/run_speaker_diarization.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../ui/core/asr_model_option.dart';
-import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
-import '../ui/features/meetings/view_models/meeting_detail_view_model.dart';
-import '../ui/features/meetings/view_models/recording_session_view_model.dart';
-import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
+import '../ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
+import '../ui/features/meetings/view_models/list/meeting_list_view_model.dart';
+import '../ui/features/meetings/view_models/recording/recording_session_view_model.dart';
+import '../ui/features/meetings/view_models/start/start_meeting_view_model.dart';
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
 

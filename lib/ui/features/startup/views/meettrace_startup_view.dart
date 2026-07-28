@@ -118,24 +118,23 @@ final class _StartupLoadingContent extends StatelessWidget {
         children: [
           const _Wordmark(),
           SizedBox(height: appStyle.space2Xl),
-          FProgress(
-            semanticsLabel: '正在准备本地数据与离线模型',
-            style: FProgressStyle(
-              constraints: BoxConstraints.tightFor(
-                height: appStyle.strongBorderWidth,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const FCircularProgress(
+                key: ValueKey('meettrace-startup-progress'),
+                size: FCircularProgressSizeVariant.lg,
+                semanticsLabel: '正在准备本地数据与离线模型',
               ),
-              trackDecoration: BoxDecoration(color: theme.colors.border),
-              fillDecoration: BoxDecoration(color: theme.colors.foreground),
-              motion: const FProgressMotion(
-                period: Duration(milliseconds: 900),
-                interval: Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                value: 0.28,
+              SizedBox(width: appStyle.spaceSm),
+              Expanded(
+                child: Text(
+                  '正在准备本地数据与离线模型',
+                  style: theme.typography.display.md,
+                ),
               ),
-            ),
+            ],
           ),
-          SizedBox(height: appStyle.spaceMd),
-          Text('正在准备本地数据与离线模型', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceXs),
           Text(
             '恢复会议记录，并校验标准转录模型',

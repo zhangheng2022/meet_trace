@@ -5,15 +5,19 @@ import 'package:meettrace/app/application.dart';
 import 'package:meettrace/ui/core/app_state_panel.dart';
 
 void main() {
-  testWidgets('加载状态提供明确语义且不显示操作', (WidgetTester tester) async {
+  testWidgets('加载状态使用紧凑指示器并提供明确语义', (WidgetTester tester) async {
     await tester.pumpWidget(
       const Application(home: AppStatePanel.loading(label: '正在加载会议')),
     );
 
-    expect(find.byType(FProgress), findsOneWidget);
+    expect(find.byType(FProgress), findsNothing);
+    expect(find.byType(FCircularProgress), findsOneWidget);
+    expect(find.text('正在加载会议'), findsOneWidget);
     expect(
-      tester.widget<FProgress>(find.byType(FProgress)).semanticsLabel,
-      '正在加载会议',
+      tester
+          .getSize(find.byKey(const ValueKey('app-state-loading-progress')))
+          .width,
+      lessThan(32),
     );
     expect(find.byType(FButton), findsNothing);
   });

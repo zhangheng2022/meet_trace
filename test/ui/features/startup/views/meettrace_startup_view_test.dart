@@ -14,10 +14,19 @@ void main() {
     expect(find.text('恢复会议记录，并校验标准转录模型'), findsOneWidget);
     expect(find.text('无需登录 · 事实音频仅保存在本机'), findsOneWidget);
     expect(find.byType(FHeader), findsNothing);
-    expect(find.byType(FProgress), findsOneWidget);
+    expect(find.byType(FProgress), findsNothing);
+    expect(find.byType(FCircularProgress), findsOneWidget);
     expect(
-      tester.widget<FProgress>(find.byType(FProgress)).semanticsLabel,
+      tester
+          .widget<FCircularProgress>(find.byType(FCircularProgress))
+          .semanticsLabel,
       '正在准备本地数据与离线模型',
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('meettrace-startup-progress')))
+          .width,
+      lessThan(32),
     );
     expect(tester.takeException(), isNull);
   });
