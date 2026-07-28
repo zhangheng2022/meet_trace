@@ -178,6 +178,7 @@ blend
 blinking
 blob
 block
+blocked
 blocking
 blocks
 blur
@@ -270,6 +271,8 @@ character
 chars
 chat
 check
+checker
+checking
 checklist
 checkpoint
 checkpoints
@@ -1127,6 +1130,7 @@ method
 metric
 metrics
 mib
+microphone
 microseconds
 migrate
 migrating
@@ -1412,6 +1416,7 @@ prepared
 prerequisite
 prerequisites
 present
+presentation
 press
 pressure
 prevention
@@ -2011,6 +2016,7 @@ ultra
 umd
 unapplied
 unavailable
+unchecked
 under
 unexpected
 unique
@@ -2244,6 +2250,7 @@ zero
 预览队列
 风险与对策
 首次启动
+首页的准备就绪是什么意思
 验收场景
 高级模型管理
 高级模型门槛

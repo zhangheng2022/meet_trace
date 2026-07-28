@@ -39,8 +39,6 @@ dependencies:
   flutter_foreground_task: 10.0.0
   path: 1.9.1
   path_provider: 2.1.6
-  # 2.3.x 的 JNI 实现在 Android 11 Mi 10 上触发 libdartjni SIGSEGV。
-  path_provider_android: 2.2.23
   record: 7.1.1
   sherpa_onnx: 1.13.4
   share_plus: 13.3.0

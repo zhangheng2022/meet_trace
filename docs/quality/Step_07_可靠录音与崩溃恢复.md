@@ -71,6 +71,6 @@ flutter test --no-pub integration_test/reliable_recording_test.dart -d 3f842cd0 
 
 ## 兼容性与剩余风险
 
-- `path_provider_android` 2.3.x 的 JNI 路径在当前 Android 11 Mi 10 上触发过 `libdartjni.so` SIGSEGV，当前固定 2.2.23；升级必须复跑真机测试。
+- 本步骤执行时，`path_provider_android` 2.3.x 的 JNI 路径曾在 Android 11 Mi 10 上触发 `libdartjni.so` SIGSEGV，因此当时固定为 2.2.23。2026-07-28 的依赖更新已按用户授权移除该钉住并解析到 2.3.1；原真机结论不再覆盖当前依赖组合，必须重新执行启动、私有目录和后台录音测试。
 - `flutter_foreground_task` 10.0.0 与 `storage_space` 1.2.0 在 Flutter 3.44.7 构建时仍有旧式 Kotlin Gradle Plugin 警告；当前构建成功，但 Flutter 后续版本升级前需要先验证插件兼容性。
 - 本步骤真机覆盖 30 秒后台录音；30 分钟完整率由实际文件写入的合成 PCM 测试验证。30 分钟锁屏、来电和强制终止的端到端真机矩阵继续在 Step 18 发布门槛执行。

@@ -348,5 +348,8 @@
   "346": "TranscriptRepository",
   "347": "Q: 首页的准备就绪是什么意思",
   "348": "EvidencePlaybackService",
-  "349": "DeviceAudioOutput"
+  "349": "DeviceAudioOutput",
+  "350": "Q: path_provider_android 为什么要添加到pubspec.yaml",
+  "351": "SherpaOnnxVadRuntime",
+  "352": "VoiceActivitySegmenter"
 }
