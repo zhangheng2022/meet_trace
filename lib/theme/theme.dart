@@ -1,6 +1,8 @@
 import 'package:forui/forui.dart';
 import 'package:flutter/material.dart';
 
+import 'system_ui.dart';
+
 part 'colors.dart';
 part 'typography.dart';
 part 'style.dart';

@@ -5,7 +5,7 @@ part of 'theme.dart';
 /// Color tokens and theme extensions for the generated theme.
 final FColors lightColors = FColors(
   brightness: .light,
-  systemOverlayStyle: .dark,
+  systemOverlayStyle: appSystemUiOverlayStyle(.light),
   barrier: Color(0x66111111),
   background: Color(0xFFF7F7F5),
   foreground: Color(0xFF111111),
@@ -26,7 +26,7 @@ final FColors lightColors = FColors(
 
 final FColors darkColors = FColors(
   brightness: .dark,
-  systemOverlayStyle: .light,
+  systemOverlayStyle: appSystemUiOverlayStyle(.dark),
   barrier: Color(0xB3000000),
   background: Color(0xFF0D0D0D),
   foreground: Color(0xFFF4F4F1),

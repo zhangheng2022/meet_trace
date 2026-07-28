@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-28T01:00:46.223351+00:00",
+  "generated_at": "2026-07-28T02:05:15.369137+00:00",
   "nodes": {
     "_agents_skills_flutter_add_widget_test_skill_writing_flutter_widget_tests": {
       "code_fingerprint": "ecc36bea2093a9f4f004f86f09aa9601930edd8321160a7dd3748af6e7ef9479",
@@ -12,7 +12,7 @@
           "q": "改为中文"
         }
       ],
-      "score": 0.89868711,
+      "score": 0.897757738,
       "source_file": ".agents/skills/flutter-add-widget-test/SKILL.md",
       "status": "tentative",
       "uses": 1
@@ -28,7 +28,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.986769446,
+      "score": 0.985748984,
       "source_file": "lib/theme/colors.dart",
       "status": "tentative",
       "uses": 1
@@ -44,7 +44,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.986769446,
+      "score": 0.985748984,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -60,7 +60,7 @@
           "q": "开始会议按下状态样式异常"
         }
       ],
-      "score": 0.987159941,
+      "score": 0.986139076,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -76,7 +76,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.987488286,
+      "score": 0.986467081,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -92,7 +92,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.985297854,
+      "score": 0.984278915,
       "source_file": "ios/Runner/AppDelegate.swift",
       "status": "tentative",
       "uses": 1
@@ -123,7 +123,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 3.932917229,
+      "score": 3.928850027,
       "source_file": "lib/app/application.dart",
       "status": "preferred",
       "uses": 4
@@ -144,7 +144,7 @@
           "q": "查询当前启动异常"
         }
       ],
-      "score": 1.975647016,
+      "score": 1.973603913,
       "source_file": "lib/app/meettrace_dependencies.dart",
       "status": "preferred",
       "uses": 2
@@ -165,7 +165,7 @@
           "q": "查询当前启动异常"
         }
       ],
-      "score": 1.975647016,
+      "score": 1.973603913,
       "source_file": "lib/app/meettrace_flow.dart",
       "status": "preferred",
       "uses": 2
@@ -181,7 +181,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.985297854,
+      "score": 0.984278915,
       "source_file": "lib/data/services/asr/android_proc_asr_device_risk_monitor.dart",
       "status": "tentative",
       "uses": 1
@@ -197,7 +197,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.985297854,
+      "score": 0.984278915,
       "source_file": "lib/data/services/audio/flutter_foreground_recording_lifecycle.dart",
       "status": "tentative",
       "uses": 1
@@ -213,7 +213,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.987488286,
+      "score": 0.986467081,
       "source_file": "lib/data/services/models/platform_download_preflight_providers.dart",
       "status": "tentative",
       "uses": 1
@@ -239,7 +239,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 2.956204733,
+      "score": 2.953147593,
       "source_file": "lib/data/services/storage/app_database.dart",
       "status": "preferred",
       "uses": 3
@@ -255,7 +255,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 0.980557717,
+      "score": 0.97954368,
       "source_file": "lib/data/services/storage/app_file_layout.dart",
       "status": "tentative",
       "uses": 1
@@ -271,7 +271,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.980292212,
+      "score": 0.979278449,
       "source_file": "lib/data/services/vad/bundled_silero_vad_model.dart",
       "status": "tentative",
       "uses": 1
@@ -292,7 +292,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.959839293,
+      "score": 1.957812538,
       "source_file": "lib/domain/models/meeting.dart",
       "status": "preferred",
       "uses": 2
@@ -313,7 +313,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.79721578,
+      "score": 1.795357201,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
@@ -344,7 +344,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 3.93376868,
+      "score": 3.929700597,
       "source_file": "lib/theme/theme.dart",
       "status": "preferred",
       "uses": 4
@@ -360,7 +360,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 0.97968323,
+      "score": 0.978670097,
       "source_file": "lib/ui/core/app_page_body.dart",
       "status": "tentative",
       "uses": 1
@@ -381,7 +381,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.959839293,
+      "score": 1.957812538,
       "source_file": "lib/ui/core/view_state.dart",
       "status": "preferred",
       "uses": 2
@@ -397,7 +397,7 @@
           "q": "修复当前启动异常"
         }
       ],
-      "score": 0.988006107,
+      "score": 0.986984367,
       "source_file": "lib/ui/features/meetings/views/meeting_list_view.dart",
       "status": "tentative",
       "uses": 1
@@ -413,7 +413,7 @@
           "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
         }
       ],
-      "score": 0.980156063,
+      "score": 0.979142441,
       "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
       "status": "tentative",
       "uses": 1
@@ -429,7 +429,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.898559751,
+      "score": 0.897630511,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -445,7 +445,7 @@
           "q": "修复当前启动异常"
         }
       ],
-      "score": 0.988006107,
+      "score": 0.986984367,
       "source_file": "PRODUCT.md",
       "status": "tentative",
       "uses": 1
@@ -466,7 +466,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 1.970294326,
+      "score": 1.968256759,
       "source_file": "web/manifest.json",
       "status": "preferred",
       "uses": 2
@@ -482,7 +482,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.987488286,
+      "score": 0.986467081,
       "source_file": "windows/flutter/generated_plugin_registrant.cc",
       "status": "tentative",
       "uses": 1

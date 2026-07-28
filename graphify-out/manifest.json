@@ -45,8 +45,8 @@
     "semantic_hash": "0c3e86af131f6a9e547c80b5ed058914"
   },
   "lib/main.dart": {
-    "mtime": 1785126484.1857512,
-    "ast_hash": "820a729fc32b9733db6156b1a59f2301",
+    "mtime": 1785204665.6234517,
+    "ast_hash": "5617fca3754367db847f0704cf1db493",
     "semantic_hash": ""
   },
   "linux/flutter/generated_plugin_registrant.cc": {
@@ -955,8 +955,8 @@
     "semantic_hash": "4f0f3f4d72fbd2bbe4c594c5a64b3309"
   },
   "lib/theme/colors.dart": {
-    "mtime": 1785147665.8380456,
-    "ast_hash": "b7c80f4b7ebb0e4433bd140a018b5c82",
+    "mtime": 1785204665.6284537,
+    "ast_hash": "94ab15b02e1d73e21a7d404766d80339",
     "semantic_hash": ""
   },
   "lib/theme/icons.dart": {
@@ -970,9 +970,9 @@
     "semantic_hash": ""
   },
   "lib/theme/theme.dart": {
-    "mtime": 1784798369.957454,
-    "ast_hash": "cb78a5a10377d5a011a407b5c875ebe9",
-    "semantic_hash": "cb78a5a10377d5a011a407b5c875ebe9"
+    "mtime": 1785204659.332288,
+    "ast_hash": "71a3a3c8f1dbf4e72940c9208c10ffdc",
+    "semantic_hash": ""
   },
   "lib/theme/typography.dart": {
     "mtime": 1785148065.1034422,
@@ -2497,6 +2497,21 @@
   "graphify-out/memory/query_20260728_010201_path_provider_android_\u4e3a\u4ec0\u4e48\u8981\u6dfb\u52a0\u5230pubspec_yaml.md": {
     "mtime": 1785200521.57531,
     "ast_hash": "33ac6d959e18ee30e76204ffac880d19",
+    "semantic_hash": ""
+  },
+  "lib/theme/system_ui.dart": {
+    "mtime": 1785204659.3317323,
+    "ast_hash": "e2a207a143a82a1b4c3a9e81a51b812a",
+    "semantic_hash": ""
+  },
+  "test/theme/system_ui_test.dart": {
+    "mtime": 1785204659.3354058,
+    "ast_hash": "91aec0bb1685fedf0b10370e74f05ece",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260728_021353_\u4fee\u590d\u5b89\u5353\u6807\u9898\u680f\u4e3a\u6c89\u6d78\u5f0f.md": {
+    "mtime": 1785204833.4746947,
+    "ast_hash": "b51d3a3862fdfc088cae0efb7d9c301a",
     "semantic_hash": ""
   }
 }
