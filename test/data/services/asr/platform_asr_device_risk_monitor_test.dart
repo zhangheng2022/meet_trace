@@ -7,7 +7,7 @@ void main() {
   group('createPlatformAsrDeviceRiskMonitor', () {
     test('Android 使用 procfs/sysfs 风险监测', () {
       final monitor = createPlatformAsrDeviceRiskMonitor(
-        operatingSystem: MobileOperatingSystem.android,
+        platform: AsrRiskPlatform.android,
       );
 
       expect(monitor, isA<AndroidProcAsrDeviceRiskMonitor>());
@@ -15,7 +15,7 @@ void main() {
 
     test('iOS 使用保守的可移植风险快照', () async {
       final monitor = createPlatformAsrDeviceRiskMonitor(
-        operatingSystem: MobileOperatingSystem.ios,
+        platform: AsrRiskPlatform.ios,
       );
 
       expect(monitor, isA<PortableAsrDeviceRiskMonitor>());
@@ -25,6 +25,14 @@ void main() {
       expect(state.thermalState, AsrThermalState.unknown);
       expect(state.blocksInference, isFalse);
       expect(state.hasWarning, isTrue);
+    });
+
+    test('Windows 开发预览使用保守的可移植风险快照', () {
+      final monitor = createPlatformAsrDeviceRiskMonitor(
+        platform: AsrRiskPlatform.windows,
+      );
+
+      expect(monitor, isA<PortableAsrDeviceRiskMonitor>());
     });
   });
 

@@ -2,9 +2,11 @@
 // Impeccable · page: meeting-list · world: Evidence Ledger
 // THESIS: the home is a live local-recording desk, not a dashboard of cards.
 // OWN-WORLD: white sheets, black ink, hairline rules, a dated ledger timeline.
-// STORY: verify local safety, scan meetings, select one, then start or open it.
-// FIRST VIEWPORT: readiness strip, meeting count, ledger, fixed black action.
+// STORY: confirm local recording rules, scan meetings, select one, then start.
+// FIRST VIEWPORT: recording setup, meeting count, ledger, fixed black action.
 // FORM: reference-pinned phone ledger + tablet master-detail composition.
+
+import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
@@ -71,9 +73,13 @@ final class _MeetingListViewState extends State<MeetingListView> {
       ),
       child: MeetingListContent(
         state: state,
+        readiness:
+            widget.viewModel?.readiness ??
+            const MeetingReadinessViewState.unchecked(),
         onStartMeeting: widget.onStartMeeting,
         onOpenMeeting: widget.onOpenMeeting,
         onOpenSettings: widget.onOpenSettings,
+        onRetryReadiness: widget.viewModel?.refreshReadiness,
       ),
     );
   }
@@ -83,16 +89,20 @@ final class _MeetingListViewState extends State<MeetingListView> {
 final class MeetingListContent extends StatefulWidget {
   const MeetingListContent({
     required this.state,
+    required this.readiness,
     required this.onStartMeeting,
     required this.onOpenMeeting,
     this.onOpenSettings,
+    this.onRetryReadiness,
     super.key,
   });
 
   final ViewState<List<Meeting>> state;
+  final MeetingReadinessViewState readiness;
   final VoidCallback? onStartMeeting;
   final ValueChanged<Meeting>? onOpenMeeting;
   final VoidCallback? onOpenSettings;
+  final Future<void> Function()? onRetryReadiness;
 
   @override
   State<MeetingListContent> createState() => _MeetingListContentState();
@@ -115,7 +125,9 @@ final class _MeetingListContentState extends State<MeetingListContent> {
           total: widget.state is ViewData<List<Meeting>>
               ? meetings.length
               : null,
+          readiness: widget.readiness,
           onOpenSettings: widget.onOpenSettings,
+          onRetryReadiness: widget.onRetryReadiness,
           onStartMeeting: widget.onStartMeeting,
           body: listBody,
         );
@@ -233,13 +245,17 @@ final class _MeetingHomePane extends StatelessWidget {
   const _MeetingHomePane({
     required this.body,
     required this.total,
+    required this.readiness,
     required this.onOpenSettings,
+    required this.onRetryReadiness,
     required this.onStartMeeting,
   });
 
   final Widget body;
   final int? total;
+  final MeetingReadinessViewState readiness;
   final VoidCallback? onOpenSettings;
+  final Future<void> Function()? onRetryReadiness;
   final VoidCallback? onStartMeeting;
 
   @override
@@ -249,7 +265,11 @@ final class _MeetingHomePane extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ReadinessStrip(onPress: onOpenSettings),
+          _RecordingSetupStrip(
+            readiness: readiness,
+            onOpenSettings: onOpenSettings,
+            onRetry: onRetryReadiness,
+          ),
           _MeetingSectionHeader(total: total),
           Expanded(child: body),
           _LocalFactFooter(onPress: onOpenSettings),
@@ -261,15 +281,28 @@ final class _MeetingHomePane extends StatelessWidget {
   }
 }
 
-final class _ReadinessStrip extends StatelessWidget {
-  const _ReadinessStrip({required this.onPress});
+final class _RecordingSetupStrip extends StatelessWidget {
+  const _RecordingSetupStrip({
+    required this.readiness,
+    required this.onOpenSettings,
+    required this.onRetry,
+  });
 
-  final VoidCallback? onPress;
+  final MeetingReadinessViewState readiness;
+  final VoidCallback? onOpenSettings;
+  final Future<void> Function()? onRetry;
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
+    final presentation = _readinessPresentation(readiness);
+    final retry = readiness.status == MeetingReadinessStatus.failed
+        ? onRetry
+        : null;
+    final VoidCallback? onPress = retry == null
+        ? onOpenSettings
+        : () => unawaited(retry());
     final content = DecoratedBox(
       decoration: BoxDecoration(
         border: Border(
@@ -286,20 +319,20 @@ final class _ReadinessStrip extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(FLucideIcons.fileAudio, size: 19),
+            Icon(presentation.icon, size: 19),
             SizedBox(width: appStyle.spaceSm),
             Expanded(
               child: Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: '准备就绪',
+                      text: presentation.title,
                       style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     TextSpan(
-                      text: '  ·  事实音频本地保存为准',
+                      text: '  ·  ${presentation.detail}',
                       style: theme.typography.body.xs.copyWith(
                         color: theme.colors.mutedForeground,
                       ),
@@ -325,12 +358,55 @@ final class _ReadinessStrip extends StatelessWidget {
       return content;
     }
     return FTappable(
-      semanticsLabel: '查看本地录音和模型设置',
+      semanticsLabel: retry == null ? '查看录音条件和默认模型设置' : '重新检查录音条件',
       onPress: onPress,
       child: content,
     );
   }
 }
+
+({IconData icon, String title, String detail}) _readinessPresentation(
+  MeetingReadinessViewState readiness,
+) => switch (readiness.status) {
+  MeetingReadinessStatus.unchecked => (
+    icon: FLucideIcons.fileAudio,
+    title: '本地录音',
+    detail: '使用默认模型',
+  ),
+  MeetingReadinessStatus.checking => (
+    icon: FLucideIcons.fileAudio,
+    title: '正在检查录音条件',
+    detail: '麦克风、存储与默认模型',
+  ),
+  MeetingReadinessStatus.ready => (
+    icon: FLucideIcons.circleCheck,
+    title: '录音条件已就绪',
+    detail: '${readiness.defaultModelName ?? '默认模型'}可用',
+  ),
+  MeetingReadinessStatus.microphonePermissionRequired => (
+    icon: FLucideIcons.circleAlert,
+    title: '需要麦克风权限',
+    detail: _readinessDetail('开始会议时授权', readiness.issueCount),
+  ),
+  MeetingReadinessStatus.storageInsufficient => (
+    icon: FLucideIcons.circleAlert,
+    title: '存储空间不足',
+    detail: _readinessDetail('至少保留 128 MB', readiness.issueCount),
+  ),
+  MeetingReadinessStatus.defaultModelUnavailable => (
+    icon: FLucideIcons.circleAlert,
+    title: '默认模型不可用',
+    detail: '${readiness.defaultModelName ?? '当前模型'}需要处理',
+  ),
+  MeetingReadinessStatus.failed => (
+    icon: FLucideIcons.circleAlert,
+    title: '无法检查录音条件',
+    detail: '点按重新检查',
+  ),
+};
+
+String _readinessDetail(String primary, int issueCount) =>
+    issueCount > 1 ? '$primary，另有 ${issueCount - 1} 项' : primary;
 
 final class _MeetingSectionHeader extends StatelessWidget {
   const _MeetingSectionHeader({required this.total});

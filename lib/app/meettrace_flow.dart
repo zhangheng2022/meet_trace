@@ -10,7 +10,6 @@ import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
 import '../ui/features/meetings/views/meeting_detail_view.dart';
 import '../ui/features/meetings/views/meeting_list_view.dart';
 import '../ui/features/meetings/views/recording_session_view.dart';
-import '../ui/features/meetings/views/start_meeting_view.dart';
 import '../ui/features/settings/views/model_settings_view.dart';
 import 'application.dart';
 import 'meettrace_dependencies.dart';
@@ -66,34 +65,95 @@ final class MeetTraceFlow extends StatefulWidget {
   State<MeetTraceFlow> createState() => _MeetTraceFlowState();
 }
 
-final class _MeetTraceFlowState extends State<MeetTraceFlow> {
+final class _MeetTraceFlowState extends State<MeetTraceFlow>
+    with WidgetsBindingObserver {
   late final MeetingListViewModel _meetingList = widget.dependencies
       .createMeetingListViewModel();
+  Future<void>? _startOperation;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_meetingList.refreshReadiness());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MeetingListView(
       viewModel: _meetingList,
-      onStartMeeting: _openStartMeeting,
+      onStartMeeting: () => unawaited(_startMeeting()),
       onOpenMeeting: _openMeeting,
       onOpenSettings: _openSettings,
     );
   }
 
-  void _openStartMeeting() {
+  Future<void> _startMeeting() {
+    final current = _startOperation;
+    if (current != null) {
+      return current;
+    }
+    final operation = _performStartMeeting();
+    _startOperation = operation;
+    return operation.whenComplete(() {
+      _startOperation = null;
+    });
+  }
+
+  Future<void> _performStartMeeting() async {
     final viewModel = widget.dependencies.createStartMeetingViewModel();
-    unawaited(
-      Navigator.of(context)
-          .push<void>(
-            MaterialPageRoute(
-              builder: (_) => StartMeetingView(
-                viewModel: viewModel,
-                onBack: () => Navigator.of(context).maybePop(),
-                onStarted: _openRecording,
-              ),
+    try {
+      await viewModel.load();
+      if (!mounted) {
+        return;
+      }
+      final session = await viewModel.start();
+      if (!mounted) {
+        return;
+      }
+      if (session == null) {
+        await _showStartFailure(viewModel.errorMessage ?? '默认模型暂时不可用，请前往设置检查');
+        return;
+      }
+      _openRecording(session);
+    } finally {
+      viewModel.dispose();
+    }
+  }
+
+  Future<void> _showStartFailure(String message) {
+    return showFDialog<void>(
+      context: context,
+      builder: (context, style, animation) => FDialog(
+        animation: animation,
+        semanticsLabel: '无法开始会议',
+        builder: (context, style) {
+          final appStyle = context.theme.style.app;
+          return Padding(
+            padding: EdgeInsets.all(appStyle.spaceLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('无法开始会议', style: style.titleTextStyle),
+                SizedBox(height: appStyle.spaceSm),
+                Text(message, style: context.theme.typography.body.md),
+                SizedBox(height: appStyle.spaceLg),
+                FButton(
+                  onPress: () => Navigator.of(context).pop(),
+                  child: const Text('知道了'),
+                ),
+              ],
             ),
-          )
-          .whenComplete(viewModel.dispose),
+          );
+        },
+      ),
     );
   }
 
@@ -103,7 +163,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow> {
     );
     unawaited(
       Navigator.of(context)
-          .pushReplacement<void, void>(
+          .push<void>(
             MaterialPageRoute(
               builder: (_) => RecordingSessionView(
                 viewModel: viewModel,
@@ -148,12 +208,14 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow> {
           .whenComplete(() {
             modelSettings.dispose();
             dataControls.dispose();
+            unawaited(_meetingList.refreshReadiness());
           }),
     );
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _meetingList.dispose();
     super.dispose();
   }

@@ -140,6 +140,12 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         );
   }
 
+  bool get _shouldAutoGenerateSummary =>
+      _meeting.title == pendingMeetingTitle &&
+      _meeting.activeSummaryId == null &&
+      _summary == null &&
+      canGenerateSummary;
+
   List<SpeakerLabelGroup> get speakerGroups {
     final groups = <String?, int>{};
     for (final segment in _snapshot?.segments ?? const <TranscriptSegment>[]) {
@@ -407,6 +413,9 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         );
       } else {
         await _runDiarizationIfNeeded();
+        if (_shouldAutoGenerateSummary) {
+          await _runSummaryGeneration();
+        }
       }
     } on Object {
       _errorMessage ??= '最终转录状态加载失败，请重试';
@@ -483,6 +492,9 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       _operation = null;
       _operationModelId = null;
       _notify();
+      if (_shouldAutoGenerateSummary) {
+        unawaited(_runSummaryGeneration());
+      }
     });
   }
 
@@ -603,7 +615,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       final result = await useCase.execute(meetingId: _meeting.id);
       _meeting = result.meeting;
       _summary = result.summary;
-      _summaryMessage = 'AI 总结已生成，结论均可查看原文证据';
+      _summaryMessage = 'AI 总结和会议标题已生成，结论均可查看原文证据';
     } on Object {
       await _refreshMeeting();
       await _refreshSummary();

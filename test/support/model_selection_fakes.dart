@@ -7,10 +7,41 @@ import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
 import 'package:meettrace/domain/models/model_usage_lease.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/check_meeting_readiness.dart';
+
+final class TestMeetingReadinessChecker implements MeetingReadinessChecker {
+  TestMeetingReadinessChecker({MeetingReadiness? result, this.error})
+    : result =
+          result ??
+          MeetingReadiness(
+            microphonePermissionGranted: true,
+            freeBytes: minimumRecordingFreeBytes,
+            defaultModelId: paraformerStandardModelId,
+            defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
+            defaultModelAvailable: true,
+          );
+
+  MeetingReadiness result;
+  Object? error;
+  final List<bool> permissionRequests = [];
+
+  @override
+  Future<MeetingReadiness> check({
+    bool requestMicrophonePermission = false,
+  }) async {
+    permissionRequests.add(requestMicrophonePermission);
+    final currentError = error;
+    if (currentError != null) {
+      throw currentError;
+    }
+    return result;
+  }
+}
 
 final class TestModelPreferences implements ModelPreferenceRepository {
   TestModelPreferences(this.value);

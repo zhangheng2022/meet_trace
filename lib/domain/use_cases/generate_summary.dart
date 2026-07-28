@@ -76,6 +76,7 @@ final class GenerateSummaryUseCase {
         provider: provider,
         model: model,
         createdAt: createdAt,
+        title: '',
         overview: '',
         keyPoints: const [],
         actionItems: const [],
@@ -207,6 +208,7 @@ final class GenerateSummaryUseCase {
       provider: provider,
       model: model,
       createdAt: createdAt,
+      title: draft.title.trim(),
       overview: draft.overview.trim(),
       keyPoints: _buildItems(
         summaryId: summaryId,
@@ -284,6 +286,7 @@ final class GenerateSummaryUseCase {
         provider: provider,
         model: model,
         createdAt: createdAt,
+        title: '',
         overview: '',
         keyPoints: const [],
         actionItems: const [],

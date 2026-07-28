@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/ui/features/meetings/view_models/start_meeting_view_model.dart';
 
@@ -24,20 +26,19 @@ void main() {
 
   tearDown(() => installations.dispose());
 
-  test('继承全局默认，选择本场覆盖不会修改默认值', () async {
+  test('直接使用全局默认模型并以待生成标题创建会议', () async {
     final qwen = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
     installations.install(installations.installed(qwen), active: true);
+    preferences = TestModelPreferences(qwen.modelId);
     final viewModel = _viewModel(preferences, installations, meetings, factory);
     await viewModel.load();
 
-    expect(viewModel.selectedModelId, paraformerStandardModelId);
-    viewModel.chooseModel(qwen.modelId);
-    viewModel.updateTitle('产品评审');
+    expect(viewModel.defaultModelId, qwen.modelId);
     final session = await viewModel.start();
 
     expect(preferences.setCalls, isEmpty);
     expect(session, isNotNull);
-    expect(session!.meeting.title, '产品评审');
+    expect(session!.meeting.title, pendingMeetingTitle);
     expect(session.meeting.requestedModelId, qwen.modelId);
     expect(session.meeting.recordingModelId, qwen.modelId);
     expect(session.meeting.recordingModelVersion, qwen.version);
@@ -48,32 +49,50 @@ void main() {
     viewModel.dispose();
   });
 
-  test('高级模型不可用时先阻止开始，用户确认后记录标准模型回退', () async {
+  test('默认高级模型不可用时阻止开始且不静默回退', () async {
+    preferences = TestModelPreferences(qwenAdvancedModelId);
     final viewModel = _viewModel(preferences, installations, meetings, factory);
     await viewModel.load();
-    viewModel.chooseModel(qwenAdvancedModelId);
 
     expect(await viewModel.start(), isNull);
-    expect(viewModel.requiresAdvancedModelAction, isTrue);
+    expect(viewModel.errorMessage, contains('默认高级模型尚未安装'));
     expect(factory.calls, isEmpty);
-
-    final session = await viewModel.useStandardAndStart();
-
-    expect(session, isNotNull);
-    expect(session!.meeting.requestedModelId, qwenAdvancedModelId);
-    expect(session.meeting.recordingModelId, paraformerStandardModelId);
-    expect(session.meeting.modelFallbackReason, advancedModelFallbackReason);
-    expect(factory.calls.single.$1, paraformerStandardModelId);
     expect(preferences.setCalls, isEmpty);
     viewModel.dispose();
   });
 
-  test('开始后 ViewModel 和 Meeting 都拒绝更改锁定模型', () async {
+  test('开始前请求麦克风权限，拒绝时不创建会议或初始化模型', () async {
+    final readiness = TestMeetingReadinessChecker(
+      result: MeetingReadiness(
+        microphonePermissionGranted: false,
+        freeBytes: minimumRecordingFreeBytes,
+        defaultModelId: paraformerStandardModelId,
+        defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
+        defaultModelAvailable: true,
+      ),
+    );
+    final viewModel = _viewModel(
+      preferences,
+      installations,
+      meetings,
+      factory,
+      readiness: readiness,
+    );
+    await viewModel.load();
+
+    expect(await viewModel.start(), isNull);
+    expect(readiness.permissionRequests, [true]);
+    expect(viewModel.errorMessage, contains('需要麦克风权限'));
+    expect(meetings.saved, isEmpty);
+    expect(factory.calls, isEmpty);
+    viewModel.dispose();
+  });
+
+  test('开始后 Meeting 拒绝更改锁定模型', () async {
     final viewModel = _viewModel(preferences, installations, meetings, factory);
     await viewModel.load();
     final session = await viewModel.start();
 
-    expect(() => viewModel.chooseModel(qwenAdvancedModelId), throwsStateError);
     expect(
       () => session!.meeting.changeRecordingModel(
         recordingModelId: qwenAdvancedModelId,
@@ -90,13 +109,15 @@ StartMeetingViewModel _viewModel(
   TestModelPreferences preferences,
   TestActiveInstallations installations,
   TestMeetingRepository meetings,
-  TestAsrEngineFactory factory,
-) {
+  TestAsrEngineFactory factory, {
+  TestMeetingReadinessChecker? readiness,
+}) {
   return StartMeetingViewModel(
     preferences: preferences,
     installations: installations,
     meetings: meetings,
     engineFactory: factory,
+    readinessChecker: readiness ?? TestMeetingReadinessChecker(),
     meetingIdFactory: () => 'meeting-step-11',
     now: () => DateTime.utc(2026, 7, 24, 9),
   );

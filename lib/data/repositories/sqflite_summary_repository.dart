@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../../domain/models/domain_exception.dart';
+import '../../domain/models/meeting.dart';
 import '../../domain/models/summary.dart';
 import '../services/storage/app_database.dart';
 import 'repository_contracts.dart';
@@ -74,9 +75,25 @@ final class SqfliteSummaryRepository implements SummaryRepository {
       }
       await _validateEvidence(txn, summary);
       await _saveSummary(txn, summary);
+      final meetingRows = await txn.query(
+        'meetings',
+        columns: const ['title'],
+        where: 'id = ?',
+        whereArgs: [summary.meetingId],
+        limit: 1,
+      );
+      if (meetingRows.isEmpty) {
+        throw const DomainInvariantViolation('摘要所属会议不存在');
+      }
+      final generatedTitle = summary.title.trim();
+      final updates = <String, Object?>{'active_summary_id': summary.id};
+      if (meetingRows.single['title'] == pendingMeetingTitle &&
+          generatedTitle.isNotEmpty) {
+        updates['title'] = generatedTitle;
+      }
       final updated = await txn.update(
         'meetings',
-        {'active_summary_id': summary.id},
+        updates,
         where: 'id = ? AND status = ? AND active_transcript_snapshot_id = ?',
         whereArgs: [
           summary.meetingId,
@@ -126,6 +143,7 @@ Future<void> _saveSummary(DatabaseExecutor executor, Summary summary) async {
     'provider': summary.provider,
     'model': summary.model,
     'created_at': summary.createdAt.millisecondsSinceEpoch,
+    'title': summary.title,
     'overview': summary.overview,
     'status': summary.status.name,
   };
@@ -230,6 +248,7 @@ Future<Summary> _summaryFromRow(
       row['created_at']! as int,
       isUtc: true,
     ),
+    title: row['title'] as String? ?? '',
     overview: row['overview']! as String,
     keyPoints: keyPoints,
     actionItems: actionItems,

@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 final class AppDatabase {
   AppDatabase({required this.databaseFactory, required this.path});
 
-  static const schemaVersion = 3;
+  static const schemaVersion = 4;
 
   final DatabaseFactory databaseFactory;
   final String path;
@@ -50,6 +50,9 @@ final class AppDatabase {
     }
     if (version >= 3) {
       await _createVersion3Schema(db);
+    }
+    if (version >= 4) {
+      await _createVersion4Schema(db);
     }
   }
 
@@ -221,6 +224,18 @@ final class AppDatabase {
     );
   }
 
+  static Future<void> _createVersion4Schema(Database db) async {
+    final summaries = await db.rawQuery(
+      "SELECT name FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'summaries'",
+    );
+    if (summaries.isNotEmpty) {
+      await db.execute(
+        "ALTER TABLE summaries ADD COLUMN title TEXT NOT NULL DEFAULT ''",
+      );
+    }
+  }
+
   static Future<void> _upgradeSchema(
     Database db,
     int oldVersion,
@@ -235,6 +250,9 @@ final class AppDatabase {
     }
     if (oldVersion < 3 && newVersion >= 3) {
       await _createVersion3Schema(db);
+    }
+    if (oldVersion < 4 && newVersion >= 4) {
+      await _createVersion4Schema(db);
     }
   }
 }

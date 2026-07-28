@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:sqflite/sqflite.dart';
 
 import '../data/repositories/sqflite_meeting_repository.dart';
 import '../data/repositories/sqflite_diarization_preference_repository.dart';
@@ -21,6 +20,7 @@ import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/platform_recording_foreground_lifecycle.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
 import '../data/services/audio/recording_checkpoint_store.dart';
+import '../data/services/audio/recording_device_readiness_probe.dart';
 import '../data/services/audio/reliable_recording_service.dart';
 import '../data/services/audio/pcm_evidence_playback_service.dart';
 import '../data/services/models/bundled_model_preparation_service.dart';
@@ -33,6 +33,7 @@ import '../data/services/models/platform_download_preflight_providers.dart';
 import '../data/services/sharing/text_share_service.dart';
 import '../data/services/storage/app_database.dart';
 import '../data/services/storage/app_file_layout.dart';
+import '../data/services/storage/platform_database_factory.dart';
 import '../data/services/storage/startup_recovery_service.dart';
 import '../data/services/storage/local_data_control_service.dart';
 import '../data/services/storage/meeting_directory_deletion_service.dart';
@@ -43,6 +44,7 @@ import '../domain/models/asr_model_registry.dart';
 import '../domain/models/meeting.dart';
 import '../domain/models/model_manifest.dart';
 import '../domain/use_cases/delete_meeting.dart';
+import '../domain/use_cases/check_meeting_readiness.dart';
 import '../domain/use_cases/generate_summary.dart';
 import '../domain/use_cases/revise_final_transcript.dart';
 import '../ui/core/asr_model_option.dart';
@@ -71,6 +73,7 @@ final class MeetTraceDependencies {
     required this.registry,
     required this.modelManifest,
     required this.modelDownloads,
+    required this.meetingReadiness,
     required this.vadModelPath,
   });
 
@@ -90,6 +93,7 @@ final class MeetTraceDependencies {
   final AsrModelRegistry registry;
   final ModelManifest modelManifest;
   final DownloadableModelService modelDownloads;
+  final CheckMeetingReadinessUseCase meetingReadiness;
   final String vadModelPath;
 
   static Future<MeetTraceDependencies> create() async {
@@ -97,7 +101,7 @@ final class MeetTraceDependencies {
     final fileLayout = await AppFileLayout.forApplication();
     await fileLayout.createBaseDirectories();
     final database = AppDatabase(
-      databaseFactory: databaseFactory,
+      databaseFactory: createPlatformDatabaseFactory(),
       path: fileLayout.databasePath,
     );
     await StartupRecoveryService(
@@ -185,6 +189,15 @@ final class MeetTraceDependencies {
       downloader: HttpModelFileDownloader(),
       verifier: const ModelFileVerifier(),
     );
+    final meetingReadiness = CheckMeetingReadinessUseCase(
+      device: DeviceRecordingReadinessProbe(
+        captureFactory: RecordPcmAudioCapture.new,
+        storageCapacity: const DeviceRecordingStorageCapacityProvider(),
+      ),
+      preferences: preferences,
+      installations: installations,
+      registry: registry,
+    );
     return MeetTraceDependencies._(
       database: database,
       fileLayout: fileLayout,
@@ -202,12 +215,16 @@ final class MeetTraceDependencies {
       registry: registry,
       modelManifest: manifest,
       modelDownloads: modelDownloads,
+      meetingReadiness: meetingReadiness,
       vadModelPath: vad.modelPath,
     );
   }
 
   MeetingListViewModel createMeetingListViewModel() {
-    return MeetingListViewModel(meetings: meetings);
+    return MeetingListViewModel(
+      meetings: meetings,
+      readinessChecker: meetingReadiness,
+    );
   }
 
   MeetingDetailViewModel createMeetingDetailViewModel(Meeting meeting) {
@@ -295,6 +312,7 @@ final class MeetTraceDependencies {
       installations: installations,
       meetings: meetings,
       engineFactory: engineFactory,
+      readinessChecker: meetingReadiness,
       meetingIdFactory: () =>
           'meeting-${DateTime.now().microsecondsSinceEpoch}',
       now: DateTime.now,

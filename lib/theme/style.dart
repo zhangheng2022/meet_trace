@@ -80,6 +80,7 @@ class AppStyle extends ThemeExtension<AppStyle> {
     this.emptyIconSize = 48,
     this.minimumTouchTarget = 48,
     this.controlHeight = 48,
+    this.dualActionMinWidth = 280,
     this.cardRadius = 8,
     this.panelRadius = 12,
     this.ledgerTimeColumnWidth = 64,
@@ -105,6 +106,7 @@ class AppStyle extends ThemeExtension<AppStyle> {
   final double emptyIconSize;
   final double minimumTouchTarget;
   final double controlHeight;
+  final double dualActionMinWidth;
   final double cardRadius;
   final double panelRadius;
   final double ledgerTimeColumnWidth;
@@ -131,6 +133,7 @@ class AppStyle extends ThemeExtension<AppStyle> {
     double? emptyIconSize,
     double? minimumTouchTarget,
     double? controlHeight,
+    double? dualActionMinWidth,
     double? cardRadius,
     double? panelRadius,
     double? ledgerTimeColumnWidth,
@@ -157,6 +160,7 @@ class AppStyle extends ThemeExtension<AppStyle> {
     emptyIconSize: emptyIconSize ?? this.emptyIconSize,
     minimumTouchTarget: minimumTouchTarget ?? this.minimumTouchTarget,
     controlHeight: controlHeight ?? this.controlHeight,
+    dualActionMinWidth: dualActionMinWidth ?? this.dualActionMinWidth,
     cardRadius: cardRadius ?? this.cardRadius,
     panelRadius: panelRadius ?? this.panelRadius,
     ledgerTimeColumnWidth: ledgerTimeColumnWidth ?? this.ledgerTimeColumnWidth,
@@ -201,6 +205,9 @@ class AppStyle extends ThemeExtension<AppStyle> {
           minimumTouchTarget +
           (other.minimumTouchTarget - minimumTouchTarget) * t,
       controlHeight: controlHeight + (other.controlHeight - controlHeight) * t,
+      dualActionMinWidth:
+          dualActionMinWidth +
+          (other.dualActionMinWidth - dualActionMinWidth) * t,
       cardRadius: cardRadius + (other.cardRadius - cardRadius) * t,
       panelRadius: panelRadius + (other.panelRadius - panelRadius) * t,
       ledgerTimeColumnWidth:
@@ -236,6 +243,7 @@ class AppStyle extends ThemeExtension<AppStyle> {
           emptyIconSize == other.emptyIconSize &&
           minimumTouchTarget == other.minimumTouchTarget &&
           controlHeight == other.controlHeight &&
+          dualActionMinWidth == other.dualActionMinWidth &&
           cardRadius == other.cardRadius &&
           panelRadius == other.panelRadius &&
           ledgerTimeColumnWidth == other.ledgerTimeColumnWidth &&
@@ -263,6 +271,7 @@ class AppStyle extends ThemeExtension<AppStyle> {
     emptyIconSize,
     minimumTouchTarget,
     controlHeight,
+    dualActionMinWidth,
     cardRadius,
     panelRadius,
     ledgerTimeColumnWidth,

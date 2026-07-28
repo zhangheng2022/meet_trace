@@ -12,6 +12,8 @@ import 'package:meettrace/ui/core/app_ledger.dart';
 import 'package:meettrace/ui/features/meetings/view_models/meeting_list_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/meeting_list_view.dart';
 
+import '../../../../support/model_selection_fakes.dart';
+
 void main() {
   testWidgets('空会议列表使用 Forui 并触发开始会议操作', (WidgetTester tester) async {
     var startMeetingRequested = false;
@@ -36,6 +38,67 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(startMeetingRequested, isTrue);
+  });
+
+  testWidgets('首页展示经过真实预检的录音条件状态', (WidgetTester tester) async {
+    var settingsRequested = false;
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(
+          viewModel: viewModel,
+          onOpenSettings: () => settingsRequested = true,
+        ),
+      ),
+    );
+    repository.emit(const []);
+    await tester.pump();
+
+    expect(find.textContaining('录音条件已就绪', findRichText: true), findsOneWidget);
+    expect(
+      find.textContaining('标准模型（Paraformer）可用', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.textContaining('准备就绪', findRichText: true), findsNothing);
+
+    await tester.tap(find.textContaining('录音条件已就绪', findRichText: true));
+    await tester.pumpAndSettle();
+
+    expect(settingsRequested, isTrue);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('预检失败时可从状态条重新检查并恢复', (WidgetTester tester) async {
+    final repository = _MeetingRepository();
+    final readiness = TestMeetingReadinessChecker(
+      error: StateError('platform channel unavailable'),
+    );
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: readiness,
+    );
+
+    await tester.pumpWidget(
+      Application(home: MeetingListView(viewModel: viewModel)),
+    );
+    repository.emit(const []);
+    await tester.pump();
+
+    expect(find.textContaining('无法检查录音条件', findRichText: true), findsOneWidget);
+    readiness.error = null;
+    await tester.tap(find.textContaining('无法检查录音条件', findRichText: true));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('录音条件已就绪', findRichText: true), findsOneWidget);
+    expect(readiness.permissionRequests, [false, false]);
+    viewModel.dispose();
+    await repository.dispose();
   });
 
   testWidgets('开始会议按下时保持全宽底栏几何稳定', (WidgetTester tester) async {
@@ -81,7 +144,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _MeetingRepository();
-    final viewModel = MeetingListViewModel(meetings: repository);
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+    );
     Meeting? opened;
 
     await tester.pumpWidget(
@@ -144,7 +210,10 @@ void main() {
 
   testWidgets('本地会议流失败时显示可重试错误状态', (WidgetTester tester) async {
     final repository = _MeetingRepository();
-    final viewModel = MeetingListViewModel(meetings: repository);
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+    );
 
     await tester.pumpWidget(
       Application(home: MeetingListView(viewModel: viewModel)),
@@ -166,7 +235,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     final repository = _MeetingRepository();
-    final viewModel = MeetingListViewModel(meetings: repository);
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+    );
 
     await tester.pumpWidget(
       Application(

@@ -126,7 +126,11 @@ final class DetailSummaryRepository implements SummaryRepository {
     records[summary.id] = summary;
     meetings.value = Meeting(
       id: meeting.id,
-      title: meeting.title,
+      title:
+          meeting.title == pendingMeetingTitle &&
+              summary.title.trim().isNotEmpty
+          ? summary.title.trim()
+          : meeting.title,
       createdAt: meeting.createdAt,
       startedAt: meeting.startedAt,
       endedAt: meeting.endedAt,

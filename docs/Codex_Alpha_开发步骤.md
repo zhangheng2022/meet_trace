@@ -1,10 +1,12 @@
 # 会迹（MeetTrace）Android + iOS Alpha — Codex 开发步骤
 
 > 版本：V1.1
-> 状态：当前执行计划
+> 状态：历史执行记录（不再定义当前产品行为）
 > 更新日期：2026-07-27
 > PRD：[会迹（MeetTrace）Android + iOS Alpha PRD V0.6](./会迹_MeetTrace_Alpha_PRD_无登录版.md)
 > 技术基线：[端侧双模型转录技术方案](./端侧双模型转录技术方案.md)
+>
+> 注意：本文保留 Step 00～19 的实施过程和当时验收证据。当前会议入口已删除标题与本场模型选择，首页直接使用设置中的全局默认模型；当前规则以 PRD、技术方案、`AGENTS.md` 和 `DESIGN.md` 为准。
 
 ## 1. 使用方式
 

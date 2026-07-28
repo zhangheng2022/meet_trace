@@ -19,4 +19,12 @@ void main() {
 
     expect(lifecycle, isA<NoopRecordingForegroundLifecycle>());
   });
+
+  test('Windows 开发预览不启动 Android 前台服务', () {
+    final lifecycle = createRecordingForegroundLifecycle(
+      platform: RecordingPlatform.windows,
+    );
+
+    expect(lifecycle, isA<NoopRecordingForegroundLifecycle>());
+  });
 }

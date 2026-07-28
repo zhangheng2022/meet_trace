@@ -209,7 +209,7 @@ void main() {
   });
 
   test('已完成摘要与当前最终快照在同一事务中激活', () async {
-    await meetings.save(_meeting('meeting-1'));
+    await meetings.save(_meeting('meeting-1', title: pendingMeetingTitle));
     final snapshot = _snapshot(
       id: 'snapshot-1',
       meetingId: 'meeting-1',
@@ -231,11 +231,39 @@ void main() {
       expectedTranscriptSnapshotId: snapshot.id,
     );
 
-    expect((await meetings.getById('meeting-1'))!.activeSummaryId, summary.id);
+    final activated = (await meetings.getById('meeting-1'))!;
+    expect(activated.activeSummaryId, summary.id);
+    expect(activated.title, 'AI 生成标题');
+    expect((await summaries.getById(summary.id))!.title, 'AI 生成标题');
     expect(
       (await summaries.getById(summary.id))!.status,
       SummaryStatus.complete,
     );
+  });
+
+  test('AI 摘要激活时不覆盖用户已有的会议标题', () async {
+    await meetings.save(_meeting('meeting-1', title: '人工命名的会议'));
+    final snapshot = _snapshot(
+      id: 'snapshot-1',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.complete,
+      withSegment: true,
+    );
+    await transcripts.saveFinalAndActivate(
+      snapshot: snapshot,
+      expectedActiveSnapshotId: null,
+    );
+
+    await summaries.saveAndActivate(
+      summary: _summary(
+        id: 'summary-1',
+        meetingId: 'meeting-1',
+        snapshotId: snapshot.id,
+      ),
+      expectedTranscriptSnapshotId: snapshot.id,
+    );
+
+    expect((await meetings.getById('meeting-1'))!.title, '人工命名的会议');
   });
 
   test('伪造的证据时间或引文不能写入并激活', () async {
@@ -361,10 +389,11 @@ Meeting _meeting(
   String id, {
   MeetingState status = MeetingState.created,
   String? activeSummaryId,
+  String title = '会议',
 }) {
   return Meeting(
     id: id,
-    title: '会议',
+    title: title,
     createdAt: DateTime.utc(2026, 7, 24),
     status: status,
     audioDurationMs: 0,
@@ -418,6 +447,7 @@ Summary _summary({
     provider: 'test-provider',
     model: 'test-model',
     createdAt: DateTime.utc(2026, 7, 25),
+    title: 'AI 生成标题',
     overview: '概览',
     keyPoints: [
       SummaryItem(

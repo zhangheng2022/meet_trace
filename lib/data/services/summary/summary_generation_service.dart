@@ -53,7 +53,7 @@ final class SummaryGenerationRequest {
   final List<SummaryPromptSegment> segments;
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'segments': [for (final segment in segments) segment.toJson()],
   };
 }
@@ -70,11 +70,13 @@ final class GeneratedSummaryItem {
 
 final class GeneratedSummaryDraft {
   GeneratedSummaryDraft({
+    required this.title,
     required this.overview,
     required List<GeneratedSummaryItem> keyPoints,
     required List<GeneratedSummaryItem> actionItems,
   }) : keyPoints = List.unmodifiable(keyPoints),
        actionItems = List.unmodifiable(actionItems) {
+    _requireText(title, 'title');
     _requireText(overview, 'overview');
     for (final item in [...this.keyPoints, ...this.actionItems]) {
       _requireText(item.text, 'item.text');
@@ -84,6 +86,7 @@ final class GeneratedSummaryDraft {
     }
   }
 
+  final String title;
   final String overview;
   final List<GeneratedSummaryItem> keyPoints;
   final List<GeneratedSummaryItem> actionItems;

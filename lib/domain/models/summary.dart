@@ -45,6 +45,7 @@ final class Summary {
     required this.provider,
     required this.model,
     required this.createdAt,
+    this.title = '',
     required this.overview,
     required List<SummaryItem> keyPoints,
     required List<SummaryItem> actionItems,
@@ -64,6 +65,7 @@ final class Summary {
   final String provider;
   final String model;
   final DateTime createdAt;
+  final String title;
   final String overview;
   final List<SummaryItem> keyPoints;
   final List<SummaryItem> actionItems;

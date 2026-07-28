@@ -11,19 +11,18 @@
    双平台产品范围、用户流程、功能需求、质量门槛和 AT-01～AT-20 的唯一事实源。
 2. [端侧双模型转录技术方案](./端侧双模型转录技术方案.md)
    将 PRD 约束落实为录音、模型管理、官方 sherpa-onnx Flutter 包、双 ASR Engine、存储和降级架构。
-3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)
-   当前仓库从应用壳到双模型 Alpha 的执行顺序、测试要求和完成看板。
-4. [会迹（MeetTrace）交互与视觉系统](../DESIGN.md)
+3. [会迹（MeetTrace）交互与视觉系统](../DESIGN.md)
    锁定多页面 UI 的结构、色彩、排版、间距、响应式、交互状态和页面契约。
-5. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)
+4. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)
    Alpha 步骤分支、隔离 worktree、合并和安全清理规则。
-6. [双模型设计规格](./superpowers/specs/2026-07-23-dual-asr-model-design.md)
+5. [双模型设计规格](./superpowers/specs/2026-07-23-dual-asr-model-design.md)
    2026-07-23 已批准决策的审计记录；若与当前 PRD 冲突，以 PRD 为准并同步修订规格。
-7. [官方 sherpa-onnx Flutter 包集成规格](./superpowers/specs/2026-07-23-official-sherpa-onnx-flutter-integration-design.md)
+6. [官方 sherpa-onnx Flutter 包集成规格](./superpowers/specs/2026-07-23-official-sherpa-onnx-flutter-integration-design.md)
    2026-07-23 已批准的依赖边界：只使用官方 Flutter/Dart 包，不自建原生桥接。
 
 实施证据：
 
+- [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)：Step 00～19 的历史执行记录，不定义当前会议入口和模型选择行为。
 - [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md)：最低 SDK、目标 ABI、开发设备和待补齐的验收设备。
 - [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md)：最低系统、arm64、iPhone/iPad、
   后台录音、双模型和无障碍待验门槛；未闭环前双平台发布保持 `blocked`。
@@ -32,7 +31,7 @@
 - [Step 08 官方 sherpa-onnx Flutter 包集成](./quality/Step_08_官方_sherpa-onnx_Flutter_包集成.md)：一次性 bindings、isolate worker、结构化错误、重复创建和 APK 审计证据。
 - [Step 09 Paraformer Standard Engine](./quality/Step_09_Paraformer_Standard_Engine.md)：15 秒窗口、全局时间轴、完整 PCM16 处理、诊断/RTF、取消和 Mi 10 真实模型证据。
 - [Step 10 Qwen Advanced Engine](./quality/Step_10_Qwen_Advanced_Engine.md)：活动版本、使用租约、设备风险、统一输出协议、录音解耦和 Android x86_64 模拟器真实模型证据。
-- [Step 11 Factory 与会议模型锁定](./quality/Step_11_Factory与会议模型锁定.md)：精确 ID/版本 Engine 创建、全局默认、本场覆盖、显式回退、会议锁定和 Forui 组件证据。
+- [Step 11 Factory 与会议模型锁定](./quality/Step_11_Factory与会议模型锁定.md)：旧入口下的模型覆盖与锁定历史证据；当前入口只使用全局默认模型。
 - [Step 12 Silero VAD 与预览队列](./quality/Step_12_Silero_VAD与预览队列.md)：统一时间轴、15 秒重叠切窗、音频时长水位、积压丢弃、确定性文本修订和仅录音降级证据。
 - [Step 13 会议主链与会中 UI](./quality/Step_13_会议主链与会中_UI.md)：生产依赖装配、会议列表、开始会议、事实录音、会中降级状态、响应式布局和 Android 端到端证据。
 - [Step 14 最终转录快照](./quality/Step_14_最终转录快照.md)：完整事实音频重处理、稳定快照 ID、原子激活、失败重试、独立重转录和 Android 端到端证据。
@@ -56,7 +55,7 @@ PRD（做什么、为什么、如何验收）
 
 截至 2026-07-27，Android 侧 Step 00、Step 02～17 已完成，Step 01 的外部语料、低端设备和公开分发许可闭环仍在执行。仓库已固定官方 `sherpa_onnx` 1.13.4；标准 Paraformer、按需下载 Qwen3-ASR、可靠事实录音、双 Engine、模型锁定、Silero VAD、有界预览队列、会议主链、完整音频最终转录、说话人降级、AI 总结证据链和会后数据控制均已落地。iOS 已纳入 P0 并完成工程权限、音频后台模式、平台装配与原生返回导航基线，但尚未形成等价的真机、模型、后台生命周期和安装包审计证据。处理详情会自动使用本场锁定模型生成最终快照，失败时保留事实音频和旧活动结果；用户也可选择当前已安装模型生成独立重转录快照。
 
-Android 侧既有 285 项测试、静态分析和 315,775,937 字节 Debug APK 证据仍有效。UI-00～UI-04 已建立 shadcn/ui Neutral 黑白语义令牌、共享页面组件、会议入口、录音工作台以及处理/结果三视图；结果页已覆盖诚实处理阶段、转录默认只读、显式编辑、总结证据定位播放、Widget Preview 源码、320～1024 px 与 2.0 字体缩放。Step 18 的三态门禁仍保持：证据缺失为 `blocked`，明确不达标为 `noGo`，只有两端适用门槛全部通过才为 `go`。Android 16 x86_64 模拟器和 Mi 10 历史证据不能替代 iOS arm64 真机验证；iOS 设备矩阵、30 分钟后台录音、双模型、系统中断、Dynamic Type/VoiceOver 和安装包审计均未闭环，因此双平台 Alpha 发布为阻塞状态。
+当前共有 304 项测试并通过静态分析；历史报告中的测试数量和 APK 字节数只代表当时构建证据。UI-00～UI-04 已建立 shadcn/ui Neutral 黑白语义令牌、共享页面组件、首页一键会议入口、录音工作台以及处理/结果三视图；结果页已覆盖诚实处理阶段、转录默认只读、显式编辑、总结证据定位播放、Widget Preview 源码、320～1024 px 与 2.0 字体缩放。Step 18 的三态门禁仍保持：证据缺失为 `blocked`，明确不达标为 `noGo`，只有两端适用门槛全部通过才为 `go`。Android 16 x86_64 模拟器和 Mi 10 历史证据不能替代 iOS arm64 真机验证；iOS 设备矩阵、30 分钟后台录音、双模型、系统中断、Dynamic Type/VoiceOver 和安装包审计均未闭环，因此双平台 Alpha 发布为阻塞状态。
 
 ## 维护规则
 

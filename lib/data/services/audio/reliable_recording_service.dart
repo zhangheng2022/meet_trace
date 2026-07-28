@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import '../../../domain/models/meeting_readiness.dart';
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/workflow_states.dart';
 import '../storage/app_file_layout.dart';
@@ -11,8 +12,6 @@ import 'recording_ports.dart';
 import 'recording_session_service.dart';
 
 export 'recording_session_service.dart';
-
-const minimumRecordingFreeBytes = 128 * 1024 * 1024;
 
 final class ReliableRecordingService implements RecordingSessionService {
   ReliableRecordingService({

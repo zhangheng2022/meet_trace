@@ -2,6 +2,7 @@ import 'domain_exception.dart';
 import 'transcript.dart';
 import 'workflow_states.dart';
 
+const pendingMeetingTitle = '待生成标题';
 const _notProvided = Object();
 
 final class Meeting {

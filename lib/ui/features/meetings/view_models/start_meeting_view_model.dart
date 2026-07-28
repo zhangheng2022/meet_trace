@@ -6,12 +6,11 @@ import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../data/services/asr/asr_engine.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
+import '../../../../domain/models/meeting_readiness.dart';
 import '../../../../domain/models/model_installation.dart';
 import '../../../../domain/models/workflow_states.dart';
+import '../../../../domain/use_cases/check_meeting_readiness.dart';
 import '../../../../domain/use_cases/resolve_meeting_model_selection.dart';
-import '../../../core/asr_model_option.dart';
-
-const advancedModelFallbackReason = '用户确认高级模型不可用，改用标准模型';
 
 final class StartedMeetingSession {
   const StartedMeetingSession({required this.meeting, required this.engine});
@@ -20,17 +19,18 @@ final class StartedMeetingSession {
   final AsrEngine engine;
 }
 
+/// 使用全局默认模型直接创建会议，不提供本场标题或模型覆盖。
 final class StartMeetingViewModel extends ChangeNotifier {
   StartMeetingViewModel({
     required this.preferences,
     required this.installations,
     required this.meetings,
     required this.engineFactory,
+    required this.readinessChecker,
     required this.meetingIdFactory,
     required this.now,
     AsrModelRegistry? registry,
     ResolveMeetingModelSelection? resolveSelection,
-    this.actions = const AdvancedModelActions(),
   }) : registry = registry ?? AsrModelRegistry.alpha,
        resolveSelection =
            resolveSelection ??
@@ -43,105 +43,41 @@ final class StartMeetingViewModel extends ChangeNotifier {
   final ActiveModelInstallationRepository installations;
   final MeetingRepository meetings;
   final AsrEngineFactory engineFactory;
+  final MeetingReadinessChecker readinessChecker;
   final String Function() meetingIdFactory;
   final DateTime Function() now;
   final AsrModelRegistry registry;
   final ResolveMeetingModelSelection resolveSelection;
-  AdvancedModelActions actions;
 
   StreamSubscription<List<ModelInstallation>>? _subscription;
   Future<void>? _loadingOperation;
-  List<AsrModelOption> _options = const [];
   Map<String, String> _availableVersions = const {};
   String _defaultModelId;
-  String? _meetingOverrideModelId;
-  String _title = '';
   String? _errorMessage;
   bool _isLoading = true;
   bool _isBusy = false;
-  bool _requiresAdvancedModelAction = false;
   bool _disposed = false;
   StartedMeetingSession? _startedSession;
 
   bool get isLoading => _isLoading;
   bool get isBusy => _isBusy;
-  bool get requiresAdvancedModelAction => _requiresAdvancedModelAction;
   String? get errorMessage => _errorMessage;
   String get defaultModelId => _defaultModelId;
-  String? get meetingOverrideModelId => _meetingOverrideModelId;
-  String get selectedModelId => _meetingOverrideModelId ?? _defaultModelId;
   StartedMeetingSession? get startedSession => _startedSession;
   bool get isModelLocked => _startedSession != null;
-  List<AsrModelOption> get options => List.unmodifiable(_options);
-
-  AsrModelOption get selectedOption => optionFor(selectedModelId);
 
   Future<void> load() => _loadingOperation ??= _load();
-
-  AsrModelOption optionFor(String modelId) {
-    return _options.firstWhere(
-      (option) => option.descriptor.modelId == modelId,
-    );
-  }
-
-  void updateTitle(String value) {
-    _title = value;
-  }
-
-  void chooseModel(String modelId) {
-    if (isModelLocked) {
-      throw StateError('录音开始后模型已经锁定');
-    }
-    registry.requireById(modelId);
-    _meetingOverrideModelId = modelId == _defaultModelId ? null : modelId;
-    _requiresAdvancedModelAction = false;
-    _errorMessage = null;
-    notifyListeners();
-  }
 
   Future<StartedMeetingSession?> start() async {
     if (_isBusy || isModelLocked) {
       return _startedSession;
     }
-    if (_availableVersions[selectedModelId] == null) {
-      _requiresAdvancedModelAction = selectedModelId == qwenAdvancedModelId;
-      _errorMessage = _requiresAdvancedModelAction
-          ? null
-          : '标准模型尚未准备完成，只能继续使用录音能力';
-      notifyListeners();
-      return null;
-    }
     return _startConfirmed();
-  }
-
-  Future<StartedMeetingSession?> useStandardAndStart() {
-    if (selectedModelId != qwenAdvancedModelId ||
-        _availableVersions[selectedModelId] != null) {
-      throw StateError('只有高级模型不可用时才能确认回退');
-    }
-    return _startConfirmed(
-      confirmedFallbackModelId: paraformerStandardModelId,
-      fallbackReason: advancedModelFallbackReason,
-    );
-  }
-
-  Future<void> downloadAdvanced() async {
-    final action = actions.download;
-    if (action == null || _isBusy) {
-      return;
-    }
-    await _runBusy(action);
-  }
-
-  void cancelAdvancedAction() {
-    _requiresAdvancedModelAction = false;
-    actions.cancel?.call();
-    notifyListeners();
   }
 
   Future<void> _load() async {
     _isLoading = true;
-    notifyListeners();
+    _notify();
     try {
       _defaultModelId = await preferences.getDefaultModelId();
       registry.requireById(_defaultModelId);
@@ -194,40 +130,42 @@ final class StartMeetingViewModel extends ChangeNotifier {
       for (final installation in installations)
         '${installation.modelId}@${installation.version}': installation,
     };
-    final options = <AsrModelOption>[];
     final available = <String, String>{};
     for (final descriptor in registry.models) {
       final installation =
           byIdentity['${descriptor.modelId}@${descriptor.version}'];
-      final option = AsrModelOption.fromInstallation(
-        descriptor: descriptor,
-        installation: installation,
-      );
-      options.add(option);
       final activeVersion = await this.installations.getActiveVersion(
         descriptor.modelId,
       );
-      if (option.isInstalled && activeVersion == descriptor.version) {
+      if (installation?.state == ModelInstallationState.installed &&
+          installation?.verifiedAt != null &&
+          activeVersion == descriptor.version) {
         available[descriptor.modelId] = descriptor.version;
       }
     }
-    _options = List.unmodifiable(options);
     _availableVersions = Map.unmodifiable(available);
     _notify();
   }
 
-  Future<StartedMeetingSession?> _startConfirmed({
-    String? confirmedFallbackModelId,
-    String? fallbackReason,
-  }) async {
+  Future<StartedMeetingSession?> _startConfirmed() async {
     StartedMeetingSession? session;
     await _runBusy(() async {
+      final readiness = await readinessChecker.check(
+        requestMicrophonePermission: true,
+      );
+      if (!readiness.canStart) {
+        throw _MeetingStartBlocked(_readinessMessage(readiness));
+      }
+      if (_availableVersions[_defaultModelId] == null) {
+        throw _MeetingStartBlocked(
+          _defaultModelId == qwenAdvancedModelId
+              ? '默认高级模型尚未安装，请先在设置中下载或切换默认模型'
+              : '默认标准模型尚未准备完成，暂时无法开始会议',
+        );
+      }
       final selection = resolveSelection(
         globalDefaultModelId: _defaultModelId,
-        meetingOverrideModelId: _meetingOverrideModelId,
         availableVersions: _availableVersions,
-        confirmedFallbackModelId: confirmedFallbackModelId,
-        fallbackReason: fallbackReason,
       );
       AsrEngine? engine;
       try {
@@ -239,7 +177,7 @@ final class StartMeetingViewModel extends ChangeNotifier {
         final timestamp = now();
         final created = Meeting(
           id: meetingIdFactory(),
-          title: _title.trim().isEmpty ? '未命名会议' : _title.trim(),
+          title: pendingMeetingTitle,
           createdAt: timestamp,
           status: MeetingState.created,
           audioDurationMs: 0,
@@ -252,7 +190,6 @@ final class StartMeetingViewModel extends ChangeNotifier {
         await meetings.save(started);
         session = StartedMeetingSession(meeting: started, engine: engine);
         _startedSession = session;
-        _requiresAdvancedModelAction = false;
       } on Object {
         await engine?.dispose();
         rethrow;
@@ -264,11 +201,13 @@ final class StartMeetingViewModel extends ChangeNotifier {
   Future<void> _runBusy(Future<void> Function() operation) async {
     _isBusy = true;
     _errorMessage = null;
-    notifyListeners();
+    _notify();
     try {
       await operation();
+    } on _MeetingStartBlocked catch (error) {
+      _errorMessage = error.message;
     } on Object {
-      _errorMessage = '会议启动失败，请重试或选择其他模型';
+      _errorMessage = '会议启动失败，请检查录音权限、存储空间和默认模型后重试';
     } finally {
       _isBusy = false;
       _notify();
@@ -287,4 +226,23 @@ final class StartMeetingViewModel extends ChangeNotifier {
     unawaited(_subscription?.cancel());
     super.dispose();
   }
+}
+
+String _readinessMessage(MeetingReadiness readiness) {
+  final firstIssue = readiness.issues.first;
+  return switch (firstIssue) {
+    MeetingReadinessIssue.microphonePermission =>
+      '需要麦克风权限。授权后才能开始会议，未授权时不会创建会议。',
+    MeetingReadinessIssue.insufficientStorage => '存储空间不足。请至少保留 128 MB 可用空间后重试。',
+    MeetingReadinessIssue.defaultModelUnavailable =>
+      readiness.defaultModelId == qwenAdvancedModelId
+          ? '默认高级模型不可用，请先在设置中下载或切换默认模型'
+          : '默认标准模型尚未准备完成，暂时无法开始会议',
+  };
+}
+
+final class _MeetingStartBlocked implements Exception {
+  const _MeetingStartBlocked(this.message);
+
+  final String message;
 }

@@ -336,6 +336,28 @@ void main() {
     await fixture.dispose();
   });
 
+  test('待生成标题的会议在最终转录就绪后自动生成总结和标题', () async {
+    final active = _snapshot(id: 'active');
+    final service = _SummaryService();
+    final fixture = _fixture(
+      _meeting(
+        title: pendingMeetingTitle,
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      summaryService: service,
+    );
+
+    await fixture.viewModel.load();
+
+    expect(service.requests, hasLength(1));
+    expect(fixture.viewModel.meeting.title, '产品评审会');
+    expect(fixture.viewModel.meeting.activeSummaryId, 'summary-active');
+    expect(fixture.viewModel.summaryMessage, contains('会议标题已生成'));
+    await fixture.dispose();
+  });
+
   test('摘要失败不隐藏最终转录且可重试', () async {
     final active = _snapshot(id: 'active');
     final service = _SummaryService(errorCode: 'summary.remote_failed');
@@ -464,13 +486,14 @@ final class _Fixture {
 }
 
 Meeting _meeting({
+  String title = '周会',
   MeetingState status = MeetingState.processing,
   String? activeTranscriptSnapshotId,
   String? activeSummaryId,
 }) {
   return Meeting(
     id: 'meeting-1',
-    title: '周会',
+    title: title,
     createdAt: DateTime.utc(2026, 7, 25),
     startedAt: DateTime.utc(2026, 7, 25, 1),
     endedAt: DateTime.utc(2026, 7, 25, 1, 0, 2),
@@ -575,6 +598,7 @@ final class _SummaryService implements SummaryGenerationService {
       throw SummaryGenerationServiceException(code);
     }
     return GeneratedSummaryDraft(
+      title: '产品评审会',
       overview: '会议概览',
       keyPoints: [
         GeneratedSummaryItem(

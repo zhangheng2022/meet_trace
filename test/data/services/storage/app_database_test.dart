@@ -21,6 +21,7 @@ void main() {
     );
     final tables = tableRows.map((row) => row['name']).toSet();
     final versionRows = await db.rawQuery('PRAGMA user_version');
+    final summaryColumns = await db.rawQuery('PRAGMA table_info(summaries)');
 
     expect(
       tables,
@@ -38,6 +39,7 @@ void main() {
         'model_usage_leases',
       }),
     );
+    expect(summaryColumns.map((column) => column['name']), contains('title'));
     expect(versionRows.single['user_version'], AppDatabase.schemaVersion);
   });
 
@@ -108,6 +110,37 @@ void main() {
 
     expect(settings, hasLength(1));
     expect(marker.single['id'], 1);
+    expect(await db.getVersion(), AppDatabase.schemaVersion);
+  });
+
+  test('现有 v3 摘要升级后补充空标题并保留数据', () async {
+    final root = await Directory.systemTemp.createTemp('meettrace-v3-');
+    addTearDown(() => root.delete(recursive: true));
+    final path = p.join(root.path, 'v3.db');
+    final legacy = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 3,
+        onCreate: (db, _) async {
+          await db.execute(
+            'CREATE TABLE summaries (id TEXT PRIMARY KEY NOT NULL)',
+          );
+          await db.insert('summaries', {'id': 'summary-legacy'});
+        },
+      ),
+    );
+    await legacy.close();
+
+    final database = AppDatabase(
+      databaseFactory: databaseFactoryFfi,
+      path: path,
+    );
+    addTearDown(database.close);
+    final db = await database.open();
+    final rows = await db.query('summaries');
+
+    expect(rows.single['id'], 'summary-legacy');
+    expect(rows.single['title'], '');
     expect(await db.getVersion(), AppDatabase.schemaVersion);
   });
 }

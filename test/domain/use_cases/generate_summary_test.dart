@@ -12,6 +12,7 @@ void main() {
   test('只把最终文本和最小片段元数据发送给生成服务', () async {
     final fixture = _fixture(
       draft: GeneratedSummaryDraft(
+        title: 'Alpha 发布准备会',
         overview: '项目按计划推进。',
         keyPoints: const [
           GeneratedSummaryItem(text: '周五发布', evidenceSegmentIds: ['segment-1']),
@@ -37,9 +38,12 @@ void main() {
       request.toJson().keys,
       unorderedEquals(['schemaVersion', 'segments']),
     );
+    expect(request.toJson()['schemaVersion'], 2);
     expect(request.toJson().toString(), isNot(contains('/audio/')));
     expect(request.toJson().toString(), isNot(contains('audioPath')));
     expect(result.summary.status, SummaryStatus.complete);
+    expect(result.summary.title, 'Alpha 发布准备会');
+    expect(result.meeting.title, 'Alpha 发布准备会');
     expect(result.meeting.activeSummaryId, result.summary.id);
     expect(fixture.tasks.records.last.state, ProcessingState.completed);
   });
@@ -47,6 +51,7 @@ void main() {
   test('证据时间和引用只从本地最终片段生成', () async {
     final fixture = _fixture(
       draft: GeneratedSummaryDraft(
+        title: '发布时间确认',
         overview: '概览',
         keyPoints: const [
           GeneratedSummaryItem(
@@ -69,6 +74,7 @@ void main() {
   test('未知证据 ID 被丢弃且结论标记为待核对', () async {
     final fixture = _fixture(
       draft: GeneratedSummaryDraft(
+        title: '待核对事项',
         overview: '概览',
         keyPoints: const [
           GeneratedSummaryItem(
@@ -182,6 +188,7 @@ _Fixture _fixture({
     draft:
         draft ??
         GeneratedSummaryDraft(
+          title: '自动生成标题',
           overview: '概览',
           keyPoints: const [],
           actionItems: const [],
@@ -337,7 +344,11 @@ final class _SummaryRepository implements SummaryRepository {
     final meeting = meetings.value;
     meetings.value = Meeting(
       id: meeting.id,
-      title: meeting.title,
+      title:
+          meeting.title == pendingMeetingTitle &&
+              summary.title.trim().isNotEmpty
+          ? summary.title.trim()
+          : meeting.title,
       createdAt: meeting.createdAt,
       startedAt: meeting.startedAt,
       endedAt: meeting.endedAt,
@@ -388,7 +399,7 @@ final class _TaskRepository implements ProcessingTaskRepository {
 Meeting _meeting({required String activeSnapshotId}) {
   return Meeting(
     id: 'meeting-1',
-    title: '周会',
+    title: pendingMeetingTitle,
     createdAt: DateTime.utc(2026, 7, 25),
     startedAt: DateTime.utc(2026, 7, 25, 1),
     endedAt: DateTime.utc(2026, 7, 25, 1, 0, 2),

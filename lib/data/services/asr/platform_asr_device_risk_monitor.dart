@@ -4,26 +4,30 @@ import 'dart:io';
 import 'android_proc_asr_device_risk_monitor.dart';
 import 'asr_engine.dart';
 
-enum MobileOperatingSystem { android, ios }
+enum AsrRiskPlatform { android, ios, windows }
 
 AsrDeviceRiskMonitor createPlatformAsrDeviceRiskMonitor({
-  MobileOperatingSystem? operatingSystem,
+  AsrRiskPlatform? platform,
 }) {
-  final resolved = operatingSystem ?? _currentOperatingSystem();
+  final resolved = platform ?? _currentPlatform();
   return switch (resolved) {
-    MobileOperatingSystem.android => AndroidProcAsrDeviceRiskMonitor(),
-    MobileOperatingSystem.ios => PortableAsrDeviceRiskMonitor(),
+    AsrRiskPlatform.android => AndroidProcAsrDeviceRiskMonitor(),
+    AsrRiskPlatform.ios ||
+    AsrRiskPlatform.windows => PortableAsrDeviceRiskMonitor(),
   };
 }
 
-MobileOperatingSystem _currentOperatingSystem() {
+AsrRiskPlatform _currentPlatform() {
   if (Platform.isAndroid) {
-    return MobileOperatingSystem.android;
+    return AsrRiskPlatform.android;
   }
   if (Platform.isIOS) {
-    return MobileOperatingSystem.ios;
+    return AsrRiskPlatform.ios;
   }
-  throw UnsupportedError('会迹仅支持 Android 与 iOS');
+  if (Platform.isWindows) {
+    return AsrRiskPlatform.windows;
+  }
+  throw UnsupportedError('当前平台不支持会迹运行');
 }
 
 /// iOS 的公开 Dart API 无法提供与 Android procfs 等价的整机内存和温控数据。

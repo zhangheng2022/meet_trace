@@ -40,13 +40,17 @@ void main() {
     expect(find.textContaining('标准模型（Paraformer） · 本场已锁定'), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('实时转录正常'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('recording-control-console')),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.text('暂停录音'));
+    await tester.tap(find.text('暂停'));
     await tester.pumpAndSettle();
     expect(find.text('事实录音已暂停'), findsOneWidget);
     expect(find.text('实时转录已随录音暂停'), findsOneWidget);
 
-    await tester.tap(find.text('恢复录音'));
+    await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     fixture.preview.emit(AsrPreviewState.recordingOnly);
     await tester.pump();
@@ -85,7 +89,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('结束并保存会议？'), findsNothing);
 
-    await tester.tap(find.text('结束并保存').last);
+    await tester.tap(find.text('结束会议'));
     await tester.pumpAndSettle();
     expect(find.text('结束并保存会议？'), findsOneWidget);
     await tester.tap(find.text('结束并保存').last);
@@ -120,8 +124,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
-    expect(find.text('暂停录音'), findsOneWidget);
-    expect(find.text('结束并保存'), findsOneWidget);
+    expect(find.text('暂停'), findsOneWidget);
+    expect(find.text('结束会议'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
@@ -147,6 +151,80 @@ void main() {
     expect(find.byType(AppTimeRuler), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('实时转录'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await fixture.dispose();
+  });
+
+  testWidgets('375、414 和 768 宽度下控制台保持单列且无溢出', (WidgetTester tester) async {
+    for (final size in const [
+      Size(375, 812),
+      Size(414, 896),
+      Size(768, 1024),
+    ]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      final fixture = _fixture();
+
+      await tester.pumpWidget(
+        Application(
+          home: RecordingSessionView(
+            viewModel: fixture.viewModel,
+            onFinished: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('recording-compact-layout')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('recording-control-console')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('live-transcript-ledger')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      await fixture.dispose();
+    }
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  });
+
+  testWidgets('实时转录按时间账本显示时标与文本', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1024, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final fixture = _fixture();
+
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    fixture.preview.emitSegment(
+      const TranscriptSegmentEvent(
+        segmentId: 'segment-1',
+        startMs: 4990000,
+        endMs: 4995000,
+        text: '关于本次需求的背景，我们先简单回顾一下。',
+        modelId: paraformerStandardModelId,
+        modelVersion: 'test',
+        isFinalForWindow: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('01:23:10'), findsOneWidget);
+    expect(find.byKey(const ValueKey('transcript-segment-1')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
@@ -263,6 +341,10 @@ final class _PreviewSession implements AsrPreviewSession {
   void emit(AsrPreviewState state) {
     _metrics = _value(state);
     _changes.add(_metrics);
+  }
+
+  void emitSegment(TranscriptSegmentEvent event) {
+    _events.add(event);
   }
 
   @override
