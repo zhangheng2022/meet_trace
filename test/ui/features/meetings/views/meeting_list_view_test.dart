@@ -59,14 +59,18 @@ void main() {
     repository.emit(const []);
     await tester.pump();
 
-    expect(find.textContaining('录音条件已就绪', findRichText: true), findsOneWidget);
+    final title = find.byKey(const ValueKey('recording-setup-title'));
+    final detail = find.byKey(const ValueKey('recording-setup-detail'));
+    expect(find.text('录音条件已就绪'), findsOneWidget);
+    expect(find.text('音频仅保存在本机 · 标准模型（Paraformer）可用'), findsOneWidget);
     expect(
-      find.textContaining('标准模型（Paraformer）可用', findRichText: true),
-      findsOneWidget,
+      tester.getBottomLeft(title).dy,
+      lessThan(tester.getTopLeft(detail).dy),
     );
-    expect(find.textContaining('准备就绪', findRichText: true), findsNothing);
+    expect(find.text('事实音频本地优先 · 实时转录仅供参考'), findsNothing);
+    expect(find.textContaining('准备就绪'), findsNothing);
 
-    await tester.tap(find.textContaining('录音条件已就绪', findRichText: true));
+    await tester.tap(find.text('录音条件已就绪'));
     await tester.pumpAndSettle();
 
     expect(settingsRequested, isTrue);
@@ -90,12 +94,12 @@ void main() {
     repository.emit(const []);
     await tester.pump();
 
-    expect(find.textContaining('无法检查录音条件', findRichText: true), findsOneWidget);
+    expect(find.text('无法检查录音条件'), findsOneWidget);
     readiness.error = null;
-    await tester.tap(find.textContaining('无法检查录音条件', findRichText: true));
+    await tester.tap(find.text('无法检查录音条件'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('录音条件已就绪', findRichText: true), findsOneWidget);
+    expect(find.text('录音条件已就绪'), findsOneWidget);
     expect(readiness.permissionRequests, [false, false]);
     viewModel.dispose();
     await repository.dispose();
@@ -261,6 +265,8 @@ void main() {
     );
     expect(find.text('开始会议'), findsOneWidget);
     expect(find.text('录音中'), findsOneWidget);
+    expect(find.text('录音条件已就绪'), findsOneWidget);
+    expect(find.text('音频仅保存在本机 · 标准模型（Paraformer）可用'), findsOneWidget);
     expect(tester.takeException(), isNull);
     viewModel.dispose();
     await repository.dispose();

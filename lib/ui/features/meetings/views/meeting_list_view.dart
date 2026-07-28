@@ -272,7 +272,6 @@ final class _MeetingHomePane extends StatelessWidget {
           ),
           _MeetingSectionHeader(total: total),
           Expanded(child: body),
-          _LocalFactFooter(onPress: onOpenSettings),
           if (onStartMeeting != null)
             _StartMeetingControl(onPress: onStartMeeting!),
         ],
@@ -315,31 +314,33 @@ final class _RecordingSetupStrip extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: appStyle.spaceMd,
-          vertical: appStyle.spaceSm,
+          vertical: appStyle.spaceXs,
         ),
         child: Row(
           children: [
             Icon(presentation.icon, size: 19),
             SizedBox(width: appStyle.spaceSm),
             Expanded(
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: presentation.title,
-                      style: theme.typography.body.sm.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    presentation.title,
+                    key: const ValueKey('recording-setup-title'),
+                    style: theme.typography.body.sm.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    TextSpan(
-                      text: '  ·  ${presentation.detail}',
-                      style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.mutedForeground,
-                      ),
+                  ),
+                  SizedBox(height: appStyle.space2Xs),
+                  Text(
+                    presentation.detail,
+                    key: const ValueKey('recording-setup-detail'),
+                    style: theme.typography.body.xs.copyWith(
+                      color: theme.colors.mutedForeground,
                     ),
-                  ],
-                ),
-                maxLines: 2,
+                  ),
+                ],
               ),
             ),
             if (onPress != null) ...[
@@ -381,7 +382,7 @@ final class _RecordingSetupStrip extends StatelessWidget {
   MeetingReadinessStatus.ready => (
     icon: FLucideIcons.circleCheck,
     title: '录音条件已就绪',
-    detail: '${readiness.defaultModelName ?? '默认模型'}可用',
+    detail: '音频仅保存在本机 · ${readiness.defaultModelName ?? '默认模型'}可用',
   ),
   MeetingReadinessStatus.microphonePermissionRequired => (
     icon: FLucideIcons.circleAlert,
@@ -445,67 +446,6 @@ final class _MeetingSectionHeader extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-final class _LocalFactFooter extends StatelessWidget {
-  const _LocalFactFooter({required this.onPress});
-
-  final VoidCallback? onPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    final content = DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: theme.colors.border,
-            width: appStyle.dividerWidth,
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: appStyle.spaceMd,
-          vertical: appStyle.spaceSm,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              FLucideIcons.info,
-              size: 16,
-              color: theme.colors.mutedForeground,
-            ),
-            SizedBox(width: appStyle.spaceXs),
-            Expanded(
-              child: Text(
-                '事实音频本地优先 · 实时转录仅供参考',
-                maxLines: 2,
-                style: theme.typography.body.xs.copyWith(
-                  color: theme.colors.mutedForeground,
-                ),
-              ),
-            ),
-            if (onPress != null)
-              Icon(
-                FLucideIcons.chevronRight,
-                size: 18,
-                color: theme.colors.mutedForeground,
-              ),
-          ],
-        ),
-      ),
-    );
-    if (onPress == null) {
-      return content;
-    }
-    return FTappable(
-      semanticsLabel: '查看本地数据说明',
-      onPress: onPress,
-      child: content,
     );
   }
 }
