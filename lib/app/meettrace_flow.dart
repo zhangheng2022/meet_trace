@@ -11,7 +11,7 @@ import '../ui/features/meetings/views/meeting_detail_view.dart';
 import '../ui/features/meetings/views/meeting_list_view.dart';
 import '../ui/features/meetings/views/recording_session_view.dart';
 import '../ui/features/settings/views/model_settings_view.dart';
-import 'application.dart';
+import '../ui/features/startup/views/meettrace_startup_view.dart';
 import 'meettrace_dependencies.dart';
 
 final class MeetTraceBootstrap extends StatefulWidget {
@@ -31,7 +31,7 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
       future: _loading,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return _BootstrapError(
+          return MeetTraceStartupErrorView(
             onRetry: () {
               setState(() {
                 _loading = MeetTraceDependencies.create();
@@ -41,7 +41,7 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
         }
         final dependencies = snapshot.data;
         if (dependencies == null) {
-          return const _BootstrapLoading();
+          return const MeetTraceStartupView();
         }
         _dependencies ??= dependencies;
         return MeetTraceFlow(dependencies: dependencies);
@@ -218,46 +218,5 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
     WidgetsBinding.instance.removeObserver(this);
     _meetingList.dispose();
     super.dispose();
-  }
-}
-
-final class _BootstrapLoading extends StatelessWidget {
-  const _BootstrapLoading();
-
-  @override
-  Widget build(BuildContext context) => const FScaffold(
-    header: FHeader(title: Text(appDisplayName)),
-    child: Center(child: FProgress(semanticsLabel: '正在准备本地模型和数据')),
-  );
-}
-
-final class _BootstrapError extends StatelessWidget {
-  const _BootstrapError({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final appStyle = context.theme.style.app;
-    return FScaffold(
-      header: const FHeader(title: Text(appDisplayName)),
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.all(appStyle.spaceMd),
-          child: FAlert(
-            variant: FAlertVariant.destructive,
-            title: const Text('本地能力准备失败'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('请确认设备空间充足后重试。已有会议数据不会被删除。'),
-                SizedBox(height: appStyle.spaceMd),
-                FButton(onPress: onRetry, child: const Text('重试')),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

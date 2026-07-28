@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-28T03:06:11.570757+00:00",
+  "generated_at": "2026-07-28T03:26:49.595057+00:00",
   "nodes": {
     "_agents_skills_flutter_add_widget_test_skill_writing_flutter_widget_tests": {
       "code_fingerprint": "ecc36bea2093a9f4f004f86f09aa9601930edd8321160a7dd3748af6e7ef9479",
@@ -12,7 +12,7 @@
           "q": "改为中文"
         }
       ],
-      "score": 0.896880399,
+      "score": 0.896583518,
       "source_file": ".agents/skills/flutter-add-widget-test/SKILL.md",
       "status": "tentative",
       "uses": 1
@@ -28,7 +28,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.984785655,
+      "score": 0.984459676,
       "source_file": "lib/theme/colors.dart",
       "status": "tentative",
       "uses": 1
@@ -44,7 +44,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.984785655,
+      "score": 0.984459676,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -60,7 +60,7 @@
           "q": "开始会议按下状态样式异常"
         }
       ],
-      "score": 0.985175366,
+      "score": 0.984849258,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -76,13 +76,13 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.98550305,
+      "score": 0.985176834,
       "source_file": "",
       "status": "tentative",
       "uses": 1
     },
     "design": {
-      "code_fingerprint": "9221a71310a4a5fc6e6a0fb51b4012a0fb47ddca8e8a3786fb30db9048da3489",
+      "code_fingerprint": "854c60d2d6fc6cdcd6c948f488bbfe5dadac8f2158dd1aa054622f22fcd58f8c",
       "label": "DESIGN.md",
       "last": "2026-07-28T02:22:35.799338+00:00",
       "provenance": [
@@ -92,7 +92,7 @@
           "q": "底部的事实音频本地优先，这块还有其他方案吗"
         }
       ],
-      "score": 0.999300741,
+      "score": 0.998969957,
       "source_file": "DESIGN.md",
       "status": "tentative",
       "uses": 1
@@ -108,7 +108,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.983317022,
+      "score": 0.98299153,
       "source_file": "ios/Runner/AppDelegate.swift",
       "status": "tentative",
       "uses": 1
@@ -144,13 +144,13 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 4.924171704,
+      "score": 4.922541729,
       "source_file": "lib/app/application.dart",
       "status": "preferred",
       "uses": 5
     },
     "lib_app_meettrace_dependencies_meettracedependencies": {
-      "code_fingerprint": "dd3c0ef50a892adac065996ba97ea7cac7a7c0f9e3cc1337167bd3e57541231f",
+      "code_fingerprint": "ca1958e6d1aea1878e5f9a9127daa78013043761960685835ab17eaa89bf544d",
       "label": "MeetTraceDependencies",
       "last": "2026-07-27T12:28:44.337625+00:00",
       "provenance": [
@@ -165,7 +165,7 @@
           "q": "查询当前启动异常"
         }
       ],
-      "score": 1.971675197,
+      "score": 1.971022542,
       "source_file": "lib/app/meettrace_dependencies.dart",
       "status": "preferred",
       "uses": 2
@@ -186,7 +186,7 @@
           "q": "查询当前启动异常"
         }
       ],
-      "score": 1.971675197,
+      "score": 1.971022542,
       "source_file": "lib/app/meettrace_flow.dart",
       "status": "preferred",
       "uses": 2
@@ -202,7 +202,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.983317022,
+      "score": 0.98299153,
       "source_file": "lib/data/services/asr/android_proc_asr_device_risk_monitor.dart",
       "status": "tentative",
       "uses": 1
@@ -218,7 +218,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.983317022,
+      "score": 0.98299153,
       "source_file": "lib/data/services/audio/flutter_foreground_recording_lifecycle.dart",
       "status": "tentative",
       "uses": 1
@@ -234,7 +234,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.98550305,
+      "score": 0.985176834,
       "source_file": "lib/data/services/models/platform_download_preflight_providers.dart",
       "status": "tentative",
       "uses": 1
@@ -260,7 +260,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 2.950261612,
+      "score": 2.949285031,
       "source_file": "lib/data/services/storage/app_database.dart",
       "status": "preferred",
       "uses": 3
@@ -276,7 +276,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 0.978586415,
+      "score": 0.978262488,
       "source_file": "lib/data/services/storage/app_file_layout.dart",
       "status": "tentative",
       "uses": 1
@@ -292,7 +292,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.978321443,
+      "score": 0.977997604,
       "source_file": "lib/data/services/vad/bundled_silero_vad_model.dart",
       "status": "tentative",
       "uses": 1
@@ -300,8 +300,13 @@
     "lib_domain_models_meeting_meeting": {
       "code_fingerprint": "95a4b4baf510a153b56a86df9fe1384b8a9729ec425a9146116a80c7f9fc42c7",
       "label": "Meeting",
-      "last": "2026-07-28T03:01:29.218370+00:00",
+      "last": "2026-07-28T03:06:51.294820+00:00",
       "provenance": [
+        {
+          "date": "2026-07-28T03:06:51.294820+00:00",
+          "outcome": "useful",
+          "q": "能左滑删除吗"
+        },
         {
           "date": "2026-07-28T03:01:29.218370+00:00",
           "outcome": "useful",
@@ -318,26 +323,31 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 2.95582375,
+      "score": 3.954524933,
       "source_file": "lib/domain/models/meeting.dart",
       "status": "preferred",
-      "uses": 3
+      "uses": 4
     },
     "lib_domain_use_cases_delete_meeting_deletemeetingusecase": {
-      "code_fingerprint": "c21c8c9c2d792143d41168d1d02ea9c539efceddbbc94d4b1de596d87be55afe",
+      "code_fingerprint": "437058e5bbe3551e98b8b211bdea919079f14ac99968a9db748e1d0eac1da3fc",
       "label": "DeleteMeetingUseCase",
-      "last": "2026-07-28T03:01:29.218370+00:00",
+      "last": "2026-07-28T03:19:33.964626+00:00",
       "provenance": [
+        {
+          "date": "2026-07-28T03:19:33.964626+00:00",
+          "outcome": "useful",
+          "q": "确认：实现会议列表左滑删除"
+        },
         {
           "date": "2026-07-28T03:01:29.218370+00:00",
           "outcome": "useful",
           "q": "列表增加删除功能，先给我方案"
         }
       ],
-      "score": 0.999924497,
+      "score": 1.999477018,
       "source_file": "lib/domain/use_cases/delete_meeting.dart",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "lib_main": {
       "code_fingerprint": "2a19c1974916fd2382ea10b72480cd6cc0b6a19ff933c8a9c01876bb3dc39719",
@@ -355,7 +365,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.793602677,
+      "score": 1.793008968,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
@@ -391,10 +401,26 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 4.925021443,
+      "score": 4.923391187,
       "source_file": "lib/theme/theme.dart",
       "status": "preferred",
       "uses": 5
+    },
+    "lib_ui_core_app_ledger": {
+      "code_fingerprint": "15b475b0b5e6350358d9da7a0773b6db1b9962f61ab209b9039f3d7ed8d28768",
+      "label": "app_ledger.dart",
+      "last": "2026-07-28T03:06:51.294820+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-28T03:06:51.294820+00:00",
+          "outcome": "useful",
+          "q": "能左滑删除吗"
+        }
+      ],
+      "score": 0.999679604,
+      "source_file": "lib/ui/core/app_ledger.dart",
+      "status": "tentative",
+      "uses": 1
     },
     "lib_ui_core_app_ledger_appledgerrow": {
       "code_fingerprint": "15b475b0b5e6350358d9da7a0773b6db1b9962f61ab209b9039f3d7ed8d28768",
@@ -407,7 +433,7 @@
           "q": "列表增加删除功能，先给我方案"
         }
       ],
-      "score": 0.999924497,
+      "score": 0.999593507,
       "source_file": "lib/ui/core/app_ledger.dart",
       "status": "tentative",
       "uses": 1
@@ -423,8 +449,24 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 0.977713686,
+      "score": 0.977390048,
       "source_file": "lib/ui/core/app_page_body.dart",
+      "status": "tentative",
+      "uses": 1
+    },
+    "lib_ui_core_app_swipe_action_row_appswipeactionrow": {
+      "code_fingerprint": "19c41623b2f99455c81ac036028978cce7c962f31c519321e532d70d243d3918",
+      "label": "AppSwipeActionRow",
+      "last": "2026-07-28T03:19:33.964626+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-28T03:19:33.964626+00:00",
+          "outcome": "useful",
+          "q": "确认：实现会议列表左滑删除"
+        }
+      ],
+      "score": 0.999883511,
+      "source_file": "lib/ui/core/app_swipe_action_row.dart",
       "status": "tentative",
       "uses": 1
     },
@@ -444,45 +486,55 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.955899254,
+      "score": 1.955251822,
       "source_file": "lib/ui/core/view_state.dart",
       "status": "preferred",
       "uses": 2
     },
     "lib_ui_features_meetings_view_models_meeting_list_view_model_meetinglistviewmodel": {
-      "code_fingerprint": "b90d644b62f31d0dbb1551934750e471407c05f8f25312e360cdf16407eaa1d8",
+      "code_fingerprint": "ffefe0511f2335a962af9d5c2f87a48160ca8d1dcaeb25e58febad32ff02c96f",
       "label": "MeetingListViewModel",
-      "last": "2026-07-28T03:01:29.218370+00:00",
+      "last": "2026-07-28T03:19:33.964626+00:00",
       "provenance": [
+        {
+          "date": "2026-07-28T03:19:33.964626+00:00",
+          "outcome": "useful",
+          "q": "确认：实现会议列表左滑删除"
+        },
         {
           "date": "2026-07-28T03:01:29.218370+00:00",
           "outcome": "useful",
           "q": "列表增加删除功能，先给我方案"
         }
       ],
-      "score": 0.999924497,
+      "score": 1.999477018,
       "source_file": "lib/ui/features/meetings/view_models/meeting_list_view_model.dart",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "lib_ui_features_meetings_views_meeting_list_view_meetinglistview": {
-      "code_fingerprint": "4e199ddde18656a6477af95293382b2b084217e2b3c80464661887487a808b3a",
+      "code_fingerprint": "73eccbc55a2dcf561f729c1f826ff3c110044804ddf3f011f8d557ab96eea655",
       "label": "MeetingListView",
-      "last": "2026-07-27T12:28:44.337625+00:00",
+      "last": "2026-07-28T03:19:33.964626+00:00",
       "provenance": [
+        {
+          "date": "2026-07-28T03:19:33.964626+00:00",
+          "outcome": "useful",
+          "q": "确认：实现会议列表左滑删除"
+        },
         {
           "date": "2026-07-27T12:28:44.337625+00:00",
           "outcome": "useful",
           "q": "修复当前启动异常"
         }
       ],
-      "score": 0.986019831,
+      "score": 1.985576955,
       "source_file": "lib/ui/features/meetings/views/meeting_list_view.dart",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "lib_ui_features_meetings_views_meeting_list_view_readiness": {
-      "code_fingerprint": "4e199ddde18656a6477af95293382b2b084217e2b3c80464661887487a808b3a",
+      "code_fingerprint": "73eccbc55a2dcf561f729c1f826ff3c110044804ddf3f011f8d557ab96eea655",
       "label": "readiness",
       "last": "2026-07-28T02:51:17.711483+00:00",
       "provenance": [
@@ -492,7 +544,7 @@
           "q": "重新排版首页录音条件预检条"
         }
       ],
-      "score": 0.999760995,
+      "score": 0.999430059,
       "source_file": "lib/ui/features/meetings/views/meeting_list_view.dart",
       "status": "tentative",
       "uses": 1
@@ -508,7 +560,7 @@
           "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
         }
       ],
-      "score": 0.978185568,
+      "score": 0.977861774,
       "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
       "status": "tentative",
       "uses": 1
@@ -524,7 +576,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.896753296,
+      "score": 0.896456457,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -540,7 +592,7 @@
           "q": "修复当前启动异常"
         }
       ],
-      "score": 0.986019831,
+      "score": 0.985693443,
       "source_file": "PRODUCT.md",
       "status": "tentative",
       "uses": 1
@@ -561,7 +613,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 1.966333268,
+      "score": 1.965682382,
       "source_file": "web/manifest.json",
       "status": "preferred",
       "uses": 2
@@ -577,7 +629,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.98550305,
+      "score": 0.985176834,
       "source_file": "windows/flutter/generated_plugin_registrant.cc",
       "status": "tentative",
       "uses": 1
