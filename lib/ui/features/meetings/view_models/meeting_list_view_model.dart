@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/meeting_readiness.dart';
 import '../../../../domain/models/workflow_states.dart';
+import '../../../../domain/ports/repositories.dart';
 import '../../../../domain/use_cases/check_meeting_readiness.dart';
 import '../../../../domain/use_cases/delete_meeting.dart';
 import '../../../core/view_state.dart';

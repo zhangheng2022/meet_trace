@@ -7,11 +7,11 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
-import '../../../../data/services/audio/evidence_playback_service.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/speaker_diarization.dart';
 import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
+import '../../../../domain/ports/evidence_playback.dart';
 import '../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../theme/theme.dart';

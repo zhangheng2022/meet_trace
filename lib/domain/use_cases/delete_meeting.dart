@@ -1,6 +1,6 @@
-import '../../data/repositories/repository_contracts.dart';
 import '../models/domain_exception.dart';
 import '../models/workflow_states.dart';
+import '../ports/repositories.dart';
 
 abstract interface class MeetingFileDeletionService {
   Future<StagedMeetingDeletion> stage(String meetingId);

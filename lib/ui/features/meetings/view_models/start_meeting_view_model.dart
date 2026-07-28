@@ -2,52 +2,27 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../../data/repositories/repository_contracts.dart';
-import '../../../../data/services/asr/asr_engine.dart';
 import '../../../../domain/models/asr_model_registry.dart';
-import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/meeting_readiness.dart';
 import '../../../../domain/models/model_installation.dart';
 import '../../../../domain/models/workflow_states.dart';
-import '../../../../domain/use_cases/check_meeting_readiness.dart';
-import '../../../../domain/use_cases/resolve_meeting_model_selection.dart';
-
-final class StartedMeetingSession {
-  const StartedMeetingSession({required this.meeting, required this.engine});
-
-  final Meeting meeting;
-  final AsrEngine engine;
-}
+import '../../../../domain/ports/repositories.dart';
+import '../../../../domain/use_cases/start_meeting.dart';
 
 /// 使用全局默认模型直接创建会议，不提供本场标题或模型覆盖。
 final class StartMeetingViewModel extends ChangeNotifier {
   StartMeetingViewModel({
     required this.preferences,
     required this.installations,
-    required this.meetings,
-    required this.engineFactory,
-    required this.readinessChecker,
-    required this.meetingIdFactory,
-    required this.now,
+    required this.startMeeting,
     AsrModelRegistry? registry,
-    ResolveMeetingModelSelection? resolveSelection,
   }) : registry = registry ?? AsrModelRegistry.alpha,
-       resolveSelection =
-           resolveSelection ??
-           ResolveMeetingModelSelection(
-             registry: registry ?? AsrModelRegistry.alpha,
-           ),
        _defaultModelId = (registry ?? AsrModelRegistry.alpha).defaultModelId;
 
   final ModelPreferenceRepository preferences;
   final ActiveModelInstallationRepository installations;
-  final MeetingRepository meetings;
-  final AsrEngineFactory engineFactory;
-  final MeetingReadinessChecker readinessChecker;
-  final String Function() meetingIdFactory;
-  final DateTime Function() now;
+  final StartMeetingUseCase startMeeting;
   final AsrModelRegistry registry;
-  final ResolveMeetingModelSelection resolveSelection;
 
   StreamSubscription<List<ModelInstallation>>? _subscription;
   Future<void>? _loadingOperation;
@@ -150,50 +125,11 @@ final class StartMeetingViewModel extends ChangeNotifier {
   Future<StartedMeetingSession?> _startConfirmed() async {
     StartedMeetingSession? session;
     await _runBusy(() async {
-      final readiness = await readinessChecker.check(
-        requestMicrophonePermission: true,
-      );
-      if (!readiness.canStart) {
-        throw _MeetingStartBlocked(_readinessMessage(readiness));
-      }
-      if (_availableVersions[_defaultModelId] == null) {
-        throw _MeetingStartBlocked(
-          _defaultModelId == qwenAdvancedModelId
-              ? '默认高级模型尚未安装，请先在设置中下载或切换默认模型'
-              : '默认标准模型尚未准备完成，暂时无法开始会议',
-        );
-      }
-      final selection = resolveSelection(
-        globalDefaultModelId: _defaultModelId,
+      session = await startMeeting.execute(
+        defaultModelId: _defaultModelId,
         availableVersions: _availableVersions,
       );
-      AsrEngine? engine;
-      try {
-        engine = await engineFactory.create(
-          modelId: selection.recordingModelId,
-          modelVersion: selection.recordingModelVersion,
-        );
-        await engine.initialize();
-        final timestamp = now();
-        final created = Meeting(
-          id: meetingIdFactory(),
-          title: pendingMeetingTitle,
-          createdAt: timestamp,
-          status: MeetingState.created,
-          audioDurationMs: 0,
-          requestedModelId: selection.requestedModelId,
-          recordingModelId: selection.recordingModelId,
-          recordingModelVersion: selection.recordingModelVersion,
-          modelFallbackReason: selection.fallbackReason,
-        );
-        final started = created.startRecording(startedAt: timestamp);
-        await meetings.save(started);
-        session = StartedMeetingSession(meeting: started, engine: engine);
-        _startedSession = session;
-      } on Object {
-        await engine?.dispose();
-        rethrow;
-      }
+      _startedSession = session;
     });
     return session;
   }
@@ -204,8 +140,8 @@ final class StartMeetingViewModel extends ChangeNotifier {
     _notify();
     try {
       await operation();
-    } on _MeetingStartBlocked catch (error) {
-      _errorMessage = error.message;
+    } on StartMeetingBlocked catch (error) {
+      _errorMessage = _startBlockedMessage(error);
     } on Object {
       _errorMessage = '会议启动失败，请检查录音权限、存储空间和默认模型后重试';
     } finally {
@@ -228,6 +164,15 @@ final class StartMeetingViewModel extends ChangeNotifier {
   }
 }
 
+String _startBlockedMessage(StartMeetingBlocked error) {
+  return switch (error.reason) {
+    StartMeetingBlockReason.readiness => _readinessMessage(error.readiness!),
+    StartMeetingBlockReason.advancedModelUnavailable =>
+      '默认高级模型尚未安装，请先在设置中下载或切换默认模型',
+    StartMeetingBlockReason.standardModelUnavailable => '默认标准模型尚未准备完成，暂时无法开始会议',
+  };
+}
+
 String _readinessMessage(MeetingReadiness readiness) {
   final firstIssue = readiness.issues.first;
   return switch (firstIssue) {
@@ -239,10 +184,4 @@ String _readinessMessage(MeetingReadiness readiness) {
           ? '默认高级模型不可用，请先在设置中下载或切换默认模型'
           : '默认标准模型尚未准备完成，暂时无法开始会议',
   };
-}
-
-final class _MeetingStartBlocked implements Exception {
-  const _MeetingStartBlocked(this.message);
-
-  final String message;
 }

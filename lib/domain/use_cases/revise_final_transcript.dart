@@ -1,7 +1,7 @@
-import '../../data/repositories/repository_contracts.dart';
 import '../models/meeting.dart';
 import '../models/transcript.dart';
 import '../models/workflow_states.dart';
+import '../ports/repositories.dart';
 
 final class TranscriptSegmentRevision {
   const TranscriptSegmentRevision({

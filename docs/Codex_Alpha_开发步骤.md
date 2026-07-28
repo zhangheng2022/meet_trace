@@ -56,7 +56,7 @@ Step 00、Step 02～16 已完成；Step 01 的代码与 Mi 10 技术验证已完
 
 ## 3. 不可破坏的工程规则
 
-- 架构固定为 `View → ViewModel → Repository → Service`。
+- 架构固定为 `View → ViewModel → Use Case / Port → Repository / Service 实现`。
 - UI 不直接依赖 ONNX、HTTP、数据库或文件系统。
 - 本地完整音频是唯一事实源。
 - 每个音频块先持久化，再投递 ASR。
@@ -108,6 +108,7 @@ lib/
       settings/{views,view_models}/
   domain/
     models/
+    ports/
     use_cases/
   data/
     models/

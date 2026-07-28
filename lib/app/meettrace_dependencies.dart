@@ -11,10 +11,8 @@ import '../data/repositories/sqflite_processing_task_repository.dart';
 import '../data/repositories/sqflite_summary_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
-import '../data/services/asr/final_transcription_service.dart';
 import '../data/services/asr/platform_asr_device_risk_monitor.dart';
 import '../data/services/asr/sherpa_onnx_asr_engine_factory.dart';
-import '../data/services/diarization/speaker_diarization_coordinator.dart';
 import '../data/services/diarization/speaker_diarization_service.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/platform_recording_foreground_lifecycle.dart';
@@ -46,7 +44,11 @@ import '../domain/models/model_manifest.dart';
 import '../domain/use_cases/delete_meeting.dart';
 import '../domain/use_cases/check_meeting_readiness.dart';
 import '../domain/use_cases/generate_summary.dart';
+import '../domain/use_cases/manage_recording_session.dart';
 import '../domain/use_cases/revise_final_transcript.dart';
+import '../domain/use_cases/run_final_transcription.dart';
+import '../domain/use_cases/run_speaker_diarization.dart';
+import '../domain/use_cases/start_meeting.dart';
 import '../ui/core/asr_model_option.dart';
 import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
 import '../ui/features/meetings/view_models/meeting_detail_view_model.dart';
@@ -54,6 +56,8 @@ import '../ui/features/meetings/view_models/recording_session_view_model.dart';
 import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
+
+part 'meettrace_dependency_factories.dart';
 
 final class MeetTraceDependencies {
   MeetTraceDependencies._({
@@ -233,133 +237,6 @@ final class MeetTraceDependencies {
       }
       Error.throwWithStackTrace(error, stackTrace);
     }
-  }
-
-  MeetingListViewModel createMeetingListViewModel() {
-    return MeetingListViewModel(
-      meetings: meetings,
-      readinessChecker: meetingReadiness,
-      deletion: DeleteMeetingUseCase(
-        meetings: meetings,
-        files: MeetingDirectoryDeletionService(layout: fileLayout),
-      ),
-    );
-  }
-
-  MeetingDetailViewModel createMeetingDetailViewModel(Meeting meeting) {
-    final sharing = const SharePlusTextShareService();
-    return MeetingDetailViewModel(
-      meeting: meeting,
-      meetings: meetings,
-      transcripts: transcripts,
-      installations: installations,
-      transcription: finalTranscription,
-      diarization: diarization,
-      diarizationPreferences: diarizationPreferences,
-      processingTasks: processingTasks,
-      summaries: summaries,
-      summaryGeneration: summaryGeneration,
-      transcriptRevision: ReviseFinalTranscriptUseCase(
-        meetings: meetings,
-        transcripts: transcripts,
-        now: DateTime.now,
-      ),
-      sharing: sharing,
-      deletion: DeleteMeetingUseCase(
-        meetings: meetings,
-        files: MeetingDirectoryDeletionService(layout: fileLayout),
-      ),
-      playback: PcmEvidencePlaybackService(
-        output: AudioplayersDeviceAudioOutput(),
-        temporaryDirectory: fileLayout.rootPath,
-      ),
-    );
-  }
-
-  ModelSettingsViewModel createModelSettingsViewModel() {
-    final advanced = registry.requireById(qwenAdvancedModelId);
-    final manifest = modelManifest.models.singleWhere(
-      (entry) => entry.modelId == advanced.modelId,
-    );
-    ModelDownloadCancellationToken? cancellation;
-
-    Future<void> download() async {
-      cancellation = ModelDownloadCancellationToken();
-      try {
-        await modelDownloads.download(
-          descriptor: advanced,
-          manifest: manifest,
-          cancellation: cancellation,
-        );
-      } finally {
-        cancellation = null;
-      }
-    }
-
-    return ModelSettingsViewModel(
-      preferences: preferences,
-      installations: installations,
-      registry: registry,
-      actions: AdvancedModelActions(
-        download: download,
-        cancel: () => cancellation?.cancel(),
-        retry: download,
-        delete: () async {
-          await modelDownloads.delete(descriptor: advanced);
-          if (await preferences.getDefaultModelId() == advanced.modelId) {
-            await preferences.setDefaultModelId(registry.defaultModelId);
-          }
-        },
-      ),
-    );
-  }
-
-  DataControlsViewModel createDataControlsViewModel() {
-    return DataControlsViewModel(
-      dataControl: LocalDataControlService(
-        layout: fileLayout,
-        meetings: meetings,
-        installations: installations,
-      ),
-      sharing: const SharePlusTextShareService(),
-    );
-  }
-
-  StartMeetingViewModel createStartMeetingViewModel() {
-    return StartMeetingViewModel(
-      preferences: preferences,
-      installations: installations,
-      meetings: meetings,
-      engineFactory: engineFactory,
-      readinessChecker: meetingReadiness,
-      meetingIdFactory: () =>
-          'meeting-${DateTime.now().microsecondsSinceEpoch}',
-      now: DateTime.now,
-    );
-  }
-
-  RecordingSessionViewModel createRecordingSessionViewModel(
-    StartedMeetingSession session,
-  ) {
-    final preview = AsrPreviewCoordinator(
-      vad: SileroVadSegmenter.official(modelPath: vadModelPath),
-      engine: session.engine,
-    );
-    final recording = ReliableRecordingService(
-      capture: RecordPcmAudioCapture(),
-      layout: fileLayout,
-      checkpoints: JsonRecordingCheckpointStore(fileLayout),
-      storageCapacity: const DeviceRecordingStorageCapacityProvider(),
-      foreground: createRecordingForegroundLifecycle(),
-      previewSink: preview,
-    );
-    return RecordingSessionViewModel(
-      session: session,
-      meetings: meetings,
-      recording: recording,
-      preview: preview,
-      now: DateTime.now,
-    );
   }
 
   Future<void> dispose() async {

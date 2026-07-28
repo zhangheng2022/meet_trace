@@ -1,10 +1,9 @@
 import 'package:share_plus/share_plus.dart';
 
+import '../../../domain/ports/text_share.dart';
 import '../../../domain/use_cases/build_meeting_share.dart';
 
-abstract interface class TextShareService {
-  Future<void> share(MeetingShareDocument document);
-}
+export '../../../domain/ports/text_share.dart';
 
 final class SharePlusTextShareService implements TextShareService {
   const SharePlusTextShareService();

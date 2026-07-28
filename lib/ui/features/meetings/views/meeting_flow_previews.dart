@@ -5,11 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../../../../app/application.dart';
-import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/meeting_readiness.dart';
 import '../../../../domain/models/workflow_states.dart';
+import '../../../../domain/ports/repositories.dart';
 import '../../../../domain/use_cases/check_meeting_readiness.dart';
 import '../../../../domain/use_cases/delete_meeting.dart';
 import '../view_models/meeting_list_view_model.dart';

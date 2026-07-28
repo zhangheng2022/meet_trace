@@ -1,11 +1,8 @@
 import '../../../domain/models/audio_source.dart';
 import '../../../domain/models/speaker_diarization.dart';
+import '../../../domain/ports/speaker_diarization.dart';
 
-abstract interface class SpeakerDiarizationService {
-  SpeakerDiarizationCapability get capability;
-
-  Future<List<SpeakerTurn>> diarize(AudioSource source);
-}
+export '../../../domain/ports/speaker_diarization.dart';
 
 /// 当前 Alpha 未配置经过发布校验的本地说话人模型，显式关闭能力。
 ///

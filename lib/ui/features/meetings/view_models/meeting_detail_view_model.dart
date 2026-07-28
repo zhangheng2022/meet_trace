@@ -2,12 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' hide Summary;
 
-import '../../../../data/repositories/repository_contracts.dart';
-import '../../../../data/services/asr/asr_engine.dart';
-import '../../../../data/services/asr/final_transcription_service.dart';
-import '../../../../data/services/audio/evidence_playback_service.dart';
-import '../../../../data/services/diarization/speaker_diarization_coordinator.dart';
-import '../../../../data/services/sharing/text_share_service.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
@@ -17,6 +11,12 @@ import '../../../../domain/models/speaker_diarization.dart';
 import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
+import '../../../../domain/ports/asr_engine.dart';
+import '../../../../domain/ports/evidence_playback.dart';
+import '../../../../domain/ports/final_transcription.dart';
+import '../../../../domain/ports/repositories.dart';
+import '../../../../domain/ports/speaker_diarization.dart';
+import '../../../../domain/ports/text_share.dart';
 import '../../../../domain/use_cases/generate_summary.dart';
 import '../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../domain/use_cases/delete_meeting.dart';

@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../../data/services/sharing/text_share_service.dart';
-import '../../../../data/services/storage/local_data_control_service.dart';
 import '../../../../domain/models/data_control.dart';
+import '../../../../domain/ports/local_data_control.dart';
+import '../../../../domain/ports/text_share.dart';
 import '../../../../domain/use_cases/build_meeting_share.dart';
 
 final class DataControlsViewModel extends ChangeNotifier {
   DataControlsViewModel({required this.dataControl, required this.sharing});
 
-  final LocalDataControlService dataControl;
+  final LocalDataControlPort dataControl;
   final TextShareService sharing;
 
   LocalStorageUsage? _usage;

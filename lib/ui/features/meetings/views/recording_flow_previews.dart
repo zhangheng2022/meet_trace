@@ -7,10 +7,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../../../../app/application.dart';
-import '../../../../data/repositories/repository_contracts.dart';
-import '../../../../data/services/asr/asr_engine.dart';
-import '../../../../data/services/asr/asr_preview_session.dart';
-import '../../../../data/services/audio/recording_session_service.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/asr_preview.dart';
@@ -18,8 +14,13 @@ import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/recording.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
+import '../../../../domain/ports/asr_engine.dart';
+import '../../../../domain/ports/asr_preview_session.dart';
+import '../../../../domain/ports/recording_session.dart';
+import '../../../../domain/ports/repositories.dart';
+import '../../../../domain/use_cases/manage_recording_session.dart';
+import '../../../../domain/use_cases/start_meeting.dart';
 import '../view_models/recording_session_view_model.dart';
-import '../view_models/start_meeting_view_model.dart';
 import 'recording_session_view.dart';
 
 @Preview(name: '录音工作台 · 375', group: 'UI-03 录音工作台', size: Size(375, 800))
@@ -47,6 +48,8 @@ Widget _recordingPreview(AsrPreviewState state) {
     recordingModelId: descriptor.modelId,
     recordingModelVersion: descriptor.version,
   );
+  final recording = _PreviewRecordingService();
+  final preview = _PreviewSession(state);
   return Application(
     home: RecordingSessionView(
       viewModel: RecordingSessionViewModel(
@@ -54,10 +57,14 @@ Widget _recordingPreview(AsrPreviewState state) {
           meeting: meeting,
           engine: _PreviewAsrEngine(descriptor),
         ),
-        meetings: const _PreviewMeetingRepository(),
-        recording: _PreviewRecordingService(),
-        preview: _PreviewSession(state),
-        now: () => DateTime(2026, 7, 25, 9, 44, 28),
+        recording: recording,
+        preview: preview,
+        sessionLifecycle: ManageRecordingSessionUseCase(
+          meetings: const _PreviewMeetingRepository(),
+          recording: recording,
+          preview: preview,
+          now: () => DateTime(2026, 7, 25, 9, 44, 28),
+        ),
         tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
       ),
       onFinished: (_) {},

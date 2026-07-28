@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 
 import '../domain/models/meeting.dart';
+import '../domain/use_cases/start_meeting.dart';
 import '../theme/theme.dart';
 import '../ui/features/meetings/view_models/meeting_list_view_model.dart';
-import '../ui/features/meetings/view_models/start_meeting_view_model.dart';
 import '../ui/features/meetings/views/meeting_detail_view.dart';
 import '../ui/features/meetings/views/meeting_list_view.dart';
 import '../ui/features/meetings/views/recording_session_view.dart';

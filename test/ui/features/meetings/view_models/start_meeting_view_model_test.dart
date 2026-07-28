@@ -3,6 +3,7 @@ import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/start_meeting.dart';
 import 'package:meettrace/ui/features/meetings/view_models/start_meeting_view_model.dart';
 
 import '../../../../support/model_selection_fakes.dart';
@@ -115,10 +116,12 @@ StartMeetingViewModel _viewModel(
   return StartMeetingViewModel(
     preferences: preferences,
     installations: installations,
-    meetings: meetings,
-    engineFactory: factory,
-    readinessChecker: readiness ?? TestMeetingReadinessChecker(),
-    meetingIdFactory: () => 'meeting-step-11',
-    now: () => DateTime.utc(2026, 7, 24, 9),
+    startMeeting: StartMeetingUseCase(
+      meetings: meetings,
+      engineFactory: factory,
+      readinessChecker: readiness ?? TestMeetingReadinessChecker(),
+      meetingIdFactory: () => 'meeting-step-11',
+      now: () => DateTime.utc(2026, 7, 24, 9),
+    ),
   );
 }

@@ -7,8 +7,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../../../../app/application.dart';
-import '../../../../data/repositories/repository_contracts.dart';
-import '../../../../data/services/asr/final_transcription_service.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
@@ -16,6 +14,8 @@ import '../../../../domain/models/model_installation.dart';
 import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
+import '../../../../domain/ports/final_transcription.dart';
+import '../../../../domain/ports/repositories.dart';
 import '../view_models/meeting_detail_view_model.dart';
 import 'meeting_detail_view.dart';
 

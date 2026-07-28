@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/model_installation.dart';
+import '../../../../domain/ports/repositories.dart';
 import '../../../core/asr_model_option.dart';
 
 final class ModelSettingsViewModel extends ChangeNotifier {

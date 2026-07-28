@@ -11,8 +11,9 @@ import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/recording.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/manage_recording_session.dart';
+import 'package:meettrace/domain/use_cases/start_meeting.dart';
 import 'package:meettrace/ui/features/meetings/view_models/recording_session_view_model.dart';
-import 'package:meettrace/ui/features/meetings/view_models/start_meeting_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/recording_session_view.dart';
 import 'package:meettrace/ui/core/app_ledger.dart';
 
@@ -292,10 +293,14 @@ _Fixture _fixture() {
       meeting: meeting,
       engine: TestAsrEngine(descriptor),
     ),
-    meetings: meetings,
     recording: recording,
     preview: preview,
-    now: () => DateTime.utc(2026, 7, 24, 1, 30),
+    sessionLifecycle: ManageRecordingSessionUseCase(
+      meetings: meetings,
+      recording: recording,
+      preview: preview,
+      now: () => DateTime.utc(2026, 7, 24, 1, 30),
+    ),
     tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
   );
   return _Fixture(

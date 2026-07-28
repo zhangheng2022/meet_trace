@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import '../../data/repositories/repository_contracts.dart';
-import '../../data/services/summary/summary_generation_service.dart';
 import '../models/meeting.dart';
 import '../models/processing_task.dart';
 import '../models/summary.dart';
 import '../models/transcript.dart';
 import '../models/workflow_states.dart';
+import '../ports/repositories.dart';
+import '../ports/summary_generation.dart';
 
 final class SummaryGenerationResult {
   const SummaryGenerationResult({required this.meeting, required this.summary});

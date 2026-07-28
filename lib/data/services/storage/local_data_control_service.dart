@@ -1,11 +1,12 @@
 import 'dart:io';
 
 import '../../../domain/models/data_control.dart';
+import '../../../domain/ports/local_data_control.dart';
 import '../../repositories/repository_contracts.dart';
 import 'app_file_layout.dart';
 import 'device_free_space_service.dart';
 
-final class LocalDataControlService {
+final class LocalDataControlService implements LocalDataControlPort {
   const LocalDataControlService({
     required this.layout,
     required this.meetings,
@@ -20,6 +21,7 @@ final class LocalDataControlService {
   final DeviceFreeSpaceService freeSpace;
   final DateTime Function() now;
 
+  @override
   Future<LocalStorageUsage> measure() async {
     final meetingBytes = await _sizeOf(Directory(layout.meetingsRoot));
     final modelBytes = await _sizeOf(Directory(layout.modelsRoot));
@@ -34,6 +36,7 @@ final class LocalDataControlService {
     );
   }
 
+  @override
   Future<DiagnosticReport> buildDiagnostics() async {
     final usage = await measure();
     final meetingRecords = await meetings.watchAll().first;

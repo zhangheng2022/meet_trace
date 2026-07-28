@@ -15,14 +15,14 @@
 
 ## 架构与项目结构
 
-遵循 `View → ViewModel → Repository → Service`：
+遵循 `View → ViewModel → Use Case / Port → Repository / Service 实现`：
 
 - `lib/ui/features/<feature>/{views,view_models}/`：精简页面和展示状态。
 - `lib/ui/core/`：共享 Forui 组件和 UI 工具。
-- `lib/domain/{models,use_cases}/`：业务概念和可复用编排。
-- `lib/data/{models,repositories,services}/`：持久化、HTTP、音频、模型管理和 ASR 适配器。
+- `lib/domain/{models,ports,use_cases}/`：业务概念、纯 Dart 能力端口和可复用编排。
+- `lib/data/{models,repositories,services}/`：端口实现，以及持久化、HTTP、音频、模型管理和 ASR 适配器。
 
-UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
+Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
 
 ## Forui 优先
 

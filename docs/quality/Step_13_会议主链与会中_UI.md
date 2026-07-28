@@ -15,7 +15,7 @@
 
 ## 关键边界
 
-- `View → ViewModel → Repository → Service`：页面不访问 SQLite、文件、录音插件或 ONNX。
+- `View → ViewModel → Use Case / Port → Repository / Service 实现`：页面不访问 SQLite、文件、录音插件或 ONNX。
 - 事实音频和预览仍为两条独立执行链；预览进入 `recordingOnly` 不会停止录音。
 - 本场锁定的一个 Engine 同时服务会中预览；任何风险或错误都不自动切换模型。
 - 高级模型风险门槛：总内存 `< 4 GiB`、可用内存 `< 512 MiB` 或温度 `≥ 80°C` 阻止推理；不可读维度保持 unknown。

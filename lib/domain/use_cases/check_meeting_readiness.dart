@@ -1,8 +1,8 @@
-import '../../data/repositories/repository_contracts.dart';
 import '../models/asr_model_registry.dart';
 import '../models/meeting_readiness.dart';
 import '../models/model_installation.dart';
 import '../models/workflow_states.dart';
+import '../ports/repositories.dart';
 
 final class RecordingDeviceReadiness {
   const RecordingDeviceReadiness({
