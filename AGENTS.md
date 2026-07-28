@@ -6,7 +6,12 @@
 
 ## 产品边界
 
-会迹（MeetTrace）是 Android + iOS 自适应 Alpha，不提供登录或跨设备同步。双平台排期以 PRD 门槛确认后的评估为准，不继承原 Android 两周交付假设。本地音频是唯一事实源；推理变慢或失败时，录音必须继续。端侧 ASR 使用 sherpa-onnx 双模型：内置标准模型 `sherpa-onnx-paraformer-zh-small-2024-03-09` INT8，高级模型 `sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25` 按需下载。设置保存全局默认，首页开始会议时直接使用该默认模型，不提供本场覆盖；录音开始后模型锁定，所选模型同时负责会中和最终转录，不得自动切换或混合输出。新会议先使用“待生成标题”，最终转录完成后由 AI 总结生成会议标题。AI 总结只能基于最终转录；使用云端 AI 时仅上传最终文本，并为关键结论保留带时间戳的原文证据。说话人分离属于可降级能力。扩展 P0 前必须先更新 PRD。
+- 会迹（MeetTrace）是 Android + iOS 自适应 Alpha，不提供登录或跨设备同步；双平台排期以 PRD 门槛评估为准，不继承原 Android 两周假设。
+- 本地音频是唯一事实源；推理变慢或失败时，录音必须继续。说话人分离属于可降级能力。
+- 端侧 ASR 仅使用官方 sherpa-onnx 双模型：内置标准模型 `sherpa-onnx-paraformer-zh-small-2024-03-09` INT8，高级模型 `sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25` 按需下载。
+- 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
+- 新会议使用“待生成标题”，最终转录完成后由 AI 总结生成标题。AI 总结只能基于最终转录；使用云端 AI 时仅上传最终文本，并为关键结论保留带时间戳的原文证据。
+- 扩展 P0 前必须先更新 PRD。
 
 ## 架构与项目结构
 
@@ -25,7 +30,11 @@ UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `As
 
 ## 技能与实现流程
 
-新增功能或重构时使用 `flutter-apply-architecture-best-practices`。行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`，交付前使用 `dart-run-static-analysis`。sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入。项目不得自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工 `jniLibs`；两个模型只在 data/service 层通过 Dart `AsrEngine` 适配官方 API。若官方包缺少目标能力，先调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。变更产品范围或 P0 验收标准前运行 `$grill-me`。活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留活动副本，历史由 Git 保存。
+- 新增功能或重构使用 `flutter-apply-architecture-best-practices`；行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`；交付前使用 `dart-run-static-analysis`；代码审查使用 `$open-code-review-delegate`。
+- sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入。禁止自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工 `jniLibs`；两个模型仅在 data/service 层通过统一 `AsrEngine` 适配。
+- 官方包缺少目标能力时，先调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。
+- 变更产品范围或 P0 验收标准前运行 `$grill-me`。
+- 活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留副本，历史由 Git 保存。
 
 ## 常用命令与质量门槛
 
@@ -40,19 +49,25 @@ UI 不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `As
 
 测试文件使用 `*_test.dart`。优先覆盖录音连续性、模型校验、会议模型锁定、积压恢复、转录排序、快照原子切换、证据映射，以及 Forui 的加载、空白和错误状态。双模型必须在相同语料与设备上对比 RTF、延迟、内存、能耗、温控和关键事实召回率。
 
+## OCR 代码审查
+
+代码审查统一使用 `$open-code-review-delegate`。OCR 只负责确定范围、排除项和适用规则，缺陷判断与误报过滤由审查代理完成。
+
+- 按目标使用 workspace、range 或 commit 模式；必须审查 preview 返回的全部 reviewable 文件，并按 `ocr delegate rule` 的规则检查真实 diff 或未跟踪文件。
+- 使用 `--background` 或 `--background-file` 注入 PRD、技术方案和用户影响。涉及录音、模型锁定、最终快照、证据链或数据删除时，必须带上相应产品边界。
+- 生成文件只能通过明确的 `--exclude` 模式排除并说明原因，不得让 `graphify-out/`、构建产物或依赖噪声掩盖源码改动。
+- 按 Critical、High、Medium、Low 报告精确路径、行号、触发条件、用户影响和修复建议。始终报告 Critical/High；只报告有实际影响的 Medium 和明确有价值的 Low；疑似误报静默丢弃。
+- 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并重新审查。涉及 `lib/`、平台目录、数据库 schema/迁移、构建配置或 `integration_test/` 的变更，交付或创建 PR 前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
+- OCR 不能替代格式化、静态检查、测试和目标平台构建；修复后重新运行受影响验证并审查新 diff。
+
 ## 提交、PR 与安全
 
-提交标题应简短并使用祈使语气，例如 `增加 ASR 积压恢复`。PR 必须引用对应 PRD 章节，说明用户影响，列出验证命令；UI 变更需附截图。禁止提交密钥、录音、下载的模型、`build/` 或 `coverage/`。
+提交标题应简短并使用祈使语气，例如 `增加 ASR 积压恢复`。PR 必须引用对应 PRD 章节，说明用户影响，列出验证命令和 OCR 范围；保留 Medium 时说明原因与后续动作。UI 变更需附截图。禁止提交密钥、录音、下载的模型、`build/` 或 `coverage/`。
 
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+项目知识图谱位于 `graphify-out/`。用户输入 `/graphify` 时，必须先使用已安装的 Graphify 技能。
 
-When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
-
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- 代码库问题优先运行 `graphify query "<question>"`；关系和概念分别使用 `graphify path`、`graphify explain`。有 `graphify-out/wiki/index.md` 时优先用于宽泛导航，只有架构综述或查询信息不足时才读取 `GRAPH_REPORT.md`。
+- `graphify-out/` 的脏文件通常来自 hook 或增量更新，不是跳过查询的理由；仅在图谱本身错误、过期或用户明确禁止时跳过。
+- 修改代码后运行 `graphify update .`，保持图谱同步。
