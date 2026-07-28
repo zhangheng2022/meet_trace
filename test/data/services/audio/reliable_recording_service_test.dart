@@ -36,6 +36,7 @@ void main() {
     RecordingPreviewSink preview = const DiscardingRecordingPreviewSink(),
     int freeBytes = 512 * 1024 * 1024,
     RecordingCheckpointStore? checkpointStore,
+    Duration captureStopTimeout = const Duration(milliseconds: 20),
   }) {
     return ReliableRecordingService(
       capture: capture,
@@ -44,6 +45,8 @@ void main() {
       storageCapacity: FixedRecordingStorageCapacity(freeBytes),
       foreground: foreground,
       previewSink: preview,
+      audioLevelMeter: PcmAudioLevelMeter(),
+      captureStopTimeout: captureStopTimeout,
       now: () => DateTime.utc(2026, 7, 24, 8),
     );
   }
@@ -73,6 +76,23 @@ void main() {
       false,
     );
     expect(foreground.events, ['start:meeting-1', 'stop']);
+  });
+
+  test('事实音频写入成功后才发布可丢弃音量反馈', () async {
+    final service = createService();
+    final levels = <RecordingAudioLevel>[];
+    final subscription = service.audioLevelChanges.listen(levels.add);
+
+    await service.start(meetingId: 'meeting-level');
+    capture.add(_pcmBytes(recordingBytesPerSecond ~/ 10));
+    await _waitFor(() => levels.isNotEmpty);
+
+    expect(service.persistedBytes, recordingBytesPerSecond ~/ 10);
+    expect(levels.single.level, 0);
+    expect(levels.single.capturedThrough, const Duration(milliseconds: 100));
+
+    await service.stop();
+    await subscription.cancel();
   });
 
   test('preview sink 阻塞或抛错都不阻塞后续事实音频写入', () async {
@@ -225,6 +245,29 @@ void main() {
     expect(foreground.events.last, 'stop');
   });
 
+  test('平台 recorder 停止不返回时仍封存已写盘事实音频', () async {
+    final service = createService();
+    await service.start(meetingId: 'meeting-stop-timeout');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
+    final stopBlocker = Completer<void>();
+    capture.stopBlocker = stopBlocker;
+    addTearDown(() {
+      if (!stopBlocker.isCompleted) {
+        stopBlocker.complete();
+      }
+    });
+
+    final result = await service.stop().timeout(
+      const Duration(milliseconds: 250),
+    );
+
+    expect(result.bytes, recordingBytesPerSecond);
+    expect(result.duration, const Duration(seconds: 1));
+    expect(await File(result.audioPath).length(), recordingBytesPerSecond);
+    expect(service.state, RecordingState.completed);
+  });
+
   test('封存提交后的前台服务和 recorder 清理异常不覆盖成功结果', () async {
     final service = createService();
     await service.start(meetingId: 'meeting-cleanup-failure');
@@ -286,6 +329,7 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
   int stopCalls = 0;
   int disposeCalls = 0;
   Object? disposeError;
+  Completer<void>? stopBlocker;
 
   void add(Uint8List bytes) {
     if (!_started) {
@@ -321,6 +365,7 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
   @override
   Future<void> stop() async {
     stopCalls++;
+    await stopBlocker?.future;
     if (_started && !_controller.isClosed) {
       await _controller.close();
     }

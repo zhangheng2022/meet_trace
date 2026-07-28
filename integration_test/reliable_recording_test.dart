@@ -38,6 +38,7 @@ void main() {
       checkpoints: checkpoints,
       storageCapacity: const DeviceRecordingStorageCapacityProvider(),
       foreground: FlutterForegroundRecordingLifecycle(),
+      audioLevelMeter: PcmAudioLevelMeter(),
     );
     final watch = Stopwatch();
 

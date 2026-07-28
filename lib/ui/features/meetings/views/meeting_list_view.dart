@@ -19,22 +19,27 @@ import '../../../core/app_ledger.dart';
 import '../../../core/app_responsive.dart';
 import '../../../core/app_state_panel.dart';
 import '../../../core/app_swipe_action_row.dart';
+import '../../../core/semantic_date_time.dart';
 import '../../../core/view_state.dart';
 import '../view_models/meeting_list_view_model.dart';
 
 final class MeetingListView extends StatefulWidget {
   const MeetingListView({
     this.viewModel,
+    this.startingMeeting = false,
     this.onStartMeeting,
     this.onOpenMeeting,
     this.onOpenSettings,
+    this.now,
     super.key,
   });
 
   final MeetingListViewModel? viewModel;
+  final bool startingMeeting;
   final VoidCallback? onStartMeeting;
   final ValueChanged<Meeting>? onOpenMeeting;
   final VoidCallback? onOpenSettings;
+  final DateTime Function()? now;
 
   @override
   State<MeetingListView> createState() => _MeetingListViewState();
@@ -79,6 +84,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
         readiness:
             widget.viewModel?.readiness ??
             const MeetingReadinessViewState.unchecked(),
+        startingMeeting: widget.startingMeeting,
         onStartMeeting: widget.onStartMeeting,
         onOpenMeeting: widget.onOpenMeeting,
         onOpenSettings: widget.onOpenSettings,
@@ -86,6 +92,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
         deletingMeetingIds:
             widget.viewModel?.deletingMeetingIds ?? const <String>{},
         canDeleteMeeting: widget.viewModel?.canDeleteMeeting,
+        now: widget.now,
         onDeleteMeeting: widget.viewModel == null
             ? null
             : _requestDeleteMeeting,
@@ -169,6 +176,7 @@ final class MeetingListContent extends StatefulWidget {
   const MeetingListContent({
     required this.state,
     required this.readiness,
+    this.startingMeeting = false,
     required this.onStartMeeting,
     required this.onOpenMeeting,
     this.onOpenSettings,
@@ -176,11 +184,13 @@ final class MeetingListContent extends StatefulWidget {
     this.deletingMeetingIds = const <String>{},
     this.canDeleteMeeting,
     this.onDeleteMeeting,
+    this.now,
     super.key,
   });
 
   final ViewState<List<Meeting>> state;
   final MeetingReadinessViewState readiness;
+  final bool startingMeeting;
   final VoidCallback? onStartMeeting;
   final ValueChanged<Meeting>? onOpenMeeting;
   final VoidCallback? onOpenSettings;
@@ -188,6 +198,7 @@ final class MeetingListContent extends StatefulWidget {
   final Set<String> deletingMeetingIds;
   final bool Function(Meeting)? canDeleteMeeting;
   final Future<void> Function(Meeting)? onDeleteMeeting;
+  final DateTime Function()? now;
 
   @override
   State<MeetingListContent> createState() => _MeetingListContentState();
@@ -228,12 +239,14 @@ final class _MeetingListContentState extends State<MeetingListContent> {
       builder: (context, sizeClass, constraints) {
         final meetings = _meetingsFrom(widget.state);
         final selected = _selectedMeeting(meetings);
-        final listBody = _listBody(meetings, sizeClass);
+        final referenceTime = widget.now?.call() ?? DateTime.now();
+        final listBody = _listBody(meetings, sizeClass, referenceTime);
         final homePane = _MeetingHomePane(
           total: widget.state is ViewData<List<Meeting>>
               ? meetings.length
               : null,
           readiness: widget.readiness,
+          startingMeeting: widget.startingMeeting,
           onOpenSettings: widget.onOpenSettings,
           onRetryReadiness: widget.onRetryReadiness,
           onStartMeeting: widget.onStartMeeting,
@@ -277,6 +290,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
                         : _MeetingPreviewPane(
                             key: ValueKey('meeting-preview-${selected.id}'),
                             meeting: selected,
+                            referenceTime: referenceTime,
                             onOpenMeeting: widget.onOpenMeeting,
                           ),
                   ),
@@ -305,7 +319,11 @@ final class _MeetingListContentState extends State<MeetingListContent> {
     return meetings.first;
   }
 
-  Widget _listBody(List<Meeting> meetings, AppWindowSizeClass sizeClass) {
+  Widget _listBody(
+    List<Meeting> meetings,
+    AppWindowSizeClass sizeClass,
+    DateTime referenceTime,
+  ) {
     return switch (widget.state) {
       ViewLoading() => const AppStatePanel.loading(label: '正在加载会议'),
       ViewError(:final retry) => AppStatePanel.error(
@@ -334,7 +352,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
               framed: false,
               children: [
                 for (var index = 0; index < meetings.length; index++)
-                  _swipeRow(meetings, index, sizeClass),
+                  _swipeRow(meetings, index, sizeClass, referenceTime),
               ],
             ),
           ],
@@ -347,6 +365,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
     List<Meeting> meetings,
     int index,
     AppWindowSizeClass sizeClass,
+    DateTime referenceTime,
   ) {
     final meeting = meetings[index];
     final deleting = widget.deletingMeetingIds.contains(meeting.id);
@@ -374,6 +393,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
       },
       child: _MeetingLedgerRow(
         meeting: meeting,
+        referenceTime: referenceTime,
         deleting: deleting,
         deletable: canDelete,
         selected:
@@ -406,6 +426,7 @@ final class _MeetingHomePane extends StatelessWidget {
     required this.body,
     required this.total,
     required this.readiness,
+    required this.startingMeeting,
     required this.onOpenSettings,
     required this.onRetryReadiness,
     required this.onStartMeeting,
@@ -414,6 +435,7 @@ final class _MeetingHomePane extends StatelessWidget {
   final Widget body;
   final int? total;
   final MeetingReadinessViewState readiness;
+  final bool startingMeeting;
   final VoidCallback? onOpenSettings;
   final Future<void> Function()? onRetryReadiness;
   final VoidCallback? onStartMeeting;
@@ -433,7 +455,10 @@ final class _MeetingHomePane extends StatelessWidget {
           _MeetingSectionHeader(total: total),
           Expanded(child: body),
           if (onStartMeeting != null)
-            _StartMeetingControl(onPress: onStartMeeting!),
+            _StartMeetingControl(
+              isStarting: startingMeeting,
+              onPress: onStartMeeting!,
+            ),
         ],
       ),
     );
@@ -610,10 +635,51 @@ final class _MeetingSectionHeader extends StatelessWidget {
   }
 }
 
-final class _StartMeetingControl extends StatelessWidget {
-  const _StartMeetingControl({required this.onPress});
+final class _StartMeetingControl extends StatefulWidget {
+  const _StartMeetingControl({required this.isStarting, required this.onPress});
 
+  final bool isStarting;
   final VoidCallback onPress;
+
+  @override
+  State<_StartMeetingControl> createState() => _StartMeetingControlState();
+}
+
+final class _StartMeetingControlState extends State<_StartMeetingControl>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _rotation = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+  bool? _disableAnimations;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    if (_disableAnimations != disableAnimations) {
+      _disableAnimations = disableAnimations;
+      _syncRotation();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _StartMeetingControl oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isStarting != oldWidget.isStarting) {
+      _syncRotation();
+    }
+  }
+
+  void _syncRotation() {
+    if (widget.isStarting && _disableAnimations != true) {
+      _rotation.repeat();
+    } else {
+      _rotation
+        ..stop()
+        ..value = 0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -626,8 +692,8 @@ final class _StartMeetingControl extends StatelessWidget {
         pressedExitDuration: Duration.zero,
         motion: FTappableMotion.none,
       ),
-      semanticsLabel: '开始会议',
-      onPress: onPress,
+      semanticsLabel: widget.isStarting ? '正在准备录音' : '开始会议',
+      onPress: widget.isStarting ? null : widget.onPress,
       builder: (context, variants, child) {
         final pressed = variants.contains(FTappableVariant.pressed);
         return AnimatedContainer(
@@ -652,10 +718,20 @@ final class _StartMeetingControl extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(FLucideIcons.mic, color: theme.colors.primaryForeground),
+                if (widget.isStarting)
+                  RotationTransition(
+                    key: const ValueKey('start-meeting-progress-icon'),
+                    turns: _rotation,
+                    child: Icon(
+                      FLucideIcons.loaderCircle,
+                      color: theme.colors.primaryForeground,
+                    ),
+                  )
+                else
+                  Icon(FLucideIcons.mic, color: theme.colors.primaryForeground),
                 SizedBox(width: appStyle.spaceSm),
                 Text(
-                  '开始会议',
+                  widget.isStarting ? '正在准备录音…' : '开始会议',
                   style: theme.typography.body.lg.copyWith(
                     color: theme.colors.primaryForeground,
                     fontWeight: FontWeight.w600,
@@ -668,11 +744,18 @@ final class _StartMeetingControl extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    _rotation.dispose();
+    super.dispose();
+  }
 }
 
 final class _MeetingLedgerRow extends StatelessWidget {
   const _MeetingLedgerRow({
     required this.meeting,
+    required this.referenceTime,
     required this.deleting,
     required this.deletable,
     required this.selected,
@@ -681,6 +764,7 @@ final class _MeetingLedgerRow extends StatelessWidget {
   });
 
   final Meeting meeting;
+  final DateTime referenceTime;
   final bool deleting;
   final bool deletable;
   final bool selected;
@@ -691,8 +775,11 @@ final class _MeetingLedgerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppLedgerRow(
       key: ValueKey('meeting-${meeting.id}'),
-      dateLabel: _dateLabel(meeting.createdAt),
-      timeLabel: _timeLabel(meeting.createdAt),
+      dateLabel: semanticCompactDateLabel(
+        meeting.createdAt,
+        reference: referenceTime,
+      ),
+      timeLabel: clockTimeLabel(meeting.createdAt),
       title: meeting.title,
       metaLabel: _durationLabel(
         Duration(milliseconds: meeting.audioDurationMs),
@@ -705,7 +792,9 @@ final class _MeetingLedgerRow extends StatelessWidget {
       selected: selected,
       showDivider: showDivider,
       semanticsLabel:
-          '打开会议：${meeting.title}，${_meetingStatusLabel(meeting.status)}',
+          '打开会议：${meeting.title}，'
+          '${semanticDateTimeLabel(meeting.createdAt, reference: referenceTime)}，'
+          '${_meetingStatusLabel(meeting.status)}',
       semanticsHint: deleting
           ? '正在删除本机会议数据'
           : [
@@ -736,11 +825,13 @@ final class _MeetingPreviewPlaceholder extends StatelessWidget {
 final class _MeetingPreviewPane extends StatelessWidget {
   const _MeetingPreviewPane({
     required this.meeting,
+    required this.referenceTime,
     required this.onOpenMeeting,
     super.key,
   });
 
   final Meeting meeting;
+  final DateTime referenceTime;
   final ValueChanged<Meeting>? onOpenMeeting;
 
   @override
@@ -770,7 +861,10 @@ final class _MeetingPreviewPane extends StatelessWidget {
                   _MeetingFactRow(
                     icon: FLucideIcons.calendar,
                     label: '开始时间',
-                    value: _fullDateTimeLabel(meeting.createdAt),
+                    value: semanticDateTimeLabel(
+                      meeting.createdAt,
+                      reference: referenceTime,
+                    ),
                   ),
                   _MeetingFactRow(
                     icon: FLucideIcons.clock4,
@@ -1096,21 +1190,6 @@ String _modelDisplayLabel(Meeting meeting) {
   final descriptor = AsrModelRegistry.alpha.findById(meeting.recordingModelId);
   final displayName = descriptor?.displayName ?? '本地模型';
   return '$displayName · ${meeting.recordingModelVersion}';
-}
-
-String _dateLabel(DateTime value) =>
-    '${value.month.toString().padLeft(2, '0')}-'
-    '${value.day.toString().padLeft(2, '0')}';
-
-String _fullDateTimeLabel(DateTime value) {
-  String two(int number) => number.toString().padLeft(2, '0');
-  return '${value.year}-${two(value.month)}-${two(value.day)}  '
-      '${two(value.hour)}:${two(value.minute)}';
-}
-
-String _timeLabel(DateTime value) {
-  String two(int number) => number.toString().padLeft(2, '0');
-  return '${two(value.hour)}:${two(value.minute)}';
 }
 
 String _durationLabel(Duration value) {

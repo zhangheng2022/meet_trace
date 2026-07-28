@@ -22,6 +22,9 @@ abstract interface class RecordingSessionService {
 
   Duration get duration;
 
+  /// 已写入事实音频派生出的可丢弃音量反馈。
+  Stream<RecordingAudioLevel> get audioLevelChanges;
+
   /// 当前会话是否仍有可封存或需要清理的事实音频。
   bool get canFinalize;
 

@@ -92,6 +92,29 @@ final class _PreviewRecordingService implements RecordingSessionService {
   RecordingState _state = RecordingState.idle;
 
   @override
+  Stream<RecordingAudioLevel> get audioLevelChanges => Stream.fromIterable(
+    const [
+      0.08,
+      0.14,
+      0.28,
+      0.46,
+      0.72,
+      0.38,
+      0.22,
+      0.54,
+      0.86,
+      0.44,
+      0.18,
+      0.64,
+    ].map(
+      (level) => RecordingAudioLevel(
+        level: level,
+        capturedThrough: Duration(milliseconds: (level * 10000).round()),
+      ),
+    ),
+  );
+
+  @override
   Duration get duration => const Duration(minutes: 14, seconds: 28);
 
   @override

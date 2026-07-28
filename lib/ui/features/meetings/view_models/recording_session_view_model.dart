@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../domain/models/asr_preview.dart';
 import '../../../../domain/models/meeting.dart';
+import '../../../../domain/models/recording.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/ports/asr_preview_session.dart';
@@ -13,6 +14,8 @@ import '../../../../domain/use_cases/start_meeting.dart';
 
 typedef RecordingTickerFactory =
     Timer Function(Duration duration, void Function(Timer timer) callback);
+
+const recordingWaveformSampleCapacity = 48;
 
 final class RecordingSessionViewModel extends ChangeNotifier {
   RecordingSessionViewModel({
@@ -33,8 +36,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   Meeting _meeting;
   AsrPreviewMetrics _previewMetrics;
   final Map<String, TranscriptSegmentEvent> _segments = {};
+  final List<double> _audioLevels = [];
   StreamSubscription<TranscriptEvent>? _eventSubscription;
   StreamSubscription<AsrPreviewMetrics>? _metricsSubscription;
+  StreamSubscription<RecordingAudioLevel>? _audioLevelSubscription;
   Timer? _ticker;
   Duration _duration = Duration.zero;
   String? _errorMessage;
@@ -45,6 +50,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   RecordingState get recordingState => recording.state;
   AsrPreviewMetrics get previewMetrics => _previewMetrics;
   Duration get duration => _duration;
+  List<double> get audioLevels => List.unmodifiable(_audioLevels);
   String? get errorMessage => _errorMessage;
   bool get isBusy => _isBusy;
   bool get canPause => !_isBusy && recordingState == RecordingState.recording;
@@ -154,6 +160,14 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   }
 
   void _subscribePreview() {
+    _audioLevelSubscription ??= recording.audioLevelChanges.listen((sample) {
+      _audioLevels.add(sample.level);
+      final overflow = _audioLevels.length - recordingWaveformSampleCapacity;
+      if (overflow > 0) {
+        _audioLevels.removeRange(0, overflow);
+      }
+      _notify();
+    });
     _eventSubscription ??= preview.events.listen((event) {
       if (event case final TranscriptSegmentEvent segment) {
         _segments[segment.segmentId] = segment;
@@ -178,8 +192,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   }
 
   Future<void> _disposePreview() async {
+    await _audioLevelSubscription?.cancel();
     await _eventSubscription?.cancel();
     await _metricsSubscription?.cancel();
+    _audioLevelSubscription = null;
     _eventSubscription = null;
     _metricsSubscription = null;
     await preview.dispose();
@@ -201,6 +217,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
         recordingState != RecordingState.paused) {
       unawaited(_disposePreviewBestEffort());
     } else {
+      unawaited(_audioLevelSubscription?.cancel());
       unawaited(_eventSubscription?.cancel());
       unawaited(_metricsSubscription?.cancel());
     }

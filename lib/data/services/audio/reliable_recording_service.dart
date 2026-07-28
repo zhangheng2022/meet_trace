@@ -7,11 +7,15 @@ import '../../../domain/models/recording.dart';
 import '../../../domain/models/workflow_states.dart';
 import '../storage/app_file_layout.dart';
 import '../storage/durable_file_committer.dart';
+import 'pcm_audio_level_meter.dart';
 import 'recording_checkpoint_store.dart';
 import 'recording_ports.dart';
 import 'recording_session_service.dart';
 
 export 'recording_session_service.dart';
+export 'pcm_audio_level_meter.dart';
+
+const defaultRecordingCaptureStopTimeout = Duration(seconds: 5);
 
 final class ReliableRecordingService implements RecordingSessionService {
   ReliableRecordingService({
@@ -24,14 +28,24 @@ final class ReliableRecordingService implements RecordingSessionService {
     this.fileCommitter = const DurableFileCommitter(),
     this.minimumFreeBytes = minimumRecordingFreeBytes,
     this.maxPendingPreviewChunks = 4,
+    this.captureStopTimeout = defaultRecordingCaptureStopTimeout,
+    required PcmAudioLevelMeter audioLevelMeter,
     DateTime Function()? now,
   }) : now = now ?? DateTime.now,
+       _audioLevelMeter = audioLevelMeter,
        _preview = RecordingPreviewDispatcher(
-         previewSink,
+         FanOutRecordingPreviewSink([audioLevelMeter, previewSink]),
          maxPendingChunks: maxPendingPreviewChunks,
        ) {
     if (minimumFreeBytes <= 0) {
       throw ArgumentError.value(minimumFreeBytes, 'minimumFreeBytes', '必须大于 0');
+    }
+    if (captureStopTimeout <= Duration.zero) {
+      throw ArgumentError.value(
+        captureStopTimeout,
+        'captureStopTimeout',
+        '必须大于 0',
+      );
     }
   }
 
@@ -43,7 +57,9 @@ final class ReliableRecordingService implements RecordingSessionService {
   final DurableFileCommitter fileCommitter;
   final int minimumFreeBytes;
   final int maxPendingPreviewChunks;
+  final Duration captureStopTimeout;
   final DateTime Function() now;
+  final PcmAudioLevelMeter _audioLevelMeter;
   final RecordingPreviewDispatcher _preview;
 
   RecordingState _state = RecordingState.idle;
@@ -55,6 +71,7 @@ final class ReliableRecordingService implements RecordingSessionService {
   Object? _writeError;
   StackTrace? _writeStackTrace;
   bool _userPaused = false;
+  bool _captureStopTimedOut = false;
   int _persistedBytes = 0;
 
   @override
@@ -62,6 +79,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   int get persistedBytes => _persistedBytes;
   @override
   Duration get duration => recordingDurationForBytes(_persistedBytes);
+  @override
+  Stream<RecordingAudioLevel> get audioLevelChanges => _audioLevelMeter.changes;
   @override
   bool get canFinalize =>
       _state == RecordingState.recording ||
@@ -197,8 +216,7 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
 
     try {
-      await capture.stop();
-      await _captureDone!.future.timeout(const Duration(seconds: 10));
+      await _stopCaptureForFinalization();
       await _writeTail;
       _throwWriteErrorIfAny();
       if (_persistedBytes == 0) {
@@ -239,7 +257,6 @@ final class ReliableRecordingService implements RecordingSessionService {
         stackTrace,
       );
     } finally {
-      _preview.close();
       await _cleanupCaptureBestEffort();
     }
   }
@@ -338,6 +355,35 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
   }
 
+  Future<void> _stopCaptureForFinalization() async {
+    try {
+      await capture.stop().timeout(captureStopTimeout);
+    } on TimeoutException {
+      _captureStopTimedOut = true;
+      await _detachAudioSubscriptionBestEffort();
+      return;
+    }
+
+    try {
+      await _captureDone!.future.timeout(captureStopTimeout);
+    } on TimeoutException {
+      await _detachAudioSubscriptionBestEffort();
+    }
+  }
+
+  Future<void> _detachAudioSubscriptionBestEffort() async {
+    final subscription = _audioSubscription;
+    _audioSubscription = null;
+    if (subscription != null) {
+      try {
+        await subscription.cancel().timeout(captureStopTimeout);
+      } on Object {
+        // 平台流无法正常结束时只封存已经完成写盘的事实音频。
+      }
+    }
+    _completeCapture();
+  }
+
   Future<void> _cleanupFailedStart(String meetingId) async {
     await _closeOutputBestEffort();
     await _cleanupCaptureBestEffort();
@@ -357,27 +403,31 @@ final class ReliableRecordingService implements RecordingSessionService {
   }
 
   Future<void> _cleanupCaptureBestEffort() async {
-    final subscription = _audioSubscription;
-    _audioSubscription = null;
-    if (subscription != null) {
-      try {
-        await subscription.cancel();
-      } on Object {
-        // 继续释放平台录音资源。
-      }
+    _preview.close();
+    await _audioLevelMeter.dispose();
+    await _detachAudioSubscriptionBestEffort();
+    if (_captureStopTimedOut) {
+      unawaited(_releasePlatformCaptureBestEffort());
+      return;
     }
+    await _releasePlatformCaptureBestEffort();
+  }
+
+  Future<void> _releasePlatformCaptureBestEffort() async {
     try {
-      await foreground.stop();
+      await foreground.stop().timeout(captureStopTimeout);
     } on Object {
       // 事实音频状态已确定，前台服务清理失败只作为平台诊断。
     }
-    try {
-      await capture.stop();
-    } on Object {
-      // recorder 可能已经停止或启动尚未完成。
+    if (!_captureStopTimedOut) {
+      try {
+        await capture.stop().timeout(captureStopTimeout);
+      } on Object {
+        // recorder 可能已经停止或启动尚未完成。
+      }
     }
     try {
-      await capture.dispose();
+      await capture.dispose().timeout(captureStopTimeout);
     } on Object {
       // 资源释放失败不得覆盖已经封存的事实音频。
     }

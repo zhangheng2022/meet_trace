@@ -14,8 +14,8 @@ import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/use_cases/manage_recording_session.dart';
 import 'package:meettrace/domain/use_cases/start_meeting.dart';
 import 'package:meettrace/ui/features/meetings/view_models/recording_session_view_model.dart';
+import 'package:meettrace/ui/features/meetings/views/recording_audio_waveform.dart';
 import 'package:meettrace/ui/features/meetings/views/recording_session_view.dart';
-import 'package:meettrace/ui/core/app_ledger.dart';
 
 import '../../../../support/model_selection_fakes.dart';
 
@@ -38,25 +38,53 @@ void main() {
     await tester.pump();
 
     expect(find.text('00:00:12'), findsOneWidget);
-    expect(find.textContaining('标准模型（Paraformer） · 本场已锁定'), findsOneWidget);
+    expect(find.textContaining('标准模型（Paraformer）'), findsOneWidget);
+    expect(find.textContaining('本场锁定'), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('实时转录正常'), findsOneWidget);
+    expect(find.text('检测到语音后在这里显示文字。'), findsOneWidget);
+    expect(find.text('录音'), findsNothing);
+    expect(find.text('事实录音'), findsNothing);
+    expect(find.text('时'), findsNothing);
+    expect(find.text('分'), findsNothing);
+    expect(find.text('秒'), findsNothing);
+    expect(find.byType(RecordingAudioWaveform), findsOneWidget);
+    expect(find.text('麦克风输入 · 实时反馈'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('recording-control-console')),
       findsOneWidget,
     );
+    expect(find.byKey(const ValueKey('recording-fact-ledger')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('recording-bottom-actions')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .getTopLeft(find.byKey(const ValueKey('recording-control-console')))
+          .dy,
+      lessThan(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('recording-bottom-actions')))
+            .dy,
+      ),
+    );
 
+    await tester.ensureVisible(find.text('暂停'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('暂停'));
     await tester.pumpAndSettle();
     expect(find.text('事实录音已暂停'), findsOneWidget);
     expect(find.text('实时转录已随录音暂停'), findsOneWidget);
+    expect(find.text('麦克风输入 · 已暂停'), findsOneWidget);
 
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     fixture.preview.emit(AsrPreviewState.recordingOnly);
     await tester.pump();
     expect(find.text('实时转录已停止，录音仍在继续'), findsOneWidget);
-    expect(find.textContaining('事实音频仍在安全写入'), findsOneWidget);
+    expect(find.text('事实音频正在安全写入'), findsOneWidget);
+    expect(find.text('结束后仍会基于完整音频生成最终转录。'), findsOneWidget);
     expect(fixture.viewModel.recordingState, RecordingState.recording);
     expect(fixture.viewModel.canStop, isTrue);
     expect(finished, isNull);
@@ -90,6 +118,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('结束并保存会议？'), findsNothing);
 
+    await tester.ensureVisible(find.text('结束会议'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('结束会议'));
     await tester.pumpAndSettle();
     expect(find.text('结束并保存会议？'), findsOneWidget);
@@ -162,10 +192,31 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    fixture.preview.emitSegment(
+      const TranscriptSegmentEvent(
+        segmentId: 'compact-segment',
+        startMs: 11000,
+        endMs: 14000,
+        text: '这是一条用于验证窄屏时间布局的实时转录。',
+        modelId: paraformerStandardModelId,
+        modelVersion: 'test',
+        isFinalForWindow: false,
+      ),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
+    expect(find.text('00:11'), findsOneWidget);
+    final compactTimestamp = tester.widget<Text>(find.text('00:11'));
+    expect(compactTimestamp.maxLines, 1);
+    expect(compactTimestamp.softWrap, isFalse);
+    expect(find.text('最新'), findsNothing);
     expect(find.text('暂停'), findsOneWidget);
     expect(find.text('结束会议'), findsOneWidget);
+    expect(
+      tester.getBottomRight(find.text('结束会议')).dy,
+      lessThanOrEqualTo(tester.view.physicalSize.height),
+    );
     expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
@@ -188,9 +239,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('recording-wide-layout')), findsOneWidget);
-    expect(find.byType(AppTimeRuler), findsOneWidget);
+    expect(find.byType(RecordingAudioWaveform), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('实时转录'), findsOneWidget);
+    final wideLedger = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('live-transcript-ledger')),
+    );
+    expect((wideLedger.decoration as BoxDecoration).border, isNotNull);
     expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
@@ -227,6 +282,12 @@ void main() {
         find.byKey(const ValueKey('live-transcript-ledger')),
         findsOneWidget,
       );
+      final compactLedger = tester.widget<DecoratedBox>(
+        find.byKey(const ValueKey('live-transcript-ledger')),
+      );
+      final compactDecoration = compactLedger.decoration as BoxDecoration;
+      expect(compactDecoration.border, isNull);
+      expect(compactDecoration.borderRadius, isNull);
       expect(tester.takeException(), isNull);
       await fixture.dispose();
     }
@@ -250,6 +311,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('live-transcript-count')), findsNothing);
     fixture.preview.emitSegment(
       const TranscriptSegmentEvent(
         segmentId: 'segment-1',
@@ -263,8 +325,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('01:23:10'), findsOneWidget);
+    expect(find.text('1:23:10'), findsOneWidget);
     expect(find.byKey(const ValueKey('transcript-segment-1')), findsOneWidget);
+    expect(find.text('1 段'), findsOneWidget);
+    expect(find.text('最新'), findsNothing);
     expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
@@ -326,14 +390,20 @@ final class _Fixture {
 
   Future<void> dispose() async {
     viewModel.dispose();
+    await recording.close();
     await preview.close();
   }
 }
 
 final class _RecordingService implements RecordingSessionService {
+  final StreamController<RecordingAudioLevel> _audioLevels =
+      StreamController<RecordingAudioLevel>.broadcast(sync: true);
   RecordingState _state = RecordingState.idle;
   Duration durationValue = Duration.zero;
   bool _hasFinalizableAudio = false;
+
+  @override
+  Stream<RecordingAudioLevel> get audioLevelChanges => _audioLevels.stream;
 
   @override
   Duration get duration => durationValue;
@@ -367,6 +437,8 @@ final class _RecordingService implements RecordingSessionService {
   void failWithFinalizableAudio() {
     _state = RecordingState.failed;
   }
+
+  Future<void> close() => _audioLevels.close();
 
   @override
   Future<RecordingArtifact> stop() async {

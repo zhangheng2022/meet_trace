@@ -70,6 +70,31 @@ void main() {
     await preview.close();
   });
 
+  test('音量反馈保持固定窗口且不受实时转录降级影响', () async {
+    final recording = _RecordingService();
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+    );
+    await viewModel.start();
+
+    for (var index = 0; index < 60; index++) {
+      recording.emitAudioLevel(index / 59);
+    }
+    preview.emitMetrics(AsrPreviewState.recordingOnly);
+
+    expect(viewModel.audioLevels, hasLength(recordingWaveformSampleCapacity));
+    expect(viewModel.audioLevels.first, closeTo(12 / 59, 0.0001));
+    expect(viewModel.audioLevels.last, 1);
+    expect(viewModel.previewMetrics.state, AsrPreviewState.recordingOnly);
+    expect(viewModel.recordingState, RecordingState.recording);
+    viewModel.dispose();
+    await recording.close();
+    await preview.close();
+  });
+
   test('事实录音启动失败会持久化失败会议', () async {
     final meetings = TestMeetingRepository();
     final recording = _RecordingService()
@@ -159,10 +184,15 @@ RecordingSessionViewModel _viewModel({
 }
 
 final class _RecordingService implements RecordingSessionService {
+  final StreamController<RecordingAudioLevel> _audioLevels =
+      StreamController<RecordingAudioLevel>.broadcast(sync: true);
   RecordingState _state = RecordingState.idle;
   Duration durationValue = Duration.zero;
   Object? startError;
   bool _started = false;
+
+  @override
+  Stream<RecordingAudioLevel> get audioLevelChanges => _audioLevels.stream;
 
   @override
   Duration get duration => durationValue;
@@ -197,6 +227,14 @@ final class _RecordingService implements RecordingSessionService {
     _started = true;
     _state = RecordingState.recording;
   }
+
+  void emitAudioLevel(double level) {
+    _audioLevels.add(
+      RecordingAudioLevel(level: level, capturedThrough: durationValue),
+    );
+  }
+
+  Future<void> close() => _audioLevels.close();
 
   @override
   Future<RecordingArtifact> stop() async {

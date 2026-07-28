@@ -120,6 +120,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       storageCapacity: const DeviceRecordingStorageCapacityProvider(),
       foreground: createRecordingForegroundLifecycle(),
       previewSink: preview,
+      audioLevelMeter: PcmAudioLevelMeter(),
     );
     return RecordingSessionViewModel(
       session: session,

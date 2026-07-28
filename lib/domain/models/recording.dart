@@ -39,6 +39,20 @@ final class RecordingPcmChunk {
   Duration get end => recordingDurationForBytes(endByteOffset);
 }
 
+/// 从已经持久化的事实音频派生出的瞬时音量反馈。
+///
+/// [level] 是相对于数字满刻度的归一化 RMS，范围为 0～1；它只用于会中
+/// 反馈，不参与事实音频、转录或会议时长计算。
+final class RecordingAudioLevel {
+  const RecordingAudioLevel({
+    required this.level,
+    required this.capturedThrough,
+  }) : assert(level >= 0 && level <= 1);
+
+  final double level;
+  final Duration capturedThrough;
+}
+
 final class RecordingArtifact {
   const RecordingArtifact({
     required this.meetingId,

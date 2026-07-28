@@ -308,6 +308,7 @@ cinematic
 clamp
 clarify
 class
+classify
 claude
 clean
 cleanup
@@ -500,6 +501,7 @@ deidentified
 deindent
 delay
 delegate
+delegation
 deletable
 delete
 deleted
@@ -536,6 +538,7 @@ details
 detect
 detection
 detector
+determine
 deterministic
 dev
 development
@@ -550,6 +553,7 @@ diarize
 diarizing
 did
 difference
+diffs
 dim
 dimensions
 dir
@@ -621,6 +625,7 @@ dual
 durable
 duration
 during
+each
 easing
 edge
 edit
@@ -727,6 +732,7 @@ extraordinary
 exts
 eyebrow
 fact
+factories
 factory
 facts
 fail
@@ -769,6 +775,7 @@ findings
 finish
 finished
 first
+fix
 fixed
 fixes
 fixing
@@ -845,6 +852,7 @@ glow
 going
 good
 google
+gotchas
 gpt
 gradient
 gradle
@@ -1150,6 +1158,7 @@ machine
 macos
 main
 make
+manage
 managed
 managing
 manifest
@@ -1828,6 +1837,7 @@ selection
 selector
 selectors
 self
+semantic
 semantics
 semver
 send
@@ -1993,6 +2003,7 @@ style
 styles
 stylesheet
 stylesheets
+sub
 subagent
 subject
 submit
@@ -2098,6 +2109,7 @@ timestamp
 timing
 title
 toast
+today
 todo
 toggle
 toggles
@@ -2259,6 +2271,7 @@ weak
 web
 website
 week
+weekday
 weight
 weighted
 weights
@@ -2310,6 +2323,7 @@ writing
 written
 wstring
 yaml
+year
 you
 your
 zero
@@ -2336,6 +2350,7 @@ zero
 全部调整为
 内置标准模型
 内置模型与许可资产
+分析当前项目架构层是否需要优化
 列表增加删除功能
 删除与保留
 功能需求

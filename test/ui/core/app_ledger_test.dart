@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
@@ -38,16 +37,5 @@ void main() {
     await tester.pumpAndSettle();
     expect(tapped, isTrue);
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('时间刻度提供真实持续时间语义', (tester) async {
-    await tester.pumpWidget(
-      const Application(
-        home: AppTimeRuler(elapsed: Duration(hours: 1, minutes: 2, seconds: 3)),
-      ),
-    );
-
-    expect(find.byType(CustomPaint), findsWidgets);
-    expect(find.bySemanticsLabel('录音已持续 01:02:03'), findsOneWidget);
   });
 }

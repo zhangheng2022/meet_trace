@@ -346,6 +346,7 @@ void main() {
       layout: layout,
       checkpoints: JsonRecordingCheckpointStore(layout),
       storageCapacity: const _FixedCapacity(512 * 1024 * 1024),
+      audioLevelMeter: PcmAudioLevelMeter(),
       now: () => clock,
     );
     await engine.initialize();

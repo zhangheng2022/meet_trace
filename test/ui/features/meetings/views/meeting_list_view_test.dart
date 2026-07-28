@@ -145,6 +145,50 @@ void main() {
     expect(startMeetingRequested, isTrue);
   });
 
+  testWidgets('会议准备期间立即反馈状态并阻止重复启动', (WidgetTester tester) async {
+    var startMeetingRequests = 0;
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(
+          startingMeeting: true,
+          onStartMeeting: () => startMeetingRequests++,
+        ),
+      ),
+    );
+
+    expect(find.text('正在准备录音…'), findsOneWidget);
+    expect(find.text('开始会议'), findsNothing);
+    expect(
+      tester
+          .widget<FTappable>(
+            find.byKey(const ValueKey('start-meeting-control')),
+          )
+          .onPress,
+      isNull,
+    );
+    final progressIcon = find.byKey(
+      const ValueKey('start-meeting-progress-icon'),
+    );
+    final initialTurn = tester
+        .widget<RotationTransition>(progressIcon)
+        .turns
+        .value;
+
+    await tester.pump(const Duration(milliseconds: 225));
+
+    final advancedTurn = tester
+        .widget<RotationTransition>(progressIcon)
+        .turns
+        .value;
+    expect(advancedTurn, greaterThan(initialTurn));
+
+    await tester.tap(find.byKey(const ValueKey('start-meeting-control')));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(startMeetingRequests, 0);
+  });
+
   testWidgets('平板使用会议账本和事实预览主从布局', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1000, 800);
     tester.view.devicePixelRatio = 1;
@@ -212,6 +256,63 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('open-selected-meeting')));
     await tester.pumpAndSettle();
     expect(opened?.id, 'failed');
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('会议账本使用今天、昨天、本周和日历日期标签', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(414, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final reference = DateTime(2026, 7, 30, 15, 45);
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(viewModel: viewModel, now: () => reference),
+      ),
+    );
+    repository.emit([
+      _meeting(
+        'today',
+        '今日会议',
+        MeetingState.completed,
+        createdAt: DateTime(2026, 7, 30, 9, 15),
+      ),
+      _meeting(
+        'yesterday',
+        '昨日会议',
+        MeetingState.completed,
+        createdAt: DateTime(2026, 7, 29, 18, 5),
+      ),
+      _meeting(
+        'weekday',
+        '本周会议',
+        MeetingState.completed,
+        createdAt: DateTime(2026, 7, 28, 10),
+      ),
+      _meeting(
+        'earlier',
+        '较早会议',
+        MeetingState.completed,
+        createdAt: DateTime(2026, 6, 3, 8),
+      ),
+    ]);
+    await tester.pump();
+
+    expect(find.text('今天'), findsOneWidget);
+    expect(find.text('昨天'), findsOneWidget);
+    expect(find.text('周二'), findsOneWidget);
+    expect(find.text('6月3日'), findsOneWidget);
+    expect(find.text('09:15'), findsOneWidget);
+    expect(find.text('07-30'), findsNothing);
+
     viewModel.dispose();
     await repository.dispose();
   });
@@ -445,10 +546,15 @@ final class _StagedMeetingDeletion implements StagedMeetingDeletion {
   Future<void> rollback() async {}
 }
 
-Meeting _meeting(String id, String title, MeetingState state) => Meeting(
+Meeting _meeting(
+  String id,
+  String title,
+  MeetingState state, {
+  DateTime? createdAt,
+}) => Meeting(
   id: id,
   title: title,
-  createdAt: DateTime.utc(2026, 7, 24),
+  createdAt: createdAt ?? DateTime.utc(2026, 7, 24),
   status: state,
   audioDurationMs: 12000,
   requestedModelId: paraformerStandardModelId,

@@ -15,10 +15,10 @@ import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_back_icon.dart';
-import '../../../core/app_ledger.dart';
 import '../../../core/app_page_body.dart';
 import '../../../core/app_status_notice.dart';
 import '../view_models/recording_session_view_model.dart';
+import 'recording_audio_waveform.dart';
 
 final class RecordingSessionView extends StatefulWidget {
   const RecordingSessionView({
@@ -69,6 +69,10 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
                 ),
               ],
             ),
+            footer: _RecordingBottomBar(
+              viewModel: widget.viewModel,
+              onEnd: () => unawaited(_requestEnd()),
+            ),
             child: _body(context),
           ),
         );
@@ -83,18 +87,20 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
         final wide = constraints.maxWidth >= appStyle.wideLayoutMinWidth;
         final facts = _RecordingFactsPanel(
           viewModel: widget.viewModel,
-          onEnd: () => unawaited(_requestEnd()),
           wide: wide,
         );
-        final transcript = _LiveTranscriptPanel(viewModel: widget.viewModel);
+        final transcript = _LiveTranscriptPanel(
+          viewModel: widget.viewModel,
+          outlined: wide,
+        );
         final content = wide
             ? Row(
                 key: const ValueKey('recording-wide-layout'),
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 9, child: facts),
+                  Expanded(flex: 8, child: facts),
                   SizedBox(width: appStyle.spaceXl),
-                  Expanded(flex: 11, child: transcript),
+                  Expanded(flex: 12, child: transcript),
                 ],
               )
             : Column(
@@ -176,14 +182,9 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
 }
 
 final class _RecordingFactsPanel extends StatelessWidget {
-  const _RecordingFactsPanel({
-    required this.viewModel,
-    required this.onEnd,
-    required this.wide,
-  });
+  const _RecordingFactsPanel({required this.viewModel, required this.wide});
 
   final RecordingSessionViewModel viewModel;
-  final VoidCallback onEnd;
   final bool wide;
 
   @override
@@ -196,22 +197,6 @@ final class _RecordingFactsPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: appStyle.spaceSm,
-          runSpacing: appStyle.space2Xs,
-          children: [
-            Text('录音', style: theme.typography.display.md),
-            Text(
-              viewModel.meeting.title,
-              style: theme.typography.body.sm.copyWith(
-                color: theme.colors.mutedForeground,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: appStyle.spaceSm),
         DecoratedBox(
           key: const ValueKey('recording-control-console'),
           decoration: BoxDecoration(
@@ -234,22 +219,11 @@ final class _RecordingFactsPanel extends StatelessWidget {
                   runSpacing: appStyle.spaceXs,
                   children: [
                     _RecordingStateLabel(state: viewModel.recordingState),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '实时转录仅供参考',
-                          style: theme.typography.body.xs.copyWith(
-                            color: theme.colors.mutedForeground,
-                          ),
-                        ),
-                        SizedBox(width: appStyle.space2Xs),
-                        Icon(
-                          FLucideIcons.info,
-                          size: 16,
-                          color: theme.colors.mutedForeground,
-                        ),
-                      ],
+                    Text(
+                      viewModel.meeting.title,
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
                     ),
                   ],
                 ),
@@ -266,19 +240,26 @@ final class _RecordingFactsPanel extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: appStyle.space2Xs),
-                const _DurationUnits(),
                 SizedBox(height: appStyle.spaceMd),
-                AppTimeRuler(elapsed: viewModel.duration),
-                SizedBox(height: appStyle.space2Xs),
-                _TimeRulerLabels(elapsed: viewModel.duration),
+                RecordingAudioWaveform(
+                  levels: viewModel.audioLevels,
+                  state: switch (viewModel.recordingState) {
+                    RecordingState.idle || RecordingState.starting =>
+                      RecordingAudioWaveformState.waiting,
+                    RecordingState.recording =>
+                      RecordingAudioWaveformState.live,
+                    RecordingState.paused => RecordingAudioWaveformState.paused,
+                    RecordingState.finalizing ||
+                    RecordingState.completed ||
+                    RecordingState.failed =>
+                      RecordingAudioWaveformState.stopped,
+                  },
+                ),
                 SizedBox(height: appStyle.spaceLg),
-                _AudioFactRow(
+                _RecordingFactLedger(
                   state: viewModel.recordingState,
                   modelName: model?.displayName ?? '本场模型',
                 ),
-                SizedBox(height: appStyle.spaceSm),
-                _PreviewStatusRow(viewModel: viewModel),
                 if (viewModel.errorMessage case final message?) ...[
                   SizedBox(height: appStyle.spaceMd),
                   AppStatusNotice(
@@ -287,8 +268,6 @@ final class _RecordingFactsPanel extends StatelessWidget {
                     message: '请保留应用数据，并按当前可用操作继续。事实音频状态以上方提示为准。',
                   ),
                 ],
-                SizedBox(height: appStyle.spaceLg),
-                _RecordingActions(viewModel: viewModel, onEnd: onEnd),
               ],
             ),
           ),
@@ -326,78 +305,8 @@ final class _RecordingStateLabel extends StatelessWidget {
   }
 }
 
-final class _DurationUnits extends StatelessWidget {
-  const _DurationUnits();
-
-  @override
-  Widget build(BuildContext context) {
-    final style = context.theme.typography.body.xs.copyWith(
-      color: context.theme.colors.mutedForeground,
-    );
-    return Row(
-      children: [
-        for (final unit in const ['时', '分', '秒'])
-          Expanded(
-            child: Text(unit, textAlign: TextAlign.center, style: style),
-          ),
-      ],
-    );
-  }
-}
-
-final class _TimeRulerLabels extends StatelessWidget {
-  const _TimeRulerLabels({required this.elapsed});
-
-  final Duration elapsed;
-
-  @override
-  Widget build(BuildContext context) {
-    final startSeconds = (elapsed.inSeconds - 15).clamp(0, 1 << 30);
-    final style = context.theme.typography.body.xs.copyWith(
-      color: context.theme.colors.mutedForeground,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
-        final compactLabels = largeText || constraints.maxWidth < 300;
-        final offsets = compactLabels
-            ? const [0, 30]
-            : constraints.maxWidth < 430
-            ? const [0, 15, 30]
-            : const [0, 10, 20, 30];
-        return Row(
-          children: [
-            for (var index = 0; index < offsets.length; index++)
-              Expanded(
-                child: Align(
-                  alignment: switch (index) {
-                    0 => Alignment.centerLeft,
-                    _ when index == offsets.length - 1 => Alignment.centerRight,
-                    _ => Alignment.center,
-                  },
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      _rulerLabel(
-                        Duration(seconds: startSeconds + offsets[index]),
-                        compact: compactLabels,
-                      ),
-                      maxLines: 1,
-                      style: style,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-final class _AudioFactRow extends StatelessWidget {
-  const _AudioFactRow({required this.state, required this.modelName});
+final class _RecordingFactLedger extends StatelessWidget {
+  const _RecordingFactLedger({required this.state, required this.modelName});
 
   final RecordingState state;
   final String modelName;
@@ -406,49 +315,66 @@ final class _AudioFactRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: theme.colors.border,
-          width: appStyle.dividerWidth,
-        ),
-        borderRadius: BorderRadius.circular(appStyle.cardRadius),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(appStyle.spaceSm),
-        child: Row(
-          children: [
-            const Icon(FLucideIcons.archive, size: 20),
-            SizedBox(width: appStyle.spaceSm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _recordingLabel(state),
-                    style: theme.typography.body.md.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: appStyle.space2Xs),
-                  Text(
-                    '本地存储 · 单一事实来源\n$modelName · 本场已锁定',
-                    style: theme.typography.body.xs.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return KeyedSubtree(
+      key: const ValueKey('recording-fact-ledger'),
+      child: Column(
+        children: [
+          _RecordingFactRow(
+            icon: FLucideIcons.archive,
+            label: _recordingLabel(state),
+            emphasized: true,
+          ),
+          SizedBox(height: appStyle.spaceSm),
+          _RecordingFactRow(
+            icon: FLucideIcons.lockKeyhole,
+            label: '$modelName · 本场锁定',
+          ),
+        ],
       ),
     );
   }
 }
 
-final class _PreviewStatusRow extends StatelessWidget {
-  const _PreviewStatusRow({required this.viewModel});
+final class _RecordingFactRow extends StatelessWidget {
+  const _RecordingFactRow({
+    required this.icon,
+    required this.label,
+    this.emphasized = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: emphasized ? null : theme.colors.mutedForeground,
+        ),
+        SizedBox(width: appStyle.spaceXs),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.typography.body.sm.copyWith(
+              color: emphasized ? null : theme.colors.mutedForeground,
+              fontWeight: emphasized ? FontWeight.w600 : null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+final class _PreviewStatusSummary extends StatelessWidget {
+  const _PreviewStatusSummary({required this.viewModel});
 
   final RecordingSessionViewModel viewModel;
 
@@ -457,32 +383,91 @@ final class _PreviewStatusRow extends StatelessWidget {
     final theme = context.theme;
     final appStyle = theme.style.app;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(
           _previewTone(viewModel) == AppStatusTone.warning
               ? FLucideIcons.triangleAlert
-              : FLucideIcons.info,
-          size: 17,
-          color: theme.colors.mutedForeground,
+              : FLucideIcons.radio,
+          size: 18,
         ),
         SizedBox(width: appStyle.spaceXs),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_previewLabel(viewModel), style: theme.typography.body.sm),
-              SizedBox(height: appStyle.space2Xs),
-              Text(
-                _previewDescription(viewModel),
-                style: theme.typography.body.xs.copyWith(
-                  color: theme.colors.mutedForeground,
-                ),
-              ),
-            ],
+          child: Text(
+            _previewLabel(viewModel),
+            style: theme.typography.body.sm.copyWith(
+              color: _previewTone(viewModel) == AppStatusTone.warning
+                  ? null
+                  : theme.colors.mutedForeground,
+              fontWeight: _previewTone(viewModel) == AppStatusTone.warning
+                  ? FontWeight.w600
+                  : null,
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+final class _RecordingBottomBar extends StatelessWidget {
+  const _RecordingBottomBar({required this.viewModel, required this.onEnd});
+
+  final RecordingSessionViewModel viewModel;
+  final VoidCallback onEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return DecoratedBox(
+      decoration: BoxDecoration(color: theme.colors.card),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            appStyle.spaceMd,
+            appStyle.spaceSm,
+            appStyle.spaceMd,
+            appStyle.spaceMd,
+          ),
+          child: Align(
+            alignment: Alignment.topCenter,
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: appStyle.wideContentMaxWidth,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final actions = KeyedSubtree(
+                      key: const ValueKey('recording-bottom-actions'),
+                      child: _RecordingActions(
+                        viewModel: viewModel,
+                        onEnd: onEnd,
+                      ),
+                    );
+                    if (constraints.maxWidth < appStyle.wideLayoutMinWidth) {
+                      return actions;
+                    }
+                    return Row(
+                      children: [
+                        const Spacer(),
+                        SizedBox(
+                          width: appStyle.factRailWidth + appStyle.spaceXl,
+                          child: actions,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -541,9 +526,10 @@ final class _RecordingActions extends StatelessWidget {
 }
 
 final class _LiveTranscriptPanel extends StatelessWidget {
-  const _LiveTranscriptPanel({required this.viewModel});
+  const _LiveTranscriptPanel({required this.viewModel, required this.outlined});
 
   final RecordingSessionViewModel viewModel;
+  final bool outlined;
 
   @override
   Widget build(BuildContext context) {
@@ -554,11 +540,15 @@ final class _LiveTranscriptPanel extends StatelessWidget {
       key: const ValueKey('live-transcript-ledger'),
       decoration: BoxDecoration(
         color: theme.colors.card,
-        border: Border.all(
-          color: theme.colors.app.borderStrong,
-          width: appStyle.dividerWidth,
-        ),
-        borderRadius: BorderRadius.circular(appStyle.panelRadius),
+        border: outlined
+            ? Border.all(
+                color: theme.colors.app.borderStrong,
+                width: appStyle.dividerWidth,
+              )
+            : null,
+        borderRadius: outlined
+            ? BorderRadius.circular(appStyle.panelRadius)
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -574,17 +564,27 @@ final class _LiveTranscriptPanel extends StatelessWidget {
             ),
             child: Padding(
               padding: EdgeInsets.all(appStyle.spaceMd),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text('实时转录', style: theme.typography.display.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text('实时转录', style: theme.typography.display.md),
+                      ),
+                      if (segments.isNotEmpty)
+                        Text(
+                          '${segments.length} 段',
+                          key: const ValueKey('live-transcript-count'),
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.mutedForeground,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                    ],
                   ),
-                  Text(
-                    '仅供参考',
-                    style: theme.typography.body.xs.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
-                  ),
+                  SizedBox(height: appStyle.spaceXs),
+                  _PreviewStatusSummary(viewModel: viewModel),
                 ],
               ),
             ),
@@ -592,15 +592,7 @@ final class _LiveTranscriptPanel extends StatelessWidget {
           Padding(
             padding: EdgeInsets.all(appStyle.spaceMd),
             child: segments.isEmpty
-                ? Text(
-                    viewModel.previewMetrics.state ==
-                            AsrPreviewState.recordingOnly
-                        ? '实时转录已停止，录音仍在继续。'
-                        : '等待检测到语音…',
-                    style: theme.typography.body.md.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
-                  )
+                ? _LiveTranscriptEmptyState(viewModel: viewModel)
                 : Column(
                     children: [
                       for (var index = 0; index < segments.length; index++)
@@ -632,7 +624,7 @@ final class _LiveTranscriptPanel extends StatelessWidget {
                   SizedBox(width: appStyle.spaceXs),
                   Expanded(
                     child: Text(
-                      '实时转录仅供参考，结束后基于本场锁定模型生成最终转录。',
+                      '仅供参考，结束后生成最终转录。',
                       style: theme.typography.body.xs.copyWith(
                         color: theme.colors.mutedForeground,
                       ),
@@ -643,6 +635,30 @@ final class _LiveTranscriptPanel extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+final class _LiveTranscriptEmptyState extends StatelessWidget {
+  const _LiveTranscriptEmptyState({required this.viewModel});
+
+  final RecordingSessionViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final stopped =
+        viewModel.previewMetrics.state == AsrPreviewState.recordingOnly;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: appStyle.spaceMd),
+      child: Text(
+        stopped ? '结束后仍会基于完整音频生成最终转录。' : '检测到语音后在这里显示文字。',
+        textAlign: TextAlign.center,
+        style: theme.typography.body.sm.copyWith(
+          color: theme.colors.mutedForeground,
+        ),
       ),
     );
   }
@@ -675,9 +691,12 @@ final class _TranscriptRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: appStyle.ledgerTimeColumnWidth,
+              width: appStyle.ledgerTimeColumnWidth + appStyle.spaceXs,
               child: Text(
                 _timestamp(segment.startMs),
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.fade,
                 style: theme.typography.body.sm.copyWith(
                   color: theme.colors.mutedForeground,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -747,19 +766,6 @@ String _previewLabel(RecordingSessionViewModel viewModel) {
   };
 }
 
-String _previewDescription(RecordingSessionViewModel viewModel) =>
-    switch (viewModel.previewMetrics.state) {
-      AsrPreviewState.ready =>
-        viewModel.previewMetrics.queuedAudioMs == 0
-            ? '当前没有待处理音频。'
-            : '当前待处理 ${viewModel.previewMetrics.queuedAudioMs} 毫秒音频。',
-      AsrPreviewState.backlogged =>
-        '事实音频不受影响，系统正在追赶 '
-            '${viewModel.previewMetrics.previewLagMs} 毫秒转录。',
-      AsrPreviewState.recordingOnly => '事实音频仍在安全写入；结束后可基于完整音频继续处理。',
-      AsrPreviewState.disposed => '事实音频将进入最终处理。',
-    };
-
 String _durationLabel(Duration value) {
   final hours = value.inHours.toString().padLeft(2, '0');
   final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -768,14 +774,11 @@ String _durationLabel(Duration value) {
 }
 
 String _timestamp(int milliseconds) {
-  return _durationLabel(Duration(milliseconds: milliseconds));
-}
-
-String _rulerLabel(Duration value, {required bool compact}) {
-  if (!compact) {
-    return _durationLabel(value);
+  final duration = Duration(milliseconds: milliseconds);
+  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+  if (duration.inHours == 0) {
+    return '$minutes:$seconds';
   }
-  final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$minutes:$seconds';
+  return '${duration.inHours}:$minutes:$seconds';
 }
