@@ -8,6 +8,7 @@ import 'package:meettrace/data/services/audio/recording_ports.dart';
 import 'package:meettrace/data/services/audio/reliable_recording_service.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/domain/models/recording.dart';
+import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   late Directory root;
@@ -34,11 +35,12 @@ void main() {
   ReliableRecordingService createService({
     RecordingPreviewSink preview = const DiscardingRecordingPreviewSink(),
     int freeBytes = 512 * 1024 * 1024,
+    RecordingCheckpointStore? checkpointStore,
   }) {
     return ReliableRecordingService(
       capture: capture,
       layout: layout,
-      checkpoints: checkpoints,
+      checkpoints: checkpointStore ?? checkpoints,
       storageCapacity: FixedRecordingStorageCapacity(freeBytes),
       foreground: foreground,
       previewSink: preview,
@@ -175,6 +177,71 @@ void main() {
     );
   });
 
+  test('首次 checkpoint 写入失败会回滚文件和平台录音资源', () async {
+    final service = createService(
+      checkpointStore: _FailingRecordingCheckpointStore(),
+    );
+
+    await expectLater(
+      service.start(meetingId: 'meeting-checkpoint-failure'),
+      throwsA(
+        isA<ReliableRecordingException>().having(
+          (error) => error.code,
+          'code',
+          'recording.start_failed',
+        ),
+      ),
+    );
+
+    expect(service.state, RecordingState.failed);
+    expect(service.canFinalize, isFalse);
+    expect(capture.stopCalls, 1);
+    expect(capture.disposeCalls, 1);
+    expect(foreground.events, ['stop']);
+    expect(
+      await File(
+        layout.meetingAudioTempPath('meeting-checkpoint-failure'),
+      ).exists(),
+      isFalse,
+    );
+  });
+
+  test('采集流异步报错后仍可封存已持久化事实音频', () async {
+    final service = createService();
+    await service.start(meetingId: 'meeting-capture-error');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
+
+    capture.addError(StateError('microphone interrupted'));
+    await _waitFor(() => service.state == RecordingState.failed);
+
+    expect(service.canFinalize, isTrue);
+    final result = await service.stop();
+
+    expect(result.bytes, recordingBytesPerSecond);
+    expect(result.duration, const Duration(seconds: 1));
+    expect(await File(result.audioPath).exists(), isTrue);
+    expect(service.state, RecordingState.completed);
+    expect(foreground.events.last, 'stop');
+  });
+
+  test('封存提交后的前台服务和 recorder 清理异常不覆盖成功结果', () async {
+    final service = createService();
+    await service.start(meetingId: 'meeting-cleanup-failure');
+    capture.add(_pcmBytes(3200));
+    await _waitFor(() => service.persistedBytes == 3200);
+    foreground.stopError = StateError('foreground stop failed');
+    capture.disposeError = StateError('recorder dispose failed');
+
+    final result = await service.stop();
+
+    expect(result.bytes, 3200);
+    expect(await File(result.audioPath).length(), 3200);
+    expect(service.state, RecordingState.completed);
+    expect(capture.disposeCalls, 1);
+    expect(foreground.events.last, 'stop');
+  });
+
   test('合成 30 分钟 PCM 的事实文件完整率为 100%', () async {
     final service = createService();
     await service.start(meetingId: 'meeting-30m');
@@ -216,12 +283,22 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
 
   bool permissionGranted = true;
   bool _started = false;
+  int stopCalls = 0;
+  int disposeCalls = 0;
+  Object? disposeError;
 
   void add(Uint8List bytes) {
     if (!_started) {
       throw StateError('capture has not started');
     }
     _controller.add(Uint8List.fromList(bytes));
+  }
+
+  void addError(Object error) {
+    if (!_started) {
+      throw StateError('capture has not started');
+    }
+    _controller.addError(error);
   }
 
   @override
@@ -243,7 +320,8 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
 
   @override
   Future<void> stop() async {
-    if (!_controller.isClosed) {
+    stopCalls++;
+    if (_started && !_controller.isClosed) {
       await _controller.close();
     }
     _started = false;
@@ -251,11 +329,17 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
 
   @override
   Future<void> dispose() async {
+    disposeCalls++;
     if (!_controller.isClosed) {
       final closing = _controller.close();
       if (_started) {
         await closing;
       }
+    }
+    final error = disposeError;
+    disposeError = null;
+    if (error != null) {
+      throw error;
     }
   }
 }
@@ -273,6 +357,7 @@ final class FixedRecordingStorageCapacity
 final class FakeRecordingForegroundLifecycle
     implements RecordingForegroundLifecycle {
   final List<String> events = [];
+  Object? stopError;
 
   @override
   Future<void> start({required String meetingId}) async {
@@ -287,5 +372,24 @@ final class FakeRecordingForegroundLifecycle
   @override
   Future<void> stop() async {
     events.add('stop');
+    final error = stopError;
+    stopError = null;
+    if (error != null) {
+      throw error;
+    }
+  }
+}
+
+final class _FailingRecordingCheckpointStore
+    implements RecordingCheckpointStore {
+  @override
+  Future<void> delete(String meetingId) async {}
+
+  @override
+  Future<RecordingCheckpoint?> load(String meetingId) async => null;
+
+  @override
+  Future<void> save(RecordingCheckpoint checkpoint) async {
+    throw FileSystemException('checkpoint write failed');
   }
 }

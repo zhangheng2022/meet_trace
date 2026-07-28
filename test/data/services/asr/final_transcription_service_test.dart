@@ -169,6 +169,108 @@ void main() {
     expect(engines.createCalls, isEmpty);
     expect(transcripts.saved, isEmpty);
   });
+
+  test('同一会议的并发最终转录会串行执行并基于最新活动快照', () async {
+    meetings.value = _meeting();
+    var snapshotSequence = 0;
+    var finalizeCalls = 0;
+    final firstStarted = Completer<void>();
+    final releaseFirst = Completer<void>();
+    engines.beforeFinalize = () async {
+      finalizeCalls++;
+      if (finalizeCalls == 1) {
+        firstStarted.complete();
+        await releaseFirst.future;
+      }
+    };
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+    service = FinalTranscriptionService(
+      meetings: meetings,
+      transcripts: transcripts,
+      engineFactory: engines,
+      now: () => now,
+      snapshotIdFactory: (_, _) => 'snapshot-${++snapshotSequence}',
+    );
+
+    final first = service.transcribe(meetingId: 'meeting-1');
+    await firstStarted.future;
+    final second = service.transcribe(meetingId: 'meeting-1');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(engines.createCalls, hasLength(1));
+
+    releaseFirst.complete();
+    final results = await Future.wait([first, second]);
+
+    expect(engines.createCalls, hasLength(2));
+    expect(results[0].snapshot.id, 'snapshot-1');
+    expect(results[1].snapshot.id, 'snapshot-2');
+    expect(transcripts.expectedActiveIds, [null, 'snapshot-1']);
+    expect(meetings.value!.status, MeetingState.completed);
+    expect(meetings.value!.activeTranscriptSnapshotId, 'snapshot-2');
+  });
+
+  test('原子激活冲突时不会用失败状态覆盖已提交的赢家', () async {
+    final descriptor = AsrModelRegistry.alpha.requireById(
+      paraformerStandardModelId,
+    );
+    final winner = _snapshot(
+      id: 'winner-snapshot',
+      meetingId: 'meeting-1',
+      descriptor: descriptor,
+      createdAt: now,
+    );
+    meetings.value = _meeting();
+    transcripts.conflictingWinner = winner;
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+
+    await expectLater(
+      service.transcribe(meetingId: 'meeting-1'),
+      throwsA(isA<StateError>()),
+    );
+
+    expect(meetings.value!.status, MeetingState.completed);
+    expect(meetings.value!.activeTranscriptSnapshotId, 'winner-snapshot');
+    expect(transcripts.activeSnapshotId, 'winner-snapshot');
+    expect(transcripts.saved.last.status, TranscriptSnapshotStatus.failed);
+  });
+
+  test('Engine 释放失败不覆盖已原子激活的最终转录', () async {
+    meetings.value = _meeting();
+    engines.disposeError = StateError('dispose failed');
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+
+    final result = await service.transcribe(meetingId: 'meeting-1');
+
+    expect(result.meeting.status, MeetingState.completed);
+    expect(result.snapshot.status, TranscriptSnapshotStatus.complete);
+    expect(meetings.value!.status, MeetingState.completed);
+    expect(meetings.value!.activeTranscriptSnapshotId, 'snapshot-attempt-1');
+  });
 }
 
 Meeting _meeting({
@@ -253,6 +355,7 @@ final class _TranscriptRepository implements TranscriptRepository {
   final List<TranscriptSnapshot> saved = [];
   final List<String?> expectedActiveIds = [];
   String? activeSnapshotId;
+  TranscriptSnapshot? conflictingWinner;
 
   @override
   Future<TranscriptSnapshot?> getById(String snapshotId) async =>
@@ -277,6 +380,14 @@ final class _TranscriptRepository implements TranscriptRepository {
     required TranscriptSnapshot snapshot,
     required String? expectedActiveSnapshotId,
   }) async {
+    final winner = conflictingWinner;
+    if (winner != null) {
+      conflictingWinner = null;
+      records[winner.id] = winner;
+      activeSnapshotId = winner.id;
+      meetings.value = meetings.value!.activateFinalTranscript(winner);
+      throw StateError('活动快照已改变');
+    }
     if (activeSnapshotId != expectedActiveSnapshotId) {
       throw StateError('活动快照已改变');
     }
@@ -284,6 +395,7 @@ final class _TranscriptRepository implements TranscriptRepository {
     saved.add(snapshot);
     expectedActiveIds.add(expectedActiveSnapshotId);
     activeSnapshotId = snapshot.id;
+    meetings.value = meetings.value!.activateFinalTranscript(snapshot);
   }
 
   @override
@@ -306,7 +418,9 @@ final class _EngineFactory implements AsrEngineFactory {
   final List<(String, String)> createCalls = [];
   _Engine? engine;
   Object? error;
+  Object? disposeError;
   _ResultBuilder? resultBuilder;
+  Future<void> Function()? beforeFinalize;
 
   @override
   Future<AsrEngine> create({
@@ -317,7 +431,9 @@ final class _EngineFactory implements AsrEngineFactory {
     final created = _Engine(
       descriptor: AsrModelRegistry.alpha.requireById(modelId),
       error: error,
+      disposeError: disposeError,
       resultBuilder: resultBuilder,
+      beforeFinalize: beforeFinalize,
     );
     engine = created;
     return created;
@@ -328,13 +444,17 @@ final class _Engine implements AsrEngine {
   _Engine({
     required this.descriptor,
     required this.error,
+    required this.disposeError,
     required this.resultBuilder,
+    required this.beforeFinalize,
   });
 
   @override
   final AsrModelDescriptor descriptor;
   final Object? error;
+  final Object? disposeError;
   final _ResultBuilder? resultBuilder;
+  final Future<void> Function()? beforeFinalize;
   final StreamController<AsrFinalizationProgress> _progress =
       StreamController.broadcast();
   AudioSource? source;
@@ -385,6 +505,7 @@ final class _Engine implements AsrEngine {
   }) async {
     this.source = source;
     this.snapshotId = snapshotId;
+    await beforeFinalize?.call();
     final failure = error;
     if (failure != null) {
       throw failure;
@@ -400,5 +521,11 @@ final class _Engine implements AsrEngine {
   void cancel() {}
 
   @override
-  Future<void> dispose() => _progress.close();
+  Future<void> dispose() async {
+    await _progress.close();
+    final failure = disposeError;
+    if (failure != null) {
+      throw failure;
+    }
+  }
 }

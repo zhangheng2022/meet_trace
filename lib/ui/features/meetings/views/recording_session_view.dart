@@ -48,7 +48,9 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
     return ListenableBuilder(
       listenable: widget.viewModel,
       builder: (context, _) {
-        final active = _isActive(widget.viewModel.recordingState);
+        final active =
+            _isActive(widget.viewModel.recordingState) ||
+            widget.viewModel.canStop;
         return PopScope(
           canPop: !active,
           onPopInvokedWithResult: (didPop, _) {
@@ -112,7 +114,9 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
   }
 
   Future<void> _requestEnd() async {
-    if (_endDialogOpen || !_isActive(widget.viewModel.recordingState)) {
+    if (_endDialogOpen ||
+        (!_isActive(widget.viewModel.recordingState) &&
+            !widget.viewModel.canStop)) {
       return;
     }
     _endDialogOpen = true;

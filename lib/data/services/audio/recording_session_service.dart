@@ -22,6 +22,9 @@ abstract interface class RecordingSessionService {
 
   Duration get duration;
 
+  /// 当前会话是否仍有可封存或需要清理的事实音频。
+  bool get canFinalize;
+
   Future<void> start({required String meetingId});
 
   Future<void> pause();

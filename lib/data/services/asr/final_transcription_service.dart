@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../../domain/models/audio_source.dart';
 import '../../../domain/models/meeting.dart';
 import '../../../domain/models/transcript.dart';
+import '../../../domain/models/workflow_states.dart';
 import '../../repositories/repository_contracts.dart';
 import 'asr_engine.dart';
 
@@ -58,6 +59,7 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
   final AsrEngineFactory engineFactory;
   final DateTime Function() now;
   final FinalTranscriptionSnapshotIdFactory snapshotIdFactory;
+  final Map<String, Future<FinalTranscriptionResult>> _meetingOperations = {};
 
   @override
   Future<FinalTranscriptionResult> transcribe({
@@ -66,6 +68,55 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
     String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
+  }) {
+    final previous = _meetingOperations[meetingId];
+    late final Future<FinalTranscriptionResult> operation;
+    operation = _runAfter(
+      previous,
+      meetingId: meetingId,
+      modelId: modelId,
+      modelVersion: modelVersion,
+      retrySnapshotId: retrySnapshotId,
+      onProgress: onProgress,
+    );
+    _meetingOperations[meetingId] = operation;
+    return operation.whenComplete(() {
+      if (identical(_meetingOperations[meetingId], operation)) {
+        _meetingOperations.remove(meetingId);
+      }
+    });
+  }
+
+  Future<FinalTranscriptionResult> _runAfter(
+    Future<FinalTranscriptionResult>? previous, {
+    required String meetingId,
+    required String? modelId,
+    required String? modelVersion,
+    required String? retrySnapshotId,
+    required FinalTranscriptionProgressCallback? onProgress,
+  }) async {
+    if (previous != null) {
+      try {
+        await previous;
+      } on Object {
+        // 前一次失败不阻止同一会议的显式重试。
+      }
+    }
+    return _transcribe(
+      meetingId: meetingId,
+      modelId: modelId,
+      modelVersion: modelVersion,
+      retrySnapshotId: retrySnapshotId,
+      onProgress: onProgress,
+    );
+  }
+
+  Future<FinalTranscriptionResult> _transcribe({
+    required String meetingId,
+    required String? modelId,
+    required String? modelVersion,
+    required String? retrySnapshotId,
+    required FinalTranscriptionProgressCallback? onProgress,
   }) async {
     final meeting = await meetings.getById(meetingId);
     if (meeting == null) {
@@ -159,12 +210,37 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
         segments: const [],
       );
       await transcripts.save(failed);
-      await meetings.save(processingMeeting.fail(errorCode: _errorCode(error)));
+      await _saveFailureIfCurrent(
+        originalMeeting: meeting,
+        errorCode: _errorCode(error),
+      );
       Error.throwWithStackTrace(error, stackTrace);
     } finally {
-      await progressSubscription?.cancel();
-      await engine?.dispose();
+      try {
+        await progressSubscription?.cancel();
+      } on Object {
+        // 监听器清理失败不得覆盖已经确定的最终转录结果。
+      }
+      try {
+        await engine?.dispose();
+      } on Object {
+        // Engine 释放异常只影响诊断，不能把已原子激活的快照改判为失败。
+      }
     }
+  }
+
+  Future<void> _saveFailureIfCurrent({
+    required Meeting originalMeeting,
+    required String errorCode,
+  }) async {
+    final current = await meetings.getById(originalMeeting.id);
+    if (current == null ||
+        current.status != MeetingState.processing ||
+        current.activeTranscriptSnapshotId !=
+            originalMeeting.activeTranscriptSnapshotId) {
+      return;
+    }
+    await meetings.save(current.fail(errorCode: errorCode));
   }
 
   (String, String) _selectedModel(

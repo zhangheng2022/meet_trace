@@ -97,127 +97,142 @@ final class MeetTraceDependencies {
   final String vadModelPath;
 
   static Future<MeetTraceDependencies> create() async {
-    final registry = AsrModelRegistry.alpha;
-    final fileLayout = await AppFileLayout.forApplication();
-    await fileLayout.createBaseDirectories();
-    final database = AppDatabase(
-      databaseFactory: createPlatformDatabaseFactory(),
-      path: fileLayout.databasePath,
-    );
-    await StartupRecoveryService(
-      database: database,
-      layout: fileLayout,
-    ).recover(now: DateTime.now());
+    final rollback = <Future<void> Function()>[];
+    try {
+      final registry = AsrModelRegistry.alpha;
+      final fileLayout = await AppFileLayout.forApplication();
+      await fileLayout.createBaseDirectories();
+      final database = AppDatabase(
+        databaseFactory: createPlatformDatabaseFactory(),
+        path: fileLayout.databasePath,
+      );
+      rollback.add(database.close);
+      await StartupRecoveryService(
+        database: database,
+        layout: fileLayout,
+      ).recover(now: DateTime.now());
 
-    final meetings = SqfliteMeetingRepository(database);
-    final transcripts = SqfliteTranscriptRepository(
-      database,
-      onMeetingChanged: meetings.notifyChanged,
-    );
-    final installations = SqfliteModelInstallationRepository(database);
-    final preferences = SqfliteModelPreferenceRepository(
-      database,
-      registry: registry,
-    );
-    final diarizationPreferences = SqfliteDiarizationPreferenceRepository(
-      database,
-    );
-    final processingTasks = SqfliteProcessingTaskRepository(database);
-    final summaries = SqfliteSummaryRepository(database);
-    final assetSource = FlutterModelAssetSource(rootBundle);
-    final manifest = ModelManifestParser(
-      registry: registry,
-      currentAppVersion: '1.0.0',
-    ).parse(await rootBundle.loadString('assets/models/manifest.json'));
-    final standard = registry.requireById(paraformerStandardModelId);
-    final standardManifest = manifest.models.singleWhere(
-      (entry) => entry.modelId == standard.modelId,
-    );
-    await BundledModelPreparationService(
-      fileLayout: fileLayout,
-      installations: installations,
-      assetSource: assetSource,
-      verifier: const ModelFileVerifier(),
-    ).prepare(descriptor: standard, manifest: standardManifest);
-    final standardInstallation = await installations.get(
-      modelId: standard.modelId,
-      version: standard.version,
-    );
-    if (standardInstallation == null) {
-      throw StateError('内置标准模型准备后没有安装记录');
+      final meetings = SqfliteMeetingRepository(database);
+      rollback.add(meetings.dispose);
+      final transcripts = SqfliteTranscriptRepository(
+        database,
+        onMeetingChanged: meetings.notifyChanged,
+      );
+      final installations = SqfliteModelInstallationRepository(database);
+      rollback.add(installations.dispose);
+      final preferences = SqfliteModelPreferenceRepository(
+        database,
+        registry: registry,
+      );
+      final diarizationPreferences = SqfliteDiarizationPreferenceRepository(
+        database,
+      );
+      final processingTasks = SqfliteProcessingTaskRepository(database);
+      final summaries = SqfliteSummaryRepository(database);
+      final assetSource = FlutterModelAssetSource(rootBundle);
+      final manifest = ModelManifestParser(
+        registry: registry,
+        currentAppVersion: '1.0.0',
+      ).parse(await rootBundle.loadString('assets/models/manifest.json'));
+      final standard = registry.requireById(paraformerStandardModelId);
+      final standardManifest = manifest.models.singleWhere(
+        (entry) => entry.modelId == standard.modelId,
+      );
+      await BundledModelPreparationService(
+        fileLayout: fileLayout,
+        installations: installations,
+        assetSource: assetSource,
+        verifier: const ModelFileVerifier(),
+      ).prepare(descriptor: standard, manifest: standardManifest);
+      final standardInstallation = await installations.get(
+        modelId: standard.modelId,
+        version: standard.version,
+      );
+      if (standardInstallation == null) {
+        throw StateError('内置标准模型准备后没有安装记录');
+      }
+      await installations.saveInstalledAndActivate(standardInstallation);
+
+      final vad = await BundledSileroVadModelService(
+        fileLayout: fileLayout,
+        assetSource: assetSource,
+      ).prepare();
+      final leases = SqfliteModelUsageLeaseRepository(database);
+      final engineFactory = SherpaOnnxAsrEngineFactory(
+        installations: installations,
+        leases: leases,
+        riskMonitor: createPlatformAsrDeviceRiskMonitor(),
+        ownerId: 'meettrace-app',
+      );
+      final finalTranscription = FinalTranscriptionService(
+        meetings: meetings,
+        transcripts: transcripts,
+        engineFactory: engineFactory,
+        now: DateTime.now,
+      );
+      final diarization = SpeakerDiarizationCoordinator(
+        meetings: meetings,
+        transcripts: transcripts,
+        tasks: processingTasks,
+        service: const UnavailableSpeakerDiarizationService(),
+        now: DateTime.now,
+      );
+      final summaryGeneration = GenerateSummaryUseCase(
+        meetings: meetings,
+        transcripts: transcripts,
+        summaries: summaries,
+        tasks: processingTasks,
+        service: const UnavailableSummaryGenerationService(),
+        now: DateTime.now,
+      );
+      final modelDownloads = DownloadableModelService(
+        fileLayout: fileLayout,
+        installations: installations,
+        leases: leases,
+        capacity: const DeviceStorageCapacityProvider(),
+        network: ConnectivityDownloadNetworkStatusProvider(),
+        downloader: HttpModelFileDownloader(),
+        verifier: const ModelFileVerifier(),
+      );
+      final meetingReadiness = CheckMeetingReadinessUseCase(
+        device: DeviceRecordingReadinessProbe(
+          captureFactory: RecordPcmAudioCapture.new,
+          storageCapacity: const DeviceRecordingStorageCapacityProvider(),
+        ),
+        preferences: preferences,
+        installations: installations,
+        registry: registry,
+      );
+      return MeetTraceDependencies._(
+        database: database,
+        fileLayout: fileLayout,
+        meetings: meetings,
+        transcripts: transcripts,
+        installations: installations,
+        preferences: preferences,
+        diarizationPreferences: diarizationPreferences,
+        processingTasks: processingTasks,
+        summaries: summaries,
+        engineFactory: engineFactory,
+        finalTranscription: finalTranscription,
+        diarization: diarization,
+        summaryGeneration: summaryGeneration,
+        registry: registry,
+        modelManifest: manifest,
+        modelDownloads: modelDownloads,
+        meetingReadiness: meetingReadiness,
+        vadModelPath: vad.modelPath,
+      );
+    } on Object catch (error, stackTrace) {
+      for (final dispose in rollback.reversed) {
+        try {
+          await dispose();
+        } on Object {
+          // 保留启动失败的原始错误，避免重试累积数据库与流资源。
+        }
+      }
+      Error.throwWithStackTrace(error, stackTrace);
     }
-    await installations.saveInstalledAndActivate(standardInstallation);
-
-    final vad = await BundledSileroVadModelService(
-      fileLayout: fileLayout,
-      assetSource: assetSource,
-    ).prepare();
-    final leases = SqfliteModelUsageLeaseRepository(database);
-    final engineFactory = SherpaOnnxAsrEngineFactory(
-      installations: installations,
-      leases: leases,
-      riskMonitor: createPlatformAsrDeviceRiskMonitor(),
-      ownerId: 'meettrace-app',
-    );
-    final finalTranscription = FinalTranscriptionService(
-      meetings: meetings,
-      transcripts: transcripts,
-      engineFactory: engineFactory,
-      now: DateTime.now,
-    );
-    final diarization = SpeakerDiarizationCoordinator(
-      meetings: meetings,
-      transcripts: transcripts,
-      tasks: processingTasks,
-      service: const UnavailableSpeakerDiarizationService(),
-      now: DateTime.now,
-    );
-    final summaryGeneration = GenerateSummaryUseCase(
-      meetings: meetings,
-      transcripts: transcripts,
-      summaries: summaries,
-      tasks: processingTasks,
-      service: const UnavailableSummaryGenerationService(),
-      now: DateTime.now,
-    );
-    final modelDownloads = DownloadableModelService(
-      fileLayout: fileLayout,
-      installations: installations,
-      leases: leases,
-      capacity: const DeviceStorageCapacityProvider(),
-      network: ConnectivityDownloadNetworkStatusProvider(),
-      downloader: HttpModelFileDownloader(),
-      verifier: const ModelFileVerifier(),
-    );
-    final meetingReadiness = CheckMeetingReadinessUseCase(
-      device: DeviceRecordingReadinessProbe(
-        captureFactory: RecordPcmAudioCapture.new,
-        storageCapacity: const DeviceRecordingStorageCapacityProvider(),
-      ),
-      preferences: preferences,
-      installations: installations,
-      registry: registry,
-    );
-    return MeetTraceDependencies._(
-      database: database,
-      fileLayout: fileLayout,
-      meetings: meetings,
-      transcripts: transcripts,
-      installations: installations,
-      preferences: preferences,
-      diarizationPreferences: diarizationPreferences,
-      processingTasks: processingTasks,
-      summaries: summaries,
-      engineFactory: engineFactory,
-      finalTranscription: finalTranscription,
-      diarization: diarization,
-      summaryGeneration: summaryGeneration,
-      registry: registry,
-      modelManifest: manifest,
-      modelDownloads: modelDownloads,
-      meetingReadiness: meetingReadiness,
-      vadModelPath: vad.modelPath,
-    );
   }
 
   MeetingListViewModel createMeetingListViewModel() {

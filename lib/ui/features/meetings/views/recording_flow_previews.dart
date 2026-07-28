@@ -88,6 +88,10 @@ final class _PreviewRecordingService implements RecordingSessionService {
   Duration get duration => const Duration(minutes: 14, seconds: 28);
 
   @override
+  bool get canFinalize =>
+      _state == RecordingState.recording || _state == RecordingState.paused;
+
+  @override
   RecordingState get state => _state;
 
   @override

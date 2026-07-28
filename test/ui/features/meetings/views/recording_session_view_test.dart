@@ -104,6 +104,45 @@ void main() {
     await fixture.dispose();
   });
 
+  testWidgets('采集流失败但仍有事实音频时继续拦截返回并允许封存', (WidgetTester tester) async {
+    final fixture = _fixture();
+    Meeting? finished;
+
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (meeting) => finished = meeting,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    fixture.recording
+      ..durationValue = const Duration(seconds: 6)
+      ..failWithFinalizableAudio();
+    fixture.viewModel.refreshDuration();
+    await tester.pump();
+
+    expect(fixture.viewModel.recordingState, RecordingState.failed);
+    expect(fixture.viewModel.canStop, isTrue);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('结束并保存会议？'), findsOneWidget);
+
+    await tester.tap(find.text('结束并保存').last);
+    await tester.runAsync(() async {
+      for (var attempt = 0; attempt < 20 && finished == null; attempt++) {
+        await Future<void>.delayed(const Duration(milliseconds: 1));
+      }
+    });
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(finished?.status, MeetingState.processing);
+    expect(finished?.audioDurationMs, 6000);
+    await fixture.dispose();
+  });
+
   testWidgets('320 宽度和 2.0 字体缩放下关键状态与操作不溢出', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(320, 760);
     tester.view.devicePixelRatio = 1;
@@ -289,9 +328,17 @@ final class _Fixture {
 final class _RecordingService implements RecordingSessionService {
   RecordingState _state = RecordingState.idle;
   Duration durationValue = Duration.zero;
+  bool _hasFinalizableAudio = false;
 
   @override
   Duration get duration => durationValue;
+
+  @override
+  bool get canFinalize =>
+      _hasFinalizableAudio &&
+      (_state == RecordingState.recording ||
+          _state == RecordingState.paused ||
+          _state == RecordingState.failed);
 
   @override
   RecordingState get state => _state;
@@ -308,11 +355,17 @@ final class _RecordingService implements RecordingSessionService {
 
   @override
   Future<void> start({required String meetingId}) async {
+    _hasFinalizableAudio = true;
     _state = RecordingState.recording;
+  }
+
+  void failWithFinalizableAudio() {
+    _state = RecordingState.failed;
   }
 
   @override
   Future<RecordingArtifact> stop() async {
+    _hasFinalizableAudio = false;
     _state = RecordingState.completed;
     return RecordingArtifact(
       meetingId: 'meeting-1',

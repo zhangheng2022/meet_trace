@@ -163,6 +163,12 @@
       "skillPath": "skills/productivity/grill-me/SKILL.md",
       "computedHash": "7edd436132b43ea2973710f0c28a9879c9b0910651eb89a991a7e98cb6dbbacb"
     },
+    "open-code-review-delegate": {
+      "source": "alibaba/open-code-review",
+      "sourceType": "github",
+      "skillPath": "skills/open-code-review-delegate/SKILL.md",
+      "computedHash": "aed7e9eb32b033d8ccad769ad1a29d4ed2f74e9fe46f36f15068d30bd1d4f72d"
+    },
     "using-git-worktrees": {
       "source": "obra/superpowers",
       "sourceType": "github",

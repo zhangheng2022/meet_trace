@@ -91,6 +91,34 @@ void main() {
     viewModel.dispose();
     await preview.close();
   });
+
+  test('预览刷新和释放失败不回滚已封存的事实音频', () async {
+    final meetings = TestMeetingRepository();
+    final recording = _RecordingService()
+      ..durationValue = const Duration(seconds: 8);
+    final preview = _PreviewSession()
+      ..flushError = StateError('flush failed')
+      ..disposeError = StateError('dispose failed');
+    final viewModel = _viewModel(
+      meetings: meetings,
+      recording: recording,
+      preview: preview,
+    );
+
+    expect(await viewModel.start(), isTrue);
+
+    final completed = await viewModel.stop();
+
+    expect(completed?.status, MeetingState.processing);
+    expect(completed?.audioPath, '/meetings/meeting-1/fact.pcm');
+    expect(completed?.audioDurationMs, 8000);
+    expect(meetings.saved.last.status, MeetingState.processing);
+    expect(viewModel.errorMessage, isNull);
+    expect(preview.flushCalls, 1);
+    expect(preview.disposeCalls, 1);
+    viewModel.dispose();
+    await preview.close();
+  });
 }
 
 RecordingSessionViewModel _viewModel({
@@ -129,9 +157,17 @@ final class _RecordingService implements RecordingSessionService {
   RecordingState _state = RecordingState.idle;
   Duration durationValue = Duration.zero;
   Object? startError;
+  bool _started = false;
 
   @override
   Duration get duration => durationValue;
+
+  @override
+  bool get canFinalize =>
+      _started &&
+      (_state == RecordingState.recording ||
+          _state == RecordingState.paused ||
+          _state == RecordingState.failed);
 
   @override
   RecordingState get state => _state;
@@ -153,11 +189,13 @@ final class _RecordingService implements RecordingSessionService {
       _state = RecordingState.failed;
       throw error;
     }
+    _started = true;
     _state = RecordingState.recording;
   }
 
   @override
   Future<RecordingArtifact> stop() async {
+    _started = false;
     _state = RecordingState.completed;
     return RecordingArtifact(
       meetingId: 'meeting-1',
@@ -175,6 +213,8 @@ final class _PreviewSession implements AsrPreviewSession {
   AsrPreviewMetrics _value = _previewMetrics(AsrPreviewState.ready);
   int flushCalls = 0;
   int disposeCalls = 0;
+  Object? flushError;
+  Object? disposeError;
 
   @override
   Stream<TranscriptEvent> get events => _events.stream;
@@ -211,11 +251,21 @@ final class _PreviewSession implements AsrPreviewSession {
   @override
   Future<void> flush() async {
     flushCalls++;
+    final error = flushError;
+    flushError = null;
+    if (error != null) {
+      throw error;
+    }
   }
 
   @override
   Future<void> dispose() async {
     disposeCalls++;
+    final error = disposeError;
+    disposeError = null;
+    if (error != null) {
+      throw error;
+    }
   }
 
   Future<void> close() async {

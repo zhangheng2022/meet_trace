@@ -62,6 +62,11 @@ final class ReliableRecordingService implements RecordingSessionService {
   int get persistedBytes => _persistedBytes;
   @override
   Duration get duration => recordingDurationForBytes(_persistedBytes);
+  @override
+  bool get canFinalize =>
+      _state == RecordingState.recording ||
+      _state == RecordingState.paused ||
+      (_state == RecordingState.failed && _output != null);
   int get droppedPreviewChunks => _preview.droppedChunks;
 
   @override
@@ -72,37 +77,33 @@ final class ReliableRecordingService implements RecordingSessionService {
     _state = RecordingState.starting;
     _meetingId = meetingId;
 
-    if (!await capture.hasPermission()) {
-      _state = RecordingState.failed;
-      throw const ReliableRecordingException(
-        code: 'recording.permission_denied',
-        message: '未获得麦克风权限',
-      );
-    }
-    final freeBytes = await storageCapacity.getFreeBytes();
-    if (freeBytes < minimumFreeBytes) {
-      _state = RecordingState.failed;
-      throw ReliableRecordingException(
-        code: 'recording.storage_insufficient',
-        message: '可用空间不足，至少需要 $minimumFreeBytes 字节',
-      );
-    }
-
-    final tempFile = File(layout.meetingAudioTempPath(meetingId));
-    final finalFile = File(layout.meetingAudioPath(meetingId));
-    if (await tempFile.exists() || await finalFile.exists()) {
-      _state = RecordingState.failed;
-      throw const ReliableRecordingException(
-        code: 'recording.audio_already_exists',
-        message: '目标会议已有事实音频，拒绝覆盖',
-      );
-    }
-
-    await tempFile.parent.create(recursive: true);
-    _output = await tempFile.open(mode: FileMode.write);
-    await _saveCheckpoint(RecordingCheckpointState.recording);
-
     try {
+      if (!await capture.hasPermission()) {
+        throw const ReliableRecordingException(
+          code: 'recording.permission_denied',
+          message: '未获得麦克风权限',
+        );
+      }
+      final freeBytes = await storageCapacity.getFreeBytes();
+      if (freeBytes < minimumFreeBytes) {
+        throw ReliableRecordingException(
+          code: 'recording.storage_insufficient',
+          message: '可用空间不足，至少需要 $minimumFreeBytes 字节',
+        );
+      }
+
+      final tempFile = File(layout.meetingAudioTempPath(meetingId));
+      final finalFile = File(layout.meetingAudioPath(meetingId));
+      if (await tempFile.exists() || await finalFile.exists()) {
+        throw const ReliableRecordingException(
+          code: 'recording.audio_already_exists',
+          message: '目标会议已有事实音频，拒绝覆盖',
+        );
+      }
+
+      await tempFile.parent.create(recursive: true);
+      _output = await tempFile.open(mode: FileMode.write);
+      await _saveCheckpoint(RecordingCheckpointState.recording);
       await foreground.start(meetingId: meetingId);
       final stream = await capture.start();
       _captureDone = Completer<void>();
@@ -110,9 +111,10 @@ final class ReliableRecordingService implements RecordingSessionService {
       subscription = stream.listen(
         (bytes) => _queueChunk(subscription, bytes),
         onError: (Object error, StackTrace stackTrace) {
-          _writeError ??= error;
-          _writeStackTrace ??= stackTrace;
           _state = RecordingState.failed;
+          if (!subscription.isPaused) {
+            subscription.pause();
+          }
           _completeCapture();
         },
         onDone: _completeCapture,
@@ -120,13 +122,19 @@ final class ReliableRecordingService implements RecordingSessionService {
       );
       _audioSubscription = subscription;
       _state = RecordingState.recording;
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
       await _cleanupFailedStart(meetingId);
       _state = RecordingState.failed;
-      throw ReliableRecordingException(
-        code: 'recording.start_failed',
-        message: '无法启动录音',
-        cause: error,
+      if (error is ReliableRecordingException) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+      Error.throwWithStackTrace(
+        ReliableRecordingException(
+          code: 'recording.start_failed',
+          message: '无法启动录音',
+          cause: error,
+        ),
+        stackTrace,
       );
     }
   }
@@ -177,7 +185,7 @@ final class ReliableRecordingService implements RecordingSessionService {
 
   @override
   Future<RecordingArtifact> stop() async {
-    if (_state != RecordingState.recording && _state != RecordingState.paused) {
+    if (!canFinalize) {
       throw StateError('当前状态不能结束录音：${_state.name}');
     }
     final meetingId = _meetingId!;
@@ -208,8 +216,8 @@ final class ReliableRecordingService implements RecordingSessionService {
         finalPath: finalPath,
         persistReference: (_) async {},
       );
-      await _saveCheckpoint(RecordingCheckpointState.finalized);
       _state = RecordingState.completed;
+      await _saveCheckpointBestEffort(RecordingCheckpointState.finalized);
       return RecordingArtifact(
         meetingId: meetingId,
         audioPath: finalPath,
@@ -217,8 +225,8 @@ final class ReliableRecordingService implements RecordingSessionService {
       );
     } on Object catch (error, stackTrace) {
       _state = RecordingState.failed;
-      await _closeOutput();
-      await _saveCheckpoint(RecordingCheckpointState.failed);
+      await _closeOutputBestEffort();
+      await _saveCheckpointBestEffort(RecordingCheckpointState.failed);
       if (error is ReliableRecordingException) {
         rethrow;
       }
@@ -232,8 +240,7 @@ final class ReliableRecordingService implements RecordingSessionService {
       );
     } finally {
       _preview.close();
-      await foreground.stop();
-      await capture.dispose();
+      await _cleanupCaptureBestEffort();
     }
   }
 
@@ -246,7 +253,9 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
     final copy = Uint8List.fromList(bytes);
     _writeTail = _writeTail.then((_) => _persistChunk(copy)).then((_) {
-      if (!_userPaused && _writeError == null) {
+      if (!_userPaused &&
+          _writeError == null &&
+          _state == RecordingState.recording) {
         subscription.resume();
       }
     });
@@ -330,18 +339,64 @@ final class ReliableRecordingService implements RecordingSessionService {
   }
 
   Future<void> _cleanupFailedStart(String meetingId) async {
+    await _closeOutputBestEffort();
+    await _cleanupCaptureBestEffort();
+    try {
+      await checkpoints.delete(meetingId);
+    } on Object {
+      // 启动失败的原始错误优先；残留 checkpoint 由启动恢复收敛。
+    }
+    final temp = File(layout.meetingAudioTempPath(meetingId));
+    try {
+      if (await temp.exists() && await temp.length() == 0) {
+        await temp.delete();
+      }
+    } on Object {
+      // 空临时文件清理失败不会覆盖启动错误。
+    }
+  }
+
+  Future<void> _cleanupCaptureBestEffort() async {
+    final subscription = _audioSubscription;
+    _audioSubscription = null;
+    if (subscription != null) {
+      try {
+        await subscription.cancel();
+      } on Object {
+        // 继续释放平台录音资源。
+      }
+    }
+    try {
+      await foreground.stop();
+    } on Object {
+      // 事实音频状态已确定，前台服务清理失败只作为平台诊断。
+    }
     try {
       await capture.stop();
     } on Object {
-      // start 失败时 recorder 可能尚无活动 session。
+      // recorder 可能已经停止或启动尚未完成。
     }
-    await _closeOutput();
-    await foreground.stop();
-    await capture.dispose();
-    await checkpoints.delete(meetingId);
-    final temp = File(layout.meetingAudioTempPath(meetingId));
-    if (await temp.exists() && await temp.length() == 0) {
-      await temp.delete();
+    try {
+      await capture.dispose();
+    } on Object {
+      // 资源释放失败不得覆盖已经封存的事实音频。
+    }
+    _completeCapture();
+  }
+
+  Future<void> _closeOutputBestEffort() async {
+    try {
+      await _closeOutput();
+    } on Object {
+      // 保留原始录音错误，启动恢复会重新检查临时文件。
+    }
+  }
+
+  Future<void> _saveCheckpointBestEffort(RecordingCheckpointState state) async {
+    try {
+      await _saveCheckpoint(state);
+    } on Object {
+      // 最终文件或原始失败优先，checkpoint 可由启动恢复重建。
     }
   }
 }

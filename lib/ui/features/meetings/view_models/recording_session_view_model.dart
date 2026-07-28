@@ -51,10 +51,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   bool get isBusy => _isBusy;
   bool get canPause => !_isBusy && recordingState == RecordingState.recording;
   bool get canResume => !_isBusy && recordingState == RecordingState.paused;
-  bool get canStop =>
-      !_isBusy &&
-      (recordingState == RecordingState.recording ||
-          recordingState == RecordingState.paused);
+  bool get canStop => !_isBusy && recording.canFinalize;
 
   List<TranscriptSegmentEvent> get segments {
     final values = _segments.values.toList();
@@ -82,7 +79,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     } on Object catch (error) {
       await _failMeeting(_errorCode(error));
       _errorMessage = '录音无法启动，请检查麦克风权限和可用空间';
-      await _disposePreview();
+      await _disposePreviewBestEffort();
       return false;
     } finally {
       _setBusy(false);
@@ -117,7 +114,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     _ticker?.cancel();
     try {
       final artifact = await recording.stop();
-      await preview.flush();
+      await _flushPreviewBestEffort();
       _duration = artifact.duration;
       _meeting = _meeting.finishRecording(
         endedAt: now(),
@@ -125,12 +122,12 @@ final class RecordingSessionViewModel extends ChangeNotifier {
         audioDurationMs: artifact.duration.inMilliseconds,
       );
       await meetings.save(_meeting);
-      await _disposePreview();
+      await _disposePreviewBestEffort();
       return _meeting;
     } on Object catch (error) {
       await _failMeeting(_errorCode(error));
       _errorMessage = '音频封存失败，请保留应用数据并重试恢复';
-      await _disposePreview();
+      await _disposePreviewBestEffort();
       return null;
     } finally {
       _setBusy(false);
@@ -202,15 +199,32 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     await preview.dispose();
   }
 
+  Future<void> _flushPreviewBestEffort() async {
+    try {
+      await preview.flush();
+    } on Object {
+      // 会中预览是派生数据，失败不得改变事实音频封存结果。
+    }
+  }
+
+  Future<void> _disposePreviewBestEffort() async {
+    try {
+      await _disposePreview();
+    } on Object {
+      // 事实音频和会议状态优先，预览资源释放异常不得回滚主链。
+    }
+  }
+
   @override
   void dispose() {
     _disposed = true;
     _ticker?.cancel();
-    unawaited(_eventSubscription?.cancel());
-    unawaited(_metricsSubscription?.cancel());
     if (recordingState != RecordingState.recording &&
         recordingState != RecordingState.paused) {
-      unawaited(preview.dispose());
+      unawaited(_disposePreviewBestEffort());
+    } else {
+      unawaited(_eventSubscription?.cancel());
+      unawaited(_metricsSubscription?.cancel());
     }
     super.dispose();
   }
