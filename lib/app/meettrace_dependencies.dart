@@ -224,6 +224,10 @@ final class MeetTraceDependencies {
     return MeetingListViewModel(
       meetings: meetings,
       readinessChecker: meetingReadiness,
+      deletion: DeleteMeetingUseCase(
+        meetings: meetings,
+        files: MeetingDirectoryDeletionService(layout: fileLayout),
+      ),
     );
   }
 

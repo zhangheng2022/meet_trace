@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/models/domain_exception.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/use_cases/delete_meeting.dart';
@@ -28,23 +29,42 @@ void main() {
 
     expect(files.events, ['stage', 'rollback']);
   });
+
+  for (final state in [MeetingState.recording, MeetingState.processing]) {
+    test('${state.name} 状态拒绝删除且不暂存事实文件', () async {
+      final meetings = _MeetingRepository(state: state);
+      final files = _FileDeletionService();
+      final useCase = DeleteMeetingUseCase(meetings: meetings, files: files);
+
+      await expectLater(
+        useCase.execute(meetingId: 'meeting-1'),
+        throwsA(isA<DomainInvariantViolation>()),
+      );
+
+      expect(files.events, isEmpty);
+      expect(meetings.deleted, isEmpty);
+    });
+  }
 }
 
 final class _MeetingRepository implements MeetingRepository {
-  _MeetingRepository({this.failDelete = false});
+  _MeetingRepository({
+    this.failDelete = false,
+    MeetingState state = MeetingState.completed,
+  }) : meeting = Meeting(
+         id: 'meeting-1',
+         title: '周会',
+         createdAt: DateTime.utc(2026, 7, 25),
+         status: state,
+         audioDurationMs: 0,
+         requestedModelId: 'paraformer',
+         recordingModelId: 'paraformer',
+         recordingModelVersion: '1',
+       );
 
   final bool failDelete;
   final List<String> deleted = [];
-  final Meeting meeting = Meeting(
-    id: 'meeting-1',
-    title: '周会',
-    createdAt: DateTime.utc(2026, 7, 25),
-    status: MeetingState.completed,
-    audioDurationMs: 0,
-    requestedModelId: 'paraformer',
-    recordingModelId: 'paraformer',
-    recordingModelVersion: '1',
-  );
+  final Meeting meeting;
 
   @override
   Future<Meeting?> getById(String meetingId) async =>

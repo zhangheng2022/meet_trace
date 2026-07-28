@@ -11,6 +11,7 @@ import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/meeting_readiness.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/use_cases/check_meeting_readiness.dart';
+import '../../../../domain/use_cases/delete_meeting.dart';
 import '../view_models/meeting_list_view_model.dart';
 import 'meeting_list_view.dart';
 
@@ -20,6 +21,10 @@ Widget meetingListCompactPreview() => Application(
     viewModel: MeetingListViewModel(
       meetings: _PreviewMeetingRepository(_previewMeetings),
       readinessChecker: const _PreviewMeetingReadinessChecker(),
+      deletion: DeleteMeetingUseCase(
+        meetings: _PreviewMeetingRepository(_previewMeetings),
+        files: const _PreviewMeetingFileDeletionService(),
+      ),
     ),
     onStartMeeting: () {},
     onOpenMeeting: (_) {},
@@ -109,4 +114,23 @@ final class _PreviewMeetingReadinessChecker implements MeetingReadinessChecker {
     defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
     defaultModelAvailable: true,
   );
+}
+
+final class _PreviewMeetingFileDeletionService
+    implements MeetingFileDeletionService {
+  const _PreviewMeetingFileDeletionService();
+
+  @override
+  Future<StagedMeetingDeletion> stage(String meetingId) async =>
+      const _PreviewStagedMeetingDeletion();
+}
+
+final class _PreviewStagedMeetingDeletion implements StagedMeetingDeletion {
+  const _PreviewStagedMeetingDeletion();
+
+  @override
+  Future<void> commit() async {}
+
+  @override
+  Future<void> rollback() async {}
 }

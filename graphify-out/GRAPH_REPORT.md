@@ -1,16 +1,16 @@
 # Graph Report - meetily_ai  (2026-07-28)
 
 ## Corpus Check
-- 445 files · ~477,872 words
+- 452 files · ~490,588 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 7206 nodes · 13179 edges · 349 communities (281 shown, 68 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 198 edges (avg confidence: 0.73)
+- 7409 nodes · 13410 edges · 382 communities (314 shown, 68 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 198 edges (avg confidence: 0.73)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `85d2fb2b`
+- Built from commit: `d280c424`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -280,6 +280,7 @@
 - 7. 功能需求
 - Generate Report
 - loadContext
+- package:path/path.dart
 - Create
 - optimize.md
 - readProjectPatternGroups
@@ -295,6 +296,7 @@
 - Simplify the Design
 - Hardening Dimensions
 - staleness-notice.mjs
+- Apple Design
 - ui-core.mjs
 - 会迹（MeetTrace）Android + iOS Alpha 产品需求文档（无登录版）
 - Product
@@ -307,16 +309,21 @@
 - quieter.md
 - detect-csp.mjs
 - Q: 修复当前启动异常
+- local_data_control_service_test.dart
 - generation-preflight.mjs
 - palette.mjs
 - Init flow
+- State
 - Dual On-device ASR Models
 - Common Cognitive Load Violations
 - Operate mode depth (and Read notes)
 - Shape
 - Persona-Based Design Testing
 - Extract Flow
+- Glossary
+- checkElementDesignSystemDOM
 - 端侧双模型转录技术基线
+- Finding Animation Opportunities
 - Generate Report
 - Cognitive Load Assessment
 - checkElementGptBorderShadowDOM
@@ -343,20 +350,46 @@
 - ui-features-meetings-views-meeting-list-view-dart.md
 - 有界 ASR 预览队列
 - style
+- model_file_verifier.dart
 - iOS platform
 - checkElementGptBorderShadowDOM
 - view_state.dart
 - TranscriptRepository
 - Q: 首页的准备就绪是什么意思
+- platform_asr_device_risk_monitor.dart
+- bool get
 - Q: path_provider_android 为什么要添加到pubspec.yaml
 - dart:async
 - Diagnostic Scan
 - readConfig
+- AsrDeviceRiskMonitor
 - Meetily Active Document Hierarchy
 - Q: 底部的事实音频本地优先，这块还有其他方案吗
 - hook.mjs
+- SAFE_TAGS
 - app_back_icon.dart
 - checkCreamPalette
+- platform_recording_foreground_lifecycle_test.dart
+- device_free_space_service.dart
+- Component Building Principles
+- source-lock.mjs
+- TranscriptRepository
+- normalizeGitHubEvent
+- source-search.mjs
+- The Animation Decision Framework
+- clip-path for Animation
+- Performance Rules
+- Gesture and Drag Interactions
+- expandScanTargets
+- CSS Transform Mastery
+- The Sonner Principles (Building Loved Components)
+- Spring Animations
+- Q: 列表增加删除功能，先给我方案
+- Q: 能左滑删除吗
+- Core Philosophy
+- Debugging Animations
+- EvidencePlaybackService
+- DeviceAudioOutput
 
 ## God Nodes (most connected - your core abstractions)
 1. `el()` - 69 edges
@@ -391,7 +424,7 @@
 - **Meeting Model Integrity** — agents_meeting_model_lock, docs_quality_step_10_qwen_advanced_engine_no_auto_fallback, docs_quality_step_11_factory__exact_engine_factory, docs_quality_step_11_factory__explicit_fallback, docs_codex_alpha__final_snapshot_pipeline [INFERRED 0.85]
 - **最终转录、总结与证据播放事实链** — docs_quality_step_14_final_transcript_snapshot, docs_quality_step_16_ai_local_evidence_chain, docs_quality_step_17_pcm_evidence_playback_service, docs_summary_evidence_boundary [EXTRACTED 1.00]
 
-## Communities (349 total, 68 thin omitted)
+## Communities (382 total, 68 thin omitted)
 
 ### Community 0 - "meeting detail view model"
 Cohesion: 0.02
@@ -414,8 +447,8 @@ Cohesion: 0.03
 Nodes (63): Isolate, cancel, _cancelled, _commands, _config, convFrontendPath, create, decoderPath (+55 more)
 
 ### Community 5 - "meeting detail view"
-Cohesion: 0.04
-Nodes (55): ../../../../data/services/audio/evidence_playback_service.dart, ../../../../domain/use_cases/revise_final_transcript.dart, MeetTraceBootstrap, _MeetTraceBootstrapState, SpeakerLabelGroup, _body, build, _confirmingDelete (+47 more)
+Cohesion: 0.03
+Nodes (71): ../../../core/app_responsive.dart, ../../../core/app_state_panel.dart, ../../../../data/services/audio/evidence_playback_service.dart, ../../../../domain/use_cases/revise_final_transcript.dart, SpeakerLabelGroup, _AudioCard, _body, build (+63 more)
 
 ### Community 6 - "Win32 Window"
 Cohesion: 0.17
@@ -434,8 +467,8 @@ Cohesion: 0.04
 Nodes (55): _FakeWorkerFactory, active, activeVersions, add, bytes, _changes, clock, close (+47 more)
 
 ### Community 10 - "sqflite repositories test"
-Cohesion: 0.03
-Nodes (77): changes, inspect, main, _modelRoot, _prepareDelaySeconds, StartupRecoveryService, DomainInvariantViolation, message (+69 more)
+Cohesion: 0.04
+Nodes (53): StartupRecoveryService, TranscriptSnapshotStatus, package:meettrace/data/repositories/sqflite_diarization_preference_repository.dart, package:meettrace/data/repositories/sqflite_meeting_repository.dart, package:meettrace/data/repositories/sqflite_processing_task_repository.dart, package:meettrace/data/repositories/sqflite_summary_repository.dart, package:meettrace/data/repositories/sqflite_transcript_repository.dart, package:meettrace/data/services/storage/app_database.dart (+45 more)
 
 ### Community 11 - "bundled silero vad model"
 Cohesion: 0.04
@@ -443,7 +476,7 @@ Nodes (53): alreadyReady, assetSource, bundledSileroVadAssetDirectory, bundledSi
 
 ### Community 12 - "package flutter widgets"
 Cohesion: 0.05
-Nodes (40): AlignmentGeometry, EdgeInsetsGeometry?, FProgress, Icon, appDisplayName, Application, build, home (+32 more)
+Nodes (45): AlignmentGeometry, EdgeInsetsGeometry?, FProgress, Icon, appDisplayName, Application, build, home (+37 more)
 
 ### Community 13 - "asr engine"
 Cohesion: 0.04
@@ -463,7 +496,7 @@ Nodes (18): 最终快照 CAS 原子激活, 最终转录快照, FinalTranscriptio
 
 ### Community 17 - "pcm evidence playback service"
 Cohesion: 0.07
-Nodes (29): AudioPlayer, evidence_playback_service.dart, AudioplayersDeviceAudioOutput, _bitsPerSample, _bytesPerMillisecond, _bytesPerSample, _channels, _completionSubscription (+21 more)
+Nodes (26): AudioPlayer, evidence_playback_service.dart, _bitsPerSample, _bytesPerMillisecond, _bytesPerSample, _channels, _completionSubscription, data (+18 more)
 
 ### Community 18 - "asr spike models"
 Cohesion: 0.04
@@ -474,12 +507,12 @@ Cohesion: 0.06
 Nodes (32): ../../../../domain/use_cases/resolve_meeting_model_selection.dart, _applyInstallations, _availableVersions, _defaultModelId, dispose, _disposed, engine, engineFactory (+24 more)
 
 ### Community 20 - "dart typed data"
-Cohesion: 0.06
-Nodes (32): BundledModelPreparationService, ModelFileDownloader, download, HttpModelFileDownloader, requireHttps, ModelManifestEntry, package:meettrace/data/services/models/model_file_verifier.dart, package:meettrace/data/services/models/model_manifest_parser.dart (+24 more)
+Cohesion: 0.08
+Nodes (23): BundledModelPreparationService, ModelManifestEntry, package:meettrace/data/services/models/model_file_verifier.dart, package:meettrace/domain/models/model_manifest.dart, assets, bytesByUrl, current, _descriptor (+15 more)
 
 ### Community 21 - "local data control service test"
 Cohesion: 0.11
-Nodes (42): checkColors(), checkCreamPalette(), checkElementAIPaletteDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlowDOM(), checkElementHoverContrast(), checkGlow() (+34 more)
+Nodes (36): ANIMATION_VALUE_KEYWORDS, checkColors(), checkElementAIPaletteDOM(), checkElementGlow(), checkGlow(), checkHoverContrast(), checkHtmlPatterns(), collectCssCustomProps() (+28 more)
 
 ### Community 22 - "generate summary test"
 Cohesion: 0.05
@@ -497,7 +530,7 @@ Nodes (46): AudioSource, channelCount, durationMs, path, sampleRate, required Da
 
 ### Community 25 - "model selection fakes"
 Cohesion: 0.04
-Nodes (56): canStart, defaultModelAvailable, defaultModelId, defaultModelName, freeBytes, issues, MeetingReadiness, MeetingReadinessIssue (+48 more)
+Nodes (45): acceptAudio, _activeVersions, cancel, _changes, check, create, createError, delete (+37 more)
 
 ### Community 26 - "reliable recording service"
 Cohesion: 0.05
@@ -505,33 +538,31 @@ Nodes (39): _audioSubscription, capture, _captureDone, checkpoints, _cleanupFail
 
 ### Community 27 - "bundled model preparation service test"
 Cohesion: 0.03
-Nodes (124): applyGlobalBarLabelState(), applyParamValue(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), averageRgb01(), bindEditBadgeProxy(), bufferToBase64(), buildCollapsible() (+116 more)
+Nodes (124): acceptedDomAlreadyClean(), addManualContextText(), applyGlobalBarLabelState(), applyParamDefaults(), applyParamValue(), applyPlaceholderSizingStyles(), applySvelteComponentVariantStyle(), averageRgb01() (+116 more)
 
 ### Community 28 - "meeting detail view test"
 Cohesion: 0.10
 Nodes (20): code, execute, meeting, meetings, _normalizedSpeaker, _revisedSegment, ReviseFinalTranscriptUseCase, segmentId (+12 more)
 
 ### Community 29 - "meeting detail view model test"
-Cohesion: 0.02
-Nodes (85): ProcessingTaskRepository, SqfliteProcessingTaskRepository, MeetingState, MeetingStateTransition, package:meettrace/ui/features/meetings/view_models/meeting_detail_view_model.dart, package:meettrace/ui/features/meetings/views/meeting_detail_view.dart, required String id,
-  TranscriptSnapshotStatus, SpeakerDiarizationRunner? diarization,
-  bool (+77 more)
+Cohesion: 0.05
+Nodes (44): ProcessingTaskRepository, SqfliteProcessingTaskRepository, _TaskRepository, _TaskRepository, DetailProcessingTaskRepository, capability, diarizationEnabled, dispose (+36 more)
 
 ### Community 30 - "package flutter test flutter test"
 Cohesion: 0.04
-Nodes (105): borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkEdgeFlushCardsDOM(), checkElementBlinkingCursorDOM(), checkElementBorders(), checkElementBordersDOM() (+97 more)
+Nodes (124): borderColorsFromStyle(), borderWidthsFromStyle(), checkBorders(), checkClippedOverflow(), checkCreamPalette(), checkEdgeFlushCardsDOM(), checkElementBlinkingCursorDOM(), checkElementBorders() (+116 more)
 
 ### Community 31 - "speaker diarization coordinator test"
 Cohesion: 0.05
-Nodes (44): SqfliteTranscriptRepository, _PreviewTranscriptRepository, package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart, package:meettrace/data/services/diarization/speaker_diarization_service.dart, package:meettrace/domain/models/speaker_diarization.dart, _TaskRepository, _TranscriptRepository, available (+36 more)
+Nodes (36): package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart, package:meettrace/data/services/diarization/speaker_diarization_service.dart, package:meettrace/domain/models/speaker_diarization.dart, _TaskRepository, available, calls, capability, coordinator (+28 more)
 
 ### Community 32 - "recording session view model"
-Cohesion: 0.06
-Nodes (35): canPause, canResume, canStop, dispose, _disposed, _disposePreview, _duration, _errorCode (+27 more)
+Cohesion: 0.05
+Nodes (43): AsrPreviewMetrics get, ../../../../domain/models/asr_preview.dart, ../../../../domain/models/transcript.dart, dispose, events, flush, metrics, metricsChanges (+35 more)
 
 ### Community 33 - "recording flow previews"
-Cohesion: 0.04
-Nodes (44): _copyAsset, data, main, _modelAsset, _tokensAsset, AndroidProcAsrDeviceRiskMonitor, package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart, package:meettrace/data/services/asr/asr_engine.dart (+36 more)
+Cohesion: 0.05
+Nodes (38): dart:typed_data, _copyAsset, data, main, _modelAsset, _tokensAsset, _copyAsset, data (+30 more)
 
 ### Community 34 - "meetily flow"
 Cohesion: 0.10
@@ -543,8 +574,8 @@ Nodes (36): package:meettrace/domain/models/asr_preview.dart, package:meettrace/
   int, accept, acceptAudio, acceptCalls, cancel, canceled (+28 more)
 
 ### Community 36 - "recording ports"
-Cohesion: 0.06
-Nodes (38): dart:collection, AsrPreviewCoordinator, DeviceRecordingStorageCapacityProvider, FlutterForegroundRecordingLifecycle, add, CallbackRecordingPreviewSink, close, _closed (+30 more)
+Cohesion: 0.09
+Nodes (24): dart:collection, add, CallbackRecordingPreviewSink, close, _closed, DiscardingRecordingPreviewSink, dispose, _drain (+16 more)
 
 ### Community 37 - "speaker diarization coordinator"
 Cohesion: 0.08
@@ -555,8 +586,8 @@ Cohesion: 0.07
 Nodes (30): actionItems, available, capability, code, evidenceSegmentIds, generate, GeneratedSummaryDraft, GeneratedSummaryItem (+22 more)
 
 ### Community 39 - "bundled model preparation service"
-Cohesion: 0.05
-Nodes (42): ../../../domain/models/model_manifest.dart, File, alreadyReady, assetSource, BundledModelPreparationPhase, BundledModelPreparationProgress, BundledModelPreparationResult, cause (+34 more)
+Cohesion: 0.07
+Nodes (28): alreadyReady, assetSource, BundledModelPreparationPhase, BundledModelPreparationProgress, BundledModelPreparationResult, cause, code, completedBytes (+20 more)
 
 ### Community 40 - "transcript Module"
 Cohesion: 0.07
@@ -572,7 +603,7 @@ Nodes (28): package:meettrace/ui/features/meetings/views/recording_session_view.
 
 ### Community 43 - "model settings view"
 Cohesion: 0.06
-Nodes (34): ChangeNotifier, ../../../core/app_back_icon.dart, ../../../core/asr_model_option.dart, MeetingDetailViewModel, MeetingListViewModel, RecordingSessionViewModel, StartMeetingViewModel, DataControlsViewModel (+26 more)
+Nodes (31): ChangeNotifier, ../../../core/app_back_icon.dart, MeetingDetailViewModel, MeetingListViewModel, RecordingSessionViewModel, StartMeetingViewModel, DataControlsViewModel, ModelSettingsViewModel (+23 more)
 
 ### Community 44 - "meeting Module"
 Cohesion: 0.07
@@ -580,15 +611,15 @@ Nodes (27): activateFinalTranscript, activeSummaryId, activeTranscriptSnapshotId
 
 ### Community 45 - "recording session view"
 Cohesion: 0.05
-Nodes (41): ../../../core/app_ledger.dart, ../../../core/app_page_body.dart, ../../../core/app_status_notice.dart, _AudioFactRow, _body, build, createState, _durationLabel (+33 more)
+Nodes (39): ../../../core/app_ledger.dart, ../../../core/app_page_body.dart, ../../../core/app_status_notice.dart, _AudioFactRow, _body, build, createState, _durationLabel (+31 more)
 
 ### Community 46 - "recording session view model test"
-Cohesion: 0.11
-Nodes (36): checkBorders(), checkColors(), checkElementAIPaletteDOM(), checkElementBorders(), checkElementBordersDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlowDOM() (+28 more)
+Cohesion: 0.12
+Nodes (33): checkBorders(), checkCreamPalette(), checkElementBorders(), checkElementBordersDOM(), checkElementColors(), checkElementColorsDOM(), checkElementGlowDOM(), checkElementHoverContrast() (+25 more)
 
 ### Community 47 - "meeting list view"
 Cohesion: 0.04
-Nodes (48): ../../../core/app_responsive.dart, ../../../core/app_state_panel.dart, _audioFactLabel, body, build, createState, _dateLabel, descriptor (+40 more)
+Nodes (53): ../../../core/app_swipe_action_row.dart, _audioFactLabel, body, build, createState, _dateLabel, deletable, _deleteDialogOpen (+45 more)
 
 ### Community 48 - "my application"
 Cohesion: 0.09
@@ -596,15 +627,15 @@ Nodes (22): FlPluginRegistry, FlView, GApplication, gboolean, gchar, GObject, Gt
 
 ### Community 49 - "model settings view model"
 Cohesion: 0.05
-Nodes (37): ../../../../domain/models/model_installation.dart, AdvancedModelActions, AsrModelOption, AsrModelUiStatus, descriptor, fromInstallation, isInstalled, lastErrorCode (+29 more)
+Nodes (38): ../../../core/asr_model_option.dart, ../../../../domain/models/model_installation.dart, Future, AdvancedModelActions, AsrModelOption, AsrModelUiStatus, descriptor, fromInstallation (+30 more)
 
 ### Community 50 - "sherpa onnx asr engine factory"
-Cohesion: 0.05
-Nodes (39): ActiveModelInstallationRepository, ModelUsageLeaseRepository, SqfliteModelInstallationRepository, SqfliteModelUsageLeaseRepository, _MemoryInstallations, _MemoryLeases, package:meettrace/data/services/asr/sherpa_onnx_asr_engine_factory.dart, package:meettrace/domain/models/model_usage_lease.dart (+31 more)
+Cohesion: 0.04
+Nodes (51): changes, inspect, main, _modelRoot, _prepareDelaySeconds, ModelUsageLeaseRepository, SqfliteModelUsageLeaseRepository, _MemoryInstallations (+43 more)
 
 ### Community 51 - "package meetily ai domain models"
-Cohesion: 0.11
-Nodes (33): agentHasWorkInFlight(), agentStatusText(), barPaletteForTheme(), brandMarkSvg(), buildDesignHeader(), buildParamsPanel(), buildSteerProcessingDots(), designPanelCss() (+25 more)
+Cohesion: 0.14
+Nodes (26): agentHasWorkInFlight(), agentStatusText(), barPaletteForTheme(), brandMarkSvg(), buildParamsPanel(), buildSteerProcessingDots(), detectPageTheme(), ensureAgentPollTooltip() (+18 more)
 
 ### Community 52 - "asr preview"
 Cohesion: 0.09
@@ -619,8 +650,8 @@ Cohesion: 0.08
 Nodes (24): buffer, BuildMeetingShareUseCase, execute, fileName, _markdown, MeetingShareDocument, MeetingShareFormat, minutes (+16 more)
 
 ### Community 55 - "domain models asr model"
-Cohesion: 0.08
-Nodes (33): addManualContextText(), applyEditing(), buildLocatorForLeaf(), canRestoreManualEditElement(), collectManualContextPieces(), contextElementForManualEdit(), copyEditContainerContext(), copyEditLeafContext() (+25 more)
+Cohesion: 0.07
+Nodes (42): buildCollapsible(), buildColorModels(), buildDesignHeader(), buildListHtml(), buildRadiiModels(), buildTypographyModels(), copyToClipboard(), cssSafe() (+34 more)
 
 ### Community 56 - "qwen advanced asr engine"
 Cohesion: 0.08
@@ -635,20 +666,20 @@ Cohesion: 0.14
 Nodes (31): applyMockWrites(), buildCopyEditBatchPrompt(), checkFrameworkSourceSyntax(), chooseCopyEditAgent(), COMMAND_AUTH_CACHE, commandAuthed(), commandExists(), compactBatchForPrompt() (+23 more)
 
 ### Community 59 - "repository contracts"
-Cohesion: 0.09
-Nodes (22): abstract interface class, delete, deleteAndDeactivate, deleteExpired, getActiveVersion, getById, getDefaultModelId, getEnabled (+14 more)
+Cohesion: 0.06
+Nodes (30): abstract interface class, delete, deleteAndDeactivate, deleteExpired, DiarizationPreferenceRepository, getActiveVersion, getById, getDefaultModelId (+22 more)
 
 ### Community 60 - "sherpa onnx asr engine factory"
-Cohesion: 0.06
-Nodes (32): android_proc_asr_device_risk_monitor.dart, asr_engine.dart, _SupportedRiskMonitor, AsrDeviceRiskMonitor, AsrDeviceRiskState, AsrRiskPlatform, changes, createPlatformAsrDeviceRiskMonitor (+24 more)
+Cohesion: 0.12
+Nodes (15): context, create, _createStandard, _failure, installations, leaseDuration, leaseRenewalLead, leases (+7 more)
 
 ### Community 61 - "meeting result previews"
 Cohesion: 0.04
-Nodes (53): @Preview, ../../../../app/application.dart, app_page_body.dart, app_state_panel.dart, app_status_notice.dart, ../../../../data/services/asr/final_transcription_service.dart, ../../../../domain/models/meeting_readiness.dart, appEmptyStatePreview (+45 more)
+Nodes (55): @Preview, ../../../../app/application.dart, app_page_body.dart, app_state_panel.dart, app_status_notice.dart, ../../../../data/services/asr/final_transcription_service.dart, ../../../../domain/models/meeting_readiness.dart, appEmptyStatePreview (+47 more)
 
 ### Community 62 - "Exception Module"
-Cohesion: 0.09
-Nodes (51): applyFixes(), cli(), collect(), parseArgs(), readProjectRootPatterns(), rel(), renderText(), safeRead() (+43 more)
+Cohesion: 0.14
+Nodes (30): applyFixes(), cli(), collect(), parseArgs(), readProjectRootPatterns(), rel(), renderText(), safeRead() (+22 more)
 
 ### Community 63 - "final transcription service"
 Cohesion: 0.09
@@ -659,8 +690,8 @@ Cohesion: 0.08
 Nodes (23): actionItems, createdAt, endMs, evidence, id, isPendingReview, keyPoints, meetingId (+15 more)
 
 ### Community 65 - "asr paraformer standard asr engine"
-Cohesion: 0.10
-Nodes (19): Completer, _FakeWorker?, SherpaOnnxAdapterException, _activeRecognitions, config, create, createdWorkers, dispose (+11 more)
+Cohesion: 0.07
+Nodes (25): Completer, _FakeWorker?, Object?, package:meettrace/domain/models/app_failure.dart, _activeRecognitions, config, create, createdWorkers (+17 more)
 
 ### Community 66 - "paraformer standard asr engine"
 Cohesion: 0.07
@@ -668,43 +699,43 @@ Nodes (30): AsrDeviceRiskState get, _, AsrEngine, acceptAudio, cancel, _core, de
 
 ### Community 67 - "start meeting view"
 Cohesion: 0.07
-Nodes (54): appendAutonomyCounterDirective(), appendDetectorFallback(), appendImageGenDirective(), appendStalenessDirective(), appendSubagentAuthorizationDirective(), appendSurfaceBriefContext(), automaticHookMode(), buildMissingTargetDirective() (+46 more)
+Nodes (51): appendAutonomyCounterDirective(), appendDetectorFallback(), appendImageGenDirective(), appendSubagentAuthorizationDirective(), appendSurfaceBriefContext(), automaticHookMode(), buildMissingTargetDirective(), buildResolvedContextDirective() (+43 more)
 
 ### Community 68 - "meeting flow previews"
-Cohesion: 0.06
-Nodes (75): applyParamDefaults(), applyPlaceholderDimensions(), applySavedSessionMeta(), buildInsertPlaceholderSnapshotFromDom(), buildPickedAnchorSnapshot(), captureAndEmit(), checkpointPayload(), clampVariantIndex() (+67 more)
+Cohesion: 0.08
+Nodes (66): applyOriginalAttrsToSvelteAnchor(), applyPlaceholderDimensions(), applySavedSessionMeta(), clampVariantIndex(), closedClipPath(), commitAcceptedSvelteComponentToDom(), completeParameterPublication(), connectSSE() (+58 more)
 
 ### Community 69 - "revise final transcript"
 Cohesion: 0.07
-Nodes (28): RecordingState, RecordingStateTransition, package:meettrace/data/services/asr/asr_preview_coordinator.dart, package:meettrace/ui/features/meetings/view_models/recording_session_view_model.dart, close, descriptor, dispose, disposeCalls (+20 more)
+Nodes (26): package:meettrace/data/services/asr/asr_preview_coordinator.dart, package:meettrace/ui/features/meetings/view_models/recording_session_view_model.dart, close, descriptor, dispose, disposeCalls, duration, durationValue (+18 more)
 
 ### Community 70 - "Hero Enrichment"
-Cohesion: 0.06
-Nodes (66): mergeDesignSystemFindings(), detectUrl(), measureContentHiddenAfterReveal(), runVisualContrastFallback(), serializeDesignSystemForBrowser(), blankCssComments(), CSS_IN_JS_EXTENSIONS, detectText() (+58 more)
+Cohesion: 0.12
+Nodes (32): mergeDesignSystemFindings(), detectUrl(), measureContentHiddenAfterReveal(), runVisualContrastFallback(), serializeDesignSystemForBrowser(), runRegexMatchers(), runTextContentAnalyzers(), collectStaticCssText() (+24 more)
 
 ### Community 71 - "domain ports test"
-Cohesion: 0.08
-Nodes (25): AsrEngineMetrics get, AsrEngineFactory, SherpaOnnxAsrEngineFactory, _EngineFactory, acceptAudio, cancel, create, delete (+17 more)
+Cohesion: 0.04
+Nodes (43): AsrEngineMetrics get, AsrEngineFactory, SherpaOnnxAsrEngineFactory, AsrModelDescriptor, AsrModelTier, capabilities, displayName, installationType (+35 more)
 
 ### Community 72 - "android proc asr device risk"
 Cohesion: 0.10
 Nodes (20): AsrRiskTextReader, AsrThermalPathLister, changes, _constrainedMemoryBytes, _deviceSupport, inspect, _listThermalPaths, _memoryCriticalBytes (+12 more)
 
 ### Community 73 - "model manifest parser"
-Cohesion: 0.07
-Nodes (28): 0, _compareVersions, currentAppVersion, leftParts, ModelManifestParser, normalized, parse, _parseEntry (+20 more)
+Cohesion: 0.10
+Nodes (20): 0, _compareVersions, currentAppVersion, leftParts, normalized, parse, _parseEntry, _parseFile (+12 more)
 
 ### Community 74 - "Component Cookbook"
 Cohesion: 0.06
 Nodes (68): addBrowserFindings(), addVisualContrastFindings(), addVisualContrastResult(), analyzeVisualContrast(), analyzeVisualContrastCandidate(), blendRgba(), browserColorsClose(), browserDesignSystemConfig() (+60 more)
 
 ### Community 75 - "dart io"
-Cohesion: 0.12
-Nodes (15): int?, code, dispose, endMs, errorCode, EvidencePlaybackService, EvidencePlaybackState, EvidencePlaybackStatus (+7 more)
+Cohesion: 0.15
+Nodes (12): int?, code, dispose, endMs, errorCode, EvidencePlaybackState, EvidencePlaybackStatus, play (+4 more)
 
 ### Community 76 - "recording session service"
-Cohesion: 0.15
-Nodes (22): acceptedDomAlreadyClean(), applyOriginalAttrsToSvelteAnchor(), commitAcceptedSvelteComponentToDom(), elementMatchesOriginalMarkup(), ensureAcceptedDomClean(), findAcceptedRuntimeWrappers(), findLiveElementForOriginalMarkup(), findLiveElementForSvelteManifest() (+14 more)
+Cohesion: 0.62
+Nodes (7): elementMatchesOriginalMarkup(), findLiveElementForOriginalMarkup(), findLiveElementFromAnchorSnapshot(), isUsableInjectionAnchor(), normalizeElementClassName(), parseOriginalMarkupElement(), resolveLiveInjectionAnchor()
 
 ### Community 77 - "app file layout"
 Cohesion: 0.10
@@ -720,35 +751,35 @@ Nodes (13): Database?, close, _createSchema, _createVersion1Schema, _createVersi
 
 ### Community 80 - "startup recovery service"
 Cohesion: 0.07
-Nodes (60): assembleLiveBrowserScript(), assertLiveBrowserScriptParts(), LIVE_BROWSER_SCRIPT_PARTS, readLiveBrowserScriptParts(), resolveLiveBrowserScriptParts(), eventPriority(), selectAvailablePendingEvent(), acknowledgePendingEvent() (+52 more)
+Nodes (59): assembleLiveBrowserScript(), assertLiveBrowserScriptParts(), LIVE_BROWSER_SCRIPT_PARTS, readLiveBrowserScriptParts(), resolveLiveBrowserScriptParts(), eventPriority(), selectAvailablePendingEvent(), acknowledgePendingEvent() (+51 more)
 
 ### Community 81 - "sherpa onnx sherpa onnx adapter"
-Cohesion: 0.04
-Nodes (45): CachingAssetBundle, main, _recordingSeconds, _copyAsset, data, file, main, _modelAsset (+37 more)
+Cohesion: 0.12
+Nodes (14): CachingAssetBundle, appSystemUiOverlayStyle, base, copyWith, enableAppEdgeToEdge, _transparentSystemBar, MethodCall, package:flutter/services.dart (+6 more)
 
 ### Community 82 - "recording checkpoint store"
-Cohesion: 0.10
-Nodes (19): app_database.dart, ../audio/recording_checkpoint_store.dart, ../../../../domain/models/recording.dart, durable_file_committer.dart, _activateCompletedSnapshots, activatedSnapshots, _alignRecoverablePcm, database (+11 more)
+Cohesion: 0.06
+Nodes (30): app_database.dart, app_file_layout.dart, ../audio/recording_checkpoint_store.dart, ../../../../domain/models/recording.dart, ../../../../domain/use_cases/delete_meeting.dart, durable_file_committer.dart, commit, layout (+22 more)
 
 ### Community 83 - "speaker diarization"
-Cohesion: 0.08
-Nodes (62): addClampEndpoints(), addColorObject(), addDesignColor(), addFontSizeStep(), addRoundedScale(), addRoundedToken(), addSidecarColors(), addSidecarRadii() (+54 more)
+Cohesion: 0.07
+Nodes (63): addClampEndpoints(), addColorObject(), addDesignColor(), addFontSizeStep(), addRoundedScale(), addRoundedToken(), addSidecarColors(), addSidecarRadii() (+55 more)
 
 ### Community 84 - "build spike sample"
 Cohesion: 0.11
 Nodes (17): bytes, data, durationSeconds, header, main, offset, output, outputPath (+9 more)
 
 ### Community 85 - "app ui previews"
-Cohesion: 0.09
-Nodes (63): abortSvelteComponentInjection(), cancelEditing(), cancelEditingToPicking(), cancelInsertConfigure(), cleanup(), cleanupAcceptedSession(), clearAnnotations(), clearInsertPicking() (+55 more)
+Cohesion: 0.08
+Nodes (62): applyEditing(), buildLocatorForLeaf(), cancelEditing(), cancelEditingToPicking(), cancelInsertConfigure(), clearAnnotations(), clearInsertPicking(), closeTunePopover() (+54 more)
 
 ### Community 86 - "asr spike test"
-Cohesion: 0.06
-Nodes (30): dart:io, Directory, DownloadableModelException, AppFileLayout, commit, DurableFileCommitException, DurableFileCommitter, message (+22 more)
+Cohesion: 0.05
+Nodes (36): dart:io, Directory, EvidencePlaybackException, AppFileLayout, commit, DurableFileCommitException, DurableFileCommitter, message (+28 more)
 
 ### Community 87 - "reliable recording test"
-Cohesion: 0.19
-Nodes (13): crc32(), hash32(), hslToRgb(), out, palette(), pngChunk(), pngFake(), promptFile (+5 more)
+Cohesion: 0.18
+Nodes (14): crc32(), hash32(), hslToRgb(), out, palette(), pngChunk(), pngFake(), promptFile (+6 more)
 
 ### Community 88 - "Stateful Widget"
 Cohesion: 0.07
@@ -763,56 +794,58 @@ Cohesion: 0.15
 Nodes (17): Official sherpa_onnx Package Boundary, Official Adapter and Dual Engine Pipeline, Final Transcript Snapshot Pipeline, Three-state Alpha Release Gate, Step 00 to Step 18 Dependency Chain, AI Summary Evidence Pipeline, Application-level ASR Cancellation, Long-lived OfflineRecognizer Isolate Worker (+9 more)
 
 ### Community 91 - "workflow states"
-Cohesion: 0.18
-Nodes (12): Enum, canTransitionTo, from, InvalidStateTransitionException, machine, ModelInstallationState, ModelInstallationStateTransition, ProcessingState (+4 more)
+Cohesion: 0.16
+Nodes (15): Enum, canTransitionTo, from, machine, MeetingState, MeetingStateTransition, ModelInstallationState, ModelInstallationStateTransition (+7 more)
 
 ### Community 92 - "recording Module"
-Cohesion: 0.12
-Nodes (16): int get, audioPath, bytes, duration, end, endByteOffset, meetingId, RecordingArtifact (+8 more)
+Cohesion: 0.11
+Nodes (17): Duration get, int get, audioPath, bytes, duration, end, endByteOffset, meetingId (+9 more)
 
 ### Community 93 - "sqflite summary repository"
 Cohesion: 0.06
-Nodes (34): ../../domain/models/domain_exception.dart, ../../../../domain/models/summary.dart, ../../../../domain/models/transcript.dart, actionItems, _appDatabase, delete, executor, getById (+26 more)
+Nodes (33): ../../domain/models/domain_exception.dart, ../../../../domain/models/summary.dart, actionItems, _appDatabase, delete, executor, getById, _insertItems (+25 more)
 
 ### Community 94 - "Macrostructures Module"
 Cohesion: 0.06
-Nodes (57): browserColorsClose(), browserDesignSystemConfig(), browserHasDirectText(), browserPrimaryFont(), browserRadiusTokens(), browserSampleText(), buildSelectorSegment(), checkBrowserDesignSystemSources() (+49 more)
+Nodes (47): checkClippedOverflow(), checkElementClippedOverflow(), checkElementClippedOverflowDOM(), checkElementItalicSerif(), checkElementItalicSerifDOM(), checkElementMotion(), checkElementMotionDOM(), checkElementOversizedH1() (+39 more)
 
 ### Community 95 - "Flutter Brand Mark"
 Cohesion: 0.14
 Nodes (16): Flutter Launcher Icon, Flutter Launcher Icon, Flutter Launcher Icon, Flutter iOS App Icon, Flutter iOS App Icon, Flutter iOS App Icon, Flutter iOS App Icon, Flutter iOS App Icon (+8 more)
 
 ### Community 96 - "flutter foreground recording lifecycle"
-Cohesion: 0.12
-Nodes (15): @pragma, meetTraceRecordingForegroundCallback, onDestroy, onRepeatEvent, onStart, _RecordingKeepAliveTaskHandler, _recordingServiceId, _requireSuccess (+7 more)
+Cohesion: 0.09
+Nodes (21): @pragma, flutter_foreground_recording_lifecycle.dart, meetTraceRecordingForegroundCallback, onDestroy, onRepeatEvent, onStart, _RecordingKeepAliveTaskHandler, _recordingServiceId (+13 more)
 
 ### Community 97 - "meeting directory deletion service"
-Cohesion: 0.13
-Nodes (15): app_file_layout.dart, ../../../../domain/use_cases/delete_meeting.dart, commit, _DirectoryStagedMeetingDeletion, layout, meetingsRoot, _NoopStagedMeetingDeletion, originalPath (+7 more)
+Cohesion: 0.05
+Nodes (39): package:meettrace/ui/features/meetings/view_models/meeting_detail_view_model.dart, package:meettrace/ui/features/meetings/views/meeting_detail_view.dart, required String id,
+  TranscriptSnapshotStatus, SpeakerDiarizationRunner? diarization,
+  bool, ../../../../support/final_transcription_fakes.dart, available, capability, diarizationEnabled (+31 more)
 
 ### Community 98 - "data controls view model"
-Cohesion: 0.10
-Nodes (20): ../../../../data/services/sharing/text_share_service.dart, ../../../../data/services/storage/local_data_control_service.dart, ../../../../domain/use_cases/build_meeting_share.dart, share, SharePlusTextShareService, TextShareService, LocalStorageUsage, dataControl (+12 more)
+Cohesion: 0.06
+Nodes (32): ../../../../data/services/sharing/text_share_service.dart, ../../../../data/services/storage/local_data_control_service.dart, device_free_space_service.dart, ../../../../domain/models/data_control.dart, ../../../../domain/use_cases/build_meeting_share.dart, share, SharePlusTextShareService, TextShareService (+24 more)
 
 ### Community 99 - "sqflite transcript repository"
-Cohesion: 0.12
-Nodes (15): bool get, SpeechSegment get, acceptedSampleCounts, acceptWaveform, flush, flushCalls, free, freeCalls (+7 more)
+Cohesion: 0.13
+Nodes (14): SpeechSegment get, acceptedSampleCounts, acceptWaveform, flush, flushCalls, free, freeCalls, front (+6 more)
 
 ### Community 100 - "revise final transcript test"
-Cohesion: 0.04
-Nodes (49): Meeting, _PreviewMeetingRepository, _PreviewMeetingRepository, MeetingRepository, package:meettrace/data/repositories/repository_contracts.dart, package:meettrace/data/services/storage/local_data_control_service.dart, package:meettrace/domain/use_cases/delete_meeting.dart, package:meettrace/domain/use_cases/revise_final_transcript.dart (+41 more)
+Cohesion: 0.07
+Nodes (26): databaseBytes, DiagnosticReport, fields, freeBytes, LocalStorageUsage, meetingBytes, modelBytes, toJsonText (+18 more)
 
 ### Community 101 - "silero vad segmenter test"
 Cohesion: 0.08
 Nodes (23): ../../data/services/summary/summary_generation_service.dart, _buildEvidence, _buildItems, _buildRequest, _buildSummary, capability, code, _completeTaskBestEffort (+15 more)
 
 ### Community 102 - "model settings view test"
-Cohesion: 0.19
-Nodes (14): collectMarqueeKeyframes(), collectPulseKeyframes(), cssLengthToPx(), indexInSourceRanges(), infiniteAnimationNames(), isRoundDotRadius(), isZeroOffset(), landmarkSourceRanges() (+6 more)
+Cohesion: 0.07
+Nodes (31): ModelManifestParser, package:flutter_test/flutter_test.dart, package:meettrace/data/services/models/model_manifest_parser.dart, package:meettrace/domain/models/asr_model_registry.dart, package:meettrace/ui/core/asr_model_option.dart, package:meettrace/ui/features/settings/view_models/model_settings_view_model.dart, package:meettrace/ui/features/settings/views/model_settings_view.dart, ../../../../support/model_selection_fakes.dart (+23 more)
 
 ### Community 103 - "record pcm audio capture"
-Cohesion: 0.14
-Nodes (13): actionLabel, AppStatePanel, _AppStatePanelKind, build, empty, error, icon, _kind (+5 more)
+Cohesion: 0.15
+Nodes (33): buildColor(), CANONICAL_SECTIONS, collectBullets(), collectColorValues(), collectParagraphs(), detectFormat(), extractColors(), extractComponents() (+25 more)
 
 ### Community 104 - "sherpa onnx runtime initializer"
 Cohesion: 0.14
@@ -823,45 +856,45 @@ Cohesion: 0.11
 Nodes (18): asr_spike_models.dart, dart:isolate, create, SherpaOnnxSpikeConfigFactory, audioDuration, message, missingRelativePaths, results (+10 more)
 
 ### Community 106 - "domain models asr model registry"
-Cohesion: 0.06
-Nodes (31): ../../../../domain/models/meeting.dart, ../../../../domain/models/processing_task.dart, _appDatabase, _changes, delete, dispose, getById, listAll (+23 more)
+Cohesion: 0.10
+Nodes (19): ActiveModelInstallationRepository, _appDatabase, _changes, deleteAndDeactivate, dispose, getActiveVersion, listAll, row (+11 more)
 
 ### Community 107 - "model file verifier"
-Cohesion: 0.06
-Nodes (65): ACK_EXTS, ADVISORY_RULES, applyPatchText(), clampByte(), clampGroupedToBudget(), clampToBudget(), cleanIgnoreValueDisplay(), CO_SCAN_STYLE_NAMES (+57 more)
+Cohesion: 0.07
+Nodes (52): ADVISORY_RULES, applyConfigSource(), applyDetectorConfigSource(), clampByte(), cleanIgnoreValueDisplay(), cloneDefaultConfig(), CO_SCAN_STYLE_NAMES, colorIgnoreKey() (+44 more)
 
 ### Community 108 - "storage mappers"
-Cohesion: 0.13
-Nodes (14): ../../../../domain/models/asr_model.dart, _date, fromMillisecondsSinceEpoch, meetingFromRow, meetingToRow, modelInstallationFromRow, modelInstallationToRow, _nullableDate (+6 more)
+Cohesion: 0.09
+Nodes (21): DatabaseFactory, ../../../../domain/models/asr_model.dart, _date, fromMillisecondsSinceEpoch, meetingFromRow, meetingToRow, modelInstallationFromRow, modelInstallationToRow (+13 more)
 
 ### Community 109 - "delete meeting test"
-Cohesion: 0.06
-Nodes (85): buildColor(), CANONICAL_SECTIONS, collectBullets(), collectColorValues(), collectParagraphs(), detectFormat(), extractColors(), extractComponents() (+77 more)
+Cohesion: 0.09
+Nodes (52): ae(), be(), bt(), Ce(), Ct(), de(), dt(), _e() (+44 more)
 
 ### Community 110 - "class Module"
-Cohesion: 0.07
-Nodes (25): >, package:meettrace/data/services/asr/final_transcription_service.dart, package:meettrace/domain/models/meeting.dart, package:meettrace/domain/models/summary.dart, package:meettrace/domain/use_cases/build_meeting_share.dart, main, main, _meeting (+17 more)
+Cohesion: 0.10
+Nodes (19): >, package:meettrace/data/services/asr/final_transcription_service.dart, package:meettrace/domain/models/summary.dart, main, calls, delete, DetailTranscriptionCall, getById (+11 more)
 
 ### Community 111 - "app status notice"
 Cohesion: 0.06
 Nodes (33): CustomPainter, AppLedgerRow, AppLedgerSurface, AppTimeRuler, build, children, color, dateLabel (+25 more)
 
 ### Community 112 - "app database"
-Cohesion: 0.07
-Nodes (29): DeviceRecordingReadinessProbe, AsrModelRegistry, check, CheckMeetingReadinessUseCase, device, freeBytes, installations, MeetingReadinessChecker (+21 more)
+Cohesion: 0.06
+Nodes (36): ../../../../data/repositories/repository_contracts.dart, AsrModelRegistry, check, CheckMeetingReadinessUseCase, device, freeBytes, installations, MeetingReadinessChecker (+28 more)
 
 ### Community 113 - "sqflite model installation repository"
-Cohesion: 0.08
-Nodes (22): Color, compact,
-  medium,, IconData, AppResponsiveBuilder, AppResponsiveWidgetBuilder, AppWindowSizeClass, build, builder (+14 more)
+Cohesion: 0.05
+Nodes (35): Color, compact,
+  medium,, IconData, AppResponsiveBuilder, AppResponsiveWidgetBuilder, AppWindowSizeClass, build, builder (+27 more)
 
 ### Community 114 - "start meeting view test"
-Cohesion: 0.15
-Nodes (12): AsrInstallationType, AsrModelDescriptor, AsrModelTier, capabilities, displayName, installationType, modelId, requiredBytes (+4 more)
+Cohesion: 0.07
+Nodes (30): AnimationController, Key?, actionIcon, actionKey, actionLabel, AppSwipeActionRow, _AppSwipeActionRowState, build (+22 more)
 
 ### Community 115 - "List Module"
-Cohesion: 0.06
-Nodes (29): Exception, AsrEngineException, FinalTranscriptionException, _RemoteWorkerError, AsrSpikePrerequisiteException, EvidencePlaybackException, ReliableRecordingException, BundledModelPreparationException (+21 more)
+Cohesion: 0.11
+Nodes (18): Exception, AsrEngineException, FinalTranscriptionException, _RemoteWorkerError, SherpaOnnxAdapterException, ReliableRecordingException, BundledModelPreparationException, _PreparationFailure (+10 more)
 
 ### Community 116 - "processing task"
 Cohesion: 0.14
@@ -872,8 +905,8 @@ Cohesion: 0.18
 Nodes (10): Duration, _bytesPerPcm16Sample, bytesWritten, channelCount, elapsed, isComplete, _minimumCompleteRatio, RecordingContinuityMetrics (+2 more)
 
 ### Community 118 - "Custom Craft"
-Cohesion: 0.07
-Nodes (55): applyConfigureBarChrome(), armPageChatForTyping(), attachSteerFocusDebug(), attachSteerFocusGuard(), clearSteerAwaitTimer(), clearSteerFocusRecoverTimer(), collapsePageChat(), dismissToast() (+47 more)
+Cohesion: 0.08
+Nodes (52): armPageChatForTyping(), attachSteerFocusDebug(), attachSteerFocusGuard(), clearSteerAwaitTimer(), clearSteerFocusRecoverTimer(), collapsePageChat(), dismissToast(), expandPageChat() (+44 more)
 
 ### Community 119 - "Enrichment Hierarchy"
 Cohesion: 0.10
@@ -881,39 +914,40 @@ Nodes (47): applyDetectionConfigSource(), clampByte(), cleanIgnoreValueDisplay()
 
 ### Community 120 - "model installation"
 Cohesion: 0.15
-Nodes (12): asr_model.dart, domain_exception.dart, bytes, installationType, installedPath, lastErrorCode, modelId, ModelInstallation (+4 more)
+Nodes (12): domain_exception.dart, AsrInstallationType, bytes, installationType, installedPath, lastErrorCode, modelId, ModelInstallation (+4 more)
 
 ### Community 121 - "Step 07 Reliable Recording Service"
 Cohesion: 0.17
 Nodes (13): Silero VAD MIT License, Silero VAD Release Provenance, Silero VAD INT8 Artifact, Reliable Recording Pipeline, Step 07 Reliable Recording Service, PCM16 Startup Recovery and Atomic Finalization, Bounded ASR Preview Queue, Deterministic Overlap Transcript Merge (+5 more)
 
 ### Community 122 - "local data control service"
-Cohesion: 0.17
-Nodes (11): ../../../../data/repositories/repository_contracts.dart, MeetingDirectoryDeletionService, commit, DeleteMeetingUseCase, execute, files, MeetingFileDeletionService, meetings (+3 more)
+Cohesion: 0.08
+Nodes (25): InvalidStateTransitionException, package:meettrace/domain/models/meeting.dart, package:meettrace/domain/models/meeting_readiness.dart, package:meettrace/domain/models/workflow_states.dart, package:meettrace/domain/use_cases/build_meeting_share.dart, package:meettrace/ui/features/meetings/view_models/start_meeting_view_model.dart, String? activeSummaryId,
+  MeetingState, main (+17 more)
 
 ### Community 123 - "asr model option"
-Cohesion: 0.11
-Nodes (32): checkElementGlow(), checkGlow(), checkHtmlPatterns(), collectCssCustomProps(), collectMarqueeKeyframes(), collectPulseKeyframes(), colorToHex(), cssLengthToPx() (+24 more)
+Cohesion: 0.10
+Nodes (36): checkColors(), checkElementAIPaletteDOM(), checkElementGlow(), checkGlow(), checkHoverContrast(), checkHtmlPatterns(), collectCssCustomProps(), collectMarqueeKeyframes() (+28 more)
 
 ### Community 124 - "App Database"
-Cohesion: 0.11
-Nodes (18): ../../../../domain/models/workflow_states.dart, Duration get, cause, code, duration, message, pause, RecordingSessionService (+10 more)
+Cohesion: 0.14
+Nodes (25): abortSvelteComponentInjection(), buildInsertPlaceholderSnapshotFromDom(), buildPickedAnchorSnapshot(), captureAndEmit(), checkpointPayload(), cleanup(), cleanupAcceptedSession(), clearHandled() (+17 more)
 
 ### Community 125 - "N1 Wordmark and 2 Links"
 Cohesion: 0.09
 Nodes (29): applyStaticDeclaration(), buildBorderOverrideMap(), buildStaticStyleMap(), buildStaticWindow(), collectStaticCssRules(), compareStaticPriority(), cssPropToCamel(), expandStaticBoxValues() (+21 more)
 
 ### Community 126 - "asr model registry"
-Cohesion: 0.17
-Nodes (11): AsrModelDescriptor get, alpha, _byId, defaultModel, defaultModelId, findById, models, paraformerStandardModelId (+3 more)
+Cohesion: 0.15
+Nodes (12): asr_model.dart, AsrModelDescriptor get, alpha, _byId, defaultModel, defaultModelId, findById, models (+4 more)
 
 ### Community 127 - "bool get"
-Cohesion: 0.08
-Nodes (23): dart:convert, delete, fromJson, hashCode, JsonRecordingCheckpointStore, layout, load, meetingId (+15 more)
+Cohesion: 0.11
+Nodes (18): delete, fromJson, hashCode, JsonRecordingCheckpointStore, layout, load, meetingId, operator (+10 more)
 
 ### Community 128 - "meeting list view model"
-Cohesion: 0.03
-Nodes (68): AnimatedContainer, FTappable, package:flutter_test/flutter_test.dart, package:meettrace/data/services/audio/device_recording_storage_capacity.dart, package:meettrace/data/services/models/platform_download_preflight_providers.dart, package:meettrace/data/services/storage/device_free_space_service.dart, package:meettrace/domain/models/asr_model_registry.dart, package:meettrace/domain/models/meeting_readiness.dart (+60 more)
+Cohesion: 0.04
+Nodes (52): AnimatedContainer, FTappable, _DirectoryStagedMeetingDeletion, MeetingDirectoryDeletionService, _NoopStagedMeetingDeletion, _PreviewMeetingFileDeletionService, _PreviewStagedMeetingDeletion, MeetingFileDeletionService (+44 more)
 
 ### Community 129 - "delete meeting"
 Cohesion: 0.19
@@ -928,16 +962,16 @@ Cohesion: 0.10
 Nodes (44): applyLegacyDeferredAcceptsOnStartup(), appendCssToSvelteStyle(), appendSanitizedCssRule(), applyDeferredSvelteComponentAccepts(), bakeParamValuesInCss(), buildInsertVariantStub(), buildPropContract(), buildPropsScript() (+36 more)
 
 ### Community 132 - "app failure"
-Cohesion: 0.09
-Nodes (20): AppFailure, code, diagnosticContext, FailureRecoverability, FailureStage, FailureUserAction, modelId, modelVersion (+12 more)
+Cohesion: 0.17
+Nodes (11): AppFailure, code, diagnosticContext, FailureRecoverability, FailureStage, FailureUserAction, modelId, modelVersion (+3 more)
 
 ### Community 133 - "resolve meeting model selection"
-Cohesion: 0.12
-Nodes (42): ACTIONS, addIgnoreFile(), addIgnoreRule(), addIgnoreValue(), DETECTOR_CONFIG_KEYS, detectorSection(), fileHasImpeccableHookMarker(), HOOK_MANIFEST_TARGETS (+34 more)
+Cohesion: 0.13
+Nodes (40): ACTIONS, addIgnoreFile(), addIgnoreRule(), addIgnoreValue(), DETECTOR_CONFIG_KEYS, detectorSection(), fileHasImpeccableHookMarker(), HOOK_MANIFEST_TARGETS (+32 more)
 
 ### Community 134 - "Meeting Repository"
-Cohesion: 0.06
-Nodes (34): AsrPreviewMetrics get, ../../../../data/services/asr/asr_engine.dart, ../../../../data/services/asr/asr_preview_session.dart, ../../../../data/services/audio/recording_session_service.dart, ../../../../domain/models/asr_preview.dart, dispose, events, flush (+26 more)
+Cohesion: 0.05
+Nodes (43): ../../../../data/services/asr/asr_engine.dart, ../../../../data/services/asr/asr_preview_session.dart, ../../../../data/services/audio/recording_session_service.dart, ../../../../domain/models/workflow_states.dart, cause, code, duration, message (+35 more)
 
 ### Community 135 - "model usage lease"
 Cohesion: 0.18
@@ -956,36 +990,36 @@ Cohesion: 0.10
 Nodes (36): addOpToManualApplyChunk(), APPLY_EVENT_HARD_TIMEOUT_MS, APPLY_EVENT_SOFT_DEADLINE_MS, buildManualApplyAgentAction(), clearManualApplyTransaction(), collectManualApplyFiles(), compactManualApplyBatch(), compactManualApplyCandidates() (+28 more)
 
 ### Community 139 - "Active Model Installation Repository"
-Cohesion: 0.20
-Nodes (9): hasInputs, main, _modelFilter, _modelRoot, _outputRoot, _recordingSeconds, _sampleWave, package:flutter/foundation.dart (+1 more)
+Cohesion: 0.09
+Nodes (19): dart:convert, hasInputs, main, _modelFilter, _modelRoot, _outputRoot, _recordingSeconds, _sampleWave (+11 more)
 
 ### Community 140 - "Imagery Kit"
-Cohesion: 0.12
-Nodes (36): confirm(), detectCli(), dim(), fileUrlToLocalPath(), formatAdvisorySection(), formatFindings(), formatFindingsBody(), formatFindingSummary() (+28 more)
+Cohesion: 0.13
+Nodes (35): confirm(), detectCli(), dim(), fileUrlToLocalPath(), formatAdvisorySection(), formatFindings(), formatFindingsBody(), formatFindingSummary() (+27 more)
 
 ### Community 141 - "Dual On device ASR Models"
 Cohesion: 0.12
 Nodes (38): acceptCli(), acceptReceiptPath(), argVal(), buildAcceptedWrappedSource(), buildCarbonizeReplacement(), decodeHtmlAttr(), deindentContent(), detectCommentSyntax() (+30 more)
 
 ### Community 142 - "sqflite model usage lease repository"
-Cohesion: 0.08
-Nodes (24): class, Connectivity, ../../../../domain/use_cases/check_meeting_readiness.dart, downloadable_model_service.dart, flutter_foreground_recording_lifecycle.dart, freeSpace, getFreeBytes, createRecordingForegroundLifecycle (+16 more)
+Cohesion: 0.09
+Nodes (21): class, Connectivity, ../../../../domain/use_cases/check_meeting_readiness.dart, downloadable_model_service.dart, freeSpace, getFreeBytes, captureFactory, check (+13 more)
 
 ### Community 143 - "Flutter Logo Mark"
 Cohesion: 0.22
 Nodes (9): Flutter App Icon (40×40), Flutter App Icon (60×60 @3x), Flutter App Icon (83.5×83.5 @2x), Flutter macOS App Icon (256×256), Rounded-Square Icon Tile, Flutter Logo Mark, Flutter Web Favicon (16×16), Flutter Maskable Web Icon (192×192) (+1 more)
 
 ### Community 144 - "Asr Engine"
-Cohesion: 0.07
-Nodes (27): AudioRecorder, dart:typed_data, dispose, hasPermission, meettracePcmRecordConfig, pause, _recorder, RecordPcmAudioCapture (+19 more)
+Cohesion: 0.09
+Nodes (22): DeviceRecordingStorageCapacityProvider, RecordPcmAudioCapture, PcmAudioCapture, RecordingStorageCapacityProvider, package:meettrace/data/services/audio/recording_device_readiness_probe.dart, _FakeCapture, _FixedCapacity, _Capacity (+14 more)
 
 ### Community 145 - "model manifest parser test"
 Cohesion: 0.12
 Nodes (34): API_BASE, API_TIMEOUT_MS, apiBudgetMs(), fetchRoll(), here, loadLocal(), localStates, pingChosen() (+26 more)
 
 ### Community 146 - "Object? Module"
-Cohesion: 0.22
-Nodes (7): Object?, package:meettrace/domain/models/app_failure.dart, error, initialize, initializeCalls, main, main
+Cohesion: 0.08
+Nodes (22): DomainInvariantViolation, message, toString, Meeting, ResolveMeetingModelSelection, package:meettrace/domain/models/domain_exception.dart, package:meettrace/domain/use_cases/delete_meeting.dart, package:meettrace/domain/use_cases/resolve_meeting_model_selection.dart (+14 more)
 
 ### Community 147 - "start meeting view model test"
 Cohesion: 0.26
@@ -1016,20 +1050,20 @@ Cohesion: 0.29
 Nodes (7): Step 01 Preliminary Conditional Go, Mi 10 Dual-model Benchmark, Paraformer 15-second Window Decision, Qwen Memory and Latency Risk, Recording and ASR Decoupling Evidence, ASR Device Risk State, Android procfs sysfs ASR Risk Monitor
 
 ### Community 154 - "Layout and Space"
-Cohesion: 0.33
-Nodes (7): AsrPreviewSession, AsrPreviewState, _PreviewSession, Metrics, Segment, _PreviewSession, _PreviewSession
+Cohesion: 0.29
+Nodes (8): AsrPreviewCoordinator, AsrPreviewSession, AsrPreviewState, _PreviewSession, Metrics, Segment, _PreviewSession, _PreviewSession
 
 ### Community 155 - "Meeting Detail View Model"
-Cohesion: 0.13
-Nodes (20): contextSourcePath(), contextSourceStatus(), findMonorepoRoot(), firstExisting(), hasGitBoundary(), isCandidateProjectRoot(), isPathInside(), isPathInsideOrEqual() (+12 more)
+Cohesion: 0.16
+Nodes (16): contextSourcePath(), contextSourceStatus(), firstExisting(), isCandidateProjectRoot(), isPathInside(), isPathInsideOrEqual(), nearestPackageRootBetween(), nearestProjectLikeRoot() (+8 more)
 
 ### Community 156 - "text share service"
 Cohesion: 0.08
-Nodes (51): actionLabel(), bindConfigureCountPillTooltip(), bindConfigureInlineControlHover(), bindConfigureModifierPillHover(), buildConfigureActionControl(), buildConfigureCountControl(), buildConfigureRow(), buildConfigureSubmitButton() (+43 more)
+Nodes (52): actionLabel(), applyConfigureBarChrome(), bindConfigureCountPillTooltip(), bindConfigureInlineControlHover(), bindConfigureModifierPillHover(), buildConfigureActionControl(), buildConfigureCountControl(), buildConfigureRow() (+44 more)
 
 ### Community 157 - "Asr Device Risk Monitor"
 Cohesion: 0.11
-Nodes (48): bumpCursorDenial(), cursorBlockMessage(), detectProposedHtml(), escapeRegExp(), findingSignature(), firstMatch(), firstString(), hasFragmentEditContent() (+40 more)
+Nodes (34): allow(), bumpCursorDenial(), deny(), detectProposedHtml(), done(), escapeRegExp(), findingSignature(), firstMatch() (+26 more)
 
 ### Community 158 - "Model Usage Lease Repository"
 Cohesion: 0.16
@@ -1040,8 +1074,8 @@ Cohesion: 0.33
 Nodes (6): Constraints, Failure modes, Flow, $impeccable hooks, Intentional findings, Routing
 
 ### Community 160 - "audio source"
-Cohesion: 0.14
-Nodes (26): resolveProjectRoot(), firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath(), getLegacyLiveServerPath() (+18 more)
+Cohesion: 0.19
+Nodes (18): resolveProjectRoot(), firstExisting(), getDesignSidecarCandidates(), getDesignSidecarPath(), getImpeccableDir(), getLegacyLiveAnnotationsDir(), getLegacyLiveConfigPath(), getLegacyLiveServerPath() (+10 more)
 
 ### Community 161 - "package sherpa onnx sherpa onnx"
 Cohesion: 0.13
@@ -1052,8 +1086,8 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: 重新排版首页录音条件预检条, Source Nodes
 
 ### Community 163 - "Sherpa Onnx Worker"
-Cohesion: 0.08
-Nodes (24): ../../../core/view_state.dart, Future, checking, _checkReadiness, defaultModelName, dispose, _disposed, issueCount (+16 more)
+Cohesion: 0.07
+Nodes (29): ../../../core/view_state.dart, canDeleteMeeting, checking, _checkReadiness, defaultModelName, _deleteErrorMessage, deleteMeeting, _deletingMeetingIds (+21 more)
 
 ### Community 164 - "Sherpa Onnx Worker Factory"
 Cohesion: 0.40
@@ -1064,12 +1098,12 @@ Cohesion: 0.07
 Nodes (27): Bottom Action Bar, Buttons, Cards / Containers, Colors, Components, Design System: 会迹 · MeetTrace, Do:, Do's and Don'ts (+19 more)
 
 ### Community 166 - "Editorial Genre"
-Cohesion: 0.18
-Nodes (21): coerceSlug(), listSnapshotsForSlug(), main(), nowFilenameStamp(), parseFrontmatter(), readLatestSnapshot(), readTrend(), serializeFrontmatter() (+13 more)
+Cohesion: 0.29
+Nodes (12): coerceSlug(), listSnapshotsForSlug(), main(), nowFilenameStamp(), parseFrontmatter(), readLatestSnapshot(), readTrend(), serializeFrontmatter() (+4 more)
 
 ### Community 167 - "design md Portable Design System"
-Cohesion: 0.48
-Nodes (7): bumpEditCount(), dedupeAgainstCache(), ensureFile(), ensureSession(), findingCacheKey(), rememberFindings(), touchFile()
+Cohesion: 0.17
+Nodes (27): main(), ALLOWED_EXTS, appendDesignSystemNote(), bumpEditCount(), dedupeAgainstCache(), depthIsSet(), designSystemOptions(), ensureFile() (+19 more)
 
 ### Community 168 - "models manifest"
 Cohesion: 0.50
@@ -1092,8 +1126,8 @@ Cohesion: 0.08
 Nodes (25): Assess Adaptation Challenge, Breakpoints: Content-Driven, Content Adaptation, Desktop Adaptation (Mobile → Desktop), Detect Input Method, Not Just Screen Size, Email Adaptation (Web → Email), Implement Adaptations, Layout Adaptation Patterns (+17 more)
 
 ### Community 173 - "plan asr preview windows test"
-Cohesion: 0.15
-Nodes (19): browserFindingsFromMap(), checkEdgeFlushCardsDOM(), checkElementBlinkingCursorDOM(), checkElementTextOverflowDOM(), checkFirstViewportColumnOverflowDOM(), checkHeadingRhythmDOM(), checkRepeatedContainerTextDOM(), checkRepeatedContainerTextFromDoc() (+11 more)
+Cohesion: 0.12
+Nodes (24): browserDesignSystemConfig(), browserFindingsFromMap(), browserPrimaryFont(), checkBrowserDesignSystemSources(), checkEdgeFlushCardsDOM(), checkElementBlinkingCursorDOM(), checkElementTextOverflowDOM(), checkFirstViewportColumnOverflowDOM() (+16 more)
 
 ### Community 175 - "Theme Extension"
 Cohesion: 1.33
@@ -1129,7 +1163,7 @@ Nodes (19): args, cwd, pageUrlFilter, remaining, compactManualLogText(), summari
 
 ### Community 183 - "package meetily ai domain models"
 Cohesion: 0.13
-Nodes (20): addBrowserFindings(), addVisualContrastFindings(), addVisualContrastResult(), analyzeVisualContrast(), analyzeVisualContrastCandidate(), clearOverlays(), collectVisualContrastCandidates(), collectVisualContrastReasons() (+12 more)
+Nodes (20): addBrowserFindings(), addVisualContrastFindings(), addVisualContrastResult(), analyzeVisualContrast(), analyzeVisualContrastCandidate(), blendRgba(), clampByte(), clearOverlays() (+12 more)
 
 ### Community 213 - "S1 Left Margin Numbered"
 Cohesion: 0.33
@@ -1148,8 +1182,8 @@ Cohesion: 0.14
 Nodes (20): checkElementHeroEyebrow(), checkElementHeroEyebrowDOM(), checkElementQualityDOM(), checkHeroEyebrow(), checkNumberedSectionLabels(), checkNumberedSectionLabelsDOM(), checkNumberedSectionLabelsFromDoc(), checkRepeatedSectionKickers() (+12 more)
 
 ### Community 217 - "S5 Bottom Anchored"
-Cohesion: 0.11
-Nodes (18): available, code, endMs, errorCode, isAvailable, reasonCode, snapshot, SpeakerDiarizationCapability (+10 more)
+Cohesion: 0.10
+Nodes (19): available, code, endMs, errorCode, isAvailable, reasonCode, snapshot, SpeakerDiarizationCapability (+11 more)
 
 ### Community 218 - "T2 Logo Wall Hairline"
 Cohesion: 0.19
@@ -1160,20 +1194,20 @@ Cohesion: 0.12
 Nodes (15): unique_ptr, DartProject, HWND, LPARAM, LRESULT, UINT, WPARAM, FlutterWindow (+7 more)
 
 ### Community 220 - "Preview Block Worked Examples"
-Cohesion: 0.20
-Nodes (17): directChildDirs(), discoverRootsForPattern(), discoverTargetCandidates(), expandSimplePattern(), findTargetExample(), hasFallbackWorkspaceChildren(), isExcludedByWorkspacePattern(), isIgnoredWorkspaceDiscoveryDir() (+9 more)
+Cohesion: 0.14
+Nodes (22): directChildDirs(), discoverRootsForPattern(), discoverTargetCandidates(), expandSimplePattern(), findMonorepoRoot(), findTargetExample(), hasFallbackWorkspaceChildren(), hasGitBoundary() (+14 more)
 
 ### Community 221 - "Carnival Theme"
-Cohesion: 0.10
-Nodes (23): checkElementMotion(), checkElementMotionDOM(), checkMotion(), checkPageTypography(), resolveSerif(), firstOverusedGoogleFont(), checkElementMotion(), checkElementMotionDOM() (+15 more)
+Cohesion: 0.06
+Nodes (47): checkPageTypography(), resolveSerif(), blankCssComments(), CSS_IN_JS_EXTENSIONS, extFromFilePath(), extractCSSinJS(), firstOverusedGoogleFont(), hexChannels() (+39 more)
 
 ### Community 222 - "Cobalt Theme"
-Cohesion: 0.08
-Nodes (23): DatabaseFactory, device_free_space_service.dart, ../../../../domain/models/data_control.dart, ModelInstallationRepository, buildDiagnostics, freeSpace, installations, layout (+15 more)
+Cohesion: 0.18
+Nodes (21): PRODUCT_DEPRECATED_SECTIONS, PRODUCT_V4_SECTIONS, productStampLine(), readSidecarSchemaVersion(), stampProductSchema(), checkConfig(), checkDesignSidecar(), checkNativePlatformEvidence() (+13 more)
 
 ### Community 223 - "Hum Theme"
-Cohesion: 0.24
-Nodes (10): safeSessionId(), applyEvent(), baseSnapshot(), COMPLETED_PHASES, GENERATION_FENCED_PHASES, getJournalPath(), getSnapshotPath(), rebuildSnapshotFromJournal() (+2 more)
+Cohesion: 0.22
+Nodes (11): safeSessionId(), missedCompletionFromSnapshot(), applyEvent(), baseSnapshot(), COMPLETED_PHASES, GENERATION_FENCED_PHASES, getJournalPath(), getSnapshotPath() (+3 more)
 
 ### Community 224 - "Lumen Theme"
 Cohesion: 0.12
@@ -1188,8 +1222,8 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: 修复安卓标题栏为沉浸式, Source Nodes
 
 ### Community 267 - "template-extensions.mjs"
-Cohesion: 0.20
-Nodes (12): extensionCache, LIVE_TEMPLATE_EXTENSIONS, matchesTemplateExtension(), normalizeExtensionEntries(), readLiveTemplateExtensions(), resolveLiveTemplateExtensions(), safeReadJson(), findSessionFile() (+4 more)
+Cohesion: 0.24
+Nodes (10): ACK_EXTS, shouldEmitAckForFile(), extensionCache, LIVE_TEMPLATE_EXTENSIONS, matchConfiguredExtension(), mergeExtensions(), normalizeExtensionEntries(), readLiveTemplateExtensions() (+2 more)
 
 ### Community 268 - "serve-question.mjs"
 Cohesion: 0.13
@@ -1204,8 +1238,12 @@ Cohesion: 0.13
 Nodes (14): 1. Accessibility (A11y), 2. Performance, 3. Theming, 4. Responsive Design, 5. Implementation Integrity (CRITICAL), Audit Health Score, Detailed Findings by Severity, Diagnostic Scan (+6 more)
 
 ### Community 271 - "loadContext"
-Cohesion: 0.25
-Nodes (13): extractPlatform(), loadContext(), cli(), COMMON_DEV_PORTS, devServerSignals(), gatherSignals(), gitSignals(), hasCode() (+5 more)
+Cohesion: 0.23
+Nodes (14): extractPlatform(), loadContext(), cli(), COMMON_DEV_PORTS, devServerSignals(), gatherSignals(), gitSignals(), hasCode() (+6 more)
+
+### Community 272 - "package:path/path.dart"
+Cohesion: 0.10
+Nodes (18): main, _recordingSeconds, main, ModelFileDownloader, download, HttpModelFileDownloader, requireHttps, package:flutter/foundation.dart (+10 more)
 
 ### Community 273 - "Create"
 Cohesion: 0.16
@@ -1224,8 +1262,8 @@ Cohesion: 0.40
 Nodes (5): OfficialSherpaOnnxWorkerFactory, SherpaOnnxWorkerFactory, _FakeWorkerFactory, _FakeWorkerFactory, _FakeWorkerFactory
 
 ### Community 277 - "sampleCssBackground"
-Cohesion: 0.18
-Nodes (16): blendRgba(), clampByte(), firstCssUrl(), getLayerValue(), loadVisualContrastImage(), parseObjectPosition(), parsePositionPair(), parsePositionToken() (+8 more)
+Cohesion: 0.24
+Nodes (13): firstCssUrl(), getLayerValue(), loadVisualContrastImage(), parseObjectPosition(), parsePositionPair(), parsePositionToken(), pointToImageSource(), resolveObjectImageRect() (+5 more)
 
 ### Community 279 - "event-validation.mjs"
 Cohesion: 0.26
@@ -1260,8 +1298,12 @@ Cohesion: 0.17
 Nodes (11): Accessibility Resilience, Assess Hardening Needs, Edge Cases & Boundary Conditions, Error Handling, Hardening Dimensions, Input Validation & Sanitization, Internationalization (i18n), Performance Resilience (+3 more)
 
 ### Community 287 - "staleness-notice.mjs"
-Cohesion: 0.46
-Nodes (7): cachePath(), filterFreshFindings(), pruneCache(), readCache(), readJson(), stalenessCheckDisabled(), writeCache()
+Cohesion: 0.33
+Nodes (10): appendStalenessDirective(), designSidecarCandidatesFor(), buildStalenessDirective(), cachePath(), filterFreshFindings(), pruneCache(), readCache(), readJson() (+2 more)
+
+### Community 288 - "Apple Design"
+Cohesion: 0.10
+Nodes (20): 10. Gesture design details (the "feel" checklist), 11. Frame-level smoothness, 12. Materials & depth — translucency conveys hierarchy, 13. Multimodal feedback — motion + sound + haptics, 14. Reduced motion & accessibility, 15. Typography — optical sizing, tracking, leading, 16. Design foundations — the eight principles, 17. Process (+12 more)
 
 ### Community 289 - "ui-core.mjs"
 Cohesion: 0.23
@@ -1311,6 +1353,10 @@ Nodes (10): detectCsp(), INLINE_HEADER_SIGNALS, LAYOUT_EXTS, MONOREPO_HELPER_SIG
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: 修复当前启动异常, Source Nodes
 
+### Community 301 - "local_data_control_service_test.dart"
+Cohesion: 0.10
+Nodes (18): package:meettrace/data/repositories/repository_contracts.dart, package:meettrace/data/services/audio/device_recording_storage_capacity.dart, package:meettrace/data/services/models/platform_download_preflight_providers.dart, package:meettrace/data/services/storage/device_free_space_service.dart, package:meettrace/data/services/storage/local_data_control_service.dart, package:meettrace/ui/core/view_state.dart, StateError, main (+10 more)
+
 ### Community 302 - "generation-preflight.mjs"
 Cohesion: 0.30
 Nodes (10): buildGenerationPreflight(), compactError(), execFileAsync, insertTarget(), normalizeTarget(), replaceTarget(), runGenerationPreflight(), sourceResolutionCache (+2 more)
@@ -1322,6 +1368,10 @@ Nodes (7): args, buildWeights(), hashUnit(), pickSeed(), seed, SEEDS, weightedPi
 ### Community 304 - "Init flow"
 Cohesion: 0.20
 Nodes (10): Completion gate, Init flow, Step 1: Load current state, Step 2: Explore the project, Step 3: Interview for product truth, Step 4: Write PRODUCT.md, Step 5: Configure live mode when useful, Step 6: Wrap up or resume (+2 more)
+
+### Community 305 - "State"
+Cohesion: 0.14
+Nodes (20): MeetTraceBootstrap, _MeetTraceBootstrapState, MeetingDetailView, _MeetingDetailViewState, _ResultActionsCard, _ResultActionsCardState, _SpeakerLabelEditor, _SpeakerLabelEditorState (+12 more)
 
 ### Community 306 - "Dual On-device ASR Models"
 Cohesion: 0.22
@@ -1347,9 +1397,21 @@ Nodes (8): 1. Impatient Power User: "Alex", 2. Confused First-Timer: "Jordan", 3
 Cohesion: 0.25
 Nodes (7): Extract Flow, Step 1: Discover the Design System, Step 2: Identify Patterns, Step 3: Plan Extraction, Step 4: Extract & Enrich, Step 5: Migrate, Step 6: Document
 
+### Community 312 - "Glossary"
+Cohesion: 0.11
+Nodes (17): Animation Vocabulary, Easing — how speed changes over an animation, Entrances & Exits — how elements appear and disappear, Examples, Feedback & Interaction — responding to the user's actions, Glossary, Instructions, Looping & Ambient Motion — animations that run on their own (+9 more)
+
+### Community 313 - "checkElementDesignSystemDOM"
+Cohesion: 0.12
+Nodes (17): browserColorsClose(), browserHasDirectText(), browserRadiusTokens(), browserSampleText(), buildSelectorSegment(), checkElementDesignSystemDOM(), generateSelector(), isBrowserDesignColorAllowed() (+9 more)
+
 ### Community 314 - "端侧双模型转录技术基线"
 Cohesion: 0.25
 Nodes (8): 端侧双模型转录技术基线, Alpha 发布阻塞状态, EvaluateAlphaReleaseUseCase, 同语料双模型评测, Alpha 三态发布门禁, Meetily 双 ASR 模型设计, 录音优先原则, View-ViewModel-UseCase-Repository 管线
+
+### Community 315 - "Finding Animation Opportunities"
+Cohesion: 0.12
+Nodes (15): 1. Frequency — how often will a user see this?, 2. Purpose — why does this animate?, 3. Speed — can it stay inside budget?, 4. Function — does motion help or hinder here?, Finding Animation Opportunities, Hard Rules, Operating Posture, Part 1 — Opportunities table (+7 more)
 
 ### Community 316 - "Generate Report"
 Cohesion: 0.29
@@ -1360,20 +1422,20 @@ Cohesion: 0.29
 Nodes (7): Cognitive Load Assessment, Cognitive Load Checklist, Extraneous Load: Bad Design, Germane Load: Learning Effort, Intrinsic Load: The Task Itself, The Working Memory Rule, Three Types of Cognitive Load
 
 ### Community 318 - "checkElementGptBorderShadowDOM"
-Cohesion: 0.18
-Nodes (13): checkElementOversizedH1(), checkElementOversizedH1DOM(), checkElementQuality(), checkOversizedH1(), checkQuality(), colorsNearlyMatch(), cssColorIsTransparent(), getComputedStyleFor() (+5 more)
+Cohesion: 0.16
+Nodes (16): borderColorsFromStyle(), borderWidthsFromStyle(), checkElementGptBorderShadow(), checkElementGptBorderShadowDOM(), checkGptThinBorderWideShadow(), checkQuality(), colorsNearlyMatch(), cssColorAlpha() (+8 more)
 
 ### Community 319 - "Q: 检查当前项目还有没有无用或过时的冗余"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: 检查当前项目还有没有无用或过时的冗余, Source Nodes
 
 ### Community 320 - "flutter_model_asset_source.dart"
-Cohesion: 0.09
-Nodes (20): AssetBundle, bundled_model_preparation_service.dart, ModelAssetSource, bundle, FlutterModelAssetSource, load, BundledSileroVadPreparationException, package:meettrace/data/services/models/bundled_model_preparation_service.dart (+12 more)
+Cohesion: 0.10
+Nodes (19): AssetBundle, bundled_model_preparation_service.dart, ModelAssetSource, bundle, FlutterModelAssetSource, load, package:meettrace/data/services/models/bundled_model_preparation_service.dart, _FakeAssetSource (+11 more)
 
 ### Community 321 - "sqflite_model_usage_lease_repository.dart"
-Cohesion: 0.06
-Nodes (32): ../../../../domain/models/asr_model_registry.dart, ../../../domain/models/model_usage_lease.dart, DiarizationPreferenceRepository, ModelPreferenceRepository, _appDatabase, _enabledKey, getEnabled, setEnabled (+24 more)
+Cohesion: 0.05
+Nodes (46): ../../../../domain/models/asr_model_registry.dart, ../../../../domain/models/meeting.dart, ../../../domain/models/model_usage_lease.dart, ../../../../domain/models/processing_task.dart, ModelPreferenceRepository, _appDatabase, _enabledKey, getEnabled (+38 more)
 
 ### Community 322 - "会迹（MeetTrace）iOS Alpha 设备矩阵"
 Cohesion: 0.33
@@ -1439,13 +1501,17 @@ Nodes (4): 4.1 P0, 4.2 可降级, 4.3 不在 Alpha 范围, 4. Alpha 范围
 Cohesion: 0.67
 Nodes (3): 3.1 目标用户, 3.2 核心场景, 3. 用户与场景
 
+### Community 342 - "model_file_verifier.dart"
+Cohesion: 0.13
+Nodes (14): ../../../domain/models/model_manifest.dart, File, issues, isValid, kind, message, ModelFileIssue, ModelFileIssueKind (+6 more)
+
 ### Community 343 - "iOS platform"
 Cohesion: 0.25
 Nodes (8): Color & materials, Components & controls, iOS platform, Layout & structure, Motion, The iOS slop test, Touch targets, Typography
 
 ### Community 344 - "checkElementGptBorderShadowDOM"
-Cohesion: 0.32
-Nodes (8): borderColorsFromStyle(), borderWidthsFromStyle(), checkElementGptBorderShadow(), checkElementGptBorderShadowDOM(), checkGptThinBorderWideShadow(), cssColorAlpha(), shadowLayerAlpha(), shadowMaxBlurPx()
+Cohesion: 0.44
+Nodes (9): getSurfaceBriefDir(), listSurfaceBriefs(), normalizeSurfaceTarget(), parseSurfaceBrief(), resolveSurfaceBrief(), surfaceBriefPathForTarget(), writeSurfaceBrief(), main() (+1 more)
 
 ### Community 345 - "view_state.dart"
 Cohesion: 0.46
@@ -1459,21 +1525,33 @@ Nodes (4): Answer, Outcome, Q: 首页的准备就绪是什么意思, Source Node
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: 首页的准备就绪是什么意思, Source Nodes
 
+### Community 348 - "platform_asr_device_risk_monitor.dart"
+Cohesion: 0.17
+Nodes (11): android_proc_asr_device_risk_monitor.dart, asr_engine.dart, AsrRiskPlatform, changes, createPlatformAsrDeviceRiskMonitor, _currentPlatform, _currentRss, inspect (+3 more)
+
+### Community 349 - "bool get"
+Cohesion: 0.17
+Nodes (11): bool get, canStart, defaultModelAvailable, defaultModelId, defaultModelName, freeBytes, issues, MeetingReadiness (+3 more)
+
 ### Community 350 - "Q: path_provider_android 为什么要添加到pubspec.yaml"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: path_provider_android 为什么要添加到pubspec.yaml, Source Nodes
 
 ### Community 351 - "dart:async"
-Cohesion: 0.18
-Nodes (9): dart:async, channelCount, RecordingContinuityProbe, run, sampleRate, package:meettrace/data/services/audio/record_pcm_audio_capture.dart, package:record/record.dart, recording_continuity_metrics.dart (+1 more)
+Cohesion: 0.10
+Nodes (18): AudioRecorder, dart:async, dispose, hasPermission, meettracePcmRecordConfig, pause, _recorder, resume (+10 more)
 
 ### Community 352 - "Diagnostic Scan"
 Cohesion: 0.33
 Nodes (6): 1. Accessibility (VoiceOver / TalkBack), 2. Performance, 3. Appearance & Theming, 4. Platform Conformance (CRITICAL), 5. Adaptivity, Diagnostic Scan
 
 ### Community 353 - "readConfig"
-Cohesion: 0.18
-Nodes (12): applyConfigSource(), applyDetectorConfigSource(), cloneDefaultConfig(), detectorSection(), hookSection(), ignoreValueFilesKey(), mergeIgnoreValues(), numberOr() (+4 more)
+Cohesion: 0.17
+Nodes (12): _PreviewMeetingRepository, _PreviewMeetingRepository, _PreviewMeetingRepository, MeetingRepository, _MeetingRepository, _MeetingRepository, _InMemoryMeetingRepository, _MeetingRepository (+4 more)
+
+### Community 354 - "AsrDeviceRiskMonitor"
+Cohesion: 0.20
+Nodes (10): _SupportedRiskMonitor, AndroidProcAsrDeviceRiskMonitor, AsrDeviceRiskMonitor, AsrDeviceRiskState, PortableAsrDeviceRiskMonitor, package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart, package:meettrace/data/services/asr/platform_asr_device_risk_monitor.dart, main (+2 more)
 
 ### Community 355 - "Meetily Active Document Hierarchy"
 Cohesion: 0.60
@@ -1484,48 +1562,136 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: 底部的事实音频本地优先，这块还有其他方案吗, Source Nodes
 
 ### Community 357 - "hook.mjs"
-Cohesion: 0.39
-Nodes (7): allow(), deny(), done(), isStopEvent(), writeAuditLog(), main(), readStdin()
+Cohesion: 0.22
+Nodes (8): Accessibility, Design Engineering, Initial Response, prefers-reduced-motion, Review Checklist, Review Format (Required), Stagger Animations, Touch device hover states
+
+### Community 358 - "SAFE_TAGS"
+Cohesion: 0.28
+Nodes (9): checkElementMotion(), checkElementMotionDOM(), checkLayout(), checkMotion(), isCardLike(), isCardLikeDOM(), isCardLikeFromProps(), LAYOUT_TRANSITION_PROPS (+1 more)
 
 ### Community 359 - "app_back_icon.dart"
-Cohesion: 0.06
-Nodes (30): AppBackIcon, build, semanticsLabel, _AudioCard, _DiarizationCard, _FactLine, _FailureCard, _MeetingFactRail (+22 more)
+Cohesion: 0.50
+Nodes (3): AppBackIcon, build, semanticsLabel
 
 ### Community 360 - "checkCreamPalette"
-Cohesion: 1.00
-Nodes (3): checkCreamPalette(), creamFromClassList(), isCreamColor()
+Cohesion: 0.31
+Nodes (9): cursorBlockMessage(), clampGroupedToBudget(), clampToBudget(), directiveFooter(), formatFindingIgnoreCommand(), formatFindingLine(), quoteCommandArg(), renderGroupedTemplate() (+1 more)
+
+### Community 361 - "platform_recording_foreground_lifecycle_test.dart"
+Cohesion: 0.25
+Nodes (8): FlutterForegroundRecordingLifecycle, NoopRecordingForegroundLifecycle, RecordingForegroundLifecycle, package:meettrace/data/services/audio/flutter_foreground_recording_lifecycle.dart, package:meettrace/data/services/audio/platform_recording_foreground_lifecycle.dart, package:meettrace/data/services/audio/recording_ports.dart, main, FakeRecordingForegroundLifecycle
+
+### Community 362 - "device_free_space_service.dart"
+Cohesion: 0.22
+Nodes (8): _bytesPerMebibyte, FreeDiskSpaceInMebibytesReader, getFreeBytes, getFreeDiskSpaceForPath, _readApplicationSupportVolume, reader, supportDirectory, package:disk_space_2/disk_space_2.dart
+
+### Community 363 - "Component Building Principles"
+Cohesion: 0.25
+Nodes (8): Animate enter states with @starting-style, Buttons must feel responsive, Component Building Principles, Make popovers origin-aware, Never animate from scale(0), Tooltips: skip delay on subsequent hovers, Use blur to mask imperfect transitions, Use CSS transitions over keyframes for interruptible UI
+
+### Community 364 - "source-lock.mjs"
+Cohesion: 0.50
+Nodes (7): isLiveServerPidReachable(), clearStaleLock(), readLock(), releaseOwnLock(), sleepSync(), sourceLockPath(), withSourceLockSync()
+
+### Community 365 - "TranscriptRepository"
+Cohesion: 0.25
+Nodes (8): SqfliteTranscriptRepository, _PreviewTranscriptRepository, _TranscriptRepository, _TranscriptRepository, _TranscriptRepository, _TranscriptRepository, DetailTranscriptRepository, TranscriptRepository
+
+### Community 366 - "normalizeGitHubEvent"
+Cohesion: 0.38
+Nodes (7): applyPatchText(), envProjectDir(), looksLikeApplyPatch(), normalizeGitHubEvent(), normalizeHookEvent(), parseGitHubToolArgs(), resolveProjectCwd()
+
+### Community 367 - "source-search.mjs"
+Cohesion: 0.38
+Nodes (6): matchesTemplateExtension(), findSessionFile(), findSourceFile(), NEVER_SOURCE_DIRS, SOURCE_SEARCH_DIRS, walk()
+
+### Community 368 - "The Animation Decision Framework"
+Cohesion: 0.33
+Nodes (6): 1. Should this animate at all?, 2. What is the purpose?, 3. What easing should it use?, 4. How fast should it be?, Perceived performance, The Animation Decision Framework
+
+### Community 369 - "clip-path for Animation"
+Cohesion: 0.33
+Nodes (6): clip-path for Animation, Comparison sliders, Hold-to-delete pattern, Image reveals on scroll, Tabs with perfect color transitions, The inset shape
+
+### Community 370 - "Performance Rules"
+Cohesion: 0.33
+Nodes (6): CSS animations beat JS under load, CSS variables are inheritable, Framer Motion hardware acceleration caveat, Only animate transform and opacity, Performance Rules, Use WAAPI for programmatic CSS animations
+
+### Community 371 - "Gesture and Drag Interactions"
+Cohesion: 0.33
+Nodes (6): Damping at boundaries, Friction instead of hard stops, Gesture and Drag Interactions, Momentum-based dismissal, Multi-touch protection, Pointer capture for drag
+
+### Community 372 - "expandScanTargets"
+Cohesion: 0.40
+Nodes (6): coLocatedStylesheets(), expandScanTargets(), isInsideProject(), parseStaticStyleImports(), STYLE_EXTS, UI_CODE_EXTS
+
+### Community 373 - "CSS Transform Mastery"
+Cohesion: 0.40
+Nodes (5): 3D transforms for depth, CSS Transform Mastery, scale() scales children too, transform-origin, translateY with percentages
+
+### Community 374 - "The Sonner Principles (Building Loved Components)"
+Cohesion: 0.40
+Nodes (5): Asymmetric enter/exit timing, Cohesion matters, Review your work the next day, The opacity + height combination, The Sonner Principles (Building Loved Components)
+
+### Community 375 - "Spring Animations"
+Cohesion: 0.40
+Nodes (5): Interruptibility advantage, Spring Animations, Spring-based mouse interactions, Spring configuration, When to use springs
+
+### Community 376 - "Q: 列表增加删除功能，先给我方案"
+Cohesion: 0.40
+Nodes (4): Answer, Outcome, Q: 列表增加删除功能，先给我方案, Source Nodes
+
+### Community 377 - "Q: 能左滑删除吗"
+Cohesion: 0.40
+Nodes (4): Answer, Outcome, Q: 能左滑删除吗, Source Nodes
+
+### Community 378 - "Core Philosophy"
+Cohesion: 0.50
+Nodes (4): Beauty is leverage, Core Philosophy, Taste is trained, not innate, Unseen details compound
+
+### Community 379 - "Debugging Animations"
+Cohesion: 0.50
+Nodes (4): Debugging Animations, Frame-by-frame inspection, Slow motion testing, Test on real devices
+
+### Community 380 - "EvidencePlaybackService"
+Cohesion: 0.67
+Nodes (3): EvidencePlaybackService, PcmEvidencePlaybackService, _Playback
+
+### Community 381 - "DeviceAudioOutput"
+Cohesion: 0.67
+Nodes (3): AudioplayersDeviceAudioOutput, DeviceAudioOutput, _PlaybackOutput
 
 ## Knowledge Gaps
-- **3479 isolated node(s):** `here`, `API_BASE`, `API_TIMEOUT_MS`, `localStates`, `COMMON_DEV_PORTS` (+3474 more)
+- **3641 isolated node(s):** `here`, `API_BASE`, `API_TIMEOUT_MS`, `localStates`, `COMMON_DEV_PORTS` (+3636 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **68 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Work-memory lessons
 
 **Preferred sources** — corroborated by past sessions; start here.
-- `theme.dart` (5× useful, score=4.926517586)
-- `Application` (5× useful, score=4.925667589)
-- `AppDatabase` (3× useful, score=2.951157854)
-- `MeetTraceDependencies` (2× useful, score=1.97227416)
-- `MeetTraceBootstrap` (2× useful, score=1.97227416)
-- `web/manifest.json` (2× useful, score=1.966930609)
-- `Meeting` (2× useful, score=1.956493425)
-- `ViewState` (2× useful, score=1.956493425)
-- `main.dart` (2× useful, score=1.794147545)
+- `theme.dart` (5× useful, score=4.925021443)
+- `Application` (5× useful, score=4.924171704)
+- `Meeting` (3× useful, score=2.95582375)
+- `AppDatabase` (3× useful, score=2.950261612)
+- `MeetTraceDependencies` (2× useful, score=1.971675197) _(code changed — re-verify)_
+- `MeetTraceBootstrap` (2× useful, score=1.971675197)
+- `web/manifest.json` (2× useful, score=1.966333268)
+- `ViewState` (2× useful, score=1.955899254)
+- `main.dart` (2× useful, score=1.793602677)
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `el()` connect `text share service` to `Hero Enrichment`, `checkCreamPalette`, `Component Cookbook`, `plan asr preview windows test`, `speaker diarization`, `package flutter test flutter test`, `N1 Wordmark and 2 Links`, `local data control service test`, `package meetily ai domain models`, `S4 Inline No Break`, `package meetily ai domain models`, `app ui previews`, `bundled model preparation service test`, `Custom Craft`, `Carnival Theme`, `Macrostructures Module`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
-- **Why does `v()` connect `delete meeting test` to `bundled model preparation service test`, `recording session view model test`, `loadContext`, `package meetily ai domain models`, `local data control service test`, `asr model option`, `N1 Wordmark and 2 Links`, `package flutter test flutter test`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `_string` connect `string Module` to `use cases evaluate alpha release`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `el()` connect `text share service` to `Hero Enrichment`, `SAFE_TAGS`, `Component Cookbook`, `plan asr preview windows test`, `recording session view model test`, `speaker diarization`, `package flutter test flutter test`, `N1 Wordmark and 2 Links`, `package meetily ai domain models`, `package meetily ai domain models`, `S4 Inline No Break`, `checkElementDesignSystemDOM`, `app ui previews`, `bundled model preparation service test`, `Custom Craft`, `Carnival Theme`, `Macrostructures Module`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+- **Why does `v()` connect `delete meeting test` to `record pcm audio capture`, `recording session view model test`, `loadContext`, `package meetily ai domain models`, `local data control service test`, `domain models asr model`, `asr model option`, `N1 Wordmark and 2 Links`, `package flutter test flutter test`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `buffer` connect `reliable recording test` to `package sherpa onnx sherpa onnx`, `Map Module`, `detect-csp.mjs`, `Imagery Kit`, `startup recovery service`, `Preview Session`, `Asr Device Risk Monitor`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Are the 43 inferred relationships involving `el()` (e.g. with `browserFindingsFromMap()` and `collectVisualContrastCandidates()`) actually correct?**
   _`el()` has 43 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `here`, `API_BASE`, `API_TIMEOUT_MS` to the rest of the system?**
-  _3479 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _3641 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `meeting detail view model` be split into smaller, more focused modules?**
   _Cohesion score 0.02040816326530612 - nodes in this community are weakly interconnected._
 - **Should `asr preview coordinator` be split into smaller, more focused modules?**

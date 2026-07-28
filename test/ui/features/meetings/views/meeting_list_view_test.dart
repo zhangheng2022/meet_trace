@@ -8,6 +8,7 @@ import 'package:meettrace/data/repositories/repository_contracts.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/ui/core/app_ledger.dart';
 import 'package:meettrace/ui/features/meetings/view_models/meeting_list_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/meeting_list_view.dart';
@@ -46,6 +47,7 @@ void main() {
     final viewModel = MeetingListViewModel(
       meetings: repository,
       readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
     );
 
     await tester.pumpWidget(
@@ -86,6 +88,7 @@ void main() {
     final viewModel = MeetingListViewModel(
       meetings: repository,
       readinessChecker: readiness,
+      deletion: _deletion(repository),
     );
 
     await tester.pumpWidget(
@@ -151,6 +154,7 @@ void main() {
     final viewModel = MeetingListViewModel(
       meetings: repository,
       readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
     );
     Meeting? opened;
 
@@ -217,6 +221,7 @@ void main() {
     final viewModel = MeetingListViewModel(
       meetings: repository,
       readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
     );
 
     await tester.pumpWidget(
@@ -242,6 +247,7 @@ void main() {
     final viewModel = MeetingListViewModel(
       meetings: repository,
       readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
     );
 
     await tester.pumpWidget(
@@ -271,29 +277,172 @@ void main() {
     viewModel.dispose();
     await repository.dispose();
   });
+
+  testWidgets('左滑只揭示删除操作并在取消确认后保留会议', (WidgetTester tester) async {
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(viewModel: viewModel, onOpenMeeting: (_) {}),
+      ),
+    );
+    repository.emit([_meeting('completed', '产品评审', MeetingState.completed)]);
+    await tester.pump();
+
+    final row = find.byKey(const ValueKey('meeting-completed'));
+    final originalX = tester.getTopLeft(row).dx;
+    await tester.drag(row, const Offset(-140, 0));
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(row).dx, lessThan(originalX));
+    await tester.tap(find.byKey(const ValueKey('delete-meeting-completed')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('永久删除「产品评审」？'), findsOneWidget);
+    expect(find.text('将删除本场事实音频、转录、AI 总结、证据索引及处理记录。此操作无法撤销。'), findsOneWidget);
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+
+    expect(repository.deleted, isEmpty);
+    expect(find.text('产品评审'), findsOneWidget);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('确认左滑删除后移除会议并反馈本地数据已删除', (WidgetTester tester) async {
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(home: MeetingListView(viewModel: viewModel)),
+    );
+    repository.emit([_meeting('completed', '产品评审', MeetingState.completed)]);
+    await tester.pump();
+
+    await tester.drag(
+      find.byKey(const ValueKey('meeting-completed')),
+      const Offset(-140, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('delete-meeting-completed')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('confirm-delete-meeting-completed')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(repository.deleted, ['completed']);
+    expect(find.byKey(const ValueKey('meeting-completed')), findsNothing);
+    expect(find.text('会议及本地数据已删除'), findsOneWidget);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('录音中和后台处理中会议不响应左滑删除', (WidgetTester tester) async {
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(home: MeetingListView(viewModel: viewModel)),
+    );
+    repository.emit([
+      _meeting('recording', '录音中会议', MeetingState.recording),
+      _meeting('processing', '处理中会议', MeetingState.processing),
+    ]);
+    await tester.pump();
+
+    for (final id in ['recording', 'processing']) {
+      final row = find.byKey(ValueKey('meeting-$id'));
+      final originalX = tester.getTopLeft(row).dx;
+      await tester.drag(row, const Offset(-140, 0));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(row).dx, originalX);
+    }
+
+    expect(repository.deleted, isEmpty);
+    viewModel.dispose();
+    await repository.dispose();
+  });
 }
 
 final class _MeetingRepository implements MeetingRepository {
   final StreamController<List<Meeting>> _changes =
       StreamController<List<Meeting>>.broadcast();
+  final List<String> deleted = [];
+  List<Meeting> _meetings = const [];
 
-  void emit(List<Meeting> meetings) => _changes.add(meetings);
+  void emit(List<Meeting> meetings) {
+    _meetings = List.of(meetings);
+    _changes.add(List.unmodifiable(_meetings));
+  }
 
   void fail(Object error) => _changes.addError(error);
 
   Future<void> dispose() => _changes.close();
 
   @override
-  Future<void> delete(String meetingId) async {}
+  Future<void> delete(String meetingId) async {
+    deleted.add(meetingId);
+    _meetings = [
+      for (final meeting in _meetings)
+        if (meeting.id != meetingId) meeting,
+    ];
+    _changes.add(List.unmodifiable(_meetings));
+  }
 
   @override
-  Future<Meeting?> getById(String meetingId) async => null;
+  Future<Meeting?> getById(String meetingId) async {
+    for (final meeting in _meetings) {
+      if (meeting.id == meetingId) {
+        return meeting;
+      }
+    }
+    return null;
+  }
 
   @override
   Future<void> save(Meeting meeting) async {}
 
   @override
   Stream<List<Meeting>> watchAll() => _changes.stream;
+}
+
+DeleteMeetingUseCase _deletion(_MeetingRepository repository) =>
+    DeleteMeetingUseCase(
+      meetings: repository,
+      files: const _MeetingFileDeletionService(),
+    );
+
+final class _MeetingFileDeletionService implements MeetingFileDeletionService {
+  const _MeetingFileDeletionService();
+
+  @override
+  Future<StagedMeetingDeletion> stage(String meetingId) async =>
+      const _StagedMeetingDeletion();
+}
+
+final class _StagedMeetingDeletion implements StagedMeetingDeletion {
+  const _StagedMeetingDeletion();
+
+  @override
+  Future<void> commit() async {}
+
+  @override
+  Future<void> rollback() async {}
 }
 
 Meeting _meeting(String id, String title, MeetingState state) => Meeting(

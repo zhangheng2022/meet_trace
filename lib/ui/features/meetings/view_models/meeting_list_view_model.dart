@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import '../../../../data/repositories/repository_contracts.dart';
 import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/meeting_readiness.dart';
+import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/use_cases/check_meeting_readiness.dart';
+import '../../../../domain/use_cases/delete_meeting.dart';
 import '../../../core/view_state.dart';
 
 enum MeetingReadinessStatus {
@@ -40,20 +42,38 @@ final class MeetingListViewModel extends ChangeNotifier {
   MeetingListViewModel({
     required this.meetings,
     required this.readinessChecker,
+    required this.deletion,
   });
 
   final MeetingRepository meetings;
   final MeetingReadinessChecker readinessChecker;
+  final DeleteMeetingUseCase deletion;
 
   ViewState<List<Meeting>> _state = const ViewLoading();
   MeetingReadinessViewState _readiness =
       const MeetingReadinessViewState.checking();
   StreamSubscription<List<Meeting>>? _subscription;
   Future<void>? _readinessOperation;
+  final Set<String> _deletingMeetingIds = {};
+  String? _deleteErrorMessage;
   bool _disposed = false;
 
   ViewState<List<Meeting>> get state => _state;
   MeetingReadinessViewState get readiness => _readiness;
+  Set<String> get deletingMeetingIds => Set.unmodifiable(_deletingMeetingIds);
+  String? get deleteErrorMessage => _deleteErrorMessage;
+
+  bool isDeletingMeeting(String meetingId) =>
+      _deletingMeetingIds.contains(meetingId);
+
+  bool canDeleteMeeting(Meeting meeting) =>
+      !isDeletingMeeting(meeting.id) &&
+      switch (meeting.status) {
+        MeetingState.created ||
+        MeetingState.completed ||
+        MeetingState.failed => true,
+        MeetingState.recording || MeetingState.processing => false,
+      };
 
   void load() {
     if (_subscription != null) {
@@ -101,6 +121,25 @@ final class MeetingListViewModel extends ChangeNotifier {
     });
     _readinessOperation = operation;
     return operation;
+  }
+
+  Future<bool> deleteMeeting(Meeting meeting) async {
+    if (!canDeleteMeeting(meeting)) {
+      return false;
+    }
+    _deleteErrorMessage = null;
+    _deletingMeetingIds.add(meeting.id);
+    _notify();
+    try {
+      await deletion.execute(meetingId: meeting.id);
+      return true;
+    } on Object {
+      _deleteErrorMessage = '删除失败，会议数据仍保留';
+      return false;
+    } finally {
+      _deletingMeetingIds.remove(meeting.id);
+      _notify();
+    }
   }
 
   Future<void> _checkReadiness() async {

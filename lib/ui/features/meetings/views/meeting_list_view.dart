@@ -18,6 +18,7 @@ import '../../../../theme/theme.dart';
 import '../../../core/app_ledger.dart';
 import '../../../core/app_responsive.dart';
 import '../../../core/app_state_panel.dart';
+import '../../../core/app_swipe_action_row.dart';
 import '../../../core/view_state.dart';
 import '../view_models/meeting_list_view_model.dart';
 
@@ -40,6 +41,8 @@ final class MeetingListView extends StatefulWidget {
 }
 
 final class _MeetingListViewState extends State<MeetingListView> {
+  bool _deleteDialogOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -80,7 +83,83 @@ final class _MeetingListViewState extends State<MeetingListView> {
         onOpenMeeting: widget.onOpenMeeting,
         onOpenSettings: widget.onOpenSettings,
         onRetryReadiness: widget.viewModel?.refreshReadiness,
+        deletingMeetingIds:
+            widget.viewModel?.deletingMeetingIds ?? const <String>{},
+        canDeleteMeeting: widget.viewModel?.canDeleteMeeting,
+        onDeleteMeeting: widget.viewModel == null
+            ? null
+            : _requestDeleteMeeting,
       ),
+    );
+  }
+
+  Future<void> _requestDeleteMeeting(Meeting meeting) async {
+    final viewModel = widget.viewModel;
+    if (_deleteDialogOpen ||
+        viewModel == null ||
+        !viewModel.canDeleteMeeting(meeting)) {
+      return;
+    }
+    _deleteDialogOpen = true;
+    final confirmed = await showFDialog<bool>(
+      context: context,
+      useSafeArea: true,
+      builder: (context, style, animation) => FDialog(
+        animation: animation,
+        semanticsLabel: '永久删除${meeting.title}',
+        builder: (context, style) {
+          final appStyle = context.theme.style.app;
+          return Padding(
+            padding: EdgeInsets.all(appStyle.spaceLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('永久删除「${meeting.title}」？', style: style.titleTextStyle),
+                SizedBox(height: appStyle.spaceSm),
+                Text(
+                  '将删除本场事实音频、转录、AI 总结、证据索引及处理记录。此操作无法撤销。',
+                  style: context.theme.typography.body.md,
+                ),
+                SizedBox(height: appStyle.spaceLg),
+                FButton(
+                  variant: FButtonVariant.outline,
+                  size: FButtonSizeVariant.lg,
+                  autofocus: true,
+                  onPress: () => Navigator.of(context).pop(false),
+                  child: const Text('取消', maxLines: 1),
+                ),
+                SizedBox(height: appStyle.spaceSm),
+                FButton(
+                  key: ValueKey('confirm-delete-meeting-${meeting.id}'),
+                  variant: FButtonVariant.destructive,
+                  size: FButtonSizeVariant.lg,
+                  onPress: () => Navigator.of(context).pop(true),
+                  child: const Text('永久删除', maxLines: 1),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    _deleteDialogOpen = false;
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final deleted = await viewModel.deleteMeeting(meeting);
+    if (!mounted) {
+      return;
+    }
+    showFToast(
+      context: context,
+      variant: deleted ? FToastVariant.primary : FToastVariant.destructive,
+      icon: Icon(deleted ? FLucideIcons.circleCheck : FLucideIcons.circleAlert),
+      title: Text(deleted ? '会议及本地数据已删除' : '删除失败'),
+      description: deleted
+          ? Text(meeting.title)
+          : Text(viewModel.deleteErrorMessage ?? '会议正在录音或处理中，暂时不能删除'),
     );
   }
 }
@@ -94,6 +173,9 @@ final class MeetingListContent extends StatefulWidget {
     required this.onOpenMeeting,
     this.onOpenSettings,
     this.onRetryReadiness,
+    this.deletingMeetingIds = const <String>{},
+    this.canDeleteMeeting,
+    this.onDeleteMeeting,
     super.key,
   });
 
@@ -103,6 +185,9 @@ final class MeetingListContent extends StatefulWidget {
   final ValueChanged<Meeting>? onOpenMeeting;
   final VoidCallback? onOpenSettings;
   final Future<void> Function()? onRetryReadiness;
+  final Set<String> deletingMeetingIds;
+  final bool Function(Meeting)? canDeleteMeeting;
+  final Future<void> Function(Meeting)? onDeleteMeeting;
 
   @override
   State<MeetingListContent> createState() => _MeetingListContentState();
@@ -110,15 +195,38 @@ final class MeetingListContent extends StatefulWidget {
 
 final class _MeetingListContentState extends State<MeetingListContent> {
   String? _selectedMeetingId;
+  String? _revealedMeetingId;
+
+  @override
+  void didUpdateWidget(covariant MeetingListContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final selectedId = _selectedMeetingId;
+    if (selectedId == null) {
+      return;
+    }
+    final previous = _meetingsFrom(oldWidget.state);
+    final current = _meetingsFrom(widget.state);
+    if (current.any((meeting) => meeting.id == selectedId)) {
+      return;
+    }
+    final previousIndex = previous.indexWhere(
+      (meeting) => meeting.id == selectedId,
+    );
+    if (current.isEmpty) {
+      _selectedMeetingId = null;
+      return;
+    }
+    final nextIndex = previousIndex < 0
+        ? 0
+        : previousIndex.clamp(0, current.length - 1);
+    _selectedMeetingId = current[nextIndex].id;
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppResponsiveBuilder(
       builder: (context, sizeClass, constraints) {
-        final meetings = switch (widget.state) {
-          ViewData(:final value) => value,
-          _ => const <Meeting>[],
-        };
+        final meetings = _meetingsFrom(widget.state);
         final selected = _selectedMeeting(meetings);
         final listBody = _listBody(meetings, sizeClass);
         final homePane = _MeetingHomePane(
@@ -211,35 +319,87 @@ final class _MeetingListContentState extends State<MeetingListContent> {
         title: '还没有会议',
         message: '开始录音后，会议会安全地保存在这台设备上。',
       ),
-      ViewData() => ListView(
-        key: const ValueKey('meeting-ledger'),
-        padding: EdgeInsets.zero,
-        children: [
-          AppLedgerSurface(
-            framed: false,
-            children: [
-              for (var index = 0; index < meetings.length; index++)
-                _MeetingLedgerRow(
-                  meeting: meetings[index],
-                  selected:
-                      sizeClass == AppWindowSizeClass.expanded &&
-                      meetings[index].id == _selectedMeeting(meetings)?.id,
-                  onPress: sizeClass == AppWindowSizeClass.expanded
-                      ? () => setState(
-                          () => _selectedMeetingId = meetings[index].id,
-                        )
-                      : widget.onOpenMeeting == null
-                      ? null
-                      : () => widget.onOpenMeeting!(meetings[index]),
-                  showDivider: index < meetings.length - 1,
-                ),
-            ],
-          ),
-        ],
+      ViewData() => NotificationListener<ScrollStartNotification>(
+        onNotification: (_) {
+          if (_revealedMeetingId != null) {
+            setState(() => _revealedMeetingId = null);
+          }
+          return false;
+        },
+        child: ListView(
+          key: const ValueKey('meeting-ledger'),
+          padding: EdgeInsets.zero,
+          children: [
+            AppLedgerSurface(
+              framed: false,
+              children: [
+                for (var index = 0; index < meetings.length; index++)
+                  _swipeRow(meetings, index, sizeClass),
+              ],
+            ),
+          ],
+        ),
       ),
     };
   }
+
+  Widget _swipeRow(
+    List<Meeting> meetings,
+    int index,
+    AppWindowSizeClass sizeClass,
+  ) {
+    final meeting = meetings[index];
+    final deleting = widget.deletingMeetingIds.contains(meeting.id);
+    final canDelete =
+        !deleting && (widget.canDeleteMeeting?.call(meeting) ?? false);
+    final revealed = canDelete && _revealedMeetingId == meeting.id;
+    return AppSwipeActionRow(
+      key: ValueKey('swipe-meeting-${meeting.id}'),
+      revealed: revealed,
+      enabled: canDelete,
+      onSwipeStart: () {
+        final revealedId = _revealedMeetingId;
+        if (revealedId != null && revealedId != meeting.id) {
+          setState(() => _revealedMeetingId = null);
+        }
+      },
+      onRevealChanged: (value) =>
+          setState(() => _revealedMeetingId = value ? meeting.id : null),
+      actionKey: ValueKey('delete-meeting-${meeting.id}'),
+      actionLabel: '删除',
+      actionIcon: FLucideIcons.trash2,
+      onAction: () {
+        setState(() => _revealedMeetingId = null);
+        unawaited(widget.onDeleteMeeting?.call(meeting));
+      },
+      child: _MeetingLedgerRow(
+        meeting: meeting,
+        deleting: deleting,
+        deletable: canDelete,
+        selected:
+            sizeClass == AppWindowSizeClass.expanded &&
+            meeting.id == _selectedMeeting(meetings)?.id,
+        onPress: () {
+          if (_revealedMeetingId != null) {
+            setState(() => _revealedMeetingId = null);
+            return;
+          }
+          if (sizeClass == AppWindowSizeClass.expanded) {
+            setState(() => _selectedMeetingId = meeting.id);
+          } else {
+            widget.onOpenMeeting?.call(meeting);
+          }
+        },
+        showDivider: index < meetings.length - 1,
+      ),
+    );
+  }
 }
+
+List<Meeting> _meetingsFrom(ViewState<List<Meeting>> state) => switch (state) {
+  ViewData(:final value) => value,
+  _ => const <Meeting>[],
+};
 
 final class _MeetingHomePane extends StatelessWidget {
   const _MeetingHomePane({
@@ -513,12 +673,16 @@ final class _StartMeetingControl extends StatelessWidget {
 final class _MeetingLedgerRow extends StatelessWidget {
   const _MeetingLedgerRow({
     required this.meeting,
+    required this.deleting,
+    required this.deletable,
     required this.selected,
     required this.onPress,
     required this.showDivider,
   });
 
   final Meeting meeting;
+  final bool deleting;
+  final bool deletable;
   final bool selected;
   final VoidCallback? onPress;
   final bool showDivider;
@@ -533,16 +697,24 @@ final class _MeetingLedgerRow extends StatelessWidget {
       metaLabel: _durationLabel(
         Duration(milliseconds: meeting.audioDurationMs),
       ),
-      statusIcon: _meetingStatusIcon(meeting.status),
-      statusLabel: _meetingLedgerStatus(meeting),
+      statusIcon: deleting
+          ? FLucideIcons.loaderCircle
+          : _meetingStatusIcon(meeting.status),
+      statusLabel: deleting ? '正在删除' : _meetingLedgerStatus(meeting),
       emphasized: meeting.status == MeetingState.recording,
       selected: selected,
       showDivider: showDivider,
       semanticsLabel:
           '打开会议：${meeting.title}，${_meetingStatusLabel(meeting.status)}',
-      semanticsHint: meeting.status == MeetingState.failed
-          ? '查看失败原因和事实音频状态'
-          : '查看会议详情',
+      semanticsHint: deleting
+          ? '正在删除本机会议数据'
+          : [
+              if (meeting.status == MeetingState.failed)
+                '查看失败原因和事实音频状态'
+              else
+                '查看会议详情',
+              if (deletable) '向左滑动显示删除操作',
+            ].join('；'),
       onPress: onPress,
     );
   }
