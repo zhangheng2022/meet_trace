@@ -35,6 +35,7 @@ migrate_working_dir/
 /.worktrees/
 
 # graphify 可再生成的本地缓存与按日期备份；保留根目录活动图谱和学习记录
+/graphify-out/cost.json
 /graphify-out/cache/
 /graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 
