@@ -1,6 +1,11 @@
 # Miscellaneous
 *.class
 *.log
+# 阶段 0～4 的四份脱敏 Android 模拟器证据必须可随仓库复核。
+!docs/quality/evidence/android-emulator/logs/01-build-android-x64-debug.log
+!docs/quality/evidence/android-emulator/logs/02-whisper-base-native.log
+!docs/quality/evidence/android-emulator/logs/03-reliable-recording.log
+!docs/quality/evidence/android-emulator/logs/04-android-emulator-meeting-flow.log
 *.pyc
 *.swp
 .DS_Store

@@ -2,9 +2,11 @@
 param(
     [string]$DeviceId,
     [int]$RecordingSeconds = 30,
-    [int]$NativeLifecycleCycles = 10,
+    [int]$NativeLifecycleCycles = 100,
     [int]$VadLifecycleCycles = 100,
-    [string]$EvidenceDirectory = "docs/quality/evidence/android-emulator"
+    [string]$EvidenceDirectory = "docs/quality/evidence/android-emulator",
+    [string]$ReleaseInputPath = "docs/quality/evidence/android-emulator/phase-0-4-release-input.json",
+    [string]$ReleaseReportPath = "docs/quality/evidence/android-emulator/phase-0-4-release-report.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -85,12 +87,16 @@ function Invoke-FlutterStep {
     )
     Set-Content -LiteralPath $LogPath -Value $sanitizedLog -Encoding UTF8 -NoNewline
     $relativeLog = (Resolve-Path -LiteralPath $LogPath -Relative) -replace "^[.][\\/]", ""
+    $logSha256 = (
+        Get-FileHash -LiteralPath $LogPath -Algorithm SHA256
+    ).Hash.ToLowerInvariant()
     $script:results += [ordered]@{
         name = $Name
         command = "flutter " + ($Arguments -join " ")
         exitCode = $exitCode
         elapsedMs = $watch.ElapsedMilliseconds
         log = $relativeLog
+        logSha256 = $logSha256
     }
     if ($exitCode -ne 0) {
         throw "Step failed: $Name (exit code $exitCode)."
@@ -151,6 +157,7 @@ if ($VadLifecycleCycles -lt 1) {
     throw "VadLifecycleCycles must be greater than zero."
 }
 
+$smokeReportWritten = $false
 Push-Location $repoRoot
 try {
     $adb = Resolve-AdbPath
@@ -260,10 +267,34 @@ try {
     }
     $reportPath = Join-Path $evidenceRoot "android-emulator-smoke.json"
     $report | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding utf8
+    $smokeReportWritten = $true
+    $androidEvidenceRef = (
+        Resolve-Path -LiteralPath $reportPath -Relative
+    ) -replace "^[.][\\/]", ""
+    $androidEvidenceRef = $androidEvidenceRef.Replace("\", "/")
+    & dart run tool/benchmarks/build_phase_0_4_release_input.dart `
+        --template $ReleaseInputPath `
+        --android-evidence $reportPath `
+        --android-evidence-ref $androidEvidenceRef `
+        --output $ReleaseInputPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to build the phase 0-4 release input."
+    }
+    & dart run tool/benchmarks/evaluate_alpha_release.dart `
+        --input $ReleaseInputPath `
+        --output $ReleaseReportPath
+    $releaseExitCode = $LASTEXITCODE
+    if ($releaseExitCode -eq 1) {
+        throw "Phase 0-4 release evaluation found a failed gate."
+    }
+    if ($releaseExitCode -ne 0 -and $releaseExitCode -ne 2) {
+        throw "Phase 0-4 release evaluation failed with exit code $releaseExitCode."
+    }
     Write-Output "Android emulator evidence: $reportPath"
+    Write-Output "Phase 0-4 release report: $ReleaseReportPath"
 }
 catch {
-    if ($null -ne $evidenceRoot) {
+    if ($null -ne $evidenceRoot -and -not $smokeReportWritten) {
         $failureReport = [ordered]@{
             schemaVersion = 1
             status = "failed"

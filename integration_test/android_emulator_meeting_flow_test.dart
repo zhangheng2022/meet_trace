@@ -111,6 +111,16 @@ void main() {
       );
       final audio = File(finalResult.meeting.audioPath!);
       final diagnostics = fixture.recording.pcmDiagnostics;
+      final meetingModelLocked =
+          finalResult.meeting.recordingModelId ==
+              finalResult.snapshot.actualModelId &&
+          finalResult.meeting.recordingModelVersion ==
+              finalResult.snapshot.actualModelVersion;
+      final factPcmSoleSourcePassed =
+          await audio.length() == fixture.recording.persistedBytes &&
+          diagnostics.totalBytes == fixture.recording.persistedBytes &&
+          diagnostics.duration.inMilliseconds ==
+              finalResult.meeting.audioDurationMs;
 
       expect(persisted?.status, MeetingState.completed);
       expect(persisted?.activeTranscriptSnapshotId, finalResult.snapshot.id);
@@ -128,16 +138,12 @@ void main() {
             .length,
         1,
       );
-      expect(await audio.length(), fixture.recording.persistedBytes);
-      expect(diagnostics.totalBytes, fixture.recording.persistedBytes);
-      expect(
-        diagnostics.duration.inMilliseconds,
-        finalResult.meeting.audioDurationMs,
-      );
+      expect(meetingModelLocked, isTrue);
+      expect(factPcmSoleSourcePassed, isTrue);
       expect(fixture.preview.metrics.state, AsrPreviewState.disposed);
 
       debugPrintSynchronously(
-        'MEETTRACE_ANDROID_EMULATOR_FLOW:${jsonEncode({'schemaVersion': 1, 'modelId': finalResult.snapshot.actualModelId, 'modelVersion': finalResult.snapshot.actualModelVersion, 'audioBytes': fixture.recording.persistedBytes, 'audioDurationMs': finalResult.meeting.audioDurationMs, 'previewFailureCode': 'asr.preview.vad_failed', 'previewDegradedWithoutRecordingLoss': true, 'finalSnapshotStatus': finalResult.snapshot.status.name, 'finalSegmentCount': finalResult.snapshot.segments.length, 'pcmRms': diagnostics.rmsNormalized, 'pcmPeak': diagnostics.peakNormalized, 'pcmClippingRatio': diagnostics.clippingRatio})}',
+        'MEETTRACE_ANDROID_EMULATOR_FLOW:${jsonEncode({'schemaVersion': 1, 'modelId': finalResult.snapshot.actualModelId, 'modelVersion': finalResult.snapshot.actualModelVersion, 'meetingModelLocked': meetingModelLocked, 'factPcmSoleSourcePassed': factPcmSoleSourcePassed, 'audioBytes': fixture.recording.persistedBytes, 'audioDurationMs': finalResult.meeting.audioDurationMs, 'previewFailureCode': 'asr.preview.vad_failed', 'previewDegradedWithoutRecordingLoss': true, 'finalSnapshotStatus': finalResult.snapshot.status.name, 'finalSegmentCount': finalResult.snapshot.segments.length, 'pcmRms': diagnostics.rmsNormalized, 'pcmPeak': diagnostics.peakNormalized, 'pcmClippingRatio': diagnostics.clippingRatio})}',
         wrapWidth: null,
       );
     } finally {

@@ -5,6 +5,65 @@ import 'package:meettrace/domain/use_cases/evaluate_alpha_release.dart';
 
 void main() {
   group('EvaluateAlphaReleaseUseCase', () {
+    test('阶段 0 到 4 范围不混入后续真机、iOS 和 Release 门槛', () {
+      final report = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(
+          evaluationScope: AlphaReleaseEvaluationScope.phase0To4,
+        ),
+      );
+      final gateIds = report.gates.map((gate) => gate.id).toSet();
+      final fullGateIds = const EvaluateAlphaReleaseUseCase()
+          .execute(_passingInput())
+          .gates
+          .map((gate) => gate.id)
+          .toSet();
+
+      expect(report.scope, AlphaReleaseEvaluationScope.phase0To4);
+      expect(report.decision, AlphaReleaseDecision.go);
+      expect(gateIds, contains('quality.previewLatencyP95Ms'));
+      expect(gateIds, contains('phase04.summaryFinalSnapshotOnly'));
+      expect(gateIds, isNot(contains('environment.lowEndArm64')));
+      expect(
+        gateIds,
+        isNot(contains('environment.adaptiveNavigationAccessibility')),
+      );
+      expect(gateIds, isNot(contains('evidence.iosBuild')));
+      expect(gateIds, isNot(contains('standard.finalTranscriptionDurationMs')));
+      expect(gateIds, isNot(contains('standard.thermal')));
+      expect(gateIds, isNot(contains('standard.relativeEnergy')));
+      expect(gateIds, isNot(contains('acceptance.AT01-AT24')));
+      expect(gateIds, isNot(contains('release.android16Kb')));
+      expect(gateIds, isNot(contains('release.iosBuildAudit')));
+      expect(fullGateIds.difference(gateIds), {
+        'environment.lowEndArm64',
+        'environment.adaptiveNavigationAccessibility',
+        'evidence.iosBuild',
+        'standard.rtfP95',
+        'standard.sentenceLatencyP95Ms',
+        'standard.finalTranscriptionDurationMs',
+        'standard.recordingCompletenessRatio',
+        'standard.thermal',
+        'standard.relativeEnergy',
+        'advanced.finalTranscriptionDurationMs',
+        'acceptance.AT01-AT24',
+        'release.android16Kb',
+        'release.iosBuildAudit',
+      });
+    });
+
+    test('缺少范围的旧输入仍按完整 Alpha 发布评估', () {
+      final json = _passingInput().toJson()..remove('evaluationScope');
+      final input = AlphaReleaseEvaluationInput.fromJson(json);
+      final report = const EvaluateAlphaReleaseUseCase().execute(input);
+
+      expect(input.evaluationScope, AlphaReleaseEvaluationScope.alphaRelease);
+      expect(report.scope, AlphaReleaseEvaluationScope.alphaRelease);
+      expect(
+        report.gates.map((gate) => gate.id),
+        contains('release.iosBuildAudit'),
+      );
+    });
+
     test('全部证据达到 PRD 门槛时给出 Go', () {
       final report = const EvaluateAlphaReleaseUseCase().execute(
         _passingInput(),
@@ -318,7 +377,7 @@ void main() {
 
       expect(input.corpusId, 'corpus-deidentified-v1');
       expect(input.deviceId, 'low-end-arm64-01');
-      expect(json['schemaVersion'], 2);
+      expect(json['schemaVersion'], 3);
       expect(json['decision'], 'go');
       expect(json['corpusEvidenceClass'], 'product-meeting');
       expect(json['corpusManifestSha256'], input.corpusManifestSha256);
@@ -340,7 +399,7 @@ void main() {
 }
 
 AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
-  schemaVersion: 4,
+  schemaVersion: alphaReleaseInputSchemaVersion,
   corpusId: 'corpus-deidentified-v1',
   corpusEvidenceClass: 'product-meeting',
   corpusManifestSha256:
@@ -414,6 +473,7 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   apkAuditPassed: true,
   android16KbPassed: true,
   androidEvidenceRef: 'evidence/android.json',
+  androidEvidenceSha256: 'a' * 64,
   iosBuildAuditPassed: true,
   iosBuildEvidenceRef: 'evidence/ios-build.json',
   whisperCppLicenseConfirmed: true,

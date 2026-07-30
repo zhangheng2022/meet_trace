@@ -39,7 +39,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，新增评测链后共 389 tests |
+| `flutter test` | 通过，新增评测链后共 398 tests |
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
@@ -133,7 +133,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 
 ### 5.3 阶段 0～4 自动发布评估
 
-- `AlphaReleaseEvaluationInput` schema 已升级为 `4`，输出报告 schema 为 `2`；旧输入
+- `AlphaReleaseEvaluationInput` schema 已升级为 `5`，输出报告 schema 为 `3`；旧输入
   schema 或缺少新增字段时返回 `blocked`，不会沿用旧默认值。
 - 正式质量门槛要求 `corpus.evidenceClass=product-meeting`，并校验 manifest
   SHA-256、来源和授权标识。`public-regression` 与 `synthetic-smoke` 会明确失败，
@@ -143,8 +143,12 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   PCM、模型锁定、预览丢弃、最终时间戳、快照原子性和总结事实源等阶段 0～4 不变量。
 - 当前机器可读输入和报告位于
   `docs/quality/evidence/android-emulator/phase-0-4-release-input.json` 与
-  `phase-0-4-release-report.json`。结果为 `blocked`：21 项通过、0 项失败、35 项
-  缺失；缺失项保留真实产品语料、产品质量指标和后续平台门禁，不以代理数据填充。
+  `phase-0-4-release-report.json`。结果为 `blocked`：22 项通过、0 项失败、22 项
+  缺失。输入显式声明 `evaluationScope=phase-0-4`，只保留阶段 0～4 的真实产品语料
+  与产品质量缺口；阶段 5 以后的 Android 真机、iOS 和 Release 门槛不再污染本阶段
+  结论，也不以代理数据填充。Android 模拟器证据由完整通过日志推导，四份日志分别
+  记录 SHA-256，评估输入再绑定聚合证据 SHA-256；CLI 会校验仓库边界、实际哈希和
+  `status=passed`，Android 模拟器子集不能只手改布尔值关闭门槛。
 
 ## 6. Hard Gate 0
 
@@ -152,7 +156,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | 产品边界批准并统一 | 通过 |
 | 工程基线可重复 | 通过 |
-| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 4 另显式阻断代理语料和阶段 0～4 不变量缺失 |
+| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 5 另显式阻断代理语料、未绑定 Android 证据和阶段 0～4 不变量缺失 |
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
 | 20 段真实去敏产品会议语料可运行 | `blocked`：未提供语料环境变量 |
 | 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
@@ -178,6 +182,8 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 
 - `docs/quality/evidence/android-emulator/android-emulator-smoke.json`
 - `docs/quality/evidence/android-emulator/logs/`
+
+上述目录只提交四份脚本脱敏后的文本日志；原始录音、模型和构建产物仍保持忽略。
 
 本次 API 36 x86_64 结果：
 

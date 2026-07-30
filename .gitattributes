@@ -1,3 +1,5 @@
 assets/models/** -text
 assets/models/**/*.onnx binary
 graphify-out/GRAPH_REPORT.md text eol=lf
+docs/quality/evidence/android-emulator/android-emulator-smoke.json -text
+docs/quality/evidence/android-emulator/logs/*.log -text whitespace=-trailing-space

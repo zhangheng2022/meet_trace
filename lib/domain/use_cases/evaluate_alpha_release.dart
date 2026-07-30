@@ -1,14 +1,24 @@
 import 'dart:math' as math;
 
-const alphaReleaseInputSchemaVersion = 4;
+const alphaReleaseInputSchemaVersion = 5;
 const alphaProductMeetingEvidenceClass = 'product-meeting';
 
 enum AlphaReleaseDecision { go, noGo, blocked }
+
+enum AlphaReleaseEvaluationScope {
+  phase0To4('phase-0-4'),
+  alphaRelease('alpha-release');
+
+  const AlphaReleaseEvaluationScope(this.jsonValue);
+
+  final String jsonValue;
+}
 
 enum ReleaseGateStatus { passed, failed, missing }
 
 final class AlphaReleaseEvaluationInput {
   const AlphaReleaseEvaluationInput({
+    this.evaluationScope = AlphaReleaseEvaluationScope.alphaRelease,
     this.schemaVersion,
     this.corpusId,
     this.corpusEvidenceClass,
@@ -68,6 +78,7 @@ final class AlphaReleaseEvaluationInput {
     this.apkAuditPassed,
     this.android16KbPassed,
     this.androidEvidenceRef,
+    this.androidEvidenceSha256,
     this.iosBuildAuditPassed,
     this.iosBuildEvidenceRef,
     this.whisperCppLicenseConfirmed,
@@ -86,6 +97,7 @@ final class AlphaReleaseEvaluationInput {
     final evidence = _map(json['evidence']);
     final release = _map(json['release']);
     return AlphaReleaseEvaluationInput(
+      evaluationScope: _evaluationScope(json['evaluationScope']),
       schemaVersion: _integer(json['schemaVersion']),
       corpusId: _string(corpus?['id']),
       corpusEvidenceClass: _string(corpus?['evidenceClass']),
@@ -189,6 +201,7 @@ final class AlphaReleaseEvaluationInput {
       apkAuditPassed: _boolean(release?['apkAuditPassed']),
       android16KbPassed: _boolean(release?['android16KbPassed']),
       androidEvidenceRef: _string(evidence?['android']),
+      androidEvidenceSha256: _string(evidence?['androidSha256']),
       iosBuildAuditPassed: _boolean(release?['iosBuildAuditPassed']),
       iosBuildEvidenceRef: _string(evidence?['iosBuild']),
       whisperCppLicenseConfirmed: _boolean(
@@ -198,6 +211,7 @@ final class AlphaReleaseEvaluationInput {
     );
   }
 
+  final AlphaReleaseEvaluationScope evaluationScope;
   final int? schemaVersion;
   final String? corpusId;
   final String? corpusEvidenceClass;
@@ -257,11 +271,13 @@ final class AlphaReleaseEvaluationInput {
   final bool? apkAuditPassed;
   final bool? android16KbPassed;
   final String? androidEvidenceRef;
+  final String? androidEvidenceSha256;
   final bool? iosBuildAuditPassed;
   final String? iosBuildEvidenceRef;
   final bool? whisperCppLicenseConfirmed;
 
   AlphaReleaseEvaluationInput copyWith({
+    AlphaReleaseEvaluationScope? evaluationScope,
     int? schemaVersion,
     String? corpusEvidenceClass,
     String? corpusManifestSha256,
@@ -282,6 +298,7 @@ final class AlphaReleaseEvaluationInput {
     bool? vadChunkBoundaryConsistent,
     bool? vadFailureRecordingContinues,
     bool? android16KbPassed,
+    String? androidEvidenceSha256,
     bool? fixedWindowBothModelsCompleted,
     List<double>? previewSentenceLatencyMs,
     double? standardFixedWindowKeyFactRecallRatio,
@@ -302,6 +319,7 @@ final class AlphaReleaseEvaluationInput {
     bool? snapshotAtomicityPassed,
     bool? summaryFinalSnapshotOnly,
   }) => AlphaReleaseEvaluationInput(
+    evaluationScope: evaluationScope ?? this.evaluationScope,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     corpusId: corpusId,
     corpusEvidenceClass: corpusEvidenceClass ?? this.corpusEvidenceClass,
@@ -389,12 +407,14 @@ final class AlphaReleaseEvaluationInput {
     apkAuditPassed: apkAuditPassed,
     android16KbPassed: android16KbPassed ?? this.android16KbPassed,
     androidEvidenceRef: androidEvidenceRef,
+    androidEvidenceSha256: androidEvidenceSha256 ?? this.androidEvidenceSha256,
     iosBuildAuditPassed: iosBuildAuditPassed ?? this.iosBuildAuditPassed,
     iosBuildEvidenceRef: iosBuildEvidenceRef,
     whisperCppLicenseConfirmed: whisperCppLicenseConfirmed,
   );
 
   Map<String, Object?> toJson() => {
+    'evaluationScope': evaluationScope.jsonValue,
     'schemaVersion': schemaVersion ?? alphaReleaseInputSchemaVersion,
     'rawMetricsRef': rawMetricsRef,
     'corpus': {
@@ -466,6 +486,7 @@ final class AlphaReleaseEvaluationInput {
     },
     'evidence': {
       'android': androidEvidenceRef,
+      'androidSha256': androidEvidenceSha256,
       'iosBuild': iosBuildEvidenceRef,
     },
     'acceptanceEvidence': acceptanceEvidence,
@@ -501,6 +522,7 @@ final class ReleaseGateResult {
 
 final class AlphaReleaseEvaluationReport {
   const AlphaReleaseEvaluationReport({
+    required this.scope,
     required this.decision,
     required this.corpusId,
     required this.corpusEvidenceClass,
@@ -511,6 +533,7 @@ final class AlphaReleaseEvaluationReport {
     required this.gates,
   });
 
+  final AlphaReleaseEvaluationScope scope;
   final AlphaReleaseDecision decision;
   final String? corpusId;
   final String? corpusEvidenceClass;
@@ -521,7 +544,8 @@ final class AlphaReleaseEvaluationReport {
   final List<ReleaseGateResult> gates;
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 2,
+    'schemaVersion': 3,
+    'evaluationScope': scope.jsonValue,
     'decision': decision.name,
     'corpusId': corpusId,
     'corpusEvidenceClass': corpusEvidenceClass,
@@ -571,7 +595,7 @@ final class EvaluateAlphaReleaseUseCase {
       input.vadNoiseHallucinationCount,
     );
     final acceptanceCount = _acceptanceEvidenceCount(input.acceptanceEvidence);
-    final gates = <ReleaseGateResult>[
+    final allGates = <ReleaseGateResult>[
       _schemaGate(input.schemaVersion),
       _referenceGate('corpus.id', '评测语料必须具有不含音频路径的可追溯标识', input.corpusId),
       _exactTextGate(
@@ -632,6 +656,11 @@ final class EvaluateAlphaReleaseUseCase {
         'evidence.android',
         'Android 构建、模拟器与真机证据具有可追溯引用',
         input.androidEvidenceRef,
+      ),
+      _sha256Gate(
+        'evidence.androidSha256',
+        'Android 证据必须绑定 64 位十六进制 SHA-256',
+        input.androidEvidenceSha256,
       ),
       _referenceGate(
         'evidence.iosBuild',
@@ -858,6 +887,11 @@ final class EvaluateAlphaReleaseUseCase {
         input.whisperCppLicenseConfirmed,
       ),
     ];
+    final gates = input.evaluationScope == AlphaReleaseEvaluationScope.phase0To4
+        ? allGates
+              .where((gate) => !_postPhase4GateIds.contains(gate.id))
+              .toList(growable: false)
+        : allGates;
     final hasFailure = gates.any(
       (gate) => gate.status == ReleaseGateStatus.failed,
     );
@@ -865,6 +899,7 @@ final class EvaluateAlphaReleaseUseCase {
       (gate) => gate.status == ReleaseGateStatus.missing,
     );
     return AlphaReleaseEvaluationReport(
+      scope: input.evaluationScope,
       decision: hasFailure
           ? AlphaReleaseDecision.noGo
           : hasMissing
@@ -929,9 +964,25 @@ final class EvaluateAlphaReleaseUseCase {
   }
 }
 
+const _postPhase4GateIds = <String>{
+  'environment.lowEndArm64',
+  'environment.adaptiveNavigationAccessibility',
+  'evidence.iosBuild',
+  'standard.rtfP95',
+  'standard.sentenceLatencyP95Ms',
+  'standard.finalTranscriptionDurationMs',
+  'standard.recordingCompletenessRatio',
+  'standard.thermal',
+  'standard.relativeEnergy',
+  'advanced.finalTranscriptionDurationMs',
+  'acceptance.AT01-AT24',
+  'release.android16Kb',
+  'release.iosBuildAudit',
+};
+
 ReleaseGateResult _schemaGate(int? value) => ReleaseGateResult(
   id: 'input.schemaVersion',
-  requirement: '发布评估输入必须使用当前 schema 4',
+  requirement: '发布评估输入必须使用当前 schema 5',
   status: value == alphaReleaseInputSchemaVersion
       ? ReleaseGateStatus.passed
       : ReleaseGateStatus.missing,
@@ -1172,6 +1223,13 @@ double? _noiseReductionRatio(int? baselineCount, int? vadCount) {
 
 Map<String, Object?>? _map(Object? value) =>
     value is Map<String, Object?> ? value : null;
+
+AlphaReleaseEvaluationScope _evaluationScope(Object? value) => switch (value) {
+  null => AlphaReleaseEvaluationScope.alphaRelease,
+  'phase-0-4' => AlphaReleaseEvaluationScope.phase0To4,
+  'alpha-release' => AlphaReleaseEvaluationScope.alphaRelease,
+  _ => throw FormatException('未知的发布评估范围：$value'),
+};
 
 String? _string(Object? value) => value is String ? value : null;
 

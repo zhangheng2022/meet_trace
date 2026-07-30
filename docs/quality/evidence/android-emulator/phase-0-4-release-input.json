@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 4,
+  "evaluationScope": "phase-0-4",
+  "schemaVersion": 5,
   "rawMetricsRef": null,
   "corpus": {
     "id": null,
@@ -74,6 +75,7 @@
   },
   "evidence": {
     "android": "docs/quality/evidence/android-emulator/android-emulator-smoke.json",
+    "androidSha256": "7944cf36bb8968951c09b8a894c4d7bbae611bf0bbee2292a3374313349b05f5",
     "iosBuild": null
   },
   "acceptanceEvidence": null,

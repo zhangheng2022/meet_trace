@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 4,
+  "evaluationScope": "alpha-release",
+  "schemaVersion": 5,
   "rawMetricsRef": null,
   "corpus": {
     "id": null,
@@ -74,6 +75,7 @@
   },
   "evidence": {
     "android": null,
+    "androidSha256": null,
     "iosBuild": null
   },
   "acceptanceEvidence": null,

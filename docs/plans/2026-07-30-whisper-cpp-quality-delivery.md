@@ -272,10 +272,13 @@ Android 模拟器用于尽早打通功能链：
 - 原始观测与报告已升级为 schema 4，固定窗口、生产 VAD 和召回候选具有独立
   `pipelineId`；除同条件噪声幻觉下降率和关键事实召回变化外，还强制记录 ASR 调用
   次数、VAD 语音段数、零检测样本数和语音覆盖率。
-- 自动发布评估输入同步升级为 schema 4，只有 `product-meeting`、有效 manifest
+- 自动发布评估输入同步升级为 schema 5，只有 `product-meeting`、有效 manifest
   SHA-256 和来源/授权标识可以关闭正式质量门槛；另显式检查 Base 相对固定窗口、
   Small 相对 Base 的召回不回退、Preview P95、语音首尾事实以及阶段 0～4 生命周期
-  和最终快照不变量。旧 schema 保持 `blocked`。
+  和最终快照不变量。报告 schema 3 增加 `evaluationScope`；阶段 0～4 报告不会混入
+  后续 Android 真机、iOS 和 Release 门槛。Android 模拟器证据由完整通过日志自动
+  推导并绑定 SHA-256，CLI 校验仓库边界、实际哈希和 `status=passed`。旧输入保持
+  完整 Alpha 发布评估语义。
 - 新入口已在 API 36 x86_64 模拟器完成编译、安装与缺参跳过检查；Small 固定权重也已
   完成真实原生初始化、窗口推理和释放。固定 ASCEND 公开回归显示生产默认 VAD 在
   20 段短语音中漏检 12 段；`vad-recall-035-v1` 恢复到 20/20 检测并通过 20 段数字

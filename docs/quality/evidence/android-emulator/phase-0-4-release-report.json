@@ -1,5 +1,6 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
+  "evaluationScope": "phase-0-4",
   "decision": "blocked",
   "corpusId": null,
   "corpusEvidenceClass": null,
@@ -31,16 +32,16 @@
     "standardToAdvancedEnergyRatio": null
   },
   "summary": {
-    "passed": 21,
+    "passed": 22,
     "failed": 0,
-    "missing": 35
+    "missing": 22
   },
   "gates": [
     {
       "id": "input.schemaVersion",
-      "requirement": "发布评估输入必须使用当前 schema 4",
+      "requirement": "发布评估输入必须使用当前 schema 5",
       "status": "passed",
-      "value": 4
+      "value": 5
     },
     {
       "id": "corpus.id",
@@ -103,18 +104,6 @@
       "value": "android-emulator-x86_64-api-36"
     },
     {
-      "id": "environment.lowEndArm64",
-      "requirement": "已在最低目标 Android arm64 实体设备验证",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "environment.adaptiveNavigationAccessibility",
-      "requirement": "Android/iOS 原生返回、字体缩放和辅助技术验收通过",
-      "status": "missing",
-      "value": null
-    },
-    {
       "id": "evidence.rawMetrics",
       "requirement": "双模型原始指标具有可追溯引用",
       "status": "missing",
@@ -127,10 +116,10 @@
       "value": "docs/quality/evidence/android-emulator/android-emulator-smoke.json"
     },
     {
-      "id": "evidence.iosBuild",
-      "requirement": "iOS 无真机构建与产物审计具有可追溯引用",
-      "status": "missing",
-      "value": null
+      "id": "evidence.androidSha256",
+      "requirement": "Android 证据必须绑定 64 位十六进制 SHA-256",
+      "status": "passed",
+      "value": "7944cf36bb8968951c09b8a894c4d7bbae611bf0bbee2292a3374313349b05f5"
     },
     {
       "id": "quality.fixedWindowBothModels",
@@ -175,42 +164,6 @@
       "requirement": "标准模型资源不超过 100 MiB",
       "status": "passed",
       "value": 60592723
-    },
-    {
-      "id": "standard.rtfP95",
-      "requirement": "最低目标设备 RTF P95 严格小于 0.5",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "standard.sentenceLatencyP95Ms",
-      "requirement": "句后出字 P95 不超过 3000 ms",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "standard.finalTranscriptionDurationMs",
-      "requirement": "30 分钟最终转录不超过 300000 ms",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "standard.recordingCompletenessRatio",
-      "requirement": "30 分钟录音完整率为 100%",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "standard.thermal",
-      "requirement": "30 分钟内不持续进入 Severe/Critical",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "standard.relativeEnergy",
-      "requirement": "标准模型能耗不高于高级模型的 70%",
-      "status": "missing",
-      "value": null
     },
     {
       "id": "standard.keyFactRecallRatio",
@@ -345,34 +298,10 @@
       "value": null
     },
     {
-      "id": "advanced.finalTranscriptionDurationMs",
-      "requirement": "高级模型记录 30 分钟最终转录耗时供支持分级",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "acceptance.AT01-AT24",
-      "requirement": "AT-01 至 AT-24 均有非空证据引用",
-      "status": "missing",
-      "value": null
-    },
-    {
       "id": "release.apkAudit",
       "requirement": "Android APK 的 ABI、模型、密钥、许可和体积审计通过",
       "status": "passed",
       "value": true
-    },
-    {
-      "id": "release.android16Kb",
-      "requirement": "Android Release 全部原生库通过 16 KB LOAD alignment",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "release.iosBuildAudit",
-      "requirement": "iOS 构建的 arm64、模型、密钥、许可和体积审计通过",
-      "status": "missing",
-      "value": null
     },
     {
       "id": "license.whisperCpp",
