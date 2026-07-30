@@ -1,12 +1,20 @@
 import 'dart:math' as math;
 
+const alphaReleaseInputSchemaVersion = 4;
+const alphaProductMeetingEvidenceClass = 'product-meeting';
+
 enum AlphaReleaseDecision { go, noGo, blocked }
 
 enum ReleaseGateStatus { passed, failed, missing }
 
 final class AlphaReleaseEvaluationInput {
   const AlphaReleaseEvaluationInput({
+    this.schemaVersion,
     this.corpusId,
+    this.corpusEvidenceClass,
+    this.corpusManifestSha256,
+    this.corpusSourceId,
+    this.corpusLicenseId,
     this.deviceId,
     this.rawMetricsRef,
     this.corpusSampleCount,
@@ -37,6 +45,25 @@ final class AlphaReleaseEvaluationInput {
     this.advancedSentenceLatencyMs,
     this.advancedFinalTranscriptionDurationMs,
     this.keyFactRecallRatio,
+    this.fixedWindowBothModelsCompleted,
+    this.previewSentenceLatencyMs,
+    this.standardFixedWindowKeyFactRecallRatio,
+    this.standardVadKeyFactRecallRatio,
+    this.advancedVadKeyFactRecallRatio,
+    this.speechBoundaryKeyFactRecallRatio,
+    this.productBoundaryApproved,
+    this.meetingModelLocked,
+    this.factPcmSoleSourcePassed,
+    this.emulatorLifecyclePassed,
+    this.asrFailureRecordingContinues,
+    this.startFailureDiagnosticsPassed,
+    this.asrContextLifecyclePassed,
+    this.vadContextLifecyclePassed,
+    this.finalChunkBoundaryConsistent,
+    this.previewDropFinalInvariant,
+    this.finalTimestampsValid,
+    this.snapshotAtomicityPassed,
+    this.summaryFinalSnapshotOnly,
     this.acceptanceEvidence,
     this.apkAuditPassed,
     this.android16KbPassed,
@@ -48,15 +75,23 @@ final class AlphaReleaseEvaluationInput {
 
   factory AlphaReleaseEvaluationInput.fromJson(Map<String, Object?> json) {
     final corpus = _map(json['corpus']);
+    final provenance = _map(corpus?['provenance']);
     final environment = _map(json['environment']);
     final standard = _map(json['standardModel']);
     final advanced = _map(json['advancedModel']);
     final energy = _map(json['energy']);
     final vad = _map(json['vad']);
+    final quality = _map(json['quality']);
+    final phase04 = _map(json['phase04']);
     final evidence = _map(json['evidence']);
     final release = _map(json['release']);
     return AlphaReleaseEvaluationInput(
+      schemaVersion: _integer(json['schemaVersion']),
       corpusId: _string(corpus?['id']),
+      corpusEvidenceClass: _string(corpus?['evidenceClass']),
+      corpusManifestSha256: _string(corpus?['manifestSha256']),
+      corpusSourceId: _string(provenance?['sourceId']),
+      corpusLicenseId: _string(provenance?['licenseId']),
       deviceId: _string(environment?['deviceId']),
       rawMetricsRef: _string(json['rawMetricsRef']),
       corpusSampleCount: _integer(corpus?['sampleCount']),
@@ -109,6 +144,47 @@ final class AlphaReleaseEvaluationInput {
         advanced?['finalTranscriptionDurationMs'],
       ),
       keyFactRecallRatio: _number(standard?['keyFactRecallRatio']),
+      fixedWindowBothModelsCompleted: _boolean(
+        quality?['fixedWindowBothModelsCompleted'],
+      ),
+      previewSentenceLatencyMs: _numbers(quality?['previewSentenceLatencyMs']),
+      standardFixedWindowKeyFactRecallRatio: _number(
+        quality?['standardFixedWindowKeyFactRecallRatio'],
+      ),
+      standardVadKeyFactRecallRatio: _number(
+        quality?['standardVadKeyFactRecallRatio'],
+      ),
+      advancedVadKeyFactRecallRatio: _number(
+        quality?['advancedVadKeyFactRecallRatio'],
+      ),
+      speechBoundaryKeyFactRecallRatio: _number(
+        quality?['speechBoundaryKeyFactRecallRatio'],
+      ),
+      productBoundaryApproved: _boolean(phase04?['productBoundaryApproved']),
+      meetingModelLocked: _boolean(phase04?['meetingModelLocked']),
+      factPcmSoleSourcePassed: _boolean(phase04?['factPcmSoleSourcePassed']),
+      emulatorLifecyclePassed: _boolean(phase04?['emulatorLifecyclePassed']),
+      asrFailureRecordingContinues: _boolean(
+        phase04?['asrFailureRecordingContinues'],
+      ),
+      startFailureDiagnosticsPassed: _boolean(
+        phase04?['startFailureDiagnosticsPassed'],
+      ),
+      asrContextLifecyclePassed: _boolean(
+        phase04?['asrContextLifecyclePassed'],
+      ),
+      vadContextLifecyclePassed: _boolean(
+        phase04?['vadContextLifecyclePassed'],
+      ),
+      finalChunkBoundaryConsistent: _boolean(
+        phase04?['finalChunkBoundaryConsistent'],
+      ),
+      previewDropFinalInvariant: _boolean(
+        phase04?['previewDropFinalInvariant'],
+      ),
+      finalTimestampsValid: _boolean(phase04?['finalTimestampsValid']),
+      snapshotAtomicityPassed: _boolean(phase04?['snapshotAtomicityPassed']),
+      summaryFinalSnapshotOnly: _boolean(phase04?['summaryFinalSnapshotOnly']),
       acceptanceEvidence: _strings(json['acceptanceEvidence']),
       apkAuditPassed: _boolean(release?['apkAuditPassed']),
       android16KbPassed: _boolean(release?['android16KbPassed']),
@@ -122,7 +198,12 @@ final class AlphaReleaseEvaluationInput {
     );
   }
 
+  final int? schemaVersion;
   final String? corpusId;
+  final String? corpusEvidenceClass;
+  final String? corpusManifestSha256;
+  final String? corpusSourceId;
+  final String? corpusLicenseId;
   final String? deviceId;
   final String? rawMetricsRef;
   final int? corpusSampleCount;
@@ -153,6 +234,25 @@ final class AlphaReleaseEvaluationInput {
   final List<double>? advancedSentenceLatencyMs;
   final double? advancedFinalTranscriptionDurationMs;
   final double? keyFactRecallRatio;
+  final bool? fixedWindowBothModelsCompleted;
+  final List<double>? previewSentenceLatencyMs;
+  final double? standardFixedWindowKeyFactRecallRatio;
+  final double? standardVadKeyFactRecallRatio;
+  final double? advancedVadKeyFactRecallRatio;
+  final double? speechBoundaryKeyFactRecallRatio;
+  final bool? productBoundaryApproved;
+  final bool? meetingModelLocked;
+  final bool? factPcmSoleSourcePassed;
+  final bool? emulatorLifecyclePassed;
+  final bool? asrFailureRecordingContinues;
+  final bool? startFailureDiagnosticsPassed;
+  final bool? asrContextLifecyclePassed;
+  final bool? vadContextLifecyclePassed;
+  final bool? finalChunkBoundaryConsistent;
+  final bool? previewDropFinalInvariant;
+  final bool? finalTimestampsValid;
+  final bool? snapshotAtomicityPassed;
+  final bool? summaryFinalSnapshotOnly;
   final Map<String, String>? acceptanceEvidence;
   final bool? apkAuditPassed;
   final bool? android16KbPassed;
@@ -162,6 +262,11 @@ final class AlphaReleaseEvaluationInput {
   final bool? whisperCppLicenseConfirmed;
 
   AlphaReleaseEvaluationInput copyWith({
+    int? schemaVersion,
+    String? corpusEvidenceClass,
+    String? corpusManifestSha256,
+    String? corpusSourceId,
+    String? corpusLicenseId,
     List<double>? standardRtfSamples,
     String? rawMetricsRef,
     bool? iosArm64DeviceTested,
@@ -177,8 +282,32 @@ final class AlphaReleaseEvaluationInput {
     bool? vadChunkBoundaryConsistent,
     bool? vadFailureRecordingContinues,
     bool? android16KbPassed,
+    bool? fixedWindowBothModelsCompleted,
+    List<double>? previewSentenceLatencyMs,
+    double? standardFixedWindowKeyFactRecallRatio,
+    double? standardVadKeyFactRecallRatio,
+    double? advancedVadKeyFactRecallRatio,
+    double? speechBoundaryKeyFactRecallRatio,
+    bool? productBoundaryApproved,
+    bool? meetingModelLocked,
+    bool? factPcmSoleSourcePassed,
+    bool? emulatorLifecyclePassed,
+    bool? asrFailureRecordingContinues,
+    bool? startFailureDiagnosticsPassed,
+    bool? asrContextLifecyclePassed,
+    bool? vadContextLifecyclePassed,
+    bool? finalChunkBoundaryConsistent,
+    bool? previewDropFinalInvariant,
+    bool? finalTimestampsValid,
+    bool? snapshotAtomicityPassed,
+    bool? summaryFinalSnapshotOnly,
   }) => AlphaReleaseEvaluationInput(
+    schemaVersion: schemaVersion ?? this.schemaVersion,
     corpusId: corpusId,
+    corpusEvidenceClass: corpusEvidenceClass ?? this.corpusEvidenceClass,
+    corpusManifestSha256: corpusManifestSha256 ?? this.corpusManifestSha256,
+    corpusSourceId: corpusSourceId ?? this.corpusSourceId,
+    corpusLicenseId: corpusLicenseId ?? this.corpusLicenseId,
     deviceId: deviceId,
     rawMetricsRef: rawMetricsRef ?? this.rawMetricsRef,
     corpusSampleCount: corpusSampleCount,
@@ -218,6 +347,44 @@ final class AlphaReleaseEvaluationInput {
     advancedSentenceLatencyMs: advancedSentenceLatencyMs,
     advancedFinalTranscriptionDurationMs: advancedFinalTranscriptionDurationMs,
     keyFactRecallRatio: keyFactRecallRatio,
+    fixedWindowBothModelsCompleted:
+        fixedWindowBothModelsCompleted ?? this.fixedWindowBothModelsCompleted,
+    previewSentenceLatencyMs:
+        previewSentenceLatencyMs ?? this.previewSentenceLatencyMs,
+    standardFixedWindowKeyFactRecallRatio:
+        standardFixedWindowKeyFactRecallRatio ??
+        this.standardFixedWindowKeyFactRecallRatio,
+    standardVadKeyFactRecallRatio:
+        standardVadKeyFactRecallRatio ?? this.standardVadKeyFactRecallRatio,
+    advancedVadKeyFactRecallRatio:
+        advancedVadKeyFactRecallRatio ?? this.advancedVadKeyFactRecallRatio,
+    speechBoundaryKeyFactRecallRatio:
+        speechBoundaryKeyFactRecallRatio ??
+        this.speechBoundaryKeyFactRecallRatio,
+    productBoundaryApproved:
+        productBoundaryApproved ?? this.productBoundaryApproved,
+    meetingModelLocked: meetingModelLocked ?? this.meetingModelLocked,
+    factPcmSoleSourcePassed:
+        factPcmSoleSourcePassed ?? this.factPcmSoleSourcePassed,
+    emulatorLifecyclePassed:
+        emulatorLifecyclePassed ?? this.emulatorLifecyclePassed,
+    asrFailureRecordingContinues:
+        asrFailureRecordingContinues ?? this.asrFailureRecordingContinues,
+    startFailureDiagnosticsPassed:
+        startFailureDiagnosticsPassed ?? this.startFailureDiagnosticsPassed,
+    asrContextLifecyclePassed:
+        asrContextLifecyclePassed ?? this.asrContextLifecyclePassed,
+    vadContextLifecyclePassed:
+        vadContextLifecyclePassed ?? this.vadContextLifecyclePassed,
+    finalChunkBoundaryConsistent:
+        finalChunkBoundaryConsistent ?? this.finalChunkBoundaryConsistent,
+    previewDropFinalInvariant:
+        previewDropFinalInvariant ?? this.previewDropFinalInvariant,
+    finalTimestampsValid: finalTimestampsValid ?? this.finalTimestampsValid,
+    snapshotAtomicityPassed:
+        snapshotAtomicityPassed ?? this.snapshotAtomicityPassed,
+    summaryFinalSnapshotOnly:
+        summaryFinalSnapshotOnly ?? this.summaryFinalSnapshotOnly,
     acceptanceEvidence: acceptanceEvidence,
     apkAuditPassed: apkAuditPassed,
     android16KbPassed: android16KbPassed ?? this.android16KbPassed,
@@ -228,12 +395,15 @@ final class AlphaReleaseEvaluationInput {
   );
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 3,
+    'schemaVersion': schemaVersion ?? alphaReleaseInputSchemaVersion,
     'rawMetricsRef': rawMetricsRef,
     'corpus': {
       'id': corpusId,
       'sampleCount': corpusSampleCount,
       'deidentified': corpusDeidentified,
+      'evidenceClass': corpusEvidenceClass,
+      'manifestSha256': corpusManifestSha256,
+      'provenance': {'sourceId': corpusSourceId, 'licenseId': corpusLicenseId},
     },
     'environment': {
       'deviceId': deviceId,
@@ -269,6 +439,30 @@ final class AlphaReleaseEvaluationInput {
       'rtfSamples': advancedRtfSamples,
       'sentenceLatencyMs': advancedSentenceLatencyMs,
       'finalTranscriptionDurationMs': advancedFinalTranscriptionDurationMs,
+    },
+    'quality': {
+      'fixedWindowBothModelsCompleted': fixedWindowBothModelsCompleted,
+      'previewSentenceLatencyMs': previewSentenceLatencyMs,
+      'standardFixedWindowKeyFactRecallRatio':
+          standardFixedWindowKeyFactRecallRatio,
+      'standardVadKeyFactRecallRatio': standardVadKeyFactRecallRatio,
+      'advancedVadKeyFactRecallRatio': advancedVadKeyFactRecallRatio,
+      'speechBoundaryKeyFactRecallRatio': speechBoundaryKeyFactRecallRatio,
+    },
+    'phase04': {
+      'productBoundaryApproved': productBoundaryApproved,
+      'meetingModelLocked': meetingModelLocked,
+      'factPcmSoleSourcePassed': factPcmSoleSourcePassed,
+      'emulatorLifecyclePassed': emulatorLifecyclePassed,
+      'asrFailureRecordingContinues': asrFailureRecordingContinues,
+      'startFailureDiagnosticsPassed': startFailureDiagnosticsPassed,
+      'asrContextLifecyclePassed': asrContextLifecyclePassed,
+      'vadContextLifecyclePassed': vadContextLifecyclePassed,
+      'finalChunkBoundaryConsistent': finalChunkBoundaryConsistent,
+      'previewDropFinalInvariant': previewDropFinalInvariant,
+      'finalTimestampsValid': finalTimestampsValid,
+      'snapshotAtomicityPassed': snapshotAtomicityPassed,
+      'summaryFinalSnapshotOnly': summaryFinalSnapshotOnly,
     },
     'evidence': {
       'android': androidEvidenceRef,
@@ -309,6 +503,8 @@ final class AlphaReleaseEvaluationReport {
   const AlphaReleaseEvaluationReport({
     required this.decision,
     required this.corpusId,
+    required this.corpusEvidenceClass,
+    required this.corpusManifestSha256,
     required this.deviceId,
     required this.rawMetricsRef,
     required this.comparison,
@@ -317,15 +513,19 @@ final class AlphaReleaseEvaluationReport {
 
   final AlphaReleaseDecision decision;
   final String? corpusId;
+  final String? corpusEvidenceClass;
+  final String? corpusManifestSha256;
   final String? deviceId;
   final String? rawMetricsRef;
   final Map<String, Object?> comparison;
   final List<ReleaseGateResult> gates;
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'decision': decision.name,
     'corpusId': corpusId,
+    'corpusEvidenceClass': corpusEvidenceClass,
+    'corpusManifestSha256': corpusManifestSha256,
     'deviceId': deviceId,
     'rawMetricsRef': rawMetricsRef,
     'comparison': comparison,
@@ -358,6 +558,10 @@ final class EvaluateAlphaReleaseUseCase {
       input.advancedSentenceLatencyMs,
       minimumSamples: 20,
     );
+    final previewLatencyP95 = _p95(
+      input.previewSentenceLatencyMs,
+      minimumSamples: 20,
+    );
     final relativeEnergy = _ratio(
       input.standardEnergyWh,
       input.advancedEnergyWh,
@@ -368,7 +572,29 @@ final class EvaluateAlphaReleaseUseCase {
     );
     final acceptanceCount = _acceptanceEvidenceCount(input.acceptanceEvidence);
     final gates = <ReleaseGateResult>[
+      _schemaGate(input.schemaVersion),
       _referenceGate('corpus.id', '评测语料必须具有不含音频路径的可追溯标识', input.corpusId),
+      _exactTextGate(
+        'corpus.evidenceClass',
+        '正式发布质量门槛只接受 product-meeting 证据',
+        input.corpusEvidenceClass,
+        alphaProductMeetingEvidenceClass,
+      ),
+      _sha256Gate(
+        'corpus.manifestSha256',
+        '评测语料必须绑定 64 位十六进制 manifest SHA-256',
+        input.corpusManifestSha256,
+      ),
+      _textGate(
+        'corpus.provenance.sourceId',
+        '评测语料必须具有来源标识',
+        input.corpusSourceId,
+      ),
+      _textGate(
+        'corpus.provenance.licenseId',
+        '评测语料必须具有授权或许可标识',
+        input.corpusLicenseId,
+      ),
       _thresholdGate(
         'corpus.sampleCount',
         '去敏会议语料不少于 20 段',
@@ -411,6 +637,35 @@ final class EvaluateAlphaReleaseUseCase {
         'evidence.iosBuild',
         'iOS 无真机构建与产物审计具有可追溯引用',
         input.iosBuildEvidenceRef,
+      ),
+      _boolGate(
+        'quality.fixedWindowBothModels',
+        'Base 和 Small 已在同语料完成固定窗口对照',
+        input.fixedWindowBothModelsCompleted,
+      ),
+      _thresholdGate(
+        'quality.previewLatencyP95Ms',
+        'Preview 句后出字 P95 不超过 3000 ms',
+        previewLatencyP95,
+        (value) => value <= 3000,
+      ),
+      _ratioNoRegressionGate(
+        'quality.standardVadRecallNoRegression',
+        'Base 的 VAD 关键事实召回不得低于固定窗口基线',
+        baseline: input.standardFixedWindowKeyFactRecallRatio,
+        candidate: input.standardVadKeyFactRecallRatio,
+      ),
+      _ratioNoRegressionGate(
+        'quality.advancedVadRecallNoRegression',
+        'Small 的 VAD 关键事实召回不得低于 Base',
+        baseline: input.standardVadKeyFactRecallRatio,
+        candidate: input.advancedVadKeyFactRecallRatio,
+      ),
+      _boundedRatioThresholdGate(
+        'quality.speechBoundaryRecall',
+        '语音首尾已标注关键事实必须全部保留',
+        input.speechBoundaryKeyFactRecallRatio,
+        (value) => value == 1,
       ),
       _thresholdGate(
         'standard.resourceBytes',
@@ -493,6 +748,71 @@ final class EvaluateAlphaReleaseUseCase {
         'VAD 失败只降级预览且事实录音继续',
         input.vadFailureRecordingContinues,
       ),
+      _boolGate(
+        'phase04.productBoundaryApproved',
+        '阶段 0 产品边界和质量门槛已批准',
+        input.productBoundaryApproved,
+      ),
+      _boolGate(
+        'phase04.meetingModelLocked',
+        '会议开始后模型身份和版本保持锁定',
+        input.meetingModelLocked,
+      ),
+      _boolGate(
+        'phase04.factPcmSoleSource',
+        '事实 PCM 是最终转录唯一事实源且写盘不依赖推理',
+        input.factPcmSoleSourcePassed,
+      ),
+      _boolGate(
+        'phase04.emulatorLifecycle',
+        'Android 模拟器连续会议生命周期无资源残留',
+        input.emulatorLifecyclePassed,
+      ),
+      _boolGate(
+        'phase04.asrFailureRecordingContinues',
+        'ASR 故障和预览积压不影响事实录音',
+        input.asrFailureRecordingContinues,
+      ),
+      _boolGate(
+        'phase04.startFailureDiagnostics',
+        '会议启动失败具有稳定错误码和用户动作',
+        input.startFailureDiagnosticsPassed,
+      ),
+      _boolGate(
+        'phase04.asrContextLifecycle',
+        'ASR context 百次生命周期无崩溃或持续泄漏',
+        input.asrContextLifecyclePassed,
+      ),
+      _boolGate(
+        'phase04.vadContextLifecycle',
+        'VAD context 百次生命周期无崩溃或持续泄漏',
+        input.vadContextLifecyclePassed,
+      ),
+      _boolGate(
+        'phase04.finalChunkBoundaryConsistent',
+        '相同 PCM 的不同 chunk 方式得到相同最终片段和排序',
+        input.finalChunkBoundaryConsistent,
+      ),
+      _boolGate(
+        'phase04.previewDropFinalInvariant',
+        '丢弃预览任务不改变最终转录',
+        input.previewDropFinalInvariant,
+      ),
+      _boolGate(
+        'phase04.finalTimestampsValid',
+        '最终时间戳无负值、越界、交叉或倒退',
+        input.finalTimestampsValid,
+      ),
+      _boolGate(
+        'phase04.snapshotAtomicity',
+        '最终快照失败时旧活动快照保持激活',
+        input.snapshotAtomicityPassed,
+      ),
+      _boolGate(
+        'phase04.summaryFinalSnapshotOnly',
+        'AI 总结只读取已激活完整最终快照',
+        input.summaryFinalSnapshotOnly,
+      ),
       _thresholdGate(
         'advanced.rtfSampleCount',
         '高级模型使用相同语料记录不少于 20 个 RTF 样本',
@@ -551,6 +871,8 @@ final class EvaluateAlphaReleaseUseCase {
           ? AlphaReleaseDecision.blocked
           : AlphaReleaseDecision.go,
       corpusId: input.corpusId,
+      corpusEvidenceClass: input.corpusEvidenceClass,
+      corpusManifestSha256: input.corpusManifestSha256,
       deviceId: input.deviceId,
       rawMetricsRef: input.rawMetricsRef,
       comparison: {
@@ -585,12 +907,36 @@ final class EvaluateAlphaReleaseUseCase {
           'finalTranscriptionDurationMs':
               input.advancedFinalTranscriptionDurationMs,
         },
+        'quality': {
+          'previewSentenceLatencyP95Ms': previewLatencyP95,
+          'standardFixedWindowKeyFactRecallRatio': _finiteOrNull(
+            input.standardFixedWindowKeyFactRecallRatio,
+          ),
+          'standardVadKeyFactRecallRatio': _finiteOrNull(
+            input.standardVadKeyFactRecallRatio,
+          ),
+          'advancedVadKeyFactRecallRatio': _finiteOrNull(
+            input.advancedVadKeyFactRecallRatio,
+          ),
+          'speechBoundaryKeyFactRecallRatio': _finiteOrNull(
+            input.speechBoundaryKeyFactRecallRatio,
+          ),
+        },
         'standardToAdvancedEnergyRatio': relativeEnergy,
       },
       gates: List.unmodifiable(gates),
     );
   }
 }
+
+ReleaseGateResult _schemaGate(int? value) => ReleaseGateResult(
+  id: 'input.schemaVersion',
+  requirement: '发布评估输入必须使用当前 schema 4',
+  status: value == alphaReleaseInputSchemaVersion
+      ? ReleaseGateStatus.passed
+      : ReleaseGateStatus.missing,
+  value: value,
+);
 
 ReleaseGateResult _textGate(String id, String requirement, String? value) {
   final normalized = value?.trim();
@@ -600,6 +946,39 @@ ReleaseGateResult _textGate(String id, String requirement, String? value) {
     status: normalized == null || normalized.isEmpty
         ? ReleaseGateStatus.missing
         : ReleaseGateStatus.passed,
+    value: normalized,
+  );
+}
+
+ReleaseGateResult _exactTextGate(
+  String id,
+  String requirement,
+  String? value,
+  String expected,
+) {
+  final normalized = value?.trim();
+  return ReleaseGateResult(
+    id: id,
+    requirement: requirement,
+    status: normalized == null || normalized.isEmpty
+        ? ReleaseGateStatus.missing
+        : normalized == expected
+        ? ReleaseGateStatus.passed
+        : ReleaseGateStatus.failed,
+    value: normalized,
+  );
+}
+
+ReleaseGateResult _sha256Gate(String id, String requirement, String? value) {
+  final normalized = value?.trim();
+  return ReleaseGateResult(
+    id: id,
+    requirement: requirement,
+    status: normalized == null || normalized.isEmpty
+        ? ReleaseGateStatus.missing
+        : RegExp(r'^[0-9a-f]{64}$', caseSensitive: false).hasMatch(normalized)
+        ? ReleaseGateStatus.passed
+        : ReleaseGateStatus.failed,
     value: normalized,
   );
 }
@@ -666,6 +1045,67 @@ ReleaseGateResult _thresholdGate<T extends num>(
       : ReleaseGateStatus.failed,
   value: value,
 );
+
+ReleaseGateResult _boundedRatioThresholdGate(
+  String id,
+  String requirement,
+  double? value,
+  bool Function(double value) passes,
+) => ReleaseGateResult(
+  id: id,
+  requirement: requirement,
+  status: value == null
+      ? ReleaseGateStatus.missing
+      : !value.isFinite || value < 0 || value > 1
+      ? ReleaseGateStatus.failed
+      : passes(value)
+      ? ReleaseGateStatus.passed
+      : ReleaseGateStatus.failed,
+  value: _finiteOrNull(value),
+);
+
+ReleaseGateResult _ratioNoRegressionGate(
+  String id,
+  String requirement, {
+  required double? baseline,
+  required double? candidate,
+}) {
+  final safeBaseline = _finiteOrNull(baseline);
+  final safeCandidate = _finiteOrNull(candidate);
+  final value = <String, double?>{
+    'baseline': safeBaseline,
+    'candidate': safeCandidate,
+    'delta': safeBaseline == null || safeCandidate == null
+        ? null
+        : safeCandidate - safeBaseline,
+  };
+  if (baseline == null || candidate == null) {
+    return ReleaseGateResult(
+      id: id,
+      requirement: requirement,
+      status: ReleaseGateStatus.missing,
+      value: value,
+    );
+  }
+  final valid =
+      baseline.isFinite &&
+      candidate.isFinite &&
+      baseline >= 0 &&
+      baseline <= 1 &&
+      candidate >= 0 &&
+      candidate <= 1;
+  return ReleaseGateResult(
+    id: id,
+    requirement: requirement,
+    status: valid && candidate >= baseline
+        ? ReleaseGateStatus.passed
+        : ReleaseGateStatus.failed,
+    value: value,
+  );
+}
+
+double? _finiteOrNull(double? value) =>
+    value != null && value.isFinite ? value : null;
 
 double? _p95(List<double>? samples, {required int minimumSamples}) {
   return _percentile(samples, percentile: 0.95, minimumSamples: minimumSamples);

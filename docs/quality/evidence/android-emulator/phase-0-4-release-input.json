@@ -13,7 +13,7 @@
     }
   },
   "environment": {
-    "deviceId": null,
+    "deviceId": "android-emulator-x86_64-api-36",
     "sameCorpusForBothModels": null,
     "sameDeviceForBothModels": null,
     "lowEndArm64DeviceTested": null,
@@ -41,8 +41,8 @@
     "noiseSampleCount": null,
     "baselineNoiseHallucinationCount": null,
     "vadNoiseHallucinationCount": null,
-    "chunkBoundaryConsistent": null,
-    "failureRecordingContinues": null
+    "chunkBoundaryConsistent": true,
+    "failureRecordingContinues": true
   },
   "advancedModel": {
     "rtfSamples": null,
@@ -58,29 +58,29 @@
     "speechBoundaryKeyFactRecallRatio": null
   },
   "phase04": {
-    "productBoundaryApproved": null,
-    "meetingModelLocked": null,
-    "factPcmSoleSourcePassed": null,
-    "emulatorLifecyclePassed": null,
-    "asrFailureRecordingContinues": null,
-    "startFailureDiagnosticsPassed": null,
-    "asrContextLifecyclePassed": null,
-    "vadContextLifecyclePassed": null,
-    "finalChunkBoundaryConsistent": null,
-    "previewDropFinalInvariant": null,
-    "finalTimestampsValid": null,
-    "snapshotAtomicityPassed": null,
-    "summaryFinalSnapshotOnly": null
+    "productBoundaryApproved": true,
+    "meetingModelLocked": true,
+    "factPcmSoleSourcePassed": true,
+    "emulatorLifecyclePassed": true,
+    "asrFailureRecordingContinues": true,
+    "startFailureDiagnosticsPassed": true,
+    "asrContextLifecyclePassed": true,
+    "vadContextLifecyclePassed": true,
+    "finalChunkBoundaryConsistent": true,
+    "previewDropFinalInvariant": true,
+    "finalTimestampsValid": true,
+    "snapshotAtomicityPassed": true,
+    "summaryFinalSnapshotOnly": true
   },
   "evidence": {
-    "android": null,
+    "android": "docs/quality/evidence/android-emulator/android-emulator-smoke.json",
     "iosBuild": null
   },
   "acceptanceEvidence": null,
   "release": {
-    "apkAuditPassed": null,
+    "apkAuditPassed": true,
     "android16KbPassed": null,
     "iosBuildAuditPassed": null,
-    "whisperCppLicenseConfirmed": null
+    "whisperCppLicenseConfirmed": true
   }
 }

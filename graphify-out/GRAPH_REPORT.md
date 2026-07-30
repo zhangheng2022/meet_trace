@@ -1,16 +1,16 @@
 # Graph Report - codex-whisper-cpp-quality-phases-0-4  (2026-07-31)
 
 ## Corpus Check
-- 485 files · ~717,757 words
+- 487 files · ~720,147 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 9655 nodes · 17991 edges · 520 communities (350 shown, 170 thin omitted)
+- 9691 nodes · 18031 edges · 521 communities (349 shown, 172 thin omitted)
 - Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 2129 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8891dcce`
+- Built from commit: `647d08c3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -20,7 +20,7 @@
 - meettrace_dependencies.dart
 - meeting_detail_view.dart
 - use_cases/evaluate_alpha_release.dart
-- dart:io
+- package:flutter_test/flutter_test.dart
 - win32_window.cpp
 - meeting_list_view.dart
 - theme.dart
@@ -37,7 +37,7 @@
 - ggml_new_tensor
 - meeting_detail_view_model_test.dart
 - ops.cpp
-- meeting_list_previews.dart
+- meeting_detail_previews.dart
 - whisper_quality_protocol.dart
 - recording_session_view.dart
 - generate_summary_test.dart
@@ -47,7 +47,7 @@
 - android_emulator_meeting_flow_test.dart
 - speaker_diarization_coordinator_test.dart
 - whisper_quality_metrics.dart
-- sqflite_model_installation_repository.dart
+- class
 - android_whisper_quality_benchmark_test.dart
 - run_speaker_diarization.dart
 - recording_previews.dart
@@ -58,7 +58,7 @@
 - meeting_list_view_model.dart
 - meettrace_flow.dart
 - summary_generation.dart
-- storage_mappers.dart
+- sqflite_model_installation_repository.dart
 - bundled_model_preparation_service.dart
 - recording_audio_waveform.dart
 - revise_final_transcript.dart
@@ -69,53 +69,54 @@
 - start_meeting_view_model.dart
 - pcm_evidence_playback_service.dart
 - start_meeting.dart
-- ggml_backend_buffer_t
+- ggml-backend.cpp
 - model_settings_view.dart
 - ggml.c
 - my_application.cc
 - model_settings_view_model.dart
-- ggml_backend_buffer_type_t
+- asr/whisper_base_standard_asr_engine_test.dart
 - app_swipe_action_row.dart
 - x86/quants.c
 - whisper_asr_engine_factory_test.dart
-- repositories.dart
+- build_meeting_share.dart
 - meeting_detail_view_test.dart
-- package:flutter_test/flutter_test.dart
+- dart:convert
 - data_controls_view_model.dart
 - summary.dart
-- whisper_vad_context
-- android_proc_asr_device_risk_monitor.dart
+- whisper_full_with_state
+- bool get
 - whisper.cpp
 - asr_preview.dart
-- recording_device_readiness_probe_test.dart
+- List
 - ggml-cpu.cpp
 - ggml-backend-reg.cpp
 - app_ledger.dart
-- _string
+- size
 - recording_session_view_model_test.dart
-- meeting_detail_previews.dart
-- pcm_evidence_playback_service_test.dart
-- Exception
+- android_proc_asr_device_risk_monitor.dart
+- evidence_playback.dart
+- whisper_quality_protocol_test.dart
 - vec.h
-- ggml_compute_params
+- unary-ops.cpp
 - meettrace_whisper.g.dart
 - recording.dart
-- app_file_layout.dart
+- platform_download_preflight_providers.dart
 - model_manifest.dart
 - MeetingRepository
 - whisper_vad_model
 - meeting_list_view_model_test.dart
-- ggml_set_op_params_f32
+- repositories.dart
 - ggml-cpu/repack.cpp
 - models/speaker_diarization.dart
 - run_final_transcription.dart
+- ggml_get_op_params_i32
 - ggml_compute_backward
 - recording_bootstrap_view.dart
 - final_transcription_fakes.dart
 - domain_ports_test.dart
-- ggml-backend.cpp
+- ggml_backend_t
 - plan_asr_preview_windows.dart
-- dart:typed_data
+- build_spike_sample.dart
 - riscv/quants.c
 - ggml-cpu/quants.c
 - Codex 实施计划：whisper.cpp 质量强化与双平台交付
@@ -132,20 +133,20 @@
 - vector
 - package:flutter/services.dart
 - generate_summary.dart
-- fetch_ascend_public_regression_test.dart
+- return
 - app_database.dart
 - ggml-backend-meta.cpp
 - arm/repack.cpp
-- sqflite_model_preference_repository.dart
-- mt_whisper_vad_context
+- dart:async
+- local_data_control_service.dart
 - MeetTrace Android and iOS Alpha PRD V0.6
-- app_status_notice.dart
+- app_state_panel.dart
 - ggml-cpu.c
 - ggml-impl.h
 - processing_task.dart
 - ggml-opt.cpp
 - Components
-- quantize_q5_0
+- recording_session.dart
 - model_installation.dart
 - ggml_is_contiguous
 - ggml_compute_forward_rope_flt
@@ -156,13 +157,13 @@
 - ggml-alloc.c
 - Q: 评估 whisper_ggml 是否适合作为会迹当前本地 ASR 模型或运行时
 - vector
-- whisper_build_graph_decoder
+- ggml_view_tensor
 - whisper_adapter.dart
 - ggml_nrows
 - Q: sherpa_onnx 替换为 whisper_ggml，给我一个方案
 - whisper_state
 - DateTime
-- app_state_panel.dart
+- iq2_data_index
 - RecordingAudioWaveform
 - Q: whisper_ggml transcribeLive 实时（流媒体）转录如何接入当前项目
 - asr/whisper_small_advanced_asr_engine_test.dart
@@ -174,31 +175,31 @@
 - Q: 正式替换 sherpa-onnx 后，MeetTrace 的 whisper.cpp 双模型 ASR 架构、实时预览、最终转录、模型生命周期与录音隔离如何连接？
 - cmp_argsort
 - Blocked iOS and Dual-Platform Release
-- _
+- recording_checkpoint_store.dart
 - 增量架构优化
 - cmp_top_k
-- whisper_context_default_params
+- app_file_layout.dart
 - gguf_tensor_info
 - Stream
-- ggml_tensor
+- gguf_get_n_kv
 - ime.cpp
 - quantize_row_iq4_nl_impl
 - x86/repack.cpp
 - 真实录音条件预检
 - gguf.cpp
-- ggml_opt_build
-- get_scale_min_k4
+- ggml_set_op_params_i32
+- nearest_int
 - tinyBLAS_Q0_AVX
 - tinyBLAS_PPC
 - whisper_native_context.dart
-- kleidiai.cpp
+- kleidiai_collect_kernel_chain
 - whisper_recognizer_profiles.dart
 - UI 渐进迁移顺序
 - 跨平台用户可见品牌身份
 - Windows databaseFactory 未初始化
 - 二次确认的永久会议删除
 - 录音连续性优先
-- apply_unary_op_functor
+- _string
 - ggml_opt_context
 - whisper_decoder
 - .supports_op
@@ -211,7 +212,7 @@
 - _
 - ggml_backend_registry
 - models/manifest.json
-- whisper_asr_engine_factory.dart
+- _
 - 语义化本地日期标签
 - madd
 - mmq.cpp
@@ -231,9 +232,9 @@
 - 精确锁定 path_provider_android 2.2.23
 - Android edge-to-edge 系统栏
 - ggml-backend-impl.h
-- size
+- data
 - ime2_kernels.cpp
-- whisper_context
+- ggml_backend_cpu_context
 - kernels.cpp
 - spine_mem_pool_manager
 - tinyBLAS_Q0_PPC
@@ -252,7 +253,7 @@
 - FColorsExtensions
 - FStyleExtensions
 - Bounded Droppable Preview Queue
-- simd-gemm.h
+- ggml_compute_forward_flash_attn_back_f32
 - ggml_kleidiai_context
 - Flutter Brand Mark
 - Flutter Brand Mark
@@ -271,7 +272,7 @@
 - Graphify Repository Workflow
 - Flutter Logo Application Launcher Icon
 - Flutter Logo Application Launcher Icon
-- gguf_get_n_tensors
+- tensor_traits
 - Forui CLI 输出配置
 - 损坏的 Graphify 查询记忆记录
 - Flutter Logo iOS Application Icon
@@ -282,9 +283,9 @@
 - Flutter Logo iOS Application Icon
 - Transparent 1×1 iOS Launch-image Placeholder
 - LaunchImage.imageset/README.md
-- nrow_block_q3_k
+- ggml_v_silu
 - local_data_control.dart
-- audio_source.dart
+- kleidiai.cpp
 - model_manifest_parser.dart
 - icons
 - style
@@ -322,7 +323,7 @@
 - LocalFactFooter
 - _generateSummary
 - summary
-- Segment
+- mt_whisper_transcribe
 - Step 22：Whisper 解码参数评测
 - canRetranscribe
 - canRetry
@@ -342,9 +343,10 @@
 - createState
 - onDeleted
 - viewModel
-- ggml_opt_dataset
+- ffigen.dart
 - build
 - viewModel
+- ime_kernels.h
 - build
 - viewModel
 - whisper_quality_metrics_test.dart
@@ -367,13 +369,13 @@
 - startingMeeting
 - build
 - WhisperWorker
-- ggml_opt_result_t
+- init_kleidiai_context
 - build
 - createState
 - onOpenSettings
 - onStartMeeting
 - startingMeeting
-- ggml_new_graph_custom
+- .supports_op
 - quantize_q4_1
 - build
 - onOpenMeeting
@@ -396,9 +398,9 @@
 - Flutter Logo Maskable Web Application Icon
 - Windows Flutter Build Rules
 - Windows Runner Build Rules
-- dart:async
+- streaming_window_segmenter.dart
 - size
-- tinyBLAS_RVV
+- tinyBLAS
 - whisper_model
 - rvv_kernels.cpp
 - simd-mappings.h
@@ -414,11 +416,11 @@
 - lerp
 - weight_buft_supported
 - operator
-- quantize_row_q8_0_ref
+- s390/quants.c
 - _
 - spine_tcm.h
 - _owner
-- ggml_type_name
+- flutter_model_asset_source_test.dart
 - gguf_init_from_reader
 - ggml-cpu/common.h
 - quantize_row_tq2_0_ref
@@ -426,24 +428,24 @@
 - MessageHandler
 - make_buft_list
 - ggml-backend-dl.h
-- whisper_global
-- ggml_backend_event_free
+- quantize_q5_1
+- ggml_graph_compute_check_for_work
 - ggml_backend_cpu_x86_score
 - asr_model_registry.dart
 - gguf_set_kv
-- gguf_context
+- TLSContext
 - quantize_q6_K
 - .compute_forward
 - _
 - x86/cpu-feats.cpp
 - Q: clang: warning: -Wl,-z,max-page-size=16384: linker input unused 是否影响 Android 16KB page-size 兼容性
-- pool_allocation
+- ggml_validate_row_data
 - ggml_conv_2d_dw_params
 - message
 - AppDelegate
 - amx/common.h
 - spine_mem_pool.cpp
-- ggml_backend_plan_cpu
+- MeetingDetailViewModel
 - ggml_tensor
 - asr_model.dart
 - Win32Window
@@ -452,7 +454,7 @@
 - _
 - unpack_A
 - _owner
-- nearest_int
+- quantize_row_q3_K_ref
 - prepare_whisper_quality_corpus.dart
 - GeneratedPluginRegistrant.swift
 - make_block_q4_0x32
@@ -464,15 +466,15 @@
 - q8k_blk_size
 - dispose
 - onEditingChanged
-- tensor_traits_base
+- ggml_map_custom1_impl
 - rotate_pairs
 - onEvidence
 - data_control.dart
-- ime_kernels.h
+- nrow_block_mxfp4
 - block_with_zp
 - flash_attn_ext_f16_one_chunk_inner_vlen1024_vf16_mrow
 - value
-- type_to_gguf_type<std::string>
+- ggml_map_custom2_impl
 - rvv_kernels.h
 - whisper_global_cache
 - ggml_quantize_chunk
@@ -483,27 +485,28 @@
 - meeting
 - onPress
 - ggml_backend_graph_copy
-- ggml_backend_sched_split
+- ggml_map_custom3_impl
 - tile_config_t
+- ../../../../../domain/ports/speaker_diarization.dart
 - referenceTime
+- ffi.Opaque
+- ggml_backend_cpu_device_context
 - make_block_q4_1x16
 - ggml_backend_dev_props
 - hbm.cpp
-- GGML_DEPRECATED
-- ggml_opt_fit
-- quantize_row_q8_K_ref
+- MeetTraceDependencies
+- ../../../../../domain/ports/asr_engine.dart
+- ../../../../../domain/ports/evidence_playback.dart
 - quantize_row_tq1_0_ref
 - ggml-quants.c
 - kleidiai_block_args
 - ggml_backend_dev_caps
 - ggml_backend_meta_split_state
-- ggml_init_params
 - ime_env.cpp
 - atomic_flag_test_and_set
 - WhisperWorkerFactory
 - ggml_set_abort_callback
 - ggml_backend_feature
-- ggml_opt_optimizer_name
 - Q: 分析当前项目的本地模型，是否需要更换模型或组合模型
 - Q: 分析各个模型
 - Q: https://github.com/moonshine-ai/moonshine
@@ -555,11 +558,11 @@
 - **PCM 波形反馈流水线** — graphify_out_memory_query_20260728_071436_reliable_recording_service, graphify_out_memory_query_20260728_071436_pcm_audio_level_meter, graphify_out_memory_query_20260728_071436_recording_session_view_model, graphify_out_memory_query_20260728_071436_recording_audio_waveform [EXTRACTED 1.00]
 - **跨平台 CMake 标准编译设置** — linux_cmakelists_apply_standard_settings, windows_cmakelists_apply_standard_settings, linux_cmakelists_target_compile_features, windows_cmakelists_target_compile_features [INFERRED 0.85]
 
-## Communities (520 total, 170 thin omitted)
+## Communities (521 total, 172 thin omitted)
 
 ### Community 0 - "meeting_detail_view_model.dart"
 Cohesion: 0.02
-Nodes (121): _applyInstallations, _applyProgress, canGenerate, displayLabel, displaySpeakerLabel, generate, isGenerating, _loadInstalledModels (+113 more)
+Nodes (115): _applyInstallations, _applyProgress, canGenerate, displayLabel, displaySpeakerLabel, generate, isGenerating, _loadInstalledModels (+107 more)
 
 ### Community 1 - "asr_preview_coordinator.dart"
 Cohesion: 0.03
@@ -567,19 +570,19 @@ Nodes (75): asr_preview_session.dart, ../audio/recording_ports.dart, ../../../do
 
 ### Community 2 - "meettrace_dependencies.dart"
 Cohesion: 0.03
-Nodes (72): createDataControlsViewModel, createMeetingDetailViewModel, createMeetingListViewModel, createModelSettingsViewModel, createRecordingSessionViewModel, createStartMeetingViewModel, MeetTraceViewModelFactories, ../data/repositories/sqflite_diarization_preference_repository.dart (+64 more)
+Nodes (68): createDataControlsViewModel, createMeetingDetailViewModel, createMeetingListViewModel, createModelSettingsViewModel, createRecordingSessionViewModel, createStartMeetingViewModel, ../data/repositories/sqflite_diarization_preference_repository.dart, ../data/repositories/sqflite_meeting_repository.dart (+60 more)
 
 ### Community 3 - "meeting_detail_view.dart"
 Cohesion: 0.03
 Nodes (83): SpeakerLabelGroup, _AudioCard, _confirmingDelete, _controller, detail, _DiarizationCard, duration, editing (+75 more)
 
 ### Community 4 - "use_cases/evaluate_alpha_release.dart"
-Cohesion: 0.03
-Nodes (78): acceptanceEvidence, _acceptanceEvidenceCount, adaptiveNavigationAccessibilityPassed, advancedEnergyWh, advancedFinalTranscriptionDurationMs, advancedRtfSamples, advancedSentenceLatencyMs, AlphaReleaseDecision (+70 more)
+Cohesion: 0.02
+Nodes (113): acceptanceEvidence, _acceptanceEvidenceCount, adaptiveNavigationAccessibilityPassed, advancedEnergyWh, advancedFinalTranscriptionDurationMs, advancedRtfSamples, advancedSentenceLatencyMs, advancedVadKeyFactRecallRatio (+105 more)
 
-### Community 5 - "dart:io"
-Cohesion: 0.03
-Nodes (71): _PreviewInstallations, dart:io, Directory, BundledModelPreparationService, AppFileLayout, commit, DurableFileCommitException, DurableFileCommitter (+63 more)
+### Community 5 - "package:flutter_test/flutter_test.dart"
+Cohesion: 0.02
+Nodes (93): dart:io, Directory, BundledModelPreparationService, download, requireHttps, ModelManifestParser, AppFileLayout, ModelManifestEntry (+85 more)
 
 ### Community 6 - "win32_window.cpp"
 Cohesion: 0.15
@@ -595,24 +598,24 @@ Nodes (57): AppColors get, AppStyle get, _body, borderRadius, borderStrong, card
 
 ### Community 9 - "ggml-cpu/repack.h"
 Cohesion: 0.04
-Nodes (51): block, d, block_iq4_nlx16, d, qs, block_iq4_nlx4, d, qs (+43 more)
+Nodes (51): block, d, block_iq4_nlx16, d, qs, block_iq4_nlx8, d, qs (+43 more)
 
 ### Community 10 - "asr_preview_coordinator_test.dart"
-Cohesion: 0.03
-Nodes (71): package:meettrace/data/services/asr/asr_preview_coordinator.dart, package:meettrace/data/services/vad/voice_activity_segmenter.dart, package:meettrace/domain/models/app_failure.dart, package:meettrace/domain/models/asr_preview.dart, package:meettrace/domain/use_cases/plan_asr_preview_windows.dart, required _ScriptedVad vad,
-  int, accept, acceptAudio (+63 more)
+Cohesion: 0.05
+Nodes (39): package:meettrace/data/services/asr/asr_preview_coordinator.dart, package:meettrace/domain/models/app_failure.dart, package:meettrace/domain/models/asr_preview.dart, package:meettrace/domain/use_cases/plan_asr_preview_windows.dart, required _ScriptedVad vad,
+  int, accept, acceptAudio, acceptCalls (+31 more)
 
 ### Community 11 - "reliable_recording_service.dart"
 Cohesion: 0.04
 Nodes (55): audioLevelChanges, _audioLevelMeter, _audioSubscription, canFinalize, capture, _captureDone, _captureStopTimedOut, captureStopTimeout (+47 more)
 
 ### Community 12 - "ports/asr_engine.dart"
-Cohesion: 0.04
-Nodes (53): acceptAudio, AsrDeviceSupport, AsrEngineMetrics, AsrEnginePurpose, AsrFinalizationPhase, AsrFinalizationProgress, AsrMemoryPressure, AsrThermalState (+45 more)
+Cohesion: 0.03
+Nodes (59): _SupportedRiskMonitor, AndroidProcAsrDeviceRiskMonitor, acceptAudio, AsrDeviceRiskMonitor, AsrDeviceRiskState, AsrDeviceSupport, AsrEngineMetrics, AsrEnginePurpose (+51 more)
 
 ### Community 13 - "sqflite_repositories_test.dart"
-Cohesion: 0.03
-Nodes (81): StartupRecoveryService, DomainInvariantViolation, message, toString, TranscriptSnapshotStatus, InvalidStateTransitionException, ResolveMeetingModelSelection, package:meettrace/data/repositories/sqflite_diarization_preference_repository.dart (+73 more)
+Cohesion: 0.02
+Nodes (105): changes, inspect, main, _modelRoot, _prepareDelaySeconds, StartupRecoveryService, DomainInvariantViolation, message (+97 more)
 
 ### Community 14 - "package:flutter/widgets.dart"
 Cohesion: 0.04
@@ -620,12 +623,12 @@ Nodes (51): AlignmentGeometry, EdgeInsetsGeometry?, FCircularProgress, Icon, app
 
 ### Community 15 - "final_transcription_service_test.dart"
 Cohesion: 0.04
-Nodes (44): required DateTime createdAt,
-  int, acceptAudio, activeSnapshotId, cancel, conflictingWinner, create, delete, descriptor (+36 more)
+Nodes (49): AudioSource, channelCount, durationMs, path, sampleRate, required DateTime createdAt,
+  int, acceptAudio, activeSnapshotId (+41 more)
 
 ### Community 16 - "downloadable_model_service.dart"
 Cohesion: 0.02
-Nodes (106): addCancelListener, _adoptExistingIfValid, alreadyInstalled, cancel, candidate, capacity, cause, code (+98 more)
+Nodes (97): addCancelListener, _adoptExistingIfValid, alreadyInstalled, cancel, candidate, capacity, cause, code (+89 more)
 
 ### Community 17 - "FlutterMacOS"
 Cohesion: 0.13
@@ -633,11 +636,11 @@ Nodes (12): Cocoa, Flutter, FlutterMacOS, FlutterSceneDelegate, SceneDelegate, R
 
 ### Community 18 - "model_selection_fakes.dart"
 Cohesion: 0.04
-Nodes (56): List, package:meettrace/domain/models/meeting_readiness.dart, package:meettrace/domain/use_cases/check_meeting_readiness.dart, check, freeBytes, main, microphonePermissionGranted, permissionRequests (+48 more)
+Nodes (55): package:meettrace/domain/models/meeting_readiness.dart, package:meettrace/domain/use_cases/check_meeting_readiness.dart, check, freeBytes, main, microphonePermissionGranted, permissionRequests, acceptAudio (+47 more)
 
 ### Community 19 - "ggml_new_tensor"
-Cohesion: 0.04
-Nodes (65): ggml_custom_op_t, ggml_tensor, ggml_argsort(), ggml_argsort_top_k(), ggml_calc_conv_output_size(), ggml_calc_conv_transpose_1d_output_size(), ggml_calc_conv_transpose_output_size(), ggml_calc_pool_output_size() (+57 more)
+Cohesion: 0.07
+Nodes (43): ggml_custom_op_t, ggml_tensor, ggml_argmax(), ggml_calc_conv_output_size(), ggml_calc_conv_transpose_1d_output_size(), ggml_calc_pool_output_size(), ggml_can_out_prod(), ggml_clamp() (+35 more)
 
 ### Community 20 - "meeting_detail_view_model_test.dart"
 Cohesion: 0.05
@@ -647,9 +650,9 @@ Nodes (44): SqfliteProcessingTaskRepository, ProcessingTaskRepository, _TaskRepo
 Cohesion: 0.06
 Nodes (136): ggml_op_pool, ggml_compute_forward(), ggml_compute_params, ggml_tensor, ggml_compute_forward_acc(), ggml_compute_forward_add_id(), ggml_compute_forward_add_id_f32(), ggml_compute_forward_add_rel_pos() (+128 more)
 
-### Community 22 - "meeting_list_previews.dart"
-Cohesion: 0.07
-Nodes (33): @Preview, ../../../../app/application.dart, app_page_body.dart, app_state_panel.dart, check, commit, delete, getById (+25 more)
+### Community 22 - "meeting_detail_previews.dart"
+Cohesion: 0.04
+Nodes (58): @Preview, ../../../../app/application.dart, app_page_body.dart, app_state_panel.dart, app_status_notice.dart, delete, getById, listByMeeting (+50 more)
 
 ### Community 23 - "whisper_quality_protocol.dart"
 Cohesion: 0.04
@@ -665,8 +668,8 @@ Nodes (41): _PreviewSummaryRepository, SqfliteSummaryRepository, Object? error,
   bool, package:meettrace/data/services/summary/summary_generation_service.dart, package:meettrace/domain/use_cases/generate_summary.dart, SummaryRepository, _SummaryService, active (+33 more)
 
 ### Community 26 - "ggml_dup_tensor"
-Cohesion: 0.04
-Nodes (68): ggml_custom1_op_t, ggml_custom2_op_t, ggml_custom3_op_t, ggml_acc(), ggml_acc_impl(), ggml_acc_inplace(), ggml_add_id(), ggml_add_impl() (+60 more)
+Cohesion: 0.05
+Nodes (43): ggml_acc(), ggml_acc_impl(), ggml_acc_inplace(), ggml_add_id(), ggml_arange(), ggml_cumsum(), ggml_diag_mask_inf(), ggml_diag_mask_inf_impl() (+35 more)
 
 ### Community 27 - "fetch_ascend_public_regression.dart"
 Cohesion: 0.03
@@ -677,8 +680,8 @@ Cohesion: 0.05
 Nodes (37): _audioLevels, _audioLevelSubscription, canPause, canResume, canStop, dispose, _disposed, _disposePreview (+29 more)
 
 ### Community 29 - "android_emulator_meeting_flow_test.dart"
-Cohesion: 0.03
-Nodes (57): AudioLevel, _PreviewRecordingService, accept, build, check, _chunkSequence, _controller, _copyAsset (+49 more)
+Cohesion: 0.04
+Nodes (51): accept, build, check, _chunkSequence, _controller, _copyAsset, create, createState (+43 more)
 
 ### Community 30 - "speaker_diarization_coordinator_test.dart"
 Cohesion: 0.05
@@ -688,21 +691,21 @@ Nodes (44): _PreviewTranscriptRepository, SqfliteTranscriptRepository, package:m
 Cohesion: 0.03
 Nodes (77): asrInvocationCount, comparisons, _csvCell, decoded, detectedSpeechDurationMs, detectedSpeechSegmentCount, deviceId, durationMs (+69 more)
 
-### Community 32 - "sqflite_model_installation_repository.dart"
-Cohesion: 0.05
-Nodes (47): class, ../../../../../domain/models/meeting.dart, ../../../domain/models/model_usage_lease.dart, ../../../../../domain/models/processing_task.dart, _appDatabase, _enabledKey, getEnabled, setEnabled (+39 more)
+### Community 32 - "class"
+Cohesion: 0.04
+Nodes (54): class, ../../../../domain/models/asr_model_registry.dart, ../../../../../domain/models/meeting.dart, ../../../domain/models/model_usage_lease.dart, ../../../../../domain/models/processing_task.dart, ../../../domain/ports/summary_generation.dart, _appDatabase, _enabledKey (+46 more)
 
 ### Community 33 - "android_whisper_quality_benchmark_test.dart"
 Cohesion: 0.03
-Nodes (69): allSamples, _appendRecognition, asrInvocationCount, _baseModelAsset, _BenchmarkRecognition, byteLength, _completeMarker, _copyAsset (+61 more)
+Nodes (66): allSamples, _appendRecognition, asrInvocationCount, _baseModelAsset, _BenchmarkRecognition, byteLength, _completeMarker, _copyAsset (+58 more)
 
 ### Community 34 - "run_speaker_diarization.dart"
-Cohesion: 0.05
-Nodes (38): ../../../domain/models/audio_source.dart, ../../../../../domain/models/speaker_diarization.dart, ../../../../../domain/ports/speaker_diarization.dart, ../../../domain/use_cases/run_speaker_diarization.dart, capability, diarize, UnavailableSpeakerDiarizationService, capability (+30 more)
+Cohesion: 0.06
+Nodes (36): ../../../domain/models/audio_source.dart, ../../../../../domain/models/speaker_diarization.dart, capability, diarize, UnavailableSpeakerDiarizationService, capability, diarize, process (+28 more)
 
 ### Community 35 - "recording_previews.dart"
 Cohesion: 0.06
-Nodes (29): audioLevelChanges, canFinalize, _changes, delete, dispose, duration, _events, flush (+21 more)
+Nodes (30): audioLevelChanges, canFinalize, _changes, delete, dispose, duration, _events, flush (+22 more)
 
 ### Community 36 - "generate_synthetic_noise_corpus.dart"
 Cohesion: 0.04
@@ -710,7 +713,7 @@ Nodes (56): allowedRoot, audioDirectory, bytes, clickLength, corpusId, create, d
 
 ### Community 37 - "reliable_recording_service_test.dart"
 Cohesion: 0.04
-Nodes (53): delete, fromJson, hashCode, JsonRecordingCheckpointStore, layout, load, meetingId, operator (+45 more)
+Nodes (45): main, _recordingSeconds, package:flutter/foundation.dart, package:meettrace/data/services/audio/flutter_foreground_recording_lifecycle.dart, package:meettrace/data/services/audio/platform_recording_foreground_lifecycle.dart, package:meettrace/data/services/audio/recording_checkpoint_store.dart, package:meettrace/data/services/audio/recording_ports.dart, package:meettrace/data/services/audio/reliable_recording_service.dart (+37 more)
 
 ### Community 38 - "ggml_backend_load_best"
 Cohesion: 0.23
@@ -721,24 +724,24 @@ Cohesion: 0.03
 Nodes (59): dart:isolate, Isolate, accept, analysisInterval, _analysisIntervalSamples, _analysisOriginSample, _analyze, _availableEndSample (+51 more)
 
 ### Community 40 - "meeting_list_view_model.dart"
-Cohesion: 0.05
-Nodes (38): ../../../../core/view_state.dart, ../../../../../domain/use_cases/check_meeting_readiness.dart, captureFactory, check, DeviceRecordingReadinessProbe, PcmAudioCaptureFactory, storageCapacity, RecordingDeviceReadinessProbe (+30 more)
+Cohesion: 0.07
+Nodes (29): ../../../../core/view_state.dart, canDeleteMeeting, checking, _checkReadiness, defaultModelName, _deleteErrorMessage, deleteMeeting, _deletingMeetingIds (+21 more)
 
 ### Community 41 - "meettrace_flow.dart"
 Cohesion: 0.07
 Nodes (29): ../../../../../domain/use_cases/start_meeting.dart, Future, build, createState, _dependencies, didChangeAppLifecycleState, dispose, initState (+21 more)
 
 ### Community 42 - "summary_generation.dart"
-Cohesion: 0.08
-Nodes (25): actionItems, available, capability, code, evidenceSegmentIds, generate, GeneratedSummaryDraft, GeneratedSummaryItem (+17 more)
-
-### Community 43 - "storage_mappers.dart"
 Cohesion: 0.07
-Nodes (27): ../../../../domain/models/asr_model.dart, ../../../../domain/models/model_installation.dart, ../../../../../domain/models/workflow_states.dart, _date, fromMillisecondsSinceEpoch, meetingFromRow, meetingToRow, modelInstallationFromRow (+19 more)
+Nodes (29): UnavailableSummaryGenerationService, actionItems, available, capability, code, evidenceSegmentIds, generate, GeneratedSummaryDraft (+21 more)
+
+### Community 43 - "sqflite_model_installation_repository.dart"
+Cohesion: 0.05
+Nodes (39): ../../../../domain/models/asr_model.dart, ../../../../domain/models/model_installation.dart, ../../../../../domain/models/workflow_states.dart, _date, fromMillisecondsSinceEpoch, meetingFromRow, meetingToRow, modelInstallationFromRow (+31 more)
 
 ### Community 44 - "bundled_model_preparation_service.dart"
-Cohesion: 0.05
-Nodes (40): ../../../domain/models/model_manifest.dart, alreadyReady, assetSource, BundledModelPreparationPhase, BundledModelPreparationProgress, BundledModelPreparationResult, cause, code (+32 more)
+Cohesion: 0.04
+Nodes (55): ../../../domain/models/model_manifest.dart, Exception, WhisperAdapterException, alreadyReady, assetSource, BundledModelPreparationException, BundledModelPreparationPhase, BundledModelPreparationProgress (+47 more)
 
 ### Community 45 - "recording_audio_waveform.dart"
 Cohesion: 0.07
@@ -746,11 +749,11 @@ Nodes (27): AnimationController, CustomPainter, active, baseline, build, _contro
 
 ### Community 46 - "revise_final_transcript.dart"
 Cohesion: 0.05
-Nodes (39): Meeting, TranscriptSnapshot, FinalTranscriptionProgressCallback, FinalTranscriptionResult, meeting, snapshot, transcribe, cause (+31 more)
+Nodes (40): asr_engine.dart, Meeting, TranscriptSnapshot, FinalTranscriptionProgressCallback, FinalTranscriptionResult, meeting, snapshot, transcribe (+32 more)
 
 ### Community 47 - "recording_session_view_test.dart"
-Cohesion: 0.03
-Nodes (68): DecoratedBox, SqfliteModelInstallationRepository, SqfliteModelPreferenceRepository, ActiveModelInstallationRepository, ModelPreferenceRepository, package:meettrace/domain/ports/asr_engine.dart, package:meettrace/domain/use_cases/start_meeting.dart, package:meettrace/ui/core/asr_model_option.dart (+60 more)
+Cohesion: 0.05
+Nodes (36): DecoratedBox, package:meettrace/ui/features/meetings/views/recording/recording_session_view.dart, _PreviewSession, _RecordingService, audioLevelChanges, _audioLevels, canFinalize, _changes (+28 more)
 
 ### Community 48 - "recording_ports.dart"
 Cohesion: 0.07
@@ -774,19 +777,19 @@ Nodes (29): AudioPlayer, evidence_playback_service.dart, AudioplayersDeviceAudio
 
 ### Community 53 - "start_meeting.dart"
 Cohesion: 0.04
-Nodes (59): _PreviewMeetingReadinessChecker, check_meeting_readiness.dart, _ReadyMeetingChecker, AsrModelRegistry, check, CheckMeetingReadinessUseCase, device, freeBytes (+51 more)
+Nodes (60): _PreviewMeetingReadinessChecker, check_meeting_readiness.dart, _ReadyMeetingChecker, AsrModelRegistry, MeetingReadiness, check, CheckMeetingReadinessUseCase, device (+52 more)
 
-### Community 54 - "ggml_backend_buffer_t"
+### Community 54 - "ggml-backend.cpp"
 Cohesion: 0.07
-Nodes (47): ggml_tallocr_alloc(), ggml_vbuffer_tensor_alloc(), ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_alloc_buffer(), ggml_backend_buffer_clear(), ggml_backend_buffer_get_alignment(), ggml_backend_buffer_get_alloc_size() (+39 more)
+Nodes (74): ggml_tallocr_alloc(), ggml_vbuffer_tensor_alloc(), ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_dev_t, ggml_backend_alloc_buffer(), ggml_backend_buffer_clear(), ggml_backend_buffer_get_alignment() (+66 more)
 
 ### Community 55 - "model_settings_view.dart"
 Cohesion: 0.06
-Nodes (32): ChangeNotifier, ../../../core/app_back_icon.dart, MeetingListViewModel, RecordingSessionViewModel, StartMeetingViewModel, DataControlsViewModel, ModelSettingsViewModel, _action (+24 more)
+Nodes (33): ChangeNotifier, ../../../core/app_back_icon.dart, ../../../core/asr_model_option.dart, MeetingListViewModel, RecordingSessionViewModel, StartMeetingViewModel, DataControlsViewModel, ModelSettingsViewModel (+25 more)
 
 ### Community 56 - "ggml.c"
-Cohesion: 0.03
-Nodes (93): ggml_bf16_t, ggml_fp16_t, ggml_log_callback, ggml_abort(), ggml_abs_inplace(), ggml_add1(), ggml_add1_impl(), ggml_add1_inplace() (+85 more)
+Cohesion: 0.02
+Nodes (123): ggml_bf16_t, ggml_fp16_t, ggml_log_callback, ggml_graph_compute_with_ctx(), ggml_abort(), ggml_abs_inplace(), ggml_add_cast(), ggml_add_cast_impl() (+115 more)
 
 ### Community 57 - "my_application.cc"
 Cohesion: 0.09
@@ -794,11 +797,11 @@ Nodes (22): FlPluginRegistry, FlView, GApplication, gboolean, gchar, GObject, Gt
 
 ### Community 58 - "model_settings_view_model.dart"
 Cohesion: 0.08
-Nodes (25): ../../../core/asr_model_option.dart, actions, _applyInstallations, cancelAdvanced, _defaultModelId, deleteAdvanced, dispose, _disposed (+17 more)
+Nodes (24): actions, _applyInstallations, cancelAdvanced, _defaultModelId, deleteAdvanced, dispose, _disposed, downloadAdvanced (+16 more)
 
-### Community 59 - "ggml_backend_buffer_type_t"
-Cohesion: 0.14
-Nodes (27): alloc_tensor_range(), ggml_backend_buffer_t, ggml_backend_buffer_type_t, free_buffers(), ggml_backend_alloc_ctx_tensors_from_buft(), ggml_backend_alloc_ctx_tensors_from_buft_impl(), ggml_backend_alloc_ctx_tensors_from_buft_size(), ggml_tallocr_new() (+19 more)
+### Community 59 - "asr/whisper_base_standard_asr_engine_test.dart"
+Cohesion: 0.04
+Nodes (52): dart:typed_data, _copyAsset, data, main, _modelAsset, PortableAsrDeviceRiskMonitor, package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart, package:meettrace/data/services/asr/asr_engine.dart (+44 more)
 
 ### Community 60 - "app_swipe_action_row.dart"
 Cohesion: 0.08
@@ -809,22 +812,22 @@ Cohesion: 0.11
 Nodes (47): bytes_from_bits_16(), bytes_from_bits_32(), bytes_from_nibbles_32(), __m128, __m128i, __m256, get_scale_shuffle(), get_scale_shuffle_k4() (+39 more)
 
 ### Community 62 - "whisper_asr_engine_factory_test.dart"
-Cohesion: 0.03
-Nodes (67): _copyAsset, data, main, _modelAsset, changes, inspect, main, _modelRoot (+59 more)
+Cohesion: 0.06
+Nodes (33): SqfliteModelUsageLeaseRepository, ModelUsageLeaseRepository, _MemoryInstallations, _MemoryLeases, package:meettrace/data/services/asr/whisper_asr_engine_factory.dart, package:meettrace/domain/models/model_usage_lease.dart, _activeVersions, changes (+25 more)
 
-### Community 63 - "repositories.dart"
-Cohesion: 0.04
-Nodes (47): abstract interface class, delete, deleteAndDeactivate, deleteExpired, getActiveVersion, getById, getDefaultModelId, getEnabled (+39 more)
+### Community 63 - "build_meeting_share.dart"
+Cohesion: 0.08
+Nodes (24): buffer, BuildMeetingShareUseCase, execute, fileName, _markdown, MeetingShareDocument, MeetingShareFormat, minutes (+16 more)
 
 ### Community 64 - "meeting_detail_view_test.dart"
 Cohesion: 0.05
-Nodes (43): SqfliteDiarizationPreferenceRepository, DiarizationPreferenceRepository, package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart, package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart, required String id,
+Nodes (39): package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart, package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart, required String id,
   TranscriptSnapshotStatus, SpeakerDiarizationRunner? diarization,
-  bool, ../../../../../support/final_transcription_fakes.dart, _DiarizationPreference (+35 more)
+  bool, ../../../../../support/final_transcription_fakes.dart, available, capability, diarizationEnabled (+31 more)
 
-### Community 65 - "package:flutter_test/flutter_test.dart"
-Cohesion: 0.04
-Nodes (50): main, _recordingSeconds, ModelManifestParser, package:flutter/foundation.dart, package:flutter_test/flutter_test.dart, package:meettrace/data/services/audio/device_recording_storage_capacity.dart, package:meettrace/data/services/audio/flutter_foreground_recording_lifecycle.dart, package:meettrace/data/services/audio/platform_recording_foreground_lifecycle.dart (+42 more)
+### Community 65 - "dart:convert"
+Cohesion: 0.13
+Nodes (14): dart:convert, package:meettrace/domain/use_cases/evaluate_alpha_release.dart, main, _passingInput, main, ../../../tool/benchmarks/evaluate_alpha_release.dart, EvaluateAlphaReleaseCliOptions, expectedLength (+6 more)
 
 ### Community 66 - "data_controls_view_model.dart"
 Cohesion: 0.09
@@ -834,77 +837,78 @@ Nodes (21): ../../../../domain/ports/text_share.dart, ../../../../domain/use_cas
 Cohesion: 0.08
 Nodes (23): actionItems, createdAt, endMs, evidence, id, isPendingReview, keyPoints, meetingId (+15 more)
 
-### Community 68 - "whisper_vad_context"
-Cohesion: 0.07
-Nodes (30): mt_whisper_vad_segment_samples(), ggml_backend_sched_t, whisper_vad_params, samples_to_cs(), whisper_sched, sched, whisper_vad_context, backends (+22 more)
+### Community 68 - "whisper_full_with_state"
+Cohesion: 0.10
+Nodes (41): timestamp_to_sample(), utf8_len(), whisper_batch_prep_legacy(), whisper_compute_logprobs(), whisper_compute_probs(), whisper_decode(), whisper_decode_with_state(), whisper_exp_compute_token_level_timestamps() (+33 more)
 
-### Community 69 - "android_proc_asr_device_risk_monitor.dart"
-Cohesion: 0.05
-Nodes (41): android_proc_asr_device_risk_monitor.dart, asr_engine.dart, Duration, AsrRiskTextReader, AsrThermalPathLister, changes, _constrainedMemoryBytes, _deviceSupport (+33 more)
+### Community 69 - "bool get"
+Cohesion: 0.09
+Nodes (21): android_proc_asr_device_risk_monitor.dart, bool get, Duration, AsrRiskPlatform, changes, createPlatformAsrDeviceRiskMonitor, _currentPlatform, _currentRss (+13 more)
 
 ### Community 70 - "whisper.cpp"
-Cohesion: 0.04
-Nodes (66): mt_whisper_transcribe(), cs_to_samples(), dft(), fft(), median_filter_user_data, filter_width, sample_to_timestamp(), should_split_on_word() (+58 more)
+Cohesion: 0.03
+Nodes (70): ggml_log_level, mt_whisper_destroy(), mt_whisper_vad_reset(), mt_whisper_vad_segment_samples(), ggml_log_callback, whisper_vad_params, dft(), fft() (+62 more)
 
 ### Community 71 - "asr_preview.dart"
 Cohesion: 0.09
 Nodes (22): Float32List, AsrPreviewMetrics, AsrPreviewWindow, audioDurationMs, droppedPreviewWindows, endMs, endSample, groupId (+14 more)
 
-### Community 72 - "recording_device_readiness_probe_test.dart"
-Cohesion: 0.08
-Nodes (23): _DeterministicPcmAudioCapture, DeviceRecordingStorageCapacityProvider, RecordPcmAudioCapture, PcmAudioCapture, RecordingStorageCapacityProvider, package:meettrace/data/services/audio/recording_device_readiness_probe.dart, _FakeCapture, _FixedCapacity (+15 more)
+### Community 72 - "List"
+Cohesion: 0.07
+Nodes (28): _DeterministicPcmAudioCapture, RecordPcmAudioCapture, PcmAudioCapture, canStart, defaultModelAvailable, defaultModelId, defaultModelName, freeBytes (+20 more)
 
 ### Community 73 - "ggml-cpu.cpp"
-Cohesion: 0.07
-Nodes (53): ggml_threadpool_t, ggml_guid_t, ggml_abort_callback, ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_dev_t, ggml_backend_graph_plan_t, ggml_backend_reg_t (+45 more)
+Cohesion: 0.08
+Nodes (45): ggml_guid_t, ggml_abort_callback, ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_dev_t, ggml_backend_graph_plan_t, ggml_backend_reg_t, ggml_backend_t (+37 more)
 
 ### Community 74 - "ggml-backend-reg.cpp"
-Cohesion: 0.12
-Nodes (11): ggml_backend, ggml_backend_buffer, ggml_backend_buffer_type, ggml_backend_device, ggml_backend_event, ggml_backend_reg, ggml_backend_sched, ggml_cgraph (+3 more)
+Cohesion: 0.11
+Nodes (13): ggml_backend, ggml_backend_buffer, ggml_backend_buffer_type, ggml_backend_device, ggml_backend_event, ggml_backend_reg, ggml_backend_sched, ggml_cgraph (+5 more)
 
 ### Community 75 - "app_ledger.dart"
 Cohesion: 0.09
 Nodes (21): AppLedgerRow, AppLedgerSurface, build, children, dateLabel, emphasized, framed, icon (+13 more)
 
-### Community 76 - "_string"
-Cohesion: 0.12
-Nodes (15): _string, powerpc_features, has_vsx, platform, power_version, T, gguf_get_arr_n(), gguf_kv (+7 more)
+### Community 76 - "size"
+Cohesion: 0.09
+Nodes (24): T, vector, size, gguf_context, alignment, data, info, kv (+16 more)
 
 ### Community 77 - "recording_session_view_model_test.dart"
-Cohesion: 0.03
-Nodes (60): bool get, canStart, defaultModelAvailable, defaultModelId, defaultModelName, freeBytes, issues, MeetingReadiness (+52 more)
+Cohesion: 0.06
+Nodes (34): package:meettrace/domain/use_cases/manage_recording_session.dart, package:meettrace/ui/features/meetings/view_models/recording/recording_session_view_model.dart, audioLevelChanges, _audioLevels, canFinalize, close, descriptor, dispose (+26 more)
 
-### Community 78 - "meeting_detail_previews.dart"
+### Community 78 - "android_proc_asr_device_risk_monitor.dart"
+Cohesion: 0.06
+Nodes (29): ../../../../../domain/use_cases/check_meeting_readiness.dart, AsrRiskTextReader, AsrThermalPathLister, changes, _constrainedMemoryBytes, _deviceSupport, inspect, _listThermalPaths (+21 more)
+
+### Community 79 - "evidence_playback.dart"
+Cohesion: 0.12
+Nodes (15): int?, PcmEvidencePlaybackService, code, dispose, endMs, errorCode, EvidencePlaybackService, EvidencePlaybackState (+7 more)
+
+### Community 80 - "whisper_quality_protocol_test.dart"
 Cohesion: 0.09
-Nodes (21): delete, getById, listByMeeting, save, saveAndActivate, saveFinalAndActivate, _standard, transcribe (+13 more)
-
-### Community 79 - "pcm_evidence_playback_service_test.dart"
-Cohesion: 0.07
-Nodes (25): int?, PcmEvidencePlaybackService, code, dispose, endMs, errorCode, EvidencePlaybackException, EvidencePlaybackService (+17 more)
-
-### Community 80 - "Exception"
-Cohesion: 0.04
-Nodes (45): dart:convert, dart:math, Exception, WhisperAdapterException, BundledModelPreparationException, _PreparationFailure, ModelDownloadCanceledException, AsrEngineException (+37 more)
+Nodes (21): dart:math, package:crypto/crypto.dart, required Directory audioRoot,
+  bool, data, _decode, main, corruptFirstHash, create (+13 more)
 
 ### Community 81 - "vec.h"
-Cohesion: 0.03
-Nodes (95): ggml_set_f32(), ggml_set_i32(), ggml_compute_forward_norm_f32(), ggml_compute_forward_out_prod_f32(), ggml_bf16_t, ggml_float, ggml_fp16_t, exp_ps_sve() (+87 more)
+Cohesion: 0.04
+Nodes (74): ggml_set_f32(), ggml_set_i32(), ggml_compute_forward_geglu_f32(), ggml_compute_forward_geglu_quick_f32(), ggml_compute_forward_out_prod_f32(), ggml_fp16_t, ggml_gelu_f32(), ggml_gelu_quick_f32() (+66 more)
 
-### Community 82 - "ggml_compute_params"
-Cohesion: 0.19
-Nodes (26): ggml_compute_forward_unary(), apply_unary_op(), ggml_compute_params, ggml_tensor, ggml_compute_forward_abs(), ggml_compute_forward_ceil(), ggml_compute_forward_cos(), ggml_compute_forward_elu() (+18 more)
+### Community 82 - "unary-ops.cpp"
+Cohesion: 0.05
+Nodes (58): Op, ggml_tensor, buffer, data, extra, flags, name, nb (+50 more)
 
 ### Community 83 - "meettrace_whisper.g.dart"
 Cohesion: 0.05
-Nodes (51): external double, external int, ffi.Opaque, package:meta/meta.dart, abi_version, beam_size, best_of, decoding_strategy (+43 more)
+Nodes (48): external double, external int, package:meta/meta.dart, abi_version, beam_size, best_of, decoding_strategy, initial_prompt (+40 more)
 
 ### Community 84 - "recording.dart"
 Cohesion: 0.10
 Nodes (19): Duration get, audioPath, bytes, capturedThrough, duration, end, endByteOffset, level (+11 more)
 
-### Community 85 - "app_file_layout.dart"
-Cohesion: 0.03
-Nodes (62): Connectivity, DatabaseFactory, device_free_space_service.dart, ../../../../domain/models/data_control.dart, ../../../../domain/ports/local_data_control.dart, downloadable_model_service.dart, _connectivity, freeSpace (+54 more)
+### Community 85 - "platform_download_preflight_providers.dart"
+Cohesion: 0.06
+Nodes (31): Connectivity, downloadable_model_service.dart, DeviceRecordingStorageCapacityProvider, freeSpace, getFreeBytes, RecordingStorageCapacityProvider, DownloadNetworkStatusProvider, ModelStorageCapacityProvider (+23 more)
 
 ### Community 86 - "model_manifest.dart"
 Cohesion: 0.10
@@ -912,23 +916,23 @@ Nodes (19): bytes, files, installationType, license, minAppVersion, modelId, Mod
 
 ### Community 87 - "MeetingRepository"
 Cohesion: 0.07
-Nodes (27): _PreviewMeetingRepository, _PreviewMeetingRepository, _PreviewMeetingRepository, TranscriptRevisionException, MeetingRepository, package:meettrace/domain/use_cases/revise_final_transcript.dart, _MeetingRepository, _MeetingRepository (+19 more)
+Nodes (27): _PreviewMeetingRepository, _PreviewMeetingRepository, TranscriptRevisionException, MeetingRepository, package:meettrace/domain/use_cases/revise_final_transcript.dart, _MeetingRepository, _MeetingRepository, _Meetings (+19 more)
 
 ### Community 88 - "whisper_vad_model"
-Cohesion: 0.07
-Nodes (28): ggml_backend_buffer_t, whisper_aheads_masks, buffer, ctx, m, whisper_vad_model, buffers, ctxs (+20 more)
+Cohesion: 0.04
+Nodes (46): ggml_backend_buffer_t, ggml_backend_sched_t, whisper_aheads_masks, buffer, ctx, m, whisper_sched, sched (+38 more)
 
 ### Community 89 - "meeting_list_view_model_test.dart"
-Cohesion: 0.02
-Nodes (88): AnimatedContainer, app_file_layout.dart, _PreviewMeetingFileDeletionService, _PreviewStagedMeetingDeletion, Completer, ../../../../../domain/use_cases/delete_meeting.dart, FTappable, commit (+80 more)
+Cohesion: 0.03
+Nodes (68): app_file_layout.dart, _PreviewMeetingFileDeletionService, _PreviewStagedMeetingDeletion, Completer, ../../../../../domain/use_cases/delete_meeting.dart, commit, _DirectoryStagedMeetingDeletion, layout (+60 more)
 
-### Community 90 - "ggml_set_op_params_f32"
-Cohesion: 0.13
-Nodes (15): ggml_arange(), ggml_fill(), ggml_fill_impl(), ggml_fill_inplace(), ggml_gated_linear_attn(), ggml_group_norm(), ggml_group_norm_impl(), ggml_group_norm_inplace() (+7 more)
+### Community 90 - "repositories.dart"
+Cohesion: 0.07
+Nodes (27): abstract interface class, SqfliteDiarizationPreferenceRepository, delete, deleteAndDeactivate, deleteExpired, DiarizationPreferenceRepository, getActiveVersion, getById (+19 more)
 
 ### Community 91 - "ggml-cpu/repack.cpp"
 Cohesion: 0.04
-Nodes (56): block_q4_0x4, block_q4_0x8, block_q8_0x16, block_q8_0x4, ggml_quantize_mat_q8_K_4x8(), block_mxfp4x8, e, qs (+48 more)
+Nodes (61): block_q4_0x4, block_q4_0x8, block_q8_0x16, block_q8_0x4, ggml_quantize_mat_q8_K_4x8(), block_iq4_nlx4, d, qs (+53 more)
 
 ### Community 92 - "models/speaker_diarization.dart"
 Cohesion: 0.11
@@ -938,9 +942,13 @@ Nodes (18): available, code, endMs, errorCode, isAvailable, reasonCode, snapshot
 Cohesion: 0.08
 Nodes (24): _PendingTranscriptionRunner, _UnavailableTranscriptionRunner, FinalTranscriptionRunner, code, engineFactory, _errorCode, FinalTranscriptionException, FinalTranscriptionService (+16 more)
 
+### Community 94 - "ggml_get_op_params_i32"
+Cohesion: 0.11
+Nodes (26): ggml_get_n_tasks(), ggml_compute_forward_concat(), ggml_compute_forward_concat_any(), ggml_compute_forward_concat_f16(), ggml_compute_forward_concat_f32(), ggml_compute_forward_concat_i8(), ggml_compute_forward_geglu(), ggml_compute_forward_geglu_erf() (+18 more)
+
 ### Community 95 - "ggml_compute_backward"
 Cohesion: 0.06
-Nodes (45): ggml_get_n_tasks(), ggml_abs(), ggml_add_cast(), ggml_add_cast_impl(), ggml_can_repeat(), ggml_can_repeat_rows(), ggml_ceil(), ggml_compute_backward() (+37 more)
+Nodes (42): ggml_abs(), ggml_add1(), ggml_add1_impl(), ggml_add1_inplace(), ggml_add1_or_set(), ggml_ceil(), ggml_compute_backward(), ggml_cos() (+34 more)
 
 ### Community 96 - "recording_bootstrap_view.dart"
 Cohesion: 0.12
@@ -951,20 +959,20 @@ Cohesion: 0.10
 Nodes (19): >, package:meettrace/data/services/asr/final_transcription_service.dart, package:meettrace/domain/models/summary.dart, main, calls, delete, DetailTranscriptionCall, getById (+11 more)
 
 ### Community 98 - "domain_ports_test.dart"
-Cohesion: 0.09
-Nodes (21): AsrDeviceRiskState get, AsrEngineMetrics get, acceptAudio, cancel, create, delete, descriptor, deviceRisk (+13 more)
+Cohesion: 0.07
+Nodes (26): AsrDeviceRiskState get, AsrEngineMetrics get, WhisperAsrEngineFactory, AsrEngineFactory, _EngineFactory, acceptAudio, cancel, create (+18 more)
 
-### Community 99 - "ggml-backend.cpp"
-Cohesion: 0.06
-Nodes (88): ggml_backend_eval_callback, ggml_backend_dev_t, ggml_backend_event_t, ggml_backend_graph_plan_t, ggml_backend_reg_t, ggml_backend_sched_t, ggml_backend_t, ggml_guid_t (+80 more)
+### Community 99 - "ggml_backend_t"
+Cohesion: 0.05
+Nodes (76): ggml_backend_eval_callback, ggml_backend_event_t, ggml_backend_graph_plan_t, ggml_backend_sched_t, ggml_backend_t, ggml_guid_t, fmt_size(), ggml_backend_buffer_copy_tensor() (+68 more)
 
 ### Community 100 - "plan_asr_preview_windows.dart"
 Cohesion: 0.12
 Nodes (16): asrPreviewContextAfterMs, asrPreviewContextBeforeMs, asrPreviewMaximumWindowMs, asrPreviewSampleRate, asrPreviewWindowOverlapMs, AsrPreviewWindowPlanner, contextAfterMs, contextBeforeMs (+8 more)
 
-### Community 101 - "dart:typed_data"
-Cohesion: 0.08
-Nodes (23): dart:typed_data, package:meettrace/data/services/audio/recording_pcm_diagnostics.dart, package:meettrace/data/services/vad/streaming_window_segmenter.dart, main, main, bytes, data, durationSeconds (+15 more)
+### Community 101 - "build_spike_sample.dart"
+Cohesion: 0.11
+Nodes (18): bytes, data, durationSeconds, header, main, offset, output, outputPath (+10 more)
 
 ### Community 102 - "riscv/quants.c"
 Cohesion: 0.06
@@ -972,7 +980,7 @@ Nodes (78): NOINLINE, ggml_vec_dot_iq1_m_q8_K(), ggml_vec_dot_iq1_m_q8_K_vl1024(
 
 ### Community 103 - "ggml-cpu/quants.c"
 Cohesion: 0.04
-Nodes (77): Float, ggml_vec_dot_iq1_s_q8_K(), ggml_vec_dot_iq2_s_q8_K(), ggml_vec_dot_iq2_xs_q8_K(), ggml_vec_dot_iq2_xxs_q8_K(), ggml_vec_dot_iq3_s_q8_K(), ggml_vec_dot_iq3_xxs_q8_K(), ggml_vec_dot_iq4_nl_q8_0() (+69 more)
+Nodes (67): Float, quantize_row_q8_K(), ggml_vec_dot_iq1_s_q8_K(), ggml_vec_dot_iq2_s_q8_K(), ggml_vec_dot_iq2_xs_q8_K(), ggml_vec_dot_iq2_xxs_q8_K(), ggml_vec_dot_iq3_s_q8_K(), ggml_vec_dot_iq3_xxs_q8_K() (+59 more)
 
 ### Community 104 - "Codex 实施计划：whisper.cpp 质量强化与双平台交付"
 Cohesion: 0.05
@@ -980,15 +988,15 @@ Nodes (40): 1. 交付目标, 2. 明确不做, 3.1 隔离工作区, 3.2 每个任
 
 ### Community 105 - "pcm_audio_level_meter.dart"
 Cohesion: 0.06
-Nodes (30): AudioRecorder, flutter_foreground_recording_lifecycle.dart, add, _changes, defaultRecordingAudioLevelFloorDbfs, defaultRecordingAudioLevelFrame, dispose, _disposed (+22 more)
+Nodes (30): AudioRecorder, ../../../../../domain/models/recording.dart, flutter_foreground_recording_lifecycle.dart, add, _changes, defaultRecordingAudioLevelFloorDbfs, defaultRecordingAudioLevelFrame, dispose (+22 more)
 
 ### Community 106 - "State"
 Cohesion: 0.12
 Nodes (25): _ResultActionsCard, _ResultActionsCardState, _SpeakerLabelEditor, _SpeakerLabelEditorState, _TranscriptCard, _TranscriptCardState, MeetingListContent, _MeetingListContentState (+17 more)
 
 ### Community 107 - "workflow_states.dart"
-Cohesion: 0.16
-Nodes (15): Enum, canTransitionTo, from, machine, MeetingState, MeetingStateTransition, ModelInstallationState, ModelInstallationStateTransition (+7 more)
+Cohesion: 0.18
+Nodes (13): Enum, canTransitionTo, from, machine, MeetingState, MeetingStateTransition, ModelInstallationState, ModelInstallationStateTransition (+5 more)
 
 ### Community 108 - "whisper_asr_engine.dart"
 Cohesion: 0.03
@@ -1007,8 +1015,8 @@ Cohesion: 0.12
 Nodes (15): @pragma, meetTraceRecordingForegroundCallback, onDestroy, onRepeatEvent, onStart, _RecordingKeepAliveTaskHandler, _recordingServiceId, _requireSuccess (+7 more)
 
 ### Community 112 - "meettrace_whisper.cpp"
-Cohesion: 0.08
-Nodes (34): ffi.Struct, mt_whisper_config_v1, mt_whisper_vad_config_v1, mt_whisper_cancel(), mt_whisper_config_v1_init(), mt_whisper_context, beam_size, best_of (+26 more)
+Cohesion: 0.05
+Nodes (59): ffi.Struct, mt_whisper_config_v1, mt_whisper_vad_config_v1, atomic_bool, vector, whisper_vad_params, mt_whisper_cancel(), mt_whisper_config_v1_init() (+51 more)
 
 ### Community 113 - "Android + iOS 自适应范围"
 Cohesion: 0.67
@@ -1019,74 +1027,74 @@ Cohesion: 0.11
 Nodes (72): bytes_from_bits_32(), bytes_from_nibbles_32(), __m128, __m128i, __m256, get_scale_shuffle(), get_scale_shuffle_k4(), get_scale_shuffle_q3k() (+64 more)
 
 ### Community 115 - "vector"
-Cohesion: 0.07
-Nodes (51): pair, vector, decode_utf8(), get_signal_energy(), log_mel_spectrogram(), log_mel_spectrogram_worker_thread(), map_processed_to_original_time(), tokenize() (+43 more)
+Cohesion: 0.14
+Nodes (27): pair, vector, decode_utf8(), get_alignment_heads_by_layer(), get_signal_energy(), whisper_full_params, whisper_grammar, whisper_grammar_accept() (+19 more)
 
 ### Community 116 - "package:flutter/services.dart"
-Cohesion: 0.08
-Nodes (21): AssetBundle, bundled_model_preparation_service.dart, CachingAssetBundle, ModelAssetSource, bundle, FlutterModelAssetSource, load, appSystemUiOverlayStyle (+13 more)
+Cohesion: 0.13
+Nodes (12): AssetBundle, bundled_model_preparation_service.dart, bundle, load, appSystemUiOverlayStyle, base, copyWith, enableAppEdgeToEdge (+4 more)
 
 ### Community 117 - "generate_summary.dart"
-Cohesion: 0.06
-Nodes (30): ../../../domain/ports/summary_generation.dart, capability, generate, UnavailableSummaryGenerationService, SummaryGenerationService, _buildEvidence, _buildItems, _buildRequest (+22 more)
+Cohesion: 0.09
+Nodes (22): _buildEvidence, _buildItems, _buildRequest, _buildSummary, capability, code, _completeTaskBestEffort, _errorCode (+14 more)
 
-### Community 118 - "fetch_ascend_public_regression_test.dart"
-Cohesion: 0.12
-Nodes (15): required double duration,
-  String, bytes, channels, data, fourCc, host, includeJunkChunk, junkSize (+7 more)
+### Community 118 - "return"
+Cohesion: 0.07
+Nodes (27): createPlatformDatabaseFactory, _createWindowsFactory, databaseFactory, databaseFactoryFfi, _windowsDatabaseFactory, package:meettrace/data/services/audio/pcm_audio_level_meter.dart, package:meettrace/domain/models/recording.dart, required double duration,
+  String (+19 more)
 
 ### Community 119 - "app_database.dart"
-Cohesion: 0.14
-Nodes (13): Database?, close, _createSchema, _createVersion1Schema, _createVersion2Schema, _createVersion3Schema, _createVersion4Schema, _database (+5 more)
+Cohesion: 0.13
+Nodes (14): Database?, DatabaseFactory, close, _createSchema, _createVersion1Schema, _createVersion2Schema, _createVersion3Schema, _createVersion4Schema (+6 more)
 
 ### Community 120 - "ggml-backend-meta.cpp"
-Cohesion: 0.08
-Nodes (61): ggml_backend_meta_get_split_state_t, ggml_backend_buffer_get_usage(), ggml_backend_buft_get_device(), ggml_backend_tensor_get_2d(), ggml_backend_tensor_set_2d(), ggml_backend_buffer_t, ggml_backend_dev_t, ggml_backend_t (+53 more)
+Cohesion: 0.12
+Nodes (44): ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_dev_t, ggml_guid_t, ggml_backend_buffer_is_meta(), ggml_backend_buffer_type_i, ggml_backend_buft_is_meta(), ggml_backend_dev_is_meta() (+36 more)
 
 ### Community 121 - "arm/repack.cpp"
+Cohesion: 0.04
+Nodes (75): quantize_row_q8_0(), quantize_row_q8_1(), int16x8_t, decode_q_Kx8_6bit_scales(), ggml_gemm_iq4_nl_4x4_q8_0(), ggml_gemm_mxfp4_4x4_q8_0(), ggml_gemm_q4_0_4x4_q8_0(), ggml_gemm_q4_0_4x8_q8_0() (+67 more)
+
+### Community 122 - "dart:async"
 Cohesion: 0.05
-Nodes (68): quantize_row_q8_0(), quantize_row_q8_1(), int16x8_t, decode_q_Kx8_6bit_scales(), ggml_gemm_iq4_nl_4x4_q8_0(), ggml_gemm_mxfp4_4x4_q8_0(), ggml_gemm_q4_0_4x4_q8_0(), ggml_gemm_q4_0_4x8_q8_0() (+60 more)
+Nodes (42): AnimatedContainer, dart:async, FTappable, channelCount, RecordingContinuityProbe, run, sampleRate, package:meettrace/data/services/audio/record_pcm_audio_capture.dart (+34 more)
 
-### Community 122 - "sqflite_model_preference_repository.dart"
-Cohesion: 0.12
-Nodes (14): ../../../../domain/models/asr_model_registry.dart, _appDatabase, _defaultModelKey, getDefaultModelId, _legacyModelMigrations, registry, setDefaultModelId, _writeDefaultModelId (+6 more)
-
-### Community 123 - "mt_whisper_vad_context"
-Cohesion: 0.11
-Nodes (19): atomic_bool, vector, whisper_vad_params, mt_whisper_vad_cancel(), mt_whisper_vad_context, cancelled, last_error, params (+11 more)
+### Community 123 - "local_data_control_service.dart"
+Cohesion: 0.09
+Nodes (22): _PreviewInstallations, device_free_space_service.dart, ../../../../domain/models/data_control.dart, ../../../../domain/ports/local_data_control.dart, SqfliteModelInstallationRepository, buildDiagnostics, freeSpace, installations (+14 more)
 
 ### Community 124 - "MeetTrace Android and iOS Alpha PRD V0.6"
 Cohesion: 0.05
 Nodes (49): Forui-First UI Policy, View-ViewModel-Use Case-Port-Repository-Service Architecture, Official sherpa_onnx Package-Only Boundary, Repository Product Boundaries, MeetTrace Repository Guide, Adaptive Native Mobile and Tablet Layout, Continuous Time Ledger, Grayscale Semantic Encoding (+41 more)
 
-### Community 125 - "app_status_notice.dart"
-Cohesion: 0.08
-Nodes (22): Color, compact,
-  medium,, IconData, AppResponsiveBuilder, AppResponsiveWidgetBuilder, AppWindowSizeClass, build, builder (+14 more)
+### Community 125 - "app_state_panel.dart"
+Cohesion: 0.05
+Nodes (35): Color, compact,
+  medium,, IconData, AppResponsiveBuilder, AppResponsiveWidgetBuilder, AppWindowSizeClass, build, builder (+27 more)
 
 ### Community 126 - "ggml-cpu.c"
-Cohesion: 0.05
-Nodes (65): atomic_thread_fence(), cpu_set_t, ggml_bf16_t, ggml_fp16_t, ggml_backend_cpu_get_features(), ggml_compute_forward_mul_mat_id_one_chunk(), ggml_cpu_bf16_to_fp32(), ggml_cpu_fp16_to_fp32() (+57 more)
+Cohesion: 0.06
+Nodes (53): cpu_set_t, ggml_bf16_t, ggml_fp16_t, ggml_backend_cpu_get_features(), ggml_compute_forward_mul_mat_id_one_chunk(), ggml_cpu_bf16_to_fp32(), ggml_cpu_fp16_to_fp32(), ggml_cpu_fp32_to_bf16() (+45 more)
 
 ### Community 127 - "ggml-impl.h"
-Cohesion: 0.04
-Nodes (74): ggml_bitset_t, GGML_NORETURN, initializer_list, ggml_cpu_try_fuse_ops(), ggml_build_backward_expand(), ggml_can_fuse_subgraph_ext(), ggml_fp32_to_bf16_row_ref(), ggml_graph_cpy() (+66 more)
+Cohesion: 0.03
+Nodes (93): ggml_bitset_t, GGML_NORETURN, initializer_list, ggml_backend_graph_copy(), ggml_dup_tensor_layout(), graph_copy_dup_tensor(), comm_allreduce, ggml_backend_meta_graph_compute() (+85 more)
 
 ### Community 128 - "processing_task.dart"
 Cohesion: 0.15
 Nodes (12): createdAt, id, kind, lastErrorCode, leaseExpiresAt, meetingId, modelId, ProcessingTask (+4 more)
 
 ### Community 129 - "ggml-opt.cpp"
-Cohesion: 0.17
-Nodes (20): ggml_opt_context_t, ggml_opt_epoch_callback, ggml_opt_context_optimizer_type(), ggml_opt_dataset_get_batch(), ggml_opt_dataset_shuffle(), ggml_opt_epoch(), ggml_opt_epoch_callback_progress_bar(), ggml_opt_free() (+12 more)
+Cohesion: 0.06
+Nodes (73): ggml_opt_context_t, ggml_opt_dataset_t, ggml_opt_epoch_callback, ggml_opt_result_t, ggml_backend_buffer_free(), ggml_backend_graph_copy_free(), ggml_count_equal(), ggml_free() (+65 more)
 
 ### Community 130 - "Components"
 Cohesion: 0.07
 Nodes (27): Bottom Action Bar, Buttons, Cards / Containers, Colors, Components, Design System: 会迹 · MeetTrace, Do:, Do's and Don'ts (+19 more)
 
-### Community 131 - "quantize_q5_0"
-Cohesion: 0.47
-Nodes (6): quantize_row_q5_0(), block_q5_0, dequantize_row_q5_0(), quantize_q5_0(), quantize_row_q5_0_impl(), quantize_row_q5_0_ref()
+### Community 131 - "recording_session.dart"
+Cohesion: 0.09
+Nodes (21): AudioLevel, _PreviewRecordingService, ReliableRecordingService, audioLevelChanges, canFinalize, cause, code, duration (+13 more)
 
 ### Community 132 - "model_installation.dart"
 Cohesion: 0.15
@@ -1094,15 +1102,15 @@ Nodes (12): domain_exception.dart, bytes, installationType, installedPath, lastE
 
 ### Community 133 - "ggml_is_contiguous"
 Cohesion: 0.07
-Nodes (72): from_float(), atomic_fetch_add_explicit(), ggml_barrier(), ggml_compute_forward_mul_mat(), ggml_compute_forward_mul_mat_id(), ggml_compute_forward_mul_mat_one_chunk(), ggml_get_type_traits_cpu(), ggml_graph_plan() (+64 more)
+Nodes (63): ggml_backend_meta_buffer_get_tensor(), ggml_backend_meta_buffer_set_tensor(), ggml_backend_meta_get_split_state(), from_float(), atomic_fetch_add_explicit(), ggml_barrier(), ggml_compute_forward_mul_mat(), ggml_compute_forward_mul_mat_id() (+55 more)
 
 ### Community 134 - "ggml_compute_forward_rope_flt"
 Cohesion: 0.50
 Nodes (5): ggml_compute_forward_rope_flt(), ggml_mrope_cache_init(), ggml_rope_cache_init(), rope_yarn(), rope_yarn_ramp()
 
 ### Community 135 - "ggml-cpu-impl.h"
-Cohesion: 0.09
-Nodes (61): ggml_int16x8x2_t, ggml_int8x16x2_t, ggml_int8x16x4_t, ggml_uint8x16x2_t, ggml_uint8x16x4_t, int32x4_t, int8x8_t, ggml_decode_q4scales_and_mins_for_mmla() (+53 more)
+Cohesion: 0.10
+Nodes (54): ggml_int16x8x2_t, ggml_int8x16x2_t, ggml_int8x16x4_t, ggml_uint8x16x2_t, ggml_uint8x16x4_t, ggml_decode_q4scales_and_mins_for_mmla(), ggml_vec_dot_iq1_m_q8_K(), ggml_vec_dot_iq1_s_q8_K() (+46 more)
 
 ### Community 136 - "cpuid_x86"
 Cohesion: 0.06
@@ -1117,8 +1125,8 @@ Cohesion: 0.09
 Nodes (22): double get, addChunk, chunkCount, clippedSampleCount, clippingRatio, dcOffsetNormalized, duration, _nextByteOffset (+14 more)
 
 ### Community 139 - "ggml-alloc.c"
-Cohesion: 0.11
-Nodes (47): add_allocated_tensor(), aligned_offset(), ggml_gallocr_t, get_node_buffer_id(), ggml_buffer_address_less(), ggml_dyn_tallocr_alloc(), ggml_dyn_tallocr_free(), ggml_dyn_tallocr_free_bytes() (+39 more)
+Cohesion: 0.08
+Nodes (64): add_allocated_tensor(), aligned_offset(), alloc_tensor_range(), ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_t, ggml_gallocr_t, free_buffers() (+56 more)
 
 ### Community 140 - "Q: 评估 whisper_ggml 是否适合作为会迹当前本地 ASR 模型或运行时"
 Cohesion: 0.40
@@ -1128,33 +1136,33 @@ Nodes (4): Answer, Outcome, Q: 评估 whisper_ggml 是否适合作为会迹当�
 Cohesion: 0.21
 Nodes (9): _In_, _In_opt_, vector, wWinMain(), vector, wchar_t, CreateAndAttachConsole(), GetCommandLineArguments() (+1 more)
 
-### Community 142 - "whisper_build_graph_decoder"
-Cohesion: 0.09
-Nodes (57): ggml_context, ggml_acc_or_set(), ggml_add(), ggml_add1_or_set(), ggml_add_or_set(), ggml_build_forward_expand(), ggml_cast(), ggml_cont() (+49 more)
+### Community 142 - "ggml_view_tensor"
+Cohesion: 0.10
+Nodes (56): ggml_context, ggml_acc_or_set(), ggml_add(), ggml_add_impl(), ggml_add_or_set(), ggml_build_forward_expand(), ggml_can_mul_mat(), ggml_cast() (+48 more)
 
 ### Community 143 - "whisper_adapter.dart"
 Cohesion: 0.03
 Nodes (68): beamSize, bestOf, cancel, _cancelled, _commands, _config, context, create (+60 more)
 
 ### Community 144 - "ggml_nrows"
-Cohesion: 0.07
-Nodes (67): get_thread_range(), pair, ggml_compute_forward_add1(), ggml_compute_forward_add1_bf16_bf16(), ggml_compute_forward_add1_bf16_f32(), ggml_compute_forward_add1_f16_f16(), ggml_compute_forward_add1_f16_f32(), ggml_compute_forward_add1_f32() (+59 more)
+Cohesion: 0.11
+Nodes (45): get_thread_range(), pair, ggml_compute_forward_acc_f32(), ggml_compute_forward_add1(), ggml_compute_forward_add1_bf16_bf16(), ggml_compute_forward_add1_bf16_f32(), ggml_compute_forward_add1_f16_f16(), ggml_compute_forward_add1_f16_f32() (+37 more)
 
 ### Community 145 - "Q: sherpa_onnx 替换为 whisper_ggml，给我一个方案"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: sherpa_onnx 替换为 whisper_ggml，给我一个方案, Source Nodes
 
 ### Community 146 - "whisper_state"
-Cohesion: 0.04
-Nodes (53): vad_time_mapping, original_time, processed_time, whisper_state, aheads_cross_QKs, aheads_cross_QKs_data, aheads_masks, backends (+45 more)
+Cohesion: 0.03
+Nodes (71): ggml_graph_get_tensor(), ggml_graph_node(), ggml_abort_callback, whisper_context, itype, model, path_model, state (+63 more)
 
 ### Community 147 - "DateTime"
 Cohesion: 0.18
 Nodes (10): DateTime, acquiredAt, expiresAt, isActiveAt, leaseId, modelId, ModelUsageLease, ownerId (+2 more)
 
-### Community 148 - "app_state_panel.dart"
-Cohesion: 0.13
-Nodes (14): app_status_notice.dart, actionLabel, AppStatePanel, _AppStatePanelKind, build, empty, error, icon (+6 more)
+### Community 148 - "iq2_data_index"
+Cohesion: 0.12
+Nodes (18): block_iq2_s, mutex_, ggml_quantize_free(), ggml_quantize_init(), dequantize_row_iq2_s(), iq2_data_index(), iq2_find_best_neighbour(), iq2_grid_size() (+10 more)
 
 ### Community 149 - "RecordingAudioWaveform"
 Cohesion: 0.18
@@ -1166,7 +1174,7 @@ Nodes (4): Answer, Outcome, Q: whisper_ggml transcribeLive 实时（流媒体）
 
 ### Community 151 - "asr/whisper_small_advanced_asr_engine_test.dart"
 Cohesion: 0.03
-Nodes (59): _FakeWorkerFactory, AsrDeviceRiskState, active, activeVersions, add, bytes, cancel, _changes (+51 more)
+Nodes (57): _FakeWorkerFactory, active, activeVersions, add, bytes, cancel, _changes, clock (+49 more)
 
 ### Community 152 - "web/manifest.json"
 Cohesion: 0.18
@@ -1181,8 +1189,8 @@ Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: 能否直接调用 ggml-org/whisper.cpp, Source Nodes
 
 ### Community 155 - "ggml_backend_meta_context"
-Cohesion: 0.06
-Nodes (36): backend_config, ggml_backend_buffer_ptr, ggml_backend_comm_allreduce_tensor_t, ggml_backend_meta_split_state, ggml_context_ptr, ggml_cgraph, ggml_tensor, map (+28 more)
+Cohesion: 0.04
+Nodes (49): backend_config, ggml_backend_buffer_ptr, ggml_backend_comm_allreduce_tensor_t, ggml_backend_meta_get_split_state_t, ggml_backend_meta_split_state, ggml_context_ptr, ggml_init_params, mem_buffer (+41 more)
 
 ### Community 156 - "APPLY_STANDARD_SETTINGS"
 Cohesion: 0.20
@@ -1196,41 +1204,41 @@ Nodes (4): Answer, Outcome, Q: 正式替换 sherpa-onnx 后，MeetTrace 的 whis
 Cohesion: 0.50
 Nodes (4): Independent Android and iOS Acceptance, Blocked iOS and Dual-Platform Release, iPhone and iPad Validation Requirements, Current Android and iOS Implementation Status
 
-### Community 160 - "_"
-Cohesion: 0.07
-Nodes (29): _PreviewAsrEngine, _, acceptAudio, cancel, _core, descriptor, deviceRisk, deviceRisks (+21 more)
+### Community 160 - "recording_checkpoint_store.dart"
+Cohesion: 0.11
+Nodes (19): delete, fromJson, hashCode, JsonRecordingCheckpointStore, layout, load, meetingId, operator (+11 more)
 
 ### Community 161 - "增量架构优化"
 Cohesion: 0.22
 Nodes (9): Domain Port 边界, FinalTranscriptionService, GenerateSummaryUseCase, 增量架构优化, MeetingDetailViewModel, MeetTraceDependencies, RecordingSessionViewModel, Repository Contracts (+1 more)
 
-### Community 163 - "whisper_context_default_params"
-Cohesion: 0.20
-Nodes (15): whisper_context_default_params(), whisper_context_default_params_by_ref(), whisper_free(), whisper_init(), whisper_init_from_buffer(), whisper_init_from_buffer_no_state(), whisper_init_from_buffer_with_params(), whisper_init_from_buffer_with_params_no_state() (+7 more)
+### Community 163 - "app_file_layout.dart"
+Cohesion: 0.10
+Nodes (19): createBaseDirectories, databaseDirectory, databasePath, forApplication, meetingAudioCheckpointNextPath, meetingAudioCheckpointPath, meetingAudioCheckpointPreviousPath, meetingAudioDirectory (+11 more)
 
 ### Community 164 - "gguf_tensor_info"
 Cohesion: 0.67
 Nodes (3): gguf_tensor_info, offset, t
 
 ### Community 165 - "Stream"
-Cohesion: 0.14
-Nodes (13): AsrPreviewMetrics get, _PreviewSession, AsrPreviewCoordinator, AsrPreviewState, AsrPreviewSession, dispose, events, flush (+5 more)
+Cohesion: 0.12
+Nodes (15): AsrPreviewMetrics get, _PreviewSession, AsrPreviewCoordinator, AsrPreviewState, AsrPreviewSession, dispose, events, flush (+7 more)
 
-### Community 166 - "ggml_tensor"
-Cohesion: 0.14
-Nodes (14): ggml_tensor, buffer, data, extra, flags, name, nb, ne (+6 more)
+### Community 166 - "gguf_get_n_kv"
+Cohesion: 0.18
+Nodes (17): gguf_find_key(), gguf_get_arr_str(), gguf_get_arr_type(), gguf_get_key(), gguf_get_kv_type(), gguf_get_n_kv(), gguf_get_val_bool(), gguf_get_val_f32() (+9 more)
 
 ### Community 167 - "ime.cpp"
-Cohesion: 0.08
-Nodes (31): bind_ai_thread(), cpu::extra_buffer_type, cpu_set_t, cpu::tensor_traits, ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_dev_t, ggml_compute_params (+23 more)
+Cohesion: 0.09
+Nodes (27): bind_ai_thread(), cpu::extra_buffer_type, cpu::tensor_traits, ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_dev_t, ggml_compute_params, ggml_tensor (+19 more)
 
 ### Community 168 - "quantize_row_iq4_nl_impl"
-Cohesion: 0.12
-Nodes (18): quantize_row_iq4_nl(), quantize_row_iq4_xs(), best_index_int8(), block_iq4_nl, block_iq4_xs, ggml_fp16_t, dequantize_row_iq4_nl(), dequantize_row_iq4_xs() (+10 more)
+Cohesion: 0.17
+Nodes (12): quantize_row_iq4_nl(), quantize_row_iq4_xs(), best_index_int8(), block_iq4_nl, block_iq4_xs, dequantize_row_iq4_nl(), dequantize_row_iq4_xs(), quantize_iq4_nl() (+4 more)
 
 ### Community 169 - "x86/repack.cpp"
-Cohesion: 0.06
-Nodes (41): ggml_gemm_q4_0_8x8_q8_0(), ggml_gemv_q4_0_8x8_q8_0(), ggml_gemm_q4_0_8x8_q8_0(), ggml_gemv_q4_0_8x8_q8_0(), ggml_quantize_mat_q8_0_4x8(), __avx512_f32cx8x2_load(), __avx512_repeat_f32cx16_load(), __avx_f32cx8_load() (+33 more)
+Cohesion: 0.07
+Nodes (39): ggml_gemm_q4_0_8x8_q8_0(), ggml_gemv_q4_0_8x8_q8_0(), ggml_gemm_q4_0_8x8_q8_0(), ggml_gemv_q4_0_8x8_q8_0(), ggml_quantize_mat_q8_0_4x8(), __avx512_f32cx8x2_load(), __avx512_repeat_f32cx16_load(), __avx_f32cx8_load() (+31 more)
 
 ### Community 170 - "真实录音条件预检"
 Cohesion: 0.25
@@ -1238,31 +1246,31 @@ Nodes (8): 未绑定技术预检的静态就绪文案, 首页固定准备就绪�
 
 ### Community 171 - "gguf.cpp"
 Cohesion: 0.06
-Nodes (42): gguf_find_key(), gguf_get_arr_str(), gguf_get_arr_type(), gguf_get_key(), gguf_get_kv_type(), gguf_get_n_kv(), gguf_get_val_bool(), gguf_get_val_data() (+34 more)
+Nodes (33): gguf_add_tensor(), gguf_find_tensor(), gguf_get_n_tensors(), gguf_get_tensor_name(), gguf_get_tensor_offset(), gguf_get_tensor_size(), gguf_get_tensor_type(), gguf_set_tensor_data() (+25 more)
 
-### Community 172 - "ggml_opt_build"
-Cohesion: 0.12
-Nodes (23): ggml_new_f32(), ggml_new_i32(), ggml_argmax(), ggml_col2im_1d(), ggml_count_equal(), ggml_cross_entropy_loss(), ggml_get_no_alloc(), ggml_get_rows_back() (+15 more)
+### Community 172 - "ggml_set_op_params_i32"
+Cohesion: 0.10
+Nodes (21): ggml_add_rel_pos(), ggml_add_rel_pos_impl(), ggml_add_rel_pos_inplace(), ggml_argsort(), ggml_argsort_top_k(), ggml_calc_conv_transpose_output_size(), ggml_concat(), ggml_conv_transpose_2d_p0() (+13 more)
 
-### Community 173 - "get_scale_min_k4"
-Cohesion: 0.23
-Nodes (13): quantize_row_q4_K(), quantize_row_q5_K(), block_q4_K, block_q5_K, dequantize_row_q4_K(), dequantize_row_q5_K(), get_scale_min_k4(), quantize_q4_K() (+5 more)
+### Community 173 - "nearest_int"
+Cohesion: 0.15
+Nodes (23): quantize_row_q2_K(), quantize_row_q4_K(), quantize_row_q5_K(), block_q2_K, block_q4_K, block_q5_K, dequantize_row_q2_K(), dequantize_row_q4_K() (+15 more)
 
 ### Community 174 - "tinyBLAS_Q0_AVX"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (31): block_iq4_nl, block_q4_0, block_q5_0, block_q8_0, int8x16_t, __m128i, NOINLINE, gemm() (+23 more)
 
 ### Community 175 - "tinyBLAS_PPC"
-Cohesion: 0.10
-Nodes (13): acc_t, kernel(), tinyBLAS_PPC, A, B, C, ith, k (+5 more)
+Cohesion: 0.09
+Nodes (14): vector, kernel(), llamafile_sgemm(), tinyBLAS_PPC, A, B, C, ith (+6 more)
 
 ### Community 176 - "whisper_native_context.dart"
 Cohesion: 0.08
 Nodes (24): mt_whisper_context>, abiVersion, cancel, cancelAddress, code, dispose, endMs, _handle (+16 more)
 
-### Community 177 - "kleidiai.cpp"
-Cohesion: 0.08
-Nodes (45): GGML_KLEIDIAI_MAX_KERNEL_SLOTS, align_up(), ceil_div_size(), array, cpu::extra_buffer_type, cpu::tensor_traits, ggml_backend_buffer_t, ggml_backend_buffer_type_t (+37 more)
+### Community 177 - "kleidiai_collect_kernel_chain"
+Cohesion: 0.26
+Nodes (14): GGML_KLEIDIAI_MAX_KERNEL_SLOTS, align_up(), array, ggml_kleidiai_kernels, ggml_backend_cpu_kleidiai_buffer_type_get_alloc_size(), kleidiai_collect_kernel_chain(), kleidiai_collect_kernel_chain_common(), kleidiai_collect_q4_chain() (+6 more)
 
 ### Community 178 - "whisper_recognizer_profiles.dart"
 Cohesion: 0.12
@@ -1288,17 +1296,17 @@ Nodes (6): 二次确认的永久会议删除, 会议删除事务数据范围, �
 Cohesion: 0.33
 Nodes (6): 录音连续性优先, RecordingPreviewDispatcher, RecordingSessionViewModel, 有界停止与后台清理, RecordPcmAudioCapture, ReliableRecordingService
 
-### Community 184 - "apply_unary_op_functor"
-Cohesion: 0.26
-Nodes (12): Op, op, dst_t, src0_t, vec_binary_op_contiguous(), vec_binary_op_non_contiguous(), apply_unary_op_functor(), dst_t (+4 more)
+### Community 184 - "_string"
+Cohesion: 0.13
+Nodes (14): _string, powerpc_features, has_vsx, platform, power_version, to_timestamp(), voice_length(), whisper_segment (+6 more)
 
 ### Community 185 - "ggml_opt_context"
 Cohesion: 0.05
-Nodes (37): ggml_cgraph, mt19937, ggml_opt_context, allocated_graph, allocated_graph_copy, backend_sched, buf_cpu, buf_static (+29 more)
+Nodes (39): ggml_opt_get_optimizer_params, ggml_cgraph, mt19937, ggml_opt_context, allocated_graph, allocated_graph_copy, backend_sched, buf_cpu (+31 more)
 
 ### Community 186 - "whisper_decoder"
-Cohesion: 0.06
-Nodes (37): A, B, id, whisper_decoder, completed, failed, grammar, has_ts (+29 more)
+Cohesion: 0.07
+Nodes (28): A, B, mt19937, whisper_decoder, completed, failed, grammar, has_ts (+20 more)
 
 ### Community 187 - ".supports_op"
 Cohesion: 0.25
@@ -1309,8 +1317,8 @@ Cohesion: 0.40
 Nodes (5): nrow_block_q5_0, qh, qs, scales16, make_block_q5_0x32()
 
 ### Community 189 - "whisper_vocab"
-Cohesion: 0.13
-Nodes (14): map, whisper_vocab, id_to_token, n_vocab, token_beg, token_eot, token_nosp, token_not (+6 more)
+Cohesion: 0.12
+Nodes (16): id, map, tokenize(), whisper_vocab, id_to_token, n_vocab, token_beg, token_eot (+8 more)
 
 ### Community 190 - "whisper_vad_segmenter_test.dart"
 Cohesion: 0.12
@@ -1329,28 +1337,28 @@ Cohesion: 0.40
 Nodes (5): AppTimeRuler, RecordingSessionView, RecordingSessionViewModel, 唯一真实录音时长, _TimeRulerLabels
 
 ### Community 194 - "_"
-Cohesion: 0.09
-Nodes (23): _, acceptAudio, cancel, context, _core, create, descriptor, deviceRisk (+15 more)
+Cohesion: 0.07
+Nodes (32): _PreviewAsrEngine, WhisperBaseStandardAsrEngine, _, acceptAudio, cancel, context, _core, create (+24 more)
 
 ### Community 195 - "ggml_backend_registry"
-Cohesion: 0.14
-Nodes (19): dl_handle_ptr, ggml_backend_reg_name(), ggml_backend_reg_t, vector, ggml_backend_reg_by_name(), ggml_backend_reg_count(), ggml_backend_reg_entry, handle (+11 more)
+Cohesion: 0.16
+Nodes (15): dl_handle_ptr, ggml_backend_reg_t, vector, ggml_backend_reg_by_name(), ggml_backend_reg_count(), ggml_backend_reg_entry, handle, reg (+7 more)
 
 ### Community 196 - "models/manifest.json"
 Cohesion: 0.50
 Nodes (3): minAppVersion, models, schemaVersion
 
-### Community 197 - "whisper_asr_engine_factory.dart"
-Cohesion: 0.07
-Nodes (27): ../../../../../domain/models/app_failure.dart, context, create, _createAdvanced, _createStandard, _failure, _finalVadFactory, installations (+19 more)
+### Community 197 - "_"
+Cohesion: 0.05
+Nodes (42): ../../../../../domain/models/app_failure.dart, context, create, _createAdvanced, _createStandard, _failure, _finalVadFactory, installations (+34 more)
 
 ### Community 198 - "语义化本地日期标签"
 Cohesion: 0.50
 Nodes (4): AppLedgerRow, 可注入参考时间, Meeting List View, 语义化本地日期标签
 
 ### Community 199 - "madd"
-Cohesion: 0.14
-Nodes (30): float16x8_t, __m256bh, __m512bh, add(), float32x4_t, ggml_bf16_t, __m128, __m256 (+22 more)
+Cohesion: 0.10
+Nodes (39): float16x8_t, __m256bh, __m512bh, add(), float32x4_t, ggml_bf16_t, __m128, __m256 (+31 more)
 
 ### Community 200 - "mmq.cpp"
 Cohesion: 0.06
@@ -1384,8 +1392,8 @@ Cohesion: 0.67
 Nodes (3): Minimum and Low-end Device Acceptance Gap, Android Alpha Device Matrix, Android Alpha Platform Baseline
 
 ### Community 207 - "startup_recovery_service.dart"
-Cohesion: 0.10
-Nodes (19): app_database.dart, ../audio/recording_checkpoint_store.dart, ../../../../../domain/models/recording.dart, durable_file_committer.dart, _activateCompletedSnapshots, activatedSnapshots, _alignRecoverablePcm, database (+11 more)
+Cohesion: 0.06
+Nodes (29): app_database.dart, ../audio/recording_checkpoint_store.dart, durable_file_committer.dart, commit, DurableFileCommitException, DurableFileCommitter, message, toString (+21 more)
 
 ### Community 208 - "ggml_backend_sched"
 Cohesion: 0.06
@@ -1423,29 +1431,25 @@ Nodes (3): Android edge-to-edge 系统栏, Android 沉浸式标题栏修复, 透
 Cohesion: 0.06
 Nodes (22): aarch64_features, has_dotprod, has_fp16_va, has_i8mm, has_sme, has_sve, has_sve2, riscv64_features (+14 more)
 
-### Community 217 - "size"
-Cohesion: 0.17
-Nodes (15): vector, gguf_buffer_reader, data, size, gguf_get_arr_data(), gguf_get_meta_data(), gguf_get_meta_size(), gguf_write_out() (+7 more)
+### Community 217 - "data"
+Cohesion: 0.21
+Nodes (10): gguf_buffer_reader, data, gguf_get_arr_data(), gguf_get_val_data(), gguf_write_out(), gguf_writer_base, write, write_tensor_data (+2 more)
 
 ### Community 218 - "ime2_kernels.cpp"
 Cohesion: 0.10
 Nodes (33): gemm_kernel_i8i2k(), gemm_kernel_i8i2k_m1(), gemm_kernel_i8i2k_m4(), gemm_kernel_i8i4(), gemm_kernel_i8i4_hp(), gemm_kernel_i8i4_hp_m1(), gemm_kernel_i8i4_hp_m4(), gemm_kernel_i8i4_m1() (+25 more)
 
-### Community 219 - "whisper_context"
-Cohesion: 0.10
-Nodes (23): ggml_backend_tensor_get(), abort_callback, ggml_graph_get_tensor(), ggml_graph_node(), ggml_abort_callback, whisper_context, itype, model (+15 more)
-
-### Community 220 - "kernels.cpp"
-Cohesion: 0.07
-Nodes (8): cpu_feature, ggml_kleidiai_kernels, ggml_tensor, ggml_kleidiai_select_kernels(), ggml_kleidiai_select_kernels_q4_0(), ggml_kleidiai_select_kernels_q8_0(), kai_rhs_pack_qs4cxs1s0_param, kai_rhs_pack_qsi8cx_params
+### Community 219 - "ggml_backend_cpu_context"
+Cohesion: 0.17
+Nodes (12): ggml_threadpool_t, ggml_backend_cpu_context, abort_callback, abort_callback_data, n_threads, threadpool, use_ref, work_data (+4 more)
 
 ### Community 221 - "spine_mem_pool_manager"
-Cohesion: 0.11
-Nodes (16): align_up(), vector, pool_chunk, base, fd, free_blocks, size, spine_mem_pool_hugetlb_1g (+8 more)
+Cohesion: 0.09
+Nodes (19): align_up(), vector, free_block, offset, size, pool_chunk, base, fd (+11 more)
 
 ### Community 222 - "tinyBLAS_Q0_PPC"
 Cohesion: 0.10
-Nodes (17): ArrayType, compute(), ggml_fp16_t, vector, pack_q8_block(), tinyBLAS_Q0_PPC, A, B (+9 more)
+Nodes (17): acc_t, ArrayType, compute(), ggml_fp16_t, pack_q8_block(), tinyBLAS_Q0_PPC, A, B (+9 more)
 
 ### Community 223 - "Flutter macOS App Icon"
 Cohesion: 0.67
@@ -1480,68 +1484,76 @@ Cohesion: 0.67
 Nodes (3): Flutter Web Bootstrap, 本地优先会议录音与端侧转录应用, MeetTrace Web Shell
 
 ### Community 234 - "sgemm.cpp"
-Cohesion: 0.12
-Nodes (12): BLOC_POS(), array, size, gemm_Mx8(), gemm_small(), llamafile_sgemm(), mma_instr, mma_instr<ggml_bf16_t> (+4 more)
+Cohesion: 0.09
+Nodes (21): BLOC_POS(), gemm_Mx8(), gemm_small(), mma_instr, mma_instr<ggml_bf16_t>, mma_instr<ggml_fp16_t>, packNormal(), tinyBLAS_HP16_PPC (+13 more)
+
+### Community 238 - "ggml_compute_forward_flash_attn_back_f32"
+Cohesion: 0.11
+Nodes (26): ggml_compute_forward_cross_entropy_loss_back_f32(), ggml_compute_forward_flash_attn_back_f32(), ggml_compute_forward_flash_attn_ext_f16_one_chunk(), ggml_compute_forward_flash_attn_ext_tiled(), ggml_compute_forward_gated_delta_net_one_chunk(), ggml_compute_forward_get_rows_f32(), ggml_compute_forward_norm_f32(), ggml_compute_forward_soft_max_ext_back_f32() (+18 more)
 
 ### Community 239 - "ggml_kleidiai_context"
 Cohesion: 0.22
 Nodes (9): cpu_feature, cpu_feature_to_string(), ggml_kleidiai_context, chunk_multiplier, features, kernels_q4, kernels_q8, sme_thread_cap (+1 more)
 
 ### Community 251 - "spine_env_info"
-Cohesion: 0.08
-Nodes (29): vector, spine_mem_pool_backend, spine_core_info, arch_id, core_id, get_spine_core_info, spine_env_info, aicpu_id_offset (+21 more)
+Cohesion: 0.09
+Nodes (23): vector, spine_mem_pool_backend, spine_core_info, arch_id, core_id, get_spine_core_info, spine_env_info, aicpu_id_offset (+15 more)
 
 ### Community 252 - "ggml_graph_dump_dot"
-Cohesion: 0.23
-Nodes (12): FILE, wchar_t, ggml_fopen(), ggml_graph_dump_dot(), ggml_graph_dump_dot_leaf_edge(), ggml_graph_dump_dot_node_edge(), ggml_graph_find(), ggml_graph_get_grad() (+4 more)
+Cohesion: 0.27
+Nodes (10): FILE, wchar_t, ggml_fopen(), ggml_graph_dump_dot(), ggml_graph_dump_dot_leaf_edge(), ggml_graph_dump_dot_node_edge(), ggml_graph_find(), ggml_graph_get_parent() (+2 more)
 
-### Community 260 - "gguf_get_n_tensors"
-Cohesion: 0.29
-Nodes (8): gguf_add_tensor(), gguf_find_tensor(), gguf_get_n_tensors(), gguf_get_tensor_name(), gguf_get_tensor_offset(), gguf_get_tensor_size(), gguf_get_tensor_type(), gguf_set_tensor_data()
+### Community 260 - "tensor_traits"
+Cohesion: 0.16
+Nodes (13): cpu::tensor_traits, ggml_compute_params, kleidiai_is_weight_header_valid(), kleidiai_weight_header, magic, offsets, sizes, slot_count (+5 more)
 
-### Community 272 - "nrow_block_q3_k"
-Cohesion: 0.40
-Nodes (5): nrow_block_q3_k, hmask, qs, scales, scales16
+### Community 272 - "ggml_v_silu"
+Cohesion: 0.21
+Nodes (16): ggml_compute_forward_swiglu_f32(), exp_ps_sve(), ggml_silu_f32(), ggml_v_expf(), ggml_v_expf_m2(), ggml_v_silu(), ggml_v_silu_m2(), ggml_vec_silu_f32() (+8 more)
 
 ### Community 273 - "local_data_control.dart"
 Cohesion: 0.33
 Nodes (5): LocalDataControlService, buildDiagnostics, LocalDataControlPort, measure, ../models/data_control.dart
 
-### Community 274 - "audio_source.dart"
-Cohesion: 0.33
-Nodes (5): AudioSource, channelCount, durationMs, path, sampleRate
+### Community 274 - "kleidiai.cpp"
+Cohesion: 0.19
+Nodes (11): ceil_div_size(), ggml_backend_buffer_t, ggml_backend_buffer_type_t, gcd_size(), get_tensor_traits(), ggml_backend_cpu_kleidiai_buffer_init_tensor(), ggml_backend_cpu_kleidiai_buffer_set_tensor(), ggml_backend_cpu_kleidiai_buffer_type_get_alignment() (+3 more)
 
 ### Community 276 - "model_manifest_parser.dart"
 Cohesion: 0.10
 Nodes (20): 0, _compareVersions, currentAppVersion, leftParts, normalized, parse, _parseEntry, _parseFile (+12 more)
 
 ### Community 285 - "Step 21：C++ Whisper 质量交付基线"
-Cohesion: 0.14
-Nodes (13): 10. OCR 代码审查, 1. 产品与架构边界, 2. 工具链, 3. 可复现基线, 4. 已确认缺口, 5.1 公开回归轨道, 5.2 确定性非语音烟测轨道, 5. 评测输入契约 (+5 more)
+Cohesion: 0.13
+Nodes (14): 10. OCR 代码审查, 1. 产品与架构边界, 2. 工具链, 3. 可复现基线, 4. 已确认缺口, 5.1 公开回归轨道, 5.2 确定性非语音烟测轨道, 5.3 阶段 0～4 自动发布评估 (+6 more)
 
 ### Community 308 - "Step 23～24：官方 VAD、预览与最终转录"
 Cohesion: 0.29
 Nodes (6): 1. 固定资产与原生边界, 2. 会中预览, 3. 最终转录, 4. 自动化与模拟器证据, 5. Hard Gate 3～4, Step 23～24：官方 VAD、预览与最终转录
 
 ### Community 309 - "ggml-cpp.h"
-Cohesion: 0.10
-Nodes (11): gguf_context, ggml_backend_buffer_deleter, ggml_backend_deleter, ggml_backend_sched_deleter, ggml_context_deleter, ggml_gallocr_deleter, gguf_context_deleter, ggml_backend_buffer_t (+3 more)
+Cohesion: 0.09
+Nodes (13): gguf_context, ggml_backend_buffer_deleter, ggml_backend_deleter, ggml_backend_event_deleter, ggml_backend_sched_deleter, ggml_context_deleter, ggml_gallocr_deleter, gguf_context_deleter (+5 more)
 
 ### Community 310 - "LocalFactFooter"
 Cohesion: 0.67
 Nodes (3): 合并本地音频事实说明, 本地事实音频底栏替代方案, LocalFactFooter
 
-### Community 313 - "Segment"
-Cohesion: 0.33
-Nodes (6): Metrics, Segment, end_ms, start_ms, text, _PreviewSession
+### Community 313 - "mt_whisper_transcribe"
+Cohesion: 0.22
+Nodes (11): mt_whisper_transcribe(), map_processed_to_original_time(), vad_time_mapping, original_time, processed_time, whisper_full_get_segment_t0(), whisper_full_get_segment_t0_from_state(), whisper_full_get_segment_t1() (+3 more)
 
 ### Community 314 - "Step 22：Whisper 解码参数评测"
 Cohesion: 0.33
 Nodes (5): 1. 已实现能力, 2. 候选 Profile, 3. 可复现评测, 4. Hard Gate 2, Step 22：Whisper 解码参数评测
 
-### Community 333 - "ggml_opt_dataset"
-Cohesion: 0.13
-Nodes (17): ggml_opt_dataset_t, ggml_backend_buffer_t, get_opt_pars, ggml_opt_dataset, buf, ctx, data, ggml_opt_dataset_free() (+9 more)
+### Community 333 - "ffigen.dart"
+Cohesion: 0.20
+Nodes (9): package:ffigen/ffigen.dart, bindings, generator, header, includedFunctions, libclangPath, main, packageRoot (+1 more)
+
+### Community 336 - "ime_kernels.h"
+Cohesion: 0.12
+Nodes (10): nrow_block_q3_k, hmask, qs, scales, scales16, nrow_block_q5_1, qh, qs (+2 more)
 
 ### Community 339 - "whisper_quality_metrics_test.dart"
 Cohesion: 0.29
@@ -1559,29 +1571,29 @@ Nodes (6): quantize_row_q4_0(), block_q4_0, dequantize_row_q4_0(), quantize_q4_0
 Cohesion: 0.50
 Nodes (4): _IsolateWhisperWorker, WhisperWorker, _FakeWorker, _FakeWorker
 
-### Community 360 - "ggml_opt_result_t"
-Cohesion: 0.20
-Nodes (12): ggml_opt_result_t, vector, ggml_opt_result, ggml_opt_result_free(), ggml_opt_result_init(), loss, loss_per_datapoint, ncorrect (+4 more)
+### Community 360 - "init_kleidiai_context"
+Cohesion: 0.29
+Nodes (10): ggml_cpu_has_sme(), cpu_feature, ggml_kleidiai_kernels, ggml_tensor, ggml_kleidiai_select_kernels(), ggml_kleidiai_select_kernels_q4_0(), ggml_kleidiai_select_kernels_q8_0(), detect_num_smcus() (+2 more)
 
-### Community 366 - "ggml_new_graph_custom"
-Cohesion: 0.22
-Nodes (13): ggml_build_forward_impl(), ggml_build_forward_select(), ggml_graph_clear(), ggml_graph_nbytes(), ggml_hash_set_new(), ggml_hash_set_reset(), ggml_hash_size(), ggml_new_buffer() (+5 more)
+### Community 366 - ".supports_op"
+Cohesion: 0.29
+Nodes (6): cpu::extra_buffer_type, ggml_backend_dev_t, ggml_tensor, extra_buffer_type, ggml_backend_cpu_kleidiai_buffer_type(), ggml_ne()
 
 ### Community 367 - "quantize_q4_1"
 Cohesion: 0.47
 Nodes (6): quantize_row_q4_1(), block_q4_1, dequantize_row_q4_1(), quantize_q4_1(), quantize_row_q4_1_impl(), quantize_row_q4_1_ref()
 
-### Community 391 - "dart:async"
+### Community 391 - "streaming_window_segmenter.dart"
 Cohesion: 0.06
-Nodes (32): dart:async, ../../../../../domain/models/asr_preview.dart, int get, _FailingVoiceActivitySegmenter, accept, _availableEndSample, dispose, _disposed (+24 more)
+Nodes (31): ../../../../../domain/models/asr_preview.dart, int get, _FailingVoiceActivitySegmenter, accept, _availableEndSample, dispose, _disposed, flush (+23 more)
 
 ### Community 392 - "size"
-Cohesion: 0.09
-Nodes (54): function, ggml_backend_t, ggml_backend_alloc_ctx_tensors(), ggml_backend_free(), ggml_backend_sched_alloc_graph(), ggml_backend_tensor_set(), ggml_cpu_init(), ggml_free() (+46 more)
+Cohesion: 0.10
+Nodes (42): function, ggml_cross_entropy_loss(), ggml_ftype_to_ggml_type(), ggml_new_tensor_1d(), ggml_new_tensor_2d(), ggml_new_tensor_3d(), ggml_sum(), ggml_tensor_overhead() (+34 more)
 
-### Community 393 - "tinyBLAS_RVV"
-Cohesion: 0.07
-Nodes (35): ggml_compute_params, TA, TB, TC, tinyBLAS, A, B, C (+27 more)
+### Community 393 - "tinyBLAS"
+Cohesion: 0.12
+Nodes (16): array, ggml_compute_params, size, TA, TB, TC, packNormalInt4(), tinyBLAS (+8 more)
 
 ### Community 394 - "whisper_model"
 Cohesion: 0.05
@@ -1625,23 +1637,23 @@ Nodes (11): AppFailure, code, diagnosticContext, FailureRecoverability, FailureS
 
 ### Community 407 - "weight_buft_supported"
 Cohesion: 0.06
-Nodes (42): buft_list_t, ggml_op, ggml_n_dims(), byteswap(), byteswap_tensor(), byteswap_tensor_data(), ggml_backend_buffer_type_t, ggml_backend_dev_t (+34 more)
+Nodes (41): buft_list_t, ggml_op, byteswap(), byteswap_tensor(), byteswap_tensor_data(), ggml_backend_buffer_type_t, ggml_backend_dev_t, ggml_tensor (+33 more)
 
-### Community 409 - "quantize_row_q8_0_ref"
-Cohesion: 0.25
-Nodes (8): quantize_row_q8_0(), quantize_row_q8_0(), quantize_row_q8_0(), quantize_row_q8_0(), quantize_row_q8_0(), quantize_row_q8_0_generic(), quantize_q8_0(), quantize_row_q8_0_ref()
+### Community 409 - "s390/quants.c"
+Cohesion: 0.13
+Nodes (27): int32x4_t, int8x8_t, quantize_row_q8_0(), quantize_row_q8_0(), ggml_vec_dot_iq4_nl_q8_0(), ggml_vec_dot_iq4_xs_q8_K(), ggml_vec_dot_mxfp4_q8_0(), ggml_vec_dot_q3_K_q8_K() (+19 more)
 
 ### Community 411 - "spine_tcm.h"
 Cohesion: 0.26
 Nodes (19): spine_mem_pool_tcm_init(), spine_tcm_block_info(), spine_tcm_default_handle(), spine_tcm_handle_bind(), spine_tcm_handle_reset(), spine_tcm_is_available(), spine_tcm_mem_force_release(), spine_tcm_mem_free() (+11 more)
 
-### Community 413 - "ggml_type_name"
-Cohesion: 0.33
-Nodes (6): ggml_compute_forward_xielu(), op_xielu(), unary_op(), unary_op_functor(), unary_op_params(), ggml_type_name()
+### Community 413 - "flutter_model_asset_source_test.dart"
+Cohesion: 0.29
+Nodes (6): CachingAssetBundle, package:meettrace/data/services/models/flutter_model_asset_source.dart, _FakeAssetBundle, lastKey, load, main
 
 ### Community 414 - "gguf_init_from_reader"
-Cohesion: 0.15
-Nodes (14): gguf_reader_callback_t, ggml_set_no_alloc(), gguf_free(), gguf_init_from_buffer(), gguf_init_from_callback(), gguf_init_from_reader(), gguf_read_emplace_helper(), gguf_reader (+6 more)
+Cohesion: 0.14
+Nodes (15): gguf_reader_callback_t, ggml_set_no_alloc(), gguf_free(), gguf_get_val_u32(), gguf_init_from_buffer(), gguf_init_from_callback(), gguf_init_from_reader(), gguf_read_emplace_helper() (+7 more)
 
 ### Community 415 - "ggml-cpu/common.h"
 Cohesion: 0.12
@@ -1660,16 +1672,16 @@ Cohesion: 0.33
 Nodes (6): HWND, LPARAM, LRESULT, UINT, WPARAM, MessageHandler
 
 ### Community 419 - "make_buft_list"
-Cohesion: 0.25
-Nodes (18): ggml_backend_dev_init(), ggml_backend_dev_name(), ggml_backend_dev_type(), ggml_backend_dev_t, ggml_backend_t, ggml_backend_dev_by_name(), ggml_backend_dev_by_type(), ggml_backend_dev_count() (+10 more)
+Cohesion: 0.17
+Nodes (23): ggml_backend_reg_t, ggml_backend_dev_description(), ggml_backend_dev_init(), ggml_backend_dev_name(), ggml_backend_dev_type(), ggml_backend_reg_dev_count(), ggml_backend_reg_dev_get(), ggml_backend_reg_get_proc_address() (+15 more)
 
-### Community 421 - "whisper_global"
-Cohesion: 0.25
-Nodes (8): ggml_log_level, ggml_log_callback, whisper_global, log_callback, log_callback_user_data, whisper_log_callback_default(), whisper_log_internal(), whisper_log_set()
+### Community 421 - "quantize_q5_1"
+Cohesion: 0.47
+Nodes (6): block_q5_1, quantize_row_q5_1(), dequantize_row_q5_1(), quantize_q5_1(), quantize_row_q5_1_impl(), quantize_row_q5_1_ref()
 
-### Community 422 - "ggml_backend_event_free"
-Cohesion: 0.50
-Nodes (3): ggml_backend_event_deleter, ggml_backend_event_t, ggml_backend_event_free()
+### Community 422 - "ggml_graph_compute_check_for_work"
+Cohesion: 0.40
+Nodes (6): atomic_thread_fence(), ggml_graph_compute_check_for_work(), ggml_graph_compute_poll_for_work(), ggml_graph_compute_thread_ready(), ggml_graph_compute_thread_sync(), ggml_thread_cpu_relax()
 
 ### Community 424 - "asr_model_registry.dart"
 Cohesion: 0.15
@@ -1679,17 +1691,17 @@ Nodes (12): asr_model.dart, AsrModelDescriptor get, alpha, _byId, defaultModel, 
 Cohesion: 0.31
 Nodes (17): gguf_check_reserved_keys(), gguf_remove_key(), gguf_set_arr_data(), gguf_set_arr_str(), gguf_set_kv(), gguf_set_val_bool(), gguf_set_val_f32(), gguf_set_val_f64() (+9 more)
 
-### Community 426 - "gguf_context"
-Cohesion: 0.25
-Nodes (8): gguf_context, alignment, data, info, kv, offset, size, version
+### Community 426 - "TLSContext"
+Cohesion: 0.33
+Nodes (6): cpu_set_t, TLSContext, cpu_id, cpuset, tcm_buffer, tcm_buffer_size
 
 ### Community 427 - "quantize_q6_K"
 Cohesion: 0.40
 Nodes (6): quantize_row_q6_K(), block_q6_K, dequantize_row_q6_K(), quantize_q6_K(), quantize_row_q6_K_impl(), quantize_row_q6_K_ref()
 
 ### Community 428 - ".compute_forward"
-Cohesion: 0.23
-Nodes (9): apply_binary_op(), binary_op(), ggml_compute_params, ggml_tensor, ggml_compute_forward_add_non_quantized(), ggml_compute_forward_div(), ggml_compute_forward_mul(), ggml_compute_forward_sub() (+1 more)
+Cohesion: 0.14
+Nodes (17): ggml_backend_tensor_memset(), apply_binary_op(), binary_op(), ggml_compute_params, ggml_tensor, ggml_compute_forward_add_non_quantized(), ggml_compute_forward_div(), ggml_compute_forward_mul() (+9 more)
 
 ### Community 430 - "x86/cpu-feats.cpp"
 Cohesion: 0.50
@@ -1699,9 +1711,9 @@ Nodes (3): bitset, cpuid(), cpuidex()
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: clang: warning: -Wl,-z,max-page-size=16384: linker input unused 是否影响 Android 16KB page-size 兼容性, Source Nodes
 
-### Community 432 - "pool_allocation"
-Cohesion: 0.17
-Nodes (10): iterator, align_up_uintptr(), free_block, offset, size, pool_allocation, base, chunk_base (+2 more)
+### Community 432 - "ggml_validate_row_data"
+Cohesion: 0.47
+Nodes (6): ggml_fp16_t, ggml_validate_row_data(), isinf_fp16(), isnan_fp16(), validate_float(), validate_fp16()
 
 ### Community 433 - "ggml_conv_2d_dw_params"
 Cohesion: 0.13
@@ -1716,12 +1728,12 @@ Cohesion: 0.21
 Nodes (12): func_t, balance211(), div_up(), ggml_compute_params, T, parallel_for(), parallel_for_ggml(), ggml_compute_params (+4 more)
 
 ### Community 437 - "spine_mem_pool.cpp"
-Cohesion: 0.12
-Nodes (13): hugetlb_1g_region, dma_addr, flags, reserved, size, is_power_of_two(), spine_mem_pool_alloc(), spine_mem_pool_free() (+5 more)
+Cohesion: 0.10
+Nodes (19): iterator, align_up_uintptr(), hugetlb_1g_region, dma_addr, flags, reserved, size, is_power_of_two() (+11 more)
 
-### Community 438 - "ggml_backend_plan_cpu"
-Cohesion: 0.67
-Nodes (3): ggml_backend_plan_cpu, cgraph, cplan
+### Community 438 - "MeetingDetailViewModel"
+Cohesion: 0.40
+Nodes (5): _MeetingActionsOperations, _MeetingAudioOperations, _MeetingSummaryOperations, _MeetingTranscriptOperations, MeetingDetailViewModel
 
 ### Community 439 - "ggml_tensor"
 Cohesion: 0.28
@@ -1743,9 +1755,9 @@ Nodes (14): block_nvfp4, ggml_vec_dot_nvfp4_q8_0_generic(), quantize_row_mxfp4()
 Cohesion: 0.18
 Nodes (8): acc_C<block_q8_1, block_q4_1, is_acc>, block_q8_1, TA, TC, tinygemm_kernel_amx(), tinygemm_kernel_avx, tinygemm_kernel_vnni<block_q8_K, block_iq4_xs, float, BLOCK_M, BLOCK_N, BLOCK_K>, unpack_A()
 
-### Community 447 - "nearest_int"
-Cohesion: 0.13
-Nodes (22): block_q3_K, quantize_row_q2_K(), quantize_row_q3_K(), block_q2_K, dequantize_row_q2_K(), dequantize_row_q3_K(), iq2_find_best_neighbour(), make_q3_quants() (+14 more)
+### Community 447 - "quantize_row_q3_K_ref"
+Cohesion: 0.33
+Nodes (7): block_q3_K, quantize_row_q3_K(), dequantize_row_q3_K(), make_q3_quants(), quantize_q3_K(), quantize_row_q3_K_impl(), quantize_row_q3_K_ref()
 
 ### Community 448 - "prepare_whisper_quality_corpus.dart"
 Cohesion: 0.17
@@ -1760,8 +1772,8 @@ Cohesion: 0.20
 Nodes (10): block_q4_0x32, block_q4_0x32x256, blocks, block_q4_1x32x256, blocks, zps, block_q4_0, block_q4_0x16 (+2 more)
 
 ### Community 451 - "gguf_writer_file"
-Cohesion: 0.22
-Nodes (9): FILE, gguf_file_reader, file, offset, gguf_init_from_file_ptr(), gguf_write_to_file(), gguf_write_to_file_ptr(), gguf_writer_file (+1 more)
+Cohesion: 0.20
+Nodes (10): FILE, gguf_file_reader, file, offset, gguf_init_from_file(), gguf_init_from_file_ptr(), gguf_write_to_file(), gguf_write_to_file_ptr() (+2 more)
 
 ### Community 452 - "MessageHandler"
 Cohesion: 0.36
@@ -1775,17 +1787,17 @@ Nodes (5): acc_C<block_q8_K, block_iq4_xs, is_acc>, acc_C<block_q8_K, block_q4_K
 Cohesion: 0.25
 Nodes (9): gemm_kernel_i8i2k_mrow_ref(), gemm_kernel_i8i3k(), gemm_kernel_i8i3k_m1(), gemm_kernel_i8i3k_m4(), gemm_kernel_i8i3k_mrow_ref(), q8k_blk_size(), quantize_a_4row_i8k(), quantize_a_nrow_i8k_ref() (+1 more)
 
-### Community 459 - "tensor_traits_base"
-Cohesion: 0.67
-Nodes (3): cpu::tensor_traits, tensor_traits_base, repack
+### Community 459 - "ggml_map_custom1_impl"
+Cohesion: 0.83
+Nodes (4): ggml_custom1_op_t, ggml_map_custom1(), ggml_map_custom1_impl(), ggml_map_custom1_inplace()
 
 ### Community 462 - "data_control.dart"
 Cohesion: 0.20
 Nodes (9): databaseBytes, DiagnosticReport, fields, freeBytes, LocalStorageUsage, meetingBytes, modelBytes, toJsonText (+1 more)
 
-### Community 463 - "ime_kernels.h"
-Cohesion: 0.15
-Nodes (13): nrow_block_mxfp4, e, qh, qs, nrow_block_q5_1, qh, qs, scales16 (+5 more)
+### Community 463 - "nrow_block_mxfp4"
+Cohesion: 0.29
+Nodes (8): nrow_block_mxfp4, e, qh, qs, convert_mxfp4_to_5bit(), block_mxfp4, make_block_mxfp4x32(), repack_mxfp4_to_mxfp4_32_bl()
 
 ### Community 464 - "block_with_zp"
 Cohesion: 0.25
@@ -1794,6 +1806,10 @@ Nodes (8): block, d, qs, block_with_zp, d, qs, zp, ggml_half
 ### Community 465 - "flash_attn_ext_f16_one_chunk_inner_vlen1024_vf16_mrow"
 Cohesion: 0.32
 Nodes (8): align_up(), ggml_fp16_t, vfloat32m4_t, flash_attn_ext_f16_one_chunk_inner_vlen1024_vf16_m1(), flash_attn_ext_f16_one_chunk_inner_vlen1024_vf16_mrow(), flash_attn_ext_supported_d_vlen1024_vf16(), flash_attn_ext_supported_shape_vlen1024_vf16(), reduce_sum_f32m4_vlen1024()
+
+### Community 467 - "ggml_map_custom2_impl"
+Cohesion: 0.83
+Nodes (4): ggml_custom2_op_t, ggml_map_custom2(), ggml_map_custom2_impl(), ggml_map_custom2_inplace()
 
 ### Community 468 - "rvv_kernels.h"
 Cohesion: 0.33
@@ -1804,8 +1820,8 @@ Cohesion: 0.38
 Nodes (4): whisper_global_cache, cos_vals, hann_window, sin_vals
 
 ### Community 470 - "ggml_quantize_chunk"
-Cohesion: 0.13
-Nodes (17): block_iq2_s, block_q1_0, block_q5_1, quantize_row_q1_0(), quantize_row_q5_1(), ggml_quantize_chunk(), ggml_quantize_requires_imatrix(), dequantize_row_iq2_s() (+9 more)
+Cohesion: 0.17
+Nodes (13): block_q1_0, quantize_row_q1_0(), ggml_quantize_chunk(), ggml_quantize_requires_imatrix(), dequantize_row_q1_0(), iq1_find_best_neighbour2(), quantize_iq1_m(), quantize_iq1_s() (+5 more)
 
 ### Community 472 - "Step 20：whisper.cpp 正式替换"
 Cohesion: 0.33
@@ -1815,13 +1831,17 @@ Nodes (5): Step 20：whisper.cpp 正式替换, 变更, 已验证, 未完成, 真
 Cohesion: 0.33
 Nodes (6): ggml_backend_graph_copy, buffer, ctx_allocated, ctx_unallocated, graph, ggml_backend_buffer_t
 
-### Community 478 - "ggml_backend_sched_split"
-Cohesion: 0.33
-Nodes (6): ggml_backend_sched_split, backend_id, i_end, i_start, inputs, n_inputs
+### Community 478 - "ggml_map_custom3_impl"
+Cohesion: 0.83
+Nodes (4): ggml_custom3_op_t, ggml_map_custom3(), ggml_map_custom3_impl(), ggml_map_custom3_inplace()
 
 ### Community 479 - "tile_config_t"
 Cohesion: 0.33
 Nodes (6): tile_config_t, colsb, palette_id, reserved_0, rows, start_row
+
+### Community 483 - "ffi.Opaque"
+Cohesion: 0.67
+Nodes (3): ffi.Opaque, mt_whisper_context, mt_whisper_vad_context
 
 ### Community 485 - "make_block_q4_1x16"
 Cohesion: 0.40
@@ -1832,16 +1852,8 @@ Cohesion: 0.25
 Nodes (8): ggml_backend_dev_props, caps, description, device_id, memory_free, memory_total, name, type
 
 ### Community 487 - "hbm.cpp"
-Cohesion: 0.31
-Nodes (7): ggml_backend_cpu_buffer_type_get_alignment(), ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_cpu_hbm_buffer_free_buffer(), ggml_backend_cpu_hbm_buffer_type(), ggml_backend_cpu_hbm_buffer_type_alloc_buffer(), ggml_backend_cpu_hbm_buffer_type_get_name()
-
-### Community 490 - "ggml_opt_fit"
-Cohesion: 0.33
-Nodes (7): ggml_opt_get_optimizer_params, ggml_backend_sched_t, ggml_tensor, map, ggml_opt_default_params(), ggml_opt_fit(), map_tensor()
-
-### Community 491 - "quantize_row_q8_K_ref"
-Cohesion: 0.25
-Nodes (8): quantize_row_q8_K(), quantize_row_q8_K(), quantize_row_q8_K(), quantize_row_q8_K(), quantize_row_q8_K_generic(), block_q8_K, dequantize_row_q8_K(), quantize_row_q8_K_ref()
+Cohesion: 0.36
+Nodes (6): ggml_backend_buffer_t, ggml_backend_buffer_type_t, ggml_backend_cpu_hbm_buffer_free_buffer(), ggml_backend_cpu_hbm_buffer_type(), ggml_backend_cpu_hbm_buffer_type_alloc_buffer(), ggml_backend_cpu_hbm_buffer_type_get_name()
 
 ### Community 493 - "quantize_row_tq1_0_ref"
 Cohesion: 0.40
@@ -1849,7 +1861,7 @@ Nodes (5): block_tq1_0, quantize_row_tq1_0(), dequantize_row_tq1_0(), quantize_r
 
 ### Community 494 - "ggml-quants.c"
 Cohesion: 0.08
-Nodes (34): block_iq1_m, block_iq1_s, block_iq2_xs, block_iq2_xxs, block_iq3_s, block_iq3_xxs, ggml_quantize_free(), block_q8_0 (+26 more)
+Nodes (31): block_iq1_m, block_iq1_s, block_iq2_xs, block_iq2_xxs, block_iq3_s, block_iq3_xxs, quantize_row_q5_0(), block_q5_0 (+23 more)
 
 ### Community 495 - "kleidiai_block_args"
 Cohesion: 0.33
@@ -1863,13 +1875,9 @@ Nodes (5): ggml_backend_dev_caps, async, buffer_from_host_ptr, events, host_buff
 Cohesion: 0.40
 Nodes (5): ggml_backend_meta_split_state, axis, n_segments, ne, nr
 
-### Community 501 - "ggml_init_params"
-Cohesion: 0.40
-Nodes (4): ggml_init_params, mem_buffer, mem_size, no_alloc
-
 ### Community 502 - "ime_env.cpp"
-Cohesion: 0.19
-Nodes (12): spine_mem_pool_backend, hex_string_to_u16(), parse_mem_backend(), spine_env_info::spine_env_info(), spine_mem_pool_backend_to_string(), spine_mem_pool_shared_mem_free(), spine_mem_pool_tcm_info, available (+4 more)
+Cohesion: 0.13
+Nodes (18): spine_mem_pool_backend, hex_string_to_u16(), parse_mem_backend(), spine_env_info::spine_env_info(), spine_mem_pool_backend_to_string(), spine_barrier_init(), spine_barrier_t, int64_t (+10 more)
 
 ### Community 503 - "atomic_flag_test_and_set"
 Cohesion: 0.50
@@ -1912,9 +1920,9 @@ Cohesion: 0.67
 Nodes (3): block_q8_0x32, block_q8_0, make_block_q8_0x32()
 
 ## Knowledge Gaps
-- **4629 isolated node(s):** `schemaVersion`, `minAppVersion`, `models`, `_MeetingFlowFixture`, `_modelAsset` (+4624 more)
+- **4665 isolated node(s):** `schemaVersion`, `minAppVersion`, `models`, `_MeetingFlowFixture`, `_modelAsset` (+4660 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **170 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **172 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Work-memory lessons
 
@@ -1933,17 +1941,17 @@ Nodes (3): block_q8_0x32, block_q8_0, make_block_q8_0x32()
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `_string` connect `_string` to `use_cases/evaluate_alpha_release.dart`, `cpuid_x86`, `size`, `whisper_model`, `vector`, `whisper_state`, `ggml_backend_meta_context`, `gguf_init_from_reader`, `ggml_backend_load_best`, `gguf_set_kv`, `gguf.cpp`, `x86/cpu-feats.cpp`, `Segment`, `whisper_decoder`, `ggml_backend_buffer_type_t`, `whisper_vad_context`, `whisper.cpp`, `ggml-cpu.cpp`, `ggml-backend-reg.cpp`, `whisper_vad_model`, `size`, `whisper_context`, `meettrace_whisper.cpp`, `vector`, `ime_env.cpp`, `ggml-backend-meta.cpp`, `mt_whisper_vad_context`?**
-  _High betweenness centrality (0.188) - this node is a cross-community bridge._
-- **Why does `cpuid_x86` connect `cpuid_x86` to `_string`, `x86/cpu-feats.cpp`, `ggml_backend_cpu_x86_score`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **Why does `ggml_type_size()` connect `ggml_is_contiguous` to `quantize_row_iq4_nl_impl`, `size`, `rvv_kernels.cpp`, `ggml_opt_build`, `whisper_build_graph_decoder`, `ggml_nrows`, `ggml_new_tensor`, `ops.cpp`, `ggml.c`, `gguf_init_from_reader`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `_string` connect `_string` to `use_cases/evaluate_alpha_release.dart`, `ggml_is_contiguous`, `cpuid_x86`, `size`, `whisper_model`, `vector`, `whisper_state`, `ggml_backend_meta_context`, `gguf_init_from_reader`, `ggml_backend_load_best`, `gguf_set_kv`, `gguf.cpp`, `x86/cpu-feats.cpp`, `whisper_vocab`, `whisper.cpp`, `ggml-cpu.cpp`, `ggml-backend-reg.cpp`, `size`, `whisper_vad_model`, `data`, `ggml_backend_cpu_device_context`, `meettrace_whisper.cpp`, `ime_env.cpp`, `ggml-backend-meta.cpp`?**
+  _High betweenness centrality (0.169) - this node is a cross-community bridge._
+- **Why does `whisper_state` connect `whisper_state` to `whisper_full_with_state`, `whisper.cpp`, `size`, `ggml_view_tensor`, `vector`, `whisper_batch`, `weight_buft_supported`, `_string`, `mt_whisper_transcribe`, `whisper_decoder`, `whisper_vad_model`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **Why does `FlutterWindow` connect `Win32Window` to `GeneratedPluginRegistrant.swift`, `MessageHandler`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Are the 98 inferred relationships involving `ggml_nrows()` (e.g. with `get_thread_range()` and `ggml_get_n_tasks()`) actually correct?**
   _`ggml_nrows()` has 98 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 93 inferred relationships involving `ggml_compute_forward()` (e.g. with `ggml_compute_forward_div()` and `ggml_compute_forward_mul()`) actually correct?**
   _`ggml_compute_forward()` has 93 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `schemaVersion`, `minAppVersion`, `models` to the rest of the system?**
-  _4629 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _4665 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `meeting_detail_view_model.dart` be split into smaller, more focused modules?**
-  _Cohesion score 0.01679328268692523 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.017241379310344827 - nodes in this community are weakly interconnected._

@@ -39,7 +39,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，新增评测链后共 380 tests |
+| `flutter test` | 通过，新增评测链后共 389 tests |
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
@@ -131,13 +131,28 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   私有路径环境变量并执行 fixed-window、生产默认 VAD 和候选 VAD。该轨道验证非语音
   防线和报告口径，不能代替真实会议环境噪声。
 
+### 5.3 阶段 0～4 自动发布评估
+
+- `AlphaReleaseEvaluationInput` schema 已升级为 `4`，输出报告 schema 为 `2`；旧输入
+  schema 或缺少新增字段时返回 `blocked`，不会沿用旧默认值。
+- 正式质量门槛要求 `corpus.evidenceClass=product-meeting`，并校验 manifest
+  SHA-256、来源和授权标识。`public-regression` 与 `synthetic-smoke` 会明确失败，
+  不能拼装成 `go`。
+- 评估器显式比较 Base VAD 相对固定窗口、Small 相对 Base 的关键事实召回，并要求
+  20 个 Preview 延迟样本、语音首尾事实全部保留，以及 ASR/VAD 百次生命周期、事实
+  PCM、模型锁定、预览丢弃、最终时间戳、快照原子性和总结事实源等阶段 0～4 不变量。
+- 当前机器可读输入和报告位于
+  `docs/quality/evidence/android-emulator/phase-0-4-release-input.json` 与
+  `phase-0-4-release-report.json`。结果为 `blocked`：21 项通过、0 项失败、35 项
+  缺失；缺失项保留真实产品语料、产品质量指标和后续平台门禁，不以代理数据填充。
+
 ## 6. Hard Gate 0
 
 | 条件 | 状态 |
 |---|---|
 | 产品边界批准并统一 | 通过 |
 | 工程基线可重复 | 通过 |
-| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过 |
+| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 4 另显式阻断代理语料和阶段 0～4 不变量缺失 |
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
 | 20 段真实去敏产品会议语料可运行 | `blocked`：未提供语料环境变量 |
 | 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
@@ -271,3 +286,8 @@ SHA-256；旧 transcript 在受限 `.spike` 输出目录内清除，噪声幻觉
 三个 reviewable 文件；OCR 不支持的四个 Markdown 变更由主审手工核对。审查补强了
 `.spike/` 写入边界、私有输入契约和实际 PCM 峰值的自动化覆盖，复审未发现或保留
 Critical/High 或有实际影响的 Medium。
+
+自动发布评估 schema 4 完成后，按 workspace 模式审查 6 个 reviewable 文件并手工
+核对三份 Markdown。审查发现直接 Domain 调用传入非有限召回值时，No-Go 报告可能因
+JSON 不支持 `NaN/Infinity` 而无法输出；现已净化报告值并新增回归测试。复审未发现
+或保留 Critical/High 或有实际影响的 Medium。

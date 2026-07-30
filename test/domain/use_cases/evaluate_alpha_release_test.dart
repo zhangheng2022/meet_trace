@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/use_cases/evaluate_alpha_release.dart';
 
@@ -146,6 +148,167 @@ void main() {
       );
     });
 
+    test('公开或合成证据不能关闭产品会议质量门槛', () {
+      for (final evidenceClass in ['public-regression', 'synthetic-smoke']) {
+        final report = const EvaluateAlphaReleaseUseCase().execute(
+          _passingInput().copyWith(corpusEvidenceClass: evidenceClass),
+        );
+        final gate = report.gates.singleWhere(
+          (candidate) => candidate.id == 'corpus.evidenceClass',
+        );
+
+        expect(gate.status, ReleaseGateStatus.failed);
+        expect(report.decision, AlphaReleaseDecision.noGo);
+      }
+    });
+
+    test('旧 schema 缺少阶段 0 到 4 字段时保持 blocked', () {
+      final json = _passingInput().toJson()
+        ..['schemaVersion'] = 3
+        ..remove('quality')
+        ..remove('phase04');
+      final report = const EvaluateAlphaReleaseUseCase().execute(
+        AlphaReleaseEvaluationInput.fromJson(json),
+      );
+
+      expect(
+        report.gates
+            .singleWhere((gate) => gate.id == 'input.schemaVersion')
+            .status,
+        ReleaseGateStatus.missing,
+      );
+      expect(report.decision, AlphaReleaseDecision.blocked);
+    });
+
+    test('Base、Small 或语音首尾关键事实回退时 No-Go', () {
+      final regressions = <(AlphaReleaseEvaluationInput, String)>[
+        (
+          _passingInput().copyWith(
+            standardFixedWindowKeyFactRecallRatio: 0.9,
+            standardVadKeyFactRecallRatio: 0.89,
+          ),
+          'quality.standardVadRecallNoRegression',
+        ),
+        (
+          _passingInput().copyWith(
+            standardVadKeyFactRecallRatio: 0.9,
+            advancedVadKeyFactRecallRatio: 0.89,
+          ),
+          'quality.advancedVadRecallNoRegression',
+        ),
+        (
+          _passingInput().copyWith(speechBoundaryKeyFactRecallRatio: 0.99),
+          'quality.speechBoundaryRecall',
+        ),
+      ];
+
+      for (final regression in regressions) {
+        final report = const EvaluateAlphaReleaseUseCase().execute(
+          regression.$1,
+        );
+
+        expect(
+          report.gates.singleWhere((gate) => gate.id == regression.$2).status,
+          ReleaseGateStatus.failed,
+          reason: regression.$2,
+        );
+        expect(report.decision, AlphaReleaseDecision.noGo);
+      }
+    });
+
+    test('Preview 延迟必须有 20 个样本且 P95 不超过 3 秒', () {
+      final missing = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(previewSentenceLatencyMs: [100]),
+      );
+      final failed = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(
+          previewSentenceLatencyMs: [
+            for (var index = 0; index < 18; index++) 1000,
+            3100,
+            4000,
+          ],
+        ),
+      );
+
+      expect(
+        missing.gates
+            .singleWhere((gate) => gate.id == 'quality.previewLatencyP95Ms')
+            .status,
+        ReleaseGateStatus.missing,
+      );
+      expect(missing.decision, AlphaReleaseDecision.blocked);
+      expect(
+        failed.gates
+            .singleWhere((gate) => gate.id == 'quality.previewLatencyP95Ms')
+            .status,
+        ReleaseGateStatus.failed,
+      );
+      expect(failed.decision, AlphaReleaseDecision.noGo);
+    });
+
+    test('语料 manifest 必须绑定有效 SHA-256 和来源授权', () {
+      final invalid = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(corpusManifestSha256: 'not-a-sha256'),
+      );
+      final gate = invalid.gates.singleWhere(
+        (candidate) => candidate.id == 'corpus.manifestSha256',
+      );
+
+      expect(gate.status, ReleaseGateStatus.failed);
+      expect(invalid.decision, AlphaReleaseDecision.noGo);
+    });
+
+    test('非有限召回值判定失败且报告仍可 JSON 序列化', () {
+      final report = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(
+          standardVadKeyFactRecallRatio: double.nan,
+          speechBoundaryKeyFactRecallRatio: double.infinity,
+        ),
+      );
+
+      expect(
+        report.gates
+            .singleWhere(
+              (gate) => gate.id == 'quality.standardVadRecallNoRegression',
+            )
+            .status,
+        ReleaseGateStatus.failed,
+      );
+      expect(
+        report.gates
+            .singleWhere((gate) => gate.id == 'quality.speechBoundaryRecall')
+            .status,
+        ReleaseGateStatus.failed,
+      );
+      expect(report.decision, AlphaReleaseDecision.noGo);
+      expect(() => jsonEncode(report.toJson()), returnsNormally);
+    });
+
+    test('阶段 0 到 4 工程不变量失败时 No-Go，缺失时 blocked', () {
+      final failed = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(asrContextLifecyclePassed: false),
+      );
+      expect(
+        failed.gates
+            .singleWhere((gate) => gate.id == 'phase04.asrContextLifecycle')
+            .status,
+        ReleaseGateStatus.failed,
+      );
+      expect(failed.decision, AlphaReleaseDecision.noGo);
+
+      final json = _passingInput().toJson()..remove('phase04');
+      final missing = const EvaluateAlphaReleaseUseCase().execute(
+        AlphaReleaseEvaluationInput.fromJson(json),
+      );
+      expect(
+        missing.gates
+            .where((gate) => gate.id.startsWith('phase04.'))
+            .every((gate) => gate.status == ReleaseGateStatus.missing),
+        isTrue,
+      );
+      expect(missing.decision, AlphaReleaseDecision.blocked);
+    });
+
     test('JSON 输入和报告输出保留可追溯标识且不包含原音频', () {
       final input = AlphaReleaseEvaluationInput.fromJson(
         _passingInput().toJson(),
@@ -155,7 +318,10 @@ void main() {
 
       expect(input.corpusId, 'corpus-deidentified-v1');
       expect(input.deviceId, 'low-end-arm64-01');
+      expect(json['schemaVersion'], 2);
       expect(json['decision'], 'go');
+      expect(json['corpusEvidenceClass'], 'product-meeting');
+      expect(json['corpusManifestSha256'], input.corpusManifestSha256);
       expect(json.toString(), isNot(contains('.wav')));
       expect(json.toString(), isNot(contains('.pcm')));
 
@@ -174,7 +340,14 @@ void main() {
 }
 
 AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
+  schemaVersion: 4,
   corpusId: 'corpus-deidentified-v1',
+  corpusEvidenceClass: 'product-meeting',
+  corpusManifestSha256:
+      '0123456789abcdef0123456789abcdef'
+      '0123456789abcdef0123456789abcdef',
+  corpusSourceId: 'meettrace:deidentified-meeting-corpus-v1',
+  corpusLicenseId: 'internal-consent-v1',
   deviceId: 'low-end-arm64-01',
   rawMetricsRef: 'metrics/at16.json',
   corpusSampleCount: 20,
@@ -206,6 +379,14 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   ],
   advancedFinalTranscriptionDurationMs: 600000,
   keyFactRecallRatio: 0.85,
+  fixedWindowBothModelsCompleted: true,
+  previewSentenceLatencyMs: [
+    for (var index = 1; index <= 20; index++) index * 100,
+  ],
+  standardFixedWindowKeyFactRecallRatio: 0.85,
+  standardVadKeyFactRecallRatio: 0.9,
+  advancedVadKeyFactRecallRatio: 0.92,
+  speechBoundaryKeyFactRecallRatio: 1,
   silenceSampleCount: 20,
   silenceFalsePositiveCount: 0,
   noiseSampleCount: 20,
@@ -213,6 +394,19 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   vadNoiseHallucinationCount: 2,
   vadChunkBoundaryConsistent: true,
   vadFailureRecordingContinues: true,
+  productBoundaryApproved: true,
+  meetingModelLocked: true,
+  factPcmSoleSourcePassed: true,
+  emulatorLifecyclePassed: true,
+  asrFailureRecordingContinues: true,
+  startFailureDiagnosticsPassed: true,
+  asrContextLifecyclePassed: true,
+  vadContextLifecyclePassed: true,
+  finalChunkBoundaryConsistent: true,
+  previewDropFinalInvariant: true,
+  finalTimestampsValid: true,
+  snapshotAtomicityPassed: true,
+  summaryFinalSnapshotOnly: true,
   acceptanceEvidence: {
     for (var index = 1; index <= 24; index++)
       'AT-${index.toString().padLeft(2, '0')}': 'evidence/AT-$index.json',

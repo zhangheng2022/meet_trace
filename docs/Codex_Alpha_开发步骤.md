@@ -12,6 +12,9 @@
 - Android 模拟器已完成 Base/Small 的固定版本 ASCEND 回归，以及 fixed-window、
   生产默认 VAD、候选 VAD 的 20 段确定性非语音回归；两者分别属于
   `public-regression` 和 `synthetic-smoke`，不替代真实产品会议证据。
+- 自动发布评估输入已升级为 schema 4，显式检查产品会议证据类别、Base/Small
+  召回不回退、Preview 延迟和阶段 0～4 工程不变量；当前机器可读结论为
+  `blocked`（21 passed、0 failed、35 missing）。
 
 ## 当前交付顺序
 
