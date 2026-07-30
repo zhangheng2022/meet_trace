@@ -43,7 +43,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
   }
 
   ModelSettingsViewModel createModelSettingsViewModel() {
-    final advanced = registry.requireById(qwenAdvancedModelId);
+    final advanced = registry.requireById(whisperSmallAdvancedModelId);
     final manifest = modelManifest.models.singleWhere(
       (entry) => entry.modelId == advanced.modelId,
     );
@@ -110,7 +110,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
     StartedMeetingSession session,
   ) {
     final preview = AsrPreviewCoordinator(
-      vad: SileroVadSegmenter.official(modelPath: vadModelPath),
+      vad: StreamingWindowSegmenter(),
       engine: session.engine,
     );
     final recording = ReliableRecordingService(

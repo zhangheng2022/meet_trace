@@ -1,7 +1,7 @@
 import 'asr_model.dart';
 
-const paraformerStandardModelId = 'sherpa-onnx-paraformer-zh-small-2024-03-09';
-const qwenAdvancedModelId = 'sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25';
+const whisperBaseStandardModelId = 'whisper-cpp-base-q5_1-v1.9.1';
+const whisperSmallAdvancedModelId = 'whisper-cpp-small-q5_1-v1.9.1';
 
 final class AsrModelRegistry {
   AsrModelRegistry({
@@ -37,27 +37,40 @@ final class AsrModelRegistry {
   static final alpha = AsrModelRegistry(
     models: [
       AsrModelDescriptor(
-        modelId: paraformerStandardModelId,
-        displayName: '标准模型（Paraformer）',
+        modelId: whisperBaseStandardModelId,
+        displayName: '标准模型（Whisper Base）',
         tier: AsrModelTier.standard,
-        version: '2024-03-09',
-        supportedLanguages: const ['zh', 'en'],
+        version: 'v1.9.1-q5_1',
+        supportedLanguages: const ['multilingual'],
         installationType: AsrInstallationType.bundled,
-        requiredBytes: 81904027,
-        capabilities: const {'offline', 'meeting-preview', 'final-transcript'},
+        requiredBytes: 59707625,
+        capabilities: const {
+          'offline',
+          'multilingual',
+          'meeting-preview',
+          'final-transcript',
+          'timestamps',
+        },
       ),
       AsrModelDescriptor(
-        modelId: qwenAdvancedModelId,
-        displayName: '高级模型（Qwen3-ASR）',
+        modelId: whisperSmallAdvancedModelId,
+        displayName: '高级模型（Whisper Small）',
         tier: AsrModelTier.advanced,
-        version: '2026-03-25',
+        version: 'v1.9.1-q5_1',
         supportedLanguages: const ['multilingual'],
         installationType: AsrInstallationType.downloadable,
-        requiredBytes: 987015347,
-        capabilities: const {'offline', 'high-accuracy', 'final-transcript'},
+        requiredBytes: 190085487,
+        capabilities: const {
+          'offline',
+          'multilingual',
+          'high-accuracy',
+          'meeting-preview',
+          'final-transcript',
+          'timestamps',
+        },
       ),
     ],
-    defaultModelId: paraformerStandardModelId,
+    defaultModelId: whisperBaseStandardModelId,
   );
 
   final List<AsrModelDescriptor> models;

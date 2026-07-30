@@ -1,0 +1,25 @@
+MeetTrace Android + iOS Alpha - whisper.cpp runtime and model notice
+
+Runtime:
+  https://github.com/ggml-org/whisper.cpp
+  tag: v1.9.1
+  commit: f049fff95a089aa9969deb009cdd4892b3e74916
+  license: MIT
+
+Model repository:
+  https://huggingface.co/ggerganov/whisper.cpp
+  revision: 5359861c739e955e79d9a303bcbc70fb988958b1
+  license: MIT
+
+Bundled standard model:
+  ggml-base-q5_1.bin
+  bytes: 59707625
+  sha256: 422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898
+
+Downloadable advanced model:
+  ggml-small-q5_1.bin
+  bytes: 190085487
+  sha256: ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb
+
+The vendored upstream runtime license is also retained at:
+  packages/meettrace_whisper_native/third_party/whisper.cpp/LICENSE

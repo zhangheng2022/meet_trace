@@ -1,4 +1,6 @@
 import '../../domain/models/asr_model_registry.dart';
+import 'package:sqflite/sqflite.dart';
+
 import '../services/storage/app_database.dart';
 import 'repository_contracts.dart';
 
@@ -7,6 +9,10 @@ final class SqfliteModelPreferenceRepository
   SqfliteModelPreferenceRepository(this._appDatabase, {required this.registry});
 
   static const _defaultModelKey = 'default_asr_model_id';
+  static const _legacyModelMigrations = {
+    'sherpa-onnx-paraformer-zh-small-2024-03-09': whisperBaseStandardModelId,
+    'sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25': whisperSmallAdvancedModelId,
+  };
 
   final AppDatabase _appDatabase;
   final AsrModelRegistry registry;
@@ -24,8 +30,12 @@ final class SqfliteModelPreferenceRepository
     if (rows.isEmpty) {
       return registry.defaultModelId;
     }
-    final modelId = rows.single['value']! as String;
+    final storedModelId = rows.single['value']! as String;
+    final modelId = _legacyModelMigrations[storedModelId] ?? storedModelId;
     registry.requireById(modelId);
+    if (modelId != storedModelId) {
+      await _writeDefaultModelId(db, modelId);
+    }
     return modelId;
   }
 
@@ -33,6 +43,10 @@ final class SqfliteModelPreferenceRepository
   Future<void> setDefaultModelId(String modelId) async {
     registry.requireById(modelId);
     final db = await _appDatabase.open();
+    await _writeDefaultModelId(db, modelId);
+  }
+
+  Future<void> _writeDefaultModelId(Database db, String modelId) async {
     await db.transaction((txn) async {
       final row = <String, Object?>{
         'value': modelId,

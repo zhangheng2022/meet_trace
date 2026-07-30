@@ -76,7 +76,7 @@ final class AsrModelOption {
 
   String? get resourceLabel => switch (descriptor.tier) {
     AsrModelTier.standard => null,
-    AsrModelTier.advanced => '约 941 MB · 至少需要 2 GB 空间 · 建议使用 Wi-Fi',
+    AsrModelTier.advanced => '约 181 MB · 至少需要 512 MB 空间 · 建议使用 Wi-Fi',
   };
 }
 

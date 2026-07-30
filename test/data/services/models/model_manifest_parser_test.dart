@@ -18,8 +18,8 @@ void main() {
     final manifest = parser.parse(jsonEncode(_validManifest()));
 
     expect(manifest.schemaVersion, 1);
-    expect(manifest.models.single.modelId, qwenAdvancedModelId);
-    expect(manifest.models.single.files, hasLength(6));
+    expect(manifest.models.single.modelId, whisperSmallAdvancedModelId);
+    expect(manifest.models.single.files, hasLength(1));
     expect(
       manifest.models.single.files.fold<int>(
         0,
@@ -99,22 +99,15 @@ Map<String, Object?> _validManifest() {
     'minAppVersion': '1.0.0',
     'models': <Object?>[
       <String, Object?>{
-        'modelId': qwenAdvancedModelId,
-        'version': '2026-03-25',
+        'modelId': whisperSmallAdvancedModelId,
+        'version': 'v1.9.1-q5_1',
         'tier': 'advanced',
         'installationType': 'downloadable',
-        'requiredBytes': 987015347,
-        'files': <Object?>[
-          _file('conv_frontend.onnx', 44148281, hash),
-          _file('decoder.int8.onnx', 755914231, hash),
-          _file('encoder.int8.onnx', 182491662, hash),
-          _file('tokenizer/merges.txt', 1671853, hash),
-          _file('tokenizer/tokenizer_config.json', 12487, hash),
-          _file('tokenizer/vocab.json', 2776833, hash),
-        ],
+        'requiredBytes': 190085487,
+        'files': <Object?>[_file('ggml-small-q5_1.bin', 190085487, hash)],
         'license': <String, Object?>{
-          'name': 'Apache-2.0',
-          'noticePath': 'licenses/qwen3-asr-NOTICE.txt',
+          'name': 'MIT',
+          'noticePath': 'assets/licenses/whisper-cpp-NOTICE.txt',
         },
       },
     ],

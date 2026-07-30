@@ -79,7 +79,7 @@ void main() {
       );
       expect(
         report.gates
-            .singleWhere((gate) => gate.id == 'license.paraformer')
+            .singleWhere((gate) => gate.id == 'license.whisperCpp')
             .value,
         isNull,
       );
@@ -151,5 +151,5 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   },
   apkAuditPassed: true,
   iosBuildAuditPassed: true,
-  paraformerRedistributionConfirmed: true,
+  whisperCppLicenseConfirmed: true,
 );

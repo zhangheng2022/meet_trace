@@ -8,7 +8,7 @@
 
 - 会迹（MeetTrace）是 Android + iOS 自适应 Alpha，不提供登录或跨设备同步；双平台排期以 PRD 门槛评估为准，不继承原 Android 两周假设。
 - 本地音频是唯一事实源；推理变慢或失败时，录音必须继续。说话人分离属于可降级能力。
-- 端侧 ASR 仅使用官方 sherpa-onnx 双模型：内置标准模型 `sherpa-onnx-paraformer-zh-small-2024-03-09` INT8，高级模型 `sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25` 按需下载。
+- 端侧 ASR 仅使用官方 `whisper.cpp` v1.9.1 双模型：内置标准模型 `whisper-cpp-base-q5_1-v1.9.1`，高级模型 `whisper-cpp-small-q5_1-v1.9.1` 按需下载。
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
 - 新会议使用“待生成标题”，最终转录完成后由 AI 总结生成标题。AI 总结只能基于最终转录；使用云端 AI 时仅上传最终文本，并为关键结论保留带时间戳的原文证据。
 - 扩展 P0 前必须先更新 PRD。
@@ -22,7 +22,7 @@
 - `lib/domain/{models,ports,use_cases}/`：业务概念、纯 Dart 能力端口和可复用编排。
 - `lib/data/{models,repositories,services}/`：端口实现，以及持久化、HTTP、音频、模型管理和 ASR 适配器。
 
-Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 ONNX、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
+Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 whisper.cpp、原生 FFI、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
 
 ## Forui 优先
 
@@ -31,7 +31,7 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 ## 技能与实现流程
 
 - 新增功能或重构使用 `flutter-apply-architecture-best-practices`；行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`；交付前使用 `dart-run-static-analysis`；代码审查使用 `$open-code-review-delegate`。
-- sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入。禁止自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工 `jniLibs`；两个模型仅在 data/service 层通过统一 `AsrEngine` 适配。
+- `whisper.cpp` 只通过仓库内 `meettrace_whisper_native` package 接入：官方源码固定 commit，使用 Native Assets 构建、`ffigen` 生成绑定和最小 C ABI 包装。禁止自建 JNI、手工 `jniLibs`、散落的 `DynamicLibrary.open` 或在 UI/domain 暴露 FFI；两个模型仅在 data/service 层通过统一 `AsrEngine` 适配。
 - 官方包缺少目标能力时，先调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。
 - 变更产品范围或 P0 验收标准前运行 `$grill-me`。
 - 活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留副本，历史由 Git 保存。

@@ -48,7 +48,7 @@ void main() {
   tearDown(() => root.delete(recursive: true));
 
   test('可用空间不足 2 GiB 时在发起网络请求前失败', () async {
-    capacity.freeBytes = 2 * 1024 * 1024 * 1024 - 1;
+    capacity.freeBytes = minimumAdvancedModelFreeBytes - 1;
 
     await expectLater(
       service.download(descriptor: _descriptor, manifest: _manifest),

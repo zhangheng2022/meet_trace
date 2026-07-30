@@ -21,7 +21,7 @@ final class TestMeetingReadinessChecker implements MeetingReadinessChecker {
           MeetingReadiness(
             microphonePermissionGranted: true,
             freeBytes: minimumRecordingFreeBytes,
-            defaultModelId: paraformerStandardModelId,
+            defaultModelId: whisperBaseStandardModelId,
             defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
             defaultModelAvailable: true,
           );

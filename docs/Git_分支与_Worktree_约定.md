@@ -30,11 +30,11 @@
 .worktrees/alpha-step-04-model-registry
   └─ codex/alpha-step-04-model-registry
 
-.worktrees/alpha-step-05-bundled-paraformer
-  └─ codex/alpha-step-05-bundled-paraformer
+.worktrees/whisper-base-assets
+  └─ codex/whisper-base-assets
 
-.worktrees/alpha-step-06-qwen-download
-  └─ codex/alpha-step-06-qwen-download
+.worktrees/whisper-small-download
+  └─ codex/whisper-small-download
 ```
 
 ## 标准流程

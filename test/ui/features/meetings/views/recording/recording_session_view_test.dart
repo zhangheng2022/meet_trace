@@ -39,7 +39,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('00:00:12'), findsOneWidget);
-    expect(find.textContaining('标准模型（Paraformer）'), findsOneWidget);
+    expect(find.textContaining('标准模型（Whisper Base）'), findsOneWidget);
     expect(find.textContaining('本场锁定'), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('实时转录正常'), findsOneWidget);
@@ -248,7 +248,7 @@ void main() {
         startMs: 11000,
         endMs: 14000,
         text: '这是一条用于验证窄屏时间布局的实时转录。',
-        modelId: paraformerStandardModelId,
+        modelId: whisperBaseStandardModelId,
         modelVersion: 'test',
         isFinalForWindow: false,
       ),
@@ -368,7 +368,7 @@ void main() {
         startMs: 4990000,
         endMs: 4995000,
         text: '关于本次需求的背景，我们先简单回顾一下。',
-        modelId: paraformerStandardModelId,
+        modelId: whisperBaseStandardModelId,
         modelVersion: 'test',
         isFinalForWindow: false,
       ),
@@ -389,7 +389,7 @@ _Fixture _fixture() {
   final recording = _RecordingService();
   final preview = _PreviewSession();
   final descriptor = AsrModelRegistry.alpha.requireById(
-    paraformerStandardModelId,
+    whisperBaseStandardModelId,
   );
   final meeting = Meeting(
     id: 'meeting-1',

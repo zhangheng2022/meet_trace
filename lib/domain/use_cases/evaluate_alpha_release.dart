@@ -33,7 +33,7 @@ final class AlphaReleaseEvaluationInput {
     this.acceptanceEvidence,
     this.apkAuditPassed,
     this.iosBuildAuditPassed,
-    this.paraformerRedistributionConfirmed,
+    this.whisperCppLicenseConfirmed,
   });
 
   factory AlphaReleaseEvaluationInput.fromJson(Map<String, Object?> json) {
@@ -91,8 +91,9 @@ final class AlphaReleaseEvaluationInput {
       acceptanceEvidence: _strings(json['acceptanceEvidence']),
       apkAuditPassed: _boolean(release?['apkAuditPassed']),
       iosBuildAuditPassed: _boolean(release?['iosBuildAuditPassed']),
-      paraformerRedistributionConfirmed: _boolean(
-        release?['paraformerRedistributionConfirmed'],
+      whisperCppLicenseConfirmed: _boolean(
+        release?['whisperCppLicenseConfirmed'] ??
+            release?['paraformerRedistributionConfirmed'],
       ),
     );
   }
@@ -124,7 +125,7 @@ final class AlphaReleaseEvaluationInput {
   final Map<String, String>? acceptanceEvidence;
   final bool? apkAuditPassed;
   final bool? iosBuildAuditPassed;
-  final bool? paraformerRedistributionConfirmed;
+  final bool? whisperCppLicenseConfirmed;
 
   AlphaReleaseEvaluationInput copyWith({
     List<double>? standardRtfSamples,
@@ -166,7 +167,7 @@ final class AlphaReleaseEvaluationInput {
     acceptanceEvidence: acceptanceEvidence,
     apkAuditPassed: apkAuditPassed,
     iosBuildAuditPassed: iosBuildAuditPassed ?? this.iosBuildAuditPassed,
-    paraformerRedistributionConfirmed: paraformerRedistributionConfirmed,
+    whisperCppLicenseConfirmed: whisperCppLicenseConfirmed,
   );
 
   Map<String, Object?> toJson() => {
@@ -207,7 +208,7 @@ final class AlphaReleaseEvaluationInput {
     'release': {
       'apkAuditPassed': apkAuditPassed,
       'iosBuildAuditPassed': iosBuildAuditPassed,
-      'paraformerRedistributionConfirmed': paraformerRedistributionConfirmed,
+      'whisperCppLicenseConfirmed': whisperCppLicenseConfirmed,
     },
   };
 }
@@ -423,9 +424,9 @@ final class EvaluateAlphaReleaseUseCase {
         input.iosBuildAuditPassed,
       ),
       _boolGate(
-        'license.paraformer',
-        'Paraformer 转换权重再分发许可已确认',
-        input.paraformerRedistributionConfirmed,
+        'license.whisperCpp',
+        'whisper.cpp 与模型权重 MIT 许可及 NOTICE 已确认',
+        input.whisperCppLicenseConfirmed,
       ),
     ];
     final hasFailure = gates.any(

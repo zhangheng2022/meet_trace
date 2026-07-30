@@ -47,8 +47,8 @@ void main() {
     final result = await service.transcribe(meetingId: 'meeting-1');
 
     expect(engines.createCalls.single, (
-      paraformerStandardModelId,
-      '2024-03-09',
+      whisperBaseStandardModelId,
+      'v1.9.1-q5_1',
     ));
     expect(engines.engine!.source!.path, '/audio/meeting-1.pcm');
     expect(engines.engine!.source!.durationMs, 2000);
@@ -60,7 +60,7 @@ void main() {
     expect(transcripts.expectedActiveIds.single, isNull);
     expect(result.meeting.status, MeetingState.completed);
     expect(result.meeting.activeTranscriptSnapshotId, 'snapshot-attempt-1');
-    expect(result.snapshot.actualModelId, paraformerStandardModelId);
+    expect(result.snapshot.actualModelId, whisperBaseStandardModelId);
   });
 
   test('推理失败时保留旧活动快照、音频并保存失败尝试', () async {
@@ -81,7 +81,7 @@ void main() {
     expect(meetings.value!.status, MeetingState.failed);
     expect(transcripts.activeSnapshotId, 'old-snapshot');
     expect(transcripts.saved.last.status, TranscriptSnapshotStatus.failed);
-    expect(transcripts.saved.last.actualModelId, paraformerStandardModelId);
+    expect(transcripts.saved.last.actualModelId, whisperBaseStandardModelId);
   });
 
   test('完整音频片段越界时拒绝激活且不混入活动快照', () async {
@@ -127,7 +127,9 @@ void main() {
             createdAt: now,
           );
         };
-    final qwen = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
+    final qwen = AsrModelRegistry.alpha.requireById(
+      whisperSmallAdvancedModelId,
+    );
 
     final result = await service.transcribe(
       meetingId: 'meeting-1',
@@ -144,7 +146,7 @@ void main() {
 
   test('同一 retrySnapshotId 已激活完成时直接返回且不重复推理', () async {
     final descriptor = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
+      whisperBaseStandardModelId,
     );
     final completed = _snapshot(
       id: 'retry-snapshot',
@@ -165,7 +167,7 @@ void main() {
     );
 
     expect(result.snapshot.id, completed.id);
-    expect(result.snapshot.actualModelId, paraformerStandardModelId);
+    expect(result.snapshot.actualModelId, whisperBaseStandardModelId);
     expect(engines.createCalls, isEmpty);
     expect(transcripts.saved, isEmpty);
   });
@@ -220,7 +222,7 @@ void main() {
 
   test('原子激活冲突时不会用失败状态覆盖已提交的赢家', () async {
     final descriptor = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
+      whisperBaseStandardModelId,
     );
     final winner = _snapshot(
       id: 'winner-snapshot',
@@ -287,9 +289,9 @@ Meeting _meeting({
     status: status,
     audioPath: '/audio/meeting-1.pcm',
     audioDurationMs: 2000,
-    requestedModelId: paraformerStandardModelId,
-    recordingModelId: paraformerStandardModelId,
-    recordingModelVersion: '2024-03-09',
+    requestedModelId: whisperBaseStandardModelId,
+    recordingModelId: whisperBaseStandardModelId,
+    recordingModelVersion: 'v1.9.1-q5_1',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
     activeSummaryId: activeSummaryId,
   );
