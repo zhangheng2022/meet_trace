@@ -53,6 +53,6 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 | Base 关键事实召回不低于阶段 0 | `blocked`：缺少真实语料 |
 | Small 关键事实召回不低于 Base | `blocked`：缺少真实语料和本机 Small 权重 |
 | Preview 句后延迟 P95 ≤ 3 秒 | `blocked`：缺少真实语料 |
-| 100 次 context 生命周期无持续增长 | `blocked`：模拟器已验证 10 次，100 次待正式运行 |
+| 100 次 context 生命周期无持续增长 | 通过：第 10→100 次 RSS +6,242,304 bytes，小于 32 MiB 上限 |
 
 在全部阻断项有原始报告前，候选 Profile 不得切换为默认。

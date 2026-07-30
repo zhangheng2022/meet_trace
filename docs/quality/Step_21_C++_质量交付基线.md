@@ -43,9 +43,9 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
-| 30 秒模拟器录音测试 | 通过，960,512 bytes，完整率 1.00036，0 个预览丢弃 |
+| 30 秒模拟器录音测试 | 通过，960,512 bytes，完整率 1.00042，0 个预览丢弃 |
 | 端到端会议流 | 通过，真实 `Application`/`FTheme`、临时数据库、Base 最终快照 |
-| Native context 生命周期 | 通过，连续 10 次创建/推理/幂等释放；首尾 RSS +11,051,008 bytes，后段趋于平台 |
+| Native context 生命周期 | 通过，连续 100 次创建/推理/幂等释放；首尾 RSS +15,822,848 bytes，预热后 RSS +6,242,304 bytes |
 
 首次 `flutter test` 因 Dart 下载 `sqlite3.x64.windows.dll` 时 TLS 握手中断而失败；
 使用 PowerShell 系统证书访问相同官方 URL 后重试通过。该问题属于本机依赖缓存，不是源码
@@ -109,11 +109,11 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 |---|---|
 | x86_64 Debug 构建 | 通过 |
 | Base Native Assets 初始化、推理、释放 | 通过 |
-| 30 秒真实麦克风 PCM | 960,512 bytes，完整率 1.00036，持久化比 1.0 |
+| 30 秒真实麦克风 PCM | 960,512 bytes，完整率 1.00042，持久化比 1.0 |
 | 预览故障注入 | `asr.preview.vad_failed`，事实 PCM 继续增长 |
 | 最终快照 | `complete`，实际模型/版本与会议锁定 Base 一致 |
-| Native context 10 次生命周期 | 通过；最后三次增量为 188,416 / 45,056 / 61,440 bytes，增长已收敛 |
-| 事实 PCM 10 次开始/停止 | 通过，所有采集流关闭、checkpoint 均 finalized |
+| Native context 100 次生命周期 | 通过；第 10→100 次 RSS +6,242,304 bytes，小于 32 MiB 上限 |
+| 事实 PCM 100 次开始/停止 | 通过，所有采集流关闭、checkpoint 均 finalized |
 
 端到端会议测试通过 `PcmAudioCapture` 注入确定性 PCM，同时使用真实写盘、真实 SQLite、
 真实 Base 推理与最终快照原子激活；真实麦克风完整率由独立 30 秒测试负责。两类证据分开，
@@ -144,8 +144,8 @@ Engine 初始化或会议持久化失败时会 best-effort 释放已创建 Engin
 | Android x86_64 会议闭环 | 通过 |
 | 30 秒 PCM 完整率 `≥ 98%` | 通过 |
 | 预览故障后 PCM 继续增长 | 通过 |
-| 10 次 Native context 无持续增长 | 通过 |
-| 10 次事实 PCM 开始/停止无采集流残留 | 通过 |
+| 不少于 10 次 Native context 无持续增长 | 通过，实际 100 次 |
+| 不少于 10 次事实 PCM 开始/停止无采集流残留 | 通过，实际 100 次 |
 | 启动失败有稳定错误码和动作 | 通过 |
 | 30 分钟 Android 真机录音 | 留待阶段 5，不属于本模拟器 Gate |
 

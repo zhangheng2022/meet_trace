@@ -185,8 +185,11 @@ void main() {
       final growthBytes = rssSamples.length < 2
           ? 0
           : rssSamples.last - rssSamples.first;
+      final warmupIndex = rssSamples.length > 10 ? 9 : 0;
+      final steadyStateGrowthBytes = rssSamples.last - rssSamples[warmupIndex];
+      expect(steadyStateGrowthBytes, lessThan(32 * 1024 * 1024));
       debugPrintSynchronously(
-        'MEETTRACE_ANDROID_NATIVE_CYCLES:${jsonEncode({'schemaVersion': 1, 'cycles': _nativeLifecycleCycles, 'runtimeVersion': WhisperNativeContext.runtimeVersion, 'rssSamplesBytes': rssSamples, 'rssGrowthBytes': growthBytes, 'silenceSegmentCount': emittedSegmentCount, 'disposeIdempotent': true})}',
+        'MEETTRACE_ANDROID_NATIVE_CYCLES:${jsonEncode({'schemaVersion': 1, 'cycles': _nativeLifecycleCycles, 'runtimeVersion': WhisperNativeContext.runtimeVersion, 'rssSamplesBytes': rssSamples, 'rssGrowthBytes': growthBytes, 'steadyStateGrowthBytes': steadyStateGrowthBytes, 'steadyStateGrowthLimitBytes': 32 * 1024 * 1024, 'silenceSegmentCount': emittedSegmentCount, 'disposeIdempotent': true})}',
         wrapWidth: null,
       );
     } finally {
@@ -194,7 +197,7 @@ void main() {
         await root.delete(recursive: true);
       }
     }
-  }, timeout: const Timeout(Duration(minutes: 5)));
+  }, timeout: const Timeout(Duration(minutes: 30)));
 
   testWidgets('官方 Silero VAD 可加载、分段并幂等释放', (_) async {
     final temporary = await getTemporaryDirectory();

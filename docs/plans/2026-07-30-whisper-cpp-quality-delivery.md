@@ -471,7 +471,8 @@ flutter test test/data/services/audio/recording_pcm_diagnostics_test.dart
 - Base 关键事实召回率不低于固定窗口基线。
 - Small 关键事实召回率不低于 Base。
 - Preview 句后延迟 P95 `≤ 3 秒`。
-- 取消和 dispose 幂等；100 次 context 生命周期无持续内存增长。
+- 取消和 dispose 幂等；100 次 context 生命周期无崩溃，且第 10→100 次 RSS
+  增长小于 32 MiB。
 
 **阶段 2 审查与提交：**
 
@@ -842,7 +843,7 @@ flutter build ios --debug --no-codesign
 |---|---|---|---|
 | 0 边界与基线 | 工程完成 / 质量阻断 | 隔离 worktree | Step 21、发布评估测试已完成；真实语料缺失 |
 | 1 Android 模拟器与 PCM | 通过 | 阶段 0 工程基线 | x86_64、10 次启动、30 秒 PCM、最终快照 |
-| 2 解码 Profile | 工程完成 / 候选未激活 | 阶段 1 | ABI/Profile 已完成；真实参数矩阵缺失 |
+| 2 解码 Profile | 工程完成 / 候选未激活 | 阶段 1 | ABI/Profile 与 100 次生命周期已完成；真实参数矩阵缺失 |
 | 3 官方 VAD | 工程完成 / 质量阻断 | 阶段 2 工程能力 | 静音/chunk/模拟器 100 次生命周期通过；真实噪声证据缺失 |
 | 4 预览与最终 | 工程完成 / 质量阻断 | 阶段 3 工程能力 | 确定性最终快照和故障注入通过；真实关键事实证据缺失 |
 | 5 Android | 待执行 | Hard Gate 4 | 三档设备、16 KB、质量报告 |

@@ -40,7 +40,7 @@ SHA-256 均匹配；未包含 Small、sherpa、ONNX、用户音频或数据库�
 | 不同 chunk 边界 | 单元测试得到相同最终 VAD 区间 |
 | 纯静音 | 单元测试及 API 36 x86_64 原生 VAD 均为 0 片段 |
 | VAD isolate | API 36 x86_64 成功加载、检测、幂等释放 |
-| VAD 生命周期 | 100 次 create/detect/cancel-reset/destroy 通过，预热后 RSS -2,088,960 bytes |
+| VAD 生命周期 | 100 次 create/detect/cancel-reset/destroy 通过，预热后 RSS -5,836,800 bytes |
 | 预览故障 | 事实 PCM 继续增长，最终快照仍 `complete` |
 | 最终重新分段 | 只识别从完整 PCM 得到的脚本化语音区间 |
 | 快照原子性 | 数据库冲突/推理失败测试保留旧活动快照 |
