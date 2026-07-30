@@ -12,8 +12,10 @@ void main() {
       final summary = summaries.single;
 
       expect(report['corpusId'], 'deidentified-v1');
-      expect(report['schemaVersion'], 2);
+      expect(report['corpusEvidenceClass'], 'product-meeting');
+      expect(report['schemaVersion'], 3);
       expect(summary['deviceId'], 'android-emulator-x86_64-api-36');
+      expect(summary['pipelineId'], 'fixed-window-v1');
       expect(summary['sampleCount'], 20);
       expect(summary['rtfP50'], 0.1);
       expect(summary['rtfP95'], 0.1);
@@ -28,6 +30,60 @@ void main() {
       expect(summary['energySampleCount'], 20);
       expect(summary['sustainedSevereOrCriticalThermal'], isFalse);
       expect(summary['thermalSampleCount'], 20);
+    });
+
+    test('按 pipeline 分组并计算 VAD 相对固定窗口的噪声幻觉下降', () {
+      final input = _input(sampleCount: 20);
+      final fixedObservations =
+          input['observations']! as List<Map<String, Object?>>;
+      for (var index = 5; index < 10; index++) {
+        fixedObservations[index]['emittedText'] = true;
+      }
+      final vadObservations = [
+        for (final observation in fixedObservations)
+          {
+            ...observation,
+            'pipelineId': 'vad-segmented-v1',
+            if ((observation['sampleId']! as String).startsWith('sample-'))
+              'emittedText':
+                  int.parse(
+                    (observation['sampleId']! as String).substring(7),
+                  ) >=
+                  10,
+          },
+      ];
+      input['observations'] = [...fixedObservations, ...vadObservations];
+
+      final report = const WhisperQualityMetrics().evaluate(input);
+      final summaries = report['summaries']! as List<Map<String, Object?>>;
+      expect(summaries, hasLength(2));
+      final comparison =
+          (report['pipelineComparisons']! as List<Map<String, Object?>>).single;
+
+      expect(comparison['baselinePipelineId'], 'fixed-window-v1');
+      expect(comparison['candidatePipelineId'], 'vad-segmented-v1');
+      expect(comparison['baselineNoiseHallucinationCount'], 5);
+      expect(comparison['candidateNoiseHallucinationCount'], 0);
+      expect(comparison['noiseHallucinationReductionRatio'], 1);
+      expect(comparison['keyFactRecallDelta'], 0);
+    });
+
+    test('固定窗口没有噪声幻觉时不伪造百分比改善', () {
+      final input = _input(sampleCount: 20);
+      final fixedObservations =
+          input['observations']! as List<Map<String, Object?>>;
+      input['observations'] = [
+        ...fixedObservations,
+        for (final observation in fixedObservations)
+          {...observation, 'pipelineId': 'vad-segmented-v1'},
+      ];
+
+      final report = const WhisperQualityMetrics().evaluate(input);
+      final comparison =
+          (report['pipelineComparisons']! as List<Map<String, Object?>>).single;
+
+      expect(comparison['baselineNoiseHallucinationCount'], 0);
+      expect(comparison['noiseHallucinationReductionRatio'], isNull);
     });
 
     test('少于 20 段、未知 sample 或音频路径引用会拒绝', () {
@@ -69,6 +125,26 @@ void main() {
           'true';
       expect(
         () => const WhisperQualityMetrics().evaluate(invalidBoolean),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+
+      final missingPipeline = _input(sampleCount: 20);
+      final missingPipelineObservations =
+          missingPipeline['observations']! as List<Object?>;
+      (missingPipelineObservations.first! as Map<String, Object?>).remove(
+        'pipelineId',
+      );
+      expect(
+        () => const WhisperQualityMetrics().evaluate(missingPipeline),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+
+      final missingEvidenceClass = _input(sampleCount: 20);
+      (missingEvidenceClass['corpus']! as Map<String, Object?>).remove(
+        'evidenceClass',
+      );
+      expect(
+        () => const WhisperQualityMetrics().evaluate(missingEvidenceClass),
         throwsA(isA<WhisperQualityMetricsException>()),
       );
     });
@@ -142,17 +218,22 @@ Map<String, Object?> _input({required int sampleCount}) {
         'durationMs': 10000,
         'tags': [
           if (index < 5) 'silence',
-          if (index >= 5 && index < 10) 'noise',
+          if (index >= 5 && index < 10) 'noise-only',
           if (index >= 10) 'speech',
         ],
         'expectedKeyFacts': [if (index >= 10) 'fact-$index'],
       },
   ];
   return {
-    'schemaVersion': 2,
+    'schemaVersion': 3,
     'corpus': {
       'id': 'deidentified-v1',
       'deidentified': true,
+      'evidenceClass': 'product-meeting',
+      'provenance': const {
+        'sourceId': 'private-deidentified-meetings',
+        'licenseId': 'internal-consented',
+      },
       'samples': samples,
     },
     'observations': [
@@ -163,6 +244,7 @@ Map<String, Object?> _input({required int sampleCount}) {
           'modelId': 'whisper-base',
           'modelVersion': 'v1',
           'profileId': 'baseline',
+          'pipelineId': 'fixed-window-v1',
           'inferenceDurationMs': 1000,
           'sentenceLatencyMs': 1200,
           'emittedText': index >= 10,

@@ -10,6 +10,12 @@ param(
     [ValidateSet("baseline", "preview", "final")]
     [string[]]$Profiles = @("baseline", "preview", "final"),
 
+    [ValidateSet("fixed-window", "vad-segmented")]
+    [string[]]$Pipelines = @("fixed-window", "vad-segmented"),
+
+    [ValidateSet("product-meeting", "public-regression", "synthetic-smoke")]
+    [string]$RequiredEvidenceClass = "product-meeting",
+
     [ValidateRange(1, 32)]
     [int]$ThreadCount = 2,
 
@@ -97,6 +103,31 @@ function Assert-NativeSuccess {
     }
 }
 
+function Invoke-AdbChecked {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Action
+    )
+
+    $previousErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & $adb @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
+    if ($exitCode -ne 0) {
+        $detail = ($output | ForEach-Object { "$_" }) -join [Environment]::NewLine
+        throw "$Action failed with exit code $exitCode. $detail"
+    }
+    return @($output | ForEach-Object { "$_" })
+}
+
 function Get-RelativeOutputReference {
     param(
         [Parameter(Mandatory = $true)]
@@ -133,6 +164,9 @@ function Write-JsonFile {
 if ($Profiles.Count -eq 0) {
     throw "Profiles must not be empty."
 }
+if ($Pipelines.Count -eq 0) {
+    throw "Pipelines must not be empty."
+}
 $profileIds = @(
     @(
         foreach ($profile in $Profiles) {
@@ -144,8 +178,21 @@ $profileIds = @(
         }
     ) | Select-Object -Unique
 )
+$pipelineIds = @(
+    @(
+        foreach ($pipeline in $Pipelines) {
+            switch ($pipeline) {
+                "fixed-window" { "fixed-window-v1" }
+                "vad-segmented" { "vad-segmented-v1" }
+            }
+        }
+    ) | Select-Object -Unique
+)
 
 $manifestPath = Resolve-ExistingFile -Path $CorpusManifest -Label "Corpus manifest"
+$manifestSha256 = (
+    Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256
+).Hash.ToLowerInvariant()
 $resolvedSmallModel = Resolve-ExistingFile -Path $SmallModelPath -Label "Whisper Small model"
 $smallFile = Get-Item -LiteralPath $resolvedSmallModel
 if ($smallFile.Length -ne $smallExpectedBytes) {
@@ -156,9 +203,14 @@ if ($smallHash -ne $smallExpectedSha256) {
     throw "Whisper Small model SHA-256 mismatch."
 }
 
-$outputRoot = [System.IO.Path]::GetFullPath(
-    (Join-Path -Path $repoRoot -ChildPath $OutputDirectory)
-)
+$outputRoot = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {
+    [System.IO.Path]::GetFullPath($OutputDirectory)
+}
+else {
+    [System.IO.Path]::GetFullPath(
+        (Join-Path -Path $repoRoot -ChildPath $OutputDirectory)
+    )
+}
 $spikeRoot = [System.IO.Path]::GetFullPath(
     (Join-Path -Path $repoRoot -ChildPath ".spike")
 )
@@ -171,6 +223,9 @@ if (-not $outputRoot.StartsWith(
 }
 [System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
 $transcriptRoot = Join-Path $outputRoot "transcripts"
+if (Test-Path -LiteralPath $transcriptRoot) {
+    Remove-Item -LiteralPath $transcriptRoot -Recurse -Force
+}
 [System.IO.Directory]::CreateDirectory($transcriptRoot) | Out-Null
 $preparedCorpusPath = Join-Path $outputRoot "prepared-corpus.private.json"
 $deviceManifestHostPath = Join-Path $outputRoot "device-run.private.json"
@@ -183,38 +238,63 @@ try {
     & dart run tool/benchmarks/prepare_whisper_quality_corpus.dart `
         --manifest $manifestPath `
         --repository-root $repoRoot `
-        --output $preparedCorpusPath
+        --output $preparedCorpusPath `
+        --required-evidence-class $RequiredEvidenceClass
     Assert-NativeSuccess -Action "Corpus manifest validation"
     $preparedCorpus = Get-Content -LiteralPath $preparedCorpusPath -Raw -Encoding UTF8 |
         ConvertFrom-Json
 
     $adb = Resolve-AdbPath
     $resolvedDeviceId = Resolve-X64EmulatorDevice -RequestedDeviceId $DeviceId
-    $state = (& $adb -s $resolvedDeviceId get-state).Trim()
+    $state = (
+        Invoke-AdbChecked `
+            -Arguments @("-s", $resolvedDeviceId, "get-state") `
+            -Action "Read Android device state" |
+            Out-String
+    ).Trim()
     if ($state -ne "device") {
         throw "Android emulator is not ready: $resolvedDeviceId ($state)"
     }
-    $emulatorFlag = (& $adb -s $resolvedDeviceId shell getprop ro.kernel.qemu).Trim()
-    $abi = (& $adb -s $resolvedDeviceId shell getprop ro.product.cpu.abi).Trim()
+    $emulatorFlag = (
+        Invoke-AdbChecked `
+            -Arguments @("-s", $resolvedDeviceId, "shell", "getprop", "ro.kernel.qemu") `
+            -Action "Read Android emulator flag" |
+            Out-String
+    ).Trim()
+    $abi = (
+        Invoke-AdbChecked `
+            -Arguments @("-s", $resolvedDeviceId, "shell", "getprop", "ro.product.cpu.abi") `
+            -Action "Read Android device ABI" |
+            Out-String
+    ).Trim()
     if ($emulatorFlag -ne "1" -or $abi -ne "x86_64") {
         throw "Target must be an Android x86_64 emulator; actual ABI: $abi."
     }
-    $apiLevel = [int]((& $adb -s $resolvedDeviceId shell getprop ro.build.version.sdk).Trim())
+    $apiLevel = [int]((
+        Invoke-AdbChecked `
+            -Arguments @("-s", $resolvedDeviceId, "shell", "getprop", "ro.build.version.sdk") `
+            -Action "Read Android API level" |
+            Out-String
+    ).Trim())
     $deviceLabel = "android-emulator-x86_64-api-$apiLevel"
 
     $remoteRoot = "/data/local/tmp/meettrace-quality-$([Guid]::NewGuid().ToString('N'))"
     if ($remoteRoot -notmatch "^/data/local/tmp/meettrace-quality-[0-9a-f]{32}$") {
         throw "The temporary device directory is outside the allowed boundary."
     }
-    & $adb -s $resolvedDeviceId shell mkdir -p $remoteRoot | Out-Null
-    Assert-NativeSuccess -Action "Create temporary device directory"
+    Invoke-AdbChecked `
+        -Arguments @("-s", $resolvedDeviceId, "shell", "mkdir", "-p", $remoteRoot) `
+        -Action "Create temporary device directory" |
+        Out-Null
 
     $deviceSamples = @()
     for ($index = 0; $index -lt $preparedCorpus.samples.Count; $index++) {
         $sample = $preparedCorpus.samples[$index]
         $remotePath = "$remoteRoot/sample-$($index.ToString('D3')).pcm"
-        & $adb -s $resolvedDeviceId push $sample.sourcePath $remotePath *> $null
-        Assert-NativeSuccess -Action "Push deidentified PCM sample-$($index.ToString('D3'))"
+        Invoke-AdbChecked `
+            -Arguments @("-s", $resolvedDeviceId, "push", $sample.sourcePath, $remotePath) `
+            -Action "Push deidentified PCM sample-$($index.ToString('D3'))" |
+            Out-Null
         $deviceSamples += [ordered]@{
             id = $sample.id
             path = $remotePath
@@ -226,14 +306,19 @@ try {
     }
 
     $remoteSmallModel = "$remoteRoot/ggml-small-q5_1.bin"
-    & $adb -s $resolvedDeviceId push $resolvedSmallModel $remoteSmallModel *> $null
-    Assert-NativeSuccess -Action "Push Whisper Small model"
+    Invoke-AdbChecked `
+        -Arguments @("-s", $resolvedDeviceId, "push", $resolvedSmallModel, $remoteSmallModel) `
+        -Action "Push Whisper Small model" |
+        Out-Null
 
     $deviceManifest = [ordered]@{
         schemaVersion = 1
         corpusId = $preparedCorpus.id
+        corpusEvidenceClass = $preparedCorpus.evidenceClass
+        corpusProvenance = $preparedCorpus.provenance
         deviceId = $deviceLabel
         threadCount = $ThreadCount
+        pipelineIds = $pipelineIds
         samples = $deviceSamples
         models = @(
             [ordered]@{
@@ -254,8 +339,10 @@ try {
     }
     Write-JsonFile -Value $deviceManifest -Path $deviceManifestHostPath
     $remoteDeviceManifest = "$remoteRoot/device-run.json"
-    & $adb -s $resolvedDeviceId push $deviceManifestHostPath $remoteDeviceManifest *> $null
-    Assert-NativeSuccess -Action "Push device benchmark manifest"
+    Invoke-AdbChecked `
+        -Arguments @("-s", $resolvedDeviceId, "push", $deviceManifestHostPath, $remoteDeviceManifest) `
+        -Action "Push device benchmark manifest" |
+        Out-Null
 
     $flutterArguments = @(
         "test",
@@ -311,7 +398,7 @@ try {
     }
 
     $rawObservations = [ordered]@{
-        schemaVersion = 2
+        schemaVersion = 3
         execution = [ordered]@{
             platform = "android-emulator"
             deviceId = $deviceLabel
@@ -319,6 +406,12 @@ try {
             apiLevel = $apiLevel
             threadCount = $ThreadCount
             windowDurationMs = 2000
+            fixedWindowCaptureLatencyMs = 2000
+            vadStabilityMarginMs = 1000
+            pipelineIds = $pipelineIds
+            corpusId = $preparedCorpus.id
+            corpusEvidenceClass = $preparedCorpus.evidenceClass
+            corpusManifestSha256 = $manifestSha256
             energyStatus = "not_collected"
             thermalStatus = "not_collected"
         }
@@ -333,6 +426,7 @@ try {
         -File tool/benchmarks/run_whisper_quality_matrix.ps1 `
         -CorpusManifest $manifestPath `
         -RawObservations $rawObservationsPath `
+        -RequiredEvidenceClass $RequiredEvidenceClass `
         -OutputDirectory $outputRoot
     Assert-NativeSuccess -Action "Aggregate Whisper quality metrics"
 
@@ -345,14 +439,20 @@ try {
         abi = $abi
         apiLevel = $apiLevel
         corpusId = $preparedCorpus.id
+        corpusEvidenceClass = $preparedCorpus.evidenceClass
+        corpusProvenance = $preparedCorpus.provenance
+        corpusManifestSha256 = $manifestSha256
         sampleCount = [int]$completion.sampleCount
         observationCount = [int]$completion.observationCount
         profileIds = $profileIds
+        pipelineIds = $pipelineIds
         modelIds = @(
             "whisper-cpp-base-q5_1-v1.9.1",
             "whisper-cpp-small-q5_1-v1.9.1"
         )
         windowDurationMs = 2000
+        fixedWindowCaptureLatencyMs = 2000
+        vadStabilityMarginMs = 1000
         energyStatus = "not_collected"
         thermalStatus = "not_collected"
         privateArtifacts = @(
@@ -374,7 +474,14 @@ finally {
         $null -ne $resolvedDeviceId -and
         $null -ne $remoteRoot -and
         $remoteRoot -match "^/data/local/tmp/meettrace-quality-[0-9a-f]{32}$") {
-        & $adb -s $resolvedDeviceId shell rm -rf -- $remoteRoot *> $null
+        $previousErrorAction = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        try {
+            & $adb -s $resolvedDeviceId shell rm -rf -- $remoteRoot *> $null
+        }
+        finally {
+            $ErrorActionPreference = $previousErrorAction
+        }
     }
     Pop-Location
 }

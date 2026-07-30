@@ -39,7 +39,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，新增评测链后共 363 tests |
+| `flutter test` | 通过，新增评测链后共 366 tests |
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
@@ -59,8 +59,8 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
    独立产物门槛，不能由“无警告”代替。
 2. 模拟器首次录音会出现通知和麦克风权限弹窗；自动脚本必须在测试前显式授权 Debug 包，
    避免把交互等待误判为录音挂死。
-3. 仓库外尚未配置不少于 20 段的真实去敏会议语料，因此 Base/Small 固定窗口质量基线、
-   噪声幻觉下降和关键事实召回率暂时没有可声明的结果。
+3. 仓库外尚未配置不少于 20 段的真实去敏产品会议语料，因此 Base/Small 固定窗口质量
+   基线、VAD 噪声幻觉下降和关键事实召回率暂时没有可声明的产品结果。
 4. 阶段 0 无 VAD 基线中，Base 对 1 秒纯静音连续 10 次推理均产生片段；阶段 3
    已接入官方 Silero VAD，API 36 x86_64 的 3 秒纯静音返回 0 片段。
 
@@ -74,13 +74,26 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 - 已有原始观测的聚合入口：`tool/benchmarks/run_whisper_quality_matrix.ps1`
 - 音频固定为无文件头的 16 kHz、单声道、PCM16LE，只通过每段 `pathEnv`
   指向仓库外或 `.spike/` 文件。
-- manifest 只保存 corpus/sample ID、去敏状态、SHA-256、时长、标签和关键事实。
+- corpus manifest schema 为 `2`，除 corpus/sample ID、去敏状态、SHA-256、时长、
+  标签和关键事实外，还必须保存证据类别与来源/许可标识：
+  - `product-meeting`：唯一可用于关闭正式产品质量门槛；
+  - `public-regression`：公开数据集回归，不替代产品会议证据；
+  - `synthetic-smoke`：合成链路烟测，不用于识别质量结论。
 - 主机在推送前重新校验不少于 20 段、SHA-256、PCM 字节数和时长；设备临时目录在
   `finally` 中按受限路径清理。
-- Base/Small 和选择的 Profile 均使用固定 2 秒窗口；设备端逐条输出原始观测，
-  主机再把正文保存为 `.spike/` 下 transcript 引用。
+- 原始观测携带 corpus ID、证据类别和 manifest SHA-256；聚合前必须与输入 manifest
+  完全匹配。重用输出目录时先清除旧私有 transcript，避免残留正文混入新一轮证据。
+- Base/Small 和选择的 Profile 默认同时执行 `fixed-window-v1` 与
+  `vad-segmented-v1`。前者保留阶段 0 的固定 2 秒窗口对照，后者先以生产
+  `WhisperVadSegmenter` 从完整 PCM 生成全局区间，再只识别语音区间。
+- 原始观测和聚合报告 schema 为 `3`，每条观测必须携带 `pipelineId`；聚合器只在
+  相同设备、模型、版本和 Profile 内计算 VAD 相对固定窗口的噪声幻觉下降率与关键事实
+  召回变化。固定窗口噪声幻觉为零时下降率保持 `null`，不得伪造 100% 改善。
+- 设备端逐条输出原始观测，主机再把正文保存为 `.spike/` 下 transcript 引用。
 - JSON/CSV 报告不得包含录音路径或录音内容。能耗、温控未采集时保持 `null` 并记录
   sample count 为 0，不得伪装成 `0 Wh` 或 `false`。
+- `noise-only` 专用于没有语音的噪声样本；带背景噪声的正常语音使用其他标签，不能计入
+  噪声幻觉分母。
 
 ## 6. Hard Gate 0
 
@@ -90,8 +103,9 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 | 工程基线可重复 | 通过 |
 | 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过 |
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
-| 20 段真实去敏语料可运行 | `blocked`：未提供语料环境变量 |
+| 20 段真实去敏产品会议语料可运行 | `blocked`：未提供语料环境变量 |
 | 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
+| 固定窗口与 VAD 分段可同条件比较 | 通过：双管线 Android 执行及 schema 3 聚合链已实现 |
 
 在真实语料注入前，不得把 Hard Gate 0 或质量指标标记为通过；后续实现可以继续，但发布
 结论必须保持 `blocked`。
@@ -203,3 +217,16 @@ Critical/High。
 
 修复后的 `run_android_whisper_validation.ps1 -ModelFilter small` 已在 API 36 x86_64
 模拟器通过。
+
+2026-07-31 对固定窗口/VAD 双管线与证据分级再次审查全部 9 个 reviewable 文件。首轮
+发现并修复：
+
+- raw observations 未绑定 corpus manifest，可能把同名 sample 错接到另一份语料；
+- 重用输出目录时保留旧私有 transcript，可能造成正文残留；
+- Android 评测预加载全部 PCM，长语料矩阵会不必要地抬高内存；
+- 普通 `noise` 标签可能把“语音 + 背景噪声”误算为幻觉；
+- 固定窗口与 VAD 句后延迟漏算窗口等待或稳定裕量。
+
+修复后 raw observations 和 run evidence 均携带 corpus ID、证据类别与 manifest
+SHA-256；旧 transcript 在受限 `.spike` 输出目录内清除，噪声幻觉只统计
+`noise-only`。第二轮规则审查未发现或保留 Critical/High 或有实际影响的 Medium。

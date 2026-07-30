@@ -41,6 +41,7 @@ SHA-256 均匹配；未包含 Small、sherpa、ONNX、用户音频或数据库�
 | 纯静音 | 单元测试及 API 36 x86_64 原生 VAD 均为 0 片段 |
 | VAD isolate | API 36 x86_64 成功加载、检测、幂等释放 |
 | VAD 生命周期 | 100 次 create/detect/cancel-reset/destroy 通过，预热后 RSS -5,836,800 bytes |
+| Android 双管线评测 | 固定窗口与生产 VAD 分段可在同设备、模型、Profile、语料上直接比较 |
 | 预览故障 | 事实 PCM 继续增长，最终快照仍 `complete` |
 | 最终重新分段 | 只识别从完整 PCM 得到的脚本化语音区间 |
 | 快照原子性 | 数据库冲突/推理失败测试保留旧活动快照 |
@@ -54,6 +55,28 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 ```
 
 机器可读证据位于 `docs/quality/evidence/android-emulator/`。
+
+质量执行器不再用固定窗口结果推断 VAD 效果。`vad-segmented-v1` 为每段完整 PCM 创建
+全新 `WhisperVadSegmenter` 状态，只识别其全局语音区间；`fixed-window-v1` 保留为阶段
+0 对照。聚合器仅对匹配的设备、模型、版本和 Profile 计算：
+
+- 噪声幻觉下降率；
+- 关键事实召回率变化；
+- 两条管线各自的 RTF、句后延迟和峰值 RSS。
+
+正式门槛只接受 `product-meeting` 证据。合成静音可验证设备执行、零片段和报告结构，
+但不得替代真实噪声、远场和语音首尾样本。
+
+2026-07-31 在 API 36 x86_64 模拟器执行 20 段数字静音烟测：
+
+- Base/Small × Baseline × 固定窗口/VAD 共生成 80 条 schema 3 原始观测；
+- 固定窗口 Base 和 Small 均在 20/20 段静音上输出文本；
+- VAD 分段 Base 和 Small 均为 0/20 静音误输出；
+- 报告保留 `synthetic-smoke`、`generated-digital-silence` 来源，噪声下降率和关键事实
+  召回保持 `null`。
+
+该结果证明 Android 原生双管线与证据隔离可执行，不是噪声幻觉下降 80% 或产品识别质量
+通过的证据。
 
 ## 5. Hard Gate 3～4
 

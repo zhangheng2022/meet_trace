@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:meettrace/data/services/asr/whisper/whisper_adapter.dart';
 import 'package:meettrace/data/services/asr/whisper/whisper_recognizer_profiles.dart';
+import 'package:meettrace/data/services/vad/whisper_vad_segmenter.dart';
+import 'package:meettrace/domain/models/asr_preview.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -20,8 +22,12 @@ const _deviceManifestPath = String.fromEnvironment(
 );
 const _baseModelAsset =
     'assets/models/whisper-cpp-base-q5_1-v1.9.1/ggml-base-q5_1.bin';
+const _vadModelAsset =
+    'assets/models/whisper-vad-silero-v6.2.0/ggml-silero-v6.2.0.bin';
 const _observationMarker = 'MEETTRACE_WHISPER_QUALITY_OBSERVATION:';
 const _completeMarker = 'MEETTRACE_WHISPER_QUALITY_COMPLETE:';
+const _fixedWindowCaptureLatency = Duration(seconds: 2);
+const _vadStabilityMargin = Duration(seconds: 1);
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +47,24 @@ void main() {
       var observationCount = 0;
       try {
         final baseModelPath = p.join(benchmarkRoot.path, 'ggml-base-q5_1.bin');
+        final vadModelPath = p.join(
+          benchmarkRoot.path,
+          'ggml-silero-v6.2.0.bin',
+        );
         await _copyAsset(_baseModelAsset, baseModelPath);
+        await _copyAsset(_vadModelAsset, vadModelPath);
+
+        final vadMeasurements = <String, _VadMeasurement>{};
+        for (final sample in run.samples) {
+          final bytes = await File(sample.path).readAsBytes();
+          expect(bytes.length, sample.byteLength);
+          expect(sha256.convert(bytes).toString(), sample.sha256);
+          vadMeasurements[sample.id] = await _segmentMeasured(
+            bytes,
+            modelPath: vadModelPath,
+            threadCount: run.threadCount,
+          );
+        }
 
         for (final model in run.models) {
           final modelPath = switch (model.source) {
@@ -65,82 +88,58 @@ void main() {
             try {
               for (final sample in run.samples) {
                 final bytes = await File(sample.path).readAsBytes();
-                expect(bytes.length, sample.byteLength);
-                expect(sha256.convert(bytes).toString(), sample.sha256);
-
-                final transcriptParts = <String>[];
-                final segments = <Map<String, Object?>>[];
-                var inferenceDurationMicros = 0;
-                var maximumWindowLatencyMicros = 0;
-                var peakRssBytes = ProcessInfo.currentRss;
-                var windowIndex = 0;
-                for (final window in decodePcm16LeWindows(bytes)) {
-                  final measured = await _recognizeMeasured(adapter, window);
-                  final recognition = measured.recognition;
-                  inferenceDurationMicros += recognition.elapsed.inMicroseconds;
-                  maximumWindowLatencyMicros = math.max(
-                    maximumWindowLatencyMicros,
-                    measured.wallElapsed.inMicroseconds,
+                final vad = vadMeasurements[sample.id]!;
+                for (final pipelineId in run.pipelineIds) {
+                  final result = switch (pipelineId) {
+                    whisperFixedWindowPipelineId => await _recognizeFixedWindow(
+                      adapter,
+                      bytes,
+                      durationMs: sample.durationMs,
+                    ),
+                    whisperVadSegmentedPipelineId =>
+                      await _recognizeVadSegments(
+                        adapter,
+                        bytes,
+                        vad,
+                        durationMs: sample.durationMs,
+                      ),
+                    _ => throw WhisperQualityProtocolException(
+                      '未知 pipelineId：$pipelineId',
+                    ),
+                  };
+                  final recognizedFacts = recognizeExpectedKeyFacts(
+                    transcript: result.transcript,
+                    expectedKeyFacts: sample.expectedKeyFacts,
                   );
-                  peakRssBytes = math.max(peakRssBytes, measured.peakRssBytes);
-                  final windowOffsetMs =
-                      windowIndex *
-                      whisperQualityWindowSamples *
-                      1000 ~/
-                      whisperQualitySampleRateHz;
-                  final text = recognition.text.trim();
-                  if (text.isNotEmpty) {
-                    transcriptParts.add(text);
-                  }
-                  for (final segment in recognition.segments) {
-                    final startMs = math.min(
-                      sample.durationMs.floor(),
-                      windowOffsetMs + segment.startMs,
-                    );
-                    final endMs = math.min(
-                      sample.durationMs.ceil(),
-                      windowOffsetMs + segment.endMs,
-                    );
-                    if (endMs > startMs) {
-                      segments.add({
-                        'text': segment.text,
-                        'startMs': startMs,
-                        'endMs': endMs,
-                      });
-                    }
-                  }
-                  windowIndex++;
+                  final observation = <String, Object?>{
+                    'sampleId': sample.id,
+                    'modelId': model.modelId,
+                    'modelVersion': model.modelVersion,
+                    'profileId': profile.id,
+                    'pipelineId': pipelineId,
+                    'deviceId': run.deviceId,
+                    'inferenceDurationMs':
+                        result.inferenceDurationMicros / 1000,
+                    'sentenceLatencyMs': result.sentenceLatencyMicros == null
+                        ? null
+                        : result.sentenceLatencyMicros! / 1000,
+                    'emittedText': result.transcript.isNotEmpty,
+                    'recognizedKeyFacts': recognizedFacts,
+                    'peakRssBytes': result.peakRssBytes,
+                    'energyWh': null,
+                    'energyEvidenceRef': null,
+                    'sustainedSevereOrCriticalThermal': null,
+                    'thermalEvidenceRef': null,
+                  };
+                  debugPrintSynchronously(
+                    '$_observationMarker${jsonEncode({
+                      'observation': observation,
+                      'transcript': {'schemaVersion': 1, 'sampleId': sample.id, 'modelId': model.modelId, 'modelVersion': model.modelVersion, 'profileId': profile.id, 'pipelineId': pipelineId, 'text': result.transcript, 'segments': result.segments},
+                    })}',
+                    wrapWidth: null,
+                  );
+                  observationCount++;
                 }
-                final transcript = transcriptParts.join(' ').trim();
-                final recognizedFacts = recognizeExpectedKeyFacts(
-                  transcript: transcript,
-                  expectedKeyFacts: sample.expectedKeyFacts,
-                );
-                final observation = <String, Object?>{
-                  'sampleId': sample.id,
-                  'modelId': model.modelId,
-                  'modelVersion': model.modelVersion,
-                  'profileId': profile.id,
-                  'deviceId': run.deviceId,
-                  'inferenceDurationMs': inferenceDurationMicros / 1000,
-                  // 固定 2 秒窗口到齐后的最慢端到端识别往返，作为保守句后延迟。
-                  'sentenceLatencyMs': maximumWindowLatencyMicros / 1000,
-                  'emittedText': transcript.isNotEmpty,
-                  'recognizedKeyFacts': recognizedFacts,
-                  'peakRssBytes': peakRssBytes,
-                  'energyWh': null,
-                  'energyEvidenceRef': null,
-                  'sustainedSevereOrCriticalThermal': null,
-                  'thermalEvidenceRef': null,
-                };
-                debugPrintSynchronously(
-                  '$_observationMarker${jsonEncode({
-                    'observation': observation,
-                    'transcript': {'schemaVersion': 1, 'sampleId': sample.id, 'modelId': model.modelId, 'modelVersion': model.modelVersion, 'profileId': profile.id, 'text': transcript, 'segments': segments},
-                  })}',
-                  wrapWidth: null,
-                );
-                observationCount++;
               }
             } finally {
               await adapter.dispose();
@@ -148,10 +147,10 @@ void main() {
           }
         }
 
-        final expectedCount = run.samples.length * run.profileRunCount;
+        final expectedCount = run.samples.length * run.evaluationRunCount;
         expect(observationCount, expectedCount);
         debugPrintSynchronously(
-          '$_completeMarker${jsonEncode({'schemaVersion': 1, 'corpusId': run.corpusId, 'deviceId': run.deviceId, 'sampleCount': run.samples.length, 'profileRunCount': run.profileRunCount, 'observationCount': observationCount, 'windowDurationMs': 2000, 'energyStatus': 'not_collected', 'thermalStatus': 'not_collected'})}',
+          '$_completeMarker${jsonEncode({'schemaVersion': 1, 'corpusId': run.corpusId, 'deviceId': run.deviceId, 'sampleCount': run.samples.length, 'evaluationRunCount': run.evaluationRunCount, 'pipelineIds': run.pipelineIds, 'observationCount': observationCount, 'windowDurationMs': 2000, 'energyStatus': 'not_collected', 'thermalStatus': 'not_collected'})}',
           wrapWidth: null,
         );
       } finally {
@@ -163,6 +162,185 @@ void main() {
     skip: _deviceManifestPath.isEmpty,
     timeout: const Timeout(Duration(hours: 6)),
   );
+}
+
+final class _VadMeasurement {
+  const _VadMeasurement({
+    required this.segments,
+    required this.elapsedMicros,
+    required this.peakRssBytes,
+  });
+
+  final List<VadSpeechSegment> segments;
+  final int elapsedMicros;
+  final int peakRssBytes;
+}
+
+final class _BenchmarkRecognition {
+  const _BenchmarkRecognition({
+    required this.transcript,
+    required this.segments,
+    required this.inferenceDurationMicros,
+    required this.sentenceLatencyMicros,
+    required this.peakRssBytes,
+  });
+
+  final String transcript;
+  final List<Map<String, Object?>> segments;
+  final int inferenceDurationMicros;
+  final int? sentenceLatencyMicros;
+  final int peakRssBytes;
+}
+
+Future<_VadMeasurement> _segmentMeasured(
+  Uint8List bytes, {
+  required String modelPath,
+  required int threadCount,
+}) async {
+  var peakRssBytes = ProcessInfo.currentRss;
+  final timer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+    peakRssBytes = math.max(peakRssBytes, ProcessInfo.currentRss);
+  });
+  final watch = Stopwatch()..start();
+  final segmenter = WhisperVadSegmenter(
+    modelPath: modelPath,
+    config: WhisperVadConfig(modelPath: modelPath, threadCount: threadCount),
+    stabilityMargin: _vadStabilityMargin,
+  );
+  try {
+    final segments = <VadSpeechSegment>[];
+    for (final window in decodePcm16LeWindows(bytes)) {
+      segments.addAll(await segmenter.accept(window));
+    }
+    segments.addAll(await segmenter.flush());
+    watch.stop();
+    peakRssBytes = math.max(peakRssBytes, ProcessInfo.currentRss);
+    return _VadMeasurement(
+      segments: List.unmodifiable(segments),
+      elapsedMicros: watch.elapsedMicroseconds,
+      peakRssBytes: peakRssBytes,
+    );
+  } finally {
+    watch.stop();
+    timer.cancel();
+    await segmenter.dispose();
+  }
+}
+
+Future<_BenchmarkRecognition> _recognizeFixedWindow(
+  WhisperAdapter adapter,
+  Uint8List bytes, {
+  required double durationMs,
+}) async {
+  final transcriptParts = <String>[];
+  final segments = <Map<String, Object?>>[];
+  var inferenceDurationMicros = 0;
+  var maximumWindowLatencyMicros = 0;
+  var peakRssBytes = ProcessInfo.currentRss;
+  var windowIndex = 0;
+  for (final window in decodePcm16LeWindows(bytes)) {
+    final measured = await _recognizeMeasured(adapter, window);
+    final recognition = measured.recognition;
+    inferenceDurationMicros += recognition.elapsed.inMicroseconds;
+    maximumWindowLatencyMicros = math.max(
+      maximumWindowLatencyMicros,
+      measured.wallElapsed.inMicroseconds,
+    );
+    peakRssBytes = math.max(peakRssBytes, measured.peakRssBytes);
+    final windowOffsetMs =
+        windowIndex *
+        whisperQualityWindowSamples *
+        1000 ~/
+        whisperQualitySampleRateHz;
+    _appendRecognition(
+      recognition,
+      transcriptParts: transcriptParts,
+      segments: segments,
+      offsetMs: windowOffsetMs,
+      durationMs: durationMs,
+    );
+    windowIndex++;
+  }
+  return _BenchmarkRecognition(
+    transcript: transcriptParts.join(' ').trim(),
+    segments: List.unmodifiable(segments),
+    inferenceDurationMicros: inferenceDurationMicros,
+    // 保守覆盖一句话在 2 秒窗口起点结束时等待窗口到齐的时间。
+    sentenceLatencyMicros:
+        _fixedWindowCaptureLatency.inMicroseconds + maximumWindowLatencyMicros,
+    peakRssBytes: peakRssBytes,
+  );
+}
+
+Future<_BenchmarkRecognition> _recognizeVadSegments(
+  WhisperAdapter adapter,
+  Uint8List bytes,
+  _VadMeasurement vad, {
+  required double durationMs,
+}) async {
+  final allSamples = decodePcm16Le(bytes);
+  final transcriptParts = <String>[];
+  final segments = <Map<String, Object?>>[];
+  var inferenceDurationMicros = vad.elapsedMicros;
+  var maximumSegmentLatencyMicros = 0;
+  var peakRssBytes = vad.peakRssBytes;
+  for (final speech in vad.segments) {
+    final start = speech.startSample.clamp(0, allSamples.length);
+    final end = speech.endSample.clamp(start, allSamples.length);
+    if (end <= start) {
+      continue;
+    }
+    final measured = await _recognizeMeasured(
+      adapter,
+      Float32List.sublistView(allSamples, start, end),
+    );
+    final recognition = measured.recognition;
+    inferenceDurationMicros += recognition.elapsed.inMicroseconds;
+    maximumSegmentLatencyMicros = math.max(
+      maximumSegmentLatencyMicros,
+      measured.wallElapsed.inMicroseconds,
+    );
+    peakRssBytes = math.max(peakRssBytes, measured.peakRssBytes);
+    final offsetMs = start * 1000 ~/ whisperQualitySampleRateHz;
+    _appendRecognition(
+      recognition,
+      transcriptParts: transcriptParts,
+      segments: segments,
+      offsetMs: offsetMs,
+      durationMs: durationMs,
+    );
+  }
+  return _BenchmarkRecognition(
+    transcript: transcriptParts.join(' ').trim(),
+    segments: List.unmodifiable(segments),
+    inferenceDurationMicros: inferenceDurationMicros,
+    sentenceLatencyMicros: vad.segments.isEmpty
+        ? null
+        : _vadStabilityMargin.inMicroseconds +
+              vad.elapsedMicros +
+              maximumSegmentLatencyMicros,
+    peakRssBytes: peakRssBytes,
+  );
+}
+
+void _appendRecognition(
+  WhisperRecognition recognition, {
+  required List<String> transcriptParts,
+  required List<Map<String, Object?>> segments,
+  required int offsetMs,
+  required double durationMs,
+}) {
+  final text = recognition.text.trim();
+  if (text.isNotEmpty) {
+    transcriptParts.add(text);
+  }
+  for (final segment in recognition.segments) {
+    final startMs = math.min(durationMs.floor(), offsetMs + segment.startMs);
+    final endMs = math.min(durationMs.ceil(), offsetMs + segment.endMs);
+    if (endMs > startMs) {
+      segments.add({'text': segment.text, 'startMs': startMs, 'endMs': endMs});
+    }
+  }
 }
 
 Future<
@@ -208,6 +386,7 @@ final class _DeviceBenchmarkRun {
     required this.threadCount,
     required this.samples,
     required this.models,
+    required this.pipelineIds,
   });
 
   final String corpusId;
@@ -215,9 +394,11 @@ final class _DeviceBenchmarkRun {
   final int threadCount;
   final List<_DeviceSample> samples;
   final List<_DeviceModel> models;
+  final List<String> pipelineIds;
 
-  int get profileRunCount =>
-      models.fold(0, (total, model) => total + model.profileIds.length);
+  int get evaluationRunCount =>
+      models.fold(0, (total, model) => total + model.profileIds.length) *
+      pipelineIds.length;
 
   static Future<_DeviceBenchmarkRun> load(String path) async {
     final file = File(path);
@@ -226,16 +407,29 @@ final class _DeviceBenchmarkRun {
     }
     final decoded = jsonDecode(await file.readAsString());
     if (decoded is! Map<String, Object?> ||
-        decoded['schemaVersion'] != whisperQualitySchemaVersion) {
+        decoded['schemaVersion'] != whisperQualityDeviceManifestSchemaVersion) {
       throw const WhisperQualityProtocolException('设备评测清单 schemaVersion 必须为 1');
     }
     final rawSamples = decoded['samples'];
     final rawModels = decoded['models'];
+    final rawPipelineIds = decoded['pipelineIds'];
     if (rawSamples is! List<Object?> || rawSamples.isEmpty) {
       throw const WhisperQualityProtocolException('设备评测 samples 不能为空');
     }
     if (rawModels is! List<Object?> || rawModels.isEmpty) {
       throw const WhisperQualityProtocolException('设备评测 models 不能为空');
+    }
+    if (rawPipelineIds is! List<Object?> ||
+        rawPipelineIds.isEmpty ||
+        rawPipelineIds.any(
+          (value) =>
+              value != whisperFixedWindowPipelineId &&
+              value != whisperVadSegmentedPipelineId,
+        ) ||
+        rawPipelineIds.toSet().length != rawPipelineIds.length) {
+      throw const WhisperQualityProtocolException(
+        '设备评测 pipelineIds 必须是不重复的已知 pipeline',
+      );
     }
     final threadCount = decoded['threadCount'];
     if (threadCount is! int || threadCount <= 0 || threadCount > 32) {
@@ -255,6 +449,7 @@ final class _DeviceBenchmarkRun {
         for (var index = 0; index < rawModels.length; index++)
           _DeviceModel.fromJson(_object(rawModels[index], 'models[$index]')),
       ],
+      pipelineIds: rawPipelineIds.cast<String>(),
     );
   }
 }

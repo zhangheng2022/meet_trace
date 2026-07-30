@@ -5,11 +5,23 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-const whisperQualitySchemaVersion = 1;
+const whisperQualityCorpusSchemaVersion = 2;
+const whisperQualityDeviceManifestSchemaVersion = 1;
 const whisperQualitySampleRateHz = 16000;
 const whisperQualityChannelCount = 1;
 const whisperQualityEncoding = 'pcm16le';
 const whisperQualityWindowSamples = 2 * whisperQualitySampleRateHz;
+const whisperQualityMetricsSchemaVersion = 3;
+const whisperFixedWindowPipelineId = 'fixed-window-v1';
+const whisperVadSegmentedPipelineId = 'vad-segmented-v1';
+const whisperProductMeetingEvidenceClass = 'product-meeting';
+const whisperPublicRegressionEvidenceClass = 'public-regression';
+const whisperSyntheticSmokeEvidenceClass = 'synthetic-smoke';
+const whisperQualityEvidenceClasses = {
+  whisperProductMeetingEvidenceClass,
+  whisperPublicRegressionEvidenceClass,
+  whisperSyntheticSmokeEvidenceClass,
+};
 
 final class WhisperQualityProtocolException implements Exception {
   const WhisperQualityProtocolException(this.message);
@@ -21,9 +33,16 @@ final class WhisperQualityProtocolException implements Exception {
 }
 
 final class WhisperQualityCorpus {
-  WhisperQualityCorpus({required this.id, required this.samples});
+  WhisperQualityCorpus({
+    required this.id,
+    required this.evidenceClass,
+    required this.provenance,
+    required this.samples,
+  });
 
   final String id;
+  final String evidenceClass;
+  final WhisperQualityCorpusProvenance provenance;
   final List<WhisperQualityCorpusSample> samples;
 
   static Future<WhisperQualityCorpus> load({
@@ -31,6 +50,7 @@ final class WhisperQualityCorpus {
     required String repositoryRoot,
     Map<String, String>? environment,
     int minimumSampleCount = 20,
+    String? requiredEvidenceClass,
   }) async {
     final manifestFile = File(p.normalize(p.absolute(manifestPath)));
     if (!await manifestFile.exists()) {
@@ -47,9 +67,9 @@ final class WhisperQualityCorpus {
       );
     }
     final manifest = _map(decoded, 'manifest');
-    if (manifest['schemaVersion'] != whisperQualitySchemaVersion) {
+    if (manifest['schemaVersion'] != whisperQualityCorpusSchemaVersion) {
       throw const WhisperQualityProtocolException(
-        'manifest.schemaVersion 必须为 1',
+        'manifest.schemaVersion 必须为 2',
       );
     }
     if (manifest['deidentified'] != true) {
@@ -57,6 +77,25 @@ final class WhisperQualityCorpus {
         'manifest.deidentified 必须为 true',
       );
     }
+    final evidenceClass = _requiredText(
+      manifest['evidenceClass'],
+      'manifest.evidenceClass',
+    );
+    if (!whisperQualityEvidenceClasses.contains(evidenceClass)) {
+      throw const WhisperQualityProtocolException(
+        'manifest.evidenceClass 必须为 product-meeting、'
+        'public-regression 或 synthetic-smoke',
+      );
+    }
+    if (requiredEvidenceClass != null &&
+        evidenceClass != requiredEvidenceClass) {
+      throw WhisperQualityProtocolException(
+        '语料 evidenceClass 必须为 $requiredEvidenceClass，实际为 $evidenceClass',
+      );
+    }
+    final provenance = WhisperQualityCorpusProvenance.fromJson(
+      _map(manifest['provenance'], 'manifest.provenance'),
+    );
     final audioFormat = _map(manifest['audioFormat'], 'manifest.audioFormat');
     if (audioFormat['encoding'] != whisperQualityEncoding ||
         audioFormat['sampleRateHz'] != whisperQualitySampleRateHz ||
@@ -159,20 +198,49 @@ final class WhisperQualityCorpus {
     }
     return WhisperQualityCorpus(
       id: _requiredText(manifest['id'], 'manifest.id'),
+      evidenceClass: evidenceClass,
+      provenance: provenance,
       samples: List.unmodifiable(samples),
     );
   }
 
   Map<String, Object?> toPreparedJson() => {
-    'schemaVersion': whisperQualitySchemaVersion,
+    'schemaVersion': whisperQualityCorpusSchemaVersion,
     'id': id,
     'deidentified': true,
+    'evidenceClass': evidenceClass,
+    'provenance': provenance.toJson(),
     'audioFormat': const {
       'encoding': whisperQualityEncoding,
       'sampleRateHz': whisperQualitySampleRateHz,
       'channels': whisperQualityChannelCount,
     },
     'samples': [for (final sample in samples) sample.toPreparedJson()],
+  };
+}
+
+final class WhisperQualityCorpusProvenance {
+  const WhisperQualityCorpusProvenance({
+    required this.sourceId,
+    required this.licenseId,
+  });
+
+  factory WhisperQualityCorpusProvenance.fromJson(Map<String, Object?> json) {
+    return WhisperQualityCorpusProvenance(
+      sourceId: _requiredText(json['sourceId'], 'manifest.provenance.sourceId'),
+      licenseId: _requiredText(
+        json['licenseId'],
+        'manifest.provenance.licenseId',
+      ),
+    );
+  }
+
+  final String sourceId;
+  final String licenseId;
+
+  Map<String, Object?> toJson() => {
+    'sourceId': sourceId,
+    'licenseId': licenseId,
   };
 }
 
@@ -227,6 +295,18 @@ Iterable<Float32List> decodePcm16LeWindows(
     }
     yield samples;
   }
+}
+
+Float32List decodePcm16Le(Uint8List bytes) {
+  if (bytes.isEmpty || bytes.length.isOdd) {
+    throw const WhisperQualityProtocolException('PCM16LE 必须非空且字节数为偶数');
+  }
+  final pcm = ByteData.sublistView(bytes);
+  final samples = Float32List(bytes.length ~/ 2);
+  for (var index = 0; index < samples.length; index++) {
+    samples[index] = pcm.getInt16(index * 2, Endian.little) / 32768;
+  }
+  return samples;
 }
 
 List<String> recognizeExpectedKeyFacts({

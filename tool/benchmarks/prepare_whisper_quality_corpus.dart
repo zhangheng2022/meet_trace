@@ -7,6 +7,10 @@ Future<void> main(List<String> arguments) async {
   final manifest = _valueOf(arguments, '--manifest');
   final repositoryRoot = _valueOf(arguments, '--repository-root');
   final output = _valueOf(arguments, '--output');
+  final requiredEvidenceClass = _valueOf(
+    arguments,
+    '--required-evidence-class',
+  );
   if (manifest == null || repositoryRoot == null || output == null) {
     throw const WhisperQualityProtocolException(
       '用法：--manifest <json> --repository-root <path> --output <json>',
@@ -15,6 +19,7 @@ Future<void> main(List<String> arguments) async {
   final corpus = await WhisperQualityCorpus.load(
     manifestPath: manifest,
     repositoryRoot: repositoryRoot,
+    requiredEvidenceClass: requiredEvidenceClass,
   );
   final outputFile = File(output);
   await outputFile.parent.create(recursive: true);

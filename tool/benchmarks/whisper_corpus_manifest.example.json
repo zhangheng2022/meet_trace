@@ -1,7 +1,12 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "replace-with-deidentified-corpus-id",
   "deidentified": true,
+  "evidenceClass": "product-meeting",
+  "provenance": {
+    "sourceId": "replace-with-non-identifying-source-id",
+    "licenseId": "internal-consented"
+  },
   "audioFormat": {
     "encoding": "pcm16le",
     "sampleRateHz": 16000,

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'whisper_quality_protocol.dart';
+
 final class WhisperQualityMetricsException implements Exception {
   const WhisperQualityMetricsException(this.message);
 
@@ -15,8 +17,8 @@ final class WhisperQualityMetrics {
   const WhisperQualityMetrics();
 
   Map<String, Object?> evaluate(Map<String, Object?> input) {
-    if (input['schemaVersion'] != 2) {
-      throw const WhisperQualityMetricsException('input.schemaVersion 必须为 2');
+    if (input['schemaVersion'] != whisperQualityMetricsSchemaVersion) {
+      throw const WhisperQualityMetricsException('input.schemaVersion 必须为 3');
     }
     final corpus = _map(input['corpus'], 'corpus');
     final corpusId = _requiredText(corpus['id'], 'corpus.id');
@@ -25,6 +27,19 @@ final class WhisperQualityMetrics {
         'corpus.deidentified 必须为 true',
       );
     }
+    final evidenceClass = _evidenceClass(
+      corpus['evidenceClass'],
+      'corpus.evidenceClass',
+    );
+    final provenance = _map(corpus['provenance'], 'corpus.provenance');
+    final sourceId = _requiredText(
+      provenance['sourceId'],
+      'corpus.provenance.sourceId',
+    );
+    final licenseId = _requiredText(
+      provenance['licenseId'],
+      'corpus.provenance.licenseId',
+    );
     final samples = _samples(corpus['samples']);
     if (samples.length < 20) {
       throw const WhisperQualityMetricsException('语料必须至少包含 20 段');
@@ -68,7 +83,7 @@ final class WhisperQualityMetrics {
           .where((value) => value.sample.tags.contains('silence'))
           .toList(growable: false);
       final noise = values
-          .where((value) => value.sample.tags.contains('noise'))
+          .where((value) => value.sample.tags.contains('noise-only'))
           .toList(growable: false);
       final expectedFacts = values.fold<int>(
         0,
@@ -88,6 +103,7 @@ final class WhisperQualityMetrics {
         'modelId': first.modelId,
         'modelVersion': first.modelVersion,
         'profileId': first.profileId,
+        'pipelineId': first.pipelineId,
         'sampleCount': values.length,
         'rtfSamples': rtfSamples,
         'rtfP50': _percentile(rtfSamples, 0.5),
@@ -150,18 +166,22 @@ final class WhisperQualityMetrics {
     }
     summaries.sort(
       (left, right) =>
-          '${left['deviceId']}:${left['modelId']}:${left['profileId']}'
+          '${left['deviceId']}:${left['modelId']}:${left['profileId']}:'
+                  '${left['pipelineId']}'
               .compareTo(
                 '${right['deviceId']}:${right['modelId']}:'
-                '${right['profileId']}',
+                '${right['profileId']}:${right['pipelineId']}',
               ),
     );
 
     return {
-      'schemaVersion': 2,
+      'schemaVersion': whisperQualityMetricsSchemaVersion,
       'corpusId': corpusId,
+      'corpusEvidenceClass': evidenceClass,
+      'corpusProvenance': {'sourceId': sourceId, 'licenseId': licenseId},
       'sampleCount': samples.length,
       'summaries': summaries,
+      'pipelineComparisons': _pipelineComparisons(summaries),
     };
   }
 }
@@ -320,6 +340,10 @@ _Observation _observation(
       item['profileId'],
       'observations[$index].profileId',
     ),
+    pipelineId: _pipelineId(
+      item['pipelineId'],
+      'observations[$index].pipelineId',
+    ),
     inferenceDurationMs: _nonNegativeNumber(
       item['inferenceDurationMs'],
       'observations[$index].inferenceDurationMs',
@@ -369,6 +393,7 @@ final class _Observation {
     required this.modelId,
     required this.modelVersion,
     required this.profileId,
+    required this.pipelineId,
     required this.inferenceDurationMs,
     required this.sentenceLatencyMs,
     required this.emittedText,
@@ -386,6 +411,7 @@ final class _Observation {
   final String modelId;
   final String modelVersion;
   final String profileId;
+  final String pipelineId;
   final double inferenceDurationMs;
   final double? sentenceLatencyMs;
   final bool emittedText;
@@ -398,7 +424,54 @@ final class _Observation {
   final String? transcriptRef;
 
   String get groupKey =>
-      '$deviceId\u0000$modelId\u0000$modelVersion\u0000$profileId';
+      '$deviceId\u0000$modelId\u0000$modelVersion\u0000$profileId'
+      '\u0000$pipelineId';
+}
+
+List<Map<String, Object?>> _pipelineComparisons(
+  List<Map<String, Object?>> summaries,
+) {
+  final comparisons = <Map<String, Object?>>[];
+  for (final baseline in summaries.where(
+    (summary) => summary['pipelineId'] == whisperFixedWindowPipelineId,
+  )) {
+    final candidates = summaries.where(
+      (candidate) =>
+          candidate['pipelineId'] == whisperVadSegmentedPipelineId &&
+          candidate['deviceId'] == baseline['deviceId'] &&
+          candidate['modelId'] == baseline['modelId'] &&
+          candidate['modelVersion'] == baseline['modelVersion'] &&
+          candidate['profileId'] == baseline['profileId'],
+    );
+    if (candidates.isEmpty) {
+      continue;
+    }
+    final candidate = candidates.single;
+    final baselineNoise = baseline['noiseHallucinationCount']! as int;
+    final candidateNoise = candidate['noiseHallucinationCount']! as int;
+    final baselineRecall = baseline['keyFactRecallRatio'] as double?;
+    final candidateRecall = candidate['keyFactRecallRatio'] as double?;
+    comparisons.add({
+      'deviceId': baseline['deviceId'],
+      'modelId': baseline['modelId'],
+      'modelVersion': baseline['modelVersion'],
+      'profileId': baseline['profileId'],
+      'baselinePipelineId': whisperFixedWindowPipelineId,
+      'candidatePipelineId': whisperVadSegmentedPipelineId,
+      'noiseSampleCount': baseline['noiseSampleCount'],
+      'baselineNoiseHallucinationCount': baselineNoise,
+      'candidateNoiseHallucinationCount': candidateNoise,
+      'noiseHallucinationReductionRatio': baselineNoise == 0
+          ? null
+          : (baselineNoise - candidateNoise) / baselineNoise,
+      'baselineKeyFactRecallRatio': baselineRecall,
+      'candidateKeyFactRecallRatio': candidateRecall,
+      'keyFactRecallDelta': baselineRecall == null || candidateRecall == null
+          ? null
+          : candidateRecall - baselineRecall,
+    });
+  }
+  return comparisons;
 }
 
 double? _percentile(List<double> values, double percentile) {
@@ -423,6 +496,28 @@ String _requiredText(Object? value, String name) {
     throw WhisperQualityMetricsException('$name 不能为空');
   }
   return text;
+}
+
+String _pipelineId(Object? value, String name) {
+  final pipelineId = _requiredText(value, name);
+  if (pipelineId != whisperFixedWindowPipelineId &&
+      pipelineId != whisperVadSegmentedPipelineId) {
+    throw WhisperQualityMetricsException(
+      '$name 必须为 $whisperFixedWindowPipelineId 或 '
+      '$whisperVadSegmentedPipelineId',
+    );
+  }
+  return pipelineId;
+}
+
+String _evidenceClass(Object? value, String name) {
+  final evidenceClass = _requiredText(value, name);
+  if (!whisperQualityEvidenceClasses.contains(evidenceClass)) {
+    throw WhisperQualityMetricsException(
+      '$name 必须为 ${whisperQualityEvidenceClasses.join('、')}',
+    );
+  }
+  return evidenceClass;
 }
 
 String? _optionalText(Object? value) {
@@ -527,7 +622,8 @@ bool _looksLikeAudioPath(String value) => RegExp(
 String _toCsv(Map<String, Object?> report) {
   final summaries = report['summaries']! as List<Map<String, Object?>>;
   final rows = <String>[
-    'deviceId,modelId,modelVersion,profileId,sampleCount,rtfP50,rtfP95,'
+    'deviceId,modelId,modelVersion,profileId,pipelineId,sampleCount,'
+        'rtfP50,rtfP95,'
         'sentenceLatencySampleCount,sentenceLatencyP50Ms,'
         'sentenceLatencyP95Ms,keyFactRecallRatio,'
         'silenceFalsePositiveCount,noiseHallucinationCount,peakRssBytes,'
@@ -539,6 +635,7 @@ String _toCsv(Map<String, Object?> report) {
         summary['modelId'],
         summary['modelVersion'],
         summary['profileId'],
+        summary['pipelineId'],
         summary['sampleCount'],
         summary['rtfP50'],
         summary['rtfP95'],

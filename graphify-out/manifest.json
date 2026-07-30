@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "docs/README.md": {
-    "mtime": 1785430458.4478202,
-    "ast_hash": "c44b83de82b515956ba1ad6ee485aa79",
+    "mtime": 1785439353.1432283,
+    "ast_hash": "9cd2908ed44b1822c5ff8fa8686659e5",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
@@ -2575,8 +2575,8 @@
     "semantic_hash": ""
   },
   "test/tool/benchmarks/whisper_quality_metrics_test.dart": {
-    "mtime": 1785435289.6644392,
-    "ast_hash": "d495034b2374d0c628f48b8abfe58ed5",
+    "mtime": 1785439718.2028627,
+    "ast_hash": "ee0bcc85b61a5effab76402e795b753c",
     "semantic_hash": ""
   },
   "tool/benchmarks/run_android_emulator_smoke.ps1": {
@@ -2585,38 +2585,38 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/run_whisper_quality_matrix.ps1": {
-    "mtime": 1785435681.0295267,
-    "ast_hash": "2ad04439ea41bff9c8a6f21bb81a14ff",
+    "mtime": 1785439741.852954,
+    "ast_hash": "7021a94d3d76333056420ded88946553",
     "semantic_hash": ""
   },
   "tool/benchmarks/whisper_corpus_manifest.example.json": {
-    "mtime": 1785434429.8518949,
-    "ast_hash": "ffa0aa54152f672aa7e12fa613cd770e",
+    "mtime": 1785437417.8543036,
+    "ast_hash": "5b7da0a897a87b8924e960aff31014e1",
     "semantic_hash": ""
   },
   "tool/benchmarks/whisper_quality_metrics.dart": {
-    "mtime": 1785435304.965147,
-    "ast_hash": "7ed9489b957fd2cec683bda5bf23c1cd",
+    "mtime": 1785439718.2018125,
+    "ast_hash": "11758dd048e17004ab04e29f0947ffd4",
     "semantic_hash": ""
   },
   "docs/plans/2026-07-30-whisper-cpp-quality-delivery.md": {
-    "mtime": 1785436171.2145386,
-    "ast_hash": "476030f1ff296b4a8de9a301f2c8650d",
+    "mtime": 1785439149.262623,
+    "ast_hash": "4d33398161038ace2ee1a5c0adaf8d78",
     "semantic_hash": ""
   },
   "docs/quality/Step_21_C++_\u8d28\u91cf\u4ea4\u4ed8\u57fa\u7ebf.md": {
-    "mtime": 1785436171.2114122,
-    "ast_hash": "9fe6ea5f530783343baf3f4c1226e661",
+    "mtime": 1785439967.692339,
+    "ast_hash": "dc47d4dea918e430dc58d2fce4449a6d",
     "semantic_hash": ""
   },
   "docs/quality/Step_22_Whisper_\u89e3\u7801\u53c2\u6570\u8bc4\u6d4b.md": {
-    "mtime": 1785436171.212851,
-    "ast_hash": "8de5e18e864f4247ce85991e1a378c50",
+    "mtime": 1785439752.1892357,
+    "ast_hash": "79007c17bac93470d1d986e39436e7d1",
     "semantic_hash": ""
   },
   "docs/quality/Step_23_24_VAD_\u4e0e\u6700\u7ec8\u8f6c\u5f55.md": {
-    "mtime": 1785433895.0141387,
-    "ast_hash": "caf79f42dbfc3a5cb7055777ec67f76b",
+    "mtime": 1785439470.8635767,
+    "ast_hash": "b1231a1f75d06c2835863b48d46bac4c",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260730_114643_start_meeting_readiness_model_installation_whisper.md": {
@@ -2625,28 +2625,28 @@
     "semantic_hash": ""
   },
   "integration_test/android_whisper_quality_benchmark_test.dart": {
-    "mtime": 1785435245.7765074,
-    "ast_hash": "1f3d23f04d1ed8107fe27fd09f38c40a",
+    "mtime": 1785439718.2002482,
+    "ast_hash": "25aa16b8952cb143eed3a5b21b32b073",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/whisper_quality_protocol_test.dart": {
-    "mtime": 1785435148.3036387,
-    "ast_hash": "196fc618ce4f3a3304d372536ac2a702",
+    "mtime": 1785437355.1566024,
+    "ast_hash": "cdb9c6996720b0089c2722539ae90c0c",
     "semantic_hash": ""
   },
   "tool/benchmarks/prepare_whisper_quality_corpus.dart": {
-    "mtime": 1785434429.8498962,
-    "ast_hash": "e42c0af819fccc88f334037df9d87b80",
+    "mtime": 1785437402.852123,
+    "ast_hash": "9675b2067f71e2e434b4de2c1eeb87e9",
     "semantic_hash": ""
   },
   "tool/benchmarks/run_android_whisper_quality_benchmark.ps1": {
-    "mtime": 1785435681.030043,
-    "ast_hash": "255ea3181dc1aed881952624acde7203",
+    "mtime": 1785439733.6648793,
+    "ast_hash": "58f086ac1a834b35ea75499877d76134",
     "semantic_hash": ""
   },
   "tool/benchmarks/whisper_quality_protocol.dart": {
-    "mtime": 1785435148.302331,
-    "ast_hash": "6bb8ab559fd49e73d1d097eaad4446e4",
+    "mtime": 1785439718.20129,
+    "ast_hash": "9035382d33e4d9ef12b7bb7b5f81ed04",
     "semantic_hash": ""
   }
 }

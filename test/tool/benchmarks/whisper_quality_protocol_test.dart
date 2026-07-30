@@ -40,6 +40,8 @@ void main() {
       );
 
       expect(corpus.id, 'deidentified-v1');
+      expect(corpus.evidenceClass, 'product-meeting');
+      expect(corpus.provenance.sourceId, 'private-deidentified-meetings');
       expect(corpus.samples, hasLength(20));
       expect(corpus.samples.first.durationMs, 100);
       expect(corpus.samples.first.sourcePath, fixture.firstAudioPath);
@@ -87,6 +89,24 @@ void main() {
 
       expect(corpus.samples, hasLength(20));
     });
+
+    test('正式质量入口拒绝公开回归或合成冒烟语料', () async {
+      final fixture = await _fixture(
+        repository: repository,
+        audioRoot: external,
+        evidenceClass: 'synthetic-smoke',
+      );
+
+      expect(
+        () => WhisperQualityCorpus.load(
+          manifestPath: fixture.manifestPath,
+          repositoryRoot: repository.path,
+          environment: fixture.environment,
+          requiredEvidenceClass: 'product-meeting',
+        ),
+        throwsA(isA<WhisperQualityProtocolException>()),
+      );
+    });
   });
 
   group('PCM 与关键事实', () {
@@ -133,6 +153,7 @@ _fixture({
   required Directory repository,
   required Directory audioRoot,
   bool corruptFirstHash = false,
+  String evidenceClass = 'product-meeting',
 }) async {
   await audioRoot.create(recursive: true);
   final samples = <Map<String, Object?>>[];
@@ -161,9 +182,14 @@ _fixture({
   final manifestFile = File(p.join(repository.path, 'corpus.json'));
   await manifestFile.writeAsString(
     jsonEncode({
-      'schemaVersion': 1,
+      'schemaVersion': 2,
       'id': 'deidentified-v1',
       'deidentified': true,
+      'evidenceClass': evidenceClass,
+      'provenance': const {
+        'sourceId': 'private-deidentified-meetings',
+        'licenseId': 'internal-consented',
+      },
       'audioFormat': const {
         'encoding': 'pcm16le',
         'sampleRateHz': 16000,
