@@ -57,6 +57,18 @@ void main() {
     expect(forbiddenContents, isEmpty);
   });
 
+  test('Android Whisper 动态库显式链接系统数学库', () async {
+    final nativeBuild = await File(
+      'packages/meettrace_whisper_native/lib/src/c_library.dart',
+    ).readAsString();
+
+    expect(
+      nativeBuild,
+      contains("if (targetOS == OS.android) 'm'"),
+      reason: 'ggml 使用 exp 等数学函数，Android 动态加载时必须能解析 libm',
+    );
+  });
+
   test('C ABI 由 ffigen 生成，原生源码仅存在于隔离 package', () async {
     expect(
       await File(

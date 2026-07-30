@@ -11,6 +11,7 @@ import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace_whisper_native/meettrace_whisper_native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -34,6 +35,7 @@ void main() {
       final audioFile = File(p.join(root.path, 'one-second-silence.pcm'));
 
       try {
+        expect(WhisperNativeContext.runtimeVersion, contains('1.9.1'));
         await _copyAsset(_modelAsset, p.join(root.path, 'ggml-base-q5_1.bin'));
         await audioFile.writeAsBytes(Uint8List(32000), flush: true);
         final descriptor = AsrModelRegistry.alpha.defaultModel;
@@ -52,7 +54,14 @@ void main() {
         final subscription = engine.finalizationProgress.listen(progress.add);
 
         try {
-          await engine.initialize();
+          try {
+            await engine.initialize();
+          } on AsrEngineException catch (error) {
+            fail(
+              'Whisper Base 初始化失败：${error.failure.code} '
+              '${error.failure.diagnosticContext}',
+            );
+          }
           await engine.acceptAudio(
             Float32List(16000),
             sampleRate: whisperBaseSampleRate,

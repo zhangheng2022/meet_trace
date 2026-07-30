@@ -113,7 +113,7 @@ Future<void> buildWhisperLibrary(
       ...architectureSources.where((path) => path.endsWith('.cpp')),
     ],
     includes: includes,
-    libraries: const ['meettrace_ggml_c'],
+    libraries: ['meettrace_ggml_c', if (targetOS == OS.android) 'm'],
     language: Language.cpp,
     std: 'c++17',
     cppLinkStdLib: targetOS == OS.android ? 'c++_static' : null,
