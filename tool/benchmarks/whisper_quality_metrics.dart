@@ -15,6 +15,9 @@ final class WhisperQualityMetrics {
   const WhisperQualityMetrics();
 
   Map<String, Object?> evaluate(Map<String, Object?> input) {
+    if (input['schemaVersion'] != 2) {
+      throw const WhisperQualityMetricsException('input.schemaVersion 必须为 2');
+    }
     final corpus = _map(input['corpus'], 'corpus');
     final corpusId = _requiredText(corpus['id'], 'corpus.id');
     if (corpus['deidentified'] != true) {
@@ -81,6 +84,7 @@ final class WhisperQualityMetrics {
                 .length,
       );
       summaries.add({
+        'deviceId': first.deviceId,
         'modelId': first.modelId,
         'modelVersion': first.modelVersion,
         'profileId': first.profileId,
@@ -89,6 +93,7 @@ final class WhisperQualityMetrics {
         'rtfP50': _percentile(rtfSamples, 0.5),
         'rtfP95': _percentile(rtfSamples, 0.95),
         'sentenceLatencyMs': latencySamples,
+        'sentenceLatencySampleCount': latencySamples.length,
         'sentenceLatencyP50Ms': _percentile(latencySamples, 0.5),
         'sentenceLatencyP95Ms': _percentile(latencySamples, 0.95),
         'keyFactRecallRatio': expectedFacts == 0
@@ -108,13 +113,34 @@ final class WhisperQualityMetrics {
             .map((value) => value.peakRssBytes)
             .whereType<int>()
             .fold<int?>(null, (peak, value) => math.max(peak ?? 0, value)),
-        'energyWh': values
-            .map((value) => value.energyWh)
-            .whereType<double>()
-            .fold<double>(0, (total, value) => total + value),
-        'sustainedSevereOrCriticalThermal': values.any(
-          (value) => value.sustainedSevereOrCriticalThermal,
-        ),
+        'peakRssSampleCount': values
+            .where((value) => value.peakRssBytes != null)
+            .length,
+        'energyWh': values.every((value) => value.energyWh != null)
+            ? values.fold<double>(0, (total, value) => total + value.energyWh!)
+            : null,
+        'energySampleCount': values
+            .where((value) => value.energyWh != null)
+            .length,
+        'energyEvidenceRefs': values
+            .map((value) => value.energyEvidenceRef)
+            .whereType<String>()
+            .toSet()
+            .toList(growable: false),
+        'sustainedSevereOrCriticalThermal':
+            values.every(
+              (value) => value.sustainedSevereOrCriticalThermal != null,
+            )
+            ? values.any((value) => value.sustainedSevereOrCriticalThermal!)
+            : null,
+        'thermalSampleCount': values
+            .where((value) => value.sustainedSevereOrCriticalThermal != null)
+            .length,
+        'thermalEvidenceRefs': values
+            .map((value) => value.thermalEvidenceRef)
+            .whereType<String>()
+            .toSet()
+            .toList(growable: false),
         'transcriptRefs': values
             .map((value) => value.transcriptRef)
             .whereType<String>()
@@ -123,13 +149,16 @@ final class WhisperQualityMetrics {
       });
     }
     summaries.sort(
-      (left, right) => '${left['modelId']}:${left['profileId']}'.compareTo(
-        '${right['modelId']}:${right['profileId']}',
-      ),
+      (left, right) =>
+          '${left['deviceId']}:${left['modelId']}:${left['profileId']}'
+              .compareTo(
+                '${right['deviceId']}:${right['modelId']}:'
+                '${right['profileId']}',
+              ),
     );
 
     return {
-      'schemaVersion': 1,
+      'schemaVersion': 2,
       'corpusId': corpusId,
       'sampleCount': samples.length,
       'summaries': summaries,
@@ -243,14 +272,45 @@ _Observation _observation(
       'observations[$index] 引用了未知 sampleId：$sampleId',
     );
   }
-  final transcriptRef = _optionalText(item['transcriptRef']);
-  if (transcriptRef != null && _looksLikeAudioPath(transcriptRef)) {
+  final transcriptRef = _requiredText(
+    item['transcriptRef'],
+    'observations[$index].transcriptRef',
+  );
+  if (_looksLikeAudioPath(transcriptRef)) {
     throw WhisperQualityMetricsException(
       'observations[$index].transcriptRef 不得指向音频文件',
     );
   }
+  _requireSafeRelativeRef(transcriptRef, 'observations[$index].transcriptRef');
+  final energyWh = _optionalNonNegativeNumber(
+    item['energyWh'],
+    'observations[$index].energyWh',
+  );
+  final energyEvidenceRef = _optionalEvidenceRef(
+    item['energyEvidenceRef'],
+    'observations[$index].energyEvidenceRef',
+  );
+  if ((energyWh == null) != (energyEvidenceRef == null)) {
+    throw WhisperQualityMetricsException(
+      'observations[$index] 的 energyWh 与 energyEvidenceRef 必须同时提供',
+    );
+  }
+  final thermal = _optionalBoolean(
+    item['sustainedSevereOrCriticalThermal'],
+    'observations[$index].sustainedSevereOrCriticalThermal',
+  );
+  final thermalEvidenceRef = _optionalEvidenceRef(
+    item['thermalEvidenceRef'],
+    'observations[$index].thermalEvidenceRef',
+  );
+  if ((thermal == null) != (thermalEvidenceRef == null)) {
+    throw WhisperQualityMetricsException(
+      'observations[$index] 的温控结论与 thermalEvidenceRef 必须同时提供',
+    );
+  }
   return _Observation(
     sample: sample,
+    deviceId: _requiredText(item['deviceId'], 'observations[$index].deviceId'),
     modelId: _requiredText(item['modelId'], 'observations[$index].modelId'),
     modelVersion: _requiredText(
       item['modelVersion'],
@@ -268,7 +328,10 @@ _Observation _observation(
       item['sentenceLatencyMs'],
       'observations[$index].sentenceLatencyMs',
     ),
-    emittedText: item['emittedText'] == true,
+    emittedText: _requiredBoolean(
+      item['emittedText'],
+      'observations[$index].emittedText',
+    ),
     recognizedKeyFacts: _textList(
       item['recognizedKeyFacts'] ?? const <Object?>[],
       'observations[$index].recognizedKeyFacts',
@@ -277,12 +340,10 @@ _Observation _observation(
       item['peakRssBytes'],
       'observations[$index].peakRssBytes',
     ),
-    energyWh: _optionalNonNegativeNumber(
-      item['energyWh'],
-      'observations[$index].energyWh',
-    ),
-    sustainedSevereOrCriticalThermal:
-        item['sustainedSevereOrCriticalThermal'] == true,
+    energyWh: energyWh,
+    energyEvidenceRef: energyEvidenceRef,
+    sustainedSevereOrCriticalThermal: thermal,
+    thermalEvidenceRef: thermalEvidenceRef,
     transcriptRef: transcriptRef,
   );
 }
@@ -304,6 +365,7 @@ final class _Sample {
 final class _Observation {
   const _Observation({
     required this.sample,
+    required this.deviceId,
     required this.modelId,
     required this.modelVersion,
     required this.profileId,
@@ -313,11 +375,14 @@ final class _Observation {
     required this.recognizedKeyFacts,
     required this.peakRssBytes,
     required this.energyWh,
+    required this.energyEvidenceRef,
     required this.sustainedSevereOrCriticalThermal,
+    required this.thermalEvidenceRef,
     required this.transcriptRef,
   });
 
   final _Sample sample;
+  final String deviceId;
   final String modelId;
   final String modelVersion;
   final String profileId;
@@ -327,10 +392,13 @@ final class _Observation {
   final List<String> recognizedKeyFacts;
   final int? peakRssBytes;
   final double? energyWh;
-  final bool sustainedSevereOrCriticalThermal;
+  final String? energyEvidenceRef;
+  final bool? sustainedSevereOrCriticalThermal;
+  final String? thermalEvidenceRef;
   final String? transcriptRef;
 
-  String get groupKey => '$modelId\u0000$modelVersion\u0000$profileId';
+  String get groupKey =>
+      '$deviceId\u0000$modelId\u0000$modelVersion\u0000$profileId';
 }
 
 double? _percentile(List<double> values, double percentile) {
@@ -407,6 +475,50 @@ int? _optionalNonNegativeInteger(Object? value, String name) {
   return value;
 }
 
+bool? _optionalBoolean(Object? value, String name) {
+  if (value == null) {
+    return null;
+  }
+  if (value is! bool) {
+    throw WhisperQualityMetricsException('$name 必须是布尔值或 null');
+  }
+  return value;
+}
+
+bool _requiredBoolean(Object? value, String name) {
+  final result = _optionalBoolean(value, name);
+  if (result == null) {
+    throw WhisperQualityMetricsException('$name 必须是布尔值');
+  }
+  return result;
+}
+
+String? _optionalEvidenceRef(Object? value, String name) {
+  final text = _optionalText(value);
+  if (value != null && text == null) {
+    throw WhisperQualityMetricsException('$name 必须是非空字符串或 null');
+  }
+  if (text != null && _looksLikeAudioPath(text)) {
+    throw WhisperQualityMetricsException('$name 不得指向音频文件');
+  }
+  if (text != null) {
+    _requireSafeRelativeRef(text, name);
+  }
+  return text;
+}
+
+void _requireSafeRelativeRef(String value, String name) {
+  final normalized = value.replaceAll('\\', '/');
+  final uri = Uri.tryParse(normalized);
+  if (normalized.startsWith('/') ||
+      RegExp(r'^[a-zA-Z]:/').hasMatch(normalized) ||
+      uri == null ||
+      uri.hasScheme ||
+      normalized.split('/').contains('..')) {
+    throw WhisperQualityMetricsException('$name 必须是输出目录内的安全相对引用');
+  }
+}
+
 bool _looksLikeAudioPath(String value) => RegExp(
   r'\.(wav|pcm|m4a|aac|mp3|ogg|flac)(?:$|[?#])',
   caseSensitive: false,
@@ -415,26 +527,33 @@ bool _looksLikeAudioPath(String value) => RegExp(
 String _toCsv(Map<String, Object?> report) {
   final summaries = report['summaries']! as List<Map<String, Object?>>;
   final rows = <String>[
-    'modelId,modelVersion,profileId,sampleCount,rtfP50,rtfP95,'
-        'sentenceLatencyP50Ms,sentenceLatencyP95Ms,keyFactRecallRatio,'
+    'deviceId,modelId,modelVersion,profileId,sampleCount,rtfP50,rtfP95,'
+        'sentenceLatencySampleCount,sentenceLatencyP50Ms,'
+        'sentenceLatencyP95Ms,keyFactRecallRatio,'
         'silenceFalsePositiveCount,noiseHallucinationCount,peakRssBytes,'
-        'energyWh,sustainedSevereOrCriticalThermal',
+        'peakRssSampleCount,energyWh,energySampleCount,'
+        'sustainedSevereOrCriticalThermal,thermalSampleCount',
     for (final summary in summaries)
       [
+        summary['deviceId'],
         summary['modelId'],
         summary['modelVersion'],
         summary['profileId'],
         summary['sampleCount'],
         summary['rtfP50'],
         summary['rtfP95'],
+        summary['sentenceLatencySampleCount'],
         summary['sentenceLatencyP50Ms'],
         summary['sentenceLatencyP95Ms'],
         summary['keyFactRecallRatio'],
         summary['silenceFalsePositiveCount'],
         summary['noiseHallucinationCount'],
         summary['peakRssBytes'],
+        summary['peakRssSampleCount'],
         summary['energyWh'],
+        summary['energySampleCount'],
         summary['sustainedSevereOrCriticalThermal'],
+        summary['thermalSampleCount'],
       ].map(_csvCell).join(','),
   ];
   return '${rows.join('\n')}\n';

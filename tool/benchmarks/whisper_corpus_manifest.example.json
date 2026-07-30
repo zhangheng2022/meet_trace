@@ -1,6 +1,12 @@
 {
+  "schemaVersion": 1,
   "id": "replace-with-deidentified-corpus-id",
   "deidentified": true,
+  "audioFormat": {
+    "encoding": "pcm16le",
+    "sampleRateHz": 16000,
+    "channels": 1
+  },
   "samples": [
     {
       "id": "replace-with-sample-id",

@@ -29,11 +29,27 @@
 输入契约：
 
 - `tool/benchmarks/whisper_corpus_manifest.example.json`
-- 仓库外不少于 20 段的去敏音频，通过 `pathEnv` 引用；
+- 仓库外或 `.spike/` 中不少于 20 段的去敏 PCM16LE，通过 `pathEnv` 引用；
 - raw observations 必须带 model/version/profile、推理耗时、句后延迟、关键事实、
-  静音/噪声输出、RSS、能耗和温控信息。
+  静音/噪声输出、RSS、能耗和温控信息；无法从模拟器取得的能耗/温控必须为 `null`。
 
-执行：
+Android x86_64 模拟器完整执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File tool/benchmarks/run_android_whisper_quality_benchmark.ps1 `
+  -CorpusManifest <仓库外语料清单> `
+  -DeviceId emulator-5554 `
+  -SmallModelPath <ggml-small-q5_1.bin>
+```
+
+默认比较 Base/Small × Baseline/Preview/Final。可用
+`-Profiles baseline,preview,final` 明确选择矩阵；每个组合必须完整覆盖同一批语料。
+脚本验证语料和 Small 权重，推送临时设备副本，静默捕获包含正文的私有日志，写出
+transcript 引用，再调用聚合器生成 JSON/CSV。句后延迟按每段中最慢的 2 秒窗口
+端到端识别往返统计，包含 isolate 投递和结果返回；RSS 在推理期间每 50 ms 采样。
+
+已有合规原始观测时仍可直接执行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass `
@@ -42,14 +58,16 @@ powershell -NoProfile -ExecutionPolicy Bypass `
   -RawObservations <原始观测 JSON>
 ```
 
-输出位于 `.spike/results/whisper-quality/`，不提交原始音频或转录正文。
+输出位于 `.spike/results/whisper-quality/`，不提交原始音频、私有设备清单、日志或转录
+正文。2026-07-31 已在 API 36 x86_64 模拟器完成新 integration test 的编译、安装和
+缺参跳过检查；尚未把该检查表述为真实质量评测。
 
 ## 4. Hard Gate 2
 
 | 条件 | 状态 |
 |---|---|
 | 版本化 ABI、边界校验、生成绑定 | 通过 |
-| Base/Small/Preview/Final 可用精确 Profile ID 评测 | 通过 |
+| Base/Small/Preview/Final 可用精确 Profile ID 端到端评测 | 通过 |
 | Base 关键事实召回不低于阶段 0 | `blocked`：缺少真实语料 |
 | Small 关键事实召回不低于 Base | `blocked`：缺少真实语料和本机 Small 权重 |
 | Preview 句后延迟 P95 ≤ 3 秒 | `blocked`：缺少真实语料 |

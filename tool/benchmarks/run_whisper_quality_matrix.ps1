@@ -27,6 +27,22 @@ function Resolve-ExistingFile {
     return $resolved.Path
 }
 
+function Write-JsonFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Value,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [int]$Depth = 20
+    )
+
+    $json = $Value | ConvertTo-Json -Depth $Depth
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $json, $utf8NoBom)
+}
+
 $manifestPath = Resolve-ExistingFile -Path $CorpusManifest -Label "Corpus manifest"
 $observationsPath = Resolve-ExistingFile -Path $RawObservations -Label "Raw observations"
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -40,6 +56,9 @@ if ($null -eq $manifest.samples -or $manifest.samples.Count -lt 20) {
 }
 if ($null -eq $observations.observations) {
     throw "Raw observations 缺少 observations 数组"
+}
+if ($observations.schemaVersion -ne 2) {
+    throw "Raw observations schemaVersion 必须为 2"
 }
 
 $sampleIds = @{}
@@ -80,11 +99,11 @@ $jsonPath = Join-Path $outputRoot "quality-report.json"
 $csvPath = Join-Path $outputRoot "quality-report.csv"
 
 $combined = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     corpus = $manifest
     observations = $observations.observations
 }
-$combined | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $combinedPath -Encoding UTF8
+Write-JsonFile -Value $combined -Path $combinedPath
 
 dart run tool/benchmarks/whisper_quality_metrics.dart `
     --input $combinedPath `

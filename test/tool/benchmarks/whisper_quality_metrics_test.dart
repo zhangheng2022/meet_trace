@@ -12,6 +12,8 @@ void main() {
       final summary = summaries.single;
 
       expect(report['corpusId'], 'deidentified-v1');
+      expect(report['schemaVersion'], 2);
+      expect(summary['deviceId'], 'android-emulator-x86_64-api-36');
       expect(summary['sampleCount'], 20);
       expect(summary['rtfP50'], 0.1);
       expect(summary['rtfP95'], 0.1);
@@ -23,6 +25,9 @@ void main() {
       expect(summary['noiseHallucinationCount'], 0);
       expect(summary['peakRssBytes'], 120000000);
       expect(summary['energyWh'], closeTo(2, 0.00001));
+      expect(summary['energySampleCount'], 20);
+      expect(summary['sustainedSevereOrCriticalThermal'], isFalse);
+      expect(summary['thermalSampleCount'], 20);
     });
 
     test('少于 20 段、未知 sample 或音频路径引用会拒绝', () {
@@ -47,6 +52,25 @@ void main() {
         () => const WhisperQualityMetrics().evaluate(unsafe),
         throwsA(isA<WhisperQualityMetricsException>()),
       );
+
+      final absolute = _input(sampleCount: 20);
+      final absoluteObservations = absolute['observations']! as List<Object?>;
+      (absoluteObservations.first! as Map<String, Object>)['transcriptRef'] =
+          r'C:\private\transcript.json';
+      expect(
+        () => const WhisperQualityMetrics().evaluate(absolute),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+
+      final invalidBoolean = _input(sampleCount: 20);
+      final booleanObservations =
+          invalidBoolean['observations']! as List<Object?>;
+      (booleanObservations.first! as Map<String, Object>)['emittedText'] =
+          'true';
+      expect(
+        () => const WhisperQualityMetrics().evaluate(invalidBoolean),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
     });
 
     test('每个 Profile 必须完整且不重复地覆盖全部语料', () {
@@ -63,6 +87,47 @@ void main() {
       duplicateObservations.add(duplicateObservations.first);
       expect(
         () => const WhisperQualityMetrics().evaluate(duplicate),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+    });
+
+    test('能耗或温控缺测保持 null，不伪装为零或 false', () {
+      final input = _input(sampleCount: 20);
+      final observations = input['observations']! as List<Object?>;
+      final nullableObservations = <Object?>[];
+      for (var index = 0; index < observations.length; index++) {
+        final observation = Map<String, Object?>.from(
+          observations[index]! as Map<String, Object>,
+        );
+        observation['energyWh'] = null;
+        observation['energyEvidenceRef'] = null;
+        observation['sustainedSevereOrCriticalThermal'] = null;
+        observation['thermalEvidenceRef'] = null;
+        nullableObservations.add(observation);
+      }
+      input['observations'] = nullableObservations;
+
+      final report = const WhisperQualityMetrics().evaluate(input);
+      final summary =
+          (report['summaries']! as List<Map<String, Object?>>).single;
+
+      expect(summary['energyWh'], isNull);
+      expect(summary['energySampleCount'], 0);
+      expect(summary['sustainedSevereOrCriticalThermal'], isNull);
+      expect(summary['thermalSampleCount'], 0);
+    });
+
+    test('能耗和温控结论必须带可追溯证据引用', () {
+      final input = _input(sampleCount: 20);
+      final observations = input['observations']! as List<Object?>;
+      final first = Map<String, Object?>.from(
+        observations.first! as Map<String, Object>,
+      );
+      first['energyEvidenceRef'] = null;
+      input['observations'] = <Object?>[first, ...observations.skip(1)];
+
+      expect(
+        () => const WhisperQualityMetrics().evaluate(input),
         throwsA(isA<WhisperQualityMetricsException>()),
       );
     });
@@ -84,7 +149,7 @@ Map<String, Object?> _input({required int sampleCount}) {
       },
   ];
   return {
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'corpus': {
       'id': 'deidentified-v1',
       'deidentified': true,
@@ -94,6 +159,7 @@ Map<String, Object?> _input({required int sampleCount}) {
       for (var index = 0; index < sampleCount; index++)
         {
           'sampleId': 'sample-$index',
+          'deviceId': 'android-emulator-x86_64-api-36',
           'modelId': 'whisper-base',
           'modelVersion': 'v1',
           'profileId': 'baseline',
@@ -103,7 +169,9 @@ Map<String, Object?> _input({required int sampleCount}) {
           'recognizedKeyFacts': [if (index >= 10) 'fact-$index'],
           'peakRssBytes': 120000000,
           'energyWh': 0.1,
+          'energyEvidenceRef': 'metrics/energy-$index.json',
           'sustainedSevereOrCriticalThermal': false,
+          'thermalEvidenceRef': 'metrics/thermal-$index.json',
           'transcriptRef': 'metrics/transcript-$index.json',
         },
     ],

@@ -39,7 +39,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，356 tests |
+| `flutter test` | 通过，新增评测链后共 363 tests |
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
@@ -53,9 +53,9 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 
 ## 4. 已确认缺口
 
-1. Native Assets 工具链把 `-Wl,-z,max-page-size=16384` 同时传入 `clang -c`，
-   因而产生 `linker input unused` 警告；最终链接成功，但阶段 5 前必须把编译/链接参数
-   分层并用 `llvm-readelf` 验证实际 LOAD alignment。
+1. Native Assets 的 `clang -c` 已不再接收 linker-only 参数，原有
+   `linker input unused` 警告已消除；Release 16 KB LOAD alignment 仍属于阶段 5
+   独立产物门槛，不能由“无警告”代替。
 2. 模拟器首次录音会出现通知和麦克风权限弹窗；自动脚本必须在测试前显式授权 Debug 包，
    避免把交互等待误判为录音挂死。
 3. 仓库外尚未配置不少于 20 段的真实去敏会议语料，因此 Base/Small 固定窗口质量基线、
@@ -66,11 +66,20 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 ## 5. 评测输入契约
 
 - 示例：`tool/benchmarks/whisper_corpus_manifest.example.json`
+- 主机校验器：`tool/benchmarks/prepare_whisper_quality_corpus.dart`
+- Android 执行器：`integration_test/android_whisper_quality_benchmark_test.dart`
+- Android 编排入口：`tool/benchmarks/run_android_whisper_quality_benchmark.ps1`
 - 聚合器：`tool/benchmarks/whisper_quality_metrics.dart`
-- 入口：`tool/benchmarks/run_whisper_quality_matrix.ps1`
-- 音频只通过每段 `pathEnv` 指向仓库外文件。
+- 已有原始观测的聚合入口：`tool/benchmarks/run_whisper_quality_matrix.ps1`
+- 音频固定为无文件头的 16 kHz、单声道、PCM16LE，只通过每段 `pathEnv`
+  指向仓库外或 `.spike/` 文件。
 - manifest 只保存 corpus/sample ID、去敏状态、SHA-256、时长、标签和关键事实。
-- JSON/CSV 报告不得包含录音路径或录音内容。
+- 主机在推送前重新校验不少于 20 段、SHA-256、PCM 字节数和时长；设备临时目录在
+  `finally` 中按受限路径清理。
+- Base/Small 和选择的 Profile 均使用固定 2 秒窗口；设备端逐条输出原始观测，
+  主机再把正文保存为 `.spike/` 下 transcript 引用。
+- JSON/CSV 报告不得包含录音路径或录音内容。能耗、温控未采集时保持 `null` 并记录
+  sample count 为 0，不得伪装成 `0 Wh` 或 `false`。
 
 ## 6. Hard Gate 0
 
@@ -79,8 +88,9 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 | 产品边界批准并统一 | 通过 |
 | 工程基线可重复 | 通过 |
 | 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过 |
-| 20 段真实去敏语料可运行 | `blocked` |
-| 固定窗口 Base/Small 原始指标已生成 | `blocked` |
+| Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
+| 20 段真实去敏语料可运行 | `blocked`：未提供语料环境变量 |
+| 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料与本机 Small 权重 |
 
 在真实语料注入前，不得把 Hard Gate 0 或质量指标标记为通过；后续实现可以继续，但发布
 结论必须保持 `blocked`。
@@ -167,3 +177,16 @@ Profile 激活、噪声幻觉下降率和关键事实召回结论。
 - 模拟器详细指标只存在于不提交的日志，缺少机器可读证据。
 
 修复后重新执行规则审查，未保留 Critical/High；有实际影响的 Medium 也已关闭。
+
+2026-07-31 对新增 Android 外部语料执行链再次按 workspace 模式审查 9 个 reviewable
+文件，并手工覆盖 PowerShell、integration test 和指标语义。审查中已修正：
+
+- 能耗/温控缺测被错误折算为 `0`/`false`；
+- transcript/evidence 引用可写入绝对路径，以及私有输出目录可越出 `.spike/`；
+- `emittedText` 非布尔输入被静默折算为 `false`；
+- 句后延迟只统计原生解码、漏掉 isolate 往返；
+- RSS 只读取推理前后瞬时值，可能漏掉推理期间峰值；
+- 仅由标点组成的关键事实会因归一化为空串而被误报为召回。
+
+修复后目标测试、静态分析与 API 36 x86_64 编译/安装检查通过；本轮未发现或保留
+Critical/High。
