@@ -69,7 +69,7 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 | 版本化 ABI、边界校验、生成绑定 | 通过 |
 | Base/Small/Preview/Final 可用精确 Profile ID 端到端评测 | 通过 |
 | Base 关键事实召回不低于阶段 0 | `blocked`：缺少真实语料 |
-| Small 关键事实召回不低于 Base | `blocked`：缺少真实语料和本机 Small 权重 |
+| Small 关键事实召回不低于 Base | `blocked`：Small 模拟器原生冒烟已通过，但缺少真实语料矩阵 |
 | Preview 句后延迟 P95 ≤ 3 秒 | `blocked`：缺少真实语料 |
 | 100 次 context 生命周期无持续增长 | 通过：第 10→100 次 RSS +6,242,304 bytes，小于 32 MiB 上限 |
 

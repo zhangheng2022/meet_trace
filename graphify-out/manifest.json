@@ -2420,13 +2420,13 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/download_whisper_models.ps1": {
-    "mtime": 1785428995.105086,
-    "ast_hash": "068fe96c9d6c64ab2f993b03938982de",
+    "mtime": 1785435681.027411,
+    "ast_hash": "5d86b6a032ac8a5e1d84476abddccc5c",
     "semantic_hash": ""
   },
   "tool/benchmarks/run_android_whisper_validation.ps1": {
-    "mtime": 1785425208.2546797,
-    "ast_hash": "760763e0628022f6362f3aa23d65c8a5",
+    "mtime": 1785436327.4196477,
+    "ast_hash": "351f083fa00e583e203792e6625d53d0",
     "semantic_hash": ""
   },
   "assets/licenses/whisper-cpp-NOTICE.txt": {
@@ -2585,8 +2585,8 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/run_whisper_quality_matrix.ps1": {
-    "mtime": 1785435289.6655357,
-    "ast_hash": "532d761df4c1fd6903fbd82863ebf16d",
+    "mtime": 1785435681.0295267,
+    "ast_hash": "2ad04439ea41bff9c8a6f21bb81a14ff",
     "semantic_hash": ""
   },
   "tool/benchmarks/whisper_corpus_manifest.example.json": {
@@ -2600,18 +2600,18 @@
     "semantic_hash": ""
   },
   "docs/plans/2026-07-30-whisper-cpp-quality-delivery.md": {
-    "mtime": 1785434893.4200315,
-    "ast_hash": "400439be0dd742db0fde4bf9ed8636bc",
+    "mtime": 1785436171.2145386,
+    "ast_hash": "476030f1ff296b4a8de9a301f2c8650d",
     "semantic_hash": ""
   },
   "docs/quality/Step_21_C++_\u8d28\u91cf\u4ea4\u4ed8\u57fa\u7ebf.md": {
-    "mtime": 1785435451.8254156,
-    "ast_hash": "1e222cab99060c37fe1f3ae2d8118164",
+    "mtime": 1785436171.2114122,
+    "ast_hash": "9fe6ea5f530783343baf3f4c1226e661",
     "semantic_hash": ""
   },
   "docs/quality/Step_22_Whisper_\u89e3\u7801\u53c2\u6570\u8bc4\u6d4b.md": {
-    "mtime": 1785435174.3059385,
-    "ast_hash": "4f0cf59f779530b6e3db9e454112d0b7",
+    "mtime": 1785436171.212851,
+    "ast_hash": "8de5e18e864f4247ce85991e1a378c50",
     "semantic_hash": ""
   },
   "docs/quality/Step_23_24_VAD_\u4e0e\u6700\u7ec8\u8f6c\u5f55.md": {
@@ -2640,8 +2640,8 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/run_android_whisper_quality_benchmark.ps1": {
-    "mtime": 1785435016.45447,
-    "ast_hash": "03302c214f8a6270086b519b278f9f36",
+    "mtime": 1785435681.030043,
+    "ast_hash": "255ea3181dc1aed881952624acde7203",
     "semantic_hash": ""
   },
   "tool/benchmarks/whisper_quality_protocol.dart": {

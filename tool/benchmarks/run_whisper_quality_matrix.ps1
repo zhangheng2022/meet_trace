@@ -22,7 +22,7 @@ function Resolve-ExistingFile {
 
     $resolved = Resolve-Path -LiteralPath $Path -ErrorAction Stop
     if (-not (Test-Path -LiteralPath $resolved.Path -PathType Leaf)) {
-        throw "$Label 不是文件：$($resolved.Path)"
+        throw "$Label is not a file: $($resolved.Path)"
     }
     return $resolved.Path
 }
@@ -49,44 +49,44 @@ $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | Convert
 $observations = Get-Content -LiteralPath $observationsPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
 if ($manifest.deidentified -ne $true) {
-    throw "Corpus manifest 必须声明 deidentified=true"
+    throw "Corpus manifest must declare deidentified=true"
 }
 if ($null -eq $manifest.samples -or $manifest.samples.Count -lt 20) {
-    throw "Corpus manifest 必须至少包含 20 段"
+    throw "Corpus manifest must contain at least 20 samples"
 }
 if ($null -eq $observations.observations) {
-    throw "Raw observations 缺少 observations 数组"
+    throw "Raw observations must contain an observations array"
 }
 if ($observations.schemaVersion -ne 2) {
-    throw "Raw observations schemaVersion 必须为 2"
+    throw "Raw observations schemaVersion must be 2"
 }
 
 $sampleIds = @{}
 foreach ($sample in $manifest.samples) {
     if ([string]::IsNullOrWhiteSpace($sample.id)) {
-        throw "Corpus sample id 不能为空"
+        throw "Corpus sample id must not be empty"
     }
     if ($sampleIds.ContainsKey($sample.id)) {
-        throw "Corpus sample id 重复：$($sample.id)"
+        throw "Duplicate corpus sample id: $($sample.id)"
     }
     $sampleIds[$sample.id] = $true
 
     if ([string]::IsNullOrWhiteSpace($sample.pathEnv)) {
-        throw "Corpus sample $($sample.id) 缺少 pathEnv"
+        throw "Corpus sample $($sample.id) is missing pathEnv"
     }
     $audioPath = [Environment]::GetEnvironmentVariable($sample.pathEnv)
     if ([string]::IsNullOrWhiteSpace($audioPath)) {
-        throw "环境变量 $($sample.pathEnv) 未配置"
+        throw "Environment variable $($sample.pathEnv) is not configured"
     }
     $resolvedAudio = Resolve-ExistingFile -Path $audioPath -Label "Corpus audio"
     if ($resolvedAudio -match '\.(?i:wav|pcm|m4a|aac|mp3|ogg|flac)$') {
         $actualHash = (Get-FileHash -LiteralPath $resolvedAudio -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actualHash -ne "$($sample.sha256)".ToLowerInvariant()) {
-            throw "Corpus sample $($sample.id) SHA-256 不匹配"
+            throw "Corpus sample $($sample.id) SHA-256 mismatch"
         }
     }
     else {
-        throw "Corpus sample $($sample.id) 必须是受支持的本地音频"
+        throw "Corpus sample $($sample.id) must be a supported local audio file"
     }
 }
 
@@ -110,7 +110,7 @@ dart run tool/benchmarks/whisper_quality_metrics.dart `
     --output-json $jsonPath `
     --output-csv $csvPath
 if ($LASTEXITCODE -ne 0) {
-    throw "Whisper quality metrics 计算失败，退出码：$LASTEXITCODE"
+    throw "Whisper quality metrics failed with exit code $LASTEXITCODE"
 }
 
 Write-Output "Whisper quality JSON: $jsonPath"

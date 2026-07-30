@@ -264,8 +264,9 @@ Android 模拟器用于尽早打通功能链：
 - 已增加主机语料校验器、Android integration test 和安全编排脚本，可从仓库外
   PCM16LE 自动生成 Base/Small × Profile 原始观测、私有 transcript 引用及 JSON/CSV。
 - 模拟器无法提供的能耗与温控保持 `null`，不会被聚合器折算为零或无异常。
-- 新入口已在 API 36 x86_64 模拟器完成编译、安装与缺参跳过检查；20 段真实语料和
-  Small 权重尚未提供，因此 Hard Gate 0 仍为 `blocked`。
+- 新入口已在 API 36 x86_64 模拟器完成编译、安装与缺参跳过检查；Small 固定权重也已
+  完成真实原生初始化、窗口推理和释放。20 段真实语料尚未提供，因此 Hard Gate 0
+  仍为 `blocked`。
 
 ---
 

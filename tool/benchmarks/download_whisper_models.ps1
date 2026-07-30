@@ -47,17 +47,17 @@ $files = foreach ($model in $models) {
     New-Item -ItemType Directory -Force -Path $modelDirectory | Out-Null
 
     if (-not (Test-Path -LiteralPath $modelPath -PathType Leaf)) {
-        Write-Host "下载 $($model.id)"
+        Write-Host "Downloading $($model.id)"
         & curl.exe --fail --location --continue-at - --output $modelPath $sourceUrl
         if ($LASTEXITCODE -ne 0) {
-            throw "下载失败：$($model.id)"
+            throw "Download failed: $($model.id)"
         }
     }
 
     $actualBytes = (Get-Item -LiteralPath $modelPath).Length
     $actualSha256 = (Get-FileHash -LiteralPath $modelPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualBytes -ne $model.bytes -or $actualSha256 -ne $model.sha256) {
-        throw "模型校验失败：$modelPath"
+        throw "Model verification failed: $modelPath"
     }
 
     [ordered]@{
@@ -85,5 +85,5 @@ $manifest = [ordered]@{
 $manifestPath = Join-Path ([System.IO.Path]::GetDirectoryName($OutputRoot)) 'model-files.json'
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $manifestPath -Encoding utf8
 
-Write-Host "Whisper 模型已准备：$OutputRoot"
-Write-Host "文件清单：$manifestPath"
+Write-Host "Whisper models are ready: $OutputRoot"
+Write-Host "File manifest: $manifestPath"

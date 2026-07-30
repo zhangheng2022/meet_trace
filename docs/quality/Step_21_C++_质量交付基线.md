@@ -46,6 +46,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 | 30 秒模拟器录音测试 | 通过，960,512 bytes，完整率 1.00042，0 个预览丢弃 |
 | 端到端会议流 | 通过，真实 `Application`/`FTheme`、临时数据库、Base 最终快照 |
 | Native context 生命周期 | 通过，连续 100 次创建/推理/幂等释放；首尾 RSS +15,822,848 bytes，预热后 RSS +6,242,304 bytes |
+| Small 模拟器原生冒烟 | 通过，固定 SHA-256 权重完成初始化、窗口推理和释放，67 秒 |
 
 首次 `flutter test` 因 Dart 下载 `sqlite3.x64.windows.dll` 时 TLS 握手中断而失败；
 使用 PowerShell 系统证书访问相同官方 URL 后重试通过。该问题属于本机依赖缓存，不是源码
@@ -90,7 +91,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 | 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过 |
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
 | 20 段真实去敏语料可运行 | `blocked`：未提供语料环境变量 |
-| 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料与本机 Small 权重 |
+| 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
 
 在真实语料注入前，不得把 Hard Gate 0 或质量指标标记为通过；后续实现可以继续，但发布
 结论必须保持 `blocked`。
@@ -119,6 +120,7 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 |---|---|
 | x86_64 Debug 构建 | 通过 |
 | Base Native Assets 初始化、推理、释放 | 通过 |
+| Small Native Assets 初始化、推理、释放 | 通过；本机忽略目录权重，未进入 APK |
 | 30 秒真实麦克风 PCM | 960,512 bytes，完整率 1.00042，持久化比 1.0 |
 | 预览故障注入 | `asr.preview.vad_failed`，事实 PCM 继续增长 |
 | 最终快照 | `complete`，实际模型/版本与会议锁定 Base 一致 |
@@ -190,3 +192,14 @@ Profile 激活、噪声幻觉下降率和关键事实召回结论。
 
 修复后目标测试、静态分析与 API 36 x86_64 编译/安装检查通过；本轮未发现或保留
 Critical/High。
+
+随后使用 Windows PowerShell 5.1 执行 Small 模拟器验证时又发现并修复两项脚本缺陷：
+
+- UTF-8 无 BOM 的中文 `.ps1` 在 Windows PowerShell 5.1 下可能被本地代码页破坏；
+  benchmark PowerShell 脚本现保持 ASCII 兼容并逐个通过 PS5 parser。
+- 旧脚本把 Small 复制进应用私有目录，但 `flutter test` 重装应用会删除它，且
+  `run-as` 清理会掩盖原始结果；现改为受限 `/data/local/tmp` 只读临时目录，
+  校验路径后清理，清理错误不覆盖测试退出码。
+
+修复后的 `run_android_whisper_validation.ps1 -ModelFilter small` 已在 API 36 x86_64
+模拟器通过。

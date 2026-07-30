@@ -37,7 +37,7 @@ function Resolve-ExistingFile {
 
     $resolved = Resolve-Path -LiteralPath $Path -ErrorAction Stop
     if (-not (Test-Path -LiteralPath $resolved.Path -PathType Leaf)) {
-        throw "$Label 不是文件：$($resolved.Path)"
+        throw "$Label is not a file: $($resolved.Path)"
     }
     return $resolved.Path
 }
@@ -67,7 +67,7 @@ function Resolve-AdbPath {
     if ($null -ne $command) {
         return $command.Source
     }
-    throw "找不到 adb；请配置 ANDROID_SDK_ROOT 或 flutter config --android-sdk。"
+    throw "adb not found; configure ANDROID_SDK_ROOT or flutter config --android-sdk."
 }
 
 function Resolve-X64EmulatorDevice {
@@ -81,7 +81,7 @@ function Resolve-X64EmulatorDevice {
         $_.targetPlatform -eq "android-x64" -and $_.emulator -eq $true
     })
     if ($matches.Count -ne 1) {
-        throw "需要且只能有一个运行中的 Android x86_64 模拟器；当前为 $($matches.Count) 个。"
+        throw "Exactly one running Android x86_64 emulator is required; found $($matches.Count)."
     }
     return $matches[0].id
 }
@@ -93,7 +93,7 @@ function Assert-NativeSuccess {
     )
 
     if ($LASTEXITCODE -ne 0) {
-        throw "$Action 失败，退出码：$LASTEXITCODE"
+        throw "$Action failed with exit code $LASTEXITCODE"
     }
 }
 
@@ -131,7 +131,7 @@ function Write-JsonFile {
 }
 
 if ($Profiles.Count -eq 0) {
-    throw "Profiles 不能为空。"
+    throw "Profiles must not be empty."
 }
 $profileIds = @(
     @(
@@ -146,14 +146,14 @@ $profileIds = @(
 )
 
 $manifestPath = Resolve-ExistingFile -Path $CorpusManifest -Label "Corpus manifest"
-$resolvedSmallModel = Resolve-ExistingFile -Path $SmallModelPath -Label "Whisper Small 模型"
+$resolvedSmallModel = Resolve-ExistingFile -Path $SmallModelPath -Label "Whisper Small model"
 $smallFile = Get-Item -LiteralPath $resolvedSmallModel
 if ($smallFile.Length -ne $smallExpectedBytes) {
-    throw "Whisper Small 模型字节数不匹配。"
+    throw "Whisper Small model byte length mismatch."
 }
 $smallHash = (Get-FileHash -LiteralPath $resolvedSmallModel -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($smallHash -ne $smallExpectedSha256) {
-    throw "Whisper Small 模型 SHA-256 不匹配。"
+    throw "Whisper Small model SHA-256 mismatch."
 }
 
 $outputRoot = [System.IO.Path]::GetFullPath(
@@ -167,7 +167,7 @@ if (-not $outputRoot.StartsWith(
         $spikePrefix,
         [System.StringComparison]::OrdinalIgnoreCase
     )) {
-    throw "OutputDirectory 必须位于仓库已忽略的 .spike 目录内。"
+    throw "OutputDirectory must be inside the ignored repository .spike directory."
 }
 [System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
 $transcriptRoot = Join-Path $outputRoot "transcripts"
@@ -184,7 +184,7 @@ try {
         --manifest $manifestPath `
         --repository-root $repoRoot `
         --output $preparedCorpusPath
-    Assert-NativeSuccess -Action "Corpus manifest 校验"
+    Assert-NativeSuccess -Action "Corpus manifest validation"
     $preparedCorpus = Get-Content -LiteralPath $preparedCorpusPath -Raw -Encoding UTF8 |
         ConvertFrom-Json
 
@@ -192,29 +192,29 @@ try {
     $resolvedDeviceId = Resolve-X64EmulatorDevice -RequestedDeviceId $DeviceId
     $state = (& $adb -s $resolvedDeviceId get-state).Trim()
     if ($state -ne "device") {
-        throw "Android 模拟器未就绪：$resolvedDeviceId ($state)"
+        throw "Android emulator is not ready: $resolvedDeviceId ($state)"
     }
     $emulatorFlag = (& $adb -s $resolvedDeviceId shell getprop ro.kernel.qemu).Trim()
     $abi = (& $adb -s $resolvedDeviceId shell getprop ro.product.cpu.abi).Trim()
     if ($emulatorFlag -ne "1" -or $abi -ne "x86_64") {
-        throw "当前目标必须是 Android x86_64 模拟器；实际 ABI：$abi。"
+        throw "Target must be an Android x86_64 emulator; actual ABI: $abi."
     }
     $apiLevel = [int]((& $adb -s $resolvedDeviceId shell getprop ro.build.version.sdk).Trim())
     $deviceLabel = "android-emulator-x86_64-api-$apiLevel"
 
     $remoteRoot = "/data/local/tmp/meettrace-quality-$([Guid]::NewGuid().ToString('N'))"
     if ($remoteRoot -notmatch "^/data/local/tmp/meettrace-quality-[0-9a-f]{32}$") {
-        throw "临时设备目录不符合安全边界。"
+        throw "The temporary device directory is outside the allowed boundary."
     }
     & $adb -s $resolvedDeviceId shell mkdir -p $remoteRoot | Out-Null
-    Assert-NativeSuccess -Action "创建设备临时目录"
+    Assert-NativeSuccess -Action "Create temporary device directory"
 
     $deviceSamples = @()
     for ($index = 0; $index -lt $preparedCorpus.samples.Count; $index++) {
         $sample = $preparedCorpus.samples[$index]
         $remotePath = "$remoteRoot/sample-$($index.ToString('D3')).pcm"
         & $adb -s $resolvedDeviceId push $sample.sourcePath $remotePath *> $null
-        Assert-NativeSuccess -Action "推送去敏 PCM sample-$($index.ToString('D3'))"
+        Assert-NativeSuccess -Action "Push deidentified PCM sample-$($index.ToString('D3'))"
         $deviceSamples += [ordered]@{
             id = $sample.id
             path = $remotePath
@@ -227,7 +227,7 @@ try {
 
     $remoteSmallModel = "$remoteRoot/ggml-small-q5_1.bin"
     & $adb -s $resolvedDeviceId push $resolvedSmallModel $remoteSmallModel *> $null
-    Assert-NativeSuccess -Action "推送 Whisper Small 模型"
+    Assert-NativeSuccess -Action "Push Whisper Small model"
 
     $deviceManifest = [ordered]@{
         schemaVersion = 1
@@ -255,7 +255,7 @@ try {
     Write-JsonFile -Value $deviceManifest -Path $deviceManifestHostPath
     $remoteDeviceManifest = "$remoteRoot/device-run.json"
     & $adb -s $resolvedDeviceId push $deviceManifestHostPath $remoteDeviceManifest *> $null
-    Assert-NativeSuccess -Action "推送设备评测清单"
+    Assert-NativeSuccess -Action "Push device benchmark manifest"
 
     $flutterArguments = @(
         "test",
@@ -276,7 +276,7 @@ try {
     $flutterOutput | ForEach-Object { "$_" } |
         Set-Content -LiteralPath $rawLogPath -Encoding UTF8
     if ($flutterExitCode -ne 0) {
-        throw "Android Whisper 质量评测失败；私有日志：$rawLogPath"
+        throw "Android Whisper quality benchmark failed; private log: $rawLogPath"
     }
 
     $observationLines = @(
@@ -287,11 +287,11 @@ try {
         Where-Object { $_.StartsWith($completeMarker) } |
         Select-Object -Last 1
     if ([string]::IsNullOrWhiteSpace($completeLine)) {
-        throw "Android 评测完成标记缺失；私有日志：$rawLogPath"
+        throw "Android benchmark completion marker is missing; private log: $rawLogPath"
     }
     $completion = $completeLine.Substring($completeMarker.Length) | ConvertFrom-Json
     if ($observationLines.Count -ne [int]$completion.observationCount) {
-        throw "原始观测数量与完成标记不一致。"
+        throw "Raw observation count does not match the completion marker."
     }
 
     $observations = @()
@@ -334,7 +334,7 @@ try {
         -CorpusManifest $manifestPath `
         -RawObservations $rawObservationsPath `
         -OutputDirectory $outputRoot
-    Assert-NativeSuccess -Action "Whisper 质量指标聚合"
+    Assert-NativeSuccess -Action "Aggregate Whisper quality metrics"
 
     $runEvidence = [ordered]@{
         schemaVersion = 1
@@ -366,8 +366,8 @@ try {
     }
     Write-JsonFile -Value $runEvidence -Path $runEvidencePath
 
-    Write-Output "Android Whisper 质量评测完成：$runEvidencePath"
-    Write-Output "质量报告：$(Join-Path $outputRoot 'quality-report.json')"
+    Write-Output "Android Whisper quality benchmark completed: $runEvidencePath"
+    Write-Output "Quality report: $(Join-Path $outputRoot 'quality-report.json')"
 }
 finally {
     if ($null -ne $adb -and
