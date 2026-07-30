@@ -175,7 +175,6 @@ bundle
 bundled
 busy
 button
-buttons
 byte
 bytes
 byteswap
@@ -202,7 +201,6 @@ caps
 capture
 captured
 card
-cards
 cas
 case
 cases
@@ -277,7 +275,6 @@ completed
 completeness
 completer
 completion
-components
 composition
 compute
 concat
@@ -296,7 +293,6 @@ constant
 constrained
 cont
 container
-containers
 contains
 content
 context
@@ -391,7 +387,6 @@ denibble
 dependencies
 dependency
 deprecated
-depth
 dequantize
 desc
 description
@@ -440,7 +435,6 @@ dnowext
 document
 documentation
 domain
-don
 done
 dot
 dotprod
@@ -479,7 +473,6 @@ effort
 elapsed
 element
 elements
-elevation
 eligible
 elu
 embd
@@ -697,7 +690,6 @@ helper
 hex
 hexagon
 hidden
-hierarchy
 high
 hint
 hle
@@ -762,7 +754,6 @@ installations
 installed
 instance
 instr
-instrument
 int
 integer
 integral
@@ -977,7 +968,6 @@ muted
 mutex
 mxfp
 name
-named
 native
 navigation
 nbs
@@ -994,7 +984,6 @@ nelements
 neon
 net
 network
-neutral
 new
 next
 nib
@@ -1435,7 +1424,6 @@ sgemm
 sgn
 sha
 shape
-shapes
 shard
 share
 shared
@@ -1640,6 +1628,7 @@ trace
 traceable
 traits
 transcribe
+transcribelive
 transcribing
 transcript
 transcription
@@ -1834,7 +1823,9 @@ zps
 全项目身份迁移
 分析各个模型
 分析当前项目的本地模型
+制定替换
 单一设计源
+双模型
 可注入参考时间
 可移植运行时回退
 可见品牌重命名
@@ -1847,6 +1838,7 @@ zps
 增量架构优化
 安全左滑删除交互
 实时波形
+实时预览
 展示职责拆分
 已验证
 平台敏感服务集合
@@ -1854,11 +1846,15 @@ zps
 录音连续性优先
 技术与产品统一身份
 损坏的
+文档并为
 文档查询
 新应用身份与旧沙箱数据不迁移
 无引用组件与过时配置
 明暗主题
+是否适合作为会迹当前本地
 是否需要更换模型或组合模型
+替换为
+最终转录
 有界停止与后台清理
 有界可丢弃派生音频链
 未初始化
@@ -1869,16 +1865,22 @@ zps
 本地启动边界
 构建异常
 查询记忆记录
+模型或运行时
+模型生命周期与录音隔离如何连接
 正式替换
 沉浸式标题栏修复
+流媒体
 渐进迁移顺序
+的完整实施方案
 直接依赖原因
 真实录音条件预检
 真机复验入口
 窄屏与大字体换行稳定性
 精确锁定
 系统栏
+给我一个方案
 编译修复
+能否直接调用
 自适应波形动画
 自适应范围
 解码失败
@@ -1886,6 +1888,7 @@ zps
 设计画板范围
 语义化本地日期标签
 跨平台用户可见品牌身份
+转录如何接入当前项目
 输出配置
 透明状态栏主题策略
 重构方案查询
