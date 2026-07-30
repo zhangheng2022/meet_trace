@@ -46,6 +46,7 @@ final class _FakeAsrEngineFactory implements AsrEngineFactory {
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    AsrEnginePurpose purpose = AsrEnginePurpose.finalTranscript,
   }) async {
     return _FakeAsrEngine(modelId: modelId, modelVersion: modelVersion);
   }

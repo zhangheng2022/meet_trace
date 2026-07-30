@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../../../domain/models/app_failure.dart';
 import '../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../domain/models/meeting_readiness.dart';
 import '../../../../../domain/models/model_installation.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../domain/ports/repositories.dart';
+import '../../../../../domain/ports/asr_engine.dart';
 import '../../../../../domain/use_cases/start_meeting.dart';
 
 /// 使用全局默认模型直接创建会议，不提供本场标题或模型覆盖。
@@ -29,6 +31,8 @@ final class StartMeetingViewModel extends ChangeNotifier {
   Map<String, String> _availableVersions = const {};
   String _defaultModelId;
   String? _errorMessage;
+  String? _errorCode;
+  FailureUserAction? _failureAction;
   bool _isLoading = true;
   bool _isBusy = false;
   bool _disposed = false;
@@ -37,6 +41,8 @@ final class StartMeetingViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isBusy => _isBusy;
   String? get errorMessage => _errorMessage;
+  String? get errorCode => _errorCode;
+  FailureUserAction? get failureAction => _failureAction;
   String get defaultModelId => _defaultModelId;
   StartedMeetingSession? get startedSession => _startedSession;
   bool get isModelLocked => _startedSession != null;
@@ -137,17 +143,35 @@ final class StartMeetingViewModel extends ChangeNotifier {
   Future<void> _runBusy(Future<void> Function() operation) async {
     _isBusy = true;
     _errorMessage = null;
+    _errorCode = null;
+    _failureAction = null;
     _notify();
     try {
       await operation();
     } on StartMeetingBlocked catch (error) {
-      _errorMessage = _startBlockedMessage(error);
+      _applyFailure(_blockedFailure(error));
+    } on StartMeetingException catch (error) {
+      _applyFailure(_appFailurePresentation(error.failure));
+    } on AsrEngineException catch (error) {
+      _applyFailure(_appFailurePresentation(error.failure));
     } on Object {
-      _errorMessage = '会议启动失败，请检查录音权限、存储空间和默认模型后重试';
+      _applyFailure(
+        const _StartFailurePresentation(
+          code: 'meeting.start.unexpected',
+          message: '会议启动失败，请稍后重试',
+          action: FailureUserAction.retry,
+        ),
+      );
     } finally {
       _isBusy = false;
       _notify();
     }
+  }
+
+  void _applyFailure(_StartFailurePresentation failure) {
+    _errorCode = failure.code;
+    _failureAction = failure.action;
+    _errorMessage = '${failure.message}（错误码：${failure.code}）';
   }
 
   void _notify() {
@@ -164,24 +188,78 @@ final class StartMeetingViewModel extends ChangeNotifier {
   }
 }
 
-String _startBlockedMessage(StartMeetingBlocked error) {
+_StartFailurePresentation _blockedFailure(StartMeetingBlocked error) {
   return switch (error.reason) {
-    StartMeetingBlockReason.readiness => _readinessMessage(error.readiness!),
+    StartMeetingBlockReason.readiness => _readinessFailure(error.readiness!),
     StartMeetingBlockReason.advancedModelUnavailable =>
-      '默认高级模型尚未安装，请先在设置中下载或切换默认模型',
-    StartMeetingBlockReason.standardModelUnavailable => '默认标准模型尚未准备完成，暂时无法开始会议',
+      const _StartFailurePresentation(
+        code: 'meeting.start.advanced_model_unavailable',
+        message: '默认高级模型尚未安装，请先在设置中下载或切换默认模型',
+        action: FailureUserAction.downloadModel,
+      ),
+    StartMeetingBlockReason.standardModelUnavailable =>
+      const _StartFailurePresentation(
+        code: 'meeting.start.standard_model_unavailable',
+        message: '默认标准模型尚未准备完成，请重新安装应用后重试',
+        action: FailureUserAction.reinstallApp,
+      ),
   };
 }
 
-String _readinessMessage(MeetingReadiness readiness) {
+_StartFailurePresentation _readinessFailure(MeetingReadiness readiness) {
   final firstIssue = readiness.issues.first;
   return switch (firstIssue) {
     MeetingReadinessIssue.microphonePermission =>
-      '需要麦克风权限。授权后才能开始会议，未授权时不会创建会议。',
-    MeetingReadinessIssue.insufficientStorage => '存储空间不足。请至少保留 128 MB 可用空间后重试。',
+      const _StartFailurePresentation(
+        code: 'meeting.start.microphone_permission',
+        message: '需要麦克风权限。授权后才能开始会议，未授权时不会创建会议。',
+        action: FailureUserAction.grantPermission,
+      ),
+    MeetingReadinessIssue.insufficientStorage =>
+      const _StartFailurePresentation(
+        code: 'meeting.start.storage_insufficient',
+        message: '存储空间不足。请至少保留 128 MB 可用空间后重试。',
+        action: FailureUserAction.freeStorage,
+      ),
     MeetingReadinessIssue.defaultModelUnavailable =>
       readiness.defaultModelId == whisperSmallAdvancedModelId
-          ? '默认高级模型不可用，请先在设置中下载或切换默认模型'
-          : '默认标准模型尚未准备完成，暂时无法开始会议',
+          ? const _StartFailurePresentation(
+              code: 'meeting.start.advanced_model_unavailable',
+              message: '默认高级模型不可用，请先在设置中下载或切换默认模型',
+              action: FailureUserAction.downloadModel,
+            )
+          : const _StartFailurePresentation(
+              code: 'meeting.start.standard_model_unavailable',
+              message: '默认标准模型尚未准备完成，请重新安装应用后重试',
+              action: FailureUserAction.reinstallApp,
+            ),
   };
+}
+
+_StartFailurePresentation _appFailurePresentation(AppFailure failure) {
+  final message = switch (failure.code) {
+    'asr.whisper.native_library_unavailable' => '本地转录组件不可用，请重新安装应用',
+    'asr.whisper.context_create_failed' => '内置 Base 模型上下文创建失败，请重试',
+    'meeting.start.persistence_failed' => '会议无法写入本地数据库，请重试',
+    'meeting.start.asr_factory_failed' => '本地转录引擎无法创建，请重试',
+    'meeting.start.asr_initialization_failed' => '本地转录引擎初始化失败，请重试',
+    _ => '本地转录模型无法初始化，请按提示处理后重试',
+  };
+  return _StartFailurePresentation(
+    code: failure.code,
+    message: message,
+    action: failure.userAction,
+  );
+}
+
+final class _StartFailurePresentation {
+  const _StartFailurePresentation({
+    required this.code,
+    required this.message,
+    required this.action,
+  });
+
+  final String code;
+  final String message;
+  final FailureUserAction action;
 }

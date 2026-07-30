@@ -50,6 +50,7 @@ void main() {
       whisperBaseStandardModelId,
       'v1.9.1-q5_1',
     ));
+    expect(engines.purposes, [AsrEnginePurpose.finalTranscript]);
     expect(engines.engine!.source!.path, '/audio/meeting-1.pcm');
     expect(engines.engine!.source!.durationMs, 2000);
     expect(engines.engine!.snapshotId, 'snapshot-attempt-1');
@@ -418,6 +419,7 @@ typedef _ResultBuilder =
 
 final class _EngineFactory implements AsrEngineFactory {
   final List<(String, String)> createCalls = [];
+  final List<AsrEnginePurpose> purposes = [];
   _Engine? engine;
   Object? error;
   Object? disposeError;
@@ -428,8 +430,10 @@ final class _EngineFactory implements AsrEngineFactory {
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    AsrEnginePurpose purpose = AsrEnginePurpose.finalTranscript,
   }) async {
     createCalls.add((modelId, modelVersion));
+    purposes.add(purpose);
     final created = _Engine(
       descriptor: AsrModelRegistry.alpha.requireById(modelId),
       error: error,

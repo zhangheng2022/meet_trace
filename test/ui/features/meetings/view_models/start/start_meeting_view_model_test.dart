@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meettrace/domain/models/app_failure.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/use_cases/start_meeting.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/ui/features/meetings/view_models/start/start_meeting_view_model.dart';
 
 import '../../../../../support/model_selection_fakes.dart';
@@ -48,6 +50,7 @@ void main() {
     expect(session.meeting.status, MeetingState.recording);
     expect(session.meeting.isRecordingModelLocked, isTrue);
     expect(factory.calls, [(qwen.modelId, qwen.version)]);
+    expect(factory.purposes, [AsrEnginePurpose.preview]);
     expect(factory.engines.single.initializeCalls, 1);
     viewModel.dispose();
   });
@@ -86,8 +89,80 @@ void main() {
     expect(await viewModel.start(), isNull);
     expect(readiness.permissionRequests, [true]);
     expect(viewModel.errorMessage, contains('需要麦克风权限'));
+    expect(viewModel.errorCode, 'meeting.start.microphone_permission');
+    expect(
+      viewModel.errorMessage,
+      contains('meeting.start.microphone_permission'),
+    );
+    expect(viewModel.failureAction, FailureUserAction.grantPermission);
     expect(meetings.saved, isEmpty);
     expect(factory.calls, isEmpty);
+    viewModel.dispose();
+  });
+
+  test('Native Assets 动态库不可用时保留稳定错误码和重新安装动作', () async {
+    factory.createError = AsrEngineException(
+      AppFailure(
+        code: 'asr.whisper.native_library_unavailable',
+        stage: FailureStage.asrInitialization,
+        recoverability: FailureRecoverability.userActionRequired,
+        userAction: FailureUserAction.reinstallApp,
+      ),
+    );
+    final viewModel = _viewModel(preferences, installations, meetings, factory);
+    await viewModel.load();
+
+    expect(await viewModel.start(), isNull);
+    expect(viewModel.errorCode, 'asr.whisper.native_library_unavailable');
+    expect(
+      viewModel.errorMessage,
+      contains('asr.whisper.native_library_unavailable'),
+    );
+    expect(viewModel.failureAction, FailureUserAction.reinstallApp);
+    expect(meetings.saved, isEmpty);
+    viewModel.dispose();
+  });
+
+  test('Base context 创建失败时释放 Engine 且不留下半创建会议', () async {
+    factory.engineInitializeError = AsrEngineException(
+      AppFailure(
+        code: 'asr.whisper.context_create_failed',
+        stage: FailureStage.asrInitialization,
+        modelId: whisperBaseStandardModelId,
+        modelVersion: AsrModelRegistry.alpha.defaultModel.version,
+        recoverability: FailureRecoverability.retryable,
+        userAction: FailureUserAction.retry,
+      ),
+    );
+    final viewModel = _viewModel(preferences, installations, meetings, factory);
+    await viewModel.load();
+
+    expect(await viewModel.start(), isNull);
+    expect(viewModel.errorCode, 'asr.whisper.context_create_failed');
+    expect(
+      viewModel.errorMessage,
+      contains('asr.whisper.context_create_failed'),
+    );
+    expect(factory.engines.single.disposeCalls, 1);
+    expect(meetings.saved, isEmpty);
+    viewModel.dispose();
+  });
+
+  test('会议持久化失败时使用独立错误码并释放已初始化 Engine', () async {
+    meetings.saveError = StateError('injected persistence failure');
+    final viewModel = _viewModel(preferences, installations, meetings, factory);
+    await viewModel.load();
+
+    expect(await viewModel.start(), isNull);
+    expect(viewModel.errorCode, 'meeting.start.persistence_failed');
+    expect(
+      viewModel.errorMessage,
+      contains('meeting.start.persistence_failed'),
+    );
+    expect(viewModel.failureAction, FailureUserAction.retry);
+    expect(factory.engines.single.initializeCalls, 1);
+    expect(factory.engines.single.disposeCalls, 1);
+    expect(meetings.saved, isEmpty);
     viewModel.dispose();
   });
 

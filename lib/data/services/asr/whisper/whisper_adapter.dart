@@ -6,20 +6,48 @@ import 'package:meettrace_whisper_native/meettrace_whisper_native.dart';
 
 import '../../../../domain/models/app_failure.dart';
 
+enum WhisperDecodingStrategy { greedy, beamSearch }
+
 final class WhisperRecognizerConfig {
   WhisperRecognizerConfig({
     required this.modelId,
     required this.modelVersion,
     required this.modelPath,
+    this.profileId = 'legacy-greedy-v1',
     this.threadCount = 2,
     this.language = 'auto',
+    this.decodingStrategy = WhisperDecodingStrategy.greedy,
+    this.bestOf = 5,
+    this.beamSize = 5,
+    this.noContext = true,
+    this.suppressBlank = true,
+    this.temperature = 0,
+    this.temperatureIncrement = 0.2,
+    this.initialPrompt,
   }) {
     _requireText(modelId, 'modelId');
     _requireText(modelVersion, 'modelVersion');
     _requireText(modelPath, 'modelPath');
+    _requireText(profileId, 'profileId');
     _requireText(language, 'language');
-    if (threadCount <= 0) {
-      throw ArgumentError.value(threadCount, 'threadCount', '必须大于 0');
+    if (threadCount <= 0 || threadCount > 32) {
+      throw ArgumentError.value(threadCount, 'threadCount', '必须在 1 到 32 之间');
+    }
+    if (bestOf <= 0 || bestOf > 10) {
+      throw ArgumentError.value(bestOf, 'bestOf', '必须在 1 到 10 之间');
+    }
+    if (beamSize <= 0 || beamSize > 10) {
+      throw ArgumentError.value(beamSize, 'beamSize', '必须在 1 到 10 之间');
+    }
+    if (temperature < 0 || temperature > 1) {
+      throw ArgumentError.value(temperature, 'temperature', '必须在 0 到 1 之间');
+    }
+    if (temperatureIncrement < 0 || temperatureIncrement > 1) {
+      throw ArgumentError.value(
+        temperatureIncrement,
+        'temperatureIncrement',
+        '必须在 0 到 1 之间',
+      );
     }
   }
 
@@ -28,23 +56,52 @@ final class WhisperRecognizerConfig {
       modelId: map['modelId']! as String,
       modelVersion: map['modelVersion']! as String,
       modelPath: map['modelPath']! as String,
+      profileId: map['profileId']! as String,
       threadCount: map['threadCount']! as int,
       language: map['language']! as String,
+      decodingStrategy: WhisperDecodingStrategy.values.byName(
+        map['decodingStrategy']! as String,
+      ),
+      bestOf: map['bestOf']! as int,
+      beamSize: map['beamSize']! as int,
+      noContext: map['noContext']! as bool,
+      suppressBlank: map['suppressBlank']! as bool,
+      temperature: map['temperature']! as double,
+      temperatureIncrement: map['temperatureIncrement']! as double,
+      initialPrompt: map['initialPrompt'] as String?,
     );
   }
 
   final String modelId;
   final String modelVersion;
   final String modelPath;
+  final String profileId;
   final int threadCount;
   final String language;
+  final WhisperDecodingStrategy decodingStrategy;
+  final int bestOf;
+  final int beamSize;
+  final bool noContext;
+  final bool suppressBlank;
+  final double temperature;
+  final double temperatureIncrement;
+  final String? initialPrompt;
 
   Map<String, Object> toMessage() => {
     'modelId': modelId,
     'modelVersion': modelVersion,
     'modelPath': modelPath,
+    'profileId': profileId,
     'threadCount': threadCount,
     'language': language,
+    'decodingStrategy': decodingStrategy.name,
+    'bestOf': bestOf,
+    'beamSize': beamSize,
+    'noContext': noContext,
+    'suppressBlank': suppressBlank,
+    'temperature': temperature,
+    'temperatureIncrement': temperatureIncrement,
+    'initialPrompt': ?initialPrompt,
   };
 }
 
@@ -91,6 +148,15 @@ final class WhisperAdapterException implements Exception {
   String toString() => 'WhisperAdapterException(${failure.code})';
 }
 
+class WhisperWorkerException implements Exception {
+  const WhisperWorkerException(this.errorCode);
+
+  final String errorCode;
+
+  @override
+  String toString() => 'WhisperWorkerException($errorCode)';
+}
+
 abstract interface class WhisperWorker {
   int get nativeContextAddress;
 
@@ -131,10 +197,22 @@ final class WhisperAdapter {
     try {
       _worker = await _workerFactory.create(config);
     } on Object catch (error) {
+      final workerCode = _workerErrorCode(error);
       throw _exception(
-        code: 'asr.whisper.recognizer_initialization_failed',
+        code: switch (workerCode) {
+          'native.library_unavailable' =>
+            'asr.whisper.native_library_unavailable',
+          'native.context_create_failed' => 'asr.whisper.context_create_failed',
+          _ => 'asr.whisper.recognizer_initialization_failed',
+        },
         stage: FailureStage.asrInitialization,
         error: error,
+        recoverability: workerCode == 'native.library_unavailable'
+            ? FailureRecoverability.userActionRequired
+            : FailureRecoverability.retryable,
+        userAction: workerCode == 'native.library_unavailable'
+            ? FailureUserAction.reinstallApp
+            : FailureUserAction.retry,
       );
     }
   }
@@ -242,6 +320,8 @@ final class WhisperAdapter {
     required String code,
     required FailureStage stage,
     Object? error,
+    FailureRecoverability recoverability = FailureRecoverability.retryable,
+    FailureUserAction userAction = FailureUserAction.retry,
   }) {
     final config = _config;
     return WhisperAdapterException(
@@ -250,8 +330,8 @@ final class WhisperAdapter {
         stage: stage,
         modelId: config?.modelId,
         modelVersion: config?.modelVersion,
-        recoverability: FailureRecoverability.retryable,
-        userAction: FailureUserAction.retry,
+        recoverability: recoverability,
+        userAction: userAction,
         diagnosticContext: {
           if (error != null) 'errorType': _workerErrorType(error),
         },
@@ -490,6 +570,17 @@ void _whisperWorkerMain(List<Object?> bootstrap) async {
       modelPath: config.modelPath,
       threadCount: config.threadCount,
       language: config.language,
+      decodingStrategy:
+          config.decodingStrategy == WhisperDecodingStrategy.greedy
+          ? WhisperNativeDecodingStrategy.greedy
+          : WhisperNativeDecodingStrategy.beamSearch,
+      bestOf: config.bestOf,
+      beamSize: config.beamSize,
+      noContext: config.noContext,
+      suppressBlank: config.suppressBlank,
+      temperature: config.temperature,
+      temperatureIncrement: config.temperatureIncrement,
+      initialPrompt: config.initialPrompt,
     );
     responses.send({
       'type': 'ready',
@@ -563,12 +654,10 @@ void _whisperWorkerMain(List<Object?> bootstrap) async {
         }
       }
     }
-  } on WhisperNativeException catch (error) {
-    responses.send({'type': 'initializationError', 'errorCode': error.code});
   } on Object catch (error) {
     responses.send({
       'type': 'initializationError',
-      'errorCode': error.runtimeType.toString(),
+      'errorCode': _nativeInitializationErrorCode(error),
     });
   } finally {
     context?.dispose();
@@ -578,15 +667,30 @@ void _whisperWorkerMain(List<Object?> bootstrap) async {
 
 String _workerErrorType(Object error) {
   return switch (error) {
-    _RemoteWhisperError(:final errorCode) => errorCode,
+    WhisperWorkerException(:final errorCode) => errorCode,
     _ => error.runtimeType.toString(),
   };
 }
 
-final class _RemoteWhisperError implements Exception {
-  const _RemoteWhisperError(this.errorCode);
+String? _workerErrorCode(Object error) =>
+    error is WhisperWorkerException ? error.errorCode : null;
 
-  final String errorCode;
+String _nativeInitializationErrorCode(Object error) {
+  if (error is WhisperNativeException) {
+    return error.code;
+  }
+  final message = error.toString().toLowerCase();
+  if (message.contains('lookup') ||
+      message.contains('symbol') ||
+      message.contains('dynamic library') ||
+      message.contains('native function')) {
+    return 'native.library_unavailable';
+  }
+  return 'native.initialization_failed';
+}
+
+final class _RemoteWhisperError extends WhisperWorkerException {
+  const _RemoteWhisperError(super.errorCode);
 }
 
 void _requireText(String value, String name) {

@@ -1,0 +1,20 @@
+{
+  "id": "replace-with-deidentified-corpus-id",
+  "deidentified": true,
+  "samples": [
+    {
+      "id": "replace-with-sample-id",
+      "pathEnv": "MEETTRACE_CORPUS_SAMPLE_01",
+      "sha256": "replace-with-lowercase-sha256",
+      "durationMs": 10000,
+      "tags": [
+        "speech",
+        "zh",
+        "near-field"
+      ],
+      "expectedKeyFacts": [
+        "replace-with-deidentified-key-fact"
+      ]
+    }
+  ]
+}

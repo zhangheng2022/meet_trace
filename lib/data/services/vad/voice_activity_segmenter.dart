@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import '../../../domain/models/asr_preview.dart';
@@ -5,11 +6,11 @@ import '../../../domain/models/asr_preview.dart';
 abstract interface class VoiceActivitySegmenter {
   int get sampleRate;
 
-  List<VadSpeechSegment> accept(Float32List samples);
+  FutureOr<List<VadSpeechSegment>> accept(Float32List samples);
 
-  List<VadSpeechSegment> flush();
+  FutureOr<List<VadSpeechSegment>> flush();
 
-  void reset({required int nextStartSample});
+  FutureOr<void> reset({required int nextStartSample});
 
-  void dispose();
+  FutureOr<void> dispose();
 }

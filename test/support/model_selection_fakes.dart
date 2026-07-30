@@ -159,6 +159,7 @@ final class TestActiveInstallations
 
 final class TestMeetingRepository implements MeetingRepository {
   final List<Meeting> saved = [];
+  Object? saveError;
 
   @override
   Future<Meeting?> getById(String meetingId) async {
@@ -170,6 +171,10 @@ final class TestMeetingRepository implements MeetingRepository {
 
   @override
   Future<void> save(Meeting meeting) async {
+    final error = saveError;
+    if (error != null) {
+      throw error;
+    }
     saved.add(meeting);
   }
 
@@ -181,21 +186,26 @@ final class TestMeetingRepository implements MeetingRepository {
 
 final class TestAsrEngineFactory implements AsrEngineFactory {
   final List<(String, String)> calls = [];
+  final List<AsrEnginePurpose> purposes = [];
   final List<TestAsrEngine> engines = [];
   Object? createError;
+  Object? engineInitializeError;
 
   @override
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    AsrEnginePurpose purpose = AsrEnginePurpose.finalTranscript,
   }) async {
     calls.add((modelId, modelVersion));
+    purposes.add(purpose);
     final error = createError;
     if (error != null) {
       throw error;
     }
     final descriptor = AsrModelRegistry.alpha.requireById(modelId);
-    final engine = TestAsrEngine(descriptor);
+    final engine = TestAsrEngine(descriptor)
+      ..initializeError = engineInitializeError;
     engines.add(engine);
     return engine;
   }

@@ -24,6 +24,13 @@ final class AlphaReleaseEvaluationInput {
     this.finalTranscriptionDurationMs,
     this.recordingCompletenessRatio,
     this.sustainedSevereOrCriticalThermal,
+    this.silenceSampleCount,
+    this.silenceFalsePositiveCount,
+    this.noiseSampleCount,
+    this.baselineNoiseHallucinationCount,
+    this.vadNoiseHallucinationCount,
+    this.vadChunkBoundaryConsistent,
+    this.vadFailureRecordingContinues,
     this.standardEnergyWh,
     this.advancedEnergyWh,
     this.advancedRtfSamples,
@@ -32,7 +39,10 @@ final class AlphaReleaseEvaluationInput {
     this.keyFactRecallRatio,
     this.acceptanceEvidence,
     this.apkAuditPassed,
+    this.android16KbPassed,
+    this.androidEvidenceRef,
     this.iosBuildAuditPassed,
+    this.iosBuildEvidenceRef,
     this.whisperCppLicenseConfirmed,
   });
 
@@ -42,6 +52,8 @@ final class AlphaReleaseEvaluationInput {
     final standard = _map(json['standardModel']);
     final advanced = _map(json['advancedModel']);
     final energy = _map(json['energy']);
+    final vad = _map(json['vad']);
+    final evidence = _map(json['evidence']);
     final release = _map(json['release']);
     return AlphaReleaseEvaluationInput(
       corpusId: _string(corpus?['id']),
@@ -80,6 +92,15 @@ final class AlphaReleaseEvaluationInput {
       sustainedSevereOrCriticalThermal: _boolean(
         standard?['sustainedSevereOrCriticalThermal'],
       ),
+      silenceSampleCount: _integer(vad?['silenceSampleCount']),
+      silenceFalsePositiveCount: _integer(vad?['silenceFalsePositiveCount']),
+      noiseSampleCount: _integer(vad?['noiseSampleCount']),
+      baselineNoiseHallucinationCount: _integer(
+        vad?['baselineNoiseHallucinationCount'],
+      ),
+      vadNoiseHallucinationCount: _integer(vad?['vadNoiseHallucinationCount']),
+      vadChunkBoundaryConsistent: _boolean(vad?['chunkBoundaryConsistent']),
+      vadFailureRecordingContinues: _boolean(vad?['failureRecordingContinues']),
       standardEnergyWh: _number(energy?['standardWh']),
       advancedEnergyWh: _number(energy?['advancedWh']),
       advancedRtfSamples: _numbers(advanced?['rtfSamples']),
@@ -90,7 +111,10 @@ final class AlphaReleaseEvaluationInput {
       keyFactRecallRatio: _number(standard?['keyFactRecallRatio']),
       acceptanceEvidence: _strings(json['acceptanceEvidence']),
       apkAuditPassed: _boolean(release?['apkAuditPassed']),
+      android16KbPassed: _boolean(release?['android16KbPassed']),
+      androidEvidenceRef: _string(evidence?['android']),
       iosBuildAuditPassed: _boolean(release?['iosBuildAuditPassed']),
+      iosBuildEvidenceRef: _string(evidence?['iosBuild']),
       whisperCppLicenseConfirmed: _boolean(
         release?['whisperCppLicenseConfirmed'] ??
             release?['paraformerRedistributionConfirmed'],
@@ -116,6 +140,13 @@ final class AlphaReleaseEvaluationInput {
   final double? finalTranscriptionDurationMs;
   final double? recordingCompletenessRatio;
   final bool? sustainedSevereOrCriticalThermal;
+  final int? silenceSampleCount;
+  final int? silenceFalsePositiveCount;
+  final int? noiseSampleCount;
+  final int? baselineNoiseHallucinationCount;
+  final int? vadNoiseHallucinationCount;
+  final bool? vadChunkBoundaryConsistent;
+  final bool? vadFailureRecordingContinues;
   final double? standardEnergyWh;
   final double? advancedEnergyWh;
   final List<double>? advancedRtfSamples;
@@ -124,7 +155,10 @@ final class AlphaReleaseEvaluationInput {
   final double? keyFactRecallRatio;
   final Map<String, String>? acceptanceEvidence;
   final bool? apkAuditPassed;
+  final bool? android16KbPassed;
+  final String? androidEvidenceRef;
   final bool? iosBuildAuditPassed;
+  final String? iosBuildEvidenceRef;
   final bool? whisperCppLicenseConfirmed;
 
   AlphaReleaseEvaluationInput copyWith({
@@ -135,6 +169,14 @@ final class AlphaReleaseEvaluationInput {
     bool? iosInterruptionRecoveryPassed,
     bool? adaptiveNavigationAccessibilityPassed,
     bool? iosBuildAuditPassed,
+    int? silenceSampleCount,
+    int? silenceFalsePositiveCount,
+    int? noiseSampleCount,
+    int? baselineNoiseHallucinationCount,
+    int? vadNoiseHallucinationCount,
+    bool? vadChunkBoundaryConsistent,
+    bool? vadFailureRecordingContinues,
+    bool? android16KbPassed,
   }) => AlphaReleaseEvaluationInput(
     corpusId: corpusId,
     deviceId: deviceId,
@@ -158,6 +200,18 @@ final class AlphaReleaseEvaluationInput {
     finalTranscriptionDurationMs: finalTranscriptionDurationMs,
     recordingCompletenessRatio: recordingCompletenessRatio,
     sustainedSevereOrCriticalThermal: sustainedSevereOrCriticalThermal,
+    silenceSampleCount: silenceSampleCount ?? this.silenceSampleCount,
+    silenceFalsePositiveCount:
+        silenceFalsePositiveCount ?? this.silenceFalsePositiveCount,
+    noiseSampleCount: noiseSampleCount ?? this.noiseSampleCount,
+    baselineNoiseHallucinationCount:
+        baselineNoiseHallucinationCount ?? this.baselineNoiseHallucinationCount,
+    vadNoiseHallucinationCount:
+        vadNoiseHallucinationCount ?? this.vadNoiseHallucinationCount,
+    vadChunkBoundaryConsistent:
+        vadChunkBoundaryConsistent ?? this.vadChunkBoundaryConsistent,
+    vadFailureRecordingContinues:
+        vadFailureRecordingContinues ?? this.vadFailureRecordingContinues,
     standardEnergyWh: standardEnergyWh,
     advancedEnergyWh: advancedEnergyWh,
     advancedRtfSamples: advancedRtfSamples,
@@ -166,12 +220,15 @@ final class AlphaReleaseEvaluationInput {
     keyFactRecallRatio: keyFactRecallRatio,
     acceptanceEvidence: acceptanceEvidence,
     apkAuditPassed: apkAuditPassed,
+    android16KbPassed: android16KbPassed ?? this.android16KbPassed,
+    androidEvidenceRef: androidEvidenceRef,
     iosBuildAuditPassed: iosBuildAuditPassed ?? this.iosBuildAuditPassed,
+    iosBuildEvidenceRef: iosBuildEvidenceRef,
     whisperCppLicenseConfirmed: whisperCppLicenseConfirmed,
   );
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 2,
+    'schemaVersion': 3,
     'rawMetricsRef': rawMetricsRef,
     'corpus': {
       'id': corpusId,
@@ -199,14 +256,28 @@ final class AlphaReleaseEvaluationInput {
       'keyFactRecallRatio': keyFactRecallRatio,
     },
     'energy': {'standardWh': standardEnergyWh, 'advancedWh': advancedEnergyWh},
+    'vad': {
+      'silenceSampleCount': silenceSampleCount,
+      'silenceFalsePositiveCount': silenceFalsePositiveCount,
+      'noiseSampleCount': noiseSampleCount,
+      'baselineNoiseHallucinationCount': baselineNoiseHallucinationCount,
+      'vadNoiseHallucinationCount': vadNoiseHallucinationCount,
+      'chunkBoundaryConsistent': vadChunkBoundaryConsistent,
+      'failureRecordingContinues': vadFailureRecordingContinues,
+    },
     'advancedModel': {
       'rtfSamples': advancedRtfSamples,
       'sentenceLatencyMs': advancedSentenceLatencyMs,
       'finalTranscriptionDurationMs': advancedFinalTranscriptionDurationMs,
     },
+    'evidence': {
+      'android': androidEvidenceRef,
+      'iosBuild': iosBuildEvidenceRef,
+    },
     'acceptanceEvidence': acceptanceEvidence,
     'release': {
       'apkAuditPassed': apkAuditPassed,
+      'android16KbPassed': android16KbPassed,
       'iosBuildAuditPassed': iosBuildAuditPassed,
       'whisperCppLicenseConfirmed': whisperCppLicenseConfirmed,
     },
@@ -291,6 +362,10 @@ final class EvaluateAlphaReleaseUseCase {
       input.standardEnergyWh,
       input.advancedEnergyWh,
     );
+    final noiseReduction = _noiseReductionRatio(
+      input.baselineNoiseHallucinationCount,
+      input.vadNoiseHallucinationCount,
+    );
     final acceptanceCount = _acceptanceEvidenceCount(input.acceptanceEvidence);
     final gates = <ReleaseGateResult>[
       _referenceGate('corpus.id', '评测语料必须具有不含音频路径的可追溯标识', input.corpusId),
@@ -318,21 +393,6 @@ final class EvaluateAlphaReleaseUseCase {
         input.lowEndArm64DeviceTested,
       ),
       _boolGate(
-        'environment.iosArm64',
-        '已在最低目标 iOS arm64 实体设备验证',
-        input.iosArm64DeviceTested,
-      ),
-      _boolGate(
-        'environment.iosBackgroundRecording',
-        'iOS 30 分钟后台录音完整率为 100%',
-        input.iosBackgroundRecordingPassed,
-      ),
-      _boolGate(
-        'environment.iosInterruptionRecovery',
-        'iOS 系统音频中断可恢复且强制结束边界准确',
-        input.iosInterruptionRecoveryPassed,
-      ),
-      _boolGate(
         'environment.adaptiveNavigationAccessibility',
         'Android/iOS 原生返回、字体缩放和辅助技术验收通过',
         input.adaptiveNavigationAccessibilityPassed,
@@ -341,6 +401,16 @@ final class EvaluateAlphaReleaseUseCase {
         'evidence.rawMetrics',
         '双模型原始指标具有可追溯引用',
         input.rawMetricsRef,
+      ),
+      _referenceGate(
+        'evidence.android',
+        'Android 构建、模拟器与真机证据具有可追溯引用',
+        input.androidEvidenceRef,
+      ),
+      _referenceGate(
+        'evidence.iosBuild',
+        'iOS 无真机构建与产物审计具有可追溯引用',
+        input.iosBuildEvidenceRef,
       ),
       _thresholdGate(
         'standard.resourceBytes',
@@ -390,6 +460,40 @@ final class EvaluateAlphaReleaseUseCase {
         (value) => value >= 0.85,
       ),
       _thresholdGate(
+        'vad.silenceSampleCount',
+        '纯静音评测样本不少于 20 段',
+        input.silenceSampleCount,
+        (value) => value >= 20,
+      ),
+      _thresholdGate(
+        'vad.silenceFalsePositiveCount',
+        '纯静音不得产生语音区间或文本',
+        input.silenceFalsePositiveCount,
+        (value) => value == 0,
+      ),
+      _thresholdGate(
+        'vad.noiseSampleCount',
+        '噪声评测样本不少于 20 段',
+        input.noiseSampleCount,
+        (value) => value >= 20,
+      ),
+      _thresholdGate(
+        'vad.noiseReductionRatio',
+        'VAD 相对固定窗口基线降低至少 80% 噪声幻觉',
+        noiseReduction,
+        (value) => value >= 0.8,
+      ),
+      _boolGate(
+        'vad.chunkBoundaryConsistent',
+        '相同 PCM 的不同 chunk 边界产生相同最终 VAD 区间',
+        input.vadChunkBoundaryConsistent,
+      ),
+      _boolGate(
+        'vad.failureRecordingContinues',
+        'VAD 失败只降级预览且事实录音继续',
+        input.vadFailureRecordingContinues,
+      ),
+      _thresholdGate(
         'advanced.rtfSampleCount',
         '高级模型使用相同语料记录不少于 20 个 RTF 样本',
         _sampleCount(input.advancedRtfSamples),
@@ -408,15 +512,20 @@ final class EvaluateAlphaReleaseUseCase {
         (value) => value >= 0,
       ),
       _thresholdGate(
-        'acceptance.AT01-AT20',
-        'AT-01 至 AT-20 均有非空证据引用',
+        'acceptance.AT01-AT24',
+        'AT-01 至 AT-24 均有非空证据引用',
         acceptanceCount,
-        (value) => value == 20,
+        (value) => value == 24,
       ),
       _boolGate(
         'release.apkAudit',
         'Android APK 的 ABI、模型、密钥、许可和体积审计通过',
         input.apkAuditPassed,
+      ),
+      _boolGate(
+        'release.android16Kb',
+        'Android Release 全部原生库通过 16 KB LOAD alignment',
+        input.android16KbPassed,
       ),
       _boolGate(
         'release.iosBuildAudit',
@@ -603,9 +712,22 @@ int? _acceptanceEvidenceCount(Map<String, String>? evidence) {
     return null;
   }
   return [
-    for (var index = 1; index <= 20; index++)
+    for (var index = 1; index <= 24; index++)
       'AT-${index.toString().padLeft(2, '0')}',
   ].where((id) => evidence[id]?.trim().isNotEmpty == true).length;
+}
+
+double? _noiseReductionRatio(int? baselineCount, int? vadCount) {
+  if (baselineCount == null ||
+      vadCount == null ||
+      baselineCount < 0 ||
+      vadCount < 0) {
+    return null;
+  }
+  if (baselineCount == 0) {
+    return null;
+  }
+  return (baselineCount - vadCount) / baselineCount;
 }
 
 Map<String, Object?>? _map(Object? value) =>

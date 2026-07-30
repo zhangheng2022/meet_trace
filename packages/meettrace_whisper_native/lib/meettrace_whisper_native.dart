@@ -4,3 +4,4 @@
 library;
 
 export 'src/whisper_native_context.dart';
+export 'src/whisper_vad_native_context.dart';

@@ -1,3 +1,4 @@
+import '../models/app_failure.dart';
 import '../models/asr_model_registry.dart';
 import '../models/meeting.dart';
 import '../models/meeting_readiness.dart';
@@ -25,6 +26,15 @@ final class StartMeetingBlocked implements Exception {
 
   final StartMeetingBlockReason reason;
   final MeetingReadiness? readiness;
+}
+
+final class StartMeetingException implements Exception {
+  const StartMeetingException(this.failure);
+
+  final AppFailure failure;
+
+  @override
+  String toString() => 'StartMeetingException(${failure.code})';
 }
 
 /// 校验真实启动条件、锁定模型并持久化会议的单一业务入口。
@@ -77,13 +87,46 @@ final class StartMeetingUseCase {
       globalDefaultModelId: defaultModelId,
       availableVersions: availableVersions,
     );
-    AsrEngine? engine;
+    AsrEngine engine;
     try {
       engine = await engineFactory.create(
         modelId: selection.recordingModelId,
         modelVersion: selection.recordingModelVersion,
+        purpose: AsrEnginePurpose.preview,
       );
+    } on AsrEngineException {
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        _startFailure(
+          code: 'meeting.start.asr_factory_failed',
+          modelId: selection.recordingModelId,
+          modelVersion: selection.recordingModelVersion,
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+
+    try {
       await engine.initialize();
+    } on AsrEngineException {
+      await _disposeBestEffort(engine);
+      rethrow;
+    } on Object catch (error, stackTrace) {
+      await _disposeBestEffort(engine);
+      Error.throwWithStackTrace(
+        _startFailure(
+          code: 'meeting.start.asr_initialization_failed',
+          modelId: selection.recordingModelId,
+          modelVersion: selection.recordingModelVersion,
+          error: error,
+        ),
+        stackTrace,
+      );
+    }
+
+    try {
       final timestamp = now();
       final created = Meeting(
         id: meetingIdFactory(),
@@ -99,9 +142,46 @@ final class StartMeetingUseCase {
       final started = created.startRecording(startedAt: timestamp);
       await meetings.save(started);
       return StartedMeetingSession(meeting: started, engine: engine);
-    } on Object {
-      await engine?.dispose();
-      rethrow;
+    } on Object catch (error, stackTrace) {
+      await _disposeBestEffort(engine);
+      Error.throwWithStackTrace(
+        _startFailure(
+          code: 'meeting.start.persistence_failed',
+          modelId: selection.recordingModelId,
+          modelVersion: selection.recordingModelVersion,
+          error: error,
+          stage: FailureStage.storage,
+        ),
+        stackTrace,
+      );
     }
+  }
+}
+
+StartMeetingException _startFailure({
+  required String code,
+  required String modelId,
+  required String modelVersion,
+  required Object error,
+  FailureStage stage = FailureStage.asrInitialization,
+}) {
+  return StartMeetingException(
+    AppFailure(
+      code: code,
+      stage: stage,
+      modelId: modelId,
+      modelVersion: modelVersion,
+      recoverability: FailureRecoverability.retryable,
+      userAction: FailureUserAction.retry,
+      diagnosticContext: {'errorType': error.runtimeType.toString()},
+    ),
+  );
+}
+
+Future<void> _disposeBestEffort(AsrEngine engine) async {
+  try {
+    await engine.dispose();
+  } on Object {
+    // 启动失败的原始错误优先，释放失败不能覆盖可执行诊断。
   }
 }

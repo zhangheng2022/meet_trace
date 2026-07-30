@@ -232,6 +232,7 @@ chunk
 chunks
 circular
 clamp
+clang
 class
 cleanup
 clear
@@ -841,6 +842,7 @@ light
 lighter
 line
 linear
+linker
 lints
 linux
 list
@@ -1821,6 +1823,7 @@ zps
 保留内部技术身份与本地数据
 全面调整查询
 全项目身份迁移
+兼容性
 分析各个模型
 分析当前项目的本地模型
 制定替换
@@ -1851,6 +1854,7 @@ zps
 新应用身份与旧沙箱数据不迁移
 无引用组件与过时配置
 明暗主题
+是否影响
 是否适合作为会迹当前本地
 是否需要更换模型或组合模型
 替换为

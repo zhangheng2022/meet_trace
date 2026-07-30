@@ -20,8 +20,18 @@ import 'dart:ffi' as ffi;
 import 'package:meta/meta.dart' as meta;
 
 @meta.RecordUse()
+@ffi.Native<ffi.Uint32 Function()>()
+external int mt_whisper_abi_version();
+
+@meta.RecordUse()
 @ffi.Native<ffi.Void Function(ffi.Pointer<mt_whisper_context>)>()
 external void mt_whisper_cancel(ffi.Pointer<mt_whisper_context> context);
+
+@meta.RecordUse()
+@ffi.Native<ffi.Void Function(ffi.Pointer<mt_whisper_config_v1>)>()
+external void mt_whisper_config_v1_init(
+  ffi.Pointer<mt_whisper_config_v1> config,
+);
 
 @meta.RecordUse()
 @ffi.Native<
@@ -35,6 +45,20 @@ external ffi.Pointer<mt_whisper_context> mt_whisper_create(
   ffi.Pointer<ffi.Char> model_path,
   int thread_count,
   ffi.Pointer<ffi.Char> language,
+);
+
+@meta.RecordUse()
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<mt_whisper_config_v1>,
+    ffi.Pointer<ffi.Pointer<mt_whisper_context>>,
+  )
+>()
+external int mt_whisper_create_v1(
+  ffi.Pointer<ffi.Char> model_path,
+  ffi.Pointer<mt_whisper_config_v1> config,
+  ffi.Pointer<ffi.Pointer<mt_whisper_context>> out_context,
 );
 
 @meta.RecordUse()
@@ -79,6 +103,10 @@ external ffi.Pointer<ffi.Char> mt_whisper_segment_text(
 );
 
 @meta.RecordUse()
+@ffi.Native<ffi.Pointer<ffi.Char> Function(ffi.Int32)>()
+external ffi.Pointer<ffi.Char> mt_whisper_status_message(int status);
+
+@meta.RecordUse()
 @ffi.Native<
   ffi.Int32 Function(
     ffi.Pointer<mt_whisper_context>,
@@ -92,4 +120,215 @@ external int mt_whisper_transcribe(
   int sample_count,
 );
 
+@meta.RecordUse()
+@ffi.Native<ffi.Void Function(ffi.Pointer<mt_whisper_vad_context>)>()
+external void mt_whisper_vad_cancel(
+  ffi.Pointer<mt_whisper_vad_context> context,
+);
+
+@meta.RecordUse()
+@ffi.Native<ffi.Void Function(ffi.Pointer<mt_whisper_vad_config_v1>)>()
+external void mt_whisper_vad_config_v1_init(
+  ffi.Pointer<mt_whisper_vad_config_v1> config,
+);
+
+@meta.RecordUse()
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Pointer<mt_whisper_vad_config_v1>,
+    ffi.Pointer<ffi.Pointer<mt_whisper_vad_context>>,
+  )
+>()
+external int mt_whisper_vad_create_v1(
+  ffi.Pointer<ffi.Char> model_path,
+  ffi.Pointer<mt_whisper_vad_config_v1> config,
+  ffi.Pointer<ffi.Pointer<mt_whisper_vad_context>> out_context,
+);
+
+@meta.RecordUse()
+@ffi.Native<ffi.Void Function(ffi.Pointer<mt_whisper_vad_context>)>()
+external void mt_whisper_vad_destroy(
+  ffi.Pointer<mt_whisper_vad_context> context,
+);
+
+@meta.RecordUse()
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Pointer<mt_whisper_vad_context>)
+>()
+external ffi.Pointer<ffi.Char> mt_whisper_vad_last_error(
+  ffi.Pointer<mt_whisper_vad_context> context,
+);
+
+@meta.RecordUse()
+@ffi.Native<ffi.Void Function(ffi.Pointer<mt_whisper_vad_context>)>()
+external void mt_whisper_vad_reset(ffi.Pointer<mt_whisper_vad_context> context);
+
+@meta.RecordUse()
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<mt_whisper_vad_context>)>()
+external int mt_whisper_vad_segment_count(
+  ffi.Pointer<mt_whisper_vad_context> context,
+);
+
+@meta.RecordUse()
+@ffi.Native<
+  ffi.Int64 Function(ffi.Pointer<mt_whisper_vad_context>, ffi.Int32)
+>()
+external int mt_whisper_vad_segment_end_sample(
+  ffi.Pointer<mt_whisper_vad_context> context,
+  int segment_index,
+);
+
+@meta.RecordUse()
+@ffi.Native<
+  ffi.Int32 Function(
+    ffi.Pointer<mt_whisper_vad_context>,
+    ffi.Pointer<ffi.Float>,
+    ffi.Int32,
+  )
+>()
+external int mt_whisper_vad_segment_samples(
+  ffi.Pointer<mt_whisper_vad_context> context,
+  ffi.Pointer<ffi.Float> samples,
+  int sample_count,
+);
+
+@meta.RecordUse()
+@ffi.Native<
+  ffi.Int64 Function(ffi.Pointer<mt_whisper_vad_context>, ffi.Int32)
+>()
+external int mt_whisper_vad_segment_start_sample(
+  ffi.Pointer<mt_whisper_vad_context> context,
+  int segment_index,
+);
+
+@meta.RecordUse()
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<mt_whisper_vad_config_v1>)>()
+external int mt_whisper_vad_validate_config_v1(
+  ffi.Pointer<mt_whisper_vad_config_v1> config,
+);
+
+@meta.RecordUse()
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<mt_whisper_config_v1>)>()
+external int mt_whisper_validate_config_v1(
+  ffi.Pointer<mt_whisper_config_v1> config,
+);
+
+final class mt_whisper_config_v1 extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int abi_version;
+
+  @ffi.Int32()
+  external int thread_count;
+
+  @ffi.Int32()
+  external int decoding_strategy;
+
+  @ffi.Int32()
+  external int best_of;
+
+  @ffi.Int32()
+  external int beam_size;
+
+  @ffi.Int32()
+  external int no_context;
+
+  @ffi.Int32()
+  external int suppress_blank;
+
+  @ffi.Float()
+  external double temperature;
+
+  @ffi.Float()
+  external double temperature_inc;
+
+  external ffi.Pointer<ffi.Char> language;
+
+  external ffi.Pointer<ffi.Char> initial_prompt;
+
+  static ffi.Pointer<mt_whisper_config_v1> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int abi_version,
+    required int thread_count,
+    required int decoding_strategy,
+    required int best_of,
+    required int beam_size,
+    required int no_context,
+    required int suppress_blank,
+    required double temperature,
+    required double temperature_inc,
+    required ffi.Pointer<ffi.Char> language,
+    required ffi.Pointer<ffi.Char> initial_prompt,
+  }) => $allocator<mt_whisper_config_v1>()
+    ..ref.struct_size = struct_size
+    ..ref.abi_version = abi_version
+    ..ref.thread_count = thread_count
+    ..ref.decoding_strategy = decoding_strategy
+    ..ref.best_of = best_of
+    ..ref.beam_size = beam_size
+    ..ref.no_context = no_context
+    ..ref.suppress_blank = suppress_blank
+    ..ref.temperature = temperature
+    ..ref.temperature_inc = temperature_inc
+    ..ref.language = language
+    ..ref.initial_prompt = initial_prompt;
+}
+
 final class mt_whisper_context extends ffi.Opaque {}
+
+final class mt_whisper_vad_config_v1 extends ffi.Struct {
+  @ffi.Uint32()
+  external int struct_size;
+
+  @ffi.Uint32()
+  external int abi_version;
+
+  @ffi.Int32()
+  external int thread_count;
+
+  @ffi.Float()
+  external double threshold;
+
+  @ffi.Int32()
+  external int min_speech_duration_ms;
+
+  @ffi.Int32()
+  external int min_silence_duration_ms;
+
+  @ffi.Float()
+  external double max_speech_duration_s;
+
+  @ffi.Int32()
+  external int speech_pad_ms;
+
+  @ffi.Float()
+  external double samples_overlap;
+
+  static ffi.Pointer<mt_whisper_vad_config_v1> $allocate(
+    ffi.Allocator $allocator, {
+    required int struct_size,
+    required int abi_version,
+    required int thread_count,
+    required double threshold,
+    required int min_speech_duration_ms,
+    required int min_silence_duration_ms,
+    required double max_speech_duration_s,
+    required int speech_pad_ms,
+    required double samples_overlap,
+  }) => $allocator<mt_whisper_vad_config_v1>()
+    ..ref.struct_size = struct_size
+    ..ref.abi_version = abi_version
+    ..ref.thread_count = thread_count
+    ..ref.threshold = threshold
+    ..ref.min_speech_duration_ms = min_speech_duration_ms
+    ..ref.min_silence_duration_ms = min_silence_duration_ms
+    ..ref.max_speech_duration_s = max_speech_duration_s
+    ..ref.speech_pad_ms = speech_pad_ms
+    ..ref.samples_overlap = samples_overlap;
+}
+
+final class mt_whisper_vad_context extends ffi.Opaque {}

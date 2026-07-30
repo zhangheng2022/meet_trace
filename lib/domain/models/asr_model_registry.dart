@@ -43,7 +43,7 @@ final class AsrModelRegistry {
         version: 'v1.9.1-q5_1',
         supportedLanguages: const ['multilingual'],
         installationType: AsrInstallationType.bundled,
-        requiredBytes: 59707625,
+        requiredBytes: 60592723,
         capabilities: const {
           'offline',
           'multilingual',

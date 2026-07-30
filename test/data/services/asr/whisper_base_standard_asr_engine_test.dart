@@ -6,7 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/asr/asr_engine.dart';
 import 'package:meettrace/data/services/asr/whisper_base_standard_asr_engine.dart';
 import 'package:meettrace/data/services/asr/whisper/whisper_adapter.dart';
+import 'package:meettrace/data/services/vad/voice_activity_segmenter.dart';
+import 'package:meettrace/domain/models/app_failure.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/asr_preview.dart';
 import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
 import 'package:meettrace/domain/models/transcript.dart';
@@ -144,6 +147,64 @@ void main() {
     await engine.dispose();
   });
 
+  test('Native Assets 动态库不可用保留独立错误码和重新安装动作', () async {
+    final engine = _engine(
+      tempDirectory,
+      _FakeWorkerFactory(
+        initializationErrors: const [
+          WhisperWorkerException('native.library_unavailable'),
+        ],
+      ),
+    );
+
+    await expectLater(
+      engine.initialize(),
+      throwsA(
+        isA<AsrEngineException>()
+            .having(
+              (error) => error.failure.code,
+              'code',
+              'asr.whisper.native_library_unavailable',
+            )
+            .having(
+              (error) => error.failure.userAction,
+              'userAction',
+              FailureUserAction.reinstallApp,
+            ),
+      ),
+    );
+    await engine.dispose();
+  });
+
+  test('Base context 创建失败保留独立可重试错误码', () async {
+    final engine = _engine(
+      tempDirectory,
+      _FakeWorkerFactory(
+        initializationErrors: const [
+          WhisperWorkerException('native.context_create_failed'),
+        ],
+      ),
+    );
+
+    await expectLater(
+      engine.initialize(),
+      throwsA(
+        isA<AsrEngineException>()
+            .having(
+              (error) => error.failure.code,
+              'code',
+              'asr.whisper.context_create_failed',
+            )
+            .having(
+              (error) => error.failure.userAction,
+              'userAction',
+              FailureUserAction.retry,
+            ),
+      ),
+    );
+    await engine.dispose();
+  });
+
   test('并发提交窗口仍按提交顺序发出确定结果', () async {
     final firstGate = Completer<void>();
     final engine = _engine(
@@ -273,6 +334,63 @@ void main() {
     await engine.dispose();
   });
 
+  test('最终转录只识别从完整 PCM 重新计算的 VAD 语音区间', () async {
+    final audioFile = File(p.join(tempDirectory.path, 'vad-meeting.pcm'));
+    await audioFile.writeAsBytes(_pcm16Bytes(20 * 16000), flush: true);
+    final workerFactory = _FakeWorkerFactory(results: const ['片段一', '片段二']);
+    final vad = _ScriptedFinalVad([
+      const VadSpeechSegment(startSample: 2 * 16000, endSample: 5 * 16000),
+      const VadSpeechSegment(startSample: 12 * 16000, endSample: 14 * 16000),
+    ]);
+    final engine = _engine(
+      tempDirectory,
+      workerFactory,
+      finalVadFactory: () => vad,
+    );
+    await engine.initialize();
+
+    final snapshot = await engine.finalizeMeeting(
+      AudioSource(path: audioFile.path, durationMs: 20000),
+      meetingId: 'meeting-vad',
+    );
+
+    expect(workerFactory.workers.single.recognizedSampleCounts, [
+      3 * 16000,
+      2 * 16000,
+    ]);
+    expect(
+      snapshot.segments.map((segment) => (segment.startMs, segment.endMs)),
+      [(2000, 5000), (12000, 14000)],
+    );
+    expect(vad.acceptedSamples, 20 * 16000);
+    expect(vad.disposed, isTrue);
+    await engine.dispose();
+  });
+
+  test('最终 VAD 判定纯静音时生成完成的零片段快照且不调用 ASR', () async {
+    final audioFile = File(p.join(tempDirectory.path, 'silent-meeting.pcm'));
+    await audioFile.writeAsBytes(_pcm16Bytes(4 * 16000), flush: true);
+    final workerFactory = _FakeWorkerFactory();
+    final vad = _ScriptedFinalVad(const []);
+    final engine = _engine(
+      tempDirectory,
+      workerFactory,
+      finalVadFactory: () => vad,
+    );
+    await engine.initialize();
+
+    final snapshot = await engine.finalizeMeeting(
+      AudioSource(path: audioFile.path, durationMs: 4000),
+      meetingId: 'meeting-silence',
+    );
+
+    expect(snapshot.status, TranscriptSnapshotStatus.complete);
+    expect(snapshot.segments, isEmpty);
+    expect(workerFactory.workers.single.recognizeCalls, 0);
+    expect(vad.disposed, isTrue);
+    await engine.dispose();
+  });
+
   test('取消会标记最终处理进度并拒绝后续窗口', () async {
     final gate = Completer<void>();
     final workerFactory = _FakeWorkerFactory(firstRecognitionGate: gate);
@@ -305,8 +423,9 @@ void main() {
 
 WhisperBaseStandardAsrEngine _engine(
   Directory modelDirectory,
-  _FakeWorkerFactory workerFactory,
-) {
+  _FakeWorkerFactory workerFactory, {
+  VoiceActivitySegmenter Function()? finalVadFactory,
+}) {
   final descriptor = AsrModelRegistry.alpha.defaultModel;
   return WhisperBaseStandardAsrEngine(
     installation: ModelInstallation(
@@ -319,6 +438,7 @@ WhisperBaseStandardAsrEngine _engine(
       bytes: descriptor.requiredBytes,
     ),
     workerFactory: workerFactory,
+    finalVadFactory: finalVadFactory,
     now: () => DateTime.utc(2026, 7, 24, 12),
   );
 }
@@ -390,6 +510,7 @@ final class _FakeWorker implements WhisperWorker {
   final Completer<void>? firstRecognitionGate;
   int recognizeCalls = 0;
   int cancelCalls = 0;
+  final List<int> recognizedSampleCounts = [];
 
   @override
   int get nativeContextAddress => 1;
@@ -400,6 +521,7 @@ final class _FakeWorker implements WhisperWorker {
     required int sampleRate,
   }) async {
     final call = recognizeCalls++;
+    recognizedSampleCounts.add(samples.length);
     if (call == 0 && firstRecognitionGate != null) {
       await firstRecognitionGate!.future;
     }
@@ -425,4 +547,32 @@ final class _FakeWorker implements WhisperWorker {
 
   @override
   Future<void> dispose() async {}
+}
+
+final class _ScriptedFinalVad implements VoiceActivitySegmenter {
+  _ScriptedFinalVad(this._segments);
+
+  final List<VadSpeechSegment> _segments;
+  int acceptedSamples = 0;
+  bool disposed = false;
+
+  @override
+  int get sampleRate => 16000;
+
+  @override
+  List<VadSpeechSegment> accept(Float32List samples) {
+    acceptedSamples += samples.length;
+    return const [];
+  }
+
+  @override
+  List<VadSpeechSegment> flush() => _segments;
+
+  @override
+  void reset({required int nextStartSample}) {}
+
+  @override
+  void dispose() {
+    disposed = true;
+  }
 }

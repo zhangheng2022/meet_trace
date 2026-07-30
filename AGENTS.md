@@ -9,7 +9,9 @@
 - 会迹（MeetTrace）是 Android + iOS 自适应 Alpha，不提供登录或跨设备同步；双平台排期以 PRD 门槛评估为准，不继承原 Android 两周假设。
 - 本地音频是唯一事实源；推理变慢或失败时，录音必须继续。说话人分离属于可降级能力。
 - 端侧 ASR 仅使用官方 `whisper.cpp` v1.9.1 双模型：内置标准模型 `whisper-cpp-base-q5_1-v1.9.1`，高级模型 `whisper-cpp-small-q5_1-v1.9.1` 按需下载。
+- 官方 `ggml-silero-v6.2.0` VAD 随 Base 内置，只负责确定性语音分段，不是第三个 ASR 模型；VAD 失败时预览降级为仅录音，事实 PCM 不受影响。
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
+- 当前 iOS 只要求 macOS/Xcode arm64 无签名构建、产物审计和共享自动化测试，不执行 iPhone/iPad 真机测试；后台录音、中断、性能、温控和识别质量必须标记为 `not_tested`。
 - 新会议使用“待生成标题”，最终转录完成后由 AI 总结生成标题。AI 总结只能基于最终转录；使用云端 AI 时仅上传最终文本，并为关键结论保留带时间戳的原文证据。
 - 扩展 P0 前必须先更新 PRD。
 
@@ -22,7 +24,7 @@
 - `lib/domain/{models,ports,use_cases}/`：业务概念、纯 Dart 能力端口和可复用编排。
 - `lib/data/{models,repositories,services}/`：端口实现，以及持久化、HTTP、音频、模型管理和 ASR 适配器。
 
-Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 whisper.cpp、原生 FFI、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
+Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 whisper.cpp、原生 FFI、存储或 HTTP。两个模型分别实现统一 `AsrEngine`，由 Factory 按会议锁定的模型创建；具体 Engine 不得泄漏到 UI 或 ViewModel。VAD 与 ASR context 只存在于 data/service 和隔离 Native Assets package。音频写入与 VAD/ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，设备流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
 
 ## Forui 优先
 

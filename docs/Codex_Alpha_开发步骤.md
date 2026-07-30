@@ -1,7 +1,7 @@
 # 会迹 Codex Alpha 开发步骤
 
-> 状态：当前实施顺序
-> 更新日期：2026-07-29
+> 状态：阶段 0～4 工程实现完成；阶段 1 Android 模拟器门槛通过，真实语料质量门槛阻断
+> 更新日期：2026-07-30
 
 ## 已完成基线
 
@@ -12,22 +12,28 @@
 
 ## 当前交付顺序
 
-1. 固定官方源码 commit、模型 revision、大小、SHA-256 和 NOTICE。
-2. 以本地 `meettrace_whisper_native` package 隔离 Native Assets、C ABI 和 `ffigen` 产物。
-3. 用 `WhisperAdapter` isolate 封装推理、真实取消、错误映射和资源释放。
-4. 用 Base/Small 两个 Engine 实现统一 `AsrEngine`，由 Factory 按会议锁定模型创建。
-5. 用连续重叠切窗替换旧 VAD 依赖，保持预览可丢弃、录音不可丢失。
-6. 更新 Registry、Manifest、设置文案、下载空间门槛和旧默认模型迁移。
-7. 删除 sherpa-onnx、ONNX、Silero 代码、依赖、资产与旧活动文档。
-8. 运行格式化、静态分析、全量测试、Android Debug APK、APK 内容审计和 OCR 代码审查。
-9. 在 macOS 完成 iOS Debug 构建和 arm64 真机验证。
-10. 在相同语料与设备档位上补齐双模型 RTF、延迟、内存、能耗、温控和召回率门禁。
+完整文件级任务、测试命令、硬门槛、审查和提交点见
+[whisper.cpp 质量强化与双平台交付计划](./plans/2026-07-30-whisper-cpp-quality-delivery.md)。
+
+1. 阶段 0：统一 `AGENTS.md`、PRD 和当前 C++ 实现，冻结 20 段去敏语料与质量基线。
+2. 阶段 1：首先打通 Android x86_64 模拟器，完成 Base 初始化、会议开始/停止、
+   30 秒事实 PCM、故障降级和最终快照闭环。
+3. 阶段 2：增加版本化 C ABI，基于同语料选择 Preview/Final 解码 Profile。
+4. 阶段 3：接入官方 Silero VAD，并在异步 worker 中实现确定性流式分段。
+5. 阶段 4：用 VAD 驱动会中预览和完整 PCM 最终转录，保持模型锁定与快照原子激活。
+6. 阶段 5：完成 Android 三档真机、Release APK、16 KB、质量与资源门禁。
+7. 阶段 6：完成 iOS arm64 无签名构建、产物审计和自动化门禁；不执行 iOS 真机测试。
+8. 阶段 7：运行全量验证、OCR、Graphify 和自动发布评估；全部为 Go 后才合并 `dev`。
 
 ## 阻断门槛
 
 - 事实录音不完整、推理阻塞写盘、会议中自动切换模型或最终快照非原子：阻断交付。
 - Android/iOS 任一目标 ABI 缺失原生库，或包内混入 Small 权重/旧 ONNX 权重：阻断对应平台。
 - 未解决的 OCR Critical/High：阻断交付。
-- iOS 构建、后台录音与真机模型证据未闭环：双平台 Alpha 发布保持 `blocked`。
+- iOS arm64 构建或产物审计失败：阻断合并；后台录音、系统中断、性能和模型质量
+  明确记为 `not_tested`，不得表述为已通过。
+- Android Release 任一 `.so` 未通过 16 KB LOAD alignment：阻断 Android 交付。
+- 静音产生文本、VAD chunk 边界不一致或 VAD/ASR 阻塞写盘：阻断质量交付。
+- Android 模拟器 x86_64 原生库、会议流或最终快照未闭环：不进入 VAD、真机和 iOS 阶段。
 
 历史 sherpa-onnx 实施步骤从 Git 查看，不在活动文档中继续维护。

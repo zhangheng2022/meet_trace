@@ -69,6 +69,7 @@ final class AsrWindowDiagnostic {
     required this.outcome,
     required this.elapsed,
     this.errorCode,
+    this.profileId,
   });
 
   final int startMs;
@@ -76,6 +77,7 @@ final class AsrWindowDiagnostic {
   final AsrWindowOutcome outcome;
   final Duration elapsed;
   final String? errorCode;
+  final String? profileId;
 }
 
 final class AsrEngineMetrics {
@@ -164,9 +166,12 @@ abstract interface class AsrEngine {
   Future<void> dispose();
 }
 
+enum AsrEnginePurpose { preview, finalTranscript }
+
 abstract interface class AsrEngineFactory {
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    AsrEnginePurpose purpose = AsrEnginePurpose.finalTranscript,
   });
 }

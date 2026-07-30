@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
 
 import '../data/repositories/sqflite_meeting_repository.dart';
 import '../data/repositories/sqflite_diarization_preference_repository.dart';
@@ -36,7 +37,7 @@ import '../data/services/storage/startup_recovery_service.dart';
 import '../data/services/storage/local_data_control_service.dart';
 import '../data/services/storage/meeting_directory_deletion_service.dart';
 import '../data/services/summary/summary_generation_service.dart';
-import '../data/services/vad/streaming_window_segmenter.dart';
+import '../data/services/vad/whisper_vad_segmenter.dart';
 import '../domain/models/asr_model_registry.dart';
 import '../domain/models/meeting.dart';
 import '../domain/models/model_manifest.dart';
@@ -77,6 +78,7 @@ final class MeetTraceDependencies {
     required this.modelManifest,
     required this.modelDownloads,
     required this.meetingReadiness,
+    required this.whisperVadModelPath,
   });
 
   final AppDatabase database;
@@ -96,6 +98,7 @@ final class MeetTraceDependencies {
   final ModelManifest modelManifest;
   final DownloadableModelService modelDownloads;
   final CheckMeetingReadinessUseCase meetingReadiness;
+  final String whisperVadModelPath;
 
   static Future<MeetTraceDependencies> create() async {
     final rollback = <Future<void> Function()>[];
@@ -152,6 +155,15 @@ final class MeetTraceDependencies {
       if (standardInstallation == null) {
         throw StateError('内置标准模型准备后没有安装记录');
       }
+      final standardInstalledPath = standardInstallation.installedPath;
+      if (standardInstalledPath == null) {
+        throw StateError('内置标准模型准备后没有安装目录');
+      }
+      final whisperVadModelPath = p.join(
+        standardInstalledPath,
+        'vad',
+        'ggml-silero-v6.2.0.bin',
+      );
       await installations.saveInstalledAndActivate(standardInstallation);
 
       final leases = SqfliteModelUsageLeaseRepository(database);
@@ -218,6 +230,7 @@ final class MeetTraceDependencies {
         modelManifest: manifest,
         modelDownloads: modelDownloads,
         meetingReadiness: meetingReadiness,
+        whisperVadModelPath: whisperVadModelPath,
       );
     } on Object catch (error, stackTrace) {
       for (final dispose in rollback.reversed) {

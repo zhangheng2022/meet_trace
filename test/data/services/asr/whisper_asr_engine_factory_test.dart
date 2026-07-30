@@ -39,6 +39,10 @@ void main() {
   });
 
   test('只按锁定的高级模型 ID 和活动版本创建 Whisper Small Engine', () async {
+    final standard = AsrModelRegistry.alpha.requireById(
+      whisperBaseStandardModelId,
+    );
+    installations.install(_installed(standard));
     final descriptor = AsrModelRegistry.alpha.requireById(
       whisperSmallAdvancedModelId,
     );
@@ -55,6 +59,64 @@ void main() {
     expect(leases.saved.single.ownerId, 'meeting-11');
     await engine.dispose();
     expect(leases.released, [leases.saved.single.leaseId]);
+  });
+
+  test('高级模型缺少随包 VAD 安装时拒绝创建且不获取租约', () async {
+    final descriptor = AsrModelRegistry.alpha.requireById(
+      whisperSmallAdvancedModelId,
+    );
+    installations.install(_installed(descriptor), active: true);
+    final factory = _factory(installations, leases);
+
+    await expectLater(
+      factory.create(
+        modelId: descriptor.modelId,
+        modelVersion: descriptor.version,
+      ),
+      throwsA(
+        isA<AsrEngineException>().having(
+          (error) => error.failure.code,
+          'code',
+          'asr.factory.vad_model_not_verified',
+        ),
+      ),
+    );
+    expect(leases.saved, isEmpty);
+  });
+
+  test('高级模型拒绝复用未验证的随包 VAD 安装且不获取租约', () async {
+    final standard = AsrModelRegistry.alpha.requireById(
+      whisperBaseStandardModelId,
+    );
+    installations.install(
+      ModelInstallation(
+        modelId: standard.modelId,
+        version: standard.version,
+        installationType: standard.installationType,
+        state: ModelInstallationState.failed,
+        installedPath: 'models/${standard.modelId}/${standard.version}',
+        verifiedAt: DateTime.utc(2026, 7, 24),
+        bytes: standard.requiredBytes,
+        lastErrorCode: 'checksum_mismatch',
+      ),
+    );
+    final advanced = AsrModelRegistry.alpha.requireById(
+      whisperSmallAdvancedModelId,
+    );
+    installations.install(_installed(advanced), active: true);
+    final factory = _factory(installations, leases);
+
+    await expectLater(
+      factory.create(modelId: advanced.modelId, modelVersion: advanced.version),
+      throwsA(
+        isA<AsrEngineException>().having(
+          (error) => error.failure.code,
+          'code',
+          'asr.factory.vad_model_not_verified',
+        ),
+      ),
+    );
+    expect(leases.saved, isEmpty);
   });
 
   test('Registry 版本不匹配时在读取安装记录前拒绝创建', () async {

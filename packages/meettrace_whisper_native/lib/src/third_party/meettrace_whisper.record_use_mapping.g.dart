@@ -14,8 +14,11 @@
 
 /// Mapping from Dart function name to native symbol name.
 const recordUseMapping = {
+  'mt_whisper_abi_version': 'mt_whisper_abi_version',
   'mt_whisper_cancel': 'mt_whisper_cancel',
+  'mt_whisper_config_v1_init': 'mt_whisper_config_v1_init',
   'mt_whisper_create': 'mt_whisper_create',
+  'mt_whisper_create_v1': 'mt_whisper_create_v1',
   'mt_whisper_destroy': 'mt_whisper_destroy',
   'mt_whisper_last_error': 'mt_whisper_last_error',
   'mt_whisper_runtime_version': 'mt_whisper_runtime_version',
@@ -23,5 +26,18 @@ const recordUseMapping = {
   'mt_whisper_segment_end_ms': 'mt_whisper_segment_end_ms',
   'mt_whisper_segment_start_ms': 'mt_whisper_segment_start_ms',
   'mt_whisper_segment_text': 'mt_whisper_segment_text',
+  'mt_whisper_status_message': 'mt_whisper_status_message',
   'mt_whisper_transcribe': 'mt_whisper_transcribe',
+  'mt_whisper_vad_cancel': 'mt_whisper_vad_cancel',
+  'mt_whisper_vad_config_v1_init': 'mt_whisper_vad_config_v1_init',
+  'mt_whisper_vad_create_v1': 'mt_whisper_vad_create_v1',
+  'mt_whisper_vad_destroy': 'mt_whisper_vad_destroy',
+  'mt_whisper_vad_last_error': 'mt_whisper_vad_last_error',
+  'mt_whisper_vad_reset': 'mt_whisper_vad_reset',
+  'mt_whisper_vad_segment_count': 'mt_whisper_vad_segment_count',
+  'mt_whisper_vad_segment_end_sample': 'mt_whisper_vad_segment_end_sample',
+  'mt_whisper_vad_segment_samples': 'mt_whisper_vad_segment_samples',
+  'mt_whisper_vad_segment_start_sample': 'mt_whisper_vad_segment_start_sample',
+  'mt_whisper_vad_validate_config_v1': 'mt_whisper_vad_validate_config_v1',
+  'mt_whisper_validate_config_v1': 'mt_whisper_validate_config_v1',
 };

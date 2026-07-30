@@ -75,6 +75,7 @@ flutter:
   assets:
     - assets/models/manifest.json
     - assets/models/whisper-cpp-base-q5_1-v1.9.1/ggml-base-q5_1.bin
+    - assets/models/whisper-vad-silero-v6.2.0/ggml-silero-v6.2.0.bin
     - assets/licenses/whisper-cpp-NOTICE.txt
 
   # To add assets to your application, add an assets section, like this:

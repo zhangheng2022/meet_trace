@@ -84,4 +84,51 @@ void main() {
       true,
     );
   });
+
+  test('C ABI 暴露版本化配置、稳定状态码和结构大小校验', () async {
+    final header = await File(
+      'packages/meettrace_whisper_native/src/meettrace_whisper.h',
+    ).readAsString();
+    final context = await File(
+      'packages/meettrace_whisper_native/lib/src/whisper_native_context.dart',
+    ).readAsString();
+
+    expect(header, contains('MT_WHISPER_ABI_VERSION'));
+    expect(header, contains('mt_whisper_status'));
+    expect(header, contains('mt_whisper_decoding_strategy'));
+    expect(header, contains('mt_whisper_config_v1'));
+    expect(header, contains('struct_size'));
+    expect(header, contains('abi_version'));
+    expect(header, contains('mt_whisper_abi_version'));
+    expect(header, contains('mt_whisper_config_v1_init'));
+    expect(header, contains('mt_whisper_validate_config_v1'));
+    expect(header, contains('mt_whisper_create_v1'));
+    expect(header, contains('mt_whisper_status_message'));
+    expect(context, contains('native.abi_version_mismatch'));
+    expect(context, contains('mt_whisper_create_v1'));
+  });
+
+  test('官方 VAD 使用独立版本化 context 且完整生命周期由 ffigen 生成', () async {
+    final header = await File(
+      'packages/meettrace_whisper_native/src/meettrace_whisper.h',
+    ).readAsString();
+    final bindings = await File(
+      'packages/meettrace_whisper_native/'
+      'lib/src/third_party/meettrace_whisper.g.dart',
+    ).readAsString();
+
+    for (final symbol in [
+      'mt_whisper_vad_config_v1',
+      'mt_whisper_vad_create_v1',
+      'mt_whisper_vad_segment_samples',
+      'mt_whisper_vad_segment_start_sample',
+      'mt_whisper_vad_segment_end_sample',
+      'mt_whisper_vad_reset',
+      'mt_whisper_vad_cancel',
+      'mt_whisper_vad_destroy',
+    ]) {
+      expect(header, contains(symbol));
+      expect(bindings, contains(symbol));
+    }
+  });
 }

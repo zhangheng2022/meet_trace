@@ -8,6 +8,7 @@ import '../../../domain/models/workflow_states.dart';
 import '../storage/app_file_layout.dart';
 import '../storage/durable_file_committer.dart';
 import 'pcm_audio_level_meter.dart';
+import 'recording_pcm_diagnostics.dart';
 import 'recording_checkpoint_store.dart';
 import 'recording_ports.dart';
 import 'recording_session_service.dart';
@@ -30,9 +31,11 @@ final class ReliableRecordingService implements RecordingSessionService {
     this.maxPendingPreviewChunks = 4,
     this.captureStopTimeout = defaultRecordingCaptureStopTimeout,
     required PcmAudioLevelMeter audioLevelMeter,
+    RecordingPcmDiagnostics? pcmDiagnostics,
     DateTime Function()? now,
   }) : now = now ?? DateTime.now,
        _audioLevelMeter = audioLevelMeter,
+       _pcmDiagnostics = pcmDiagnostics ?? RecordingPcmDiagnostics(),
        _preview = RecordingPreviewDispatcher(
          FanOutRecordingPreviewSink([audioLevelMeter, previewSink]),
          maxPendingChunks: maxPendingPreviewChunks,
@@ -60,6 +63,7 @@ final class ReliableRecordingService implements RecordingSessionService {
   final Duration captureStopTimeout;
   final DateTime Function() now;
   final PcmAudioLevelMeter _audioLevelMeter;
+  final RecordingPcmDiagnostics _pcmDiagnostics;
   final RecordingPreviewDispatcher _preview;
 
   RecordingState _state = RecordingState.idle;
@@ -87,6 +91,8 @@ final class ReliableRecordingService implements RecordingSessionService {
       _state == RecordingState.paused ||
       (_state == RecordingState.failed && _output != null);
   int get droppedPreviewChunks => _preview.droppedChunks;
+  RecordingPcmDiagnosticsSnapshot get pcmDiagnostics =>
+      _pcmDiagnostics.snapshot;
 
   @override
   Future<void> start({required String meetingId}) async {
@@ -95,6 +101,7 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
     _state = RecordingState.starting;
     _meetingId = meetingId;
+    _pcmDiagnostics.reset(nextByteOffset: 0);
 
     try {
       if (!await capture.hasPermission()) {
@@ -306,6 +313,7 @@ final class ReliableRecordingService implements RecordingSessionService {
             ? RecordingCheckpointState.paused
             : RecordingCheckpointState.recording,
       );
+      _pcmDiagnostics.addChunk(bytes, startByteOffset: startByteOffset);
       _preview.offer(
         RecordingPcmChunk(bytes: bytes, startByteOffset: startByteOffset),
       );

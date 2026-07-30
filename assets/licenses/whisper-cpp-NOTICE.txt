@@ -21,5 +21,15 @@ Downloadable advanced model:
   bytes: 190085487
   sha256: ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb
 
+Bundled VAD model repository:
+  https://huggingface.co/ggml-org/whisper-vad
+  revision: 9ffd54a1e1ee413ddf265af9913beaf518d1639b
+  license: MIT
+
+Bundled VAD model:
+  ggml-silero-v6.2.0.bin
+  bytes: 885098
+  sha256: 2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987
+
 The vendored upstream runtime license is also retained at:
   packages/meettrace_whisper_native/third_party/whisper.cpp/LICENSE

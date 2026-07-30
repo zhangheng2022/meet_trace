@@ -56,12 +56,16 @@ void main() {
         channelCount: 1,
       );
       final checkpoint = await checkpoints.load('device-recording');
+      final diagnostics = service.pcmDiagnostics;
 
       expect(fileBytes, artifact.bytes);
       expect(artifact.bytes, greaterThan(0));
       expect(metrics.completenessRatio, greaterThanOrEqualTo(0.98));
       expect(checkpoint?.state, RecordingCheckpointState.finalized);
       expect(checkpoint?.persistedBytes, artifact.bytes);
+      expect(diagnostics.totalBytes, artifact.bytes);
+      expect(diagnostics.sampleCount * 2, artifact.bytes);
+      expect(diagnostics.duration, artifact.duration);
 
       final report = <String, Object>{
         'schemaVersion': 1,
@@ -71,6 +75,7 @@ void main() {
         'persistenceRatio': fileBytes / artifact.bytes,
         'captureCompletenessRatio': metrics.completenessRatio,
         'droppedPreviewChunks': service.droppedPreviewChunks,
+        'pcmDiagnostics': diagnostics.toJson(),
       };
       debugPrintSynchronously(
         'MEETTRACE_STEP07_RECORDING:${jsonEncode(report)}',

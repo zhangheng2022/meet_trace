@@ -92,17 +92,17 @@ final class AsrPreviewCoordinator
   );
 
   @override
-  Future<void> add(RecordingPcmChunk chunk) {
+  Future<void> add(RecordingPcmChunk chunk) async {
     if (_state == AsrPreviewState.recordingOnly ||
         _state == AsrPreviewState.disposed) {
-      return Future<void>.value();
+      return;
     }
     try {
       final startSample = chunk.startByteOffset ~/ recordingBytesPerSample;
       final samples = _decodePcm16(chunk.bytes);
       final expected = _expectedNextSample;
       if (expected != null && expected != startSample) {
-        vad.reset(nextStartSample: startSample);
+        await vad.reset(nextStartSample: startSample);
         _timeline.reset(startSample: startSample);
         _dropAllPending();
       } else if (_timeline.isEmpty) {
@@ -110,7 +110,7 @@ final class AsrPreviewCoordinator
       }
       _timeline.append(startSample: startSample, samples: samples);
       _expectedNextSample = startSample + samples.length;
-      _acceptSegments(vad.accept(samples));
+      _acceptSegments(await vad.accept(samples));
       _trimTimeline();
     } on Object catch (error) {
       _enterRecordingOnly(
@@ -119,7 +119,6 @@ final class AsrPreviewCoordinator
             : 'asr.preview.vad_failed',
       );
     }
-    return Future<void>.value();
   }
 
   @override
@@ -129,7 +128,7 @@ final class AsrPreviewCoordinator
       return;
     }
     try {
-      _acceptSegments(vad.flush());
+      _acceptSegments(await vad.flush());
       await _draining;
     } on Object catch (error) {
       _enterRecordingOnly(
@@ -149,7 +148,7 @@ final class AsrPreviewCoordinator
     _dropAllPending();
     engine.cancel();
     await _draining;
-    vad.dispose();
+    await vad.dispose();
     await _engineEvents.cancel();
     await engine.dispose();
     _emitMetrics();

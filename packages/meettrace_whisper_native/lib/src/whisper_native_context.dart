@@ -42,6 +42,10 @@ final class WhisperNativeResult {
       .trim();
 }
 
+enum WhisperNativeDecodingStrategy { greedy, beamSearch }
+
+const whisperNativeAbiVersion = 1;
+
 final class WhisperNativeContext {
   WhisperNativeContext._(this._handle);
 
@@ -49,6 +53,15 @@ final class WhisperNativeContext {
     required String modelPath,
     int threadCount = 2,
     String language = 'auto',
+    WhisperNativeDecodingStrategy decodingStrategy =
+        WhisperNativeDecodingStrategy.greedy,
+    int bestOf = 5,
+    int beamSize = 5,
+    bool noContext = true,
+    bool suppressBlank = true,
+    double temperature = 0,
+    double temperatureIncrement = 0.2,
+    String? initialPrompt,
   }) {
     if (modelPath.trim().isEmpty) {
       throw ArgumentError.value(modelPath, 'modelPath', '不能为空');
@@ -59,21 +72,67 @@ final class WhisperNativeContext {
     if (language.trim().isEmpty) {
       throw ArgumentError.value(language, 'language', '不能为空');
     }
+    if (bestOf <= 0 || bestOf > 10) {
+      throw ArgumentError.value(bestOf, 'bestOf', '必须在 1 到 10 之间');
+    }
+    if (beamSize <= 0 || beamSize > 10) {
+      throw ArgumentError.value(beamSize, 'beamSize', '必须在 1 到 10 之间');
+    }
+    if (temperature < 0 || temperature > 1) {
+      throw ArgumentError.value(temperature, 'temperature', '必须在 0 到 1 之间');
+    }
+    if (temperatureIncrement < 0 || temperatureIncrement > 1) {
+      throw ArgumentError.value(
+        temperatureIncrement,
+        'temperatureIncrement',
+        '必须在 0 到 1 之间',
+      );
+    }
+
+    final runtimeAbiVersion = native.mt_whisper_abi_version();
+    if (runtimeAbiVersion != whisperNativeAbiVersion) {
+      throw WhisperNativeException(
+        'native.abi_version_mismatch.'
+        '$whisperNativeAbiVersion.$runtimeAbiVersion',
+      );
+    }
 
     return using((arena) {
       final path = modelPath.toNativeUtf8(allocator: arena).cast<Char>();
       final languagePointer = language
           .toNativeUtf8(allocator: arena)
           .cast<Char>();
-      final handle = native.mt_whisper_create(
-        path,
-        threadCount,
-        languagePointer,
-      );
-      if (handle == nullptr) {
-        throw const WhisperNativeException('native.context_create_failed');
+      final prompt = initialPrompt?.trim();
+      final promptPointer = prompt == null || prompt.isEmpty
+          ? nullptr.cast<Char>()
+          : prompt.toNativeUtf8(allocator: arena).cast<Char>();
+      final config = arena<native.mt_whisper_config_v1>();
+      native.mt_whisper_config_v1_init(config);
+      config.ref
+        ..thread_count = threadCount
+        ..decoding_strategy =
+            decodingStrategy == WhisperNativeDecodingStrategy.greedy ? 0 : 1
+        ..best_of = bestOf
+        ..beam_size = beamSize
+        ..no_context = noContext ? 1 : 0
+        ..suppress_blank = suppressBlank ? 1 : 0
+        ..temperature = temperature
+        ..temperature_inc = temperatureIncrement
+        ..language = languagePointer
+        ..initial_prompt = promptPointer;
+      final output = arena<Pointer<native.mt_whisper_context>>();
+      output.value = nullptr;
+      final status = native.mt_whisper_create_v1(path, config, output);
+      if (status != 0 || output.value == nullptr) {
+        final message = native
+            .mt_whisper_status_message(status)
+            .cast<Utf8>()
+            .toDartString();
+        throw WhisperNativeException(
+          message.isEmpty ? 'native.context_create_failed.$status' : message,
+        );
       }
-      return WhisperNativeContext._(handle);
+      return WhisperNativeContext._(output.value);
     });
   }
 
@@ -88,6 +147,8 @@ final class WhisperNativeContext {
 
   static String get runtimeVersion =>
       native.mt_whisper_runtime_version().cast<Utf8>().toDartString();
+
+  static int get abiVersion => native.mt_whisper_abi_version();
 
   WhisperNativeResult transcribe(Float32List samples) {
     _throwIfDisposed();

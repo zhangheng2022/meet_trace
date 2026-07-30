@@ -70,6 +70,9 @@ void main() {
     expect(result.audioPath, layout.meetingAudioPath('meeting-1'));
     expect(result.bytes, 16000);
     expect(result.duration, const Duration(milliseconds: 500));
+    expect(service.pcmDiagnostics.totalBytes, 16000);
+    expect(service.pcmDiagnostics.sampleCount, 8000);
+    expect(service.pcmDiagnostics.duration, const Duration(milliseconds: 500));
     expect(await File(result.audioPath).length(), 16000);
     expect(
       await File(layout.meetingAudioTempPath('meeting-1')).exists(),

@@ -6,7 +6,9 @@ import '../../../../domain/models/app_failure.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/audio_source.dart';
 import '../../../../domain/models/transcript.dart';
+import '../../../../domain/models/asr_preview.dart';
 import '../asr_engine.dart';
+import '../../vad/voice_activity_segmenter.dart';
 import 'whisper_adapter.dart';
 
 const whisperAsrSampleRate = 16000;
@@ -15,6 +17,7 @@ const whisperMaximumWindowSamples =
     whisperAsrSampleRate * whisperMaximumWindowSeconds;
 
 typedef AsrEngineLifecycleHook = Future<void> Function();
+typedef FinalVoiceActivitySegmenterFactory = VoiceActivitySegmenter Function();
 
 final class WhisperAsrEngine implements AsrEngine {
   WhisperAsrEngine({
@@ -25,6 +28,7 @@ final class WhisperAsrEngine implements AsrEngine {
     this._riskMonitor,
     this._beforeOperation,
     this._onDispose,
+    this.finalVadFactory,
     DateTime Function()? now,
   }) : _config = config,
        _errorPrefix = errorPrefix,
@@ -47,6 +51,7 @@ final class WhisperAsrEngine implements AsrEngine {
   final AsrDeviceRiskMonitor? _riskMonitor;
   final AsrEngineLifecycleHook? _beforeOperation;
   final AsrEngineLifecycleHook? _onDispose;
+  final FinalVoiceActivitySegmenterFactory? finalVadFactory;
   final DateTime Function() _now;
   final StreamController<TranscriptEvent> _events =
       StreamController<TranscriptEvent>.broadcast(sync: true);
@@ -215,54 +220,60 @@ final class WhisperAsrEngine implements AsrEngine {
           snapshotId ?? 'final-$meetingId-${_now().microsecondsSinceEpoch}';
       final segments = <TranscriptSegment>[];
       var segmentSequence = 0;
-
-      while (_finalizationCompletedSamples < _finalizationTotalSamples) {
-        await _prepareOperation(stage: FailureStage.finalTranscription);
-        final remaining =
-            _finalizationTotalSamples - _finalizationCompletedSamples;
-        final requestedSamples = remaining > whisperMaximumWindowSamples
-            ? whisperMaximumWindowSamples
-            : remaining;
-        final bytes = await input.read(requestedSamples * 2);
-        if (bytes.length != requestedSamples * 2) {
-          throw _exception(
-            code: '$_errorPrefix.audio_read_incomplete',
-            stage: FailureStage.finalTranscription,
-            context: {
-              'expectedBytes': requestedSamples * 2,
-              'actualBytes': bytes.length,
-            },
+      final speechSegments = await _finalSpeechSegments(
+        input,
+        totalSamples: _finalizationTotalSamples,
+      );
+      for (final speech in speechSegments) {
+        var windowStartSample = speech.startSample;
+        while (windowStartSample < speech.endSample) {
+          await _prepareOperation(stage: FailureStage.finalTranscription);
+          final requestedSamples = (speech.endSample - windowStartSample).clamp(
+            1,
+            whisperMaximumWindowSamples,
           );
-        }
-        final samples = _decodePcm16(bytes);
-        final startMs =
-            (_finalizationCompletedSamples * 1000) ~/ whisperAsrSampleRate;
-        final result = await _recognizeWindow(
-          samples,
-          sampleRate: whisperAsrSampleRate,
-          startMs: startMs,
-          segmentId:
-              '$resolvedSnapshotId-window-$_finalizationCompletedSamples',
-        );
-        _finalizationCompletedSamples += requestedSamples;
-        if (result != null) {
-          for (final timedSegment in result.segments) {
-            segmentSequence++;
-            segments.add(
-              TranscriptSegment(
-                id: '$resolvedSnapshotId-segment-$segmentSequence',
-                snapshotId: resolvedSnapshotId,
-                startMs: timedSegment.startMs,
-                endMs: timedSegment.endMs,
-                text: timedSegment.text,
-                modelId: descriptor.modelId,
-                modelVersion: descriptor.version,
-              ),
+          await input.setPosition(windowStartSample * 2);
+          final bytes = await input.read(requestedSamples * 2);
+          if (bytes.length != requestedSamples * 2) {
+            throw _exception(
+              code: '$_errorPrefix.audio_read_incomplete',
+              stage: FailureStage.finalTranscription,
+              context: {
+                'expectedBytes': requestedSamples * 2,
+                'actualBytes': bytes.length,
+              },
             );
           }
+          final samples = _decodePcm16(bytes);
+          final startMs = (windowStartSample * 1000) ~/ whisperAsrSampleRate;
+          final result = await _recognizeWindow(
+            samples,
+            sampleRate: whisperAsrSampleRate,
+            startMs: startMs,
+            segmentId: '$resolvedSnapshotId-window-$windowStartSample',
+          );
+          windowStartSample += requestedSamples;
+          _finalizationCompletedSamples = windowStartSample;
+          if (result != null) {
+            for (final timedSegment in result.segments) {
+              segmentSequence++;
+              segments.add(
+                TranscriptSegment(
+                  id: '$resolvedSnapshotId-segment-$segmentSequence',
+                  snapshotId: resolvedSnapshotId,
+                  startMs: timedSegment.startMs,
+                  endMs: timedSegment.endMs,
+                  text: timedSegment.text,
+                  modelId: descriptor.modelId,
+                  modelVersion: descriptor.version,
+                ),
+              );
+            }
+          }
+          _emitProgress(AsrFinalizationPhase.processing);
         }
-        _emitProgress(AsrFinalizationPhase.processing);
       }
+      _finalizationCompletedSamples = _finalizationTotalSamples;
 
       _emitProgress(AsrFinalizationPhase.completed);
       return TranscriptSnapshot(
@@ -291,6 +302,53 @@ final class WhisperAsrEngine implements AsrEngine {
     } finally {
       await input?.close();
       _finalizing = false;
+    }
+  }
+
+  Future<List<VadSpeechSegment>> _finalSpeechSegments(
+    RandomAccessFile input, {
+    required int totalSamples,
+  }) async {
+    final factory = finalVadFactory;
+    if (factory == null) {
+      return [VadSpeechSegment(startSample: 0, endSample: totalSamples)];
+    }
+    final vad = factory();
+    if (vad.sampleRate != whisperAsrSampleRate) {
+      await vad.dispose();
+      throw _exception(
+        code: '$_errorPrefix.vad_sample_rate_mismatch',
+        stage: FailureStage.finalTranscription,
+      );
+    }
+    final detected = <VadSpeechSegment>[];
+    var sampleOffset = 0;
+    try {
+      await input.setPosition(0);
+      while (sampleOffset < totalSamples) {
+        await _prepareOperation(stage: FailureStage.finalTranscription);
+        final requestedSamples = (totalSamples - sampleOffset).clamp(
+          1,
+          whisperAsrSampleRate,
+        );
+        final bytes = await input.read(requestedSamples * 2);
+        if (bytes.length != requestedSamples * 2) {
+          throw _exception(
+            code: '$_errorPrefix.audio_read_incomplete',
+            stage: FailureStage.finalTranscription,
+            context: {
+              'expectedBytes': requestedSamples * 2,
+              'actualBytes': bytes.length,
+            },
+          );
+        }
+        detected.addAll(await vad.accept(_decodePcm16(bytes)));
+        sampleOffset += requestedSamples;
+      }
+      detected.addAll(await vad.flush());
+      return _normalizeVadSegments(detected, totalSamples: totalSamples);
+    } finally {
+      await vad.dispose();
     }
   }
 
@@ -368,6 +426,7 @@ final class WhisperAsrEngine implements AsrEngine {
             endMs: endMs,
             outcome: AsrWindowOutcome.empty,
             elapsed: recognition.elapsed,
+            profileId: _config.profileId,
           ),
         );
         return null;
@@ -380,6 +439,7 @@ final class WhisperAsrEngine implements AsrEngine {
           endMs: endMs,
           outcome: AsrWindowOutcome.recognized,
           elapsed: recognition.elapsed,
+          profileId: _config.profileId,
         ),
       );
       final eventSegmentId = segmentId ?? 'preview-$sequence-$startMs-$endMs';
@@ -537,6 +597,7 @@ final class WhisperAsrEngine implements AsrEngine {
         outcome: AsrWindowOutcome.failed,
         elapsed: elapsed,
         errorCode: errorCode,
+        profileId: _config.profileId,
       ),
     );
   }
@@ -650,6 +711,42 @@ final class WhisperAsrEngine implements AsrEngine {
     _lastProgress = progress;
     _progress.add(progress);
   }
+}
+
+List<VadSpeechSegment> _normalizeVadSegments(
+  Iterable<VadSpeechSegment> segments, {
+  required int totalSamples,
+}) {
+  final sorted =
+      segments
+          .map(
+            (segment) => (
+              start: segment.startSample.clamp(0, totalSamples),
+              end: segment.endSample.clamp(0, totalSamples),
+            ),
+          )
+          .where((segment) => segment.end > segment.start)
+          .toList()
+        ..sort((left, right) => left.start.compareTo(right.start));
+  final result = <VadSpeechSegment>[];
+  for (final segment in sorted) {
+    if (result.isEmpty || segment.start > result.last.endSample) {
+      result.add(
+        VadSpeechSegment(startSample: segment.start, endSample: segment.end),
+      );
+      continue;
+    }
+    final previous = result.removeLast();
+    result.add(
+      VadSpeechSegment(
+        startSample: previous.startSample,
+        endSample: segment.end > previous.endSample
+            ? segment.end
+            : previous.endSample,
+      ),
+    );
+  }
+  return List.unmodifiable(result);
 }
 
 Float32List _decodePcm16(Uint8List bytes) {

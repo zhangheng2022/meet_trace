@@ -27,11 +27,16 @@ $missingWhisperLibraries = @($whisperLibraryEntries | Where-Object {
 $expectedBundledAssets = @(
     'assets/flutter_assets/assets/licenses/whisper-cpp-NOTICE.txt',
     'assets/flutter_assets/assets/models/manifest.json',
-    'assets/flutter_assets/assets/models/whisper-cpp-base-q5_1-v1.9.1/ggml-base-q5_1.bin'
+    'assets/flutter_assets/assets/models/whisper-cpp-base-q5_1-v1.9.1/ggml-base-q5_1.bin',
+    'assets/flutter_assets/assets/models/whisper-vad-silero-v6.2.0/ggml-silero-v6.2.0.bin'
 )
 $missingBundledAssets = @($expectedBundledAssets | Where-Object { $_ -notin $entries })
 $forbiddenLegacyEntries = @($entries | Where-Object {
-    $_ -match '(?i)(sherpa|paraformer|qwen3-asr|silero|\.onnx$)'
+    $_ -match '(?i)(sherpa|paraformer|qwen3-asr|\.onnx$)'
+})
+$approvedVadAssetEntry = $expectedBundledAssets[3]
+$forbiddenUnapprovedVadEntries = @($entries | Where-Object {
+    $_ -match '(?i)(silero|whisper-vad)' -and $_ -ne $approvedVadAssetEntry
 })
 $forbiddenSmallEntries = @($entries | Where-Object {
     $_ -match '(?i)(whisper-cpp-small|ggml-small)'
@@ -46,6 +51,10 @@ $baseExpectedBytes = 59707625
 $baseExpectedSha256 = '422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898'
 $baseActualBytes = $null
 $baseActualSha256 = $null
+$vadExpectedBytes = 885098
+$vadExpectedSha256 = '2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987'
+$vadActualBytes = $null
+$vadActualSha256 = $null
 $suspiciousSecretEntries = @()
 $secretPattern =
     '(?i)(sk-[a-z0-9_-]{20,}|AIza[0-9a-z_-]{30,}|AKIA[0-9A-Z]{16}|' +
@@ -62,6 +71,20 @@ try {
         try {
             $digest = $sha.ComputeHash($stream)
             $baseActualSha256 = -join ($digest | ForEach-Object { $_.ToString('x2') })
+        }
+        finally {
+            $sha.Dispose()
+            $stream.Dispose()
+        }
+    }
+    $vadEntry = $archive.GetEntry($approvedVadAssetEntry)
+    if ($null -ne $vadEntry) {
+        $vadActualBytes = $vadEntry.Length
+        $stream = $vadEntry.Open()
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $digest = $sha.ComputeHash($stream)
+            $vadActualSha256 = -join ($digest | ForEach-Object { $_.ToString('x2') })
         }
         finally {
             $sha.Dispose()
@@ -106,6 +129,9 @@ finally {
 $baseIntegrityMatches =
     $baseActualBytes -eq $baseExpectedBytes -and
     $baseActualSha256 -eq $baseExpectedSha256
+$vadIntegrityMatches =
+    $vadActualBytes -eq $vadExpectedBytes -and
+    $vadActualSha256 -eq $vadExpectedSha256
 $report = [ordered]@{
     capturedAtUtc = [DateTimeOffset]::UtcNow.ToString('O')
     apkPath = $ApkPath
@@ -115,6 +141,7 @@ $report = [ordered]@{
     missingWhisperLibraries = $missingWhisperLibraries
     missingBundledAssets = $missingBundledAssets
     forbiddenLegacyEntries = $forbiddenLegacyEntries
+    forbiddenUnapprovedVadEntries = $forbiddenUnapprovedVadEntries
     forbiddenSmallEntries = $forbiddenSmallEntries
     baseAssetEntry = $baseAssetEntry
     baseExpectedBytes = $baseExpectedBytes
@@ -122,6 +149,12 @@ $report = [ordered]@{
     baseExpectedSha256 = $baseExpectedSha256
     baseActualSha256 = $baseActualSha256
     baseIntegrityMatches = $baseIntegrityMatches
+    vadAssetEntry = $approvedVadAssetEntry
+    vadExpectedBytes = $vadExpectedBytes
+    vadActualBytes = $vadActualBytes
+    vadExpectedSha256 = $vadExpectedSha256
+    vadActualSha256 = $vadActualSha256
+    vadIntegrityMatches = $vadIntegrityMatches
     flutterNoticesEntry = $flutterNoticesEntry
     hasFlutterNotices = $hasFlutterNotices
     forbiddenUserDataEntries = $forbiddenUserDataEntries
@@ -134,9 +167,11 @@ Write-Host "APK inspection report: $output"
 
 if (-not $hasFlutterNotices -or
     -not $baseIntegrityMatches -or
+    -not $vadIntegrityMatches -or
     $missingWhisperLibraries.Count -gt 0 -or
     $missingBundledAssets.Count -gt 0 -or
     $forbiddenLegacyEntries.Count -gt 0 -or
+    $forbiddenUnapprovedVadEntries.Count -gt 0 -or
     $forbiddenSmallEntries.Count -gt 0 -or
     $forbiddenUserDataEntries.Count -gt 0 -or
     $suspiciousSecretEntries.Count -gt 0) {

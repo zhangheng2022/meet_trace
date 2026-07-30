@@ -22,6 +22,14 @@ $models = @(
         file = 'ggml-small-q5_1.bin'
         bytes = 190085487
         sha256 = 'ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb'
+    },
+    @{
+        id = 'whisper-vad-silero-v6.2.0'
+        file = 'ggml-silero-v6.2.0.bin'
+        bytes = 885098
+        sha256 = '2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987'
+        sourceUrl = 'https://huggingface.co/ggml-org/whisper-vad/resolve/9ffd54a1e1ee413ddf265af9913beaf518d1639b/ggml-silero-v6.2.0.bin?download=true'
+        sourceRevision = '9ffd54a1e1ee413ddf265af9913beaf518d1639b'
     }
 )
 
@@ -30,7 +38,12 @@ New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
 $files = foreach ($model in $models) {
     $modelDirectory = Join-Path $OutputRoot $model.id
     $modelPath = Join-Path $modelDirectory $model.file
-    $sourceUrl = "$baseUrl/$($model.file)?download=true"
+    $sourceUrl = if ($model.sourceUrl) {
+        $model.sourceUrl
+    }
+    else {
+        "$baseUrl/$($model.file)?download=true"
+    }
     New-Item -ItemType Directory -Force -Path $modelDirectory | Out-Null
 
     if (-not (Test-Path -LiteralPath $modelPath -PathType Leaf)) {
@@ -53,7 +66,12 @@ $files = foreach ($model in $models) {
         bytes = $actualBytes
         sha256 = $actualSha256
         sourceUrl = $sourceUrl
-        sourceRevision = $revision
+        sourceRevision = if ($model.sourceRevision) {
+            $model.sourceRevision
+        }
+        else {
+            $revision
+        }
     }
 }
 

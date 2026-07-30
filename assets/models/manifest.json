@@ -7,13 +7,19 @@
       "version": "v1.9.1-q5_1",
       "tier": "standard",
       "installationType": "bundled",
-      "requiredBytes": 59707625,
+      "requiredBytes": 60592723,
       "files": [
         {
           "path": "ggml-base-q5_1.bin",
           "bytes": 59707625,
           "sha256": "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
           "url": "asset://assets/models/whisper-cpp-base-q5_1-v1.9.1/ggml-base-q5_1.bin"
+        },
+        {
+          "path": "vad/ggml-silero-v6.2.0.bin",
+          "bytes": 885098,
+          "sha256": "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987",
+          "url": "asset://assets/models/whisper-vad-silero-v6.2.0/ggml-silero-v6.2.0.bin"
         }
       ],
       "license": {

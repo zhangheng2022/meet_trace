@@ -16,6 +16,11 @@ void main() {
   );
   const includedFunctions = {
     'mt_whisper_runtime_version',
+    'mt_whisper_abi_version',
+    'mt_whisper_config_v1_init',
+    'mt_whisper_validate_config_v1',
+    'mt_whisper_create_v1',
+    'mt_whisper_status_message',
     'mt_whisper_create',
     'mt_whisper_transcribe',
     'mt_whisper_segment_count',
@@ -25,6 +30,17 @@ void main() {
     'mt_whisper_last_error',
     'mt_whisper_cancel',
     'mt_whisper_destroy',
+    'mt_whisper_vad_config_v1_init',
+    'mt_whisper_vad_validate_config_v1',
+    'mt_whisper_vad_create_v1',
+    'mt_whisper_vad_segment_samples',
+    'mt_whisper_vad_segment_count',
+    'mt_whisper_vad_segment_start_sample',
+    'mt_whisper_vad_segment_end_sample',
+    'mt_whisper_vad_last_error',
+    'mt_whisper_vad_reset',
+    'mt_whisper_vad_cancel',
+    'mt_whisper_vad_destroy',
   };
 
   final generator = FfiGenerator(
@@ -35,12 +51,20 @@ void main() {
       recordUse: (_) => true,
     ),
     structs: Structs(
-      include: (declaration) =>
-          declaration.originalName == 'mt_whisper_context',
+      include: (declaration) => {
+        'mt_whisper_context',
+        'mt_whisper_config_v1',
+        'mt_whisper_vad_context',
+        'mt_whisper_vad_config_v1',
+      }.contains(declaration.originalName),
     ),
     typedefs: Typedefs(
-      include: (declaration) =>
-          declaration.originalName == 'mt_whisper_context',
+      include: (declaration) => {
+        'mt_whisper_context',
+        'mt_whisper_config_v1',
+        'mt_whisper_vad_context',
+        'mt_whisper_vad_config_v1',
+      }.contains(declaration.originalName),
     ),
     output: Output(
       dartFile: bindings,

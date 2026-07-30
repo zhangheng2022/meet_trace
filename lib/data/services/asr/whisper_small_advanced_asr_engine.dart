@@ -14,6 +14,7 @@ import '../../repositories/repository_contracts.dart';
 import 'asr_engine.dart';
 import 'whisper/whisper_adapter.dart';
 import 'whisper/whisper_asr_engine.dart';
+import 'whisper/whisper_recognizer_profiles.dart';
 
 const whisperSmallSampleRate = whisperAsrSampleRate;
 const whisperSmallMaximumWindowSeconds = whisperMaximumWindowSeconds;
@@ -29,6 +30,8 @@ final class WhisperSmallAdvancedAsrEngine implements AsrEngine {
     Duration leaseDuration = const Duration(hours: 1),
     Duration leaseRenewalLead = const Duration(minutes: 5),
     String Function()? leaseIdFactory,
+    WhisperRecognizerProfile profile = whisperBaselineRecognizerProfile,
+    FinalVoiceActivitySegmenterFactory? finalVadFactory,
   }) async {
     final descriptor = AsrModelRegistry.alpha.requireById(
       whisperSmallAdvancedModelId,
@@ -152,13 +155,14 @@ final class WhisperSmallAdvancedAsrEngine implements AsrEngine {
         return WhisperSmallAdvancedAsrEngine._(
           WhisperAsrEngine(
             descriptor: descriptor,
-            config: WhisperRecognizerConfig(
+            config: profile.createConfig(
               modelId: descriptor.modelId,
               modelVersion: descriptor.version,
               modelPath: p.join(modelRoot, 'ggml-small-q5_1.bin'),
             ),
             errorPrefix: 'asr.whisper_small',
             workerFactory: workerFactory,
+            finalVadFactory: finalVadFactory,
             riskMonitor: riskMonitor,
             beforeOperation: ensureLease,
             onDispose: releaseLease,

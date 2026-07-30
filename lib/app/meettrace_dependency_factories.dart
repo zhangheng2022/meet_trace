@@ -110,7 +110,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
     StartedMeetingSession session,
   ) {
     final preview = AsrPreviewCoordinator(
-      vad: StreamingWindowSegmenter(),
+      vad: WhisperVadSegmenter(modelPath: whisperVadModelPath),
       engine: session.engine,
     );
     final recording = ReliableRecordingService(

@@ -51,20 +51,81 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.blocked);
     });
 
-    test('Android 证据完整但 iOS 后台录音未通过时双平台发布 No-Go', () {
+    test('当前范围不执行 iOS 真机时真机字段不参与发布判定', () {
       final report = const EvaluateAlphaReleaseUseCase().execute(
-        _passingInput().copyWith(iosBackgroundRecordingPassed: false),
+        _passingInput().copyWith(
+          iosArm64DeviceTested: false,
+          iosBackgroundRecordingPassed: false,
+          iosInterruptionRecoveryPassed: false,
+        ),
       );
 
       expect(
         report.gates
-            .singleWhere(
-              (gate) => gate.id == 'environment.iosBackgroundRecording',
-            )
+            .where((gate) => gate.id.startsWith('environment.ios'))
+            .isEmpty,
+        isTrue,
+      );
+      expect(report.decision, AlphaReleaseDecision.go);
+    });
+
+    test('静音、噪声、chunk 一致性或 16 KB 任一失败时 No-Go', () {
+      final failingInputs = [
+        _passingInput().copyWith(silenceFalsePositiveCount: 1),
+        _passingInput().copyWith(vadNoiseHallucinationCount: 3),
+        _passingInput().copyWith(vadChunkBoundaryConsistent: false),
+        _passingInput().copyWith(vadFailureRecordingContinues: false),
+        _passingInput().copyWith(android16KbPassed: false),
+      ];
+
+      for (final input in failingInputs) {
+        final report = const EvaluateAlphaReleaseUseCase().execute(input);
+        expect(report.decision, AlphaReleaseDecision.noGo);
+      }
+    });
+
+    test('噪声幻觉相对固定窗口下降至少 80%', () {
+      final passing = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(
+          baselineNoiseHallucinationCount: 10,
+          vadNoiseHallucinationCount: 2,
+        ),
+      );
+      final failing = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(
+          baselineNoiseHallucinationCount: 10,
+          vadNoiseHallucinationCount: 3,
+        ),
+      );
+
+      expect(
+        passing.gates
+            .singleWhere((gate) => gate.id == 'vad.noiseReductionRatio')
+            .status,
+        ReleaseGateStatus.passed,
+      );
+      expect(
+        failing.gates
+            .singleWhere((gate) => gate.id == 'vad.noiseReductionRatio')
             .status,
         ReleaseGateStatus.failed,
       );
-      expect(report.decision, AlphaReleaseDecision.noGo);
+    });
+
+    test('固定窗口没有基线噪声幻觉时不能声称下降 80%', () {
+      final report = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(
+          baselineNoiseHallucinationCount: 0,
+          vadNoiseHallucinationCount: 0,
+        ),
+      );
+      final gate = report.gates.singleWhere(
+        (candidate) => candidate.id == 'vad.noiseReductionRatio',
+      );
+
+      expect(gate.value, isNull);
+      expect(gate.status, ReleaseGateStatus.missing);
+      expect(report.decision, AlphaReleaseDecision.blocked);
     });
 
     test('缺少真机、语料、许可或验收证据时阻塞发布而非伪造失败值', () {
@@ -145,11 +206,21 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   ],
   advancedFinalTranscriptionDurationMs: 600000,
   keyFactRecallRatio: 0.85,
+  silenceSampleCount: 20,
+  silenceFalsePositiveCount: 0,
+  noiseSampleCount: 20,
+  baselineNoiseHallucinationCount: 10,
+  vadNoiseHallucinationCount: 2,
+  vadChunkBoundaryConsistent: true,
+  vadFailureRecordingContinues: true,
   acceptanceEvidence: {
-    for (var index = 1; index <= 20; index++)
+    for (var index = 1; index <= 24; index++)
       'AT-${index.toString().padLeft(2, '0')}': 'evidence/AT-$index.json',
   },
   apkAuditPassed: true,
+  android16KbPassed: true,
+  androidEvidenceRef: 'evidence/android.json',
   iosBuildAuditPassed: true,
+  iosBuildEvidenceRef: 'evidence/ios-build.json',
   whisperCppLicenseConfirmed: true,
 );

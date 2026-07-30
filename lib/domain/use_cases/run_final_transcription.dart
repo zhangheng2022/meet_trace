@@ -151,6 +151,7 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
       engine = await engineFactory.create(
         modelId: selected.$1,
         modelVersion: selected.$2,
+        purpose: AsrEnginePurpose.finalTranscript,
       );
       _validateEngine(engine, selected);
       if (onProgress != null) {

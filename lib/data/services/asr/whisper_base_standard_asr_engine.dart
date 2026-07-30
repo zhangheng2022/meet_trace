@@ -12,6 +12,7 @@ import '../../../domain/models/workflow_states.dart';
 import 'asr_engine.dart';
 import 'whisper/whisper_adapter.dart';
 import 'whisper/whisper_asr_engine.dart';
+import 'whisper/whisper_recognizer_profiles.dart';
 
 const whisperBaseSampleRate = whisperAsrSampleRate;
 const whisperBaseMaximumWindowSeconds = whisperMaximumWindowSeconds;
@@ -20,6 +21,8 @@ final class WhisperBaseStandardAsrEngine implements AsrEngine {
   factory WhisperBaseStandardAsrEngine({
     required ModelInstallation installation,
     WhisperWorkerFactory workerFactory = const OfficialWhisperWorkerFactory(),
+    WhisperRecognizerProfile profile = whisperBaselineRecognizerProfile,
+    FinalVoiceActivitySegmenterFactory? finalVadFactory,
     DateTime Function()? now,
   }) {
     final descriptor = AsrModelRegistry.alpha.requireById(
@@ -30,13 +33,14 @@ final class WhisperBaseStandardAsrEngine implements AsrEngine {
     return WhisperBaseStandardAsrEngine._(
       WhisperAsrEngine(
         descriptor: descriptor,
-        config: WhisperRecognizerConfig(
+        config: profile.createConfig(
           modelId: descriptor.modelId,
           modelVersion: descriptor.version,
           modelPath: p.join(modelRoot, 'ggml-base-q5_1.bin'),
         ),
         errorPrefix: 'asr.whisper_base',
         workerFactory: workerFactory,
+        finalVadFactory: finalVadFactory,
         now: now,
       ),
     );

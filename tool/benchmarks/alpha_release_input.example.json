@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "rawMetricsRef": null,
   "corpus": {
     "id": null,
@@ -17,7 +17,7 @@
     "adaptiveNavigationAccessibilityPassed": null
   },
   "standardModel": {
-    "resourceBytes": 59707625,
+    "resourceBytes": 60592723,
     "rtfSamples": null,
     "sentenceLatencyMs": null,
     "finalTranscriptionDurationMs": null,
@@ -29,14 +29,28 @@
     "standardWh": null,
     "advancedWh": null
   },
+  "vad": {
+    "silenceSampleCount": null,
+    "silenceFalsePositiveCount": null,
+    "noiseSampleCount": null,
+    "baselineNoiseHallucinationCount": null,
+    "vadNoiseHallucinationCount": null,
+    "chunkBoundaryConsistent": null,
+    "failureRecordingContinues": null
+  },
   "advancedModel": {
     "rtfSamples": null,
     "sentenceLatencyMs": null,
     "finalTranscriptionDurationMs": null
   },
+  "evidence": {
+    "android": null,
+    "iosBuild": null
+  },
   "acceptanceEvidence": null,
   "release": {
     "apkAuditPassed": null,
+    "android16KbPassed": null,
     "iosBuildAuditPassed": null,
     "whisperCppLicenseConfirmed": null
   }

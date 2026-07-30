@@ -1,19 +1,20 @@
 # 会迹（MeetTrace）文档索引
 
 > 状态：当前文档入口
-> 更新日期：2026-07-29
+> 更新日期：2026-07-30
 
 ## 活动文档
 
-1. [Android + iOS Alpha PRD V0.7](./会迹_MeetTrace_Alpha_PRD_无登录版.md)：产品范围、用户流程、质量门槛和 AT-01～AT-20 的事实源。
-2. [端侧双模型转录技术方案](./端侧双模型转录技术方案.md)：`whisper.cpp` 双模型、Native Assets、录音解耦、模型生命周期和降级设计。
+1. [Android + iOS Alpha PRD](./会迹_MeetTrace_Alpha_PRD_无登录版.md)：产品范围、用户流程、质量门槛和 AT-01～AT-24 的事实源。
+2. [端侧双模型转录技术方案 V0.8](./端侧双模型转录技术方案.md)：`whisper.cpp` 双模型、官方 Silero VAD、Native Assets、录音解耦、模型生命周期和降级设计。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)：当前实现顺序与交付门槛。
-4. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)：隔离开发、合并和安全清理规则。
-5. [交互与视觉系统](../DESIGN.md)：页面、响应式布局和交互契约。
+4. [whisper.cpp 质量强化与双平台交付计划](./plans/2026-07-30-whisper-cpp-quality-delivery.md)：Codex 可直接执行的文件级任务、测试、审查、硬门槛和提交点。
+5. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)：隔离开发、合并和安全清理规则。
+6. [交互与视觉系统](../DESIGN.md)：页面、响应式布局和交互契约。
 
 ## 当前实现状态
 
-截至 2026-07-29，应用 ASR 主链已从 sherpa-onnx 正式替换为官方
+截至 2026-07-30，应用 ASR 主链已从 sherpa-onnx 正式替换为官方
 `whisper.cpp` v1.9.1：
 
 - 标准模型 `Whisper Base Q5_1` 随包内置。
@@ -22,21 +23,27 @@
   最小 C ABI 和 `ffigen` 接入；应用层不维护 JNI 或手工 `jniLibs`。
 - 两个模型继续实现统一 `AsrEngine`。开始录音后模型锁定，会中与最终转录使用同一模型，
   不自动切换或混合输出。
-- 事实 PCM 写入独立于推理。连续切窗和有界预览队列可丢弃临时预览任务，但不得丢失录音。
+- 官方 Silero VAD 在独立 isolate 中驱动会中预览；最终转录从完整 PCM 创建全新 VAD
+  状态重跑，不依赖会中预览。
+- 事实 PCM 写入独立于推理。有界预览队列可丢弃临时预览任务，但不得丢失录音。
 - 历史默认模型设置会迁移到对应的 Whisper 层级；历史会议的原模型 ID 与版本保持不变。
 
 Android Debug APK 已能产出 `arm64-v8a`、`armeabi-v7a`、`x86_64` 三个
-`libmeettrace_whisper.so`，并只包含内置 Base 权重。iOS 仍需在 macOS/Xcode 和真机上完成
-等价构建、后台录音、内存、温控和模型验收，因此双平台 Alpha 发布仍为 `blocked`。
+`libmeettrace_whisper.so`，并只包含内置 Base 权重和批准的官方 VAD。当前实施范围只要求 iOS 在
+macOS/Xcode 完成 arm64 无签名构建、产物审计和自动化验证，不执行 iOS 真机测试；
+后台录音、系统中断、内存、温控和模型质量必须标记为 `not_tested`，不得推定通过。
 
 ## 仍需保留的实施证据
 
 - [Step 07 可靠录音与崩溃恢复](./quality/Step_07_可靠录音与崩溃恢复.md)
 - [Step 20 whisper.cpp 正式替换](./quality/Step_20_whisper.cpp_正式替换.md)
+- [Step 21 C++ Whisper 质量交付基线](./quality/Step_21_C++_质量交付基线.md)
+- [Step 22 Whisper 解码参数评测](./quality/Step_22_Whisper_解码参数评测.md)
+- [Step 23～24 官方 VAD、预览与最终转录](./quality/Step_23_24_VAD_与最终转录.md)
 - [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md)
 - [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md)
 
-旧 sherpa-onnx、Paraformer、Qwen3-ASR 和 Silero VAD 方案不在 `docs/` 保留并列副本；
+旧 sherpa-onnx、Paraformer、Qwen3-ASR 和旧 sherpa Silero VAD 方案不在 `docs/` 保留并列副本；
 需要追溯时使用 Git 历史。
 
 ## 维护规则
