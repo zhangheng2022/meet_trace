@@ -17,7 +17,7 @@
     "adaptiveNavigationAccessibilityPassed": null
   },
   "standardModel": {
-    "resourceBytes": 81904027,
+    "resourceBytes": 59707625,
     "rtfSamples": null,
     "sentenceLatencyMs": null,
     "finalTranscriptionDurationMs": null,
@@ -38,6 +38,6 @@
   "release": {
     "apkAuditPassed": null,
     "iosBuildAuditPassed": null,
-    "paraformerRedistributionConfirmed": null
+    "whisperCppLicenseConfirmed": null
   }
 }

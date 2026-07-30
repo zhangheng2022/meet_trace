@@ -12,7 +12,7 @@ import '../data/repositories/sqflite_summary_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
 import '../data/services/asr/platform_asr_device_risk_monitor.dart';
-import '../data/services/asr/sherpa_onnx_asr_engine_factory.dart';
+import '../data/services/asr/whisper_asr_engine_factory.dart';
 import '../data/services/diarization/speaker_diarization_service.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/platform_recording_foreground_lifecycle.dart';
@@ -36,8 +36,7 @@ import '../data/services/storage/startup_recovery_service.dart';
 import '../data/services/storage/local_data_control_service.dart';
 import '../data/services/storage/meeting_directory_deletion_service.dart';
 import '../data/services/summary/summary_generation_service.dart';
-import '../data/services/vad/bundled_silero_vad_model.dart';
-import '../data/services/vad/silero_vad_segmenter.dart';
+import '../data/services/vad/streaming_window_segmenter.dart';
 import '../domain/models/asr_model_registry.dart';
 import '../domain/models/meeting.dart';
 import '../domain/models/model_manifest.dart';
@@ -78,7 +77,6 @@ final class MeetTraceDependencies {
     required this.modelManifest,
     required this.modelDownloads,
     required this.meetingReadiness,
-    required this.vadModelPath,
   });
 
   final AppDatabase database;
@@ -90,7 +88,7 @@ final class MeetTraceDependencies {
   final SqfliteDiarizationPreferenceRepository diarizationPreferences;
   final SqfliteProcessingTaskRepository processingTasks;
   final SqfliteSummaryRepository summaries;
-  final SherpaOnnxAsrEngineFactory engineFactory;
+  final WhisperAsrEngineFactory engineFactory;
   final FinalTranscriptionService finalTranscription;
   final SpeakerDiarizationCoordinator diarization;
   final GenerateSummaryUseCase summaryGeneration;
@@ -98,7 +96,6 @@ final class MeetTraceDependencies {
   final ModelManifest modelManifest;
   final DownloadableModelService modelDownloads;
   final CheckMeetingReadinessUseCase meetingReadiness;
-  final String vadModelPath;
 
   static Future<MeetTraceDependencies> create() async {
     final rollback = <Future<void> Function()>[];
@@ -138,7 +135,7 @@ final class MeetTraceDependencies {
         registry: registry,
         currentAppVersion: '1.0.0',
       ).parse(await rootBundle.loadString('assets/models/manifest.json'));
-      final standard = registry.requireById(paraformerStandardModelId);
+      final standard = registry.requireById(whisperBaseStandardModelId);
       final standardManifest = manifest.models.singleWhere(
         (entry) => entry.modelId == standard.modelId,
       );
@@ -157,12 +154,8 @@ final class MeetTraceDependencies {
       }
       await installations.saveInstalledAndActivate(standardInstallation);
 
-      final vad = await BundledSileroVadModelService(
-        fileLayout: fileLayout,
-        assetSource: assetSource,
-      ).prepare();
       final leases = SqfliteModelUsageLeaseRepository(database);
-      final engineFactory = SherpaOnnxAsrEngineFactory(
+      final engineFactory = WhisperAsrEngineFactory(
         installations: installations,
         leases: leases,
         riskMonitor: createPlatformAsrDeviceRiskMonitor(),
@@ -225,7 +218,6 @@ final class MeetTraceDependencies {
         modelManifest: manifest,
         modelDownloads: modelDownloads,
         meetingReadiness: meetingReadiness,
-        vadModelPath: vad.modelPath,
       );
     } on Object catch (error, stackTrace) {
       for (final dispose in rollback.reversed) {

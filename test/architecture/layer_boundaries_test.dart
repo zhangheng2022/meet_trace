@@ -39,9 +39,9 @@ void main() {
 
   test('具体 ASR Engine 不泄漏到 ui', () {
     const concreteTypes = [
-      'ParaformerStandardAsrEngine',
-      'QwenAdvancedAsrEngine',
-      'SherpaOnnxAsrEngine',
+      'WhisperBaseStandardAsrEngine',
+      'WhisperSmallAdvancedAsrEngine',
+      'WhisperAsrEngine',
     ];
     final violations = <String>[];
     for (final file in _dartFilesUnder('lib/ui')) {

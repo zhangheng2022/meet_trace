@@ -67,7 +67,7 @@ final class StartMeetingUseCase {
     }
     if (availableVersions[defaultModelId] == null) {
       throw StartMeetingBlocked(
-        defaultModelId == qwenAdvancedModelId
+        defaultModelId == whisperSmallAdvancedModelId
             ? StartMeetingBlockReason.advancedModelUnavailable
             : StartMeetingBlockReason.standardModelUnavailable,
       );

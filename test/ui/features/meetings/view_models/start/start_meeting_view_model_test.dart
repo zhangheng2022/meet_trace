@@ -15,12 +15,12 @@ void main() {
   late TestAsrEngineFactory factory;
 
   setUp(() {
-    preferences = TestModelPreferences(paraformerStandardModelId);
+    preferences = TestModelPreferences(whisperBaseStandardModelId);
     installations = TestActiveInstallations();
     meetings = TestMeetingRepository();
     factory = TestAsrEngineFactory();
     final standard = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
+      whisperBaseStandardModelId,
     );
     installations.install(installations.installed(standard), active: true);
   });
@@ -28,7 +28,9 @@ void main() {
   tearDown(() => installations.dispose());
 
   test('直接使用全局默认模型并以待生成标题创建会议', () async {
-    final qwen = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
+    final qwen = AsrModelRegistry.alpha.requireById(
+      whisperSmallAdvancedModelId,
+    );
     installations.install(installations.installed(qwen), active: true);
     preferences = TestModelPreferences(qwen.modelId);
     final viewModel = _viewModel(preferences, installations, meetings, factory);
@@ -51,7 +53,7 @@ void main() {
   });
 
   test('默认高级模型不可用时阻止开始且不静默回退', () async {
-    preferences = TestModelPreferences(qwenAdvancedModelId);
+    preferences = TestModelPreferences(whisperSmallAdvancedModelId);
     final viewModel = _viewModel(preferences, installations, meetings, factory);
     await viewModel.load();
 
@@ -67,7 +69,7 @@ void main() {
       result: MeetingReadiness(
         microphonePermissionGranted: false,
         freeBytes: minimumRecordingFreeBytes,
-        defaultModelId: paraformerStandardModelId,
+        defaultModelId: whisperBaseStandardModelId,
         defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
         defaultModelAvailable: true,
       ),
@@ -96,8 +98,8 @@ void main() {
 
     expect(
       () => session!.meeting.changeRecordingModel(
-        recordingModelId: qwenAdvancedModelId,
-        recordingModelVersion: '2026-03-25',
+        recordingModelId: whisperSmallAdvancedModelId,
+        recordingModelVersion: 'v1.9.1-q5_1',
         fallbackReason: '不应允许',
       ),
       throwsA(isA<InvalidStateTransitionException>()),

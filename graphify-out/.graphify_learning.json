@@ -1,54 +1,6 @@
 {
-  "generated_at": "2026-07-29T09:49:04.355723+00:00",
+  "generated_at": "2026-07-29T11:58:08.166856+00:00",
   "nodes": {
-    "c_users_96227_desktop_works_meetily_ai_lib_theme_theme_appcolors": {
-      "code_fingerprint": "be030aa44add73fd1473c0edc2fca0a886ccc64da11d7d863abb830f3843c085",
-      "label": "AppColors",
-      "last": "2026-07-27T11:10:40.812778+00:00",
-      "provenance": [
-        {
-          "date": "2026-07-27T11:10:40.812778+00:00",
-          "outcome": "useful",
-          "q": "/impeccable document DESIGN.md"
-        }
-      ],
-      "score": 0.956092693,
-      "source_file": "lib/theme/colors.dart",
-      "status": "tentative",
-      "uses": 1
-    },
-    "c_users_96227_desktop_works_meetily_ai_lib_theme_theme_appstyle": {
-      "code_fingerprint": "1683a7f5b6f5a6efab2f5313e4d89314bf993d988e96a604dbf26ea80af66227",
-      "label": "AppStyle",
-      "last": "2026-07-27T11:10:40.812778+00:00",
-      "provenance": [
-        {
-          "date": "2026-07-27T11:10:40.812778+00:00",
-          "outcome": "useful",
-          "q": "/impeccable document DESIGN.md"
-        }
-      ],
-      "score": 0.956092693,
-      "source_file": "lib/theme/style.dart",
-      "status": "tentative",
-      "uses": 1
-    },
-    "c_users_96227_desktop_works_meetily_ai_lib_theme_theme_controlheight": {
-      "code_fingerprint": "1683a7f5b6f5a6efab2f5313e4d89314bf993d988e96a604dbf26ea80af66227",
-      "label": "controlHeight",
-      "last": "2026-07-27T11:35:20.343363+00:00",
-      "provenance": [
-        {
-          "date": "2026-07-27T11:35:20.343363+00:00",
-          "outcome": "useful",
-          "q": "开始会议按下状态样式异常"
-        }
-      ],
-      "score": 0.956471048,
-      "source_file": "lib/theme/style.dart",
-      "status": "tentative",
-      "uses": 1
-    },
     "connectivity": {
       "code_fingerprint": "",
       "label": "Connectivity",
@@ -60,7 +12,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.956789186,
+      "score": 0.954809885,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -76,13 +28,13 @@
           "q": "列表日期需要更加语义化"
         }
       ],
-      "score": 0.974071058,
+      "score": 0.972056006,
       "source_file": "",
       "status": "tentative",
       "uses": 1
     },
     "docs_quality_step_01__spike_conditional_go": {
-      "code_fingerprint": "4a0b7f5e1133617c0b6c2947d4f50a7cce08dfef1eed4b37a9d7c9bf9f4135ec",
+      "code_fingerprint": "",
       "label": "Step 01 Preliminary Conditional Go",
       "last": "2026-07-29T09:47:01.204909+00:00",
       "provenance": [
@@ -102,16 +54,21 @@
           "q": "分析当前项目的本地模型，是否需要更换模型或组合模型"
         }
       ],
-      "score": 2.985958108,
+      "score": 2.979781084,
       "source_file": "docs/quality/Step_01_双模型真机_Spike.md",
       "status": "preferred",
       "uses": 3
     },
     "docs_quality_step_01__spike_qwen_risk": {
-      "code_fingerprint": "4a0b7f5e1133617c0b6c2947d4f50a7cce08dfef1eed4b37a9d7c9bf9f4135ec",
+      "code_fingerprint": "",
       "label": "Qwen Memory and Latency Risk",
-      "last": "2026-07-29T09:47:01.204909+00:00",
+      "last": "2026-07-29T09:51:12.065070+00:00",
       "provenance": [
+        {
+          "date": "2026-07-29T09:51:12.065070+00:00",
+          "outcome": "useful",
+          "q": "ggml-org/whisper.cpp"
+        },
         {
           "date": "2026-07-29T09:47:01.204909+00:00",
           "outcome": "useful",
@@ -133,10 +90,10 @@
           "q": "分析当前项目的本地模型，是否需要更换模型或组合模型"
         }
       ],
-      "score": 3.985763041,
+      "score": 4.97548312,
       "source_file": "docs/quality/Step_01_双模型真机_Spike.md",
       "status": "preferred",
-      "uses": 4
+      "uses": 5
     },
     "graphify_out_memory_query_20260728_063918_app_time_ruler": {
       "code_fingerprint": "401a4fe3ab85bc551f00c0af41aa7061a336b9dd4555a6ff3ecd1d378255fa52",
@@ -154,7 +111,7 @@
           "q": "录音中为什么有三个时间"
         }
       ],
-      "score": 1.948568656,
+      "score": 1.94453767,
       "source_file": "graphify-out/memory/query_20260728_063918_录音中为什么有三个时间.md",
       "status": "preferred",
       "uses": 2
@@ -170,7 +127,7 @@
           "q": "录音中为什么有三个时间"
         }
       ],
-      "score": 0.974189162,
+      "score": 0.972173866,
       "source_file": "graphify-out/memory/query_20260728_063918_录音中为什么有三个时间.md",
       "status": "tentative",
       "uses": 1
@@ -186,7 +143,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.95466685,
+      "score": 0.95269194,
       "source_file": "ios/Runner/AppDelegate.swift",
       "status": "tentative",
       "uses": 1
@@ -202,7 +159,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.949816824,
+      "score": 0.947851946,
       "source_file": "lib/app/application.dart",
       "status": "tentative",
       "uses": 1
@@ -238,7 +195,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 4.7806998,
+      "score": 4.770810009,
       "source_file": "lib/app/application.dart",
       "status": "preferred",
       "uses": 5
@@ -254,13 +211,13 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.95466685,
+      "score": 0.95269194,
       "source_file": "lib/data/services/asr/android_proc_asr_device_risk_monitor.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_data_services_asr_asr_preview_coordinator_asrpreviewcoordinator": {
-      "code_fingerprint": "1c9538fdd2a285d45b2dae5f896bbbc127870c2983a1decbeacfeffb5eb21054",
+      "code_fingerprint": "7ee20abc7cbf15c1f2b3f10ec4dda77ab493b81f412545066bdf5977b61ef4ab",
       "label": "AsrPreviewCoordinator",
       "last": "2026-07-29T09:36:54.837558+00:00",
       "provenance": [
@@ -270,13 +227,29 @@
           "q": "https://github.com/moonshine-ai/moonshine"
         }
       ],
-      "score": 0.999804933,
+      "score": 0.997736645,
       "source_file": "lib/data/services/asr/asr_preview_coordinator.dart",
       "status": "tentative",
       "uses": 1
     },
+    "lib_data_services_asr_sherpa_onnx_sherpa_onnx_adapter": {
+      "code_fingerprint": "",
+      "label": "sherpa_onnx_adapter.dart",
+      "last": "2026-07-29T09:51:12.065070+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-29T09:51:12.065070+00:00",
+          "outcome": "useful",
+          "q": "ggml-org/whisper.cpp"
+        }
+      ],
+      "score": 0.997965391,
+      "source_file": "lib/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart",
+      "status": "tentative",
+      "uses": 1
+    },
     "lib_data_services_asr_sherpa_onnx_sherpa_onnx_asr_engine_sherpaonnxasrengine": {
-      "code_fingerprint": "d20b1cac2ec20e799bbc448c152a61eef11154240241c2ca09833b2b245efcd0",
+      "code_fingerprint": "",
       "label": "SherpaOnnxAsrEngine",
       "last": "2026-07-29T09:36:54.837558+00:00",
       "provenance": [
@@ -291,13 +264,13 @@
           "q": "分析当前项目的本地模型，是否需要更换模型或组合模型"
         }
       ],
-      "score": 1.99226539,
+      "score": 1.988144009,
       "source_file": "lib/data/services/asr/sherpa_onnx/sherpa_onnx_asr_engine.dart",
       "status": "preferred",
       "uses": 2
     },
     "lib_data_services_asr_spike_asr_spike_models_qwen": {
-      "code_fingerprint": "4e900a61c72b27be6ed217d794026635550ecada407eeffcea460b5e87162071",
+      "code_fingerprint": "",
       "label": "qwen",
       "last": "2026-07-29T09:47:01.204909+00:00",
       "provenance": [
@@ -307,7 +280,7 @@
           "q": "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09"
         }
       ],
-      "score": 0.999967068,
+      "score": 0.997898445,
       "source_file": "lib/data/services/asr/spike/asr_spike_models.dart",
       "status": "tentative",
       "uses": 1
@@ -323,7 +296,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.95466685,
+      "score": 0.95269194,
       "source_file": "lib/data/services/audio/flutter_foreground_recording_lifecycle.dart",
       "status": "tentative",
       "uses": 1
@@ -339,7 +312,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.956789186,
+      "score": 0.954809885,
       "source_file": "lib/data/services/models/platform_download_preflight_providers.dart",
       "status": "tentative",
       "uses": 1
@@ -365,7 +338,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 2.864302048,
+      "score": 2.858376692,
       "source_file": "lib/data/services/storage/app_database.dart",
       "status": "preferred",
       "uses": 3
@@ -381,13 +354,13 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 0.950074075,
+      "score": 0.948108665,
       "source_file": "lib/data/services/storage/app_file_layout.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_data_services_vad_bundled_silero_vad_model_manifest": {
-      "code_fingerprint": "43d8136d9e6f30ca9810c4a9107cc4eb740677833fe73b7b10499a6410263d0d",
+      "code_fingerprint": "",
       "label": "manifest",
       "last": "2026-07-27T04:20:13.745608+00:00",
       "provenance": [
@@ -397,13 +370,13 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.949816824,
+      "score": 0.947851946,
       "source_file": "lib/data/services/vad/bundled_silero_vad_model.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_data_services_vad_silero_vad_segmenter_silerovadsegmenter": {
-      "code_fingerprint": "830c8f8177a734615917e00fb875e4290f805efee698af72a70af36d15367db8",
+      "code_fingerprint": "",
       "label": "SileroVadSegmenter",
       "last": "2026-07-29T03:04:33.599569+00:00",
       "provenance": [
@@ -413,16 +386,21 @@
           "q": "分析各个模型"
         }
       ],
-      "score": 0.993530583,
+      "score": 0.991475275,
       "source_file": "lib/data/services/vad/silero_vad_segmenter.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_domain_models_asr_model_registry_asrmodelregistry": {
-      "code_fingerprint": "f6591ba678013491183255bf85ac6601157014ca259161cc5606873d650c78f6",
+      "code_fingerprint": "8243bf5598e57a5cd119b13fe95fed34a69ef6e7dbb50c3413cd41225148951b",
       "label": "AsrModelRegistry",
-      "last": "2026-07-29T09:47:01.204909+00:00",
+      "last": "2026-07-29T09:51:12.065070+00:00",
       "provenance": [
+        {
+          "date": "2026-07-29T09:51:12.065070+00:00",
+          "outcome": "useful",
+          "q": "ggml-org/whisper.cpp"
+        },
         {
           "date": "2026-07-29T09:47:01.204909+00:00",
           "outcome": "useful",
@@ -444,16 +422,21 @@
           "q": "分析当前项目的本地模型，是否需要更换模型或组合模型"
         }
       ],
-      "score": 3.985763041,
+      "score": 4.97548312,
       "source_file": "lib/domain/models/asr_model_registry.dart",
       "status": "preferred",
-      "uses": 4
+      "uses": 5
     },
     "lib_domain_models_asr_model_supportedlanguages": {
       "code_fingerprint": "0f9d6cb34179d4568b8cf16688e1dd93d1f0d43f0f6cd4bb8965e40a57ae39c7",
       "label": "supportedLanguages",
-      "last": "2026-07-29T09:47:01.204909+00:00",
+      "last": "2026-07-29T09:51:12.065070+00:00",
       "provenance": [
+        {
+          "date": "2026-07-29T09:51:12.065070+00:00",
+          "outcome": "useful",
+          "q": "ggml-org/whisper.cpp"
+        },
         {
           "date": "2026-07-29T09:47:01.204909+00:00",
           "outcome": "useful",
@@ -465,10 +448,10 @@
           "q": "https://github.com/moonshine-ai/moonshine"
         }
       ],
-      "score": 1.999772001,
+      "score": 2.993600481,
       "source_file": "lib/domain/models/asr_model.dart",
       "status": "preferred",
-      "uses": 2
+      "uses": 3
     },
     "lib_domain_models_meeting_meeting": {
       "code_fingerprint": "95a4b4baf510a153b56a86df9fe1384b8a9729ec425a9146116a80c7f9fc42c7",
@@ -496,13 +479,13 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 3.840576189,
+      "score": 3.832631223,
       "source_file": "lib/domain/models/meeting.dart",
       "status": "preferred",
       "uses": 4
     },
     "lib_main": {
-      "code_fingerprint": "2a19c1974916fd2382ea10b72480cd6cc0b6a19ff933c8a9c01876bb3dc39719",
+      "code_fingerprint": "5bf2cd13662ac43bcddec7ef864972acad613b7779846d6c0cb9c4e96940ba92",
       "label": "main.dart",
       "last": "2026-07-23T10:01:05.885475+00:00",
       "provenance": [
@@ -517,13 +500,13 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.741343819,
+      "score": 1.737741517,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
     },
     "lib_theme_theme": {
-      "code_fingerprint": "9164cc780cf339d97612e30b4380a275c06e194bbf496552d741bd5e1e51e3d9",
+      "code_fingerprint": "94adc689cdd5c3bbf4bf3df9032e6bc49c2dc60570a52f39ea2d259a989f6c7b",
       "label": "theme.dart",
       "last": "2026-07-28T02:13:53.474297+00:00",
       "provenance": [
@@ -553,13 +536,13 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 4.78152478,
+      "score": 4.771633283,
       "source_file": "lib/theme/theme.dart",
       "status": "preferred",
       "uses": 5
     },
     "lib_ui_core_app_ledger": {
-      "code_fingerprint": "050161f78ad679f9e745a2efe6d84f9c1a621eee8c8515850e3b687cce8eb56c",
+      "code_fingerprint": "463717acbd2a8b2814ee7ab1666db6825e1db86e17597613f931da4c95657f3b",
       "label": "app_ledger.dart",
       "last": "2026-07-28T03:06:51.294820+00:00",
       "provenance": [
@@ -569,7 +552,7 @@
           "q": "能左滑删除吗"
         }
       ],
-      "score": 0.970874062,
+      "score": 0.968865624,
       "source_file": "lib/ui/core/app_ledger.dart",
       "status": "tentative",
       "uses": 1
@@ -585,7 +568,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 0.949226774,
+      "score": 0.947263117,
       "source_file": "lib/ui/core/app_page_body.dart",
       "status": "tentative",
       "uses": 1
@@ -606,13 +589,13 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.898911681,
+      "score": 1.89498342,
       "source_file": "lib/ui/core/view_state.dart",
       "status": "preferred",
       "uses": 2
     },
     "lib_ui_features_meetings_view_models_detail_meeting_detail_view_model": {
-      "code_fingerprint": "9c3db86ff2b4dcfb2587387047a7962e89449258fdfce76889fb2a4b60dfd09b",
+      "code_fingerprint": "302da4190106fc4be2839e25a33104cb3fdf2af52d960e7b642949e19166afb7",
       "label": "meeting_detail_view_model.dart",
       "last": "2026-07-28T05:09:01.343117+00:00",
       "provenance": [
@@ -622,13 +605,13 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.972779022,
+      "score": 0.970766643,
       "source_file": "lib/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_ui_features_meetings_view_models_recording_recording_session_view_model": {
-      "code_fingerprint": "2c4d7d7e177d65fa809c284dbb54e938d6d2bff12682448e20b820dd07675837",
+      "code_fingerprint": "8915eddade3e1d9e9ff2cd1bec5bcac84d7cfb9110f913223d9c153dc9a63441",
       "label": "recording_session_view_model.dart",
       "last": "2026-07-28T05:09:01.343117+00:00",
       "provenance": [
@@ -638,13 +621,13 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.972779022,
+      "score": 0.970766643,
       "source_file": "lib/ui/features/meetings/view_models/recording/recording_session_view_model.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_ui_features_meetings_view_models_start_start_meeting_view_model": {
-      "code_fingerprint": "ca16e60578c8a086c4a4fdd1e7a165e461b3342ea03dab32095266223179abb1",
+      "code_fingerprint": "137fa482cead0c3554ceaf96bb1e3860fcb9870651cafd83618cdde31df2cc4e",
       "label": "start_meeting_view_model.dart",
       "last": "2026-07-28T05:09:01.343117+00:00",
       "provenance": [
@@ -654,13 +637,13 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.972779022,
+      "score": 0.970766643,
       "source_file": "lib/ui/features/meetings/view_models/start/start_meeting_view_model.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_ui_features_meetings_views_detail_meeting_detail_view": {
-      "code_fingerprint": "70568f6fa8315648d222f0602d6f212a429b5477ef7cd45d3fd58b3b541f8e6b",
+      "code_fingerprint": "75dba49bf68e0c8f2244fb8e1d692e5f3eab2ef9a820ca79439d89d2a745680e",
       "label": "meeting_detail_view.dart",
       "last": "2026-07-28T03:06:51.294820+00:00",
       "provenance": [
@@ -680,13 +663,13 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 2.869785743,
+      "score": 2.863849044,
       "source_file": "lib/ui/features/meetings/views/detail/meeting_detail_view.dart",
       "status": "preferred",
       "uses": 3
     },
     "lib_ui_features_meetings_views_list_meeting_list_view": {
-      "code_fingerprint": "6f818b98680db81d42af0e235c49145f406263a01b7c19c70a2d4424539adc67",
+      "code_fingerprint": "1b2cd93a8bbb08cc7902f09334d815e9084825383e00d4b46bc5cc08685803cf",
       "label": "meeting_list_view.dart",
       "last": "2026-07-28T06:31:44.769443+00:00",
       "provenance": [
@@ -716,7 +699,7 @@
           "q": "修复安卓标题栏为沉浸式"
         }
       ],
-      "score": 6.780762905,
+      "score": 6.766735602,
       "source_file": "lib/ui/features/meetings/views/list/meeting_list_view.dart",
       "status": "preferred",
       "uses": 7
@@ -732,7 +715,7 @@
           "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
         }
       ],
-      "score": 0.949684907,
+      "score": 0.947720303,
       "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
       "status": "tentative",
       "uses": 1
@@ -753,7 +736,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 1.899890899,
+      "score": 1.895960612,
       "source_file": "linux/runner/main.cc",
       "status": "preferred",
       "uses": 2
@@ -769,13 +752,29 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.870625267,
+      "score": 0.868824212,
       "source_file": "",
       "status": "tentative",
       "uses": 1
     },
+    "product_platform": {
+      "code_fingerprint": "d90e25625dd7adc6858ddbd9a21dc88d0772ce07552afcd03b7846c57bb78376",
+      "label": "Platform",
+      "last": "2026-07-27T12:28:44.337625+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-27T12:28:44.337625+00:00",
+          "outcome": "useful",
+          "q": "修复当前启动异常"
+        }
+      ],
+      "score": 0.95531057,
+      "source_file": "PRODUCT.md",
+      "status": "tentative",
+      "uses": 1
+    },
     "test_ui_features_meetings_views_list_meeting_list_view_test": {
-      "code_fingerprint": "c09b3bd3bc77b416ef7feb9be9d1a8d727b09e1d9ec127cfb37e4db8c806a3b7",
+      "code_fingerprint": "acded1ea8934219fd601f6346c7a06e4f2a886216871700f256fa8f87df1dc9f",
       "label": "meeting_list_view_test.dart",
       "last": "2026-07-28T06:31:44.769443+00:00",
       "provenance": [
@@ -785,13 +784,13 @@
           "q": "列表日期需要更加语义化"
         }
       ],
-      "score": 0.974071058,
+      "score": 0.972056006,
       "source_file": "test/ui/features/meetings/views/list/meeting_list_view_test.dart",
       "status": "tentative",
       "uses": 1
     },
     "web_manifest": {
-      "code_fingerprint": "923f337da7f8edc638ae000ffc84d026a6a1802ff1d9c09c5edb76a17a084af5",
+      "code_fingerprint": "e6f967eb047a30111cbdf2587596347642845576b7ac175334a640bcf9bc448b",
       "label": "web/manifest.json",
       "last": "2026-07-27T14:17:48.315238+00:00",
       "provenance": [
@@ -806,7 +805,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 1.909041688,
+      "score": 1.90509247,
       "source_file": "web/manifest.json",
       "status": "preferred",
       "uses": 2
@@ -822,7 +821,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.956789186,
+      "score": 0.954809885,
       "source_file": "windows/flutter/generated_plugin_registrant.cc",
       "status": "tentative",
       "uses": 1

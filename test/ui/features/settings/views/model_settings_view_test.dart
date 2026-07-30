@@ -38,7 +38,7 @@ void main() {
     testWidgets('设置页显示高级模型状态：$expectedStatus', (tester) async {
       final installations = TestActiveInstallations();
       final standard = AsrModelRegistry.alpha.requireById(
-        paraformerStandardModelId,
+        whisperBaseStandardModelId,
       );
       installations.install(installations.installed(standard), active: true);
       if (installation != null) {
@@ -48,7 +48,7 @@ void main() {
         );
       }
       final viewModel = ModelSettingsViewModel(
-        preferences: TestModelPreferences(paraformerStandardModelId),
+        preferences: TestModelPreferences(whisperBaseStandardModelId),
         installations: installations,
       );
 
@@ -59,14 +59,14 @@ void main() {
 
       expect(find.byType(FScaffold), findsOneWidget);
       expect(find.text('转录模型'), findsWidgets);
-      expect(find.text('标准模型（Paraformer）'), findsOneWidget);
+      expect(find.text('标准模型（Whisper Base）'), findsOneWidget);
       expect(find.text('已安装'), findsWidgets);
-      expect(find.text('高级模型（Qwen3-ASR）'), findsOneWidget);
+      expect(find.text('高级模型（Whisper Small）'), findsOneWidget);
       expect(
         find.text(expectedStatus),
         expectedStatus == '已安装' ? findsNWidgets(2) : findsOneWidget,
       );
-      expect(find.textContaining('约 941 MB'), findsOneWidget);
+      expect(find.textContaining('约 181 MB'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       viewModel.dispose();
@@ -78,11 +78,11 @@ void main() {
     var downloadCalls = 0;
     final installations = TestActiveInstallations();
     final standard = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
+      whisperBaseStandardModelId,
     );
     installations.install(installations.installed(standard), active: true);
     final viewModel = ModelSettingsViewModel(
-      preferences: TestModelPreferences(paraformerStandardModelId),
+      preferences: TestModelPreferences(whisperBaseStandardModelId),
       installations: installations,
       actions: AdvancedModelActions(download: () async => downloadCalls++),
     );
@@ -105,11 +105,11 @@ void main() {
     final installations = TestActiveInstallations();
     final registry = AsrModelRegistry.alpha;
     installations.install(
-      installations.installed(registry.requireById(paraformerStandardModelId)),
+      installations.installed(registry.requireById(whisperBaseStandardModelId)),
       active: true,
     );
     final viewModel = ModelSettingsViewModel(
-      preferences: TestModelPreferences(paraformerStandardModelId),
+      preferences: TestModelPreferences(whisperBaseStandardModelId),
       installations: installations,
       actions: AdvancedModelActions(
         download: () => download.future,
@@ -143,7 +143,9 @@ ModelInstallation _qwenState(
   ModelInstallationState state, {
   String? errorCode,
 }) {
-  final descriptor = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
+  final descriptor = AsrModelRegistry.alpha.requireById(
+    whisperSmallAdvancedModelId,
+  );
   return ModelInstallation(
     modelId: descriptor.modelId,
     version: descriptor.version,

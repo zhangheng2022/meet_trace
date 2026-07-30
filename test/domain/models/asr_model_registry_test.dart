@@ -8,10 +8,10 @@ void main() {
       final registry = AsrModelRegistry.alpha;
 
       expect(registry.models, hasLength(2));
-      expect(registry.defaultModel.modelId, paraformerStandardModelId);
+      expect(registry.defaultModel.modelId, whisperBaseStandardModelId);
       expect(registry.defaultModel.tier, AsrModelTier.standard);
       expect(
-        registry.requireById(qwenAdvancedModelId).installationType,
+        registry.requireById(whisperSmallAdvancedModelId).installationType,
         AsrInstallationType.downloadable,
       );
     });

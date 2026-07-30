@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/asr/asr_engine.dart';
 import 'package:meettrace/data/services/asr/asr_preview_coordinator.dart';
-import 'package:meettrace/data/services/vad/silero_vad_segmenter.dart';
+import 'package:meettrace/data/services/vad/voice_activity_segmenter.dart';
 import 'package:meettrace/domain/models/app_failure.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
@@ -19,7 +19,7 @@ void main() {
   test('两个模型使用完全相同的 VAD 全局区间', () async {
     final standard = _FakeAsrEngine(AsrModelRegistry.alpha.defaultModel);
     final advanced = _FakeAsrEngine(
-      AsrModelRegistry.alpha.requireById(qwenAdvancedModelId),
+      AsrModelRegistry.alpha.requireById(whisperSmallAdvancedModelId),
     );
     final standardCoordinator = _coordinator(
       engine: standard,

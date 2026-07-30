@@ -11,7 +11,7 @@ import '../../repositories/repository_contracts.dart';
 import '../storage/app_file_layout.dart';
 import 'model_file_verifier.dart';
 
-const minimumAdvancedModelFreeBytes = 2 * 1024 * 1024 * 1024;
+const minimumAdvancedModelFreeBytes = 512 * 1024 * 1024;
 
 enum DownloadNetworkKind { offline, unmetered, metered, unknown }
 

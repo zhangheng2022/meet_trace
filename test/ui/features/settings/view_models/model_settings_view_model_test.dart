@@ -10,10 +10,10 @@ void main() {
   late TestActiveInstallations installations;
 
   setUp(() {
-    preferences = TestModelPreferences(paraformerStandardModelId);
+    preferences = TestModelPreferences(whisperBaseStandardModelId);
     installations = TestActiveInstallations();
     final standard = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
+      whisperBaseStandardModelId,
     );
     installations.install(installations.installed(standard), active: true);
   });
@@ -29,21 +29,23 @@ void main() {
     await viewModel.load();
 
     expect(viewModel.isLoading, isFalse);
-    expect(viewModel.defaultModelId, paraformerStandardModelId);
+    expect(viewModel.defaultModelId, whisperBaseStandardModelId);
     expect(viewModel.options, hasLength(2));
     expect(
-      viewModel.optionFor(paraformerStandardModelId).status,
+      viewModel.optionFor(whisperBaseStandardModelId).status,
       AsrModelUiStatus.installed,
     );
     expect(
-      viewModel.optionFor(qwenAdvancedModelId).status,
+      viewModel.optionFor(whisperSmallAdvancedModelId).status,
       AsrModelUiStatus.notInstalled,
     );
     viewModel.dispose();
   });
 
   test('只有已安装模型可以保存为后续会议默认值', () async {
-    final qwen = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
+    final qwen = AsrModelRegistry.alpha.requireById(
+      whisperSmallAdvancedModelId,
+    );
     final viewModel = ModelSettingsViewModel(
       preferences: preferences,
       installations: installations,

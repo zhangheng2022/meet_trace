@@ -51,7 +51,7 @@ final class ModelSettingsViewModel extends ChangeNotifier {
     registry.requireById(modelId);
     final option = optionFor(modelId);
     if (!option.isInstalled) {
-      _errorMessage = option.descriptor.modelId == qwenAdvancedModelId
+      _errorMessage = option.descriptor.modelId == whisperSmallAdvancedModelId
           ? '请先下载并校验高级模型'
           : '标准模型尚未准备完成';
       notifyListeners();

@@ -1,0 +1,19 @@
+name: meettrace_whisper_native
+description: MeetTrace-owned Native Assets wrapper for the official whisper.cpp runtime.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  code_assets: ^1.2.1
+  ffi: ^2.2.0
+  # Flutter 3.44.8 pins meta 1.18.0. hooks 2.1.0 and
+  # native_toolchain_c 0.19.3 require meta 1.19.0.
+  hooks: ">=2.0.2 <2.1.0"
+  native_toolchain_c: ">=0.19.2 <0.19.3"
+
+dev_dependencies:
+  ffigen: ^21.0.0
+  lints: ^6.1.0

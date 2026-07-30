@@ -42,8 +42,8 @@ void main() {
         }) async {
           final completed = _snapshot(
             id: 'qwen-new',
-            modelId: qwenAdvancedModelId,
-            modelVersion: '2026-03-25',
+            modelId: whisperSmallAdvancedModelId,
+            modelVersion: 'v1.9.1-q5_1',
             text: '高级模型最终文本',
           );
           final meeting = fixture.meetings.value!
@@ -70,10 +70,10 @@ void main() {
     );
     await tester.tap(find.text('录音'));
     await tester.pumpAndSettle();
-    expect(find.text('标准模型（Paraformer）'), findsOneWidget);
-    expect(find.text('高级模型（Qwen3-ASR）'), findsOneWidget);
+    expect(find.text('标准模型（Whisper Base）'), findsOneWidget);
+    expect(find.text('高级模型（Whisper Small）'), findsOneWidget);
 
-    final advanced = find.text('高级模型（Qwen3-ASR）');
+    final advanced = find.text('高级模型（Whisper Small）');
     await tester.ensureVisible(advanced);
     await tester.tap(advanced);
     await tester.pump();
@@ -82,7 +82,7 @@ void main() {
     await tester.tap(retranscribe);
     await tester.pumpAndSettle();
 
-    expect(fixture.runner.calls.single.modelId, qwenAdvancedModelId);
+    expect(fixture.runner.calls.single.modelId, whisperSmallAdvancedModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
     final transcriptTab = find.text('转录');
     await tester.ensureVisible(transcriptTab);
@@ -90,7 +90,7 @@ void main() {
     await tester.tap(transcriptTab);
     await tester.pumpAndSettle();
     expect(find.textContaining('高级模型最终文本'), findsOneWidget);
-    expect(find.textContaining('来源模型：高级模型（Qwen3-ASR）'), findsOneWidget);
+    expect(find.textContaining('来源模型：高级模型（Whisper Small）'), findsOneWidget);
     await fixture.dispose();
   });
 
@@ -486,11 +486,13 @@ _Fixture _fixture(
   final installations = TestActiveInstallations();
   final registry = AsrModelRegistry.alpha;
   installations.install(
-    installations.installed(registry.requireById(paraformerStandardModelId)),
+    installations.installed(registry.requireById(whisperBaseStandardModelId)),
   );
   if (installQwen) {
     installations.install(
-      installations.installed(registry.requireById(qwenAdvancedModelId)),
+      installations.installed(
+        registry.requireById(whisperSmallAdvancedModelId),
+      ),
     );
   }
   final runner = DetailTranscriptionRunner(
@@ -586,9 +588,9 @@ Meeting _meeting({
     status: status,
     audioPath: '/audio/fact.pcm',
     audioDurationMs: 2000,
-    requestedModelId: paraformerStandardModelId,
-    recordingModelId: paraformerStandardModelId,
-    recordingModelVersion: '2024-03-09',
+    requestedModelId: whisperBaseStandardModelId,
+    recordingModelId: whisperBaseStandardModelId,
+    recordingModelVersion: 'v1.9.1-q5_1',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
     activeSummaryId: activeSummaryId,
   );
@@ -597,8 +599,8 @@ Meeting _meeting({
 TranscriptSnapshot _snapshot({
   required String id,
   TranscriptSnapshotStatus status = TranscriptSnapshotStatus.complete,
-  String modelId = paraformerStandardModelId,
-  String modelVersion = '2024-03-09',
+  String modelId = whisperBaseStandardModelId,
+  String modelVersion = 'v1.9.1-q5_1',
   String text = '最终事实文本',
   String? speakerId,
 }) {

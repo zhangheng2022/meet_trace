@@ -90,8 +90,8 @@ void main() {
 
     final retry = fixture.runner.calls.last;
     expect(retry.retrySnapshotId, failed.id);
-    expect(retry.modelId, paraformerStandardModelId);
-    expect(retry.modelVersion, '2024-03-09');
+    expect(retry.modelId, whisperBaseStandardModelId);
+    expect(retry.modelVersion, 'v1.9.1-q5_1');
     expect(
       fixture.viewModel.snapshot?.status,
       TranscriptSnapshotStatus.complete,
@@ -119,8 +119,8 @@ void main() {
         }) async {
           final completed = _snapshot(
             id: 'qwen-new',
-            modelId: qwenAdvancedModelId,
-            modelVersion: '2026-03-25',
+            modelId: whisperSmallAdvancedModelId,
+            modelVersion: 'v1.9.1-q5_1',
           );
           final processing = fixture.meetings.value!.beginFinalTranscription();
           final meeting = processing.activateFinalTranscript(completed);
@@ -132,10 +132,10 @@ void main() {
         };
     await fixture.viewModel.load();
 
-    fixture.viewModel.selectModel(qwenAdvancedModelId);
+    fixture.viewModel.selectModel(whisperSmallAdvancedModelId);
     await fixture.viewModel.retranscribe();
 
-    expect(fixture.runner.calls.single.modelId, qwenAdvancedModelId);
+    expect(fixture.runner.calls.single.modelId, whisperSmallAdvancedModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
     expect(fixture.viewModel.snapshot?.id, 'qwen-new');
     await fixture.dispose();
@@ -145,8 +145,8 @@ void main() {
     final pending = _snapshot(
       id: 'qwen-pending',
       status: TranscriptSnapshotStatus.processing,
-      modelId: qwenAdvancedModelId,
-      modelVersion: '2026-03-25',
+      modelId: whisperSmallAdvancedModelId,
+      modelVersion: 'v1.9.1-q5_1',
     );
     final fixture = _fixture(_meeting(), installQwen: true);
     fixture.transcripts.records[pending.id] = pending;
@@ -160,8 +160,8 @@ void main() {
         }) async {
           final completed = _snapshot(
             id: pending.id,
-            modelId: qwenAdvancedModelId,
-            modelVersion: '2026-03-25',
+            modelId: whisperSmallAdvancedModelId,
+            modelVersion: 'v1.9.1-q5_1',
           );
           final meeting = fixture.meetings.value!.activateFinalTranscript(
             completed,
@@ -177,8 +177,8 @@ void main() {
 
     final resumed = fixture.runner.calls.single;
     expect(resumed.retrySnapshotId, pending.id);
-    expect(resumed.modelId, qwenAdvancedModelId);
-    expect(resumed.modelVersion, '2026-03-25');
+    expect(resumed.modelId, whisperSmallAdvancedModelId);
+    expect(resumed.modelVersion, 'v1.9.1-q5_1');
     await fixture.dispose();
   });
 
@@ -451,11 +451,13 @@ _Fixture _fixture(
   final installations = TestActiveInstallations();
   final registry = AsrModelRegistry.alpha;
   installations.install(
-    installations.installed(registry.requireById(paraformerStandardModelId)),
+    installations.installed(registry.requireById(whisperBaseStandardModelId)),
   );
   if (installQwen) {
     installations.install(
-      installations.installed(registry.requireById(qwenAdvancedModelId)),
+      installations.installed(
+        registry.requireById(whisperSmallAdvancedModelId),
+      ),
     );
   }
   late final DetailTranscriptionRunner runner;
@@ -530,9 +532,9 @@ Meeting _meeting({
     status: status,
     audioPath: '/audio/fact.pcm',
     audioDurationMs: 2000,
-    requestedModelId: paraformerStandardModelId,
-    recordingModelId: paraformerStandardModelId,
-    recordingModelVersion: '2024-03-09',
+    requestedModelId: whisperBaseStandardModelId,
+    recordingModelId: whisperBaseStandardModelId,
+    recordingModelVersion: 'v1.9.1-q5_1',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
     activeSummaryId: activeSummaryId,
   );
@@ -541,8 +543,8 @@ Meeting _meeting({
 TranscriptSnapshot _snapshot({
   required String id,
   TranscriptSnapshotStatus status = TranscriptSnapshotStatus.complete,
-  String modelId = paraformerStandardModelId,
-  String modelVersion = '2024-03-09',
+  String modelId = whisperBaseStandardModelId,
+  String modelVersion = 'v1.9.1-q5_1',
   String? speakerId,
 }) {
   return TranscriptSnapshot(

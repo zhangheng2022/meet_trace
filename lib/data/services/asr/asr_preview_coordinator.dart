@@ -7,7 +7,7 @@ import '../../../domain/models/recording.dart';
 import '../../../domain/models/transcript.dart';
 import '../../../domain/use_cases/plan_asr_preview_windows.dart';
 import '../audio/recording_ports.dart';
-import '../vad/silero_vad_segmenter.dart';
+import '../vad/voice_activity_segmenter.dart';
 import 'asr_engine.dart';
 import 'asr_preview_session.dart';
 

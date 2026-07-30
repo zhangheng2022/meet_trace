@@ -180,7 +180,7 @@ String _readinessMessage(MeetingReadiness readiness) {
       '需要麦克风权限。授权后才能开始会议，未授权时不会创建会议。',
     MeetingReadinessIssue.insufficientStorage => '存储空间不足。请至少保留 128 MB 可用空间后重试。',
     MeetingReadinessIssue.defaultModelUnavailable =>
-      readiness.defaultModelId == qwenAdvancedModelId
+      readiness.defaultModelId == whisperSmallAdvancedModelId
           ? '默认高级模型不可用，请先在设置中下载或切换默认模型'
           : '默认标准模型尚未准备完成，暂时无法开始会议',
   };
