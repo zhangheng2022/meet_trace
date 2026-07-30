@@ -1,6 +1,6 @@
 # 会迹 Codex Alpha 开发步骤
 
-> 状态：Rust ASR 分阶段迁移实施顺序
+> 状态：当前实施顺序
 > 更新日期：2026-07-30
 
 ## 已完成基线
@@ -12,20 +12,19 @@
 
 ## 当前交付顺序
 
-详细任务、命令和回退点见
-[Rust + whisper-rs 流式 ASR 迁移计划](./superpowers/plans/2026-07-30-rust-whisper-streaming-asr-migration.md)。
+1. 固定官方源码 commit、模型 revision、大小、SHA-256 和 NOTICE。
+2. 以本地 `meettrace_whisper_native` package 隔离 Native Assets、C ABI 和 `ffigen` 产物。
+3. 用 `WhisperAdapter` isolate 封装推理、真实取消、错误映射和资源释放。
+4. 用 Base/Small 两个 Engine 实现统一 `AsrEngine`，由 Factory 按会议锁定模型创建。
+5. 用连续重叠切窗替换旧 VAD 依赖，保持预览可丢弃、录音不可丢失。
+6. 更新 Registry、Manifest、设置文案、下载空间门槛和旧默认模型迁移。
+7. 删除 sherpa-onnx、ONNX、Silero 代码、依赖、资产与旧活动文档。
+8. 运行格式化、静态分析、全量测试、Android Debug APK、APK 内容审计和 OCR 代码审查。
+9. 在 macOS 完成 iOS Debug 构建和 arm64 真机验证。
+10. 在相同语料与设备档位上补齐双模型 RTF、延迟、内存、能耗、温控和召回率门禁。
 
-1. 冻结旧 C++ 后端自动化、Android/iOS 真机和同语料质量基线，先更新 PRD。
-2. 固定 Rust 1.88.0、FRB 2.12.0/Cargokit、`whisper-rs` 0.16.0，完成双平台最小 Spike。
-3. 只有 Android+iOS 模型加载、推理、取消、释放和 Android 16 KB 检查全部通过，才进入
-   Rust 生产接入。
-4. 在 Rust 实现 Whisper 识别与滚动未决尾段 VAD；不同 PCM chunk 切分必须得到相同区间。
-5. 通过现有 `WhisperWorkerFactory` seam 接入，保持 `AsrEngine` 和 Domain 不变。
-6. VAD ingress 与 ASR 队列独立于事实写入；阻塞/超限只降级临时预览。
-7. 最终转录从完整事实 PCM 重跑，保持模型锁定、租约、失败恢复和快照原子激活。
-8. 同设备、同权重、同语料对比 C++/Rust；通过质量、延迟、内存、功耗和温控门槛后，
-   默认切换 Rust。
-9. 再删除旧 C++/FFI/Native Assets 链，完成全量测试、Android/iOS 构建、OCR 和 Graphify。
+Rust + `whisper-rs` 候选迁移已在阶段 1 判定 No-Go，后续阶段停止；原因和证据见
+[Rust ASR 阶段 1 No-Go 审查](./quality/Rust_ASR_阶段1审查.md)。
 
 ## 阻断门槛
 
@@ -33,8 +32,4 @@
 - Android/iOS 任一目标 ABI 缺失原生库，或包内混入 Small 权重/旧 ONNX 权重：阻断对应平台。
 - 未解决的 OCR Critical/High：阻断交付。
 - iOS 构建、后台录音与真机模型证据未闭环：双平台 Alpha 发布保持 `blocked`。
-- `whisper-rs` 需要 raw API、私有 fork、手写 JNI 或手工 `.so` 才能支持移动端：停止迁移，
-  保留当前 C++ 后端。
-- Rust/VAD 未达到同语料 cutover 门槛：不得切默认 backend 或删除旧后端。
-
 历史 sherpa-onnx 实施步骤从 Git 查看，不在活动文档中继续维护。

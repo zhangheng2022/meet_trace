@@ -1,0 +1,4 @@
+rust_input: crate::api
+rust_root: rust/
+dart_output: lib/data/services/asr/rust_bridge/generated
+web: false
