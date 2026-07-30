@@ -53,6 +53,24 @@ void main() {
       expect(phase04['asrContextLifecyclePassed'], isFalse);
     });
 
+    test('已有质量证据时不被后续 Android 冒烟覆盖评测设备', () {
+      final template = _template()..['rawMetricsRef'] = 'evidence/quality.json';
+      (template['environment']! as Map<String, Object?>)['deviceId'] =
+          'quality-device';
+
+      final input = const Phase04ReleaseInputBuilder().build(
+        template: template,
+        androidEvidence: _androidEvidence(),
+        androidEvidenceRef: 'evidence/android.json',
+        androidEvidenceSha256: 'a' * 64,
+      );
+
+      expect(
+        (input['environment']! as Map<String, Object?>)['deviceId'],
+        'quality-device',
+      );
+    });
+
     test('拒绝非 passed、非 x86_64 或无效哈希证据', () {
       final failed = _androidEvidence()..['status'] = 'failed';
       expect(
@@ -90,7 +108,9 @@ void main() {
 }
 
 Map<String, Object?> _template() => {
-  'schemaVersion': 5,
+  'schemaVersion': 6,
+  'rawMetricsRef': null,
+  'rawMetricsSha256': null,
   'environment': <String, Object?>{'deviceId': null},
   'vad': <String, Object?>{'failureRecordingContinues': null},
   'phase04': <String, Object?>{

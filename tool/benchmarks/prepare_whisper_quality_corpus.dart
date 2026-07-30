@@ -27,7 +27,10 @@ Future<void> main(List<String> arguments) async {
     const JsonEncoder.withIndent('  ').convert(corpus.toPreparedJson()),
     flush: true,
   );
-  stdout.writeln('已校验 ${corpus.samples.length} 段受控 PCM；未输出本地路径。');
+  stdout.writeln(
+    '已校验 ${corpus.samples.length} 段受控 PCM；'
+    '本地路径仅写入指定的私有 prepared 输出。',
+  );
 }
 
 String? _valueOf(List<String> arguments, String name) {

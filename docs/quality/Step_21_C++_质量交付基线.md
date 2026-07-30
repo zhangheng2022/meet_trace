@@ -39,7 +39,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，新增评测链后共 398 tests |
+| `flutter test` | 通过，新增评测链后共 406 tests |
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
@@ -59,8 +59,9 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
    独立产物门槛，不能由“无警告”代替。
 2. 模拟器首次录音会出现通知和麦克风权限弹窗；自动脚本必须在测试前显式授权 Debug 包，
    避免把交互等待误判为录音挂死。
-3. 仓库外尚未配置不少于 20 段的真实去敏产品会议语料，因此 Base/Small 固定窗口质量
-   基线、VAD 噪声幻觉下降和关键事实召回率暂时没有可声明的产品结果。
+3. 仓库外尚未配置 60 段真实去敏产品会议语料（20 段静音、20 段纯噪声、20 段带
+   关键事实的语音，且覆盖语音起止边界），因此 Base/Small 固定窗口质量基线、VAD
+   噪声幻觉下降和关键事实召回率暂时没有可声明的产品结果。
 4. 阶段 0 无 VAD 基线中，Base 对 1 秒纯静音连续 10 次推理均产生片段；阶段 3
    已接入官方 Silero VAD，API 36 x86_64 的 3 秒纯静音返回 0 片段。
 
@@ -79,17 +80,22 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   - `product-meeting`：唯一可用于关闭正式产品质量门槛；
   - `public-regression`：公开数据集回归，不替代产品会议证据；
   - `synthetic-smoke`：合成链路烟测，不用于识别质量结论。
-- 主机在推送前重新校验不少于 20 段、SHA-256、PCM 字节数和时长；设备临时目录在
-  `finally` 中按受限路径清理。
+- 正式 `product-meeting` 矩阵必须分别覆盖不少于 20 段纯静音、20 段纯噪声和
+  20 段带去敏关键事实的会议语音；语音样本还必须同时覆盖起始和结束边界。
+  主机在推送前重新校验上述覆盖、SHA-256、PCM 字节数和时长；设备临时目录在
+  `finally` 中按受限路径清理。公开/合成轨道仍可使用各自的 20 段受控语料。
 - 原始观测携带 corpus ID、证据类别和 manifest SHA-256；聚合前必须与输入 manifest
   完全匹配。重用输出目录时先清除旧私有 transcript，避免残留正文混入新一轮证据。
-- Base/Small 和选择的 Profile 默认同时执行 `fixed-window-v1` 与
-  `vad-segmented-v1`。前者保留阶段 0 的固定 2 秒窗口对照，后者先以生产
-  `WhisperVadSegmenter` 从完整 PCM 生成全局区间，再只识别语音区间。
+- Base/Small 和 Baseline/Preview/Final 默认同时执行 `fixed-window-v1`、
+  `vad-segmented-v1` 与 `vad-recall-035-v1` 完整矩阵。固定窗口保留阶段 0
+  对照，另两条管线分别验证生产 VAD 和召回候选；任何缺项都会显式阻断质量矩阵门禁。
 - 原始观测和聚合报告 schema 为 `4`，每条观测必须携带 `pipelineId` 和实际 ASR
   调用次数；VAD 管线还必须携带检测语音段数与检测语音时长。聚合器只在
   相同设备、模型、版本和 Profile 内计算 VAD 相对固定窗口的噪声幻觉下降率与关键事实
   召回变化。固定窗口噪声幻觉为零时下降率保持 `null`，不得伪造 100% 改善。
+- 聚合报告额外保存 manifest SHA-256、同一设备/管线执行证明，以及关键事实样本数、
+  语音起始/结束样本数和首尾关键事实召回率；标点归一化后为空或重复的事实会在推送前
+  被拒绝。
 - 设备端逐条输出原始观测，主机再把正文保存为 `.spike/` 下 transcript 引用。
 - JSON/CSV 报告不得包含录音路径或录音内容。能耗、温控未采集时保持 `null` 并记录
   sample count 为 0，不得伪装成 `0 Wh` 或 `false`。
@@ -133,17 +139,22 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 
 ### 5.3 阶段 0～4 自动发布评估
 
-- `AlphaReleaseEvaluationInput` schema 已升级为 `5`，输出报告 schema 为 `3`；旧输入
+- `AlphaReleaseEvaluationInput` schema 已升级为 `6`，输出报告 schema 为 `3`；旧输入
   schema 或缺少新增字段时返回 `blocked`，不会沿用旧默认值。
 - 正式质量门槛要求 `corpus.evidenceClass=product-meeting`，并校验 manifest
   SHA-256、来源和授权标识。`public-regression` 与 `synthetic-smoke` 会明确失败，
   不能拼装成 `go`。
 - 评估器显式比较 Base VAD 相对固定窗口、Small 相对 Base 的关键事实召回，并要求
-  20 个 Preview 延迟样本、语音首尾事实全部保留，以及 ASR/VAD 百次生命周期、事实
-  PCM、模型锁定、预览丢弃、最终时间戳、快照原子性和总结事实源等阶段 0～4 不变量。
+  20 个 Preview 延迟样本、完整 Profile/Pipeline 矩阵、语音首尾事实全部保留，以及
+  ASR/VAD 百次生命周期、事实 PCM、模型锁定、预览丢弃、最终时间戳、快照原子性和
+  总结事实源等阶段 0～4 不变量。
+- `build_phase_0_4_quality_input.dart` 通过字段白名单只推广不含音频、绝对路径、正文、
+  transcript 引用和私有观测的聚合报告，并自动写入 corpus、同设备/同语料、
+  Base/Small、VAD 和 Preview 指标。评估 CLI 会复算报告 SHA-256、拒绝白名单外字段
+  并逐字段验证输入，不能以手改 JSON 代替真实矩阵。
 - 当前机器可读输入和报告位于
   `docs/quality/evidence/android-emulator/phase-0-4-release-input.json` 与
-  `phase-0-4-release-report.json`。结果为 `blocked`：22 项通过、0 项失败、22 项
+  `phase-0-4-release-report.json`。结果为 `blocked`：22 项通过、0 项失败、24 项
   缺失。输入显式声明 `evaluationScope=phase-0-4`，只保留阶段 0～4 的真实产品语料
   与产品质量缺口；阶段 5 以后的 Android 真机、iOS 和 Release 门槛不再污染本阶段
   结论，也不以代理数据填充。Android 模拟器证据由完整通过日志推导，四份日志分别
@@ -156,9 +167,9 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | 产品边界批准并统一 | 通过 |
 | 工程基线可重复 | 通过 |
-| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 5 另显式阻断代理语料、未绑定 Android 证据和阶段 0～4 不变量缺失 |
+| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 6 另显式阻断代理语料、未绑定 Android/质量证据、矩阵缺项和阶段 0～4 不变量缺失 |
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
-| 20 段真实去敏产品会议语料可运行 | `blocked`：未提供语料环境变量 |
+| 正式产品会议矩阵可运行 | `blocked`：未提供 20 段静音、20 段噪声和 20 段带事实语音的环境变量 |
 | 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
 | 固定窗口与 VAD 分段可同条件比较 | 通过：多管线 Android 执行、schema 4 可观测性及聚合链已实现 |
 
@@ -293,7 +304,7 @@ SHA-256；旧 transcript 在受限 `.spike` 输出目录内清除，噪声幻觉
 `.spike/` 写入边界、私有输入契约和实际 PCM 峰值的自动化覆盖，复审未发现或保留
 Critical/High 或有实际影响的 Medium。
 
-自动发布评估 schema 4 完成后，按 workspace 模式审查 6 个 reviewable 文件并手工
+自动发布评估 schema 6 完成后，按 workspace 模式审查 6 个 reviewable 文件并手工
 核对三份 Markdown。审查发现直接 Domain 调用传入非有限召回值时，No-Go 报告可能因
 JSON 不支持 `NaN/Infinity` 而无法输出；现已净化报告值并新增回归测试。复审未发现
 或保留 Critical/High 或有实际影响的 Medium。

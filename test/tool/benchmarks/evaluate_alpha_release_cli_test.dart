@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/use_cases/evaluate_alpha_release.dart';
 
 import '../../../tool/benchmarks/evaluate_alpha_release.dart';
+import '../../../tool/benchmarks/phase_0_4_quality_input_builder.dart';
+import '../../../tool/benchmarks/whisper_quality_protocol.dart';
 
 void main() {
   test('发布评估 CLI 支持命名参数和兼容位置参数', () {
@@ -118,6 +120,44 @@ void main() {
     );
   });
 
+  test('阶段 0 到 4 输入必须与哈希绑定的质量报告逐字段一致', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'meettrace-quality-release-evidence-',
+    );
+    try {
+      final report = _qualityReport();
+      final reportFile = File('${root.path}/evidence/quality.json');
+      await reportFile.parent.create(recursive: true);
+      await reportFile.writeAsString(jsonEncode(report));
+      final digest = sha256.convert(await reportFile.readAsBytes()).toString();
+      final template = const AlphaReleaseEvaluationInput(
+        evaluationScope: AlphaReleaseEvaluationScope.phase0To4,
+        schemaVersion: alphaReleaseInputSchemaVersion,
+      ).toJson();
+      final derivedJson = const Phase04QualityInputBuilder().build(
+        template: template,
+        qualityReport: report,
+        rawMetricsRef: 'evidence/quality.json',
+        rawMetricsSha256: digest,
+      );
+      final derived = AlphaReleaseEvaluationInput.fromJson(derivedJson);
+
+      await verifyAlphaReleaseEvidence(input: derived, repositoryRoot: root);
+
+      final standard = derivedJson['standardModel']! as Map<String, Object?>;
+      standard['keyFactRecallRatio'] = 0.1;
+      await expectLater(
+        verifyAlphaReleaseEvidence(
+          input: AlphaReleaseEvaluationInput.fromJson(derivedJson),
+          repositoryRoot: root,
+        ),
+        throwsFormatException,
+      );
+    } finally {
+      await root.delete(recursive: true);
+    }
+  });
+
   test('提交的阶段 0 到 4 blocked 报告与当前评估器一致', () async {
     final inputJson =
         jsonDecode(
@@ -147,3 +187,76 @@ void main() {
     );
   });
 }
+
+Map<String, Object?> _qualityReport() => {
+  'schemaVersion': 4,
+  'status': 'passed',
+  'capturedAtUtc': '2026-07-31T00:00:00Z',
+  'corpusId': 'product-meeting-v1',
+  'corpusDeidentified': true,
+  'corpusEvidenceClass': 'product-meeting',
+  'corpusManifestSha256': 'd' * 64,
+  'corpusProvenance': const {
+    'sourceId': 'deidentified-internal-v1',
+    'licenseId': 'internal-consented-v1',
+  },
+  'sampleCount': 60,
+  'execution': {
+    'platform': 'android-emulator',
+    'deviceId': 'android-emulator-x86_64-api-36',
+    'pipelineIds': const [
+      whisperFixedWindowPipelineId,
+      whisperVadSegmentedPipelineId,
+      whisperVadRecallCandidatePipelineId,
+    ],
+  },
+  'summaries': <Object?>[
+    for (final modelId in const [
+      whisperBaseQualityModelId,
+      whisperSmallQualityModelId,
+    ])
+      for (final profileId in const [
+        whisperBaselineProfileId,
+        whisperPreviewProfileId,
+        whisperFinalProfileId,
+      ])
+        for (final pipelineId in const [
+          whisperFixedWindowPipelineId,
+          whisperVadSegmentedPipelineId,
+          whisperVadRecallCandidatePipelineId,
+        ])
+          {
+            'deviceId': 'android-emulator-x86_64-api-36',
+            'modelId': modelId,
+            'modelVersion': 'v1.9.1-q5_1',
+            'profileId': profileId,
+            'pipelineId': pipelineId,
+            'sampleCount': 60,
+            'rtfSamples': <double>[
+              for (var index = 0; index < 60; index++) 0.1,
+            ],
+            'sentenceLatencyMs': <double>[
+              for (var index = 0; index < 60; index++) 1200,
+            ],
+            'keyFactRecallRatio': modelId == whisperSmallQualityModelId
+                ? 0.92
+                : pipelineId == whisperFixedWindowPipelineId
+                ? 0.85
+                : 0.9,
+            'keyFactSampleCount': 20,
+            'expectedKeyFactCount': 20,
+            'recalledKeyFactCount': 18,
+            'speechBoundarySampleCount': 2,
+            'speechBoundaryStartSampleCount': 1,
+            'speechBoundaryEndSampleCount': 1,
+            'expectedSpeechBoundaryKeyFactCount': 2,
+            'recalledSpeechBoundaryKeyFactCount': 2,
+            'speechBoundaryKeyFactRecallRatio': 1.0,
+            'silenceSampleCount': 20,
+            'silenceFalsePositiveCount': 0,
+            'noiseSampleCount': 20,
+            'noiseHallucinationCount':
+                pipelineId == whisperFixedWindowPipelineId ? 10 : 2,
+          },
+  ],
+};

@@ -23,6 +23,11 @@ const whisperQualityPipelineIds = {
 const whisperProductMeetingEvidenceClass = 'product-meeting';
 const whisperPublicRegressionEvidenceClass = 'public-regression';
 const whisperSyntheticSmokeEvidenceClass = 'synthetic-smoke';
+const whisperSilenceTag = 'silence';
+const whisperNoiseOnlyTag = 'noise-only';
+const whisperSpeechTag = 'speech';
+const whisperSpeechBoundaryStartTag = 'speech-boundary-start';
+const whisperSpeechBoundaryEndTag = 'speech-boundary-end';
 const whisperQualityEvidenceClasses = {
   whisperProductMeetingEvidenceClass,
   whisperPublicRegressionEvidenceClass,
@@ -127,6 +132,9 @@ final class WhisperQualityCorpus {
     }
 
     final resolvedRepositoryRoot = p.normalize(p.absolute(repositoryRoot));
+    final canonicalRepositoryRoot = p.normalize(
+      await Directory(resolvedRepositoryRoot).resolveSymbolicLinks(),
+    );
     final allowedSpikeRoot = p.join(resolvedRepositoryRoot, '.spike');
     final values = environment ?? Platform.environment;
     final ids = <String>{};
@@ -159,11 +167,22 @@ final class WhisperQualityCorpus {
       if (p.extension(sourceFile.path).toLowerCase() != '.pcm') {
         throw WhisperQualityProtocolException('sample $id 必须使用 .pcm 文件');
       }
-      if (_isWithin(resolvedRepositoryRoot, sourceFile.path) &&
-          !_isWithin(allowedSpikeRoot, sourceFile.path)) {
-        throw WhisperQualityProtocolException(
-          'sample $id 必须位于仓库外或已忽略的 .spike 目录',
-        );
+      final canonicalSourcePath = p.normalize(
+        await sourceFile.resolveSymbolicLinks(),
+      );
+      if (_isWithin(canonicalRepositoryRoot, canonicalSourcePath)) {
+        final spikeDirectory = Directory(allowedSpikeRoot);
+        final insideAllowedSpike =
+            await spikeDirectory.exists() &&
+            _isWithin(
+              p.normalize(await spikeDirectory.resolveSymbolicLinks()),
+              canonicalSourcePath,
+            );
+        if (!insideAllowedSpike) {
+          throw WhisperQualityProtocolException(
+            'sample $id 必须位于仓库外或已忽略的 .spike 目录',
+          );
+        }
       }
 
       final byteLength = await sourceFile.length();
@@ -191,6 +210,20 @@ final class WhisperQualityCorpus {
         throw WhisperQualityProtocolException('sample $id 时长与 PCM 字节数不一致');
       }
 
+      final tags = _textList(
+        raw['tags'],
+        'manifest.samples[$index].tags',
+        allowEmpty: false,
+      );
+      final expectedKeyFacts = _textList(
+        raw['expectedKeyFacts'] ?? const <Object?>[],
+        'manifest.samples[$index].expectedKeyFacts',
+      );
+      _validateSampleSemantics(
+        id: id,
+        tags: tags,
+        expectedKeyFacts: expectedKeyFacts,
+      );
       samples.add(
         WhisperQualityCorpusSample(
           id: id,
@@ -198,17 +231,13 @@ final class WhisperQualityCorpus {
           sha256: expectedSha256,
           byteLength: byteLength,
           durationMs: measuredDurationMs,
-          tags: _textList(
-            raw['tags'],
-            'manifest.samples[$index].tags',
-            allowEmpty: false,
-          ),
-          expectedKeyFacts: _textList(
-            raw['expectedKeyFacts'] ?? const <Object?>[],
-            'manifest.samples[$index].expectedKeyFacts',
-          ),
+          tags: tags,
+          expectedKeyFacts: expectedKeyFacts,
         ),
       );
+    }
+    if (evidenceClass == whisperProductMeetingEvidenceClass) {
+      _validateProductMeetingCoverage(samples);
     }
     return WhisperQualityCorpus(
       id: _requiredText(manifest['id'], 'manifest.id'),
@@ -341,6 +370,71 @@ String _normalizeFactText(String value) => value.toLowerCase().replaceAll(
   RegExp(r'''[\s，。！？、,.!?;；:：'"“”‘’（）()\[\]【】<>《》\-—_]+'''),
   '',
 );
+
+void _validateSampleSemantics({
+  required String id,
+  required List<String> tags,
+  required List<String> expectedKeyFacts,
+}) {
+  final tagSet = tags.toSet();
+  if (tagSet.length != tags.length) {
+    throw WhisperQualityProtocolException('sample $id 的 tags 不得重复');
+  }
+  final isSilence = tagSet.contains(whisperSilenceTag);
+  final isNoiseOnly = tagSet.contains(whisperNoiseOnlyTag);
+  final isSpeech = tagSet.contains(whisperSpeechTag);
+  final isBoundary =
+      tagSet.contains(whisperSpeechBoundaryStartTag) ||
+      tagSet.contains(whisperSpeechBoundaryEndTag);
+  if ((isSilence && (isNoiseOnly || isSpeech || isBoundary)) ||
+      (isNoiseOnly && (isSpeech || isBoundary))) {
+    throw WhisperQualityProtocolException(
+      'sample $id 的 silence、noise-only 与 speech 标签互斥',
+    );
+  }
+  if (isBoundary && !isSpeech) {
+    throw WhisperQualityProtocolException('sample $id 的语音首尾标签必须同时声明 speech');
+  }
+  if ((isSilence || isNoiseOnly) && expectedKeyFacts.isNotEmpty) {
+    throw WhisperQualityProtocolException('sample $id 的纯静音或纯噪声不得声明关键事实');
+  }
+  final normalizedFacts = <String>{};
+  for (final fact in expectedKeyFacts) {
+    final normalized = _normalizeFactText(fact);
+    if (normalized.isEmpty) {
+      throw WhisperQualityProtocolException('sample $id 的关键事实归一化后不得为空');
+    }
+    if (!normalizedFacts.add(normalized)) {
+      throw WhisperQualityProtocolException('sample $id 的关键事实归一化后不得重复');
+    }
+  }
+}
+
+void _validateProductMeetingCoverage(List<WhisperQualityCorpusSample> samples) {
+  int countTag(String tag) =>
+      samples.where((sample) => sample.tags.contains(tag)).length;
+  final silenceCount = countTag(whisperSilenceTag);
+  final noiseOnlyCount = countTag(whisperNoiseOnlyTag);
+  final keyFactSampleCount = samples
+      .where(
+        (sample) =>
+            sample.tags.contains(whisperSpeechTag) &&
+            sample.expectedKeyFacts.isNotEmpty,
+      )
+      .length;
+  final boundaryStartCount = countTag(whisperSpeechBoundaryStartTag);
+  final boundaryEndCount = countTag(whisperSpeechBoundaryEndTag);
+  if (silenceCount < 20 ||
+      noiseOnlyCount < 20 ||
+      keyFactSampleCount < 20 ||
+      boundaryStartCount < 1 ||
+      boundaryEndCount < 1) {
+    throw WhisperQualityProtocolException(
+      'product-meeting 语料必须至少包含 20 段 silence、20 段 noise-only、'
+      '20 段带关键事实的 speech，并同时覆盖语音起始和结束边界',
+    );
+  }
+}
 
 Map<String, Object?> _map(Object? value, String name) {
   if (value is! Map<String, Object?>) {

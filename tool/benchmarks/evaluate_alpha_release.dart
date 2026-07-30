@@ -5,6 +5,8 @@ import 'package:crypto/crypto.dart';
 import 'package:meettrace/domain/use_cases/evaluate_alpha_release.dart';
 import 'package:path/path.dart' as p;
 
+import 'phase_0_4_quality_input_builder.dart';
+
 Future<void> main(List<String> arguments) async {
   final options = parseEvaluateAlphaReleaseArguments(arguments);
   if (options == null) {
@@ -117,27 +119,63 @@ Future<void> verifyAlphaReleaseEvidence({
   required AlphaReleaseEvaluationInput input,
   required Directory repositoryRoot,
 }) async {
-  final reference = input.androidEvidenceRef?.trim();
-  final expectedSha256 = input.androidEvidenceSha256?.trim().toLowerCase();
-  if ((reference == null || reference.isEmpty) &&
-      (expectedSha256 == null || expectedSha256.isEmpty)) {
-    return;
+  final androidEvidence = await _verifyRepositoryEvidence(
+    reference: input.androidEvidenceRef,
+    expectedSha256: input.androidEvidenceSha256,
+    repositoryRoot: repositoryRoot,
+    label: 'Android 证据',
+  );
+  if (androidEvidence != null && androidEvidence['status'] != 'passed') {
+    throw const FormatException('Android 证据必须是 status=passed 的 JSON 对象');
   }
-  if (reference == null ||
-      reference.isEmpty ||
-      expectedSha256 == null ||
-      expectedSha256.isEmpty) {
-    return;
+  final qualityEvidence = await _verifyRepositoryEvidence(
+    reference: input.rawMetricsRef,
+    expectedSha256: input.rawMetricsSha256,
+    repositoryRoot: repositoryRoot,
+    label: '质量指标证据',
+  );
+  if (qualityEvidence != null &&
+      input.evaluationScope == AlphaReleaseEvaluationScope.phase0To4) {
+    final normalizedInput = input.toJson();
+    final derived = const Phase04QualityInputBuilder().build(
+      template: normalizedInput,
+      qualityReport: qualityEvidence,
+      rawMetricsRef: input.rawMetricsRef!,
+      rawMetricsSha256: input.rawMetricsSha256!.toLowerCase(),
+    );
+    if (!_deepEquals(normalizedInput, derived)) {
+      throw const FormatException('阶段 0～4 质量输入与绑定的质量报告不一致');
+    }
   }
-  if (p.isAbsolute(reference)) {
-    throw const FormatException('Android 证据引用必须为仓库相对路径');
+}
+
+Future<Map<String, Object?>?> _verifyRepositoryEvidence({
+  required String? reference,
+  required String? expectedSha256,
+  required Directory repositoryRoot,
+  required String label,
+}) async {
+  final normalizedReference = reference?.trim();
+  final normalizedSha256 = expectedSha256?.trim().toLowerCase();
+  if ((normalizedReference == null || normalizedReference.isEmpty) &&
+      (normalizedSha256 == null || normalizedSha256.isEmpty)) {
+    return null;
+  }
+  if (normalizedReference == null ||
+      normalizedReference.isEmpty ||
+      normalizedSha256 == null ||
+      normalizedSha256.isEmpty) {
+    return null;
+  }
+  if (p.isAbsolute(normalizedReference)) {
+    throw FormatException('$label引用必须为仓库相对路径');
   }
   final lexicalRoot = p.normalize(p.absolute(repositoryRoot.path));
   final lexicalEvidencePath = p.normalize(
-    p.absolute(p.join(lexicalRoot, reference)),
+    p.absolute(p.join(lexicalRoot, normalizedReference)),
   );
   if (!p.isWithin(lexicalRoot, lexicalEvidencePath)) {
-    throw const FormatException('Android 证据引用越过仓库根目录');
+    throw FormatException('$label引用越过仓库根目录');
   }
   final canonicalRoot = p.normalize(
     await repositoryRoot.resolveSymbolicLinks(),
@@ -147,14 +185,35 @@ Future<void> verifyAlphaReleaseEvidence({
     await evidenceFile.resolveSymbolicLinks(),
   );
   if (!p.isWithin(canonicalRoot, canonicalEvidencePath)) {
-    throw const FormatException('Android 证据符号链接越过仓库根目录');
+    throw FormatException('$label符号链接越过仓库根目录');
   }
   final actualSha256 = await sha256.bind(evidenceFile.openRead()).first;
-  if (actualSha256.toString() != expectedSha256) {
-    throw const FormatException('Android 证据 SHA-256 与评估输入不一致');
+  if (actualSha256.toString() != normalizedSha256) {
+    throw FormatException('$label SHA-256 与评估输入不一致');
   }
   final decoded = jsonDecode(await evidenceFile.readAsString());
-  if (decoded is! Map<String, Object?> || decoded['status'] != 'passed') {
-    throw const FormatException('Android 证据必须是 status=passed 的 JSON 对象');
+  if (decoded is! Map<String, Object?>) {
+    throw FormatException('$label必须是 JSON 对象');
   }
+  return decoded;
+}
+
+bool _deepEquals(Object? left, Object? right) {
+  if (identical(left, right)) {
+    return true;
+  }
+  if (left is List<Object?> && right is List<Object?>) {
+    return left.length == right.length &&
+        List.generate(
+          left.length,
+          (index) => _deepEquals(left[index], right[index]),
+        ).every((value) => value);
+  }
+  if (left is Map<String, Object?> && right is Map<String, Object?>) {
+    return left.length == right.length &&
+        left.keys.every(
+          (key) => right.containsKey(key) && _deepEquals(left[key], right[key]),
+        );
+  }
+  return left == right;
 }

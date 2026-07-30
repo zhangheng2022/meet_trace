@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-const alphaReleaseInputSchemaVersion = 5;
+const alphaReleaseInputSchemaVersion = 6;
 const alphaProductMeetingEvidenceClass = 'product-meeting';
 
 enum AlphaReleaseDecision { go, noGo, blocked }
@@ -27,6 +27,7 @@ final class AlphaReleaseEvaluationInput {
     this.corpusLicenseId,
     this.deviceId,
     this.rawMetricsRef,
+    this.rawMetricsSha256,
     this.corpusSampleCount,
     this.corpusDeidentified,
     this.sameCorpusForBothModels,
@@ -56,6 +57,7 @@ final class AlphaReleaseEvaluationInput {
     this.advancedFinalTranscriptionDurationMs,
     this.keyFactRecallRatio,
     this.fixedWindowBothModelsCompleted,
+    this.qualityMatrixCompleted,
     this.previewSentenceLatencyMs,
     this.standardFixedWindowKeyFactRecallRatio,
     this.standardVadKeyFactRecallRatio,
@@ -106,6 +108,7 @@ final class AlphaReleaseEvaluationInput {
       corpusLicenseId: _string(provenance?['licenseId']),
       deviceId: _string(environment?['deviceId']),
       rawMetricsRef: _string(json['rawMetricsRef']),
+      rawMetricsSha256: _string(json['rawMetricsSha256']),
       corpusSampleCount: _integer(corpus?['sampleCount']),
       corpusDeidentified: _boolean(corpus?['deidentified']),
       sameCorpusForBothModels: _boolean(
@@ -158,6 +161,9 @@ final class AlphaReleaseEvaluationInput {
       keyFactRecallRatio: _number(standard?['keyFactRecallRatio']),
       fixedWindowBothModelsCompleted: _boolean(
         quality?['fixedWindowBothModelsCompleted'],
+      ),
+      qualityMatrixCompleted: _boolean(
+        quality?['profilePipelineMatrixCompleted'],
       ),
       previewSentenceLatencyMs: _numbers(quality?['previewSentenceLatencyMs']),
       standardFixedWindowKeyFactRecallRatio: _number(
@@ -220,6 +226,7 @@ final class AlphaReleaseEvaluationInput {
   final String? corpusLicenseId;
   final String? deviceId;
   final String? rawMetricsRef;
+  final String? rawMetricsSha256;
   final int? corpusSampleCount;
   final bool? corpusDeidentified;
   final bool? sameCorpusForBothModels;
@@ -249,6 +256,7 @@ final class AlphaReleaseEvaluationInput {
   final double? advancedFinalTranscriptionDurationMs;
   final double? keyFactRecallRatio;
   final bool? fixedWindowBothModelsCompleted;
+  final bool? qualityMatrixCompleted;
   final List<double>? previewSentenceLatencyMs;
   final double? standardFixedWindowKeyFactRecallRatio;
   final double? standardVadKeyFactRecallRatio;
@@ -285,6 +293,7 @@ final class AlphaReleaseEvaluationInput {
     String? corpusLicenseId,
     List<double>? standardRtfSamples,
     String? rawMetricsRef,
+    String? rawMetricsSha256,
     bool? iosArm64DeviceTested,
     bool? iosBackgroundRecordingPassed,
     bool? iosInterruptionRecoveryPassed,
@@ -300,6 +309,7 @@ final class AlphaReleaseEvaluationInput {
     bool? android16KbPassed,
     String? androidEvidenceSha256,
     bool? fixedWindowBothModelsCompleted,
+    bool? qualityMatrixCompleted,
     List<double>? previewSentenceLatencyMs,
     double? standardFixedWindowKeyFactRecallRatio,
     double? standardVadKeyFactRecallRatio,
@@ -328,6 +338,7 @@ final class AlphaReleaseEvaluationInput {
     corpusLicenseId: corpusLicenseId ?? this.corpusLicenseId,
     deviceId: deviceId,
     rawMetricsRef: rawMetricsRef ?? this.rawMetricsRef,
+    rawMetricsSha256: rawMetricsSha256 ?? this.rawMetricsSha256,
     corpusSampleCount: corpusSampleCount,
     corpusDeidentified: corpusDeidentified,
     sameCorpusForBothModels: sameCorpusForBothModels,
@@ -367,6 +378,8 @@ final class AlphaReleaseEvaluationInput {
     keyFactRecallRatio: keyFactRecallRatio,
     fixedWindowBothModelsCompleted:
         fixedWindowBothModelsCompleted ?? this.fixedWindowBothModelsCompleted,
+    qualityMatrixCompleted:
+        qualityMatrixCompleted ?? this.qualityMatrixCompleted,
     previewSentenceLatencyMs:
         previewSentenceLatencyMs ?? this.previewSentenceLatencyMs,
     standardFixedWindowKeyFactRecallRatio:
@@ -417,6 +430,7 @@ final class AlphaReleaseEvaluationInput {
     'evaluationScope': evaluationScope.jsonValue,
     'schemaVersion': schemaVersion ?? alphaReleaseInputSchemaVersion,
     'rawMetricsRef': rawMetricsRef,
+    'rawMetricsSha256': rawMetricsSha256,
     'corpus': {
       'id': corpusId,
       'sampleCount': corpusSampleCount,
@@ -462,6 +476,7 @@ final class AlphaReleaseEvaluationInput {
     },
     'quality': {
       'fixedWindowBothModelsCompleted': fixedWindowBothModelsCompleted,
+      'profilePipelineMatrixCompleted': qualityMatrixCompleted,
       'previewSentenceLatencyMs': previewSentenceLatencyMs,
       'standardFixedWindowKeyFactRecallRatio':
           standardFixedWindowKeyFactRecallRatio,
@@ -652,6 +667,11 @@ final class EvaluateAlphaReleaseUseCase {
         '双模型原始指标具有可追溯引用',
         input.rawMetricsRef,
       ),
+      _sha256Gate(
+        'evidence.rawMetricsSha256',
+        '双模型原始指标必须绑定 64 位十六进制 SHA-256',
+        input.rawMetricsSha256,
+      ),
       _referenceGate(
         'evidence.android',
         'Android 构建、模拟器与真机证据具有可追溯引用',
@@ -671,6 +691,11 @@ final class EvaluateAlphaReleaseUseCase {
         'quality.fixedWindowBothModels',
         'Base 和 Small 已在同语料完成固定窗口对照',
         input.fixedWindowBothModelsCompleted,
+      ),
+      _boolGate(
+        'quality.profilePipelineMatrixCompleted',
+        'Base/Small 已完成 Baseline/Preview/Final 与固定窗口/双 VAD 完整矩阵',
+        input.qualityMatrixCompleted,
       ),
       _thresholdGate(
         'quality.previewLatencyP95Ms',
@@ -982,7 +1007,7 @@ const _postPhase4GateIds = <String>{
 
 ReleaseGateResult _schemaGate(int? value) => ReleaseGateResult(
   id: 'input.schemaVersion',
-  requirement: '发布评估输入必须使用当前 schema 5',
+  requirement: '发布评估输入必须使用当前 schema 6',
   status: value == alphaReleaseInputSchemaVersion
       ? ReleaseGateStatus.passed
       : ReleaseGateStatus.missing,

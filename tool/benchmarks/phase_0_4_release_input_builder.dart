@@ -36,7 +36,18 @@ final class Phase04ReleaseInputBuilder {
     input['evaluationScope'] = 'phase-0-4';
 
     final environment = _mutableMap(input, 'environment');
-    environment['deviceId'] = 'android-emulator-x86_64-api-$apiLevel';
+    final rawMetricsRef = input['rawMetricsRef'];
+    final hasQualityEvidence =
+        rawMetricsRef is String && rawMetricsRef.trim().isNotEmpty;
+    if (!hasQualityEvidence) {
+      environment['deviceId'] = 'android-emulator-x86_64-api-$apiLevel';
+    } else {
+      _require(
+        environment['deviceId'] is String &&
+            (environment['deviceId']! as String).trim().isNotEmpty,
+        '已有质量证据时必须保留其评测设备标识',
+      );
+    }
 
     final phase04 = _mutableMap(input, 'phase04');
     phase04['meetingModelLocked'] = _isTrue(meetingFlow, 'meetingModelLocked');

@@ -409,6 +409,9 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   corpusLicenseId: 'internal-consent-v1',
   deviceId: 'low-end-arm64-01',
   rawMetricsRef: 'metrics/at16.json',
+  rawMetricsSha256:
+      'abcdef0123456789abcdef0123456789'
+      'abcdef0123456789abcdef0123456789',
   corpusSampleCount: 20,
   corpusDeidentified: true,
   sameCorpusForBothModels: true,
@@ -439,6 +442,7 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   advancedFinalTranscriptionDurationMs: 600000,
   keyFactRecallRatio: 0.85,
   fixedWindowBothModelsCompleted: true,
+  qualityMatrixCompleted: true,
   previewSentenceLatencyMs: [
     for (var index = 1; index <= 20; index++) index * 100,
   ],

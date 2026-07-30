@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../tool/benchmarks/whisper_quality_metrics.dart';
+import '../../../tool/benchmarks/whisper_quality_protocol.dart';
 
 void main() {
   group('WhisperQualityMetrics', () {
@@ -15,6 +16,12 @@ void main() {
       expect(report['corpusDeidentified'], isTrue);
       expect(report['corpusEvidenceClass'], 'product-meeting');
       expect(report['schemaVersion'], 4);
+      expect(report['status'], 'passed');
+      expect(
+        report['corpusManifestSha256'],
+        '0123456789abcdef0123456789abcdef'
+        '0123456789abcdef0123456789abcdef',
+      );
       expect(summary['deviceId'], 'android-emulator-x86_64-api-36');
       expect(summary['pipelineId'], 'fixed-window-v1');
       expect(summary['sampleCount'], 20);
@@ -25,6 +32,10 @@ void main() {
       expect(summary['detectedSpeechSampleCount'], isNull);
       expect(summary['detectedSpeechCoverageRatio'], isNull);
       expect(summary['keyFactRecallRatio'], 1);
+      expect(summary['keyFactSampleCount'], 10);
+      expect(summary['speechBoundaryStartSampleCount'], 1);
+      expect(summary['speechBoundaryEndSampleCount'], 1);
+      expect(summary['speechBoundaryKeyFactRecallRatio'], 1);
       expect(summary['silenceSampleCount'], 5);
       expect(summary['silenceFalsePositiveCount'], 0);
       expect(summary['noiseSampleCount'], 5);
@@ -56,6 +67,10 @@ void main() {
           },
       ];
       input['observations'] = [...fixedObservations, ...vadObservations];
+      _declarePipelines(input, const [
+        whisperFixedWindowPipelineId,
+        whisperVadSegmentedPipelineId,
+      ]);
 
       final report = const WhisperQualityMetrics().evaluate(input);
       final summaries = report['summaries']! as List<Map<String, Object?>>;
@@ -88,6 +103,10 @@ void main() {
         for (final observation in fixedObservations)
           _asVadObservation(observation, 'vad-segmented-v1'),
       ];
+      _declarePipelines(input, const [
+        whisperFixedWindowPipelineId,
+        whisperVadSegmentedPipelineId,
+      ]);
 
       final report = const WhisperQualityMetrics().evaluate(input);
       final comparison =
@@ -108,6 +127,11 @@ void main() {
         for (final observation in fixedObservations)
           _asVadObservation(observation, 'vad-recall-035-v1'),
       ];
+      _declarePipelines(input, const [
+        whisperFixedWindowPipelineId,
+        whisperVadSegmentedPipelineId,
+        whisperVadRecallCandidatePipelineId,
+      ]);
 
       final report = const WhisperQualityMetrics().evaluate(input);
       final comparisons =
@@ -136,6 +160,7 @@ void main() {
             'recognizedKeyFacts': <String>[],
           },
       ];
+      _declarePipelines(input, const [whisperVadSegmentedPipelineId]);
 
       final report = const WhisperQualityMetrics().evaluate(input);
       final summary =
@@ -168,6 +193,9 @@ void main() {
             'asrInvocationCount': 0,
           },
       ];
+      _declarePipelines(missingVadMetrics, const [
+        whisperVadSegmentedPipelineId,
+      ]);
       expect(
         () => const WhisperQualityMetrics().evaluate(missingVadMetrics),
         throwsA(isA<WhisperQualityMetricsException>()),
@@ -204,6 +232,9 @@ void main() {
       final corpus = input['corpus']! as Map<String, Object?>;
       corpus['deidentified'] = false;
       corpus['evidenceClass'] = 'public-regression';
+      final execution = input['execution']! as Map<String, Object?>;
+      execution['corpusDeidentified'] = false;
+      execution['corpusEvidenceClass'] = 'public-regression';
 
       final report = const WhisperQualityMetrics().evaluate(input);
 
@@ -292,6 +323,24 @@ void main() {
       );
     });
 
+    test('执行证明必须与语料、设备和管线完全一致', () {
+      final wrongDevice = _input(sampleCount: 20);
+      (wrongDevice['execution']! as Map<String, Object?>)['deviceId'] =
+          'another-device';
+      expect(
+        () => const WhisperQualityMetrics().evaluate(wrongDevice),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+
+      final missingPipeline = _input(sampleCount: 20);
+      (missingPipeline['execution']! as Map<String, Object?>)['pipelineIds'] =
+          <String>['vad-segmented-v1'];
+      expect(
+        () => const WhisperQualityMetrics().evaluate(missingPipeline),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+    });
+
     test('能耗或温控缺测保持 null，不伪装为零或 false', () {
       final input = _input(sampleCount: 20);
       final observations = input['observations']! as List<Object?>;
@@ -345,12 +394,26 @@ Map<String, Object?> _input({required int sampleCount}) {
           if (index < 5) 'silence',
           if (index >= 5 && index < 10) 'noise-only',
           if (index >= 10) 'speech',
+          if (index == 10) whisperSpeechBoundaryStartTag,
+          if (index == sampleCount - 1) whisperSpeechBoundaryEndTag,
         ],
         'expectedKeyFacts': [if (index >= 10) 'fact-$index'],
       },
   ];
   return {
     'schemaVersion': 4,
+    'execution': {
+      'capturedAtUtc': '2026-07-31T00:00:00Z',
+      'platform': 'android-emulator',
+      'deviceId': 'android-emulator-x86_64-api-36',
+      'pipelineIds': const ['fixed-window-v1'],
+      'corpusId': 'deidentified-v1',
+      'corpusDeidentified': true,
+      'corpusEvidenceClass': 'product-meeting',
+      'corpusManifestSha256':
+          '0123456789abcdef0123456789abcdef'
+          '0123456789abcdef0123456789abcdef',
+    },
     'corpus': {
       'id': 'deidentified-v1',
       'deidentified': true,
@@ -398,3 +461,7 @@ Map<String, Object?> _asVadObservation(
   'detectedSpeechSegmentCount': 1,
   'detectedSpeechDurationMs': 5000,
 };
+
+void _declarePipelines(Map<String, Object?> input, List<String> pipelineIds) {
+  (input['execution']! as Map<String, Object?>)['pipelineIds'] = pipelineIds;
+}

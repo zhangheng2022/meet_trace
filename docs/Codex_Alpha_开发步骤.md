@@ -12,9 +12,10 @@
 - Android 模拟器已完成 Base/Small 的固定版本 ASCEND 回归，以及 fixed-window、
   生产默认 VAD、候选 VAD 的 20 段确定性非语音回归；两者分别属于
   `public-regression` 和 `synthetic-smoke`，不替代真实产品会议证据。
-- 自动发布评估输入已升级为 schema 5，显式检查产品会议证据类别、Base/Small
+- 自动发布评估输入已升级为 schema 6，显式检查产品会议证据类别、Base/Small
   召回不回退、Preview 延迟和阶段 0～4 工程不变量；当前机器可读结论为
-  `blocked`（22 passed、0 failed、22 missing）。该报告显式使用
+  `blocked`（22 passed、0 failed、24 missing）。新增质量报告 SHA-256 和完整
+  Profile/Pipeline 矩阵门禁，质量指标只能由脱敏聚合报告自动写入。该报告显式使用
   `evaluationScope=phase-0-4`，不会让阶段 5 以后的 Android 真机、iOS 和 Release
   门槛污染本阶段结论；Android 模拟器证据由完整日志自动推导，并以 SHA-256 绑定。
 
@@ -23,7 +24,8 @@
 完整文件级任务、测试命令、硬门槛、审查和提交点见
 [whisper.cpp 质量强化与双平台交付计划](./plans/2026-07-30-whisper-cpp-quality-delivery.md)。
 
-1. 阶段 0：统一 `AGENTS.md`、PRD 和当前 C++ 实现，冻结 20 段去敏语料与质量基线。
+1. 阶段 0：统一 `AGENTS.md`、PRD 和当前 C++ 实现，冻结正式去敏矩阵：20 段静音、
+   20 段噪声和 20 段带关键事实的会议语音。
 2. 阶段 1：首先打通 Android x86_64 模拟器，完成 Base 初始化、会议开始/停止、
    30 秒事实 PCM、故障降级和最终快照闭环。
 3. 阶段 2：增加版本化 C ABI，基于同语料选择 Preview/Final 解码 Profile。

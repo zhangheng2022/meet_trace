@@ -44,11 +44,51 @@ final class WhisperQualityMetrics {
       provenance['licenseId'],
       'corpus.provenance.licenseId',
     );
+    final execution = _map(input['execution'], 'execution');
+    final capturedAtUtc = _utcTimestamp(
+      execution['capturedAtUtc'],
+      'execution.capturedAtUtc',
+    );
+    final manifestSha256 = _sha256(
+      execution['corpusManifestSha256'],
+      'execution.corpusManifestSha256',
+    );
+    final executionDeviceId = _requiredText(
+      execution['deviceId'],
+      'execution.deviceId',
+    );
+    final executionPipelineIds = _pipelineIds(
+      execution['pipelineIds'],
+      'execution.pipelineIds',
+    );
+    if (execution['corpusId'] != corpusId ||
+        execution['corpusDeidentified'] != deidentified ||
+        execution['corpusEvidenceClass'] != evidenceClass) {
+      throw const WhisperQualityMetricsException(
+        'execution 的语料证明必须与 corpus 一致',
+      );
+    }
     final samples = _samples(corpus['samples']);
     if (samples.length < 20) {
       throw const WhisperQualityMetricsException('语料必须至少包含 20 段');
     }
     final observations = _observations(input['observations'], samples);
+    if (observations.any(
+      (observation) => observation.deviceId != executionDeviceId,
+    )) {
+      throw const WhisperQualityMetricsException(
+        '所有 observations 必须使用 execution.deviceId',
+      );
+    }
+    final observedPipelineIds = observations
+        .map((observation) => observation.pipelineId)
+        .toSet();
+    if (observedPipelineIds.length != executionPipelineIds.length ||
+        !observedPipelineIds.containsAll(executionPipelineIds)) {
+      throw const WhisperQualityMetricsException(
+        'execution.pipelineIds 必须与 observations 完全一致',
+      );
+    }
     final groups = <String, List<_Observation>>{};
     final seenObservations = <String>{};
     for (final observation in observations) {
@@ -94,6 +134,29 @@ final class WhisperQualityMetrics {
         (total, value) => total + value.sample.expectedKeyFacts.length,
       );
       final recalledFacts = values.fold<int>(
+        0,
+        (total, value) =>
+            total +
+            value.recognizedKeyFacts
+                .toSet()
+                .intersection(value.sample.expectedKeyFacts.toSet())
+                .length,
+      );
+      final keyFactSampleCount = values
+          .where((value) => value.sample.expectedKeyFacts.isNotEmpty)
+          .length;
+      final speechBoundary = values
+          .where(
+            (value) =>
+                value.sample.tags.contains(whisperSpeechBoundaryStartTag) ||
+                value.sample.tags.contains(whisperSpeechBoundaryEndTag),
+          )
+          .toList(growable: false);
+      final expectedSpeechBoundaryFacts = speechBoundary.fold<int>(
+        0,
+        (total, value) => total + value.sample.expectedKeyFacts.length,
+      );
+      final recalledSpeechBoundaryFacts = speechBoundary.fold<int>(
         0,
         (total, value) =>
             total +
@@ -154,6 +217,27 @@ final class WhisperQualityMetrics {
         'keyFactRecallRatio': expectedFacts == 0
             ? null
             : recalledFacts / expectedFacts,
+        'keyFactSampleCount': keyFactSampleCount,
+        'expectedKeyFactCount': expectedFacts,
+        'recalledKeyFactCount': recalledFacts,
+        'speechBoundarySampleCount': speechBoundary.length,
+        'speechBoundaryStartSampleCount': speechBoundary
+            .where(
+              (value) =>
+                  value.sample.tags.contains(whisperSpeechBoundaryStartTag),
+            )
+            .length,
+        'speechBoundaryEndSampleCount': speechBoundary
+            .where(
+              (value) =>
+                  value.sample.tags.contains(whisperSpeechBoundaryEndTag),
+            )
+            .length,
+        'expectedSpeechBoundaryKeyFactCount': expectedSpeechBoundaryFacts,
+        'recalledSpeechBoundaryKeyFactCount': recalledSpeechBoundaryFacts,
+        'speechBoundaryKeyFactRecallRatio': expectedSpeechBoundaryFacts == 0
+            ? null
+            : recalledSpeechBoundaryFacts / expectedSpeechBoundaryFacts,
         'emptyTextRatio':
             values.where((value) => !value.emittedText).length / values.length,
         'silenceSampleCount': silence.length,
@@ -215,11 +299,19 @@ final class WhisperQualityMetrics {
 
     return {
       'schemaVersion': whisperQualityMetricsSchemaVersion,
+      'status': 'passed',
+      'capturedAtUtc': capturedAtUtc,
       'corpusId': corpusId,
       'corpusDeidentified': deidentified,
       'corpusEvidenceClass': evidenceClass,
+      'corpusManifestSha256': manifestSha256,
       'corpusProvenance': {'sourceId': sourceId, 'licenseId': licenseId},
       'sampleCount': samples.length,
+      'execution': {
+        'platform': _requiredText(execution['platform'], 'execution.platform'),
+        'deviceId': executionDeviceId,
+        'pipelineIds': executionPipelineIds.toList(growable: false)..sort(),
+      },
       'summaries': summaries,
       'pipelineComparisons': _pipelineComparisons(summaries),
     };
@@ -625,6 +717,37 @@ String _pipelineId(Object? value, String name) {
   return pipelineId;
 }
 
+Set<String> _pipelineIds(Object? value, String name) {
+  if (value is! List<Object?> || value.isEmpty) {
+    throw WhisperQualityMetricsException('$name 必须是非空数组');
+  }
+  final result = <String>{};
+  for (var index = 0; index < value.length; index++) {
+    final pipelineId = _pipelineId(value[index], '$name[$index]');
+    if (!result.add(pipelineId)) {
+      throw WhisperQualityMetricsException('$name 不得重复');
+    }
+  }
+  return result;
+}
+
+String _sha256(Object? value, String name) {
+  final text = _requiredText(value, name).toLowerCase();
+  if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(text)) {
+    throw WhisperQualityMetricsException('$name 必须是 64 位十六进制');
+  }
+  return text;
+}
+
+String _utcTimestamp(Object? value, String name) {
+  final text = _requiredText(value, name);
+  final parsed = DateTime.tryParse(text);
+  if (parsed == null || !parsed.isUtc) {
+    throw WhisperQualityMetricsException('$name 必须是有效 UTC 时间');
+  }
+  return text;
+}
+
 String _evidenceClass(Object? value, String name) {
   final evidenceClass = _requiredText(value, name);
   if (!whisperQualityEvidenceClasses.contains(evidenceClass)) {
@@ -752,6 +875,9 @@ String _toCsv(Map<String, Object?> report) {
         'detectedSpeechSampleCount,zeroDetectedSpeechSampleCount,'
         'detectedSpeechSegmentCount,detectedSpeechDurationMs,'
         'detectedSpeechCoverageRatio,keyFactRecallRatio,'
+        'keyFactSampleCount,expectedKeyFactCount,recalledKeyFactCount,'
+        'speechBoundarySampleCount,speechBoundaryStartSampleCount,'
+        'speechBoundaryEndSampleCount,speechBoundaryKeyFactRecallRatio,'
         'silenceFalsePositiveCount,noiseHallucinationCount,peakRssBytes,'
         'peakRssSampleCount,energyWh,energySampleCount,'
         'sustainedSevereOrCriticalThermal,thermalSampleCount',
@@ -775,6 +901,13 @@ String _toCsv(Map<String, Object?> report) {
         summary['detectedSpeechDurationMs'],
         summary['detectedSpeechCoverageRatio'],
         summary['keyFactRecallRatio'],
+        summary['keyFactSampleCount'],
+        summary['expectedKeyFactCount'],
+        summary['recalledKeyFactCount'],
+        summary['speechBoundarySampleCount'],
+        summary['speechBoundaryStartSampleCount'],
+        summary['speechBoundaryEndSampleCount'],
+        summary['speechBoundaryKeyFactRecallRatio'],
         summary['silenceFalsePositiveCount'],
         summary['noiseHallucinationCount'],
         summary['peakRssBytes'],

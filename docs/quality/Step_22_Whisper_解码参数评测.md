@@ -31,7 +31,9 @@
 - `tool/benchmarks/whisper_corpus_manifest.example.json`
 - corpus manifest schema `2`；正式执行要求 `evidenceClass=product-meeting` 以及
   非空的 `provenance.sourceId`、`provenance.licenseId`；
-- 仓库外或 `.spike/` 中不少于 20 段的去敏 PCM16LE，通过 `pathEnv` 引用；
+- 仓库外或 `.spike/` 中的正式去敏矩阵，通过 `pathEnv` 引用：至少 20 段
+  `silence`、20 段 `noise-only` 和 20 段带关键事实的 `speech`；语音必须同时包含
+  `speech-boundary-start` 与 `speech-boundary-end` 样本；
 - raw observations 必须带 model/version/profile、推理耗时、句后延迟、关键事实、
   静音/噪声输出、RSS、能耗、温控、`pipelineId` 和 ASR 调用次数；VAD 管线还必须
   带检测语音段数与时长。无法从模拟器取得的能耗/温控必须为 `null`。
@@ -45,12 +47,13 @@ powershell -NoProfile -ExecutionPolicy Bypass `
   -CorpusManifest <仓库外语料清单> `
   -DeviceId emulator-5554 `
   -SmallModelPath <ggml-small-q5_1.bin> `
-  -Pipelines fixed-window,vad-segmented
+  -Pipelines fixed-window,vad-segmented,vad-recall
 ```
 
 默认比较 Base/Small × Baseline/Preview/Final。可用
 `-Profiles baseline,preview,final` 明确选择 Profile，并默认对每个组合执行
-`fixed-window-v1` 和 `vad-segmented-v1`；每个组合必须完整覆盖同一批语料。
+`fixed-window-v1`、`vad-segmented-v1` 和 `vad-recall-035-v1`；每个组合必须完整
+覆盖同一批语料。
 脚本验证语料和 Small 权重，推送临时设备副本，静默捕获包含正文的私有日志，写出
 transcript 引用，再调用 schema `4` 聚合器生成 JSON/CSV。schema 4 会拒绝旧 v3
 观测以及缺少 VAD 可观测字段的输入。固定窗口句后延迟按每段中
@@ -104,6 +107,12 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 正文。2026-07-31 已在 API 36 x86_64 模拟器完成新 integration test 的编译、安装和
 缺参跳过检查，并完成 Base/Small 的 20 段 ASCEND 双 VAD schema 4 回归；公开回归
 不替代真实产品会议质量评测。
+
+正式 `product-meeting` 执行完成后，编排脚本会调用
+`build_phase_0_4_quality_input.dart`，按字段白名单把不含音频、绝对路径、正文、
+transcript 引用或逐条私有观测的聚合报告推广到
+`docs/quality/evidence/product-meeting/quality-report.json`，绑定 SHA-256 并更新
+阶段 0～4 输入和报告。任何质量失败或矩阵缺项都会以非零退出码结束。
 
 ## 4. Hard Gate 2
 

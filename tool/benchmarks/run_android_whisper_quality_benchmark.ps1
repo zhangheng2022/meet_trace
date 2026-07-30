@@ -14,7 +14,7 @@ param(
     [string[]]$Profiles = @("baseline", "preview", "final"),
 
     [ValidateSet("fixed-window", "vad-segmented", "vad-recall")]
-    [string[]]$Pipelines = @("fixed-window", "vad-segmented"),
+    [string[]]$Pipelines = @("fixed-window", "vad-segmented", "vad-recall"),
 
     [ValidateSet("product-meeting", "public-regression", "synthetic-smoke")]
     [string]$RequiredEvidenceClass = "product-meeting",
@@ -22,7 +22,15 @@ param(
     [ValidateRange(1, 32)]
     [int]$ThreadCount = 2,
 
-    [string]$OutputDirectory = ".spike/results/whisper-quality/android-emulator"
+    [string]$OutputDirectory = ".spike/results/whisper-quality/android-emulator",
+
+    [string]$ReleaseInputPath = "docs/quality/evidence/android-emulator/phase-0-4-release-input.json",
+
+    [string]$ReleaseReportPath = "docs/quality/evidence/android-emulator/phase-0-4-release-report.json",
+
+    [string]$QualityEvidenceOutput = "docs/quality/evidence/product-meeting/quality-report.json",
+
+    [string]$QualityEvidenceRef = "docs/quality/evidence/product-meeting/quality-report.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -454,6 +462,7 @@ try {
     $rawObservations = [ordered]@{
         schemaVersion = 4
         execution = [ordered]@{
+            capturedAtUtc = [DateTimeOffset]::UtcNow.ToString("O")
             platform = "android-emulator"
             deviceId = $deviceLabel
             abi = $abi
@@ -527,6 +536,24 @@ try {
         reports = @("quality-report.json", "quality-report.csv")
     }
     Write-JsonFile -Value $runEvidence -Path $runEvidencePath
+
+    if ($RequiredEvidenceClass -eq "product-meeting") {
+        & dart run tool/benchmarks/build_phase_0_4_quality_input.dart `
+            --template $ReleaseInputPath `
+            --quality-report (Join-Path $outputRoot "quality-report.json") `
+            --quality-evidence-output $QualityEvidenceOutput `
+            --quality-evidence-ref $QualityEvidenceRef `
+            --output $ReleaseInputPath
+        Assert-NativeSuccess -Action "Build phase 0-4 quality input"
+
+        & dart run tool/benchmarks/evaluate_alpha_release.dart `
+            --input $ReleaseInputPath `
+            --output $ReleaseReportPath `
+            --repository-root $repoRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw "Phase 0-4 quality gates did not reach Go; inspect $ReleaseReportPath"
+        }
+    }
 
     Write-Output "Android Whisper quality benchmark completed: $runEvidencePath"
     Write-Output "Quality report: $(Join-Path $outputRoot 'quality-report.json')"

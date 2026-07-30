@@ -169,6 +169,7 @@ foreach ($sample in $manifest.samples) {
 
 $combined = [ordered]@{
     schemaVersion = 4
+    execution = $observations.execution
     corpus = $manifest
     observations = $observations.observations
 }

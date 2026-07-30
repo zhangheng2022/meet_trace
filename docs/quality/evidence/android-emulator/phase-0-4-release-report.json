@@ -34,14 +34,14 @@
   "summary": {
     "passed": 22,
     "failed": 0,
-    "missing": 22
+    "missing": 24
   },
   "gates": [
     {
       "id": "input.schemaVersion",
-      "requirement": "发布评估输入必须使用当前 schema 5",
+      "requirement": "发布评估输入必须使用当前 schema 6",
       "status": "passed",
-      "value": 5
+      "value": 6
     },
     {
       "id": "corpus.id",
@@ -110,6 +110,12 @@
       "value": null
     },
     {
+      "id": "evidence.rawMetricsSha256",
+      "requirement": "双模型原始指标必须绑定 64 位十六进制 SHA-256",
+      "status": "missing",
+      "value": null
+    },
+    {
       "id": "evidence.android",
       "requirement": "Android 构建、模拟器与真机证据具有可追溯引用",
       "status": "passed",
@@ -124,6 +130,12 @@
     {
       "id": "quality.fixedWindowBothModels",
       "requirement": "Base 和 Small 已在同语料完成固定窗口对照",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "id": "quality.profilePipelineMatrixCompleted",
+      "requirement": "Base/Small 已完成 Baseline/Preview/Final 与固定窗口/双 VAD 完整矩阵",
       "status": "missing",
       "value": null
     },

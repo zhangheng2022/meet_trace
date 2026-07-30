@@ -1,7 +1,8 @@
 {
   "evaluationScope": "phase-0-4",
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "rawMetricsRef": null,
+  "rawMetricsSha256": null,
   "corpus": {
     "id": null,
     "sampleCount": null,
@@ -52,6 +53,7 @@
   },
   "quality": {
     "fixedWindowBothModelsCompleted": null,
+    "profilePipelineMatrixCompleted": null,
     "previewSentenceLatencyMs": null,
     "standardFixedWindowKeyFactRecallRatio": null,
     "standardVadKeyFactRecallRatio": null,

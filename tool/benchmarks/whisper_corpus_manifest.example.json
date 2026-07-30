@@ -14,17 +14,54 @@
   },
   "samples": [
     {
-      "id": "replace-with-sample-id",
+      "id": "replace-with-silence-01-of-20",
       "pathEnv": "MEETTRACE_CORPUS_SAMPLE_01",
       "sha256": "replace-with-lowercase-sha256",
       "durationMs": 10000,
       "tags": [
+        "silence"
+      ],
+      "expectedKeyFacts": []
+    },
+    {
+      "id": "replace-with-noise-only-01-of-20",
+      "pathEnv": "MEETTRACE_CORPUS_SAMPLE_21",
+      "sha256": "replace-with-lowercase-sha256",
+      "durationMs": 10000,
+      "tags": [
+        "noise-only",
+        "far-field"
+      ],
+      "expectedKeyFacts": []
+    },
+    {
+      "id": "replace-with-speech-boundary-start",
+      "pathEnv": "MEETTRACE_CORPUS_SAMPLE_41",
+      "sha256": "replace-with-lowercase-sha256",
+      "durationMs": 10000,
+      "tags": [
         "speech",
+        "speech-boundary-start",
         "zh",
         "near-field"
       ],
       "expectedKeyFacts": [
-        "replace-with-deidentified-key-fact"
+        "replace-with-deidentified-start-fact"
+      ]
+    },
+    {
+      "id": "replace-with-speech-boundary-end",
+      "pathEnv": "MEETTRACE_CORPUS_SAMPLE_60",
+      "sha256": "replace-with-lowercase-sha256",
+      "durationMs": 10000,
+      "tags": [
+        "speech",
+        "speech-boundary-end",
+        "zh",
+        "far-field"
+      ],
+      "expectedKeyFacts": [
+        "replace-with-deidentified-end-fact"
       ]
     }
   ]

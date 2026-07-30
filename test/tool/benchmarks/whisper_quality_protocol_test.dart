@@ -27,7 +27,7 @@ void main() {
       await external.delete(recursive: true);
     });
 
-    test('校验 20 段仓库外 PCM 的哈希、格式和时长', () async {
+    test('校验正式语料的静音、噪声、事实和语音首尾覆盖', () async {
       final fixture = await _fixture(
         repository: repository,
         audioRoot: external,
@@ -42,7 +42,7 @@ void main() {
       expect(corpus.id, 'deidentified-v1');
       expect(corpus.evidenceClass, 'product-meeting');
       expect(corpus.provenance.sourceId, 'private-deidentified-meetings');
-      expect(corpus.samples, hasLength(20));
+      expect(corpus.samples, hasLength(60));
       expect(corpus.samples.first.durationMs, 100);
       expect(corpus.samples.first.sourcePath, fixture.firstAudioPath);
     });
@@ -87,7 +87,7 @@ void main() {
         environment: fixture.environment,
       );
 
-      expect(corpus.samples, hasLength(20));
+      expect(corpus.samples, hasLength(60));
     });
 
     test('正式质量入口拒绝公开回归或合成冒烟语料', () async {
@@ -142,6 +142,36 @@ void main() {
         throwsA(isA<WhisperQualityProtocolException>()),
       );
     });
+
+    test('产品会议语料拒绝不足的门禁覆盖和无效关键事实', () async {
+      final incomplete = await _fixture(
+        repository: repository,
+        audioRoot: external,
+        incompleteProductCoverage: true,
+      );
+      expect(
+        () => WhisperQualityCorpus.load(
+          manifestPath: incomplete.manifestPath,
+          repositoryRoot: repository.path,
+          environment: incomplete.environment,
+        ),
+        throwsA(isA<WhisperQualityProtocolException>()),
+      );
+
+      final invalidFact = await _fixture(
+        repository: repository,
+        audioRoot: external,
+        invalidFirstSpeechFact: true,
+      );
+      expect(
+        () => WhisperQualityCorpus.load(
+          manifestPath: invalidFact.manifestPath,
+          repositoryRoot: repository.path,
+          environment: invalidFact.environment,
+        ),
+        throwsA(isA<WhisperQualityProtocolException>()),
+      );
+    });
   });
 
   group('PCM 与关键事实', () {
@@ -190,12 +220,19 @@ _fixture({
   bool corruptFirstHash = false,
   String evidenceClass = 'product-meeting',
   bool deidentified = true,
+  bool incompleteProductCoverage = false,
+  bool invalidFirstSpeechFact = false,
 }) async {
   await audioRoot.create(recursive: true);
   final samples = <Map<String, Object?>>[];
   final environment = <String, String>{};
   var firstAudioPath = '';
-  for (var index = 0; index < 20; index++) {
+  final sampleCount =
+      evidenceClass == whisperProductMeetingEvidenceClass &&
+          !incompleteProductCoverage
+      ? 60
+      : 20;
+  for (var index = 0; index < sampleCount; index++) {
     final bytes = Uint8List(3200);
     final path = p.join(audioRoot.path, 'sample-$index.pcm');
     await File(path).writeAsBytes(bytes);
@@ -211,8 +248,28 @@ _fixture({
           ? '0' * 64
           : sha256.convert(bytes).toString(),
       'durationMs': 100,
-      'tags': const ['speech', 'zh'],
-      'expectedKeyFacts': const <String>[],
+      'tags': [
+        if (evidenceClass == whisperProductMeetingEvidenceClass &&
+            !incompleteProductCoverage &&
+            index < 20)
+          whisperSilenceTag
+        else if (evidenceClass == whisperProductMeetingEvidenceClass &&
+            !incompleteProductCoverage &&
+            index < 40)
+          whisperNoiseOnlyTag
+        else ...[
+          whisperSpeechTag,
+          if (index == 40) whisperSpeechBoundaryStartTag,
+          if (index == sampleCount - 1) whisperSpeechBoundaryEndTag,
+        ],
+        'zh',
+      ],
+      'expectedKeyFacts': [
+        if (evidenceClass == whisperProductMeetingEvidenceClass &&
+            !incompleteProductCoverage &&
+            index >= 40)
+          if (invalidFirstSpeechFact && index == 40) '。。。' else '事实-$index',
+      ],
     });
   }
   final manifestFile = File(p.join(repository.path, 'corpus.json'));
