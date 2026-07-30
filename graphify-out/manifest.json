@@ -1125,8 +1125,8 @@
     "semantic_hash": ""
   },
   "docs/Codex_Alpha_\u5f00\u53d1\u6b65\u9aa4.md": {
-    "mtime": 1785431628.2697191,
-    "ast_hash": "c177e7c7e0337e25ebf749ba87816740",
+    "mtime": 1785446962.3486693,
+    "ast_hash": "0907121d6d7bd192f311d7e46663971b",
     "semantic_hash": ""
   },
   "docs/Git_\u5206\u652f\u4e0e_Worktree_\u7ea6\u5b9a.md": {
@@ -2605,18 +2605,18 @@
     "semantic_hash": ""
   },
   "docs/quality/Step_21_C++_\u8d28\u91cf\u4ea4\u4ed8\u57fa\u7ebf.md": {
-    "mtime": 1785443192.4742165,
-    "ast_hash": "9b80e83182cfe93e9f31a0bee260bdcd",
+    "mtime": 1785447168.0538745,
+    "ast_hash": "5f1c4db89c238747fa293eb91f71b6db",
     "semantic_hash": ""
   },
   "docs/quality/Step_22_Whisper_\u89e3\u7801\u53c2\u6570\u8bc4\u6d4b.md": {
-    "mtime": 1785443192.4755168,
-    "ast_hash": "40f15a22421010eb6611c815cbe2d242",
+    "mtime": 1785446593.297907,
+    "ast_hash": "b7ec4af54faa3aa158ec0cc10497ba96",
     "semantic_hash": ""
   },
   "docs/quality/Step_23_24_VAD_\u4e0e\u6700\u7ec8\u8f6c\u5f55.md": {
-    "mtime": 1785443192.4760277,
-    "ast_hash": "85859c691ad72c2106a5ef33a8c176f8",
+    "mtime": 1785446952.8525486,
+    "ast_hash": "960a143d23d2beec1645d39beed0c5c6",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260730_114643_start_meeting_readiness_model_installation_whisper.md": {
@@ -2662,6 +2662,21 @@
   "tool/benchmarks/run_ascend_android_regression.ps1": {
     "mtime": 1785441478.753579,
     "ast_hash": "bf8e395051899cacae71d71ed0a557b5",
+    "semantic_hash": ""
+  },
+  "test/tool/benchmarks/generate_synthetic_noise_corpus_test.dart": {
+    "mtime": 1785447153.739983,
+    "ast_hash": "62528c8b4c0cf757e10bf330714f9c4b",
+    "semantic_hash": ""
+  },
+  "tool/benchmarks/generate_synthetic_noise_corpus.dart": {
+    "mtime": 1785446047.891338,
+    "ast_hash": "c004a8d1c2a7b8216b5d2cbfc9aab850",
+    "semantic_hash": ""
+  },
+  "tool/benchmarks/run_synthetic_noise_android_regression.ps1": {
+    "mtime": 1785446475.281114,
+    "ast_hash": "b5924d7f123a2199510c8283588ebd4f",
     "semantic_hash": ""
   }
 }

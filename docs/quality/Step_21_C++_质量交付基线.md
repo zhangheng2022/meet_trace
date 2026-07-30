@@ -39,7 +39,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，新增评测链后共 366 tests |
+| `flutter test` | 通过，新增评测链后共 380 tests |
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
@@ -111,8 +111,25 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   检测、语音覆盖率 34.65%、空文本率 60%、完整参考句召回 0；评测候选
   `vad-recall-035-v1` 为 0/20 段零检测、覆盖率 97.71%、空文本率 0、完整参考句
   召回 15.79%。
+- 同一语料、Profile 和 VAD 参数下完成 Small A/B：默认 VAD 仍有 12/20 段零检测，
+  候选为 0/20 段零检测；候选的完整参考句召回由 Base 的 15.79% 增至 Small 的
+  26.32%，但 Small 候选的模拟器 RTF P50 为 28.390、峰值 RSS 为
+  1,010,302,976 bytes，Base 对应为 8.070 和 713,633,792 bytes。因此 Small
+  继续只按需下载，不自动切换、不与 Base 混合输出。
 - 该参考句召回采用归一化后的整句匹配，属于严格回归信号，不等同于产品会议关键事实
   召回。模拟器绝对 RTF 与延迟也不得用于真机发布承诺。
+
+### 5.2 确定性非语音烟测轨道
+
+- `tool/benchmarks/generate_synthetic_noise_corpus.dart` 确定性生成 20 段、每段默认
+  3 秒的 PCM16LE：white noise、fan-like noise、50/60 Hz hum 和 impulsive
+  clicks 各 5 档电平（-45、-35、-25、-18、-12 dBFS）。
+- 生成器只允许写入仓库 `.spike/` 子目录；manifest 固定标记为
+  `synthetic-smoke`、`deidentified=true` 和
+  `generated:deterministic-nonspeech-v1`，每段保存 SHA-256。
+- `tool/benchmarks/run_synthetic_noise_android_regression.ps1` 会生成语料、受控注入
+  私有路径环境变量并执行 fixed-window、生产默认 VAD 和候选 VAD。该轨道验证非语音
+  防线和报告口径，不能代替真实会议环境噪声。
 
 ## 6. Hard Gate 0
 
@@ -249,3 +266,8 @@ Critical/High。
 修复后 raw observations 和 run evidence 均携带 corpus ID、证据类别与 manifest
 SHA-256；旧 transcript 在受限 `.spike` 输出目录内清除，噪声幻觉只统计
 `noise-only`。第二轮规则审查未发现或保留 Critical/High 或有实际影响的 Medium。
+
+确定性非语音轨道完成后，再按 workspace 模式审查生成器、单测和 Android wrapper
+三个 reviewable 文件；OCR 不支持的四个 Markdown 变更由主审手工核对。审查补强了
+`.spike/` 写入边界、私有输入契约和实际 PCM 峰值的自动化覆盖，复审未发现或保留
+Critical/High 或有实际影响的 Medium。

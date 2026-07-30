@@ -1,7 +1,7 @@
 # 会迹 Codex Alpha 开发步骤
 
 > 状态：阶段 0～4 工程实现完成；阶段 1 Android 模拟器门槛通过，真实语料质量门槛阻断
-> 更新日期：2026-07-30
+> 更新日期：2026-07-31
 
 ## 已完成基线
 
@@ -9,6 +9,9 @@
 - 统一 `AsrEngine`、会议模型锁定、有界预览队列、最终转录快照与失败重试。
 - 说话人可降级、AI 总结证据链、分享与本地删除。
 - 官方 `whisper.cpp` v1.9.1 Native Assets 接入、Base 内置、Small 下载管理和旧偏好迁移。
+- Android 模拟器已完成 Base/Small 的固定版本 ASCEND 回归，以及 fixed-window、
+  生产默认 VAD、候选 VAD 的 20 段确定性非语音回归；两者分别属于
+  `public-regression` 和 `synthetic-smoke`，不替代真实产品会议证据。
 
 ## 当前交付顺序
 

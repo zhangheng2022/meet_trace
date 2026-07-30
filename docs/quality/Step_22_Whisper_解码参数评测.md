@@ -78,6 +78,19 @@ transcript 引用，再调用 schema `4` 聚合器生成 JSON/CSV。schema 4 会
 `vad-recall-035-v1`（threshold 0.35、min speech 100 ms、pad 100 ms），仅是评测
 候选；生产 `WhisperVadConfig` 默认值没有改变。
 
+确定性非语音三管线回归可直接执行：
+
+```powershell
+& .\tool\benchmarks\run_synthetic_noise_android_regression.ps1 `
+  -DeviceId emulator-5554 `
+  -Models @("base") `
+  -Profiles @("baseline")
+```
+
+脚本默认生成 20 段 3 秒非语音噪声，并比较 `fixed-window-v1`、
+`vad-segmented-v1` 和 `vad-recall-035-v1`。其证据类别固定为 `synthetic-smoke`；
+即使 VAD 完全拦截合成噪声，也不能用于关闭产品会议的噪声幻觉门槛。
+
 已有合规原始观测时仍可直接执行：
 
 ```powershell
@@ -89,8 +102,8 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 
 输出位于 `.spike/results/whisper-quality/`，不提交原始音频、私有设备清单、日志或转录
 正文。2026-07-31 已在 API 36 x86_64 模拟器完成新 integration test 的编译、安装和
-缺参跳过检查，并完成 Base 的 20 段 ASCEND 双 VAD schema 4 回归；公开回归不替代
-真实产品会议质量评测。
+缺参跳过检查，并完成 Base/Small 的 20 段 ASCEND 双 VAD schema 4 回归；公开回归
+不替代真实产品会议质量评测。
 
 ## 4. Hard Gate 2
 
