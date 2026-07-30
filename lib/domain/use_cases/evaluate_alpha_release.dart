@@ -294,6 +294,7 @@ final class AlphaReleaseEvaluationInput {
     List<double>? standardRtfSamples,
     String? rawMetricsRef,
     String? rawMetricsSha256,
+    int? corpusSampleCount,
     bool? iosArm64DeviceTested,
     bool? iosBackgroundRecordingPassed,
     bool? iosInterruptionRecoveryPassed,
@@ -339,7 +340,7 @@ final class AlphaReleaseEvaluationInput {
     deviceId: deviceId,
     rawMetricsRef: rawMetricsRef ?? this.rawMetricsRef,
     rawMetricsSha256: rawMetricsSha256 ?? this.rawMetricsSha256,
-    corpusSampleCount: corpusSampleCount,
+    corpusSampleCount: corpusSampleCount ?? this.corpusSampleCount,
     corpusDeidentified: corpusDeidentified,
     sameCorpusForBothModels: sameCorpusForBothModels,
     sameDeviceForBothModels: sameDeviceForBothModels,
@@ -636,9 +637,9 @@ final class EvaluateAlphaReleaseUseCase {
       ),
       _thresholdGate(
         'corpus.sampleCount',
-        '去敏会议语料不少于 20 段',
+        '正式去敏矩阵不少于 60 段（20 静音、20 纯噪声、20 带事实语音）',
         input.corpusSampleCount,
-        (value) => value >= 20,
+        (value) => value >= 60,
       ),
       _boolGate('corpus.deidentified', '评测语料已去敏', input.corpusDeidentified),
       _boolGate(

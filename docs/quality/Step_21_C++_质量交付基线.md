@@ -39,7 +39,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，新增评测链后共 406 tests |
+| `flutter test` | 通过，新增评测链后共 407 tests |
 | `flutter build apk --debug` | 通过，145.3 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |

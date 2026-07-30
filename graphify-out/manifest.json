@@ -725,8 +725,8 @@
     "semantic_hash": ""
   },
   "lib/domain/use_cases/evaluate_alpha_release.dart": {
-    "mtime": 1785452269.787112,
-    "ast_hash": "203998f5152aa72a785afc20fdb9794a",
+    "mtime": 1785453584.1193035,
+    "ast_hash": "8da1a2b1a74c865c8b50d050f04340c8",
     "semantic_hash": ""
   },
   "lib/domain/use_cases/generate_summary.dart": {
@@ -1020,8 +1020,8 @@
     "semantic_hash": "51b888c5cb372c6c627cba4f7c0df83c"
   },
   "test/domain/use_cases/evaluate_alpha_release_test.dart": {
-    "mtime": 1785452269.7883735,
-    "ast_hash": "c4cff267c2348db65abdfde930088daa",
+    "mtime": 1785453550.9542868,
+    "ast_hash": "0bbcec92b4afabf431b5216f8b1f330e",
     "semantic_hash": ""
   },
   "test/domain/use_cases/generate_summary_test.dart": {
@@ -1150,8 +1150,8 @@
     "semantic_hash": ""
   },
   "docs/\u7aef\u4fa7\u53cc\u6a21\u578b\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1785426365.9185965,
-    "ast_hash": "f0218e23e480dcb4e404f6c96bdc0674",
+    "mtime": 1785453550.9554052,
+    "ast_hash": "a02a08833ed3a298a91e4d8003ba1369",
     "semantic_hash": ""
   },
   "forui.yaml": {
@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "docs/\u4f1a\u8ff9_MeetTrace_Alpha_PRD_\u65e0\u767b\u5f55\u7248.md": {
-    "mtime": 1785426390.1899745,
-    "ast_hash": "927ea9c20fb0b08477a41b1b005891c0",
+    "mtime": 1785453550.9549036,
+    "ast_hash": "e8d01bc3e87332b2b757b999416b4647",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260727_034129_\u91cd\u6784\u6240\u6709ui\u8bbe\u8ba1\u90e8\u5206_\u5148\u7ed9\u6211\u65b9\u6848.md": {
@@ -2605,8 +2605,8 @@
     "semantic_hash": ""
   },
   "docs/quality/Step_21_C++_\u8d28\u91cf\u4ea4\u4ed8\u57fa\u7ebf.md": {
-    "mtime": 1785453201.8136528,
-    "ast_hash": "1528cf0dea7b0aa84129158c186a9d1c",
+    "mtime": 1785453550.9565718,
+    "ast_hash": "cdc1b14c626e58f510dc7379ee978f00",
     "semantic_hash": ""
   },
   "docs/quality/Step_22_Whisper_\u89e3\u7801\u53c2\u6570\u8bc4\u6d4b.md": {
@@ -2685,8 +2685,8 @@
     "semantic_hash": ""
   },
   "docs/quality/evidence/android-emulator/phase-0-4-release-report.json": {
-    "mtime": 1785453252.2578769,
-    "ast_hash": "4d8106887e20390f8e5078f5669b1b1b",
+    "mtime": 1785453576.3123693,
+    "ast_hash": "a7b85bf45cca36e2f3a8aef72d9d747d",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/phase_0_4_release_input_builder_test.dart": {

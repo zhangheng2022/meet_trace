@@ -112,6 +112,19 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.blocked);
     });
 
+    test('少于 60 段不能冒充正式产品会议三类矩阵', () {
+      final report = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(corpusSampleCount: 59),
+      );
+      final gate = report.gates.singleWhere(
+        (candidate) => candidate.id == 'corpus.sampleCount',
+      );
+
+      expect(gate.value, 59);
+      expect(gate.status, ReleaseGateStatus.failed);
+      expect(report.decision, AlphaReleaseDecision.noGo);
+    });
+
     test('当前范围不执行 iOS 真机时真机字段不参与发布判定', () {
       final report = const EvaluateAlphaReleaseUseCase().execute(
         _passingInput().copyWith(
@@ -412,7 +425,7 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   rawMetricsSha256:
       'abcdef0123456789abcdef0123456789'
       'abcdef0123456789abcdef0123456789',
-  corpusSampleCount: 20,
+  corpusSampleCount: 60,
   corpusDeidentified: true,
   sameCorpusForBothModels: true,
   sameDeviceForBothModels: true,

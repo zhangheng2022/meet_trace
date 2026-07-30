@@ -75,7 +75,7 @@
     },
     {
       "id": "corpus.sampleCount",
-      "requirement": "去敏会议语料不少于 20 段",
+      "requirement": "正式去敏矩阵不少于 60 段（20 静音、20 纯噪声、20 带事实语音）",
       "status": "missing",
       "value": null
     },
