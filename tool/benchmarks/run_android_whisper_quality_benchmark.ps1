@@ -7,10 +7,13 @@ param(
 
     [string]$SmallModelPath = ".spike/models/whisper-cpp-small-q5_1-v1.9.1/ggml-small-q5_1.bin",
 
+    [ValidateSet("base", "small")]
+    [string[]]$Models = @("base", "small"),
+
     [ValidateSet("baseline", "preview", "final")]
     [string[]]$Profiles = @("baseline", "preview", "final"),
 
-    [ValidateSet("fixed-window", "vad-segmented")]
+    [ValidateSet("fixed-window", "vad-segmented", "vad-recall")]
     [string[]]$Pipelines = @("fixed-window", "vad-segmented"),
 
     [ValidateSet("product-meeting", "public-regression", "synthetic-smoke")]
@@ -164,9 +167,13 @@ function Write-JsonFile {
 if ($Profiles.Count -eq 0) {
     throw "Profiles must not be empty."
 }
+if ($Models.Count -eq 0) {
+    throw "Models must not be empty."
+}
 if ($Pipelines.Count -eq 0) {
     throw "Pipelines must not be empty."
 }
+$modelNames = @($Models | Select-Object -Unique)
 $profileIds = @(
     @(
         foreach ($profile in $Profiles) {
@@ -184,6 +191,7 @@ $pipelineIds = @(
             switch ($pipeline) {
                 "fixed-window" { "fixed-window-v1" }
                 "vad-segmented" { "vad-segmented-v1" }
+                "vad-recall" { "vad-recall-035-v1" }
             }
         }
     ) | Select-Object -Unique
@@ -193,14 +201,21 @@ $manifestPath = Resolve-ExistingFile -Path $CorpusManifest -Label "Corpus manife
 $manifestSha256 = (
     Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256
 ).Hash.ToLowerInvariant()
-$resolvedSmallModel = Resolve-ExistingFile -Path $SmallModelPath -Label "Whisper Small model"
-$smallFile = Get-Item -LiteralPath $resolvedSmallModel
-if ($smallFile.Length -ne $smallExpectedBytes) {
-    throw "Whisper Small model byte length mismatch."
-}
-$smallHash = (Get-FileHash -LiteralPath $resolvedSmallModel -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($smallHash -ne $smallExpectedSha256) {
-    throw "Whisper Small model SHA-256 mismatch."
+$resolvedSmallModel = $null
+if ($modelNames -contains "small") {
+    $resolvedSmallModel = Resolve-ExistingFile `
+        -Path $SmallModelPath `
+        -Label "Whisper Small model"
+    $smallFile = Get-Item -LiteralPath $resolvedSmallModel
+    if ($smallFile.Length -ne $smallExpectedBytes) {
+        throw "Whisper Small model byte length mismatch."
+    }
+    $smallHash = (
+        Get-FileHash -LiteralPath $resolvedSmallModel -Algorithm SHA256
+    ).Hash.ToLowerInvariant()
+    if ($smallHash -ne $smallExpectedSha256) {
+        throw "Whisper Small model SHA-256 mismatch."
+    }
 }
 
 $outputRoot = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {
@@ -232,6 +247,21 @@ $deviceManifestHostPath = Join-Path $outputRoot "device-run.private.json"
 $rawLogPath = Join-Path $outputRoot "android-benchmark.private.log"
 $rawObservationsPath = Join-Path $outputRoot "raw-observations.private.json"
 $runEvidencePath = Join-Path $outputRoot "benchmark-run.json"
+$staleOutputFiles = @(
+    $preparedCorpusPath,
+    $deviceManifestHostPath,
+    $rawLogPath,
+    $rawObservationsPath,
+    $runEvidencePath,
+    (Join-Path $outputRoot "quality-input.json"),
+    (Join-Path $outputRoot "quality-report.json"),
+    (Join-Path $outputRoot "quality-report.csv")
+)
+foreach ($staleOutputFile in $staleOutputFiles) {
+    if (Test-Path -LiteralPath $staleOutputFile -PathType Leaf) {
+        Remove-Item -LiteralPath $staleOutputFile -Force
+    }
+}
 
 Push-Location $repoRoot
 try {
@@ -293,7 +323,7 @@ try {
         $remotePath = "$remoteRoot/sample-$($index.ToString('D3')).pcm"
         Invoke-AdbChecked `
             -Arguments @("-s", $resolvedDeviceId, "push", $sample.sourcePath, $remotePath) `
-            -Action "Push deidentified PCM sample-$($index.ToString('D3'))" |
+            -Action "Push controlled PCM sample-$($index.ToString('D3'))" |
             Out-Null
         $deviceSamples += [ordered]@{
             id = $sample.id
@@ -305,37 +335,46 @@ try {
         }
     }
 
-    $remoteSmallModel = "$remoteRoot/ggml-small-q5_1.bin"
-    Invoke-AdbChecked `
-        -Arguments @("-s", $resolvedDeviceId, "push", $resolvedSmallModel, $remoteSmallModel) `
-        -Action "Push Whisper Small model" |
-        Out-Null
+    $remoteSmallModel = $null
+    if ($modelNames -contains "small") {
+        $remoteSmallModel = "$remoteRoot/ggml-small-q5_1.bin"
+        Invoke-AdbChecked `
+            -Arguments @("-s", $resolvedDeviceId, "push", $resolvedSmallModel, $remoteSmallModel) `
+            -Action "Push Whisper Small model" |
+            Out-Null
+    }
+
+    $deviceModels = @()
+    if ($modelNames -contains "base") {
+        $deviceModels += [ordered]@{
+            modelId = "whisper-cpp-base-q5_1-v1.9.1"
+            modelVersion = "v1.9.1-q5_1"
+            source = "bundledBase"
+            path = $null
+            profileIds = $profileIds
+        }
+    }
+    if ($modelNames -contains "small") {
+        $deviceModels += [ordered]@{
+            modelId = "whisper-cpp-small-q5_1-v1.9.1"
+            modelVersion = "v1.9.1-q5_1"
+            source = "deviceFile"
+            path = $remoteSmallModel
+            profileIds = $profileIds
+        }
+    }
 
     $deviceManifest = [ordered]@{
         schemaVersion = 1
         corpusId = $preparedCorpus.id
+        corpusDeidentified = [bool]$preparedCorpus.deidentified
         corpusEvidenceClass = $preparedCorpus.evidenceClass
         corpusProvenance = $preparedCorpus.provenance
         deviceId = $deviceLabel
         threadCount = $ThreadCount
         pipelineIds = $pipelineIds
         samples = $deviceSamples
-        models = @(
-            [ordered]@{
-                modelId = "whisper-cpp-base-q5_1-v1.9.1"
-                modelVersion = "v1.9.1-q5_1"
-                source = "bundledBase"
-                path = $null
-                profileIds = $profileIds
-            },
-            [ordered]@{
-                modelId = "whisper-cpp-small-q5_1-v1.9.1"
-                modelVersion = "v1.9.1-q5_1"
-                source = "deviceFile"
-                path = $remoteSmallModel
-                profileIds = $profileIds
-            }
-        )
+        models = $deviceModels
     }
     Write-JsonFile -Value $deviceManifest -Path $deviceManifestHostPath
     $remoteDeviceManifest = "$remoteRoot/device-run.json"
@@ -377,7 +416,22 @@ try {
         throw "Android benchmark completion marker is missing; private log: $rawLogPath"
     }
     $completion = $completeLine.Substring($completeMarker.Length) | ConvertFrom-Json
-    if ($observationLines.Count -ne [int]$completion.observationCount) {
+    $expectedEvaluationRunCount = (
+        $deviceModels.Count * $profileIds.Count * $pipelineIds.Count
+    )
+    $expectedObservationCount = (
+        $preparedCorpus.samples.Count * $expectedEvaluationRunCount
+    )
+    if ($completion.schemaVersion -ne 1 -or
+        $completion.corpusId -ne $preparedCorpus.id -or
+        $completion.deviceId -ne $deviceLabel -or
+        [int]$completion.sampleCount -ne $preparedCorpus.samples.Count -or
+        [int]$completion.evaluationRunCount -ne $expectedEvaluationRunCount -or
+        (@($completion.pipelineIds) -join "`0") -ne ($pipelineIds -join "`0")) {
+        throw "Android benchmark completion marker does not match the requested run."
+    }
+    if ([int]$completion.observationCount -ne $expectedObservationCount -or
+        $observationLines.Count -ne $expectedObservationCount) {
         throw "Raw observation count does not match the completion marker."
     }
 
@@ -398,7 +452,7 @@ try {
     }
 
     $rawObservations = [ordered]@{
-        schemaVersion = 3
+        schemaVersion = 4
         execution = [ordered]@{
             platform = "android-emulator"
             deviceId = $deviceLabel
@@ -410,6 +464,7 @@ try {
             vadStabilityMarginMs = 1000
             pipelineIds = $pipelineIds
             corpusId = $preparedCorpus.id
+            corpusDeidentified = [bool]$preparedCorpus.deidentified
             corpusEvidenceClass = $preparedCorpus.evidenceClass
             corpusManifestSha256 = $manifestSha256
             energyStatus = "not_collected"
@@ -439,6 +494,7 @@ try {
         abi = $abi
         apiLevel = $apiLevel
         corpusId = $preparedCorpus.id
+        corpusDeidentified = [bool]$preparedCorpus.deidentified
         corpusEvidenceClass = $preparedCorpus.evidenceClass
         corpusProvenance = $preparedCorpus.provenance
         corpusManifestSha256 = $manifestSha256
@@ -447,8 +503,14 @@ try {
         profileIds = $profileIds
         pipelineIds = $pipelineIds
         modelIds = @(
-            "whisper-cpp-base-q5_1-v1.9.1",
-            "whisper-cpp-small-q5_1-v1.9.1"
+            foreach ($modelName in $modelNames) {
+                if ($modelName -eq "base") {
+                    "whisper-cpp-base-q5_1-v1.9.1"
+                }
+                else {
+                    "whisper-cpp-small-q5_1-v1.9.1"
+                }
+            }
         )
         windowDurationMs = 2000
         fixedWindowCaptureLatencyMs = 2000

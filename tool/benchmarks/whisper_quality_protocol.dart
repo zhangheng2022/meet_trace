@@ -11,9 +11,15 @@ const whisperQualitySampleRateHz = 16000;
 const whisperQualityChannelCount = 1;
 const whisperQualityEncoding = 'pcm16le';
 const whisperQualityWindowSamples = 2 * whisperQualitySampleRateHz;
-const whisperQualityMetricsSchemaVersion = 3;
+const whisperQualityMetricsSchemaVersion = 4;
 const whisperFixedWindowPipelineId = 'fixed-window-v1';
 const whisperVadSegmentedPipelineId = 'vad-segmented-v1';
+const whisperVadRecallCandidatePipelineId = 'vad-recall-035-v1';
+const whisperQualityPipelineIds = {
+  whisperFixedWindowPipelineId,
+  whisperVadSegmentedPipelineId,
+  whisperVadRecallCandidatePipelineId,
+};
 const whisperProductMeetingEvidenceClass = 'product-meeting';
 const whisperPublicRegressionEvidenceClass = 'public-regression';
 const whisperSyntheticSmokeEvidenceClass = 'synthetic-smoke';
@@ -35,12 +41,14 @@ final class WhisperQualityProtocolException implements Exception {
 final class WhisperQualityCorpus {
   WhisperQualityCorpus({
     required this.id,
+    required this.deidentified,
     required this.evidenceClass,
     required this.provenance,
     required this.samples,
   });
 
   final String id;
+  final bool deidentified;
   final String evidenceClass;
   final WhisperQualityCorpusProvenance provenance;
   final List<WhisperQualityCorpusSample> samples;
@@ -72,9 +80,10 @@ final class WhisperQualityCorpus {
         'manifest.schemaVersion 必须为 2',
       );
     }
-    if (manifest['deidentified'] != true) {
+    final deidentified = manifest['deidentified'];
+    if (deidentified is! bool) {
       throw const WhisperQualityProtocolException(
-        'manifest.deidentified 必须为 true',
+        'manifest.deidentified 必须是布尔值',
       );
     }
     final evidenceClass = _requiredText(
@@ -85,6 +94,11 @@ final class WhisperQualityCorpus {
       throw const WhisperQualityProtocolException(
         'manifest.evidenceClass 必须为 product-meeting、'
         'public-regression 或 synthetic-smoke',
+      );
+    }
+    if (evidenceClass == whisperProductMeetingEvidenceClass && !deidentified) {
+      throw const WhisperQualityProtocolException(
+        'product-meeting 语料必须声明 deidentified=true',
       );
     }
     if (requiredEvidenceClass != null &&
@@ -198,6 +212,7 @@ final class WhisperQualityCorpus {
     }
     return WhisperQualityCorpus(
       id: _requiredText(manifest['id'], 'manifest.id'),
+      deidentified: deidentified,
       evidenceClass: evidenceClass,
       provenance: provenance,
       samples: List.unmodifiable(samples),
@@ -207,7 +222,7 @@ final class WhisperQualityCorpus {
   Map<String, Object?> toPreparedJson() => {
     'schemaVersion': whisperQualityCorpusSchemaVersion,
     'id': id,
-    'deidentified': true,
+    'deidentified': deidentified,
     'evidenceClass': evidenceClass,
     'provenance': provenance.toJson(),
     'audioFormat': const {

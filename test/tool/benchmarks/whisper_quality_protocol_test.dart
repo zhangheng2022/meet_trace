@@ -107,6 +107,41 @@ void main() {
         throwsA(isA<WhisperQualityProtocolException>()),
       );
     });
+
+    test('公开许可回归语料不伪装为已去敏产品会议', () async {
+      final fixture = await _fixture(
+        repository: repository,
+        audioRoot: external,
+        evidenceClass: 'public-regression',
+        deidentified: false,
+      );
+
+      final corpus = await WhisperQualityCorpus.load(
+        manifestPath: fixture.manifestPath,
+        repositoryRoot: repository.path,
+        environment: fixture.environment,
+      );
+
+      expect(corpus.deidentified, isFalse);
+      expect(corpus.evidenceClass, 'public-regression');
+    });
+
+    test('产品会议语料必须明确声明已去敏', () async {
+      final fixture = await _fixture(
+        repository: repository,
+        audioRoot: external,
+        deidentified: false,
+      );
+
+      expect(
+        () => WhisperQualityCorpus.load(
+          manifestPath: fixture.manifestPath,
+          repositoryRoot: repository.path,
+          environment: fixture.environment,
+        ),
+        throwsA(isA<WhisperQualityProtocolException>()),
+      );
+    });
   });
 
   group('PCM 与关键事实', () {
@@ -154,6 +189,7 @@ _fixture({
   required Directory audioRoot,
   bool corruptFirstHash = false,
   String evidenceClass = 'product-meeting',
+  bool deidentified = true,
 }) async {
   await audioRoot.create(recursive: true);
   final samples = <Map<String, Object?>>[];
@@ -184,7 +220,7 @@ _fixture({
     jsonEncode({
       'schemaVersion': 2,
       'id': 'deidentified-v1',
-      'deidentified': true,
+      'deidentified': deidentified,
       'evidenceClass': evidenceClass,
       'provenance': const {
         'sourceId': 'private-deidentified-meetings',

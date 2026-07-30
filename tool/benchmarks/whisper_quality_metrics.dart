@@ -18,19 +18,23 @@ final class WhisperQualityMetrics {
 
   Map<String, Object?> evaluate(Map<String, Object?> input) {
     if (input['schemaVersion'] != whisperQualityMetricsSchemaVersion) {
-      throw const WhisperQualityMetricsException('input.schemaVersion 必须为 3');
+      throw const WhisperQualityMetricsException('input.schemaVersion 必须为 4');
     }
     final corpus = _map(input['corpus'], 'corpus');
     final corpusId = _requiredText(corpus['id'], 'corpus.id');
-    if (corpus['deidentified'] != true) {
-      throw const WhisperQualityMetricsException(
-        'corpus.deidentified 必须为 true',
-      );
+    final deidentified = corpus['deidentified'];
+    if (deidentified is! bool) {
+      throw const WhisperQualityMetricsException('corpus.deidentified 必须是布尔值');
     }
     final evidenceClass = _evidenceClass(
       corpus['evidenceClass'],
       'corpus.evidenceClass',
     );
+    if (evidenceClass == whisperProductMeetingEvidenceClass && !deidentified) {
+      throw const WhisperQualityMetricsException(
+        'product-meeting corpus.deidentified 必须为 true',
+      );
+    }
     final provenance = _map(corpus['provenance'], 'corpus.provenance');
     final sourceId = _requiredText(
       provenance['sourceId'],
@@ -98,6 +102,17 @@ final class WhisperQualityMetrics {
                 .intersection(value.sample.expectedKeyFacts.toSet())
                 .length,
       );
+      final isVadPipeline = first.pipelineId != whisperFixedWindowPipelineId;
+      final detectedSpeechDurationMs = isVadPipeline
+          ? values.fold<double>(
+              0,
+              (total, value) => total + value.detectedSpeechDurationMs!,
+            )
+          : null;
+      final inputAudioDurationMs = values.fold<double>(
+        0,
+        (total, value) => total + value.sample.durationMs,
+      );
       summaries.add({
         'deviceId': first.deviceId,
         'modelId': first.modelId,
@@ -112,6 +127,30 @@ final class WhisperQualityMetrics {
         'sentenceLatencySampleCount': latencySamples.length,
         'sentenceLatencyP50Ms': _percentile(latencySamples, 0.5),
         'sentenceLatencyP95Ms': _percentile(latencySamples, 0.95),
+        'asrInvocationCount': values.fold<int>(
+          0,
+          (total, value) => total + value.asrInvocationCount,
+        ),
+        'detectedSpeechSampleCount': isVadPipeline
+            ? values
+                  .where((value) => value.detectedSpeechSegmentCount! > 0)
+                  .length
+            : null,
+        'zeroDetectedSpeechSampleCount': isVadPipeline
+            ? values
+                  .where((value) => value.detectedSpeechSegmentCount == 0)
+                  .length
+            : null,
+        'detectedSpeechSegmentCount': isVadPipeline
+            ? values.fold<int>(
+                0,
+                (total, value) => total + value.detectedSpeechSegmentCount!,
+              )
+            : null,
+        'detectedSpeechDurationMs': detectedSpeechDurationMs,
+        'detectedSpeechCoverageRatio': isVadPipeline
+            ? detectedSpeechDurationMs! / inputAudioDurationMs
+            : null,
         'keyFactRecallRatio': expectedFacts == 0
             ? null
             : recalledFacts / expectedFacts,
@@ -177,6 +216,7 @@ final class WhisperQualityMetrics {
     return {
       'schemaVersion': whisperQualityMetricsSchemaVersion,
       'corpusId': corpusId,
+      'corpusDeidentified': deidentified,
       'corpusEvidenceClass': evidenceClass,
       'corpusProvenance': {'sourceId': sourceId, 'licenseId': licenseId},
       'sampleCount': samples.length,
@@ -328,6 +368,88 @@ _Observation _observation(
       'observations[$index] 的温控结论与 thermalEvidenceRef 必须同时提供',
     );
   }
+  final pipelineId = _pipelineId(
+    item['pipelineId'],
+    'observations[$index].pipelineId',
+  );
+  final asrInvocationCount = _nonNegativeInteger(
+    item['asrInvocationCount'],
+    'observations[$index].asrInvocationCount',
+  );
+  final detectedSpeechSegmentCount = _optionalNonNegativeInteger(
+    item['detectedSpeechSegmentCount'],
+    'observations[$index].detectedSpeechSegmentCount',
+  );
+  final detectedSpeechDurationMs = _optionalNonNegativeNumber(
+    item['detectedSpeechDurationMs'],
+    'observations[$index].detectedSpeechDurationMs',
+  );
+  final sentenceLatencyMs = _optionalNonNegativeNumber(
+    item['sentenceLatencyMs'],
+    'observations[$index].sentenceLatencyMs',
+  );
+  final emittedText = _requiredBoolean(
+    item['emittedText'],
+    'observations[$index].emittedText',
+  );
+  final recognizedKeyFacts = _textList(
+    item['recognizedKeyFacts'] ?? const <Object?>[],
+    'observations[$index].recognizedKeyFacts',
+  );
+  if (pipelineId == whisperFixedWindowPipelineId) {
+    if (detectedSpeechSegmentCount != null ||
+        detectedSpeechDurationMs != null) {
+      throw WhisperQualityMetricsException(
+        'observations[$index] 固定窗口不得伪造 VAD 检测指标',
+      );
+    }
+    final fixedWindowDurationMs =
+        whisperQualityWindowSamples * 1000 / whisperQualitySampleRateHz;
+    final expectedInvocationCount = (sample.durationMs / fixedWindowDurationMs)
+        .ceil();
+    if (asrInvocationCount != expectedInvocationCount) {
+      throw WhisperQualityMetricsException(
+        'observations[$index] 固定窗口 ASR 调用次数必须为 '
+        '$expectedInvocationCount',
+      );
+    }
+  } else {
+    if (detectedSpeechSegmentCount == null ||
+        detectedSpeechDurationMs == null) {
+      throw WhisperQualityMetricsException(
+        'observations[$index] VAD pipeline 必须提供语音检测指标',
+      );
+    }
+    if (detectedSpeechSegmentCount != asrInvocationCount) {
+      throw WhisperQualityMetricsException(
+        'observations[$index] VAD 语音段数必须等于 ASR 调用次数',
+      );
+    }
+    if (detectedSpeechDurationMs > sample.durationMs + 1) {
+      throw WhisperQualityMetricsException(
+        'observations[$index] VAD 语音时长不得超过样本时长',
+      );
+    }
+    if ((detectedSpeechSegmentCount == 0) != (detectedSpeechDurationMs == 0)) {
+      throw WhisperQualityMetricsException(
+        'observations[$index] VAD 语音段数与语音时长状态不一致',
+      );
+    }
+  }
+  if ((asrInvocationCount == 0) != (sentenceLatencyMs == null)) {
+    throw WhisperQualityMetricsException(
+      'observations[$index] ASR 调用次数与句后延迟状态不一致',
+    );
+  }
+  if (asrInvocationCount == 0 &&
+      (emittedText || recognizedKeyFacts.isNotEmpty)) {
+    throw WhisperQualityMetricsException(
+      'observations[$index] 未调用 ASR 时不得输出文本或识别事实',
+    );
+  }
+  if (!emittedText && recognizedKeyFacts.isNotEmpty) {
+    throw WhisperQualityMetricsException('observations[$index] 空文本不得包含识别事实');
+  }
   return _Observation(
     sample: sample,
     deviceId: _requiredText(item['deviceId'], 'observations[$index].deviceId'),
@@ -340,26 +462,17 @@ _Observation _observation(
       item['profileId'],
       'observations[$index].profileId',
     ),
-    pipelineId: _pipelineId(
-      item['pipelineId'],
-      'observations[$index].pipelineId',
-    ),
+    pipelineId: pipelineId,
     inferenceDurationMs: _nonNegativeNumber(
       item['inferenceDurationMs'],
       'observations[$index].inferenceDurationMs',
     ),
-    sentenceLatencyMs: _optionalNonNegativeNumber(
-      item['sentenceLatencyMs'],
-      'observations[$index].sentenceLatencyMs',
-    ),
-    emittedText: _requiredBoolean(
-      item['emittedText'],
-      'observations[$index].emittedText',
-    ),
-    recognizedKeyFacts: _textList(
-      item['recognizedKeyFacts'] ?? const <Object?>[],
-      'observations[$index].recognizedKeyFacts',
-    ),
+    sentenceLatencyMs: sentenceLatencyMs,
+    asrInvocationCount: asrInvocationCount,
+    detectedSpeechSegmentCount: detectedSpeechSegmentCount,
+    detectedSpeechDurationMs: detectedSpeechDurationMs,
+    emittedText: emittedText,
+    recognizedKeyFacts: recognizedKeyFacts,
     peakRssBytes: _optionalNonNegativeInteger(
       item['peakRssBytes'],
       'observations[$index].peakRssBytes',
@@ -396,6 +509,9 @@ final class _Observation {
     required this.pipelineId,
     required this.inferenceDurationMs,
     required this.sentenceLatencyMs,
+    required this.asrInvocationCount,
+    required this.detectedSpeechSegmentCount,
+    required this.detectedSpeechDurationMs,
     required this.emittedText,
     required this.recognizedKeyFacts,
     required this.peakRssBytes,
@@ -414,6 +530,9 @@ final class _Observation {
   final String pipelineId;
   final double inferenceDurationMs;
   final double? sentenceLatencyMs;
+  final int asrInvocationCount;
+  final int? detectedSpeechSegmentCount;
+  final double? detectedSpeechDurationMs;
   final bool emittedText;
   final List<String> recognizedKeyFacts;
   final int? peakRssBytes;
@@ -437,39 +556,37 @@ List<Map<String, Object?>> _pipelineComparisons(
   )) {
     final candidates = summaries.where(
       (candidate) =>
-          candidate['pipelineId'] == whisperVadSegmentedPipelineId &&
+          candidate['pipelineId'] != whisperFixedWindowPipelineId &&
           candidate['deviceId'] == baseline['deviceId'] &&
           candidate['modelId'] == baseline['modelId'] &&
           candidate['modelVersion'] == baseline['modelVersion'] &&
           candidate['profileId'] == baseline['profileId'],
     );
-    if (candidates.isEmpty) {
-      continue;
+    for (final candidate in candidates) {
+      final baselineNoise = baseline['noiseHallucinationCount']! as int;
+      final candidateNoise = candidate['noiseHallucinationCount']! as int;
+      final baselineRecall = baseline['keyFactRecallRatio'] as double?;
+      final candidateRecall = candidate['keyFactRecallRatio'] as double?;
+      comparisons.add({
+        'deviceId': baseline['deviceId'],
+        'modelId': baseline['modelId'],
+        'modelVersion': baseline['modelVersion'],
+        'profileId': baseline['profileId'],
+        'baselinePipelineId': whisperFixedWindowPipelineId,
+        'candidatePipelineId': candidate['pipelineId'],
+        'noiseSampleCount': baseline['noiseSampleCount'],
+        'baselineNoiseHallucinationCount': baselineNoise,
+        'candidateNoiseHallucinationCount': candidateNoise,
+        'noiseHallucinationReductionRatio': baselineNoise == 0
+            ? null
+            : (baselineNoise - candidateNoise) / baselineNoise,
+        'baselineKeyFactRecallRatio': baselineRecall,
+        'candidateKeyFactRecallRatio': candidateRecall,
+        'keyFactRecallDelta': baselineRecall == null || candidateRecall == null
+            ? null
+            : candidateRecall - baselineRecall,
+      });
     }
-    final candidate = candidates.single;
-    final baselineNoise = baseline['noiseHallucinationCount']! as int;
-    final candidateNoise = candidate['noiseHallucinationCount']! as int;
-    final baselineRecall = baseline['keyFactRecallRatio'] as double?;
-    final candidateRecall = candidate['keyFactRecallRatio'] as double?;
-    comparisons.add({
-      'deviceId': baseline['deviceId'],
-      'modelId': baseline['modelId'],
-      'modelVersion': baseline['modelVersion'],
-      'profileId': baseline['profileId'],
-      'baselinePipelineId': whisperFixedWindowPipelineId,
-      'candidatePipelineId': whisperVadSegmentedPipelineId,
-      'noiseSampleCount': baseline['noiseSampleCount'],
-      'baselineNoiseHallucinationCount': baselineNoise,
-      'candidateNoiseHallucinationCount': candidateNoise,
-      'noiseHallucinationReductionRatio': baselineNoise == 0
-          ? null
-          : (baselineNoise - candidateNoise) / baselineNoise,
-      'baselineKeyFactRecallRatio': baselineRecall,
-      'candidateKeyFactRecallRatio': candidateRecall,
-      'keyFactRecallDelta': baselineRecall == null || candidateRecall == null
-          ? null
-          : candidateRecall - baselineRecall,
-    });
   }
   return comparisons;
 }
@@ -500,11 +617,9 @@ String _requiredText(Object? value, String name) {
 
 String _pipelineId(Object? value, String name) {
   final pipelineId = _requiredText(value, name);
-  if (pipelineId != whisperFixedWindowPipelineId &&
-      pipelineId != whisperVadSegmentedPipelineId) {
+  if (!whisperQualityPipelineIds.contains(pipelineId)) {
     throw WhisperQualityMetricsException(
-      '$name 必须为 $whisperFixedWindowPipelineId 或 '
-      '$whisperVadSegmentedPipelineId',
+      '$name 必须为 ${whisperQualityPipelineIds.join('、')}',
     );
   }
   return pipelineId;
@@ -570,6 +685,14 @@ int? _optionalNonNegativeInteger(Object? value, String name) {
   return value;
 }
 
+int _nonNegativeInteger(Object? value, String name) {
+  final result = _optionalNonNegativeInteger(value, name);
+  if (result == null) {
+    throw WhisperQualityMetricsException('$name 必须是非负整数');
+  }
+  return result;
+}
+
 bool? _optionalBoolean(Object? value, String name) {
   if (value == null) {
     return null;
@@ -625,7 +748,10 @@ String _toCsv(Map<String, Object?> report) {
     'deviceId,modelId,modelVersion,profileId,pipelineId,sampleCount,'
         'rtfP50,rtfP95,'
         'sentenceLatencySampleCount,sentenceLatencyP50Ms,'
-        'sentenceLatencyP95Ms,keyFactRecallRatio,'
+        'sentenceLatencyP95Ms,asrInvocationCount,'
+        'detectedSpeechSampleCount,zeroDetectedSpeechSampleCount,'
+        'detectedSpeechSegmentCount,detectedSpeechDurationMs,'
+        'detectedSpeechCoverageRatio,keyFactRecallRatio,'
         'silenceFalsePositiveCount,noiseHallucinationCount,peakRssBytes,'
         'peakRssSampleCount,energyWh,energySampleCount,'
         'sustainedSevereOrCriticalThermal,thermalSampleCount',
@@ -642,6 +768,12 @@ String _toCsv(Map<String, Object?> report) {
         summary['sentenceLatencySampleCount'],
         summary['sentenceLatencyP50Ms'],
         summary['sentenceLatencyP95Ms'],
+        summary['asrInvocationCount'],
+        summary['detectedSpeechSampleCount'],
+        summary['zeroDetectedSpeechSampleCount'],
+        summary['detectedSpeechSegmentCount'],
+        summary['detectedSpeechDurationMs'],
+        summary['detectedSpeechCoverageRatio'],
         summary['keyFactRecallRatio'],
         summary['silenceFalsePositiveCount'],
         summary['noiseHallucinationCount'],

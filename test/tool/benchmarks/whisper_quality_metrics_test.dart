@@ -12,14 +12,18 @@ void main() {
       final summary = summaries.single;
 
       expect(report['corpusId'], 'deidentified-v1');
+      expect(report['corpusDeidentified'], isTrue);
       expect(report['corpusEvidenceClass'], 'product-meeting');
-      expect(report['schemaVersion'], 3);
+      expect(report['schemaVersion'], 4);
       expect(summary['deviceId'], 'android-emulator-x86_64-api-36');
       expect(summary['pipelineId'], 'fixed-window-v1');
       expect(summary['sampleCount'], 20);
       expect(summary['rtfP50'], 0.1);
       expect(summary['rtfP95'], 0.1);
       expect(summary['sentenceLatencyP95Ms'], 1200);
+      expect(summary['asrInvocationCount'], 100);
+      expect(summary['detectedSpeechSampleCount'], isNull);
+      expect(summary['detectedSpeechCoverageRatio'], isNull);
       expect(summary['keyFactRecallRatio'], 1);
       expect(summary['silenceSampleCount'], 5);
       expect(summary['silenceFalsePositiveCount'], 0);
@@ -42,8 +46,7 @@ void main() {
       final vadObservations = [
         for (final observation in fixedObservations)
           {
-            ...observation,
-            'pipelineId': 'vad-segmented-v1',
+            ..._asVadObservation(observation, 'vad-segmented-v1'),
             if ((observation['sampleId']! as String).startsWith('sample-'))
               'emittedText':
                   int.parse(
@@ -66,6 +69,14 @@ void main() {
       expect(comparison['candidateNoiseHallucinationCount'], 0);
       expect(comparison['noiseHallucinationReductionRatio'], 1);
       expect(comparison['keyFactRecallDelta'], 0);
+      final vadSummary = summaries.singleWhere(
+        (summary) => summary['pipelineId'] == 'vad-segmented-v1',
+      );
+      expect(vadSummary['detectedSpeechSampleCount'], 20);
+      expect(vadSummary['zeroDetectedSpeechSampleCount'], 0);
+      expect(vadSummary['detectedSpeechSegmentCount'], 20);
+      expect(vadSummary['detectedSpeechDurationMs'], 100000);
+      expect(vadSummary['detectedSpeechCoverageRatio'], 0.5);
     });
 
     test('固定窗口没有噪声幻觉时不伪造百分比改善', () {
@@ -75,7 +86,7 @@ void main() {
       input['observations'] = [
         ...fixedObservations,
         for (final observation in fixedObservations)
-          {...observation, 'pipelineId': 'vad-segmented-v1'},
+          _asVadObservation(observation, 'vad-segmented-v1'),
       ];
 
       final report = const WhisperQualityMetrics().evaluate(input);
@@ -84,6 +95,120 @@ void main() {
 
       expect(comparison['baselineNoiseHallucinationCount'], 0);
       expect(comparison['noiseHallucinationReductionRatio'], isNull);
+    });
+
+    test('同一固定窗口可分别比较多个 VAD 候选', () {
+      final input = _input(sampleCount: 20);
+      final fixedObservations =
+          input['observations']! as List<Map<String, Object?>>;
+      input['observations'] = [
+        ...fixedObservations,
+        for (final observation in fixedObservations)
+          _asVadObservation(observation, 'vad-segmented-v1'),
+        for (final observation in fixedObservations)
+          _asVadObservation(observation, 'vad-recall-035-v1'),
+      ];
+
+      final report = const WhisperQualityMetrics().evaluate(input);
+      final comparisons =
+          report['pipelineComparisons']! as List<Map<String, Object?>>;
+
+      expect(comparisons, hasLength(2));
+      expect(comparisons.map((value) => value['candidatePipelineId']).toSet(), {
+        'vad-segmented-v1',
+        'vad-recall-035-v1',
+      });
+    });
+
+    test('VAD 零语音样本不调用 ASR 并进入独立计数', () {
+      final input = _input(sampleCount: 20);
+      final fixedObservations =
+          input['observations']! as List<Map<String, Object?>>;
+      input['observations'] = [
+        for (final observation in fixedObservations)
+          {
+            ..._asVadObservation(observation, 'vad-segmented-v1'),
+            'asrInvocationCount': 0,
+            'detectedSpeechSegmentCount': 0,
+            'detectedSpeechDurationMs': 0,
+            'sentenceLatencyMs': null,
+            'emittedText': false,
+            'recognizedKeyFacts': <String>[],
+          },
+      ];
+
+      final report = const WhisperQualityMetrics().evaluate(input);
+      final summary =
+          (report['summaries']! as List<Map<String, Object?>>).single;
+
+      expect(summary['asrInvocationCount'], 0);
+      expect(summary['detectedSpeechSampleCount'], 0);
+      expect(summary['zeroDetectedSpeechSampleCount'], 20);
+      expect(summary['detectedSpeechSegmentCount'], 0);
+      expect(summary['detectedSpeechDurationMs'], 0);
+      expect(summary['detectedSpeechCoverageRatio'], 0);
+      expect(summary['sentenceLatencySampleCount'], 0);
+    });
+
+    test('schema v3 与缺失 VAD 可观测字段会被拒绝', () {
+      final legacy = _input(sampleCount: 20)..['schemaVersion'] = 3;
+      expect(
+        () => const WhisperQualityMetrics().evaluate(legacy),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+
+      final missingVadMetrics = _input(sampleCount: 20);
+      final fixedObservations =
+          missingVadMetrics['observations']! as List<Map<String, Object?>>;
+      missingVadMetrics['observations'] = [
+        for (final observation in fixedObservations)
+          {
+            ...observation,
+            'pipelineId': 'vad-segmented-v1',
+            'asrInvocationCount': 0,
+          },
+      ];
+      expect(
+        () => const WhisperQualityMetrics().evaluate(missingVadMetrics),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+
+      final wrongFixedInvocations = _input(sampleCount: 20);
+      final wrongFixedObservations =
+          wrongFixedInvocations['observations']! as List<Map<String, Object?>>;
+      wrongFixedObservations.first['asrInvocationCount'] = 4;
+      expect(
+        () => const WhisperQualityMetrics().evaluate(wrongFixedInvocations),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+
+      final outputWithoutInvocation = _input(sampleCount: 20);
+      final outputObservations =
+          outputWithoutInvocation['observations']!
+              as List<Map<String, Object?>>;
+      outputObservations[10] = {
+        ..._asVadObservation(outputObservations[10], 'vad-segmented-v1'),
+        'asrInvocationCount': 0,
+        'detectedSpeechSegmentCount': 0,
+        'detectedSpeechDurationMs': 0,
+        'sentenceLatencyMs': null,
+      };
+      expect(
+        () => const WhisperQualityMetrics().evaluate(outputWithoutInvocation),
+        throwsA(isA<WhisperQualityMetricsException>()),
+      );
+    });
+
+    test('公开许可回归报告允许 deidentified=false 并保留证据类别', () {
+      final input = _input(sampleCount: 20);
+      final corpus = input['corpus']! as Map<String, Object?>;
+      corpus['deidentified'] = false;
+      corpus['evidenceClass'] = 'public-regression';
+
+      final report = const WhisperQualityMetrics().evaluate(input);
+
+      expect(report['corpusDeidentified'], isFalse);
+      expect(report['corpusEvidenceClass'], 'public-regression');
     });
 
     test('少于 20 段、未知 sample 或音频路径引用会拒绝', () {
@@ -111,7 +236,7 @@ void main() {
 
       final absolute = _input(sampleCount: 20);
       final absoluteObservations = absolute['observations']! as List<Object?>;
-      (absoluteObservations.first! as Map<String, Object>)['transcriptRef'] =
+      (absoluteObservations.first! as Map<String, Object?>)['transcriptRef'] =
           r'C:\private\transcript.json';
       expect(
         () => const WhisperQualityMetrics().evaluate(absolute),
@@ -121,7 +246,7 @@ void main() {
       final invalidBoolean = _input(sampleCount: 20);
       final booleanObservations =
           invalidBoolean['observations']! as List<Object?>;
-      (booleanObservations.first! as Map<String, Object>)['emittedText'] =
+      (booleanObservations.first! as Map<String, Object?>)['emittedText'] =
           'true';
       expect(
         () => const WhisperQualityMetrics().evaluate(invalidBoolean),
@@ -173,7 +298,7 @@ void main() {
       final nullableObservations = <Object?>[];
       for (var index = 0; index < observations.length; index++) {
         final observation = Map<String, Object?>.from(
-          observations[index]! as Map<String, Object>,
+          observations[index]! as Map<String, Object?>,
         );
         observation['energyWh'] = null;
         observation['energyEvidenceRef'] = null;
@@ -197,7 +322,7 @@ void main() {
       final input = _input(sampleCount: 20);
       final observations = input['observations']! as List<Object?>;
       final first = Map<String, Object?>.from(
-        observations.first! as Map<String, Object>,
+        observations.first! as Map<String, Object?>,
       );
       first['energyEvidenceRef'] = null;
       input['observations'] = <Object?>[first, ...observations.skip(1)];
@@ -225,7 +350,7 @@ Map<String, Object?> _input({required int sampleCount}) {
       },
   ];
   return {
-    'schemaVersion': 3,
+    'schemaVersion': 4,
     'corpus': {
       'id': 'deidentified-v1',
       'deidentified': true,
@@ -247,6 +372,9 @@ Map<String, Object?> _input({required int sampleCount}) {
           'pipelineId': 'fixed-window-v1',
           'inferenceDurationMs': 1000,
           'sentenceLatencyMs': 1200,
+          'asrInvocationCount': 5,
+          'detectedSpeechSegmentCount': null,
+          'detectedSpeechDurationMs': null,
           'emittedText': index >= 10,
           'recognizedKeyFacts': [if (index >= 10) 'fact-$index'],
           'peakRssBytes': 120000000,
@@ -259,3 +387,14 @@ Map<String, Object?> _input({required int sampleCount}) {
     ],
   };
 }
+
+Map<String, Object?> _asVadObservation(
+  Map<String, Object?> observation,
+  String pipelineId,
+) => {
+  ...observation,
+  'pipelineId': pipelineId,
+  'asrInvocationCount': 1,
+  'detectedSpeechSegmentCount': 1,
+  'detectedSpeechDurationMs': 5000,
+};

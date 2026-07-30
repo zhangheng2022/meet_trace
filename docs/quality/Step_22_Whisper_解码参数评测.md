@@ -33,8 +33,8 @@
   非空的 `provenance.sourceId`、`provenance.licenseId`；
 - 仓库外或 `.spike/` 中不少于 20 段的去敏 PCM16LE，通过 `pathEnv` 引用；
 - raw observations 必须带 model/version/profile、推理耗时、句后延迟、关键事实、
-  静音/噪声输出、RSS、能耗、温控和 `pipelineId`；无法从模拟器取得的能耗/温控必须
-  为 `null`。
+  静音/噪声输出、RSS、能耗、温控、`pipelineId` 和 ASR 调用次数；VAD 管线还必须
+  带检测语音段数与时长。无法从模拟器取得的能耗/温控必须为 `null`。
 - 无语音噪声样本使用 `noise-only`；“语音 + 背景噪声”不得使用该标签。
 
 Android x86_64 模拟器完整执行：
@@ -52,7 +52,8 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 `-Profiles baseline,preview,final` 明确选择 Profile，并默认对每个组合执行
 `fixed-window-v1` 和 `vad-segmented-v1`；每个组合必须完整覆盖同一批语料。
 脚本验证语料和 Small 权重，推送临时设备副本，静默捕获包含正文的私有日志，写出
-transcript 引用，再调用 schema `3` 聚合器生成 JSON/CSV。固定窗口句后延迟按每段中
+transcript 引用，再调用 schema `4` 聚合器生成 JSON/CSV。schema 4 会拒绝旧 v3
+观测以及缺少 VAD 可观测字段的输入。固定窗口句后延迟按每段中
 最慢的端到端识别往返加 2 秒窗口等待统计；VAD 分段句后延迟包含 1 秒生产稳定裕量、
 分段和最慢语音区间的识别往返。两者都包含 isolate 投递和结果返回；RSS 在分段和推理
 期间每 50 ms 采样。该口径是设备离线评测的保守估算，阶段 5 仍需以真实时间录音验证
@@ -61,6 +62,21 @@ transcript 引用，再调用 schema `3` 聚合器生成 JSON/CSV。固定窗口
 `-RequiredEvidenceClass` 默认为 `product-meeting`。公开语料和合成音频只能在明确传入
 `public-regression` 或 `synthetic-smoke` 时运行，其报告保留证据类别，不能用于关闭
 产品质量门槛。
+
+固定版本 ASCEND 公开回归可直接执行：
+
+```powershell
+& .\tool\benchmarks\run_ascend_android_regression.ps1 `
+  -DeviceId emulator-5554 `
+  -Models @("base") `
+  -Profiles @("baseline") `
+  -Pipelines @("vad-segmented", "vad-recall")
+```
+
+下载器默认从固定 revision 的 validation 前 100 行选择 20 段 1～3 秒语音，并把
+全部私有产物限制在 `.spike/`。`vad-recall` 映射到
+`vad-recall-035-v1`（threshold 0.35、min speech 100 ms、pad 100 ms），仅是评测
+候选；生产 `WhisperVadConfig` 默认值没有改变。
 
 已有合规原始观测时仍可直接执行：
 
@@ -73,7 +89,8 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 
 输出位于 `.spike/results/whisper-quality/`，不提交原始音频、私有设备清单、日志或转录
 正文。2026-07-31 已在 API 36 x86_64 模拟器完成新 integration test 的编译、安装和
-缺参跳过检查；尚未把该检查表述为真实质量评测。
+缺参跳过检查，并完成 Base 的 20 段 ASCEND 双 VAD schema 4 回归；公开回归不替代
+真实产品会议质量评测。
 
 ## 4. Hard Gate 2
 

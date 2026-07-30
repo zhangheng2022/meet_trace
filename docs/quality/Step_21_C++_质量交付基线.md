@@ -86,7 +86,8 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 - Base/Small 和选择的 Profile 默认同时执行 `fixed-window-v1` 与
   `vad-segmented-v1`。前者保留阶段 0 的固定 2 秒窗口对照，后者先以生产
   `WhisperVadSegmenter` 从完整 PCM 生成全局区间，再只识别语音区间。
-- 原始观测和聚合报告 schema 为 `3`，每条观测必须携带 `pipelineId`；聚合器只在
+- 原始观测和聚合报告 schema 为 `4`，每条观测必须携带 `pipelineId` 和实际 ASR
+  调用次数；VAD 管线还必须携带检测语音段数与检测语音时长。聚合器只在
   相同设备、模型、版本和 Profile 内计算 VAD 相对固定窗口的噪声幻觉下降率与关键事实
   召回变化。固定窗口噪声幻觉为零时下降率保持 `null`，不得伪造 100% 改善。
 - 设备端逐条输出原始观测，主机再把正文保存为 `.spike/` 下 transcript 引用。
@@ -94,6 +95,24 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   sample count 为 0，不得伪装成 `0 Wh` 或 `false`。
 - `noise-only` 专用于没有语音的噪声样本；带背景噪声的正常语音使用其他标签，不能计入
   噪声幻觉分母。
+
+### 5.1 公开回归轨道
+
+- `tool/benchmarks/fetch_ascend_public_regression.dart` 只从 Hugging Face
+  datasets-server 的 HTTPS 主机取得
+  [ASCEND](https://huggingface.co/datasets/CAiRE/ASCEND/blob/main/README.md)
+  元数据和音频，固定 revision
+  `737e9800ae31be9932ba8464c80366559bd28424` 与 `CC-BY-SA-4.0`。
+- 下载器拒绝非 16 kHz、单声道、16-bit PCM WAV；转换后的 PCM、manifest 和环境变量
+  文件只写入被忽略的 `.spike/`。公开数据明确标记 `deidentified=false` 和
+  `public-regression`，不得伪装成去敏产品会议。
+- 2026-07-31 在 API 36 x86_64 模拟器以 Base、Baseline 和同一份 20 段
+  中英自然短语音完成 schema 4 A/B。默认 `vad-segmented-v1` 有 12/20 段零语音
+  检测、语音覆盖率 34.65%、空文本率 60%、完整参考句召回 0；评测候选
+  `vad-recall-035-v1` 为 0/20 段零检测、覆盖率 97.71%、空文本率 0、完整参考句
+  召回 15.79%。
+- 该参考句召回采用归一化后的整句匹配，属于严格回归信号，不等同于产品会议关键事实
+  召回。模拟器绝对 RTF 与延迟也不得用于真机发布承诺。
 
 ## 6. Hard Gate 0
 
@@ -105,7 +124,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
 | 20 段真实去敏产品会议语料可运行 | `blocked`：未提供语料环境变量 |
 | 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
-| 固定窗口与 VAD 分段可同条件比较 | 通过：双管线 Android 执行及 schema 3 聚合链已实现 |
+| 固定窗口与 VAD 分段可同条件比较 | 通过：多管线 Android 执行、schema 4 可观测性及聚合链已实现 |
 
 在真实语料注入前，不得把 Hard Gate 0 或质量指标标记为通过；后续实现可以继续，但发布
 结论必须保持 `blocked`。

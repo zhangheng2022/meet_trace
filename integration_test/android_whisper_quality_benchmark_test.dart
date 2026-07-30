@@ -33,7 +33,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
-    '仓库外去敏 PCM 在 Android 上生成 Base/Small/Profile 原始观测',
+    '仓库外受控 PCM 在 Android 上生成 Base/Small/Profile 原始观测',
     (_) async {
       final run = await _DeviceBenchmarkRun.load(_deviceManifestPath);
       final temporary = await getTemporaryDirectory();
@@ -52,18 +52,31 @@ void main() {
           'ggml-silero-v6.2.0.bin',
         );
         await _copyAsset(_baseModelAsset, baseModelPath);
-        await _copyAsset(_vadModelAsset, vadModelPath);
+        final vadPipelineIds = run.pipelineIds
+            .where((pipelineId) => pipelineId != whisperFixedWindowPipelineId)
+            .toList(growable: false);
+        if (vadPipelineIds.isNotEmpty) {
+          await _copyAsset(_vadModelAsset, vadModelPath);
+        }
 
-        final vadMeasurements = <String, _VadMeasurement>{};
-        for (final sample in run.samples) {
-          final bytes = await File(sample.path).readAsBytes();
-          expect(bytes.length, sample.byteLength);
-          expect(sha256.convert(bytes).toString(), sample.sha256);
-          vadMeasurements[sample.id] = await _segmentMeasured(
-            bytes,
-            modelPath: vadModelPath,
-            threadCount: run.threadCount,
-          );
+        final vadMeasurements = <String, Map<String, _VadMeasurement>>{};
+        if (vadPipelineIds.isNotEmpty) {
+          for (final sample in run.samples) {
+            final bytes = await File(sample.path).readAsBytes();
+            expect(bytes.length, sample.byteLength);
+            expect(sha256.convert(bytes).toString(), sample.sha256);
+            vadMeasurements[sample.id] = {
+              for (final pipelineId in vadPipelineIds)
+                pipelineId: await _segmentMeasured(
+                  bytes,
+                  config: _vadConfigForPipeline(
+                    pipelineId,
+                    modelPath: vadModelPath,
+                    threadCount: run.threadCount,
+                  ),
+                ),
+            };
+          }
         }
 
         for (final model in run.models) {
@@ -88,7 +101,6 @@ void main() {
             try {
               for (final sample in run.samples) {
                 final bytes = await File(sample.path).readAsBytes();
-                final vad = vadMeasurements[sample.id]!;
                 for (final pipelineId in run.pipelineIds) {
                   final result = switch (pipelineId) {
                     whisperFixedWindowPipelineId => await _recognizeFixedWindow(
@@ -100,7 +112,14 @@ void main() {
                       await _recognizeVadSegments(
                         adapter,
                         bytes,
-                        vad,
+                        vadMeasurements[sample.id]![pipelineId]!,
+                        durationMs: sample.durationMs,
+                      ),
+                    whisperVadRecallCandidatePipelineId =>
+                      await _recognizeVadSegments(
+                        adapter,
+                        bytes,
+                        vadMeasurements[sample.id]![pipelineId]!,
                         durationMs: sample.durationMs,
                       ),
                     _ => throw WhisperQualityProtocolException(
@@ -123,6 +142,10 @@ void main() {
                     'sentenceLatencyMs': result.sentenceLatencyMicros == null
                         ? null
                         : result.sentenceLatencyMicros! / 1000,
+                    'asrInvocationCount': result.asrInvocationCount,
+                    'detectedSpeechSegmentCount':
+                        result.detectedSpeechSegmentCount,
+                    'detectedSpeechDurationMs': result.detectedSpeechDurationMs,
                     'emittedText': result.transcript.isNotEmpty,
                     'recognizedKeyFacts': recognizedFacts,
                     'peakRssBytes': result.peakRssBytes,
@@ -182,6 +205,9 @@ final class _BenchmarkRecognition {
     required this.segments,
     required this.inferenceDurationMicros,
     required this.sentenceLatencyMicros,
+    required this.asrInvocationCount,
+    required this.detectedSpeechSegmentCount,
+    required this.detectedSpeechDurationMs,
     required this.peakRssBytes,
   });
 
@@ -189,13 +215,15 @@ final class _BenchmarkRecognition {
   final List<Map<String, Object?>> segments;
   final int inferenceDurationMicros;
   final int? sentenceLatencyMicros;
+  final int asrInvocationCount;
+  final int? detectedSpeechSegmentCount;
+  final double? detectedSpeechDurationMs;
   final int peakRssBytes;
 }
 
 Future<_VadMeasurement> _segmentMeasured(
   Uint8List bytes, {
-  required String modelPath,
-  required int threadCount,
+  required WhisperVadConfig config,
 }) async {
   var peakRssBytes = ProcessInfo.currentRss;
   final timer = Timer.periodic(const Duration(milliseconds: 50), (_) {
@@ -203,8 +231,8 @@ Future<_VadMeasurement> _segmentMeasured(
   });
   final watch = Stopwatch()..start();
   final segmenter = WhisperVadSegmenter(
-    modelPath: modelPath,
-    config: WhisperVadConfig(modelPath: modelPath, threadCount: threadCount),
+    modelPath: config.modelPath,
+    config: config,
     stabilityMargin: _vadStabilityMargin,
   );
   try {
@@ -225,6 +253,27 @@ Future<_VadMeasurement> _segmentMeasured(
     timer.cancel();
     await segmenter.dispose();
   }
+}
+
+WhisperVadConfig _vadConfigForPipeline(
+  String pipelineId, {
+  required String modelPath,
+  required int threadCount,
+}) {
+  return switch (pipelineId) {
+    whisperVadSegmentedPipelineId => WhisperVadConfig(
+      modelPath: modelPath,
+      threadCount: threadCount,
+    ),
+    whisperVadRecallCandidatePipelineId => WhisperVadConfig(
+      modelPath: modelPath,
+      threadCount: threadCount,
+      threshold: 0.35,
+      minSpeechDurationMs: 100,
+      speechPadMs: 100,
+    ),
+    _ => throw WhisperQualityProtocolException('未知 VAD pipelineId：$pipelineId'),
+  };
 }
 
 Future<_BenchmarkRecognition> _recognizeFixedWindow(
@@ -268,6 +317,9 @@ Future<_BenchmarkRecognition> _recognizeFixedWindow(
     // 保守覆盖一句话在 2 秒窗口起点结束时等待窗口到齐的时间。
     sentenceLatencyMicros:
         _fixedWindowCaptureLatency.inMicroseconds + maximumWindowLatencyMicros,
+    asrInvocationCount: windowIndex,
+    detectedSpeechSegmentCount: null,
+    detectedSpeechDurationMs: null,
     peakRssBytes: peakRssBytes,
   );
 }
@@ -284,12 +336,16 @@ Future<_BenchmarkRecognition> _recognizeVadSegments(
   var inferenceDurationMicros = vad.elapsedMicros;
   var maximumSegmentLatencyMicros = 0;
   var peakRssBytes = vad.peakRssBytes;
+  var asrInvocationCount = 0;
+  var detectedSpeechSampleCount = 0;
   for (final speech in vad.segments) {
     final start = speech.startSample.clamp(0, allSamples.length);
     final end = speech.endSample.clamp(start, allSamples.length);
     if (end <= start) {
       continue;
     }
+    asrInvocationCount++;
+    detectedSpeechSampleCount += end - start;
     final measured = await _recognizeMeasured(
       adapter,
       Float32List.sublistView(allSamples, start, end),
@@ -314,11 +370,15 @@ Future<_BenchmarkRecognition> _recognizeVadSegments(
     transcript: transcriptParts.join(' ').trim(),
     segments: List.unmodifiable(segments),
     inferenceDurationMicros: inferenceDurationMicros,
-    sentenceLatencyMicros: vad.segments.isEmpty
+    sentenceLatencyMicros: asrInvocationCount == 0
         ? null
         : _vadStabilityMargin.inMicroseconds +
               vad.elapsedMicros +
               maximumSegmentLatencyMicros,
+    asrInvocationCount: asrInvocationCount,
+    detectedSpeechSegmentCount: asrInvocationCount,
+    detectedSpeechDurationMs:
+        detectedSpeechSampleCount * 1000 / whisperQualitySampleRateHz,
     peakRssBytes: peakRssBytes,
   );
 }
@@ -422,9 +482,7 @@ final class _DeviceBenchmarkRun {
     if (rawPipelineIds is! List<Object?> ||
         rawPipelineIds.isEmpty ||
         rawPipelineIds.any(
-          (value) =>
-              value != whisperFixedWindowPipelineId &&
-              value != whisperVadSegmentedPipelineId,
+          (value) => !whisperQualityPipelineIds.contains(value),
         ) ||
         rawPipelineIds.toSet().length != rawPipelineIds.length) {
       throw const WhisperQualityProtocolException(

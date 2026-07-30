@@ -49,20 +49,51 @@ function Write-JsonFile {
 
 $manifestPath = Resolve-ExistingFile -Path $CorpusManifest -Label "Corpus manifest"
 $observationsPath = Resolve-ExistingFile -Path $RawObservations -Label "Raw observations"
+$outputRoot = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {
+    [System.IO.Path]::GetFullPath($OutputDirectory)
+}
+else {
+    [System.IO.Path]::GetFullPath(
+        (Join-Path -Path $repoRoot -ChildPath $OutputDirectory)
+    )
+}
+$spikeRoot = [System.IO.Path]::GetFullPath(
+    (Join-Path -Path $repoRoot -ChildPath ".spike")
+)
+$spikePrefix = $spikeRoot.TrimEnd("\", "/") + [System.IO.Path]::DirectorySeparatorChar
+if (-not $outputRoot.StartsWith(
+        $spikePrefix,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+    throw "OutputDirectory must be inside the ignored repository .spike directory."
+}
+[System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
+$combinedPath = Join-Path $outputRoot "quality-input.json"
+$jsonPath = Join-Path $outputRoot "quality-report.json"
+$csvPath = Join-Path $outputRoot "quality-report.csv"
+foreach ($staleOutputFile in @($combinedPath, $jsonPath, $csvPath)) {
+    if (Test-Path -LiteralPath $staleOutputFile -PathType Leaf) {
+        Remove-Item -LiteralPath $staleOutputFile -Force
+    }
+}
 $manifestSha256 = (
     Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256
 ).Hash.ToLowerInvariant()
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $observations = Get-Content -LiteralPath $observationsPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
-if ($manifest.deidentified -ne $true) {
-    throw "Corpus manifest must declare deidentified=true"
+if ($manifest.deidentified -isnot [bool]) {
+    throw "Corpus manifest deidentified must be a boolean"
 }
 if ($manifest.schemaVersion -ne 2) {
     throw "Corpus manifest schemaVersion must be 2"
 }
 if ($manifest.evidenceClass -ne $RequiredEvidenceClass) {
     throw "Corpus evidenceClass must be $RequiredEvidenceClass"
+}
+if ($manifest.evidenceClass -eq "product-meeting" -and
+    $manifest.deidentified -ne $true) {
+    throw "Product meeting corpus must declare deidentified=true"
 }
 if ([string]::IsNullOrWhiteSpace($manifest.provenance.sourceId) -or
     [string]::IsNullOrWhiteSpace($manifest.provenance.licenseId)) {
@@ -74,13 +105,37 @@ if ($null -eq $manifest.samples -or $manifest.samples.Count -lt 20) {
 if ($null -eq $observations.observations) {
     throw "Raw observations must contain an observations array"
 }
-if ($observations.schemaVersion -ne 3) {
-    throw "Raw observations schemaVersion must be 3"
+if ($observations.schemaVersion -ne 4) {
+    throw "Raw observations schemaVersion must be 4"
 }
 if ($observations.execution.corpusId -ne $manifest.id -or
+    $observations.execution.corpusDeidentified -ne $manifest.deidentified -or
     $observations.execution.corpusEvidenceClass -ne $manifest.evidenceClass -or
     $observations.execution.corpusManifestSha256 -ne $manifestSha256) {
     throw "Raw observations corpus attestation does not match the manifest"
+}
+$declaredPipelineIds = @(
+    @($observations.execution.pipelineIds) |
+        ForEach-Object { "$_" } |
+        Sort-Object -Unique
+)
+$observedPipelineIds = @(
+    @($observations.observations) |
+        ForEach-Object { "$($_.pipelineId)" } |
+        Sort-Object -Unique
+)
+if ($declaredPipelineIds.Count -eq 0 -or
+    ($declaredPipelineIds -join "`0") -ne ($observedPipelineIds -join "`0")) {
+    throw "Raw observations pipeline attestation does not match observations"
+}
+$observedDeviceIds = @(
+    @($observations.observations) |
+        ForEach-Object { "$($_.deviceId)" } |
+        Sort-Object -Unique
+)
+if ($observedDeviceIds.Count -ne 1 -or
+    $observedDeviceIds[0] -ne "$($observations.execution.deviceId)") {
+    throw "Raw observations device attestation does not match observations"
 }
 
 $sampleIds = @{}
@@ -112,31 +167,8 @@ foreach ($sample in $manifest.samples) {
     }
 }
 
-$outputRoot = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {
-    [System.IO.Path]::GetFullPath($OutputDirectory)
-}
-else {
-    [System.IO.Path]::GetFullPath(
-        (Join-Path -Path $repoRoot -ChildPath $OutputDirectory)
-    )
-}
-$spikeRoot = [System.IO.Path]::GetFullPath(
-    (Join-Path -Path $repoRoot -ChildPath ".spike")
-)
-$spikePrefix = $spikeRoot.TrimEnd("\", "/") + [System.IO.Path]::DirectorySeparatorChar
-if (-not $outputRoot.StartsWith(
-        $spikePrefix,
-        [System.StringComparison]::OrdinalIgnoreCase
-    )) {
-    throw "OutputDirectory must be inside the ignored repository .spike directory."
-}
-[System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
-$combinedPath = Join-Path $outputRoot "quality-input.json"
-$jsonPath = Join-Path $outputRoot "quality-report.json"
-$csvPath = Join-Path $outputRoot "quality-report.csv"
-
 $combined = [ordered]@{
-    schemaVersion = 3
+    schemaVersion = 4
     corpus = $manifest
     observations = $observations.observations
 }
