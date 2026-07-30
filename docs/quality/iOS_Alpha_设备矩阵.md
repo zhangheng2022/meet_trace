@@ -1,8 +1,8 @@
 # 会迹（MeetTrace）iOS Alpha 设备矩阵
 
 > 状态：阻塞，等待 macOS/Xcode 与真机证据
-> 更新日期：2026-07-29
-> 上游需求：[Android + iOS Alpha PRD V0.7](../会迹_MeetTrace_Alpha_PRD_无登录版.md)
+> 更新日期：2026-07-30
+> 上游需求：[Android + iOS Alpha PRD V0.8](../会迹_MeetTrace_Alpha_PRD_无登录版.md)
 
 ## 平台基线
 
@@ -13,7 +13,7 @@
 | 必验架构 | arm64 真机 |
 | Bundle ID / 签名 | 当前仍为 `com.example.meettrace` 占位符，Apple Team 未配置；签名发布前必须替换 |
 | 录音实现 | `record` 7.1.1 / AVFoundation |
-| 端侧 ASR | 官方 `whisper.cpp` v1.9.1 + Native Assets |
+| 端侧 ASR | 当前为官方 `whisper.cpp` v1.9.1 + Native Assets；目标 Rust/`whisper-rs` 仍待双平台 Hard Gate |
 | 后台能力 | `UIBackgroundModes: audio`；不承诺用户强制结束后继续录音 |
 
 ## 必验设备

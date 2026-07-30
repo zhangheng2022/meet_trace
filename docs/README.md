@@ -1,20 +1,20 @@
 # 会迹（MeetTrace）文档索引
 
 > 状态：当前文档入口
-> 更新日期：2026-07-29
+> 更新日期：2026-07-30
 
 ## 活动文档
 
-1. [Android + iOS Alpha PRD V0.7](./会迹_MeetTrace_Alpha_PRD_无登录版.md)：产品范围、用户流程、质量门槛和 AT-01～AT-20 的事实源。
-2. [端侧双模型转录技术方案](./端侧双模型转录技术方案.md)：`whisper.cpp` 双模型、Native Assets、录音解耦、模型生命周期和降级设计。
+1. [Android + iOS Alpha PRD V0.8](./会迹_MeetTrace_Alpha_PRD_无登录版.md)：产品范围、用户流程、质量门槛和 AT-01～AT-22 的事实源。
+2. [端侧双模型转录技术方案](./端侧双模型转录技术方案.md)：Rust/`whisper-rs` 双模型、官方 Silero VAD、录音解耦、模型生命周期和降级设计。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)：当前实现顺序与交付门槛。
 4. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)：隔离开发、合并和安全清理规则。
 5. [交互与视觉系统](../DESIGN.md)：页面、响应式布局和交互契约。
 
 ## 当前实现状态
 
-截至 2026-07-29，应用 ASR 主链已从 sherpa-onnx 正式替换为官方
-`whisper.cpp` v1.9.1：
+截至 2026-07-30，应用当前 ASR 主链已从 sherpa-onnx 正式替换为官方
+`whisper.cpp` v1.9.1；下一步迁移目标已批准为 Rust + `whisper-rs` + 官方 Silero VAD：
 
 - 标准模型 `Whisper Base Q5_1` 随包内置。
 - 高级模型 `Whisper Small Q5_1` 按需下载，下载前要求至少 512 MiB 可用空间。
@@ -25,6 +25,10 @@
 - 事实 PCM 写入独立于推理。连续切窗和有界预览队列可丢弃临时预览任务，但不得丢失录音。
 - 历史默认模型设置会迁移到对应的 Whisper 层级；历史会议的原模型 ID 与版本保持不变。
 
+Rust 迁移必须先通过 Android/iOS 真机 Spike 和同语料质量门槛。Hard Gate 通过前，
+`meettrace_whisper_native` 继续作为当前后端和对照组，不得删除。迁移不改变统一
+`AsrEngine`、事实录音优先、会议模型锁定或最终快照原子激活。
+
 Android Debug APK 已能产出 `arm64-v8a`、`armeabi-v7a`、`x86_64` 三个
 `libmeettrace_whisper.so`，并只包含内置 Base 权重。iOS 仍需在 macOS/Xcode 和真机上完成
 等价构建、后台录音、内存、温控和模型验收，因此双平台 Alpha 发布仍为 `blocked`。
@@ -33,10 +37,12 @@ Android Debug APK 已能产出 `arm64-v8a`、`armeabi-v7a`、`x86_64` 三个
 
 - [Step 07 可靠录音与崩溃恢复](./quality/Step_07_可靠录音与崩溃恢复.md)
 - [Step 20 whisper.cpp 正式替换](./quality/Step_20_whisper.cpp_正式替换.md)
+- [Rust ASR 迁移基线](./quality/Rust_ASR_迁移基线.md)
+- [Rust ASR 分阶段实施方案](./superpowers/plans/2026-07-30-rust-whisper-streaming-asr-migration.md)
 - [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md)
 - [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md)
 
-旧 sherpa-onnx、Paraformer、Qwen3-ASR 和 Silero VAD 方案不在 `docs/` 保留并列副本；
+旧 sherpa-onnx、Paraformer、Qwen3-ASR 和旧 sherpa Silero VAD 方案不在 `docs/` 保留并列副本；
 需要追溯时使用 Git 历史。
 
 ## 维护规则
