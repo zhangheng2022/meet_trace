@@ -128,6 +128,38 @@ void main() {
     firstPreview.complete();
   });
 
+  test('ASR preview 阻塞时音量反馈仍独立消费已持久化 PCM', () async {
+    final firstPreview = Completer<void>();
+    var previewCalls = 0;
+    final preview = CallbackRecordingPreviewSink((_) {
+      previewCalls++;
+      return firstPreview.future;
+    });
+    final service = createService(
+      preview: preview,
+      factCommitInterval: const Duration(milliseconds: 20),
+    );
+    final levels = <RecordingAudioLevel>[];
+    final subscription = service.audioLevelChanges.listen(levels.add);
+
+    await service.start(meetingId: 'meeting-independent-levels');
+    for (var index = 0; index < 10; index++) {
+      capture.add(_pcmBytes(320));
+    }
+
+    await _waitFor(() => service.persistedBytes == 3200);
+    await _waitFor(() => levels.length == 1);
+
+    expect(previewCalls, 1);
+    expect(levels.map((sample) => sample.capturedThrough), [
+      const Duration(milliseconds: 100),
+    ]);
+
+    firstPreview.complete();
+    await service.stop();
+    await subscription.cancel();
+  });
+
   test('内部写盘排队不会暂停平台采集流', () async {
     final pauseAwareCapture = _PauseAwarePcmAudioCapture();
     addTearDown(pauseAwareCapture.dispose);

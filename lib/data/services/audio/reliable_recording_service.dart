@@ -39,8 +39,12 @@ final class ReliableRecordingService implements RecordingSessionService {
   }) : now = now ?? DateTime.now,
        _audioLevelMeter = audioLevelMeter,
        _pcmDiagnostics = pcmDiagnostics ?? RecordingPcmDiagnostics(),
-       _preview = RecordingPreviewDispatcher(
-         FanOutRecordingPreviewSink([audioLevelMeter, previewSink]),
+       _audioLevelPreview = RecordingPreviewDispatcher(
+         audioLevelMeter,
+         maxPendingChunks: maxPendingPreviewChunks,
+       ),
+       _asrPreview = RecordingPreviewDispatcher(
+         previewSink,
          maxPendingChunks: maxPendingPreviewChunks,
        ) {
     if (minimumFreeBytes <= 0) {
@@ -76,7 +80,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   final DateTime Function() now;
   final PcmAudioLevelMeter _audioLevelMeter;
   final RecordingPcmDiagnostics _pcmDiagnostics;
-  final RecordingPreviewDispatcher _preview;
+  final RecordingPreviewDispatcher _audioLevelPreview;
+  final RecordingPreviewDispatcher _asrPreview;
 
   RecordingState _state = RecordingState.idle;
   String? _meetingId;
@@ -103,7 +108,8 @@ final class ReliableRecordingService implements RecordingSessionService {
       _state == RecordingState.recording ||
       _state == RecordingState.paused ||
       (_state == RecordingState.failed && _output != null);
-  int get droppedPreviewChunks => _preview.droppedChunks;
+  int get droppedPreviewChunks => _asrPreview.droppedChunks;
+  int get droppedAudioLevelChunks => _audioLevelPreview.droppedChunks;
   RecordingPcmDiagnosticsSnapshot get pcmDiagnostics =>
       _pcmDiagnostics.snapshot;
 
@@ -337,6 +343,7 @@ final class ReliableRecordingService implements RecordingSessionService {
         return;
       }
       final combined = Uint8List(batchByteCount);
+      final batchStartByteOffset = _persistedBytes;
       var combinedOffset = 0;
       for (final bytes in nonEmptyBytes) {
         combined.setRange(combinedOffset, combinedOffset + bytes.length, bytes);
@@ -360,8 +367,14 @@ final class ReliableRecordingService implements RecordingSessionService {
             ? RecordingCheckpointState.paused
             : RecordingCheckpointState.recording,
       );
+      _audioLevelPreview.offer(
+        RecordingPcmChunk(
+          bytes: combined,
+          startByteOffset: batchStartByteOffset,
+        ),
+      );
       for (final chunk in persistedChunks) {
-        _preview.offer(chunk);
+        _asrPreview.offer(chunk);
       }
     } on Object catch (error, stackTrace) {
       _writeError ??= error;
@@ -457,7 +470,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   }
 
   Future<void> _cleanupCaptureBestEffort() async {
-    _preview.close();
+    _audioLevelPreview.close();
+    _asrPreview.close();
     await _audioLevelMeter.dispose();
     await _detachAudioSubscriptionBestEffort();
     if (_captureStopTimedOut) {

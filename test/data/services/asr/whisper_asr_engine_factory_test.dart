@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/repositories/repository_contracts.dart';
@@ -6,6 +7,8 @@ import 'package:meettrace/data/services/asr/asr_engine.dart';
 import 'package:meettrace/data/services/asr/whisper_base_standard_asr_engine.dart';
 import 'package:meettrace/data/services/asr/whisper_small_advanced_asr_engine.dart';
 import 'package:meettrace/data/services/asr/whisper_asr_engine_factory.dart';
+import 'package:meettrace/data/services/asr/whisper/whisper_adapter.dart';
+import 'package:meettrace/data/services/asr/whisper/whisper_recognizer_profiles.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
@@ -35,6 +38,54 @@ void main() {
 
     expect(engine, isA<WhisperBaseStandardAsrEngine>());
     expect(engine.descriptor, same(descriptor));
+    await engine.dispose();
+  });
+
+  test('会中预览使用低延迟 Greedy Profile', () async {
+    final descriptor = AsrModelRegistry.alpha.requireById(
+      whisperBaseStandardModelId,
+    );
+    installations.install(_installed(descriptor));
+    final workers = _CapturingWhisperWorkerFactory();
+    final factory = _factory(installations, leases, workerFactory: workers);
+
+    final engine = await factory.create(
+      modelId: descriptor.modelId,
+      modelVersion: descriptor.version,
+      purpose: AsrEnginePurpose.preview,
+    );
+    await engine.initialize();
+
+    expect(
+      workers.configs.single.profileId,
+      whisperPreviewRecognizerProfile.id,
+    );
+    expect(workers.configs.single.bestOf, 1);
+    expect(workers.configs.single.temperatureIncrement, 0.2);
+    expect(workers.configs.single.threadCount, 4);
+    await engine.dispose();
+  });
+
+  test('最终转录保持 Baseline Profile 和双线程配置', () async {
+    final descriptor = AsrModelRegistry.alpha.requireById(
+      whisperBaseStandardModelId,
+    );
+    installations.install(_installed(descriptor));
+    final workers = _CapturingWhisperWorkerFactory();
+    final factory = _factory(installations, leases, workerFactory: workers);
+
+    final engine = await factory.create(
+      modelId: descriptor.modelId,
+      modelVersion: descriptor.version,
+      purpose: AsrEnginePurpose.finalTranscript,
+    );
+    await engine.initialize();
+
+    expect(
+      workers.configs.single.profileId,
+      whisperBaselineRecognizerProfile.id,
+    );
+    expect(workers.configs.single.threadCount, 2);
     await engine.dispose();
   });
 
@@ -172,13 +223,15 @@ void main() {
 
 WhisperAsrEngineFactory _factory(
   _MemoryInstallations installations,
-  _MemoryLeases leases,
-) {
+  _MemoryLeases leases, {
+  WhisperWorkerFactory workerFactory = const OfficialWhisperWorkerFactory(),
+}) {
   return WhisperAsrEngineFactory(
     installations: installations,
     leases: leases,
     riskMonitor: const _SupportedRiskMonitor(),
     ownerId: 'meeting-11',
+    workerFactory: workerFactory,
   );
 }
 
@@ -292,5 +345,40 @@ final class _SupportedRiskMonitor implements AsrDeviceRiskMonitor {
   @override
   Future<AsrDeviceRiskState> inspect() async {
     return const AsrDeviceRiskState.supported();
+  }
+}
+
+final class _CapturingWhisperWorkerFactory implements WhisperWorkerFactory {
+  final List<WhisperRecognizerConfig> configs = [];
+
+  @override
+  Future<WhisperWorker> create(WhisperRecognizerConfig config) async {
+    configs.add(config);
+    return const _IdleWhisperWorker();
+  }
+}
+
+final class _IdleWhisperWorker implements WhisperWorker {
+  const _IdleWhisperWorker();
+
+  @override
+  int get nativeContextAddress => 1;
+
+  @override
+  void cancel() {}
+
+  @override
+  Future<void> dispose() async {}
+
+  @override
+  Future<WhisperRecognition> recognize(
+    Float32List samples, {
+    required int sampleRate,
+  }) async {
+    return WhisperRecognition(
+      text: '',
+      sampleCount: samples.length,
+      elapsed: Duration.zero,
+    );
   }
 }

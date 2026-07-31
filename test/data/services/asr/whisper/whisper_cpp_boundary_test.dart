@@ -96,6 +96,16 @@ void main() {
     );
   });
 
+  test('Native ASR 暂时使用完整音频上下文以保证质量基线', () async {
+    final nativeSource = await File(
+      'packages/meettrace_whisper_native/src/meettrace_whisper.cpp',
+    ).readAsString();
+
+    expect(nativeSource, contains('params.audio_ctx = 0;'));
+    expect(nativeSource, isNot(contains('kSamplesPerAudioContextToken')));
+    expect(nativeSource, isNot(contains('whisper_model_n_audio_ctx')));
+  });
+
   test('C ABI 暴露版本化配置、稳定状态码和结构大小校验', () async {
     final header = await File(
       'packages/meettrace_whisper_native/src/meettrace_whisper.h',

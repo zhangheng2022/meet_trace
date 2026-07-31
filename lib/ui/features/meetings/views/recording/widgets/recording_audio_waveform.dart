@@ -6,7 +6,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../theme/theme.dart';
 
-const recordingWaveformTransitionDuration = Duration(milliseconds: 140);
+const recordingWaveformTransitionDuration = Duration(milliseconds: 80);
 
 enum RecordingAudioWaveformState { waiting, live, paused, stopped }
 

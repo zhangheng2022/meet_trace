@@ -102,15 +102,20 @@ void main() {
   test('音量反馈保持固定窗口且不受实时转录降级影响', () async {
     final recording = _RecordingService();
     final preview = _PreviewSession();
+    final waveformTicker = _ManualTickerFactory();
     final viewModel = _viewModel(
       meetings: TestMeetingRepository(),
       recording: recording,
       preview: preview,
+      waveformTickerFactory: waveformTicker.call,
     );
     await viewModel.start();
 
     for (var index = 0; index < 60; index++) {
       recording.emitAudioLevel(index / 59);
+      if (index > 0) {
+        waveformTicker.fire();
+      }
     }
     preview.emitMetrics(AsrPreviewState.recordingOnly);
 
@@ -119,6 +124,72 @@ void main() {
     expect(viewModel.audioLevels.last, 1);
     expect(viewModel.previewMetrics.state, AsrPreviewState.recordingOnly);
     expect(viewModel.recordingState, RecordingState.recording);
+    viewModel.dispose();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('突发音量按固定节拍消费且不通知整页监听器', () async {
+    final recording = _RecordingService();
+    final preview = _PreviewSession();
+    final waveformTicker = _ManualTickerFactory();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      waveformTickerFactory: waveformTicker.call,
+    );
+    await viewModel.start();
+    var pageNotifications = 0;
+    viewModel.addListener(() => pageNotifications++);
+
+    recording
+      ..emitAudioLevel(0.1)
+      ..emitAudioLevel(0.5)
+      ..emitAudioLevel(0.9);
+
+    expect(viewModel.audioLevels, [0.1]);
+    expect(pageNotifications, 0);
+    expect(waveformTicker.duration, recordingWaveformSampleInterval);
+
+    waveformTicker.fire();
+    expect(viewModel.audioLevels, [0.1, 0.5]);
+    expect(pageNotifications, 0);
+
+    waveformTicker.fire();
+    expect(viewModel.audioLevels, [0.1, 0.5, 0.9]);
+    expect(pageNotifications, 0);
+
+    viewModel.dispose();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('波形积压只保留最新样本以限制展示延迟', () async {
+    final recording = _RecordingService();
+    final preview = _PreviewSession();
+    final waveformTicker = _ManualTickerFactory();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      waveformTickerFactory: waveformTicker.call,
+    );
+    await viewModel.start();
+
+    for (var index = 0; index <= 10; index++) {
+      recording.emitAudioLevel(index / 10);
+    }
+    for (
+      var index = 0;
+      index < recordingWaveformPendingSampleCapacity;
+      index++
+    ) {
+      waveformTicker.fire();
+    }
+
+    expect(viewModel.audioLevels, [0, 0.5, 0.6, 0.7, 0.8, 0.9, 1]);
+
     viewModel.dispose();
     await recording.close();
     await preview.close();
@@ -180,6 +251,7 @@ RecordingSessionViewModel _viewModel({
   required TestMeetingRepository meetings,
   required _RecordingService recording,
   required _PreviewSession preview,
+  RecordingTickerFactory? waveformTickerFactory,
 }) {
   final descriptor = AsrModelRegistry.alpha.requireById(
     whisperBaseStandardModelId,
@@ -209,7 +281,53 @@ RecordingSessionViewModel _viewModel({
       now: () => DateTime.utc(2026, 7, 24, 1, 30),
     ),
     tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
+    waveformTickerFactory: waveformTickerFactory,
   );
+}
+
+final class _ManualTickerFactory {
+  _ManualTimer? _timer;
+  Duration? duration;
+
+  Timer call(Duration duration, void Function(Timer timer) callback) {
+    this.duration = duration;
+    return _timer = _ManualTimer(callback);
+  }
+
+  void fire() {
+    final timer = _timer;
+    if (timer == null || !timer.isActive) {
+      fail('波形 ticker 尚未启动或已经停止');
+    }
+    timer.fire();
+  }
+}
+
+final class _ManualTimer implements Timer {
+  _ManualTimer(this._callback);
+
+  final void Function(Timer timer) _callback;
+  bool _active = true;
+  int _tick = 0;
+
+  @override
+  bool get isActive => _active;
+
+  @override
+  int get tick => _tick;
+
+  void fire() {
+    if (!_active) {
+      return;
+    }
+    _tick++;
+    _callback(this);
+  }
+
+  @override
+  void cancel() {
+    _active = false;
+  }
 }
 
 final class _RecordingService implements RecordingSessionService {

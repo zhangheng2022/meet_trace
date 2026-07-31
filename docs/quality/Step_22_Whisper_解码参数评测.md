@@ -17,12 +17,12 @@
 | ID | 用途 | 策略 | 关键参数 | 当前是否启用 |
 |---|---|---|---|---|
 | `baseline-fixed-greedy-v1` | 阶段 0 基线 | Greedy | best-of 5，temperature increment 0.2 | 是 |
-| `preview-greedy-low-latency-v1` | 预览候选 | Greedy | best-of 1，不做 temperature fallback | 否 |
+| `preview-greedy-low-latency-v1` | 会中预览 | Greedy | best-of 1，temperature increment 0.2 | 是 |
 | `final-beam-quality-v1` | 最终候选 | Beam | beam-size 5，temperature increment 0.2 | 否 |
 
-真实 20 段去敏语料尚未注入，因此 Preview 和 Final 候选只作为可评测配置存在。
-生产 Factory 对会中和最终转录都继续选择 `baseline-fixed-greedy-v1`，避免把未经指标
-验证的候选配置默认为质量提升。
+生产 Factory 的会中预览使用 `preview-greedy-low-latency-v1`；最终转录继续选择
+`baseline-fixed-greedy-v1`。Preview 的 temperature fallback 已恢复为 0.2，并与
+10 秒滚动上下文、`audio_ctx=0` 共同作为当前质量稳定基线。
 
 ## 3. 可复现评测
 
@@ -156,8 +156,9 @@ VAD 的 180 条预检观测。模板保持 0/90 批准；人工完成前不得�
 
 下载器默认从固定 revision 的 validation 前 100 行选择 20 段 1～3 秒语音，并把
 全部私有产物限制在 `.spike/`。`vad-recall` 映射到
-`vad-recall-035-v1`（threshold 0.35、min speech 100 ms、pad 100 ms），仅是评测
-候选；生产 `WhisperVadConfig` 默认值没有改变。
+`vad-recall-035-v1`（threshold 0.35、min speech 100 ms、pad 100 ms）。该参数组继续作为
+质量矩阵中的召回对照，并用于会中实时预览；最终转录使用的普通 `WhisperVadConfig`
+默认值仍为 0.5、250 ms、30 ms。
 
 确定性非语音三管线回归可直接执行：
 

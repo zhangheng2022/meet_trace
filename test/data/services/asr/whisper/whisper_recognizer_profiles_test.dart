@@ -35,7 +35,7 @@ void main() {
     expect(preview.profileId, 'preview-greedy-low-latency-v1');
     expect(preview.decodingStrategy, WhisperDecodingStrategy.greedy);
     expect(preview.bestOf, 1);
-    expect(preview.temperatureIncrement, 0);
+    expect(preview.temperatureIncrement, 0.2);
     expect(finalConfig.profileId, 'final-beam-quality-v1');
     expect(finalConfig.decodingStrategy, WhisperDecodingStrategy.beamSearch);
     expect(finalConfig.beamSize, 5);

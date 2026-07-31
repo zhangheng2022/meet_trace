@@ -8,6 +8,10 @@ import '../../../domain/models/asr_preview.dart';
 import 'voice_activity_segmenter.dart';
 
 const whisperVadSampleRate = 16000;
+const whisperPreviewMaximumSpeechDuration = Duration(seconds: 3);
+const whisperPreviewVadThreshold = 0.35;
+const whisperPreviewMinimumSpeechDurationMs = 100;
+const whisperPreviewSpeechPadMs = 100;
 
 final class WhisperVadConfig {
   const WhisperVadConfig({
@@ -79,12 +83,37 @@ final class OfficialWhisperVadWorkerFactory implements WhisperVadWorkerFactory {
 /// 每次只在固定的全局采样点分析，末尾保留稳定余量；原生推理始终运行在独立
 /// isolate。预览调度可以丢弃输入 chunk，但不会阻塞事实 PCM 的写入链。
 final class WhisperVadSegmenter implements VoiceActivitySegmenter {
+  factory WhisperVadSegmenter.preview({
+    required String modelPath,
+    WhisperVadWorkerFactory workerFactory =
+        const OfficialWhisperVadWorkerFactory(),
+    Duration analysisInterval = const Duration(seconds: 1),
+    Duration stabilityMargin = const Duration(seconds: 1),
+    Duration maximumBufferedDuration = const Duration(seconds: 30),
+  }) {
+    return WhisperVadSegmenter(
+      modelPath: modelPath,
+      workerFactory: workerFactory,
+      analysisInterval: analysisInterval,
+      stabilityMargin: stabilityMargin,
+      maximumBufferedDuration: maximumBufferedDuration,
+      maximumEmissionDuration: whisperPreviewMaximumSpeechDuration,
+      config: WhisperVadConfig(
+        modelPath: modelPath,
+        threshold: whisperPreviewVadThreshold,
+        minSpeechDurationMs: whisperPreviewMinimumSpeechDurationMs,
+        speechPadMs: whisperPreviewSpeechPadMs,
+      ),
+    );
+  }
+
   WhisperVadSegmenter({
     required String modelPath,
     this.workerFactory = const OfficialWhisperVadWorkerFactory(),
     this.analysisInterval = const Duration(seconds: 1),
     this.stabilityMargin = const Duration(seconds: 1),
     this.maximumBufferedDuration = const Duration(seconds: 30),
+    Duration? maximumEmissionDuration,
     WhisperVadConfig? config,
   }) : config = config ?? WhisperVadConfig(modelPath: modelPath) {
     if (this.config.modelPath.trim().isEmpty) {
@@ -93,11 +122,23 @@ final class WhisperVadSegmenter implements VoiceActivitySegmenter {
     _analysisIntervalSamples = _samplesFor(analysisInterval);
     _stabilityMarginSamples = _samplesFor(stabilityMargin);
     _maximumBufferedSamples = _samplesFor(maximumBufferedDuration);
+    if (!this.config.maxSpeechDurationSeconds.isFinite) {
+      throw ArgumentError('VAD 最大语音片段时长必须是有限值');
+    }
+    final resolvedMaximumEmissionDuration =
+        maximumEmissionDuration ??
+        Duration(
+          microseconds:
+              (this.config.maxSpeechDurationSeconds *
+                      Duration.microsecondsPerSecond)
+                  .round(),
+        );
+    _maximumSegmentSamples = _samplesFor(resolvedMaximumEmissionDuration);
     if (_analysisIntervalSamples <= 0 ||
         _stabilityMarginSamples < _analysisIntervalSamples ||
+        _maximumSegmentSamples <= 0 ||
         _maximumBufferedSamples <
-            _stabilityMarginSamples +
-                (this.config.maxSpeechDurationSeconds * sampleRate).ceil()) {
+            _stabilityMarginSamples + _maximumSegmentSamples) {
       throw ArgumentError('VAD 流式缓冲参数无效');
     }
   }
@@ -113,6 +154,7 @@ final class WhisperVadSegmenter implements VoiceActivitySegmenter {
   late final int _analysisIntervalSamples;
   late final int _stabilityMarginSamples;
   late final int _maximumBufferedSamples;
+  late final int _maximumSegmentSamples;
   final List<double> _buffer = [];
   Future<WhisperVadWorker>? _worker;
   int _bufferStartSample = 0;
@@ -207,15 +249,24 @@ final class WhisperVadSegmenter implements VoiceActivitySegmenter {
     for (final segment in nativeSegments) {
       final globalStart = _bufferStartSample + segment.startSample;
       final globalEnd = _bufferStartSample + segment.endSample;
-      if (globalEnd > stableEnd || globalEnd <= _emittedThroughSample) {
+      if (globalEnd <= _emittedThroughSample || globalStart >= stableEnd) {
         continue;
       }
-      final start = globalStart < _emittedThroughSample
+      var start = globalStart < _emittedThroughSample
           ? _emittedThroughSample
           : globalStart;
-      if (globalEnd > start) {
-        output.add(VadSpeechSegment(startSample: start, endSample: globalEnd));
-        _emittedThroughSample = globalEnd;
+      final stableSegmentEnd = globalEnd < stableEnd ? globalEnd : stableEnd;
+      while (stableSegmentEnd - start >= _maximumSegmentSamples) {
+        final end = start + _maximumSegmentSamples;
+        output.add(VadSpeechSegment(startSample: start, endSample: end));
+        _emittedThroughSample = end;
+        start = end;
+      }
+      if ((finalizing || globalEnd <= stableEnd) && stableSegmentEnd > start) {
+        output.add(
+          VadSpeechSegment(startSample: start, endSample: stableSegmentEnd),
+        );
+        _emittedThroughSample = stableSegmentEnd;
       }
     }
     if (!finalizing) {

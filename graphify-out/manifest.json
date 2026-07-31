@@ -100,7 +100,7 @@
     "semantic_hash": "93c22dae2d93f3dc1402e121901f582b"
   },
   "skills-lock.json": {
-    "mtime": 1785211908.585284,
+    "mtime": 1785485234.1528206,
     "ast_hash": "9bbe0610d7eee99725a5d768b505242f",
     "semantic_hash": ""
   },
@@ -470,8 +470,8 @@
     "semantic_hash": ""
   },
   "lib/data/services/asr/asr_preview_coordinator.dart": {
-    "mtime": 1785466315.0349157,
-    "ast_hash": "94355ce78983f5060397e8c02617c4e2",
+    "mtime": 1785493143.33101,
+    "ast_hash": "5d526adf98f625e502726a66b0972557",
     "semantic_hash": ""
   },
   "lib/data/services/asr/asr_preview_session.dart": {
@@ -525,8 +525,8 @@
     "semantic_hash": ""
   },
   "lib/data/services/audio/reliable_recording_service.dart": {
-    "mtime": 1785484766.999909,
-    "ast_hash": "eef0f6eebb92249a4baa81a972deb4b8",
+    "mtime": 1785487154.6116,
+    "ast_hash": "38ab8e2f82ce5d559aecfa3b82e49370",
     "semantic_hash": ""
   },
   "lib/data/services/audio/spike/recording_continuity_metrics.dart": {
@@ -735,9 +735,9 @@
     "semantic_hash": "d975921b4739b0944c7d812073586142"
   },
   "lib/domain/use_cases/plan_asr_preview_windows.dart": {
-    "mtime": 1785121361.0152087,
-    "ast_hash": "14650478630ced8b342236edcf61d3b1",
-    "semantic_hash": "14650478630ced8b342236edcf61d3b1"
+    "mtime": 1785494208.6364312,
+    "ast_hash": "f0514dc21aa4bae62e253f07c21e45a6",
+    "semantic_hash": ""
   },
   "lib/domain/use_cases/resolve_meeting_model_selection.dart": {
     "mtime": 1785160715.7994864,
@@ -855,8 +855,8 @@
     "semantic_hash": "aa5775e59ef08344413842b003c73f2f"
   },
   "test/data/services/asr/asr_preview_coordinator_test.dart": {
-    "mtime": 1785484767.009773,
-    "ast_hash": "d3af9ffcdb86556030e8c924e3bbb586",
+    "mtime": 1785493165.586525,
+    "ast_hash": "2668ebd338d4b790b78b66e7ef7a5849",
     "semantic_hash": ""
   },
   "test/data/services/asr/final_transcription_service_test.dart": {
@@ -885,8 +885,8 @@
     "semantic_hash": "d45eb5690f077b0086e9218c8a4e8f4e"
   },
   "test/data/services/audio/reliable_recording_service_test.dart": {
-    "mtime": 1785484767.013141,
-    "ast_hash": "399f2ce9303e639159281b66ea56773f",
+    "mtime": 1785487154.6228964,
+    "ast_hash": "70eca7b056a6820cd8012eade55286f1",
     "semantic_hash": ""
   },
   "test/data/services/audio/spike/recording_continuity_metrics_test.dart": {
@@ -1030,9 +1030,9 @@
     "semantic_hash": "7b43fc00752264568ca8f6220a1b78a2"
   },
   "test/domain/use_cases/plan_asr_preview_windows_test.dart": {
-    "mtime": 1785126484.1830153,
-    "ast_hash": "508ca0224cb533dc1822a52cc11b6e20",
-    "semantic_hash": "508ca0224cb533dc1822a52cc11b6e20"
+    "mtime": 1785494208.6413558,
+    "ast_hash": "1436c5c222d78f6f10f892423b2b110e",
+    "semantic_hash": ""
   },
   "test/domain/use_cases/resolve_meeting_model_selection_test.dart": {
     "mtime": 1785401360.4942093,
@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "docs/README.md": {
-    "mtime": 1785484766.937801,
-    "ast_hash": "febf227077c860084d363631e0b13224",
+    "mtime": 1785493217.3860562,
+    "ast_hash": "bac74cd7eb1f26025b929cafa0932e47",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
@@ -1150,8 +1150,8 @@
     "semantic_hash": ""
   },
   "docs/\u7aef\u4fa7\u53cc\u6a21\u578b\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1785484766.94616,
-    "ast_hash": "f18d94572a27ab64f22c3e090639ab0b",
+    "mtime": 1785493217.3850517,
+    "ast_hash": "af6c94204dd3740268b1324434f4c333",
     "semantic_hash": ""
   },
   "forui.yaml": {
@@ -1440,8 +1440,8 @@
     "semantic_hash": "47d166baf233703bb871ee570394d6e1"
   },
   "lib/app/meettrace_dependency_factories.dart": {
-    "mtime": 1785466315.0328991,
-    "ast_hash": "d5397d272afbbf03a88998f424748d1d",
+    "mtime": 1785488143.758015,
+    "ast_hash": "4c1ea501642fe060d610666e1b19e9e8",
     "semantic_hash": ""
   },
   "lib/domain/ports/asr_engine.dart": {
@@ -1635,8 +1635,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/view_models/recording/recording_session_view_model.dart": {
-    "mtime": 1785236411.6645696,
-    "ast_hash": "217162acab35c638606ddf5db8d837fc",
+    "mtime": 1785487197.003721,
+    "ast_hash": "c04a61c7ec8fb05eaa6cdbff0eb16610",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/view_models/start/start_meeting_view_model.dart": {
@@ -1715,8 +1715,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/recording_audio_waveform.dart": {
-    "mtime": 1785231523.3470876,
-    "ast_hash": "2633c9ccad1f6e43f3dfde18ef463d24",
+    "mtime": 1785486808.3462262,
+    "ast_hash": "3a8e4e5678a48f56d4ccb8008a59014d",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/recording_controls.dart": {
@@ -1725,8 +1725,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/recording_facts_panel.dart": {
-    "mtime": 1785236411.6656885,
-    "ast_hash": "85243b705d1350b01255a3bef67bbd26",
+    "mtime": 1785486808.3456855,
+    "ast_hash": "84aa16506ad3e4f25b557e2f0386a1f8",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/detail/meeting_detail_view_model_test.dart": {
@@ -1740,8 +1740,8 @@
     "semantic_hash": "7ef951c8a9005ab7e9704e9f9c6d6f63"
   },
   "test/ui/features/meetings/view_models/recording/recording_session_view_model_test.dart": {
-    "mtime": 1785401360.4966936,
-    "ast_hash": "e85188302fa1adc09e4d6f1d8efec62c",
+    "mtime": 1785487207.600479,
+    "ast_hash": "972e53a24ef20ed6a179fd62026d7d46",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/start/start_meeting_view_model_test.dart": {
@@ -1760,8 +1760,8 @@
     "semantic_hash": ""
   },
   "test/ui/features/meetings/views/recording/recording_session_view_test.dart": {
-    "mtime": 1785401360.4999783,
-    "ast_hash": "f39ef4a60b6db26ef7f1b3585d502056",
+    "mtime": 1785486881.107444,
+    "ast_hash": "791b3b36418184adbc1663f60229cfd6",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/views/recording/widgets/recording_audio_waveform_test.dart": {
@@ -1790,18 +1790,18 @@
     "semantic_hash": ""
   },
   "lib/data/services/asr/whisper_asr_engine_factory.dart": {
-    "mtime": 1785466315.0379207,
-    "ast_hash": "a032421f6c8e312d8095e761e53f0240",
+    "mtime": 1785488478.8129144,
+    "ast_hash": "511502783ca46f7bd51e387fbee3a859",
     "semantic_hash": ""
   },
   "lib/data/services/asr/whisper_base_standard_asr_engine.dart": {
-    "mtime": 1785466315.0379207,
-    "ast_hash": "45cf09ac0892845d420f7e595c1d47d5",
+    "mtime": 1785488478.8094404,
+    "ast_hash": "13212954742c22002fd3262bc1350ffd",
     "semantic_hash": ""
   },
   "lib/data/services/asr/whisper_small_advanced_asr_engine.dart": {
-    "mtime": 1785466315.038921,
-    "ast_hash": "016641d9290e1d03c7768ad1d27d86c1",
+    "mtime": 1785488478.8115768,
+    "ast_hash": "6093795cc73e9b7efac7ba2b98f2fd73",
     "semantic_hash": ""
   },
   "lib/data/services/vad/streaming_window_segmenter.dart": {
@@ -1845,8 +1845,8 @@
     "semantic_hash": ""
   },
   "packages/meettrace_whisper_native/src/meettrace_whisper.cpp": {
-    "mtime": 1785484767.0084515,
-    "ast_hash": "8723aa2fae8cf2481182ce144f7f059a",
+    "mtime": 1785493135.4007113,
+    "ast_hash": "f99f10cfe24d713f903ebd2c01ccc018",
     "semantic_hash": ""
   },
   "packages/meettrace_whisper_native/src/meettrace_whisper.h": {
@@ -2385,13 +2385,13 @@
     "semantic_hash": ""
   },
   "test/data/services/asr/whisper/whisper_cpp_boundary_test.dart": {
-    "mtime": 1785484767.0101368,
-    "ast_hash": "06f656099ed0bff503f2089eee897ba8",
+    "mtime": 1785493143.3518333,
+    "ast_hash": "6a4f76fae1e9869aeb5700fafb39baaa",
     "semantic_hash": ""
   },
   "test/data/services/asr/whisper_asr_engine_factory_test.dart": {
-    "mtime": 1785466315.0535662,
-    "ast_hash": "973c4d9df1a3733bed4a28643169cbef",
+    "mtime": 1785493032.126944,
+    "ast_hash": "e048df717de6e7d26ce6acebd8311841",
     "semantic_hash": ""
   },
   "test/data/services/asr/whisper_base_standard_asr_engine_test.dart": {
@@ -2535,8 +2535,8 @@
     "semantic_hash": ""
   },
   "lib/data/services/asr/whisper/whisper_recognizer_profiles.dart": {
-    "mtime": 1785466315.0369236,
-    "ast_hash": "03800911a6d3952c9c53da59349766f1",
+    "mtime": 1785493143.335012,
+    "ast_hash": "c54a62bd2af51a6ee00ee8e561f08949",
     "semantic_hash": ""
   },
   "lib/data/services/audio/recording_pcm_diagnostics.dart": {
@@ -2545,8 +2545,8 @@
     "semantic_hash": ""
   },
   "lib/data/services/vad/whisper_vad_segmenter.dart": {
-    "mtime": 1785484767.001452,
-    "ast_hash": "09ac4ba80e8f2b1bc81f505678625d99",
+    "mtime": 1785491420.3230014,
+    "ast_hash": "1054a7c3e693f7f37311c04c08dd6e95",
     "semantic_hash": ""
   },
   "packages/meettrace_whisper_native/lib/src/whisper_vad_native_context.dart": {
@@ -2555,8 +2555,8 @@
     "semantic_hash": ""
   },
   "test/data/services/asr/whisper/whisper_recognizer_profiles_test.dart": {
-    "mtime": 1785466315.0525656,
-    "ast_hash": "3a6d9cbe5a7892fa588bbaf35ab7ea5b",
+    "mtime": 1785493263.2005723,
+    "ast_hash": "c84fdf39bd9a264b1fce2fc402cdc0cf",
     "semantic_hash": ""
   },
   "test/data/services/audio/recording_pcm_diagnostics_test.dart": {
@@ -2565,8 +2565,8 @@
     "semantic_hash": ""
   },
   "test/data/services/vad/whisper_vad_segmenter_test.dart": {
-    "mtime": 1785484767.0141778,
-    "ast_hash": "8ec7f9045772c3ebe0a183cef262dbca",
+    "mtime": 1785491420.3279426,
+    "ast_hash": "e7b17783fb341c1075835634a7bafcf4",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/evaluate_alpha_release_cli_test.dart": {
@@ -2600,8 +2600,8 @@
     "semantic_hash": ""
   },
   "docs/plans/2026-07-30-whisper-cpp-quality-delivery.md": {
-    "mtime": 1785484766.9388037,
-    "ast_hash": "f3aed022ada612095a05b4264e5c83e2",
+    "mtime": 1785493217.388197,
+    "ast_hash": "772f38ce17f5a48967ef10ea0d11d433",
     "semantic_hash": ""
   },
   "docs/quality/Step_21_C++_\u8d28\u91cf\u4ea4\u4ed8\u57fa\u7ebf.md": {
@@ -2610,13 +2610,13 @@
     "semantic_hash": ""
   },
   "docs/quality/Step_22_Whisper_\u89e3\u7801\u53c2\u6570\u8bc4\u6d4b.md": {
-    "mtime": 1785484766.9397676,
-    "ast_hash": "4fbaa50eeabc3ee4ee96a2cd20795c6d",
+    "mtime": 1785493217.387056,
+    "ast_hash": "8b8d06cae86dcb3663030b826b1d5bf9",
     "semantic_hash": ""
   },
   "docs/quality/Step_23_24_VAD_\u4e0e\u6700\u7ec8\u8f6c\u5f55.md": {
-    "mtime": 1785484766.9408443,
-    "ast_hash": "b67a513378b59a589af5e031510686a2",
+    "mtime": 1785493217.3860562,
+    "ast_hash": "faad4e7d5e96dbdbe34292f134227eec",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260730_114643_start_meeting_readiness_model_installation_whisper.md": {
@@ -2872,6 +2872,31 @@
   ".tmp/meettrace-resting.png": {
     "mtime": 1785151969.3452165,
     "ast_hash": "2daa7c943564293114dbf1d6b261d019",
+    "semantic_hash": ""
+  },
+  "devtools_options.yaml": {
+    "mtime": 1785485977.8436198,
+    "ast_hash": "f5b7ed0c3de00eefb1b59b1b55579562",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260731_082825_\u5f55\u97f3\u65f6\u6ce2\u5f62\u660e\u663e\u5361\u987f.md": {
+    "mtime": 1785486505.6470985,
+    "ast_hash": "f9ae3bf04c3015410c8539c243da1616",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260731_090940_\u5b9e\u65f6\u8f6c\u5f55\u6ca1\u6709\u6210\u529f\u7684\u6839\u56e0\u662f\u4ec0\u4e48_\u5982\u4f55\u4fee\u590d.md": {
+    "mtime": 1785488980.431917,
+    "ast_hash": "12a5ca3be3abdb9e6c8696a6a0e17088",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260731_093158_\u5c0f\u7c73\u624b\u673a\u6b63\u5728\u5f55\u97f3_\u4f46\u662f\u6ca1\u6709\u5b9e\u65f6\u8f6c\u5f55\u6587\u5b57\u663e\u793a_\u8bf7\u6392\u67e5.md": {
+    "mtime": 1785490318.5891163,
+    "ast_hash": "d301e33adb09eb3ee6b1a0b78c83940e",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260731_101308_\u91cd\u65b0\u6392\u67e5.md": {
+    "mtime": 1785492788.2295074,
+    "ast_hash": "f60e947d209138981846cf24b9a2ef22",
     "semantic_hash": ""
   }
 }

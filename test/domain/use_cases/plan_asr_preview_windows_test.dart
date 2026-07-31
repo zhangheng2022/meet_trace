@@ -42,6 +42,27 @@ void main() {
         ),
       ]);
     });
+
+    test('每三秒稳定片段使用最多十秒滚动上下文', () {
+      const planner = AsrPreviewWindowPlanner();
+
+      final windows = planner(
+        segment: const VadSpeechSegment(
+          startSample: 9 * asrPreviewSampleRate,
+          endSample: 12 * asrPreviewSampleRate,
+        ),
+        availableStartSample: 0,
+        availableEndSample: 12 * asrPreviewSampleRate,
+      );
+
+      expect(asrPreviewMinimumContextMs, 10000);
+      expect(windows, [
+        (
+          startSample: 2 * asrPreviewSampleRate,
+          endSample: 12 * asrPreviewSampleRate,
+        ),
+      ]);
+    });
   });
 
   test('重叠窗口文本按最长后缀前缀确定性合并', () {
@@ -50,5 +71,16 @@ void main() {
       '今天讨论项目计划已经确认',
     );
     expect(mergeOverlappingTranscriptText('第一段', '第二段'), '第一段 第二段');
+  });
+
+  test('滚动上下文只提取相对上一窗口的新增尾部', () {
+    expect(extractNovelRollingTranscriptText('今天讨论项目计划', '项目计划已经确认'), '已经确认');
+    expect(extractNovelRollingTranscriptText('已经确认', '已经确认'), isEmpty);
+    expect(extractNovelRollingTranscriptText('', '第一段'), '第一段');
+    expect(
+      extractNovelRollingTranscriptText('上次开会', '会议现在开始'),
+      '会议现在开始',
+      reason: '单个汉字偶合不足以证明两个滚动窗口存在文本重叠',
+    );
   });
 }

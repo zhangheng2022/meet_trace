@@ -6,7 +6,7 @@
 ## 活动文档
 
 1. [Android + iOS Alpha PRD](./会迹_MeetTrace_Alpha_PRD_无登录版.md)：产品范围、用户流程、质量门槛和 AT-01～AT-24 的事实源。
-2. [端侧双模型转录技术方案 V0.9](./端侧双模型转录技术方案.md)：`whisper.cpp` 双模型、官方 Silero VAD、Native Assets、录音解耦、模型生命周期和降级设计。
+2. [端侧双模型转录技术方案 V0.12](./端侧双模型转录技术方案.md)：`whisper.cpp` 双模型、官方 Silero VAD、Native Assets、录音解耦、模型生命周期和降级设计。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)：当前实现顺序与交付门槛。
 4. [whisper.cpp 质量强化与双平台交付计划](./plans/2026-07-30-whisper-cpp-quality-delivery.md)：Codex 可直接执行的文件级任务、测试、审查、硬门槛和提交点。
 5. [阶段 0～4 完成度审计](./quality/阶段_0_4_完成度审计.md)：区分工程硬门槛、非阻断产品质量观察和后续发布门槛。
@@ -42,8 +42,11 @@
   也禁止激活 Small 候选 Profile。
 - 可复现公开回归入口固定使用 ASCEND revision
   `737e9800ae31be9932ba8464c80366559bd28424`。API 36 x86_64 模拟器 A/B 已定位到
-  生产默认 VAD 对短语音存在明显漏检，`vad-recall-035-v1` 仅作为评测候选保留；
-  在真实会议噪声、远场和语音首尾门槛通过前不切换生产参数。
+  默认 VAD 对短语音存在明显漏检。会中实时预览使用 `vad-recall-035-v1` 的
+  `0.35 / 100 ms / 100 ms` 参数以提高短语音召回；最终转录和质量对照仍使用官方默认
+  `0.5 / 250 ms / 30 ms`，实时参数不得泄漏到最终事实快照。
+- 实时预览每 3 秒刷新，使用最多 10 秒滚动音频上下文并只发布相邻窗口的新增文本；
+  Preview 恢复 temperature increment 0.2，Native 暂时保持 `audio_ctx=0` 质量基线。
 - 事实 PCM 写入独立于推理。有界预览队列可丢弃临时预览任务，但不得丢失录音。
 - 历史默认模型设置会迁移到对应的 Whisper 层级；历史会议的原模型 ID 与版本保持不变。
 

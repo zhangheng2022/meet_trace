@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T08:01:24.945782+00:00",
+  "generated_at": "2026-07-31T15:54:18.524703+00:00",
   "nodes": {
     "c_users_96227_desktop_works_meetily_ai_lib_theme_theme_appcolors": {
       "code_fingerprint": "be030aa44add73fd1473c0edc2fca0a886ccc64da11d7d863abb830f3843c085",
@@ -12,7 +12,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.914495381,
+      "score": 0.907582811,
       "source_file": "lib/theme/colors.dart",
       "status": "tentative",
       "uses": 1
@@ -28,7 +28,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.914495381,
+      "score": 0.907582811,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -44,7 +44,7 @@
           "q": "开始会议按下状态样式异常"
         }
       ],
-      "score": 0.914857275,
+      "score": 0.90794197,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -60,7 +60,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.915161571,
+      "score": 0.908243966,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -76,7 +76,7 @@
           "q": "列表日期需要更加语义化"
         }
       ],
-      "score": 0.93169155,
+      "score": 0.924648997,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -97,7 +97,7 @@
           "q": "录音中为什么有三个时间"
         }
       ],
-      "score": 1.863791084,
+      "score": 1.849702893,
       "source_file": "graphify-out/memory/query_20260728_063918_录音中为什么有三个时间.md",
       "status": "preferred",
       "uses": 2
@@ -113,7 +113,7 @@
           "q": "录音中为什么有三个时间"
         }
       ],
-      "score": 0.931804517,
+      "score": 0.924761109,
       "source_file": "graphify-out/memory/query_20260728_063918_录音中为什么有三个时间.md",
       "status": "tentative",
       "uses": 1
@@ -129,7 +129,7 @@
           "q": "根据上述文档，完成0到4阶段目标，项目整体质量架构优先"
         }
       ],
-      "score": 0.99935137,
+      "score": 0.991797384,
       "source_file": "integration_test/android_whisper_quality_benchmark_test.dart",
       "status": "tentative",
       "uses": 1
@@ -145,7 +145,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.913131574,
+      "score": 0.906229313,
       "source_file": "ios/Runner/AppDelegate.swift",
       "status": "tentative",
       "uses": 1
@@ -161,7 +161,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.90849256,
+      "score": 0.901625365,
       "source_file": "lib/app/application.dart",
       "status": "tentative",
       "uses": 1
@@ -197,7 +197,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 4.572702959,
+      "score": 4.538138402,
       "source_file": "lib/app/application.dart",
       "status": "preferred",
       "uses": 5
@@ -213,49 +213,51 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.913131574,
+      "score": 0.906229313,
       "source_file": "lib/data/services/asr/android_proc_asr_device_risk_monitor.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_data_services_asr_asr_preview_coordinator_asrpreviewcoordinator": {
-      "code_fingerprint": "6bbb2880c12bb20029bf5606f868ebf193044361383b26319f5c146e0a4a22b7",
+      "code_fingerprint": "fc6e31129fcacf7f55a8d1f20fe9d8237af7d7130f09121844f73b4197866ead",
       "label": "AsrPreviewCoordinator",
-      "last": "2026-07-30T15:02:44.501464+00:00",
+      "last": "2026-07-31T12:04:51.946364+00:00",
+      "neg": 1,
       "provenance": [
         {
-          "date": "2026-07-30T15:02:44.501464+00:00",
+          "date": "2026-07-31T12:04:51.946364+00:00",
           "outcome": "useful",
-          "q": "给我一个可交付的分阶段实施方案"
+          "q": "使用当前项目whisper.cpp 将这段音频转为文字，包括实时转录，给我转录结果"
         },
         {
-          "date": "2026-07-30T13:25:52.601669+00:00",
+          "date": "2026-07-31T10:47:04.218675+00:00",
           "outcome": "useful",
-          "q": "给 MeetTrace 制定 Rust + whisper-rs + flutter_rust_bridge 分阶段 ASR 迁移方案，保证 VAD、录音连续性、模型锁定和最终快照语义"
+          "q": "分析当前whisper.cpp 实时转录质量较低的问题"
         },
         {
-          "date": "2026-07-29T11:59:32.411367+00:00",
-          "outcome": "useful",
-          "q": "正式替换 sherpa-onnx 后，MeetTrace 的 whisper.cpp 双模型 ASR 架构、实时预览、最终转录、模型生命周期与录音隔离如何连接？"
+          "date": "2026-07-31T10:13:08.229676+00:00",
+          "outcome": "corrected",
+          "q": "重新排查"
         },
         {
-          "date": "2026-07-29T10:48:23.175712+00:00",
+          "date": "2026-07-31T09:31:58.589801+00:00",
           "outcome": "useful",
-          "q": "能否直接调用 ggml-org/whisper.cpp"
+          "q": "小米手机正在录音，但是没有实时转录文字显示，请排查"
         },
         {
-          "date": "2026-07-29T10:35:51.587594+00:00",
+          "date": "2026-07-31T09:09:40.431831+00:00",
           "outcome": "useful",
-          "q": "读取 whisper_ggml 文档并为 MeetTrace 制定替换 sherpa_onnx 的完整实施方案"
+          "q": "实时转录没有成功的根因是什么，如何修复"
         }
       ],
-      "score": 8.665950441,
+      "score": 12.577596647,
       "source_file": "lib/data/services/asr/asr_preview_coordinator.dart",
-      "status": "preferred",
-      "uses": 9
+      "status": "contested",
+      "uses": 14,
+      "verdict": "useful"
     },
     "lib_data_services_asr_asr_preview_coordinator_vad": {
-      "code_fingerprint": "6bbb2880c12bb20029bf5606f868ebf193044361383b26319f5c146e0a4a22b7",
+      "code_fingerprint": "fc6e31129fcacf7f55a8d1f20fe9d8237af7d7130f09121844f73b4197866ead",
       "label": "vad",
       "last": "2026-07-31T08:00:39.086244+00:00",
       "neg": 1,
@@ -271,17 +273,22 @@
           "q": "根据上述文档，完成0到4阶段目标，项目整体质量架构优先"
         }
       ],
-      "score": -0.000636366,
+      "score": -0.000631556,
       "source_file": "lib/data/services/asr/asr_preview_coordinator.dart",
       "status": "contested",
       "uses": 1,
       "verdict": "dead end"
     },
     "lib_data_services_asr_whisper_asr_engine_factory_whisperasrenginefactory": {
-      "code_fingerprint": "c2169ed579e99f8ece5c4ede71577bed0667489a5fad819f2327bdba8e5a3863",
+      "code_fingerprint": "b4aebaa01b635d68b208fe7015b6a80c11baafd743882fb0e5224f01c3e07d6d",
       "label": "WhisperAsrEngineFactory",
-      "last": "2026-07-31T08:00:39.654571+00:00",
+      "last": "2026-07-31T09:09:40.431831+00:00",
       "provenance": [
+        {
+          "date": "2026-07-31T09:09:40.431831+00:00",
+          "outcome": "useful",
+          "q": "实时转录没有成功的根因是什么，如何修复"
+        },
         {
           "date": "2026-07-31T08:00:39.654571+00:00",
           "outcome": "useful",
@@ -301,54 +308,103 @@
           "date": "2026-07-30T14:57:24.289268+00:00",
           "outcome": "useful",
           "q": "当前c++到什么阶段了"
-        },
-        {
-          "date": "2026-07-30T13:25:52.601669+00:00",
-          "outcome": "useful",
-          "q": "给 MeetTrace 制定 Rust + whisper-rs + flutter_rust_bridge 分阶段 ASR 迁移方案，保证 VAD、录音连续性、模型锁定和最终快照语义"
         }
       ],
-      "score": 5.907756267,
+      "score": 6.856628824,
       "source_file": "lib/data/services/asr/whisper_asr_engine_factory.dart",
       "status": "preferred",
-      "uses": 6
+      "uses": 7
+    },
+    "lib_data_services_asr_whisper_base_standard_asr_engine_whisperbasestandardasrengine": {
+      "code_fingerprint": "4fd67556ac0e49fa62acbef31b0b925248392ee4ffb5712cdcf0f89a7eae5672",
+      "label": "WhisperBaseStandardAsrEngine",
+      "last": "2026-07-31T12:04:51.946364+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-31T12:04:51.946364+00:00",
+          "outcome": "useful",
+          "q": "使用当前项目whisper.cpp 将这段音频转为文字，包括实时转录，给我转录结果"
+        }
+      ],
+      "score": 0.996325339,
+      "source_file": "lib/data/services/asr/whisper_base_standard_asr_engine.dart",
+      "status": "tentative",
+      "uses": 1
+    },
+    "lib_data_services_asr_whisper_small_advanced_asr_engine_whispersmalladvancedasrengine": {
+      "code_fingerprint": "3a95b9a2f722b0bd446399b7a13cb0a5c3ba6b52677792eba37f28c93324740c",
+      "label": "WhisperSmallAdvancedAsrEngine",
+      "last": "2026-07-31T15:27:20.021040+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-31T15:27:20.021040+00:00",
+          "outcome": "useful",
+          "q": "使用高级模型再试试；解决繁体中文问题"
+        }
+      ],
+      "score": 0.999567277,
+      "source_file": "lib/data/services/asr/whisper_small_advanced_asr_engine.dart",
+      "status": "tentative",
+      "uses": 1
     },
     "lib_data_services_asr_whisper_whisper_adapter_whisperadapter": {
       "code_fingerprint": "f8e64a52353efb03c1e5cc224489ceccb6b8e348c974c372ed58190363790727",
       "label": "WhisperAdapter",
-      "last": "2026-07-30T13:25:52.601669+00:00",
+      "last": "2026-07-31T12:04:51.946364+00:00",
+      "neg": 1,
       "provenance": [
+        {
+          "date": "2026-07-31T12:04:51.946364+00:00",
+          "outcome": "useful",
+          "q": "使用当前项目whisper.cpp 将这段音频转为文字，包括实时转录，给我转录结果"
+        },
+        {
+          "date": "2026-07-31T10:47:04.218675+00:00",
+          "outcome": "useful",
+          "q": "分析当前whisper.cpp 实时转录质量较低的问题"
+        },
+        {
+          "date": "2026-07-31T10:13:08.229676+00:00",
+          "outcome": "corrected",
+          "q": "重新排查"
+        },
+        {
+          "date": "2026-07-31T09:09:40.431831+00:00",
+          "outcome": "useful",
+          "q": "实时转录没有成功的根因是什么，如何修复"
+        },
         {
           "date": "2026-07-30T13:25:52.601669+00:00",
           "outcome": "useful",
           "q": "给 MeetTrace 制定 Rust + whisper-rs + flutter_rust_bridge 分阶段 ASR 迁移方案，保证 VAD、录音连续性、模型锁定和最终快照语义"
-        },
-        {
-          "date": "2026-07-29T11:59:32.411367+00:00",
-          "outcome": "useful",
-          "q": "正式替换 sherpa-onnx 后，MeetTrace 的 whisper.cpp 双模型 ASR 架构、实时预览、最终转录、模型生命周期与录音隔离如何连接？"
         }
       ],
-      "score": 1.940757096,
+      "score": 3.916482735,
       "source_file": "lib/data/services/asr/whisper/whisper_adapter.dart",
-      "status": "preferred",
-      "uses": 2
+      "status": "contested",
+      "uses": 5,
+      "verdict": "useful"
     },
     "lib_data_services_asr_whisper_whisper_adapter_whisperrecognizerconfig": {
       "code_fingerprint": "f8e64a52353efb03c1e5cc224489ceccb6b8e348c974c372ed58190363790727",
       "label": "WhisperRecognizerConfig",
-      "last": "2026-07-30T12:00:54.804047+00:00",
+      "last": "2026-07-31T10:47:04.218675+00:00",
       "provenance": [
+        {
+          "date": "2026-07-31T10:47:04.218675+00:00",
+          "outcome": "useful",
+          "q": "分析当前whisper.cpp 实时转录质量较低的问题"
+        },
         {
           "date": "2026-07-30T12:00:54.804047+00:00",
           "outcome": "useful",
           "q": "转录效果特别差"
         }
       ],
-      "score": 0.980922181,
+      "score": 1.968589966,
       "source_file": "lib/data/services/asr/whisper/whisper_adapter.dart",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "lib_data_services_asr_whisper_whisper_asr_engine": {
       "code_fingerprint": "b7022b34c6ece438cff5e6a353a03b6b082ea7f867e32ba9d816855f1725038a",
@@ -361,7 +417,7 @@
           "q": "https://codeberg.org/tazz4843/whisper-rs/src/branch/master/src  https://pub.dev/packages/flutter_rust_bridge  用rust是不是更好"
         }
       ],
-      "score": 0.981065474,
+      "score": 0.973649708,
       "source_file": "lib/data/services/asr/whisper/whisper_asr_engine.dart",
       "status": "tentative",
       "uses": 1
@@ -369,18 +425,23 @@
     "lib_data_services_asr_whisper_whisper_asr_engine_whisperasrengine": {
       "code_fingerprint": "b7022b34c6ece438cff5e6a353a03b6b082ea7f867e32ba9d816855f1725038a",
       "label": "WhisperAsrEngine",
-      "last": "2026-07-29T11:59:32.411367+00:00",
+      "last": "2026-07-31T09:31:58.589801+00:00",
       "provenance": [
+        {
+          "date": "2026-07-31T09:31:58.589801+00:00",
+          "outcome": "useful",
+          "q": "小米手机正在录音，但是没有实时转录文字显示，请排查"
+        },
         {
           "date": "2026-07-29T11:59:32.411367+00:00",
           "outcome": "useful",
           "q": "正式替换 sherpa-onnx 后，MeetTrace 的 whisper.cpp 双模型 ASR 架构、实时预览、最终转录、模型生命周期与录音隔离如何连接？"
         }
       ],
-      "score": 0.958496768,
+      "score": 1.945135826,
       "source_file": "lib/data/services/asr/whisper/whisper_asr_engine.dart",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "lib_data_services_audio_flutter_foreground_recording_lifecycle_flutterforegroundrecordinglifecycle": {
       "code_fingerprint": "3a507b119e45d5a99c49d20684bac0031a92d19b7c75c8b3975b52fe66166d7e",
@@ -393,7 +454,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.913131574,
+      "score": 0.906229313,
       "source_file": "lib/data/services/audio/flutter_foreground_recording_lifecycle.dart",
       "status": "tentative",
       "uses": 1
@@ -409,7 +470,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.915161571,
+      "score": 0.908243966,
       "source_file": "lib/data/services/models/platform_download_preflight_providers.dart",
       "status": "tentative",
       "uses": 1
@@ -435,7 +496,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 2.7396831,
+      "score": 2.718974138,
       "source_file": "lib/data/services/storage/app_database.dart",
       "status": "preferred",
       "uses": 3
@@ -451,7 +512,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 0.908738619,
+      "score": 0.901869564,
       "source_file": "lib/data/services/storage/app_file_layout.dart",
       "status": "tentative",
       "uses": 1
@@ -459,8 +520,13 @@
     "lib_data_services_vad_streaming_window_segmenter_streamingwindowsegmenter": {
       "code_fingerprint": "d74a4c52ed8f13ffb7231f76609a6f9fa237ba6065390260cea45df545f3fd1f",
       "label": "StreamingWindowSegmenter",
-      "last": "2026-07-30T15:02:44.501464+00:00",
+      "last": "2026-07-31T10:47:04.218675+00:00",
       "provenance": [
+        {
+          "date": "2026-07-31T10:47:04.218675+00:00",
+          "outcome": "useful",
+          "q": "分析当前whisper.cpp 实时转录质量较低的问题"
+        },
         {
           "date": "2026-07-30T15:02:44.501464+00:00",
           "outcome": "useful",
@@ -482,10 +548,48 @@
           "q": "正式替换 sherpa-onnx 后，MeetTrace 的 whisper.cpp 双模型 ASR 架构、实时预览、最终转录、模型生命周期与录音隔离如何连接？"
         }
       ],
-      "score": 3.906911009,
+      "score": 4.872461568,
       "source_file": "lib/data/services/vad/streaming_window_segmenter.dart",
       "status": "preferred",
-      "uses": 4
+      "uses": 5
+    },
+    "lib_data_services_vad_whisper_vad_segmenter_whispervadsegmenter": {
+      "code_fingerprint": "3c7c2d024b29fc38190ea494fea4b6d5652d9df83f752100e7baeef4038f82dc",
+      "label": "WhisperVadSegmenter",
+      "last": "2026-07-31T12:04:51.946364+00:00",
+      "neg": 1,
+      "provenance": [
+        {
+          "date": "2026-07-31T12:04:51.946364+00:00",
+          "outcome": "useful",
+          "q": "使用当前项目whisper.cpp 将这段音频转为文字，包括实时转录，给我转录结果"
+        },
+        {
+          "date": "2026-07-31T10:47:04.218675+00:00",
+          "outcome": "useful",
+          "q": "分析当前whisper.cpp 实时转录质量较低的问题"
+        },
+        {
+          "date": "2026-07-31T10:13:08.229676+00:00",
+          "outcome": "corrected",
+          "q": "重新排查"
+        },
+        {
+          "date": "2026-07-31T09:31:58.589801+00:00",
+          "outcome": "useful",
+          "q": "小米手机正在录音，但是没有实时转录文字显示，请排查"
+        },
+        {
+          "date": "2026-07-31T09:09:40.431831+00:00",
+          "outcome": "useful",
+          "q": "实时转录没有成功的根因是什么，如何修复"
+        }
+      ],
+      "score": 2.984279836,
+      "source_file": "lib/data/services/vad/whisper_vad_segmenter.dart",
+      "status": "contested",
+      "uses": 4,
+      "verdict": "useful"
     },
     "lib_domain_models_asr_model_registry_asrmodelregistry": {
       "code_fingerprint": "077cd67894714607b244469152ff8df5b49d210fb19e6b42fb9afc598ebcecf7",
@@ -518,10 +622,26 @@
           "q": "读取 whisper_ggml 文档并为 MeetTrace 制定替换 sherpa_onnx 的完整实施方案"
         }
       ],
-      "score": 11.577433491,
+      "score": 11.489920951,
       "source_file": "lib/domain/models/asr_model_registry.dart",
       "status": "preferred",
       "uses": 12
+    },
+    "lib_domain_models_asr_model_registry_whispersmalladvancedmodelid": {
+      "code_fingerprint": "077cd67894714607b244469152ff8df5b49d210fb19e6b42fb9afc598ebcecf7",
+      "label": "whisperSmallAdvancedModelId",
+      "last": "2026-07-31T15:27:20.021040+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-31T15:27:20.021040+00:00",
+          "outcome": "useful",
+          "q": "使用高级模型再试试；解决繁体中文问题"
+        }
+      ],
+      "score": 0.999567277,
+      "source_file": "lib/domain/models/asr_model_registry.dart",
+      "status": "tentative",
+      "uses": 1
     },
     "lib_domain_models_asr_model_supportedlanguages": {
       "code_fingerprint": "0f9d6cb34179d4568b8cf16688e1dd93d1f0d43f0f6cd4bb8965e40a57ae39c7",
@@ -544,7 +664,7 @@
           "q": "https://github.com/moonshine-ai/moonshine"
         }
       ],
-      "score": 2.869291745,
+      "score": 2.847603086,
       "source_file": "lib/domain/models/asr_model.dart",
       "status": "preferred",
       "uses": 3
@@ -575,7 +695,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 3.673481883,
+      "score": 3.645714439,
       "source_file": "lib/domain/models/meeting.dart",
       "status": "preferred",
       "uses": 4
@@ -591,7 +711,7 @@
           "q": "whisper_ggml transcribeLive 实时（流媒体）转录如何接入当前项目"
         }
       ],
-      "score": 0.956972245,
+      "score": 0.949738598,
       "source_file": "lib/domain/models/transcript.dart",
       "status": "tentative",
       "uses": 1
@@ -627,7 +747,7 @@
           "q": "sherpa_onnx 替换为 whisper_ggml，给我一个方案"
         }
       ],
-      "score": 4.810716607,
+      "score": 4.774352931,
       "source_file": "lib/domain/ports/asr_engine.dart",
       "status": "preferred",
       "uses": 5
@@ -648,7 +768,7 @@
           "q": "sherpa_onnx 替换为 whisper_ggml，给我一个方案"
         }
       ],
-      "score": 1.914273336,
+      "score": 1.899803555,
       "source_file": "lib/domain/ports/asr_engine.dart",
       "status": "preferred",
       "uses": 2
@@ -664,7 +784,7 @@
           "q": "评估 whisper_ggml 是否适合作为会迹当前本地 ASR 模型或运行时"
         }
       ],
-      "score": 0.956643111,
+      "score": 0.949411951,
       "source_file": "lib/domain/ports/asr_engine.dart",
       "status": "tentative",
       "uses": 1
@@ -680,7 +800,7 @@
           "q": "根据上述文档，完成0到4阶段目标，项目整体质量架构优先"
         }
       ],
-      "score": 0.99935137,
+      "score": 0.991797384,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "tentative",
       "uses": 1
@@ -696,7 +816,7 @@
           "q": "正式修改 PRD，取消产品会议质量门槛"
         }
       ],
-      "score": 0.99991065,
+      "score": 0.992352436,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "tentative",
       "uses": 1
@@ -717,7 +837,7 @@
           "q": "正式修改 PRD，取消产品会议质量门槛"
         }
       ],
-      "score": 1.999898688,
+      "score": 1.984781675,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "preferred",
       "uses": 2
@@ -749,7 +869,7 @@
           "q": "根据上述文档，完成0到4阶段目标，项目整体质量架构优先"
         }
       ],
-      "score": 1.999262322,
+      "score": 1.984150119,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "contested",
       "uses": 3,
@@ -771,7 +891,7 @@
           "q": "正式修改 PRD，取消产品会议质量门槛"
         }
       ],
-      "score": 1.999898688,
+      "score": 1.984781675,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "preferred",
       "uses": 2
@@ -787,7 +907,7 @@
           "q": "先实现安卓模拟器"
         }
       ],
-      "score": 0.98405659,
+      "score": 0.976618215,
       "source_file": "lib/domain/use_cases/start_meeting.dart",
       "status": "tentative",
       "uses": 1
@@ -808,7 +928,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.665582104,
+      "score": 1.652992153,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
@@ -844,7 +964,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 4.573492046,
+      "score": 4.538921525,
       "source_file": "lib/theme/theme.dart",
       "status": "preferred",
       "uses": 5
@@ -860,7 +980,7 @@
           "q": "能左滑删除吗"
         }
       ],
-      "score": 0.928633648,
+      "score": 0.921614209,
       "source_file": "lib/ui/core/app_ledger.dart",
       "status": "tentative",
       "uses": 1
@@ -876,7 +996,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 0.907928182,
+      "score": 0.901065253,
       "source_file": "lib/ui/core/app_page_body.dart",
       "status": "tentative",
       "uses": 1
@@ -897,7 +1017,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.816294565,
+      "score": 1.802565395,
       "source_file": "lib/ui/core/view_state.dart",
       "status": "preferred",
       "uses": 2
@@ -913,13 +1033,13 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.930455728,
+      "score": 0.923422516,
       "source_file": "lib/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_ui_features_meetings_view_models_recording_recording_session_view_model": {
-      "code_fingerprint": "2c4d7d7e177d65fa809c284dbb54e938d6d2bff12682448e20b820dd07675837",
+      "code_fingerprint": "4eaf7659a2c9e3ab9759664020cc8d2cfdadf179354764a4ffe01d607277945d",
       "label": "recording_session_view_model.dart",
       "last": "2026-07-28T05:09:01.343117+00:00",
       "provenance": [
@@ -929,7 +1049,7 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.930455728,
+      "score": 0.923422516,
       "source_file": "lib/ui/features/meetings/view_models/recording/recording_session_view_model.dart",
       "status": "tentative",
       "uses": 1
@@ -945,7 +1065,7 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.930455728,
+      "score": 0.923422516,
       "source_file": "lib/ui/features/meetings/view_models/start/start_meeting_view_model.dart",
       "status": "tentative",
       "uses": 1
@@ -971,7 +1091,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 2.744928213,
+      "score": 2.724179604,
       "source_file": "lib/ui/features/meetings/views/detail/meeting_detail_view.dart",
       "status": "preferred",
       "uses": 3
@@ -1007,7 +1127,7 @@
           "q": "修复安卓标题栏为沉浸式"
         }
       ],
-      "score": 6.485748091,
+      "score": 6.436723038,
       "source_file": "lib/ui/features/meetings/views/list/meeting_list_view.dart",
       "status": "preferred",
       "uses": 7
@@ -1023,7 +1143,7 @@
           "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
         }
       ],
-      "score": 0.908366383,
+      "score": 0.901500142,
       "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
       "status": "tentative",
       "uses": 1
@@ -1044,7 +1164,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 1.817231179,
+      "score": 1.803494929,
       "source_file": "linux/runner/main.cc",
       "status": "preferred",
       "uses": 2
@@ -1060,7 +1180,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.832746439,
+      "score": 0.8264518,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -1076,7 +1196,7 @@
           "q": "clang: warning: -Wl,-z,max-page-size=16384: linker input unused 是否影响 Android 16KB page-size 兼容性"
         }
       ],
-      "score": 0.979445424,
+      "score": 0.972041904,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -1084,41 +1204,58 @@
     "packages_meettrace_whisper_native_lib_src_third_party_meettrace_whisper_g_mt_whisper_transcribe": {
       "code_fingerprint": "e7a67a8e79fdf71a530cd7e59a8b623418ff6c5dfe89c8c006c0f410d7f51260",
       "label": "mt_whisper_transcribe",
-      "last": "2026-07-30T12:00:54.804047+00:00",
+      "last": "2026-07-31T10:13:08.229676+00:00",
+      "neg": 1,
       "provenance": [
+        {
+          "date": "2026-07-31T10:13:08.229676+00:00",
+          "outcome": "corrected",
+          "q": "重新排查"
+        },
         {
           "date": "2026-07-30T12:00:54.804047+00:00",
           "outcome": "useful",
           "q": "转录效果特别差"
         }
       ],
-      "score": 0.980922181,
+      "score": -0.021033334,
       "source_file": "packages/meettrace_whisper_native/lib/src/third_party/meettrace_whisper.g.dart",
-      "status": "tentative",
-      "uses": 1
+      "status": "contested",
+      "uses": 1,
+      "verdict": "dead end"
     },
     "packages_meettrace_whisper_native_lib_src_whisper_native_context_whispernativecontext": {
       "code_fingerprint": "a99a64e689b9bf4c1a45c99e79daf8dedb83544bf099b4faf3af7b191ec29655",
       "label": "WhisperNativeContext",
-      "last": "2026-07-29T11:59:32.411367+00:00",
+      "last": "2026-07-31T12:04:51.946364+00:00",
       "provenance": [
+        {
+          "date": "2026-07-31T12:04:51.946364+00:00",
+          "outcome": "useful",
+          "q": "使用当前项目whisper.cpp 将这段音频转为文字，包括实时转录，给我转录结果"
+        },
         {
           "date": "2026-07-29T11:59:32.411367+00:00",
           "outcome": "useful",
           "q": "正式替换 sherpa-onnx 后，MeetTrace 的 whisper.cpp 双模型 ASR 架构、实时预览、最终转录、模型生命周期与录音隔离如何连接？"
         }
       ],
-      "score": 0.958496768,
+      "score": 1.947576936,
       "source_file": "packages/meettrace_whisper_native/lib/src/whisper_native_context.dart",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "packages_meettrace_whisper_native_third_party_whisper_cpp_src_whisper": {
       "code_fingerprint": "82bc83fc4b95ef0e427746d42d62fa4a47b5e868934345e663d55299b5e66939",
       "label": "whisper.cpp",
-      "last": "2026-07-31T08:00:39.654571+00:00",
+      "last": "2026-07-31T15:27:20.021040+00:00",
       "neg": 1,
       "provenance": [
+        {
+          "date": "2026-07-31T15:27:20.021040+00:00",
+          "outcome": "useful",
+          "q": "使用高级模型再试试；解决繁体中文问题"
+        },
         {
           "date": "2026-07-31T08:00:39.654571+00:00",
           "outcome": "useful",
@@ -1138,17 +1275,12 @@
           "date": "2026-07-31T07:20:58.630508+00:00",
           "outcome": "useful",
           "q": "根据上述文档，完成0到4阶段目标，项目整体质量架构优先"
-        },
-        {
-          "date": "2026-07-30T15:19:44.728129+00:00",
-          "outcome": "useful",
-          "q": "先实现安卓模拟器"
         }
       ],
-      "score": 5.931484869,
+      "score": 6.886216707,
       "source_file": "packages/meettrace_whisper_native/third_party/whisper.cpp/src/whisper.cpp",
       "status": "contested",
-      "uses": 7,
+      "uses": 8,
       "verdict": "useful"
     },
     "packages_meettrace_whisper_native_third_party_whisper_cpp_src_whisper_whisper_vad_context": {
@@ -1162,7 +1294,7 @@
           "q": "https://codeberg.org/tazz4843/whisper-rs/src/branch/master/src  https://pub.dev/packages/flutter_rust_bridge  用rust是不是更好"
         }
       ],
-      "score": 0.981065474,
+      "score": 0.973649708,
       "source_file": "packages/meettrace_whisper_native/third_party/whisper.cpp/src/whisper.cpp",
       "status": "tentative",
       "uses": 1
@@ -1178,7 +1310,7 @@
           "q": "列表日期需要更加语义化"
         }
       ],
-      "score": 0.93169155,
+      "score": 0.924648997,
       "source_file": "test/ui/features/meetings/views/list/meeting_list_view_test.dart",
       "status": "tentative",
       "uses": 1
@@ -1210,7 +1342,7 @@
           "q": "根据上述文档，完成0到4阶段目标，项目整体质量架构优先"
         }
       ],
-      "score": 1.999262322,
+      "score": 1.984150119,
       "source_file": "tool/benchmarks/build_phase_0_4_quality_input.dart",
       "status": "contested",
       "uses": 3,
@@ -1227,7 +1359,7 @@
           "q": "根据上述文档，完成0到4阶段目标，项目整体质量架构优先"
         }
       ],
-      "score": 0.99935137,
+      "score": 0.991797384,
       "source_file": "tool/benchmarks/prepare_whisper_quality_corpus.dart",
       "status": "tentative",
       "uses": 1
@@ -1248,7 +1380,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 1.825983839,
+      "score": 1.812181429,
       "source_file": "web/manifest.json",
       "status": "preferred",
       "uses": 2
@@ -1264,7 +1396,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.915161571,
+      "score": 0.908243966,
       "source_file": "windows/flutter/generated_plugin_registrant.cc",
       "status": "tentative",
       "uses": 1

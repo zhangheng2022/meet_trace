@@ -112,6 +112,49 @@ void main() {
     await coordinator.dispose();
   });
 
+  test('三秒刷新使用滚动上下文且只发布新增文本', () async {
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      results: const ['今天讨论项目计划', '项目计划已经确认'],
+    );
+    final coordinator = AsrPreviewCoordinator(
+      engine: engine,
+      vad: _ScriptedVad([
+        const [
+          VadSpeechSegment(startSample: 0, endSample: 3 * recordingSampleRate),
+        ],
+        const [
+          VadSpeechSegment(
+            startSample: 3 * recordingSampleRate,
+            endSample: 6 * recordingSampleRate,
+          ),
+        ],
+      ]),
+    );
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events
+        .where((event) => event is TranscriptSegmentEvent)
+        .cast<TranscriptSegmentEvent>()
+        .listen(events.add);
+
+    await coordinator.add(
+      _chunk(startSample: 0, sampleCount: 3 * recordingSampleRate),
+    );
+    await coordinator.add(
+      _chunk(
+        startSample: 3 * recordingSampleRate,
+        sampleCount: 3 * recordingSampleRate,
+      ),
+    );
+    await coordinator.flush();
+
+    expect(engine.windows, [(0, 3000), (0, 6000)]);
+    expect(events.map((event) => event.text), ['今天讨论项目计划', '已经确认']);
+    expect(events.map((event) => event.startMs), [0, 3000]);
+    await subscription.cancel();
+    await coordinator.dispose();
+  });
+
   test('积压按音频时长丢弃最旧待处理窗口并在低水位恢复', () async {
     final firstGate = Completer<void>();
     final engine = _FakeAsrEngine(
@@ -195,6 +238,7 @@ AsrPreviewCoordinator _coordinator({
     planner: const AsrPreviewWindowPlanner(
       contextBeforeMs: 0,
       contextAfterMs: 0,
+      minimumContextMs: 0,
     ),
     maximumQueuedAudioMs: maximumQueuedAudioMs,
     highWaterMs: highWaterMs,

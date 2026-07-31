@@ -63,19 +63,23 @@ final class _RecordingFactsPanel extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: appStyle.spaceMd),
-                RecordingAudioWaveform(
-                  levels: viewModel.audioLevels,
-                  state: switch (recordingState) {
-                    RecordingState.idle || RecordingState.starting =>
-                      RecordingAudioWaveformState.waiting,
-                    RecordingState.recording =>
-                      RecordingAudioWaveformState.live,
-                    RecordingState.paused => RecordingAudioWaveformState.paused,
-                    RecordingState.finalizing ||
-                    RecordingState.completed ||
-                    RecordingState.failed =>
-                      RecordingAudioWaveformState.stopped,
-                  },
+                ValueListenableBuilder<List<double>>(
+                  valueListenable: viewModel.audioLevelsListenable,
+                  builder: (context, levels, child) => RecordingAudioWaveform(
+                    levels: levels,
+                    state: switch (recordingState) {
+                      RecordingState.idle || RecordingState.starting =>
+                        RecordingAudioWaveformState.waiting,
+                      RecordingState.recording =>
+                        RecordingAudioWaveformState.live,
+                      RecordingState.paused =>
+                        RecordingAudioWaveformState.paused,
+                      RecordingState.finalizing ||
+                      RecordingState.completed ||
+                      RecordingState.failed =>
+                        RecordingAudioWaveformState.stopped,
+                    },
+                  ),
                 ),
                 SizedBox(height: appStyle.spaceLg),
                 _RecordingFactLedger(

@@ -286,8 +286,12 @@ Android 模拟器用于尽早打通功能链：
 - 新入口已在 API 36 x86_64 模拟器完成编译、安装与缺参跳过检查；Small 固定权重也已
   完成真实原生初始化、窗口推理和释放。固定 ASCEND 公开回归显示生产默认 VAD 在
   20 段短语音中漏检 12 段；`vad-recall-035-v1` 恢复到 20/20 检测并通过 20 段数字
-  静音冒烟，但只保留为评测候选。正式三类产品会议矩阵尚未提供，相关结果保持
-  `not_tested`；Hard Gate 0 的工程项已通过，生产参数仍不因观察缺失而自动切换。
+  静音冒烟。小米实机会中诊断确认默认参数导致实时预览长时间无文字后，会中预览采用
+  该召回参数；后续实机诊断进一步确认三秒音频同时作为刷新周期和完整识别上下文，且
+  Preview 关闭 temperature fallback、Native 缩短 `audio_ctx`，会显著放大重复数字等
+  幻觉。当前改为每 3 秒刷新、最多 10 秒滚动识别上下文、temperature increment 0.2 和
+  `audio_ctx=0`，VAD 继续保持 0.35。最终转录和质量默认管线仍保留官方默认参数。正式三类产品会议矩阵尚未
+  提供，相关结果保持 `not_tested`；Hard Gate 0 的工程项已通过。
 
 ---
 
@@ -623,6 +627,9 @@ flutter test test/data/services/audio/recording_pcm_diagnostics_test.dart
    - ASR 窗口队列可丢最旧预览任务。
 4. 超过 15 秒的语音区间继续通过 `AsrPreviewWindowPlanner` 重叠切分。
 5. 保持全局时间戳、确定性修订和去重语义。
+6. 会中实时预览使用 threshold 0.35、min speech 100 ms、pad 100 ms，并对持续语音每
+   3 秒主动产出稳定子区间；每次识别向前使用最多 10 秒滚动上下文，并只发布相邻窗口
+   的新增文本。Preview 使用 temperature increment 0.2，Native 暂时保持 `audio_ctx=0`。
 
 ### Task 4.2：最终转录使用相同 VAD 语义
 
@@ -638,10 +645,11 @@ flutter test test/data/services/audio/recording_pcm_diagnostics_test.dart
 
 1. 最终转录重新打开完整事实 PCM，从 sample 0 创建全新 VAD 状态。
 2. 不复用会中 VAD 状态、预览文本或已丢弃窗口。
-3. 使用本场锁定模型和 `final` Profile。
-4. 静音会议生成零片段的完整快照。
-5. 新快照保存和校验完成后调用 `saveFinalAndActivate`。
-6. 失败、取消、崩溃和显式重试均保留旧活动快照。
+3. 使用普通 VAD 默认值 threshold 0.5、min speech 250 ms、pad 30 ms，不继承实时参数。
+4. 使用本场锁定模型和 `final` Profile。
+5. 静音会议生成零片段的完整快照。
+6. 新快照保存和校验完成后调用 `saveFinalAndActivate`。
+7. 失败、取消、崩溃和显式重试均保留旧活动快照。
 
 **Hard Gate 4：**
 

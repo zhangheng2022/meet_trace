@@ -92,6 +92,59 @@ void main() {
     await fixture.dispose();
   });
 
+  testWidgets('突发音量按固定节拍局部刷新波形而不重建页面外壳', (tester) async {
+    final fixture = _fixture();
+
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    final scaffoldBefore = tester.widget<FScaffold>(find.byType(FScaffold));
+
+    fixture.recording
+      ..emitAudioLevel(0.1)
+      ..emitAudioLevel(0.5)
+      ..emitAudioLevel(0.9);
+    await tester.pump();
+
+    expect(
+      tester
+          .widget<RecordingAudioWaveform>(find.byType(RecordingAudioWaveform))
+          .levels,
+      [0.1],
+    );
+    expect(
+      identical(
+        scaffoldBefore,
+        tester.widget<FScaffold>(find.byType(FScaffold)),
+      ),
+      isTrue,
+    );
+
+    await tester.pump(recordingWaveformSampleInterval);
+    expect(
+      tester
+          .widget<RecordingAudioWaveform>(find.byType(RecordingAudioWaveform))
+          .levels,
+      [0.1, 0.5],
+    );
+
+    await tester.pump(recordingWaveformSampleInterval);
+    expect(
+      tester
+          .widget<RecordingAudioWaveform>(find.byType(RecordingAudioWaveform))
+          .levels,
+      [0.1, 0.5, 0.9],
+    );
+
+    await fixture.dispose();
+  });
+
   testWidgets('返回键和结束按钮进入同一确认流程，确认后封存会议', (WidgetTester tester) async {
     final fixture = _fixture();
     Meeting? finished;
@@ -490,6 +543,12 @@ final class _RecordingService implements RecordingSessionService {
   }
 
   Future<void> close() => _audioLevels.close();
+
+  void emitAudioLevel(double level) {
+    _audioLevels.add(
+      RecordingAudioLevel(level: level, capturedThrough: durationValue),
+    );
+  }
 
   @override
   Future<RecordingArtifact> stop() async {

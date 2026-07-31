@@ -74,6 +74,65 @@ void main() {
     expect(factory.segmentCallCount, 3);
     await segmenter.dispose();
   });
+
+  test('预览模式在持续讲话未结束时按三秒稳定窗口提前产出', () async {
+    final factory = _CapturingVadWorkerFactory();
+    final segmenter = WhisperVadSegmenter.preview(
+      modelPath: 'fake-vad.bin',
+      workerFactory: factory,
+    );
+    final speech = Float32List(8 * whisperVadSampleRate)
+      ..fillRange(0, 8 * whisperVadSampleRate, 0.8);
+    final output = <dynamic>[];
+
+    for (
+      var offset = 0;
+      offset < speech.length;
+      offset += whisperVadSampleRate
+    ) {
+      output.addAll(
+        await segmenter.accept(
+          Float32List.sublistView(
+            speech,
+            offset,
+            offset + whisperVadSampleRate,
+          ),
+        ),
+      );
+    }
+
+    expect(segmenter.config.threshold, whisperPreviewVadThreshold);
+    expect(
+      segmenter.config.minSpeechDurationMs,
+      whisperPreviewMinimumSpeechDurationMs,
+    );
+    expect(segmenter.config.speechPadMs, whisperPreviewSpeechPadMs);
+    expect(factory.configs.single.maxSpeechDurationSeconds, 15);
+    expect(output.map((segment) => (segment.startSample, segment.endSample)), [
+      (0, 3 * whisperVadSampleRate),
+      (3 * whisperVadSampleRate, 6 * whisperVadSampleRate),
+    ]);
+    expect(
+      (await segmenter.flush()).map(
+        (segment) => (segment.startSample, segment.endSample),
+      ),
+      [(6 * whisperVadSampleRate, 8 * whisperVadSampleRate)],
+    );
+    await segmenter.dispose();
+  });
+
+  test('普通模式保留最终转录的默认 VAD 参数', () async {
+    final segmenter = WhisperVadSegmenter(
+      modelPath: 'fake-vad.bin',
+      workerFactory: const _FakeVadWorkerFactory(),
+    );
+
+    expect(segmenter.config.threshold, 0.5);
+    expect(segmenter.config.minSpeechDurationMs, 250);
+    expect(segmenter.config.speechPadMs, 30);
+
+    await segmenter.dispose();
+  });
 }
 
 Future<List<dynamic>> _run(
@@ -117,6 +176,16 @@ final class _CountingVadWorkerFactory implements WhisperVadWorkerFactory {
   @override
   Future<WhisperVadWorker> create(WhisperVadConfig config) async {
     return _FakeVadWorker(onSegment: () => segmentCallCount++);
+  }
+}
+
+final class _CapturingVadWorkerFactory implements WhisperVadWorkerFactory {
+  final List<WhisperVadConfig> configs = [];
+
+  @override
+  Future<WhisperVadWorker> create(WhisperVadConfig config) async {
+    configs.add(config);
+    return _FakeVadWorker();
   }
 }
 

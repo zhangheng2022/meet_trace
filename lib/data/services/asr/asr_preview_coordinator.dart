@@ -71,6 +71,7 @@ final class AsrPreviewCoordinator
   int _latestWindowEndMs = 0;
   int _coveredThroughMs = 0;
   String? _lastErrorCode;
+  String _previousRollingWindowText = '';
 
   @override
   Stream<TranscriptEvent> get events => _events.stream;
@@ -105,6 +106,7 @@ final class AsrPreviewCoordinator
         await vad.reset(nextStartSample: startSample);
         _timeline.reset(startSample: startSample);
         _dropAllPending();
+        _previousRollingWindowText = '';
       } else if (_timeline.isEmpty) {
         _timeline.reset(startSample: startSample);
       }
@@ -168,7 +170,7 @@ final class AsrPreviewCoordinator
           'vad-${++_nextSegmentSequence}-${segment.startSample}-${segment.endSample}';
       final group = _TranscriptGroup(
         groupId: groupId,
-        startMs: intervals.first.startSample * 1000 ~/ recordingSampleRate,
+        startMs: segment.startSample * 1000 ~/ recordingSampleRate,
         windowCount: intervals.length,
       );
       _transcriptGroups[groupId] = group;
@@ -353,18 +355,27 @@ final class AsrPreviewCoordinator
         merged = mergeOverlappingTranscriptText(merged, text);
       }
     }
-    _events.add(
-      TranscriptSegmentEvent(
-        segmentId: group.groupId,
-        startMs: group.startMs,
-        endMs: group.endMs,
-        text: merged,
-        modelId: event.modelId,
-        modelVersion: event.modelVersion,
-        isFinalForWindow: group.remainingWindows == 0,
-      ),
-    );
-    if (group.remainingWindows == 0) {
+    final isFinalForWindow = group.remainingWindows == 0;
+    final publishedText = isFinalForWindow
+        ? extractNovelRollingTranscriptText(_previousRollingWindowText, merged)
+        : merged;
+    if (isFinalForWindow) {
+      _previousRollingWindowText = merged;
+    }
+    if (publishedText.isNotEmpty) {
+      _events.add(
+        TranscriptSegmentEvent(
+          segmentId: group.groupId,
+          startMs: group.startMs,
+          endMs: group.endMs,
+          text: publishedText,
+          modelId: event.modelId,
+          modelVersion: event.modelVersion,
+          isFinalForWindow: isFinalForWindow,
+        ),
+      );
+    }
+    if (isFinalForWindow) {
       _transcriptGroups.remove(group.groupId);
     }
   }

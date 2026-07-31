@@ -68,7 +68,7 @@ const whisperPreviewRecognizerProfile = WhisperRecognizerProfile(
   noContext: true,
   suppressBlank: true,
   temperature: 0,
-  temperatureIncrement: 0,
+  temperatureIncrement: 0.2,
 );
 
 const whisperFinalRecognizerProfile = WhisperRecognizerProfile(

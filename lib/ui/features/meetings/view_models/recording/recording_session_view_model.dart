@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
@@ -16,6 +17,8 @@ typedef RecordingTickerFactory =
     Timer Function(Duration duration, void Function(Timer timer) callback);
 
 const recordingWaveformSampleCapacity = 48;
+const recordingWaveformPendingSampleCapacity = 6;
+const recordingWaveformSampleInterval = Duration(milliseconds: 100);
 
 final class RecordingSessionViewModel extends ChangeNotifier {
   RecordingSessionViewModel({
@@ -24,23 +27,30 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     required this.preview,
     required this.sessionLifecycle,
     RecordingTickerFactory? tickerFactory,
+    RecordingTickerFactory? waveformTickerFactory,
   }) : _meeting = session.meeting,
        _tickerFactory = tickerFactory ?? Timer.periodic,
+       _waveformTickerFactory = waveformTickerFactory ?? Timer.periodic,
        _previewMetrics = preview.metrics;
 
   final RecordingSessionService recording;
   final AsrPreviewSession preview;
   final ManageRecordingSessionUseCase sessionLifecycle;
   final RecordingTickerFactory _tickerFactory;
+  final RecordingTickerFactory _waveformTickerFactory;
 
   Meeting _meeting;
   AsrPreviewMetrics _previewMetrics;
   final Map<String, TranscriptSegmentEvent> _segments = {};
   final List<double> _audioLevels = [];
+  final Queue<double> _pendingAudioLevels = Queue<double>();
+  final ValueNotifier<List<double>> _audioLevelsListenable =
+      ValueNotifier<List<double>>(const []);
   StreamSubscription<TranscriptEvent>? _eventSubscription;
   StreamSubscription<AsrPreviewMetrics>? _metricsSubscription;
   StreamSubscription<RecordingAudioLevel>? _audioLevelSubscription;
   Timer? _ticker;
+  Timer? _waveformTicker;
   Duration _duration = Duration.zero;
   String? _errorMessage;
   bool _isBusy = false;
@@ -51,7 +61,9 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   RecordingState get recordingState => recording.state;
   AsrPreviewMetrics get previewMetrics => _previewMetrics;
   Duration get duration => _duration;
-  List<double> get audioLevels => List.unmodifiable(_audioLevels);
+  List<double> get audioLevels => _audioLevelsListenable.value;
+  ValueListenable<List<double>> get audioLevelsListenable =>
+      _audioLevelsListenable;
   String? get errorMessage => _errorMessage;
   bool get isBusy => _isBusy;
   bool get isFinalizing => _isFinalizing;
@@ -165,12 +177,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
 
   void _subscribePreview() {
     _audioLevelSubscription ??= recording.audioLevelChanges.listen((sample) {
-      _audioLevels.add(sample.level);
-      final overflow = _audioLevels.length - recordingWaveformSampleCapacity;
-      if (overflow > 0) {
-        _audioLevels.removeRange(0, overflow);
-      }
-      _notify();
+      _enqueueAudioLevel(sample.level);
     });
     _eventSubscription ??= preview.events.listen((event) {
       if (event case final TranscriptSegmentEvent segment) {
@@ -189,6 +196,57 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     _notify();
   }
 
+  void _enqueueAudioLevel(double level) {
+    if (_disposed) {
+      return;
+    }
+    while (_pendingAudioLevels.length >=
+        recordingWaveformPendingSampleCapacity) {
+      _pendingAudioLevels.removeFirst();
+    }
+    _pendingAudioLevels.addLast(level);
+    if (_waveformTicker != null) {
+      return;
+    }
+    _publishNextAudioLevel();
+    if (_disposed) {
+      return;
+    }
+    _waveformTicker = _waveformTickerFactory(
+      recordingWaveformSampleInterval,
+      _handleWaveformTick,
+    );
+  }
+
+  void _handleWaveformTick(Timer timer) {
+    if (_disposed || _pendingAudioLevels.isEmpty) {
+      timer.cancel();
+      if (identical(_waveformTicker, timer)) {
+        _waveformTicker = null;
+      }
+      return;
+    }
+    _publishNextAudioLevel();
+  }
+
+  void _publishNextAudioLevel() {
+    if (_pendingAudioLevels.isEmpty) {
+      return;
+    }
+    _audioLevels.add(_pendingAudioLevels.removeFirst());
+    final overflow = _audioLevels.length - recordingWaveformSampleCapacity;
+    if (overflow > 0) {
+      _audioLevels.removeRange(0, overflow);
+    }
+    _audioLevelsListenable.value = List<double>.unmodifiable(_audioLevels);
+  }
+
+  void _stopWaveformUpdates() {
+    _waveformTicker?.cancel();
+    _waveformTicker = null;
+    _pendingAudioLevels.clear();
+  }
+
   void _notify() {
     if (!_disposed) {
       notifyListeners();
@@ -196,7 +254,9 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   }
 
   Future<void> _disposePreview() async {
+    _stopWaveformUpdates();
     await _audioLevelSubscription?.cancel();
+    _stopWaveformUpdates();
     await _eventSubscription?.cancel();
     await _metricsSubscription?.cancel();
     _audioLevelSubscription = null;
@@ -217,6 +277,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _ticker?.cancel();
+    _stopWaveformUpdates();
     if (recordingState != RecordingState.recording &&
         recordingState != RecordingState.paused) {
       unawaited(_disposePreviewBestEffort());
@@ -225,6 +286,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       unawaited(_eventSubscription?.cancel());
       unawaited(_metricsSubscription?.cancel());
     }
+    _audioLevelsListenable.dispose();
     super.dispose();
   }
 }

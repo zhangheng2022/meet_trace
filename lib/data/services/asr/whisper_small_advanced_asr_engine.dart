@@ -31,6 +31,7 @@ final class WhisperSmallAdvancedAsrEngine implements AsrEngine {
     Duration leaseRenewalLead = const Duration(minutes: 5),
     String Function()? leaseIdFactory,
     WhisperRecognizerProfile profile = whisperBaselineRecognizerProfile,
+    int threadCount = 2,
     FinalVoiceActivitySegmenterFactory? finalVadFactory,
   }) async {
     final descriptor = AsrModelRegistry.alpha.requireById(
@@ -159,6 +160,7 @@ final class WhisperSmallAdvancedAsrEngine implements AsrEngine {
               modelId: descriptor.modelId,
               modelVersion: descriptor.version,
               modelPath: p.join(modelRoot, 'ggml-small-q5_1.bin'),
+              threadCount: threadCount,
             ),
             errorPrefix: 'asr.whisper_small',
             workerFactory: workerFactory,

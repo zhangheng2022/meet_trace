@@ -5,6 +5,8 @@ const asrPreviewMaximumWindowMs = 15000;
 const asrPreviewWindowOverlapMs = 500;
 const asrPreviewContextBeforeMs = 200;
 const asrPreviewContextAfterMs = 200;
+const asrPreviewMinimumContextMs = 10000;
+const asrPreviewMinimumTranscriptOverlapCharacters = 2;
 
 final class AsrPreviewWindowPlanner {
   const AsrPreviewWindowPlanner({
@@ -13,18 +15,22 @@ final class AsrPreviewWindowPlanner {
     this.overlapMs = asrPreviewWindowOverlapMs,
     this.contextBeforeMs = asrPreviewContextBeforeMs,
     this.contextAfterMs = asrPreviewContextAfterMs,
+    this.minimumContextMs = asrPreviewMinimumContextMs,
   }) : assert(sampleRate > 0),
        assert(maximumWindowMs > 0),
        assert(overlapMs >= 0),
        assert(overlapMs < maximumWindowMs),
        assert(contextBeforeMs >= 0),
-       assert(contextAfterMs >= 0);
+       assert(contextAfterMs >= 0),
+       assert(minimumContextMs >= 0),
+       assert(minimumContextMs <= maximumWindowMs);
 
   final int sampleRate;
   final int maximumWindowMs;
   final int overlapMs;
   final int contextBeforeMs;
   final int contextAfterMs;
+  final int minimumContextMs;
 
   List<({int startSample, int endSample})> call({
     required VadSpeechSegment segment,
@@ -40,9 +46,10 @@ final class AsrPreviewWindowPlanner {
 
     final contextBeforeSamples = _samplesForMs(contextBeforeMs);
     final contextAfterSamples = _samplesForMs(contextAfterMs);
+    final minimumContextSamples = _samplesForMs(minimumContextMs);
     final maximumWindowSamples = _samplesForMs(maximumWindowMs);
     final overlapSamples = _samplesForMs(overlapMs);
-    final expandedStart = (segment.startSample - contextBeforeSamples).clamp(
+    final paddedStart = (segment.startSample - contextBeforeSamples).clamp(
       availableStartSample,
       availableEndSample,
     );
@@ -50,6 +57,11 @@ final class AsrPreviewWindowPlanner {
       availableStartSample,
       availableEndSample,
     );
+    final minimumContextStart = (expandedEnd - minimumContextSamples).clamp(
+      availableStartSample,
+      availableEndSample,
+    );
+    final expandedStart = _min(paddedStart, minimumContextStart);
 
     final windows = <({int startSample, int endSample})>[];
     var start = expandedStart;
@@ -65,6 +77,31 @@ final class AsrPreviewWindowPlanner {
   int _samplesForMs(int milliseconds) {
     return milliseconds * sampleRate ~/ Duration.millisecondsPerSecond;
   }
+}
+
+String extractNovelRollingTranscriptText(String previous, String current) {
+  final earlier = previous.trim();
+  final latest = current.trim();
+  if (latest.isEmpty || earlier == latest) {
+    return '';
+  }
+  if (earlier.isEmpty) {
+    return latest;
+  }
+
+  final maximumOverlap = earlier.length < latest.length
+      ? earlier.length
+      : latest.length;
+  for (
+    var length = maximumOverlap;
+    length >= asrPreviewMinimumTranscriptOverlapCharacters;
+    length--
+  ) {
+    if (earlier.endsWith(latest.substring(0, length))) {
+      return latest.substring(length).trim();
+    }
+  }
+  return latest;
 }
 
 String mergeOverlappingTranscriptText(String earlier, String later) {
@@ -86,3 +123,5 @@ String mergeOverlappingTranscriptText(String earlier, String later) {
   }
   return '$left $right';
 }
+
+int _min(int left, int right) => left < right ? left : right;

@@ -98,6 +98,7 @@ final class WhisperAsrEngineFactory implements AsrEngineFactory {
       workerFactory: workerFactory,
       now: now,
       profile: _profileFor(purpose),
+      threadCount: _threadCountFor(purpose),
       finalVadFactory: _finalVadFactory(installation),
     );
   }
@@ -130,6 +131,7 @@ final class WhisperAsrEngineFactory implements AsrEngineFactory {
       leaseRenewalLead: leaseRenewalLead,
       leaseIdFactory: leaseIdFactory,
       profile: _profileFor(purpose),
+      threadCount: _threadCountFor(purpose),
       finalVadFactory: _finalVadFactory(standardInstallation!),
     );
   }
@@ -167,9 +169,15 @@ bool _isVerifiedInstallation(
 
 WhisperRecognizerProfile _profileFor(AsrEnginePurpose purpose) {
   return switch (purpose) {
-    // Preview/Beam 候选必须先通过真实 20 段语料门槛；未通过前保持基线。
-    AsrEnginePurpose.preview => whisperBaselineRecognizerProfile,
+    AsrEnginePurpose.preview => whisperPreviewRecognizerProfile,
     AsrEnginePurpose.finalTranscript => whisperBaselineRecognizerProfile,
+  };
+}
+
+int _threadCountFor(AsrEnginePurpose purpose) {
+  return switch (purpose) {
+    AsrEnginePurpose.preview => 4,
+    AsrEnginePurpose.finalTranscript => 2,
   };
 }
 

@@ -22,6 +22,7 @@ final class WhisperBaseStandardAsrEngine implements AsrEngine {
     required ModelInstallation installation,
     WhisperWorkerFactory workerFactory = const OfficialWhisperWorkerFactory(),
     WhisperRecognizerProfile profile = whisperBaselineRecognizerProfile,
+    int threadCount = 2,
     FinalVoiceActivitySegmenterFactory? finalVadFactory,
     DateTime Function()? now,
   }) {
@@ -37,6 +38,7 @@ final class WhisperBaseStandardAsrEngine implements AsrEngine {
           modelId: descriptor.modelId,
           modelVersion: descriptor.version,
           modelPath: p.join(modelRoot, 'ggml-base-q5_1.bin'),
+          threadCount: threadCount,
         ),
         errorPrefix: 'asr.whisper_base',
         workerFactory: workerFactory,

@@ -243,6 +243,9 @@ int32_t mt_whisper_transcribe(
     params.temperature_inc = context->temperature_inc;
     params.greedy.best_of = context->best_of;
     params.beam_search.beam_size = context->beam_size;
+    // Keep the whisper.cpp quality baseline. A non-zero audio_ctx shortens the
+    // encoder context and is reserved for a separately validated optimization.
+    params.audio_ctx = 0;
     params.initial_prompt = context->initial_prompt.empty()
                                 ? nullptr
                                 : context->initial_prompt.c_str();
