@@ -328,6 +328,13 @@ final class WhisperQualityCorpus {
     final provenance = WhisperQualityCorpusProvenance.fromJson(
       _map(manifest['provenance'], 'manifest.provenance'),
     );
+    if (evidenceClass == whisperProductMeetingEvidenceClass &&
+        (provenance.reviewAttestationSha256 == null ||
+            provenance.reviewedAtUtc == null)) {
+      throw const WhisperQualityProtocolException(
+        'product-meeting provenance 必须绑定人工复核证明 SHA-256 和复核 UTC 时间',
+      );
+    }
     final audioFormat = _map(manifest['audioFormat'], 'manifest.audioFormat');
     if (audioFormat['encoding'] != whisperQualityEncoding ||
         audioFormat['sampleRateHz'] != whisperQualitySampleRateHz ||
@@ -351,6 +358,7 @@ final class WhisperQualityCorpus {
     final allowedSpikeRoot = p.join(resolvedRepositoryRoot, '.spike');
     final values = environment ?? Platform.environment;
     final ids = <String>{};
+    final contentHashes = <String>{};
     final samples = <WhisperQualityCorpusSample>[];
     for (var index = 0; index < rawSamples.length; index++) {
       final raw = _map(rawSamples[index], 'manifest.samples[$index]');
@@ -408,6 +416,11 @@ final class WhisperQualityCorpus {
         raw['sha256'],
         'manifest.samples[$index].sha256',
       );
+      if (!contentHashes.add(expectedSha256)) {
+        throw WhisperQualityProtocolException(
+          'sample $id 的 PCM SHA-256 与另一段重复，不能重复计入语料覆盖',
+        );
+      }
       final actualSha256 = (await sha256.bind(sourceFile.openRead()).first)
           .toString();
       if (actualSha256 != expectedSha256) {
@@ -480,24 +493,52 @@ final class WhisperQualityCorpusProvenance {
   const WhisperQualityCorpusProvenance({
     required this.sourceId,
     required this.licenseId,
+    this.reviewAttestationSha256,
+    this.reviewedAtUtc,
   });
 
   factory WhisperQualityCorpusProvenance.fromJson(Map<String, Object?> json) {
+    final reviewAttestationSha256 = json['reviewAttestationSha256'];
+    if (reviewAttestationSha256 != null && reviewAttestationSha256 is! String) {
+      throw const WhisperQualityProtocolException(
+        'manifest.provenance.reviewAttestationSha256 必须是字符串',
+      );
+    }
+    final reviewedAtUtc = json['reviewedAtUtc'];
+    if (reviewedAtUtc != null && reviewedAtUtc is! String) {
+      throw const WhisperQualityProtocolException(
+        'manifest.provenance.reviewedAtUtc 必须是字符串',
+      );
+    }
     return WhisperQualityCorpusProvenance(
       sourceId: _requiredText(json['sourceId'], 'manifest.provenance.sourceId'),
       licenseId: _requiredText(
         json['licenseId'],
         'manifest.provenance.licenseId',
       ),
+      reviewAttestationSha256: reviewAttestationSha256 == null
+          ? null
+          : _sha256(
+              reviewAttestationSha256,
+              'manifest.provenance.reviewAttestationSha256',
+            ),
+      reviewedAtUtc: reviewedAtUtc == null
+          ? null
+          : _utcTimestamp(reviewedAtUtc, 'manifest.provenance.reviewedAtUtc'),
     );
   }
 
   final String sourceId;
   final String licenseId;
+  final String? reviewAttestationSha256;
+  final String? reviewedAtUtc;
 
   Map<String, Object?> toJson() => {
     'sourceId': sourceId,
     'licenseId': licenseId,
+    if (reviewAttestationSha256 != null)
+      'reviewAttestationSha256': reviewAttestationSha256,
+    if (reviewedAtUtc != null) 'reviewedAtUtc': reviewedAtUtc,
   };
 }
 
@@ -667,6 +708,15 @@ String _sha256(Object? value, String name) {
   final text = _requiredText(value, name).toLowerCase();
   if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(text)) {
     throw WhisperQualityProtocolException('$name 必须是 64 位十六进制');
+  }
+  return text;
+}
+
+String _utcTimestamp(Object? value, String name) {
+  final text = _requiredText(value, name);
+  final parsed = DateTime.tryParse(text);
+  if (parsed == null || !text.endsWith('Z') || !parsed.isUtc) {
+    throw WhisperQualityProtocolException('$name 必须是以 Z 结尾的 ISO 8601 UTC 时间');
   }
   return text;
 }

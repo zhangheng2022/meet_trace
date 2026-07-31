@@ -28,6 +28,17 @@
 - Android 质量执行链可在相同设备、模型、Profile 和语料上比较固定窗口与生产 VAD
   分段；正式门槛只接受带来源证明的 `product-meeting` 语料，公开/合成语料只做回归
   或烟测。
+- 私有候选语料必须先生成默认未批准的人工复核模板；只有逐段确认分类、去敏、关键事实
+  和语音首尾后，晋升器才会生成 `product-meeting` manifest。正式 provenance 强制
+  绑定复核证明 SHA-256 与 UTC 时间；VAD、ASR 草稿或未经晋升器校验的手工 manifest
+  不属于可接受的正式证据。
+- 当前本地审阅包提供每类 30 段冗余候选；人工可剔除敏感或误分类片段，但晋升后的
+  正式集合仍必须满足每类至少 20 段和语音首尾覆盖。
+- Base/Small × Baseline/Preview/Final × 三条 Pipeline 的模拟器矩阵可按组合断点续跑；
+  批次复用会复算 transcript 哈希，合并时校验完整样本集合、语料证明和设备指纹。
+- 当前 API 36 x86_64 模拟器的合成噪声矩阵中，Base 9 个组合完成，Small Baseline
+  固定窗口在 4/20 段后推理失败；该结果按 No-Go 保留，不代表 Android 真机结论，
+  也禁止激活 Small 候选 Profile。
 - 可复现公开回归入口固定使用 ASCEND revision
   `737e9800ae31be9932ba8464c80366559bd28424`。API 36 x86_64 模拟器 A/B 已定位到
   生产默认 VAD 对短语音存在明显漏检，`vad-recall-035-v1` 仅作为评测候选保留；

@@ -25,6 +25,7 @@ const _baseModelAsset =
 const _vadModelAsset =
     'assets/models/whisper-vad-silero-v6.2.0/ggml-silero-v6.2.0.bin';
 const _observationMarker = 'MEETTRACE_WHISPER_QUALITY_OBSERVATION:';
+const _failureMarker = 'MEETTRACE_WHISPER_QUALITY_FAILURE:';
 const _completeMarker = 'MEETTRACE_WHISPER_QUALITY_COMPLETE:';
 const _fixedWindowCaptureLatency = Duration(seconds: 2);
 const _vadStabilityMargin = Duration(seconds: 1);
@@ -153,30 +154,50 @@ void main() {
               for (final sample in run.samples) {
                 final bytes = await File(sample.path).readAsBytes();
                 for (final pipelineId in run.pipelineIds) {
-                  final result = switch (pipelineId) {
-                    whisperFixedWindowPipelineId => await _recognizeFixedWindow(
-                      adapter,
-                      bytes,
-                      durationMs: sample.durationMs,
-                    ),
-                    whisperVadSegmentedPipelineId =>
-                      await _recognizeVadSegments(
-                        adapter,
-                        bytes,
-                        vadMeasurements[sample.id]![pipelineId]!,
-                        durationMs: sample.durationMs,
+                  final _BenchmarkRecognition result;
+                  try {
+                    result = switch (pipelineId) {
+                      whisperFixedWindowPipelineId =>
+                        await _recognizeFixedWindow(
+                          adapter,
+                          bytes,
+                          durationMs: sample.durationMs,
+                        ),
+                      whisperVadSegmentedPipelineId =>
+                        await _recognizeVadSegments(
+                          adapter,
+                          bytes,
+                          vadMeasurements[sample.id]![pipelineId]!,
+                          durationMs: sample.durationMs,
+                        ),
+                      whisperVadRecallCandidatePipelineId =>
+                        await _recognizeVadSegments(
+                          adapter,
+                          bytes,
+                          vadMeasurements[sample.id]![pipelineId]!,
+                          durationMs: sample.durationMs,
+                        ),
+                      _ => throw WhisperQualityProtocolException(
+                        '未知 pipelineId：$pipelineId',
                       ),
-                    whisperVadRecallCandidatePipelineId =>
-                      await _recognizeVadSegments(
-                        adapter,
-                        bytes,
-                        vadMeasurements[sample.id]![pipelineId]!,
-                        durationMs: sample.durationMs,
-                      ),
-                    _ => throw WhisperQualityProtocolException(
-                      '未知 pipelineId：$pipelineId',
-                    ),
-                  };
+                    };
+                  } on WhisperAdapterException catch (error) {
+                    final failure = error.failure;
+                    debugPrintSynchronously(
+                      '$_failureMarker${jsonEncode({
+                        'schemaVersion': 1,
+                        'sampleId': sample.id,
+                        'modelId': model.modelId,
+                        'modelVersion': model.modelVersion,
+                        'profileId': profile.id,
+                        'pipelineId': pipelineId,
+                        'deviceId': run.deviceId,
+                        'failure': {'code': failure.code, 'stage': failure.stage.name, 'recoverability': failure.recoverability.name, 'userAction': failure.userAction.name, 'diagnosticContext': failure.diagnosticContext},
+                      })}',
+                      wrapWidth: null,
+                    );
+                    rethrow;
+                  }
                   final recognizedFacts = recognizeExpectedKeyFacts(
                     transcript: result.transcript,
                     expectedKeyFacts: sample.expectedKeyFacts,

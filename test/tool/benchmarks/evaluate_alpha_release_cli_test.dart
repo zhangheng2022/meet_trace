@@ -144,6 +144,21 @@ void main() {
 
       await verifyAlphaReleaseEvidence(input: derived, repositoryRoot: root);
 
+      final tamperedReview =
+          jsonDecode(jsonEncode(derivedJson)) as Map<String, Object?>;
+      final tamperedCorpus =
+          tamperedReview['corpus']! as Map<String, Object?>;
+      final tamperedProvenance =
+          tamperedCorpus['provenance']! as Map<String, Object?>;
+      tamperedProvenance['reviewAttestationSha256'] = 'b' * 64;
+      await expectLater(
+        verifyAlphaReleaseEvidence(
+          input: AlphaReleaseEvaluationInput.fromJson(tamperedReview),
+          repositoryRoot: root,
+        ),
+        throwsFormatException,
+      );
+
       final standard = derivedJson['standardModel']! as Map<String, Object?>;
       standard['keyFactRecallRatio'] = 0.1;
       await expectLater(
@@ -199,6 +214,9 @@ Map<String, Object?> _qualityReport() => {
   'corpusProvenance': const {
     'sourceId': 'deidentified-internal-v1',
     'licenseId': 'internal-consented-v1',
+    'reviewAttestationSha256':
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    'reviewedAtUtc': '2026-07-31T10:30:00Z',
   },
   'sampleCount': 60,
   'execution': {

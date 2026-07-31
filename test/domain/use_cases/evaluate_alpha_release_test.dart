@@ -125,6 +125,38 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.noGo);
     });
 
+    test('产品会议发布门禁拒绝缺失或无效的人工复核证明', () {
+      final missingJson = _passingInput().toJson();
+      final missingProvenance =
+          (missingJson['corpus']! as Map<String, Object?>)['provenance']!
+              as Map<String, Object?>;
+      missingProvenance
+        ..remove('reviewAttestationSha256')
+        ..remove('reviewedAtUtc');
+      final missing = const EvaluateAlphaReleaseUseCase().execute(
+        AlphaReleaseEvaluationInput.fromJson(missingJson),
+      );
+
+      expect(
+        missing.gates
+            .where((gate) => gate.id.startsWith('corpus.provenance.review'))
+            .every((gate) => gate.status == ReleaseGateStatus.missing),
+        isTrue,
+      );
+      expect(missing.decision, AlphaReleaseDecision.blocked);
+
+      final invalid = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(corpusReviewedAtUtc: '2026-07-31T10:30:00'),
+      );
+      expect(
+        invalid.gates
+            .singleWhere((gate) => gate.id == 'corpus.provenance.reviewedAtUtc')
+            .status,
+        ReleaseGateStatus.failed,
+      );
+      expect(invalid.decision, AlphaReleaseDecision.noGo);
+    });
+
     test('当前范围不执行 iOS 真机时真机字段不参与发布判定', () {
       final report = const EvaluateAlphaReleaseUseCase().execute(
         _passingInput().copyWith(
@@ -389,6 +421,8 @@ void main() {
       final json = report.toJson();
 
       expect(input.corpusId, 'corpus-deidentified-v1');
+      expect(input.corpusReviewAttestationSha256, 'a' * 64);
+      expect(input.corpusReviewedAtUtc, '2026-07-31T10:30:00Z');
       expect(input.deviceId, 'low-end-arm64-01');
       expect(json['schemaVersion'], 3);
       expect(json['decision'], 'go');
@@ -420,6 +454,8 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
       '0123456789abcdef0123456789abcdef',
   corpusSourceId: 'meettrace:deidentified-meeting-corpus-v1',
   corpusLicenseId: 'internal-consent-v1',
+  corpusReviewAttestationSha256: 'a' * 64,
+  corpusReviewedAtUtc: '2026-07-31T10:30:00Z',
   deviceId: 'low-end-arm64-01',
   rawMetricsRef: 'metrics/at16.json',
   rawMetricsSha256:

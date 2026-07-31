@@ -12,9 +12,20 @@
 - Android 模拟器已完成 Base/Small 的固定版本 ASCEND 回归，以及 fixed-window、
   生产默认 VAD、候选 VAD 的 20 段确定性非语音回归；两者分别属于
   `public-regression` 和 `synthetic-smoke`，不替代真实产品会议证据。
-- 自动发布评估输入已升级为 schema 6，显式检查产品会议证据类别、Base/Small
+- 已从用户确认可本地处理的私有会议音频生成 90 段 VAD 辅助冗余候选和人工复核包
+  （30 段静音、30 段纯噪声、30 段语音）；
+  候选保持 `synthetic-smoke`、`deidentified=false`。正式晋升器强制核对候选哈希、
+  全量样本、人工结论、敏感信息、事实和边界；未批准片段会被剔除，正式集合仍必须
+  各保留至少 20 段，并把复核证明哈希写入 provenance。
+  当前仍等待人工逐段复核，不把候选标签或 ASR 草稿声明为产品事实。
+- 完整模型/Profile/Pipeline 矩阵改为按组合落盘和断点复用；合并器拒绝缺样本、
+  重复组合、设备指纹漂移、路径越界和 transcript 哈希不匹配。
+- 20 段合成噪声完整矩阵已完成 Base 的 9 个组合，但 Small Baseline 固定窗口只完成
+  4/20 段便推理失败；该候选在当前 API 36 x86_64 模拟器上为 No-Go，不以删样本、
+  扩容或混合线程掩盖。批次失败和私有日志哈希会写入断点状态。
+- 自动发布评估输入已升级为 schema 7，显式检查人工复核证明、产品会议证据类别、Base/Small
   召回不回退、Preview 延迟和阶段 0～4 工程不变量；当前机器可读结论为
-  `blocked`（22 passed、0 failed、24 missing）。新增质量报告 SHA-256 和完整
+  `blocked`（22 passed、0 failed、26 missing）。新增两项人工复核证明门禁、质量报告 SHA-256 和完整
   Profile/Pipeline 矩阵门禁，质量指标只能由脱敏聚合报告自动写入。该报告显式使用
   `evaluationScope=phase-0-4`，不会让阶段 5 以后的 Android 真机、iOS 和 Release
   门槛污染本阶段结论；Android 模拟器证据由完整日志自动推导，并以 SHA-256 绑定。

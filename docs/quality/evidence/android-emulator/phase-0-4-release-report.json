@@ -34,14 +34,14 @@
   "summary": {
     "passed": 22,
     "failed": 0,
-    "missing": 24
+    "missing": 26
   },
   "gates": [
     {
       "id": "input.schemaVersion",
-      "requirement": "发布评估输入必须使用当前 schema 6",
+      "requirement": "发布评估输入必须使用当前 schema 7",
       "status": "passed",
-      "value": 6
+      "value": 7
     },
     {
       "id": "corpus.id",
@@ -70,6 +70,18 @@
     {
       "id": "corpus.provenance.licenseId",
       "requirement": "评测语料必须具有授权或许可标识",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "id": "corpus.provenance.reviewAttestationSha256",
+      "requirement": "产品会议语料必须绑定人工复核证明 SHA-256",
+      "status": "missing",
+      "value": null
+    },
+    {
+      "id": "corpus.provenance.reviewedAtUtc",
+      "requirement": "产品会议语料必须绑定人工复核 UTC 时间",
       "status": "missing",
       "value": null
     },

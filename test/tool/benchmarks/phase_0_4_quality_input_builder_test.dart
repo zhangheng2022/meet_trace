@@ -14,14 +14,17 @@ void main() {
         rawMetricsSha256: 'a' * 64,
       );
       final corpus = input['corpus']! as Map<String, Object?>;
+      final provenance = corpus['provenance']! as Map<String, Object?>;
       final environment = input['environment']! as Map<String, Object?>;
       final standard = input['standardModel']! as Map<String, Object?>;
       final advanced = input['advancedModel']! as Map<String, Object?>;
       final vad = input['vad']! as Map<String, Object?>;
       final quality = input['quality']! as Map<String, Object?>;
 
-      expect(input['schemaVersion'], 6);
+      expect(input['schemaVersion'], 7);
       expect(corpus['sampleCount'], 60);
+      expect(provenance['reviewAttestationSha256'], 'a' * 64);
+      expect(provenance['reviewedAtUtc'], '2026-07-31T10:30:00Z');
       expect(environment['sameCorpusForBothModels'], isTrue);
       expect(environment['sameDeviceForBothModels'], isTrue);
       expect((standard['rtfSamples']! as List<Object?>), hasLength(60));
@@ -69,6 +72,20 @@ void main() {
         () => const Phase04QualityInputBuilder().build(
           template: _template(),
           qualityReport: publicReport,
+          rawMetricsRef: 'metrics/report.json',
+          rawMetricsSha256: 'c' * 64,
+        ),
+        throwsFormatException,
+      );
+
+      final unreviewedReport = _report();
+      final provenance =
+          unreviewedReport['corpusProvenance']! as Map<String, Object?>;
+      provenance.remove('reviewAttestationSha256');
+      expect(
+        () => const Phase04QualityInputBuilder().build(
+          template: _template(),
+          qualityReport: unreviewedReport,
           rawMetricsRef: 'metrics/report.json',
           rawMetricsSha256: 'c' * 64,
         ),
@@ -137,7 +154,7 @@ void main() {
 
 Map<String, Object?> _template() => {
   'evaluationScope': 'phase-0-4',
-  'schemaVersion': 6,
+  'schemaVersion': 7,
   'rawMetricsRef': null,
   'rawMetricsSha256': null,
   'corpus': <String, Object?>{'provenance': <String, Object?>{}},
@@ -159,9 +176,12 @@ Map<String, Object?> _report() => {
   'corpusDeidentified': true,
   'corpusEvidenceClass': 'product-meeting',
   'corpusManifestSha256': 'd' * 64,
-  'corpusProvenance': const {
+  'corpusProvenance': {
     'sourceId': 'deidentified-internal-v1',
     'licenseId': 'internal-consented-v1',
+    'reviewAttestationSha256':
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    'reviewedAtUtc': '2026-07-31T10:30:00Z',
   },
   'sampleCount': 60,
   'execution': {

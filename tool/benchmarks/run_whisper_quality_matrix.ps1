@@ -68,6 +68,24 @@ if (-not $outputRoot.StartsWith(
     throw "OutputDirectory must be inside the ignored repository .spike directory."
 }
 [System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
+$canonicalSpikeRoot = (Resolve-Path -LiteralPath $spikeRoot).Path
+$canonicalOutputRoot = (Resolve-Path -LiteralPath $outputRoot).Path
+$canonicalSpikePrefix = $canonicalSpikeRoot.TrimEnd("\", "/") +
+    [System.IO.Path]::DirectorySeparatorChar
+if (-not $canonicalOutputRoot.StartsWith(
+        $canonicalSpikePrefix,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+    throw "OutputDirectory resolves outside the ignored repository .spike directory."
+}
+$canonicalObservationsPath = (Resolve-Path -LiteralPath $observationsPath).Path
+if (-not $canonicalObservationsPath.StartsWith(
+        $canonicalSpikePrefix,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+    throw "Raw observations must resolve inside the ignored repository .spike directory."
+}
+$observationsDirectory = Split-Path -Parent $canonicalObservationsPath
 $combinedPath = Join-Path $outputRoot "quality-input.json"
 $jsonPath = Join-Path $outputRoot "quality-report.json"
 $csvPath = Join-Path $outputRoot "quality-report.csv"
@@ -98,6 +116,12 @@ if ($manifest.evidenceClass -eq "product-meeting" -and
 if ([string]::IsNullOrWhiteSpace($manifest.provenance.sourceId) -or
     [string]::IsNullOrWhiteSpace($manifest.provenance.licenseId)) {
     throw "Corpus provenance must include sourceId and licenseId"
+}
+if ($manifest.evidenceClass -eq "product-meeting" -and
+    ("$($manifest.provenance.reviewAttestationSha256)" -notmatch "^[0-9a-f]{64}$" -or
+        [string]::IsNullOrWhiteSpace("$($manifest.provenance.reviewedAtUtc)") -or
+        -not "$($manifest.provenance.reviewedAtUtc)".EndsWith("Z"))) {
+    throw "Product meeting provenance must bind a review attestation SHA-256 and UTC timestamp"
 }
 if ($null -eq $manifest.samples -or $manifest.samples.Count -lt 20) {
     throw "Corpus manifest must contain at least 20 samples"
@@ -136,6 +160,39 @@ $observedDeviceIds = @(
 if ($observedDeviceIds.Count -ne 1 -or
     $observedDeviceIds[0] -ne "$($observations.execution.deviceId)") {
     throw "Raw observations device attestation does not match observations"
+}
+$transcriptPaths = @{}
+foreach ($observation in @($observations.observations)) {
+    $transcriptRef = "$($observation.transcriptRef)"
+    $transcriptSha256 = "$($observation.transcriptSha256)".ToLowerInvariant()
+    if ([string]::IsNullOrWhiteSpace($transcriptRef) -or
+        [System.IO.Path]::IsPathRooted($transcriptRef) -or
+        $transcriptSha256 -notmatch "^[0-9a-f]{64}$") {
+        throw "Every observation must bind a relative transcriptRef and transcriptSha256."
+    }
+    $transcriptPath = [System.IO.Path]::GetFullPath(
+        (Join-Path $observationsDirectory $transcriptRef)
+    )
+    if (-not (Test-Path -LiteralPath $transcriptPath -PathType Leaf)) {
+        throw "Transcript evidence does not exist: $transcriptRef"
+    }
+    $canonicalTranscriptPath = (Resolve-Path -LiteralPath $transcriptPath).Path
+    if (-not $canonicalTranscriptPath.StartsWith(
+            $canonicalSpikePrefix,
+            [System.StringComparison]::OrdinalIgnoreCase
+        )) {
+        throw "Transcript evidence resolves outside the ignored repository .spike directory."
+    }
+    if ($transcriptPaths.ContainsKey($canonicalTranscriptPath)) {
+        throw "Transcript evidence must not be reused by multiple observations."
+    }
+    $actualTranscriptSha256 = (
+        Get-FileHash -LiteralPath $canonicalTranscriptPath -Algorithm SHA256
+    ).Hash.ToLowerInvariant()
+    if ($actualTranscriptSha256 -ne $transcriptSha256) {
+        throw "Transcript evidence SHA-256 mismatch: $transcriptRef"
+    }
+    $transcriptPaths[$canonicalTranscriptPath] = $true
 }
 
 $sampleIds = @{}

@@ -255,7 +255,7 @@ int32_t mt_whisper_transcribe(
       context->last_error =
           context->cancelled.load(std::memory_order_relaxed)
               ? "cancelled"
-              : "whisper_full_failed";
+              : "whisper_full_failed:" + std::to_string(result);
       return result;
     }
 

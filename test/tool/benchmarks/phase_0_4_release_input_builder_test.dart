@@ -108,7 +108,7 @@ void main() {
 }
 
 Map<String, Object?> _template() => {
-  'schemaVersion': 6,
+  'schemaVersion': 7,
   'rawMetricsRef': null,
   'rawMetricsSha256': null,
   'environment': <String, Object?>{'deviceId': null},

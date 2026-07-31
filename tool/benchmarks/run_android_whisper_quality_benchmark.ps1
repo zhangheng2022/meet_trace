@@ -24,6 +24,8 @@ param(
 
     [switch]$VadPreflight,
 
+    [switch]$SkipReleaseEvaluation,
+
     [string]$OutputDirectory = ".spike/results/whisper-quality/android-emulator",
 
     [string]$ReleaseInputPath = "docs/quality/evidence/android-emulator/phase-0-4-release-input.json",
@@ -158,6 +160,25 @@ function Get-RelativeOutputReference {
     )
 }
 
+function Get-TextSha256 {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Value)
+        return -join (
+            $algorithm.ComputeHash($bytes) |
+                ForEach-Object { $_.ToString("x2") }
+        )
+    }
+    finally {
+        $algorithm.Dispose()
+    }
+}
+
 function Write-JsonFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -185,6 +206,9 @@ if ($Pipelines.Count -eq 0) {
 }
 if ($VadPreflight -and $Pipelines -contains "fixed-window") {
     throw "VadPreflight only accepts vad-segmented and vad-recall pipelines."
+}
+if ($VadPreflight -and $SkipReleaseEvaluation) {
+    throw "SkipReleaseEvaluation is only valid for ASR quality runs."
 }
 $modelNames = @($Models | Select-Object -Unique)
 $profileIds = @(
@@ -250,6 +274,16 @@ if (-not $outputRoot.StartsWith(
     throw "OutputDirectory must be inside the ignored repository .spike directory."
 }
 [System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
+$canonicalSpikeRoot = (Resolve-Path -LiteralPath $spikeRoot).Path
+$canonicalOutputRoot = (Resolve-Path -LiteralPath $outputRoot).Path
+$canonicalSpikePrefix = $canonicalSpikeRoot.TrimEnd("\", "/") +
+    [System.IO.Path]::DirectorySeparatorChar
+if (-not $canonicalOutputRoot.StartsWith(
+        $canonicalSpikePrefix,
+        [System.StringComparison]::OrdinalIgnoreCase
+    )) {
+    throw "OutputDirectory resolves outside the ignored repository .spike directory."
+}
 $transcriptRoot = Join-Path $outputRoot "transcripts"
 if (Test-Path -LiteralPath $transcriptRoot) {
     Remove-Item -LiteralPath $transcriptRoot -Recurse -Force
@@ -319,7 +353,10 @@ try {
             -Action "Read Android API level" |
             Out-String
     ).Trim())
-    $deviceLabel = "android-emulator-x86_64-api-$apiLevel"
+    $deviceSerialFingerprint = (
+        Get-TextSha256 -Value $resolvedDeviceId
+    ).Substring(0, 12)
+    $deviceLabel = "android-emulator-x86_64-api-$apiLevel-$deviceSerialFingerprint"
 
     $remoteRoot = "/data/local/tmp/meettrace-quality-$([Guid]::NewGuid().ToString('N'))"
     if ($remoteRoot -notmatch "^/data/local/tmp/meettrace-quality-[0-9a-f]{32}$") {
@@ -471,6 +508,9 @@ try {
         $observation["transcriptRef"] = Get-RelativeOutputReference `
             -Root $outputRoot `
             -Path $transcriptPath
+        $observation["transcriptSha256"] = (
+            Get-FileHash -LiteralPath $transcriptPath -Algorithm SHA256
+        ).Hash.ToLowerInvariant()
         $observations += $observation
     }
 
@@ -605,7 +645,8 @@ try {
     }
     Write-JsonFile -Value $runEvidence -Path $runEvidencePath
 
-    if ($RequiredEvidenceClass -eq "product-meeting") {
+    if ($RequiredEvidenceClass -eq "product-meeting" -and
+        -not $SkipReleaseEvaluation) {
         & dart run tool/benchmarks/build_phase_0_4_quality_input.dart `
             --template $ReleaseInputPath `
             --quality-report (Join-Path $outputRoot "quality-report.json") `

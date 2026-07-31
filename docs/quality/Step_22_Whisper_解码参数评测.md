@@ -30,7 +30,8 @@
 
 - `tool/benchmarks/whisper_corpus_manifest.example.json`
 - corpus manifest schema `2`；正式执行要求 `evidenceClass=product-meeting` 以及
-  非空的 `provenance.sourceId`、`provenance.licenseId`；
+  非空的 `provenance.sourceId`、`provenance.licenseId`，并强制绑定
+  `reviewAttestationSha256` 与 `reviewedAtUtc`；
 - 仓库外或 `.spike/` 中的正式去敏矩阵，通过 `pathEnv` 引用：至少 20 段
   `silence`、20 段 `noise-only` 和 20 段带关键事实的 `speech`；语音必须同时包含
   `speech-boundary-start` 与 `speech-boundary-end` 样本；
@@ -42,9 +43,9 @@
 Android x86_64 模拟器完整执行：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass `
-  -File tool/benchmarks/run_android_whisper_quality_benchmark.ps1 `
-  -CorpusManifest <仓库外语料清单> `
+& .\tool\benchmarks\run_android_whisper_quality_batches.ps1 `
+  -CorpusManifest <私有正式语料清单> `
+  -EnvironmentFile <私有 pathEnv 映射> `
   -DeviceId emulator-5554 `
   -SmallModelPath <ggml-small-q5_1.bin> `
   -Pipelines fixed-window,vad-segmented,vad-recall
@@ -53,7 +54,19 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 默认比较 Base/Small × Baseline/Preview/Final。可用
 `-Profiles baseline,preview,final` 明确选择 Profile，并默认对每个组合执行
 `fixed-window-v1`、`vad-segmented-v1` 和 `vad-recall-035-v1`；每个组合必须完整
-覆盖同一批语料。
+覆盖同一批语料。批处理入口将每个模型/Profile/Pipeline 组合独立落盘；重新执行时，
+只有 manifest SHA-256、模型、Profile、Pipeline、设备指纹、API、线程数、样本数、
+原始观测和通过报告全部一致的批次才会复用。全部批次完成后，合并器拒绝重复观测、
+缺样本、设备口径漂移和语料证明不一致，复算每条私有 transcript SHA-256、重写并
+校验引用，再生成完整矩阵报告。即使直接聚合单批，聚合器也要求原始观测和 transcript
+位于 `.spike/`，逐条复算内容哈希，并拒绝重复引用。单批内部仍由
+`run_android_whisper_quality_benchmark.ps1` 执行。
+无效或参数不匹配的旧批次不会被原地清空：新运行先写入独立 attempt 目录，完整校验
+通过后才切换；被替换批次保留在私有 `superseded/` 目录，便于失败恢复和人工审计。
+设备证明同时包含 API/ABI 类别和 adb serial 的 12 位 SHA-256 指纹，避免把两个不同
+的同版本模拟器误合并为“同一设备”，又不会把原始 serial 写入可提交报告；Android
+物理设备仍会被底层 qemu 与 x86_64 检查拒绝。
+
 脚本验证语料和 Small 权重，推送临时设备副本，静默捕获包含正文的私有日志，写出
 transcript 引用，再调用 schema `4` 聚合器生成 JSON/CSV。schema 4 会拒绝旧 v3
 观测以及缺少 VAD 可观测字段的输入。固定窗口句后延迟按每段中
@@ -82,6 +95,54 @@ transcript 引用，再调用 schema `4` 聚合器生成 JSON/CSV。schema 4 会
 峰值 RSS，不生成转录正文，也不调用质量聚合或发布证据推广。它用于发现切分和标签
 问题，不能把 VAD 自身判定当作语料真值；`silence`、`noise-only`、关键事实和去敏状态
 仍必须由独立人工复核确认。
+
+### 3.1 私有候选语料的人工复核与晋升
+
+候选切片必须保持 `evidenceClass=synthetic-smoke`、`deidentified=false`。先生成
+默认全部未批准的复核证明模板：
+
+```powershell
+dart run tool/benchmarks/create_whisper_review_attestation_template.dart `
+  --candidate-manifest <候选 manifest.private.json> `
+  --environment <environment.private.json> `
+  --repository-root . `
+  --output <.spike/.../review-attestation.template.private.json>
+```
+
+模板中的 `candidateSuggestion` 只用于定位，不是标签真值。人工逐段试听后必须：
+
+- 为每段明确填写布尔值 `approved` 和 `containsSensitiveData`，不能保留模板中的
+  `null`；
+- 只对确认可用且不含敏感信息的片段设置 `approved=true`，填写
+  `reviewedClass`；为每段获批 `speech` 写入至少一个可在原文中匹配的
+  `expectedKeyFacts`；
+- 对敏感、误分类或质量不足的片段设置 `approved=false`；该片段不会写入正式
+  manifest，且不得填写关键事实或语音首尾边界；
+- 至少各确认一段 `boundaryStart=true` 和 `boundaryEnd=true`；
+- 使用不含姓名的 `reviewedByRole`，填写 UTC 复核时间，并只在全部样本完成去敏确认后
+  设置 `deidentificationAttested=true`。
+
+把完成的模板另存为私有复核证明后执行：
+
+```powershell
+dart run tool/benchmarks/promote_reviewed_whisper_corpus.dart `
+  --candidate-manifest <候选 manifest.private.json> `
+  --review-attestation <review-attestation.private.json> `
+  --environment <environment.private.json> `
+  --repository-root . `
+  --output <.spike/.../product-meeting-manifest.private.json>
+```
+
+晋升器默认拒绝覆盖文件，并要求候选 manifest SHA-256、样本 ID 集合以及每段人工结论
+全部完整；未批准片段会被剔除，获批片段仍须满足分类、去敏、事实和边界约束。过滤后的
+正式集合必须继续满足每类至少 20 段和语音首尾覆盖。输出只保留人工结论，固定为
+`evidenceClass=product-meeting`、`deidentified=true`，并在 provenance 中绑定复核证明
+SHA-256 和复核 UTC 时间；复核人姓名、音频、转录草稿和逐条私有证明不得提交。
+ASR 草稿、VAD 结果或文件名都不能自动填充 `approved`、去敏状态或正式标签。
+
+当前本地审阅包位于 `.spike/review/product-meeting-07-29-vad-informed-surplus/`，
+共 90 段（每类 30 段），并已在同一 API 36 x86_64 模拟器上完成生产 VAD 与召回候选
+VAD 的 180 条预检观测。模板保持 0/90 批准；人工完成前不得生成正式产品证据。
 
 固定版本 ASCEND 公开回归可直接执行：
 
@@ -125,11 +186,27 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 缺参跳过检查，并完成 Base/Small 的 20 段 ASCEND 双 VAD schema 4 回归；公开回归
 不替代真实产品会议质量评测。
 
+同日执行 20 段、每段 3 秒的 `synthetic-smoke` 完整矩阵时，Base 的 9 个
+Profile/Pipeline 组合全部完成；Small Baseline 固定窗口在第 5 段高强度白噪声前返回
+`asr.whisper.inference_failed`，因此矩阵保持 No-Go，未生成伪完整报告。失败前 4 段
+各执行 2 次 ASR，单段推理耗时 161.1～305.9 秒、句后延迟 84.9～231.6 秒，观测峰值
+RSS 达 988,631,040 bytes。该结果只证明当前 x86_64 模拟器上的 Small 固定窗口性能与
+稳定性不达标，不外推为 Android 真机结论，也不通过删样本、提高模拟器内存或混合线程
+数规避。原生日志现保留 `whisper.cpp` 非零返回码；批处理失败时会把 failed batch、
+attempt 引用和私有日志 SHA-256 写入 `batch-progress.json`。
+
+另以 20 段 1 秒合成非语音完成失败恢复与发布切换烟测：证据类别故意不匹配时，
+`batch-progress.json` 正确记录 `failed`；有效 Base VAD 批次在线程数从 2 变为 3 时，
+新 attempt 完整校验后才切换，线程数 2 的旧结果保留在 `superseded/`，最终合并
+20 条观测并写出 `passed` 的 `batch-run.json`。
+
 正式 `product-meeting` 执行完成后，编排脚本会调用
 `build_phase_0_4_quality_input.dart`，按字段白名单把不含音频、绝对路径、正文、
 transcript 引用或逐条私有观测的聚合报告推广到
 `docs/quality/evidence/product-meeting/quality-report.json`，绑定 SHA-256 并更新
 阶段 0～4 输入和报告。任何质量失败或矩阵缺项都会以非零退出码结束。
+批次状态保存在 `batch-progress.json`，最终证明保存在 `batch-run.json`；二者及
+`batches/`、合并前后的原始观测都属于 `.spike/` 私有产物，不得提交。
 
 ## 4. Hard Gate 2
 
@@ -139,7 +216,8 @@ transcript 引用或逐条私有观测的聚合报告推广到
 | Base/Small/Preview/Final 可用精确 Profile ID 端到端评测 | 通过 |
 | 固定窗口与 VAD 分段按同设备/模型/Profile 对照 | 通过：聚合器输出噪声幻觉下降率及关键事实召回变化 |
 | Base 关键事实召回不低于阶段 0 | `blocked`：缺少真实语料 |
-| Small 关键事实召回不低于 Base | `blocked`：Small 模拟器原生冒烟已通过，但缺少真实语料矩阵 |
+| Small 关键事实召回不低于 Base | `blocked`：缺少真实语料矩阵；当前模拟器的合成噪声固定窗口另有推理失败，候选不得激活 |
+| Small 固定窗口模拟器稳定性 | `No-Go`：20 段合成噪声只完成 4 段，第 5 段前推理失败；保留私有日志与部分观测 |
 | Preview 句后延迟 P95 ≤ 3 秒 | `blocked`：缺少真实语料 |
 | 100 次 context 生命周期无持续增长 | 通过：第 10→100 次 RSS +6,242,304 bytes，小于 32 MiB 上限 |
 

@@ -78,6 +78,13 @@ final class Phase04QualityInputBuilder {
 
     final sampleCount = _integer(qualityReport, 'sampleCount');
     final provenance = _map(qualityReport, 'corpusProvenance');
+    _sha256(provenance, 'reviewAttestationSha256');
+    final reviewedAtUtc = _text(provenance, 'reviewedAtUtc');
+    _require(
+      reviewedAtUtc.endsWith('Z') &&
+          DateTime.tryParse(reviewedAtUtc)?.isUtc == true,
+      '正式质量报告必须绑定人工复核 UTC 时间',
+    );
     final execution = _map(qualityReport, 'execution');
     _require(
       execution['platform'] == 'android-emulator',
@@ -165,7 +172,12 @@ final class Phase04QualityInputBuilder {
     final targetProvenance = _mutableMap(corpus, 'provenance');
     targetProvenance
       ..['sourceId'] = _text(provenance, 'sourceId')
-      ..['licenseId'] = _text(provenance, 'licenseId');
+      ..['licenseId'] = _text(provenance, 'licenseId')
+      ..['reviewAttestationSha256'] = _sha256(
+        provenance,
+        'reviewAttestationSha256',
+      )
+      ..['reviewedAtUtc'] = reviewedAtUtc;
 
     final environment = _mutableMap(input, 'environment');
     environment
@@ -475,7 +487,12 @@ const _promotableTopLevelKeys = <String>[
   'sampleCount',
 ];
 
-const _promotableProvenanceKeys = <String>['sourceId', 'licenseId'];
+const _promotableProvenanceKeys = <String>[
+  'sourceId',
+  'licenseId',
+  'reviewAttestationSha256',
+  'reviewedAtUtc',
+];
 
 const _promotableExecutionKeys = <String>[
   'platform',

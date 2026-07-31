@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-const alphaReleaseInputSchemaVersion = 6;
+const alphaReleaseInputSchemaVersion = 7;
 const alphaProductMeetingEvidenceClass = 'product-meeting';
 
 enum AlphaReleaseDecision { go, noGo, blocked }
@@ -25,6 +25,8 @@ final class AlphaReleaseEvaluationInput {
     this.corpusManifestSha256,
     this.corpusSourceId,
     this.corpusLicenseId,
+    this.corpusReviewAttestationSha256,
+    this.corpusReviewedAtUtc,
     this.deviceId,
     this.rawMetricsRef,
     this.rawMetricsSha256,
@@ -106,6 +108,10 @@ final class AlphaReleaseEvaluationInput {
       corpusManifestSha256: _string(corpus?['manifestSha256']),
       corpusSourceId: _string(provenance?['sourceId']),
       corpusLicenseId: _string(provenance?['licenseId']),
+      corpusReviewAttestationSha256: _string(
+        provenance?['reviewAttestationSha256'],
+      ),
+      corpusReviewedAtUtc: _string(provenance?['reviewedAtUtc']),
       deviceId: _string(environment?['deviceId']),
       rawMetricsRef: _string(json['rawMetricsRef']),
       rawMetricsSha256: _string(json['rawMetricsSha256']),
@@ -224,6 +230,8 @@ final class AlphaReleaseEvaluationInput {
   final String? corpusManifestSha256;
   final String? corpusSourceId;
   final String? corpusLicenseId;
+  final String? corpusReviewAttestationSha256;
+  final String? corpusReviewedAtUtc;
   final String? deviceId;
   final String? rawMetricsRef;
   final String? rawMetricsSha256;
@@ -291,6 +299,8 @@ final class AlphaReleaseEvaluationInput {
     String? corpusManifestSha256,
     String? corpusSourceId,
     String? corpusLicenseId,
+    String? corpusReviewAttestationSha256,
+    String? corpusReviewedAtUtc,
     List<double>? standardRtfSamples,
     String? rawMetricsRef,
     String? rawMetricsSha256,
@@ -337,6 +347,9 @@ final class AlphaReleaseEvaluationInput {
     corpusManifestSha256: corpusManifestSha256 ?? this.corpusManifestSha256,
     corpusSourceId: corpusSourceId ?? this.corpusSourceId,
     corpusLicenseId: corpusLicenseId ?? this.corpusLicenseId,
+    corpusReviewAttestationSha256:
+        corpusReviewAttestationSha256 ?? this.corpusReviewAttestationSha256,
+    corpusReviewedAtUtc: corpusReviewedAtUtc ?? this.corpusReviewedAtUtc,
     deviceId: deviceId,
     rawMetricsRef: rawMetricsRef ?? this.rawMetricsRef,
     rawMetricsSha256: rawMetricsSha256 ?? this.rawMetricsSha256,
@@ -438,7 +451,12 @@ final class AlphaReleaseEvaluationInput {
       'deidentified': corpusDeidentified,
       'evidenceClass': corpusEvidenceClass,
       'manifestSha256': corpusManifestSha256,
-      'provenance': {'sourceId': corpusSourceId, 'licenseId': corpusLicenseId},
+      'provenance': {
+        'sourceId': corpusSourceId,
+        'licenseId': corpusLicenseId,
+        'reviewAttestationSha256': corpusReviewAttestationSha256,
+        'reviewedAtUtc': corpusReviewedAtUtc,
+      },
     },
     'environment': {
       'deviceId': deviceId,
@@ -634,6 +652,16 @@ final class EvaluateAlphaReleaseUseCase {
         'corpus.provenance.licenseId',
         '评测语料必须具有授权或许可标识',
         input.corpusLicenseId,
+      ),
+      _sha256Gate(
+        'corpus.provenance.reviewAttestationSha256',
+        '产品会议语料必须绑定人工复核证明 SHA-256',
+        input.corpusReviewAttestationSha256,
+      ),
+      _utcTimestampGate(
+        'corpus.provenance.reviewedAtUtc',
+        '产品会议语料必须绑定人工复核 UTC 时间',
+        input.corpusReviewedAtUtc,
       ),
       _thresholdGate(
         'corpus.sampleCount',
@@ -1008,12 +1036,31 @@ const _postPhase4GateIds = <String>{
 
 ReleaseGateResult _schemaGate(int? value) => ReleaseGateResult(
   id: 'input.schemaVersion',
-  requirement: '发布评估输入必须使用当前 schema 6',
+  requirement: '发布评估输入必须使用当前 schema 7',
   status: value == alphaReleaseInputSchemaVersion
       ? ReleaseGateStatus.passed
       : ReleaseGateStatus.missing,
   value: value,
 );
+
+ReleaseGateResult _utcTimestampGate(
+  String id,
+  String requirement,
+  String? value,
+) {
+  final normalized = value?.trim();
+  final parsed = normalized == null ? null : DateTime.tryParse(normalized);
+  return ReleaseGateResult(
+    id: id,
+    requirement: requirement,
+    status: normalized == null || normalized.isEmpty
+        ? ReleaseGateStatus.missing
+        : normalized.endsWith('Z') && parsed?.isUtc == true
+        ? ReleaseGateStatus.passed
+        : ReleaseGateStatus.failed,
+    value: normalized,
+  );
+}
 
 ReleaseGateResult _textGate(String id, String requirement, String? value) {
   final normalized = value?.trim();

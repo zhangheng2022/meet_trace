@@ -143,6 +143,29 @@ void main() {
       );
     });
 
+    test('产品会议语料必须绑定人工复核证明和 UTC 时间', () async {
+      final fixture = await _fixture(
+        repository: repository,
+        audioRoot: external,
+        omitReviewAttestation: true,
+      );
+
+      expect(
+        () => WhisperQualityCorpus.load(
+          manifestPath: fixture.manifestPath,
+          repositoryRoot: repository.path,
+          environment: fixture.environment,
+        ),
+        throwsA(
+          isA<WhisperQualityProtocolException>().having(
+            (error) => error.message,
+            'message',
+            contains('人工复核证明'),
+          ),
+        ),
+      );
+    });
+
     test('产品会议语料拒绝不足的门禁覆盖和无效关键事实', () async {
       final incomplete = await _fixture(
         repository: repository,
@@ -170,6 +193,38 @@ void main() {
           environment: invalidFact.environment,
         ),
         throwsA(isA<WhisperQualityProtocolException>()),
+      );
+    });
+
+    test('同一 PCM 哈希不能通过不同 sampleId 重复计入覆盖', () async {
+      final fixture = await _fixture(
+        repository: repository,
+        audioRoot: external,
+      );
+      final manifestFile = File(fixture.manifestPath);
+      final manifest =
+          jsonDecode(await manifestFile.readAsString()) as Map<String, Object?>;
+      final samples = manifest['samples']! as List<Object?>;
+      final first = samples[0]! as Map<String, Object?>;
+      final second = samples[1]! as Map<String, Object?>;
+      second
+        ..['pathEnv'] = first['pathEnv']
+        ..['sha256'] = first['sha256'];
+      await manifestFile.writeAsString(jsonEncode(manifest));
+
+      expect(
+        () => WhisperQualityCorpus.load(
+          manifestPath: fixture.manifestPath,
+          repositoryRoot: repository.path,
+          environment: fixture.environment,
+        ),
+        throwsA(
+          isA<WhisperQualityProtocolException>().having(
+            (error) => error.message,
+            'message',
+            contains('SHA-256 与另一段重复'),
+          ),
+        ),
       );
     });
   });
@@ -315,6 +370,7 @@ _fixture({
   bool deidentified = true,
   bool incompleteProductCoverage = false,
   bool invalidFirstSpeechFact = false,
+  bool omitReviewAttestation = false,
 }) async {
   await audioRoot.create(recursive: true);
   final samples = <Map<String, Object?>>[];
@@ -327,6 +383,7 @@ _fixture({
       : 20;
   for (var index = 0; index < sampleCount; index++) {
     final bytes = Uint8List(3200);
+    ByteData.sublistView(bytes).setUint32(0, index, Endian.little);
     final path = p.join(audioRoot.path, 'sample-$index.pcm');
     await File(path).writeAsBytes(bytes);
     if (index == 0) {
@@ -372,9 +429,14 @@ _fixture({
       'id': 'deidentified-v1',
       'deidentified': deidentified,
       'evidenceClass': evidenceClass,
-      'provenance': const {
+      'provenance': {
         'sourceId': 'private-deidentified-meetings',
         'licenseId': 'internal-consented',
+        if (!omitReviewAttestation)
+          'reviewAttestationSha256':
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        if (!omitReviewAttestation) 'reviewedAtUtc': '2026-07-31T10:30:00Z',
       },
       'audioFormat': const {
         'encoding': 'pcm16le',

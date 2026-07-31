@@ -44,6 +44,19 @@ final class WhisperQualityMetrics {
       provenance['licenseId'],
       'corpus.provenance.licenseId',
     );
+    final reviewAttestationSha256 =
+        evidenceClass == whisperProductMeetingEvidenceClass
+        ? _sha256(
+            provenance['reviewAttestationSha256'],
+            'corpus.provenance.reviewAttestationSha256',
+          )
+        : null;
+    final reviewedAtUtc = evidenceClass == whisperProductMeetingEvidenceClass
+        ? _utcTimestamp(
+            provenance['reviewedAtUtc'],
+            'corpus.provenance.reviewedAtUtc',
+          )
+        : null;
     final execution = _map(input['execution'], 'execution');
     final capturedAtUtc = _utcTimestamp(
       execution['capturedAtUtc'],
@@ -305,7 +318,12 @@ final class WhisperQualityMetrics {
       'corpusDeidentified': deidentified,
       'corpusEvidenceClass': evidenceClass,
       'corpusManifestSha256': manifestSha256,
-      'corpusProvenance': {'sourceId': sourceId, 'licenseId': licenseId},
+      'corpusProvenance': {
+        'sourceId': sourceId,
+        'licenseId': licenseId,
+        'reviewAttestationSha256': ?reviewAttestationSha256,
+        'reviewedAtUtc': ?reviewedAtUtc,
+      },
       'sampleCount': samples.length,
       'execution': {
         'platform': _requiredText(execution['platform'], 'execution.platform'),
@@ -377,8 +395,18 @@ Map<String, _Sample> _samples(Object? value) {
     throw const WhisperQualityMetricsException('corpus.samples 必须是数组');
   }
   final result = <String, _Sample>{};
+  final contentHashes = <String>{};
   for (var index = 0; index < value.length; index++) {
     final item = _map(value[index], 'corpus.samples[$index]');
+    final contentHash = _sha256(
+      item['sha256'],
+      'corpus.samples[$index].sha256',
+    );
+    if (!contentHashes.add(contentHash)) {
+      throw WhisperQualityMetricsException(
+        'corpus.samples[$index] 的 PCM SHA-256 与另一段重复，不能重复计入语料覆盖',
+      );
+    }
     final sample = _Sample(
       id: _requiredText(item['id'], 'corpus.samples[$index].id'),
       durationMs: _positiveNumber(

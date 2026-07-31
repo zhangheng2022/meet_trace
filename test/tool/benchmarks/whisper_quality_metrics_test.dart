@@ -22,6 +22,14 @@ void main() {
         '0123456789abcdef0123456789abcdef'
         '0123456789abcdef0123456789abcdef',
       );
+      expect(
+        report['corpusProvenance'],
+        containsPair(
+          'reviewAttestationSha256',
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        ),
+      );
       expect(summary['deviceId'], 'android-emulator-x86_64-api-36');
       expect(summary['pipelineId'], 'fixed-window-v1');
       expect(summary['sampleCount'], 20);
@@ -242,6 +250,24 @@ void main() {
       expect(report['corpusEvidenceClass'], 'public-regression');
     });
 
+    test('正式产品报告拒绝缺失的人工复核证明', () {
+      final input = _input(sampleCount: 20);
+      final corpus = input['corpus']! as Map<String, Object?>;
+      final provenance = corpus['provenance']! as Map<String, Object?>;
+      provenance.remove('reviewAttestationSha256');
+
+      expect(
+        () => const WhisperQualityMetrics().evaluate(input),
+        throwsA(
+          isA<WhisperQualityMetricsException>().having(
+            (error) => error.message,
+            'message',
+            contains('reviewAttestationSha256'),
+          ),
+        ),
+      );
+    });
+
     test('少于 20 段、未知 sample 或音频路径引用会拒绝', () {
       expect(
         () => const WhisperQualityMetrics().evaluate(_input(sampleCount: 19)),
@@ -302,6 +328,24 @@ void main() {
       expect(
         () => const WhisperQualityMetrics().evaluate(missingEvidenceClass),
         throwsA(isA<WhisperQualityMetricsException>()),
+      );
+    });
+
+    test('同一 PCM 哈希不能通过不同 sampleId 重复计入覆盖', () {
+      final input = _input(sampleCount: 20);
+      final corpus = input['corpus']! as Map<String, Object?>;
+      final samples = corpus['samples']! as List<Map<String, Object?>>;
+      samples[1]['sha256'] = samples.first['sha256'];
+
+      expect(
+        () => const WhisperQualityMetrics().evaluate(input),
+        throwsA(
+          isA<WhisperQualityMetricsException>().having(
+            (error) => error.message,
+            'message',
+            contains('SHA-256 与另一段重复'),
+          ),
+        ),
       );
     });
 
@@ -389,6 +433,7 @@ Map<String, Object?> _input({required int sampleCount}) {
     for (var index = 0; index < sampleCount; index++)
       {
         'id': 'sample-$index',
+        'sha256': index.toRadixString(16).padLeft(64, '0'),
         'durationMs': 10000,
         'tags': [
           if (index < 5) 'silence',
@@ -418,9 +463,12 @@ Map<String, Object?> _input({required int sampleCount}) {
       'id': 'deidentified-v1',
       'deidentified': true,
       'evidenceClass': 'product-meeting',
-      'provenance': const {
+      'provenance': {
         'sourceId': 'private-deidentified-meetings',
         'licenseId': 'internal-consented',
+        'reviewAttestationSha256':
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        'reviewedAtUtc': '2026-07-31T10:30:00Z',
       },
       'samples': samples,
     },

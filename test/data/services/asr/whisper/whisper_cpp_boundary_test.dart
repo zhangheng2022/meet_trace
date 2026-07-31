@@ -85,6 +85,17 @@ void main() {
     );
   });
 
+  test('原生推理失败保留 whisper.cpp 返回码用于私有诊断', () async {
+    final nativeSource = await File(
+      'packages/meettrace_whisper_native/src/meettrace_whisper.cpp',
+    ).readAsString();
+
+    expect(
+      nativeSource,
+      contains('"whisper_full_failed:" + std::to_string(result)'),
+    );
+  });
+
   test('C ABI 暴露版本化配置、稳定状态码和结构大小校验', () async {
     final header = await File(
       'packages/meettrace_whisper_native/src/meettrace_whisper.h',

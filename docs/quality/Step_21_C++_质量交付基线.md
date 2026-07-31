@@ -39,8 +39,8 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，新增评测链后共 407 tests |
-| `flutter build apk --debug` | 通过，145.3 秒 |
+| `flutter test` | 通过，人工晋级、可恢复矩阵、失败诊断与重复 PCM 防绕过补强后共 428 tests |
+| `flutter build apk --debug` | 通过，本轮 80.4 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
 | 30 秒模拟器录音测试 | 通过，960,512 bytes，完整率 1.00042，0 个预览丢弃 |
@@ -54,9 +54,11 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 
 ## 4. 已确认缺口
 
-1. Native Assets 的 `clang -c` 已不再接收 linker-only 参数，原有
-   `linker input unused` 警告已消除；Release 16 KB LOAD alignment 仍属于阶段 5
-   独立产物门槛，不能由“无警告”代替。
+1. 当前 Native Assets/Android 工具链仍会在部分 `clang -c` 调用输出
+   `-Wl,-z,max-page-size=16384: linker input unused`；这是链接参数被编译阶段忽略的
+   警告，不等于最终 ELF 未适配。2026-07-31 Debug APK 中三种 ABI 的
+   `libmeettrace_whisper.so` 所有 `LOAD` 均为 `0x4000` alignment；Release APK 的全部
+   `.so` 仍属于阶段 5 独立产物门槛，不能只凭 Debug 单库或“无警告”宣称通过。
 2. 模拟器首次录音会出现通知和麦克风权限弹窗；自动脚本必须在测试前显式授权 Debug 包，
    避免把交互等待误判为录音挂死。
 3. 仓库外尚未配置 60 段真实去敏产品会议语料（20 段静音、20 段纯噪声、20 段带
@@ -71,6 +73,8 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 - 主机校验器：`tool/benchmarks/prepare_whisper_quality_corpus.dart`
 - Android 执行器：`integration_test/android_whisper_quality_benchmark_test.dart`
 - Android 编排入口：`tool/benchmarks/run_android_whisper_quality_benchmark.ps1`
+- 可恢复完整矩阵入口：`tool/benchmarks/run_android_whisper_quality_batches.ps1`
+- 私有批次合并器：`tool/benchmarks/merge_whisper_quality_observations.dart`
 - 聚合器：`tool/benchmarks/whisper_quality_metrics.dart`
 - 已有原始观测的聚合入口：`tool/benchmarks/run_whisper_quality_matrix.ps1`
 - 音频固定为无文件头的 16 kHz、单声道、PCM16LE，只通过每段 `pathEnv`
@@ -80,10 +84,18 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   - `product-meeting`：唯一可用于关闭正式产品质量门槛；
   - `public-regression`：公开数据集回归，不替代产品会议证据；
   - `synthetic-smoke`：合成链路烟测，不用于识别质量结论。
+- `product-meeting` provenance 除来源与许可外，还必须携带人工复核证明 SHA-256 和
+  以 `Z` 结尾的复核 UTC 时间；协议校验器与指标聚合器都会拒绝缺项。手工填写
+  `evidenceClass`、`deidentified` 或证明哈希不能代替人工复核及标准晋升流程。
 - 正式 `product-meeting` 矩阵必须分别覆盖不少于 20 段纯静音、20 段纯噪声和
   20 段带去敏关键事实的会议语音；语音样本还必须同时覆盖起始和结束边界。
   主机在推送前重新校验上述覆盖、SHA-256、PCM 字节数和时长；设备临时目录在
   `finally` 中按受限路径清理。公开/合成轨道仍可使用各自的 20 段受控语料。
+- 私有候选不得直接把 VAD、ASR 草稿或文件名升级为正式标签。使用
+  `create_whisper_review_attestation_template.dart` 生成默认未批准的私有模板，
+  人工逐段确认分类、去敏、关键事实和语音首尾后，再由
+  `promote_reviewed_whisper_corpus.dart` 校验候选 manifest 哈希和完整样本集合。
+  正式 provenance 绑定复核证明 SHA-256 与 UTC 时间；复核证明本身不得提交。
 - 原始观测携带 corpus ID、证据类别和 manifest SHA-256；聚合前必须与输入 manifest
   完全匹配。重用输出目录时先清除旧私有 transcript，避免残留正文混入新一轮证据。
 - Base/Small 和 Baseline/Preview/Final 默认同时执行 `fixed-window-v1`、
@@ -154,7 +166,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   并逐字段验证输入，不能以手改 JSON 代替真实矩阵。
 - 当前机器可读输入和报告位于
   `docs/quality/evidence/android-emulator/phase-0-4-release-input.json` 与
-  `phase-0-4-release-report.json`。结果为 `blocked`：22 项通过、0 项失败、24 项
+  `phase-0-4-release-report.json`。结果为 `blocked`：22 项通过、0 项失败、26 项
   缺失。输入显式声明 `evaluationScope=phase-0-4`，只保留阶段 0～4 的真实产品语料
   与产品质量缺口；阶段 5 以后的 Android 真机、iOS 和 Release 门槛不再污染本阶段
   结论，也不以代理数据填充。Android 模拟器证据由完整通过日志推导，四份日志分别
@@ -167,10 +179,11 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | 产品边界批准并统一 | 通过 |
 | 工程基线可重复 | 通过 |
-| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 6 另显式阻断代理语料、未绑定 Android/质量证据、矩阵缺项和阶段 0～4 不变量缺失 |
+| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 7 另显式阻断未绑定人工复核证明、代理语料、未绑定 Android/质量证据、矩阵缺项和阶段 0～4 不变量缺失 |
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
 | 正式产品会议矩阵可运行 | `blocked`：未提供 20 段静音、20 段噪声和 20 段带事实语音的环境变量 |
 | 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
+| Small 合成噪声固定窗口稳定性 | `No-Go`：当前 API 36 x86_64 模拟器完成 4/20 段后推理失败；未伪造完整报告 |
 | 固定窗口与 VAD 分段可同条件比较 | 通过：多管线 Android 执行、schema 4 可观测性及聚合链已实现 |
 
 在真实语料注入前，不得把 Hard Gate 0 或质量指标标记为通过；后续实现可以继续，但发布
@@ -304,7 +317,15 @@ SHA-256；旧 transcript 在受限 `.spike` 输出目录内清除，噪声幻觉
 `.spike/` 写入边界、私有输入契约和实际 PCM 峰值的自动化覆盖，复审未发现或保留
 Critical/High 或有实际影响的 Medium。
 
-自动发布评估 schema 6 完成后，按 workspace 模式审查 6 个 reviewable 文件并手工
+自动发布评估旧 schema 6 完成后，按 workspace 模式审查 6 个 reviewable 文件并手工
 核对三份 Markdown。审查发现直接 Domain 调用传入非有限召回值时，No-Go 报告可能因
 JSON 不支持 `NaN/Infinity` 而无法输出；现已净化报告值并新增回归测试。复审未发现
 或保留 Critical/High 或有实际影响的 Medium。
+
+本轮人工语料晋升与可恢复矩阵按 workspace 模式复审 27 个 reviewable 文件，并手工
+核对 OCR 不支持的五份 Markdown。审查补齐了人工证明向 schema 7 发布门禁的端到端
+传递、未批准候选的冗余筛除、设备与线程复用绑定、transcript 哈希复算、重复 PCM
+防绕过、无效批次先暂存后切换、合并结果覆盖回滚，以及复核模板排他写入；同时移除
+“仅凭字段校验即可证明人工复核”的文档过度承诺。真实烟测继续修复了首次发布缺少
+`batches/` 父目录的问题，并为 Small 推理失败保留原生返回码、failed batch、
+attempt 与私有日志哈希。修复后未发现或保留 Critical/High 或有实际影响的 Medium。

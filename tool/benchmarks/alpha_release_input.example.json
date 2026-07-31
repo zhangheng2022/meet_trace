@@ -1,6 +1,6 @@
 {
   "evaluationScope": "alpha-release",
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "rawMetricsRef": null,
   "rawMetricsSha256": null,
   "corpus": {
@@ -11,7 +11,9 @@
     "manifestSha256": null,
     "provenance": {
       "sourceId": null,
-      "licenseId": null
+      "licenseId": null,
+      "reviewAttestationSha256": null,
+      "reviewedAtUtc": null
     }
   },
   "environment": {

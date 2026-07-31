@@ -5,7 +5,9 @@
   "evidenceClass": "product-meeting",
   "provenance": {
     "sourceId": "replace-with-non-identifying-source-id",
-    "licenseId": "internal-consented"
+    "licenseId": "internal-consented",
+    "reviewAttestationSha256": "replace-with-review-attestation-sha256",
+    "reviewedAtUtc": "replace-with-utc-timestamp-ending-in-Z"
   },
   "audioFormat": {
     "encoding": "pcm16le",
