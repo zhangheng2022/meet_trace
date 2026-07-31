@@ -217,8 +217,7 @@ final class AlphaReleaseEvaluationInput {
       iosBuildAuditPassed: _boolean(release?['iosBuildAuditPassed']),
       iosBuildEvidenceRef: _string(evidence?['iosBuild']),
       whisperCppLicenseConfirmed: _boolean(
-        release?['whisperCppLicenseConfirmed'] ??
-            release?['paraformerRedistributionConfirmed'],
+        release?['whisperCppLicenseConfirmed'],
       ),
     );
   }

@@ -252,6 +252,24 @@ void main() {
       );
     });
 
+    test('旧 Paraformer 授权字段不能关闭 Whisper C++ 许可门槛', () {
+      final json = _passingInput().toJson();
+      final release = json['release']! as Map<String, Object?>;
+      release
+        ..remove('whisperCppLicenseConfirmed')
+        ..['paraformerRedistributionConfirmed'] = true;
+
+      final input = AlphaReleaseEvaluationInput.fromJson(json);
+      final report = const EvaluateAlphaReleaseUseCase().execute(input);
+      final gate = report.gates.singleWhere(
+        (candidate) => candidate.id == 'license.whisperCpp',
+      );
+
+      expect(input.whisperCppLicenseConfirmed, isNull);
+      expect(gate.status, ReleaseGateStatus.missing);
+      expect(report.decision, AlphaReleaseDecision.blocked);
+    });
+
     test('公开或合成证据不能关闭产品会议质量门槛', () {
       for (final evidenceClass in ['public-regression', 'synthetic-smoke']) {
         final report = const EvaluateAlphaReleaseUseCase().execute(
