@@ -68,6 +68,11 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 正式门槛只接受 `product-meeting` 证据。合成静音可验证设备执行、零片段和报告结构，
 但不得替代真实噪声、远场和语音首尾样本。
 
+质量编排支持 `-VadPreflight`：复用同一语料校验、Android 上传、官方 VAD 和临时目录
+清理流程，但不加载 Base/Small、不运行 ASR，也不输出转录正文。预检可输出每个 VAD
+区间的相对时间边界，帮助准备人工审核包；由于独立片段的 flush 上下文会改变 VAD
+判定，预检结果不得自动升级为 `product-meeting` 标签或关键事实真值。
+
 2026-07-31 在 API 36 x86_64 模拟器执行 20 段数字静音烟测：
 
 - Base/Small × Baseline × 固定窗口/VAD 共生成 80 条原始观测；

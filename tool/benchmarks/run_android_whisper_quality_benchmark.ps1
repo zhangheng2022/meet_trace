@@ -22,6 +22,8 @@ param(
     [ValidateRange(1, 32)]
     [int]$ThreadCount = 2,
 
+    [switch]$VadPreflight,
+
     [string]$OutputDirectory = ".spike/results/whisper-quality/android-emulator",
 
     [string]$ReleaseInputPath = "docs/quality/evidence/android-emulator/phase-0-4-release-input.json",
@@ -172,14 +174,17 @@ function Write-JsonFile {
     [System.IO.File]::WriteAllText($Path, $json, $utf8NoBom)
 }
 
-if ($Profiles.Count -eq 0) {
+if (-not $VadPreflight -and $Profiles.Count -eq 0) {
     throw "Profiles must not be empty."
 }
-if ($Models.Count -eq 0) {
+if (-not $VadPreflight -and $Models.Count -eq 0) {
     throw "Models must not be empty."
 }
 if ($Pipelines.Count -eq 0) {
     throw "Pipelines must not be empty."
+}
+if ($VadPreflight -and $Pipelines -contains "fixed-window") {
+    throw "VadPreflight only accepts vad-segmented and vad-recall pipelines."
 }
 $modelNames = @($Models | Select-Object -Unique)
 $profileIds = @(
@@ -210,7 +215,7 @@ $manifestSha256 = (
     Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256
 ).Hash.ToLowerInvariant()
 $resolvedSmallModel = $null
-if ($modelNames -contains "small") {
+if (-not $VadPreflight -and $modelNames -contains "small") {
     $resolvedSmallModel = Resolve-ExistingFile `
         -Path $SmallModelPath `
         -Label "Whisper Small model"
@@ -344,7 +349,7 @@ try {
     }
 
     $remoteSmallModel = $null
-    if ($modelNames -contains "small") {
+    if (-not $VadPreflight -and $modelNames -contains "small") {
         $remoteSmallModel = "$remoteRoot/ggml-small-q5_1.bin"
         Invoke-AdbChecked `
             -Arguments @("-s", $resolvedDeviceId, "push", $resolvedSmallModel, $remoteSmallModel) `
@@ -353,7 +358,7 @@ try {
     }
 
     $deviceModels = @()
-    if ($modelNames -contains "base") {
+    if (-not $VadPreflight -and $modelNames -contains "base") {
         $deviceModels += [ordered]@{
             modelId = "whisper-cpp-base-q5_1-v1.9.1"
             modelVersion = "v1.9.1-q5_1"
@@ -362,7 +367,7 @@ try {
             profileIds = $profileIds
         }
     }
-    if ($modelNames -contains "small") {
+    if (-not $VadPreflight -and $modelNames -contains "small") {
         $deviceModels += [ordered]@{
             modelId = "whisper-cpp-small-q5_1-v1.9.1"
             modelVersion = "v1.9.1-q5_1"
@@ -374,6 +379,7 @@ try {
 
     $deviceManifest = [ordered]@{
         schemaVersion = 1
+        mode = if ($VadPreflight) { "vad-preflight" } else { "asr-quality" }
         corpusId = $preparedCorpus.id
         corpusDeidentified = [bool]$preparedCorpus.deidentified
         corpusEvidenceClass = $preparedCorpus.evidenceClass
@@ -424,13 +430,18 @@ try {
         throw "Android benchmark completion marker is missing; private log: $rawLogPath"
     }
     $completion = $completeLine.Substring($completeMarker.Length) | ConvertFrom-Json
-    $expectedEvaluationRunCount = (
+    $expectedEvaluationRunCount = if ($VadPreflight) {
+        $pipelineIds.Count
+    }
+    else {
         $deviceModels.Count * $profileIds.Count * $pipelineIds.Count
-    )
+    }
     $expectedObservationCount = (
         $preparedCorpus.samples.Count * $expectedEvaluationRunCount
     )
+    $expectedRunMode = if ($VadPreflight) { "vad-preflight" } else { "asr-quality" }
     if ($completion.schemaVersion -ne 1 -or
+        $completion.mode -ne $expectedRunMode -or
         $completion.corpusId -ne $preparedCorpus.id -or
         $completion.deviceId -ne $deviceLabel -or
         [int]$completion.sampleCount -ne $preparedCorpus.samples.Count -or
@@ -447,6 +458,10 @@ try {
     for ($index = 0; $index -lt $observationLines.Count; $index++) {
         $payload = $observationLines[$index].Substring($observationMarker.Length) |
             ConvertFrom-Json
+        if ($VadPreflight) {
+            $observations += $payload.observation
+            continue
+        }
         $transcriptPath = Join-Path $transcriptRoot "transcript-$($index.ToString('D4')).json"
         Write-JsonFile -Value $payload.transcript -Path $transcriptPath
         $observation = [ordered]@{}
@@ -457,6 +472,59 @@ try {
             -Root $outputRoot `
             -Path $transcriptPath
         $observations += $observation
+    }
+
+    if ($VadPreflight) {
+        $vadPreflightEvidence = [ordered]@{
+            schemaVersion = 1
+            status = "passed"
+            execution = [ordered]@{
+                capturedAtUtc = [DateTimeOffset]::UtcNow.ToString("O")
+                platform = "android-emulator"
+                deviceId = $deviceLabel
+                abi = $abi
+                apiLevel = $apiLevel
+                threadCount = $ThreadCount
+                pipelineIds = $pipelineIds
+                corpusId = $preparedCorpus.id
+                corpusDeidentified = [bool]$preparedCorpus.deidentified
+                corpusEvidenceClass = $preparedCorpus.evidenceClass
+                corpusManifestSha256 = $manifestSha256
+            }
+            observations = $observations
+        }
+        Write-JsonFile `
+            -Value $vadPreflightEvidence `
+            -Path $rawObservationsPath `
+            -Depth 16
+        $runEvidence = [ordered]@{
+            schemaVersion = 1
+            status = "passed"
+            kind = "vad-preflight"
+            capturedAtUtc = [DateTimeOffset]::UtcNow.ToString("O")
+            platform = "android-emulator"
+            deviceId = $deviceLabel
+            abi = $abi
+            apiLevel = $apiLevel
+            corpusId = $preparedCorpus.id
+            corpusDeidentified = [bool]$preparedCorpus.deidentified
+            corpusEvidenceClass = $preparedCorpus.evidenceClass
+            corpusProvenance = $preparedCorpus.provenance
+            corpusManifestSha256 = $manifestSha256
+            sampleCount = [int]$completion.sampleCount
+            observationCount = [int]$completion.observationCount
+            pipelineIds = $pipelineIds
+            privateArtifacts = @(
+                "prepared-corpus.private.json",
+                "device-run.private.json",
+                "android-benchmark.private.log",
+                "raw-observations.private.json"
+            )
+        }
+        Write-JsonFile -Value $runEvidence -Path $runEvidencePath
+        Write-Output "Android Whisper VAD preflight completed: $runEvidencePath"
+        Write-Output "Private VAD observations: $rawObservationsPath"
+        return
     }
 
     $rawObservations = [ordered]@{

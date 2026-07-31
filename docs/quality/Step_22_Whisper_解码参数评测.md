@@ -66,6 +66,23 @@ transcript 引用，再调用 schema `4` 聚合器生成 JSON/CSV。schema 4 会
 `public-regression` 或 `synthetic-smoke` 时运行，其报告保留证据类别，不能用于关闭
 产品质量门槛。
 
+对新语料先执行不加载 ASR 模型的 VAD 预检：
+
+```powershell
+& .\tool\benchmarks\run_android_whisper_quality_benchmark.ps1 `
+  -CorpusManifest <仓库外语料清单> `
+  -DeviceId emulator-5554 `
+  -Pipelines @("vad-segmented", "vad-recall") `
+  -VadPreflight `
+  -RequiredEvidenceClass <语料证据类别> `
+  -OutputDirectory .spike/results/whisper-quality/vad-preflight
+```
+
+`-VadPreflight` 禁止固定窗口和 ASR 模型，只输出 VAD 段数、相对时间边界、耗时与
+峰值 RSS，不生成转录正文，也不调用质量聚合或发布证据推广。它用于发现切分和标签
+问题，不能把 VAD 自身判定当作语料真值；`silence`、`noise-only`、关键事实和去敏状态
+仍必须由独立人工复核确认。
+
 固定版本 ASCEND 公开回归可直接执行：
 
 ```powershell

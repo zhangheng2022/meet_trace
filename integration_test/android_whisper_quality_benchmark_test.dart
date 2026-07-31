@@ -33,9 +33,9 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
-    '仓库外受控 PCM 在 Android 上生成 Base/Small/Profile 原始观测',
+    '仓库外受控 PCM 在 Android 上生成 ASR 矩阵或 VAD 预检观测',
     (_) async {
-      final run = await _DeviceBenchmarkRun.load(_deviceManifestPath);
+      final run = await WhisperQualityDeviceRun.load(_deviceManifestPath);
       final temporary = await getTemporaryDirectory();
       final benchmarkRoot = Directory(
         p.join(
@@ -51,7 +51,9 @@ void main() {
           benchmarkRoot.path,
           'ggml-silero-v6.2.0.bin',
         );
-        await _copyAsset(_baseModelAsset, baseModelPath);
+        if (!run.isVadPreflight) {
+          await _copyAsset(_baseModelAsset, baseModelPath);
+        }
         final vadPipelineIds = run.pipelineIds
             .where((pipelineId) => pipelineId != whisperFixedWindowPipelineId)
             .toList(growable: false);
@@ -79,10 +81,59 @@ void main() {
           }
         }
 
+        if (run.isVadPreflight) {
+          for (final sample in run.samples) {
+            for (final pipelineId in run.pipelineIds) {
+              final vad = vadMeasurements[sample.id]![pipelineId]!;
+              final speechSampleCount = vad.segments.fold<int>(
+                0,
+                (total, segment) =>
+                    total + (segment.endSample - segment.startSample),
+              );
+              final observation = <String, Object?>{
+                'sampleId': sample.id,
+                'pipelineId': pipelineId,
+                'deviceId': run.deviceId,
+                'inferenceDurationMs': vad.elapsedMicros / 1000,
+                'detectedSpeechSegmentCount': vad.segments.length,
+                'detectedSpeechDurationMs':
+                    speechSampleCount * 1000 / whisperQualitySampleRateHz,
+                'firstSpeechStartMs': vad.segments.isEmpty
+                    ? null
+                    : vad.segments.first.startSample *
+                          1000 /
+                          whisperQualitySampleRateHz,
+                'lastSpeechEndMs': vad.segments.isEmpty
+                    ? null
+                    : vad.segments.last.endSample *
+                          1000 /
+                          whisperQualitySampleRateHz,
+                'speechSegments': [
+                  for (final segment in vad.segments)
+                    {
+                      'startMs':
+                          segment.startSample *
+                          1000 /
+                          whisperQualitySampleRateHz,
+                      'endMs':
+                          segment.endSample * 1000 / whisperQualitySampleRateHz,
+                    },
+                ],
+                'peakRssBytes': vad.peakRssBytes,
+              };
+              debugPrintSynchronously(
+                '$_observationMarker${jsonEncode({'observation': observation})}',
+                wrapWidth: null,
+              );
+              observationCount++;
+            }
+          }
+        }
+
         for (final model in run.models) {
           final modelPath = switch (model.source) {
-            _ModelSource.bundledBase => baseModelPath,
-            _ModelSource.deviceFile => model.path!,
+            WhisperQualityModelSource.bundledBase => baseModelPath,
+            WhisperQualityModelSource.deviceFile => model.path!,
           };
           expect(await File(modelPath).exists(), isTrue);
 
@@ -173,7 +224,7 @@ void main() {
         final expectedCount = run.samples.length * run.evaluationRunCount;
         expect(observationCount, expectedCount);
         debugPrintSynchronously(
-          '$_completeMarker${jsonEncode({'schemaVersion': 1, 'corpusId': run.corpusId, 'deviceId': run.deviceId, 'sampleCount': run.samples.length, 'evaluationRunCount': run.evaluationRunCount, 'pipelineIds': run.pipelineIds, 'observationCount': observationCount, 'windowDurationMs': 2000, 'energyStatus': 'not_collected', 'thermalStatus': 'not_collected'})}',
+          '$_completeMarker${jsonEncode({'schemaVersion': 1, 'mode': run.mode, 'corpusId': run.corpusId, 'deviceId': run.deviceId, 'sampleCount': run.samples.length, 'evaluationRunCount': run.evaluationRunCount, 'pipelineIds': run.pipelineIds, 'observationCount': observationCount, 'windowDurationMs': 2000, 'energyStatus': 'not_collected', 'thermalStatus': 'not_collected'})}',
           wrapWidth: null,
         );
       } finally {
@@ -436,188 +487,6 @@ WhisperRecognizerProfile _profileById(String id) => switch (id) {
   'final-beam-quality-v1' => whisperFinalRecognizerProfile,
   _ => throw WhisperQualityProtocolException('未知 Whisper Profile：$id'),
 };
-
-enum _ModelSource { bundledBase, deviceFile }
-
-final class _DeviceBenchmarkRun {
-  const _DeviceBenchmarkRun({
-    required this.corpusId,
-    required this.deviceId,
-    required this.threadCount,
-    required this.samples,
-    required this.models,
-    required this.pipelineIds,
-  });
-
-  final String corpusId;
-  final String deviceId;
-  final int threadCount;
-  final List<_DeviceSample> samples;
-  final List<_DeviceModel> models;
-  final List<String> pipelineIds;
-
-  int get evaluationRunCount =>
-      models.fold(0, (total, model) => total + model.profileIds.length) *
-      pipelineIds.length;
-
-  static Future<_DeviceBenchmarkRun> load(String path) async {
-    final file = File(path);
-    if (!await file.exists()) {
-      throw WhisperQualityProtocolException('设备评测清单不存在：$path');
-    }
-    final decoded = jsonDecode(await file.readAsString());
-    if (decoded is! Map<String, Object?> ||
-        decoded['schemaVersion'] != whisperQualityDeviceManifestSchemaVersion) {
-      throw const WhisperQualityProtocolException('设备评测清单 schemaVersion 必须为 1');
-    }
-    final rawSamples = decoded['samples'];
-    final rawModels = decoded['models'];
-    final rawPipelineIds = decoded['pipelineIds'];
-    if (rawSamples is! List<Object?> || rawSamples.isEmpty) {
-      throw const WhisperQualityProtocolException('设备评测 samples 不能为空');
-    }
-    if (rawModels is! List<Object?> || rawModels.isEmpty) {
-      throw const WhisperQualityProtocolException('设备评测 models 不能为空');
-    }
-    if (rawPipelineIds is! List<Object?> ||
-        rawPipelineIds.isEmpty ||
-        rawPipelineIds.any(
-          (value) => !whisperQualityPipelineIds.contains(value),
-        ) ||
-        rawPipelineIds.toSet().length != rawPipelineIds.length) {
-      throw const WhisperQualityProtocolException(
-        '设备评测 pipelineIds 必须是不重复的已知 pipeline',
-      );
-    }
-    final threadCount = decoded['threadCount'];
-    if (threadCount is! int || threadCount <= 0 || threadCount > 32) {
-      throw const WhisperQualityProtocolException(
-        '设备评测 threadCount 必须在 1 到 32 之间',
-      );
-    }
-    return _DeviceBenchmarkRun(
-      corpusId: _text(decoded['corpusId'], 'corpusId'),
-      deviceId: _text(decoded['deviceId'], 'deviceId'),
-      threadCount: threadCount,
-      samples: [
-        for (var index = 0; index < rawSamples.length; index++)
-          _DeviceSample.fromJson(_object(rawSamples[index], 'samples[$index]')),
-      ],
-      models: [
-        for (var index = 0; index < rawModels.length; index++)
-          _DeviceModel.fromJson(_object(rawModels[index], 'models[$index]')),
-      ],
-      pipelineIds: rawPipelineIds.cast<String>(),
-    );
-  }
-}
-
-final class _DeviceSample {
-  const _DeviceSample({
-    required this.id,
-    required this.path,
-    required this.sha256,
-    required this.byteLength,
-    required this.durationMs,
-    required this.expectedKeyFacts,
-  });
-
-  factory _DeviceSample.fromJson(Map<String, Object?> json) {
-    final byteLength = json['bytes'];
-    final durationMs = json['durationMs'];
-    final rawFacts = json['expectedKeyFacts'];
-    if (byteLength is! int || byteLength <= 0 || byteLength.isOdd) {
-      throw const WhisperQualityProtocolException('设备 sample bytes 必须是正偶数');
-    }
-    if (durationMs is! num || !durationMs.isFinite || durationMs <= 0) {
-      throw const WhisperQualityProtocolException(
-        '设备 sample durationMs 必须是正有限数值',
-      );
-    }
-    if (rawFacts is! List<Object?> ||
-        rawFacts.any((value) => value is! String)) {
-      throw const WhisperQualityProtocolException(
-        '设备 sample expectedKeyFacts 必须是字符串数组',
-      );
-    }
-    return _DeviceSample(
-      id: _text(json['id'], 'sample.id'),
-      path: _text(json['path'], 'sample.path'),
-      sha256: _text(json['sha256'], 'sample.sha256'),
-      byteLength: byteLength,
-      durationMs: durationMs.toDouble(),
-      expectedKeyFacts: rawFacts.cast<String>(),
-    );
-  }
-
-  final String id;
-  final String path;
-  final String sha256;
-  final int byteLength;
-  final double durationMs;
-  final List<String> expectedKeyFacts;
-}
-
-final class _DeviceModel {
-  const _DeviceModel({
-    required this.modelId,
-    required this.modelVersion,
-    required this.source,
-    required this.path,
-    required this.profileIds,
-  });
-
-  factory _DeviceModel.fromJson(Map<String, Object?> json) {
-    final sourceName = _text(json['source'], 'model.source');
-    final source = switch (sourceName) {
-      'bundledBase' => _ModelSource.bundledBase,
-      'deviceFile' => _ModelSource.deviceFile,
-      _ => throw WhisperQualityProtocolException('未知 model.source：$sourceName'),
-    };
-    final rawProfileIds = json['profileIds'];
-    if (rawProfileIds is! List<Object?> ||
-        rawProfileIds.isEmpty ||
-        rawProfileIds.any(
-          (value) => value is! String || value.trim().isEmpty,
-        )) {
-      throw const WhisperQualityProtocolException(
-        'model.profileIds 必须是非空字符串数组',
-      );
-    }
-    final path = json['path'];
-    if (source == _ModelSource.deviceFile &&
-        (path is! String || path.trim().isEmpty)) {
-      throw const WhisperQualityProtocolException('deviceFile model 必须提供 path');
-    }
-    return _DeviceModel(
-      modelId: _text(json['modelId'], 'model.modelId'),
-      modelVersion: _text(json['modelVersion'], 'model.modelVersion'),
-      source: source,
-      path: path is String ? path.trim() : null,
-      profileIds: rawProfileIds.cast<String>(),
-    );
-  }
-
-  final String modelId;
-  final String modelVersion;
-  final _ModelSource source;
-  final String? path;
-  final List<String> profileIds;
-}
-
-Map<String, Object?> _object(Object? value, String name) {
-  if (value is! Map<String, Object?>) {
-    throw WhisperQualityProtocolException('$name 必须是对象');
-  }
-  return value;
-}
-
-String _text(Object? value, String name) {
-  if (value is! String || value.trim().isEmpty) {
-    throw WhisperQualityProtocolException('$name 不能为空');
-  }
-  return value.trim();
-}
 
 Future<void> _copyAsset(String assetKey, String targetPath) async {
   final data = await rootBundle.load(assetKey);

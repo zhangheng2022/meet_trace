@@ -1825,7 +1825,7 @@
     "semantic_hash": ""
   },
   "packages/meettrace_whisper_native/lib/src/c_library.dart": {
-    "mtime": 1785425208.1268067,
+    "mtime": 1785465378.9034545,
     "ast_hash": "4a008de7e60e0322291ce45ab773386c",
     "semantic_hash": ""
   },
@@ -2610,13 +2610,13 @@
     "semantic_hash": ""
   },
   "docs/quality/Step_22_Whisper_\u89e3\u7801\u53c2\u6570\u8bc4\u6d4b.md": {
-    "mtime": 1785453201.8146887,
-    "ast_hash": "7f19d6de05fe7ddd116bd6350f71701b",
+    "mtime": 1785465921.3466616,
+    "ast_hash": "26f1c3be33d3fb275e0d80b3d83c7415",
     "semantic_hash": ""
   },
   "docs/quality/Step_23_24_VAD_\u4e0e\u6700\u7ec8\u8f6c\u5f55.md": {
-    "mtime": 1785446952.8525486,
-    "ast_hash": "960a143d23d2beec1645d39beed0c5c6",
+    "mtime": 1785465921.347175,
+    "ast_hash": "0fe07132438ab567f4d676b931e72a9c",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260730_114643_start_meeting_readiness_model_installation_whisper.md": {
@@ -2625,13 +2625,13 @@
     "semantic_hash": ""
   },
   "integration_test/android_whisper_quality_benchmark_test.dart": {
-    "mtime": 1785443361.436861,
-    "ast_hash": "d4bec65a97346826cb02bb97f5cc6afe",
+    "mtime": 1785465944.6399345,
+    "ast_hash": "c50c8f41215f51f9ff64c07f7e1ddcfb",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/whisper_quality_protocol_test.dart": {
-    "mtime": 1785451982.049114,
-    "ast_hash": "32be6f3c09c4168df4d382ce60c3e257",
+    "mtime": 1785464416.1957479,
+    "ast_hash": "4302ec192020a209503060f256868672",
     "semantic_hash": ""
   },
   "tool/benchmarks/prepare_whisper_quality_corpus.dart": {
@@ -2640,13 +2640,13 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/run_android_whisper_quality_benchmark.ps1": {
-    "mtime": 1785452527.8112378,
-    "ast_hash": "c061e6961731bedf296cadbcec63080c",
+    "mtime": 1785464505.310766,
+    "ast_hash": "e7293af47c7fa08bd13a50956a40ec62",
     "semantic_hash": ""
   },
   "tool/benchmarks/whisper_quality_protocol.dart": {
-    "mtime": 1785453043.105039,
-    "ast_hash": "7425c736cd97d1223717be0bc2d8115b",
+    "mtime": 1785464355.2373204,
+    "ast_hash": "1945b974d90dcf3eddf32136216d9671",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/fetch_ascend_public_regression_test.dart": {

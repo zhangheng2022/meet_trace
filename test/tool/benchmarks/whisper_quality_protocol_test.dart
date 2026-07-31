@@ -205,7 +205,100 @@ void main() {
       );
     });
   });
+
+  group('Android 设备评测清单', () {
+    test('旧清单默认使用完整 ASR 模式', () {
+      final run = WhisperQualityDeviceRun.fromJson(
+        _deviceRunJson(
+          models: [_deviceModelJson()],
+          pipelineIds: const [
+            whisperFixedWindowPipelineId,
+            whisperVadSegmentedPipelineId,
+          ],
+        ),
+      );
+
+      expect(run.mode, whisperAsrQualityRunMode);
+      expect(run.isVadPreflight, isFalse);
+      expect(run.evaluationRunCount, 2);
+    });
+
+    test('VAD 预检不加载 ASR 模型并按管线计算观测数', () {
+      final run = WhisperQualityDeviceRun.fromJson(
+        _deviceRunJson(
+          mode: whisperVadPreflightRunMode,
+          models: const [],
+          pipelineIds: const [
+            whisperVadSegmentedPipelineId,
+            whisperVadRecallCandidatePipelineId,
+          ],
+        ),
+      );
+
+      expect(run.isVadPreflight, isTrue);
+      expect(run.models, isEmpty);
+      expect(run.evaluationRunCount, 2);
+    });
+
+    test('VAD 预检拒绝固定窗口或 ASR 模型', () {
+      expect(
+        () => WhisperQualityDeviceRun.fromJson(
+          _deviceRunJson(
+            mode: whisperVadPreflightRunMode,
+            models: const [],
+            pipelineIds: const [whisperFixedWindowPipelineId],
+          ),
+        ),
+        throwsA(isA<WhisperQualityProtocolException>()),
+      );
+      expect(
+        () => WhisperQualityDeviceRun.fromJson(
+          _deviceRunJson(
+            mode: whisperVadPreflightRunMode,
+            models: [_deviceModelJson()],
+            pipelineIds: const [whisperVadSegmentedPipelineId],
+          ),
+        ),
+        throwsA(isA<WhisperQualityProtocolException>()),
+      );
+    });
+  });
 }
+
+Map<String, Object?> _deviceRunJson({
+  String? mode,
+  required List<Map<String, Object?>> models,
+  required List<String> pipelineIds,
+}) {
+  final bytes = Uint8List(3200);
+  return {
+    'schemaVersion': whisperQualityDeviceManifestSchemaVersion,
+    'mode': ?mode,
+    'corpusId': 'corpus-v1',
+    'deviceId': 'android-emulator-x86_64-api-36',
+    'threadCount': 2,
+    'samples': [
+      {
+        'id': 'sample-1',
+        'path': '/data/local/tmp/sample-1.pcm',
+        'sha256': sha256.convert(bytes).toString(),
+        'bytes': bytes.length,
+        'durationMs': 100,
+        'expectedKeyFacts': const <String>[],
+      },
+    ],
+    'models': models,
+    'pipelineIds': pipelineIds,
+  };
+}
+
+Map<String, Object?> _deviceModelJson() => {
+  'modelId': 'whisper-cpp-base-q5_1-v1.9.1',
+  'modelVersion': 'v1.9.1-q5_1',
+  'source': 'bundledBase',
+  'path': null,
+  'profileIds': const ['final-beam-quality-v1'],
+};
 
 Future<
   ({

@@ -12,6 +12,8 @@ const whisperQualityChannelCount = 1;
 const whisperQualityEncoding = 'pcm16le';
 const whisperQualityWindowSamples = 2 * whisperQualitySampleRateHz;
 const whisperQualityMetricsSchemaVersion = 4;
+const whisperAsrQualityRunMode = 'asr-quality';
+const whisperVadPreflightRunMode = 'vad-preflight';
 const whisperFixedWindowPipelineId = 'fixed-window-v1';
 const whisperVadSegmentedPipelineId = 'vad-segmented-v1';
 const whisperVadRecallCandidatePipelineId = 'vad-recall-035-v1';
@@ -33,6 +35,217 @@ const whisperQualityEvidenceClasses = {
   whisperPublicRegressionEvidenceClass,
   whisperSyntheticSmokeEvidenceClass,
 };
+
+enum WhisperQualityModelSource { bundledBase, deviceFile }
+
+final class WhisperQualityDeviceRun {
+  const WhisperQualityDeviceRun({
+    required this.mode,
+    required this.corpusId,
+    required this.deviceId,
+    required this.threadCount,
+    required this.samples,
+    required this.models,
+    required this.pipelineIds,
+  });
+
+  final String mode;
+  final String corpusId;
+  final String deviceId;
+  final int threadCount;
+  final List<WhisperQualityDeviceSample> samples;
+  final List<WhisperQualityDeviceModel> models;
+  final List<String> pipelineIds;
+
+  bool get isVadPreflight => mode == whisperVadPreflightRunMode;
+
+  int get evaluationRunCount => isVadPreflight
+      ? pipelineIds.length
+      : models.fold(0, (total, model) => total + model.profileIds.length) *
+            pipelineIds.length;
+
+  static Future<WhisperQualityDeviceRun> load(String path) async {
+    final file = File(path);
+    if (!await file.exists()) {
+      throw WhisperQualityProtocolException('设备评测清单不存在：$path');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(await file.readAsString());
+    } on FormatException catch (error) {
+      throw WhisperQualityProtocolException('设备评测清单不是有效 JSON：${error.message}');
+    }
+    return WhisperQualityDeviceRun.fromJson(_map(decoded, 'device manifest'));
+  }
+
+  factory WhisperQualityDeviceRun.fromJson(Map<String, Object?> json) {
+    if (json['schemaVersion'] != whisperQualityDeviceManifestSchemaVersion) {
+      throw const WhisperQualityProtocolException('设备评测清单 schemaVersion 必须为 1');
+    }
+    final mode = switch (json['mode']) {
+      null => whisperAsrQualityRunMode,
+      final String value => value.trim(),
+      _ => '',
+    };
+    if (mode != whisperAsrQualityRunMode &&
+        mode != whisperVadPreflightRunMode) {
+      throw const WhisperQualityProtocolException(
+        '设备评测 mode 必须为 asr-quality 或 vad-preflight',
+      );
+    }
+    final rawSamples = json['samples'];
+    final rawModels = json['models'];
+    final rawPipelineIds = json['pipelineIds'];
+    if (rawSamples is! List<Object?> || rawSamples.isEmpty) {
+      throw const WhisperQualityProtocolException('设备评测 samples 不能为空');
+    }
+    if (rawModels is! List<Object?>) {
+      throw const WhisperQualityProtocolException('设备评测 models 必须是数组');
+    }
+    if (mode == whisperAsrQualityRunMode && rawModels.isEmpty) {
+      throw const WhisperQualityProtocolException('ASR 设备评测 models 不能为空');
+    }
+    if (mode == whisperVadPreflightRunMode && rawModels.isNotEmpty) {
+      throw const WhisperQualityProtocolException('VAD 预检不得加载 ASR models');
+    }
+    if (rawPipelineIds is! List<Object?> ||
+        rawPipelineIds.isEmpty ||
+        rawPipelineIds.any(
+          (value) => !whisperQualityPipelineIds.contains(value),
+        ) ||
+        rawPipelineIds.toSet().length != rawPipelineIds.length) {
+      throw const WhisperQualityProtocolException(
+        '设备评测 pipelineIds 必须是不重复的已知 pipeline',
+      );
+    }
+    if (mode == whisperVadPreflightRunMode &&
+        rawPipelineIds.contains(whisperFixedWindowPipelineId)) {
+      throw const WhisperQualityProtocolException('VAD 预检只允许 VAD pipeline');
+    }
+    final threadCount = json['threadCount'];
+    if (threadCount is! int || threadCount <= 0 || threadCount > 32) {
+      throw const WhisperQualityProtocolException(
+        '设备评测 threadCount 必须在 1 到 32 之间',
+      );
+    }
+    final samples = [
+      for (var index = 0; index < rawSamples.length; index++)
+        WhisperQualityDeviceSample.fromJson(
+          _map(rawSamples[index], 'samples[$index]'),
+        ),
+    ];
+    if (samples.map((sample) => sample.id).toSet().length != samples.length) {
+      throw const WhisperQualityProtocolException('设备评测 sample id 不得重复');
+    }
+    return WhisperQualityDeviceRun(
+      mode: mode,
+      corpusId: _requiredText(json['corpusId'], 'corpusId'),
+      deviceId: _requiredText(json['deviceId'], 'deviceId'),
+      threadCount: threadCount,
+      samples: List.unmodifiable(samples),
+      models: List.unmodifiable([
+        for (var index = 0; index < rawModels.length; index++)
+          WhisperQualityDeviceModel.fromJson(
+            _map(rawModels[index], 'models[$index]'),
+          ),
+      ]),
+      pipelineIds: List.unmodifiable(rawPipelineIds.cast<String>()),
+    );
+  }
+}
+
+final class WhisperQualityDeviceSample {
+  const WhisperQualityDeviceSample({
+    required this.id,
+    required this.path,
+    required this.sha256,
+    required this.byteLength,
+    required this.durationMs,
+    required this.expectedKeyFacts,
+  });
+
+  factory WhisperQualityDeviceSample.fromJson(Map<String, Object?> json) {
+    final byteLength = json['bytes'];
+    final durationMs = json['durationMs'];
+    final rawFacts = json['expectedKeyFacts'];
+    if (byteLength is! int || byteLength <= 0 || byteLength.isOdd) {
+      throw const WhisperQualityProtocolException('设备 sample bytes 必须是正偶数');
+    }
+    if (durationMs is! num || !durationMs.isFinite || durationMs <= 0) {
+      throw const WhisperQualityProtocolException(
+        '设备 sample durationMs 必须是正有限数值',
+      );
+    }
+    if (rawFacts is! List<Object?> ||
+        rawFacts.any((value) => value is! String)) {
+      throw const WhisperQualityProtocolException(
+        '设备 sample expectedKeyFacts 必须是字符串数组',
+      );
+    }
+    return WhisperQualityDeviceSample(
+      id: _requiredText(json['id'], 'sample.id'),
+      path: _requiredText(json['path'], 'sample.path'),
+      sha256: _sha256(json['sha256'], 'sample.sha256'),
+      byteLength: byteLength,
+      durationMs: durationMs.toDouble(),
+      expectedKeyFacts: List.unmodifiable(rawFacts.cast<String>()),
+    );
+  }
+
+  final String id;
+  final String path;
+  final String sha256;
+  final int byteLength;
+  final double durationMs;
+  final List<String> expectedKeyFacts;
+}
+
+final class WhisperQualityDeviceModel {
+  const WhisperQualityDeviceModel({
+    required this.modelId,
+    required this.modelVersion,
+    required this.source,
+    required this.path,
+    required this.profileIds,
+  });
+
+  factory WhisperQualityDeviceModel.fromJson(Map<String, Object?> json) {
+    final sourceName = _requiredText(json['source'], 'model.source');
+    final source = switch (sourceName) {
+      'bundledBase' => WhisperQualityModelSource.bundledBase,
+      'deviceFile' => WhisperQualityModelSource.deviceFile,
+      _ => throw WhisperQualityProtocolException('未知 model.source：$sourceName'),
+    };
+    final rawProfileIds = json['profileIds'];
+    if (rawProfileIds is! List<Object?> ||
+        rawProfileIds.isEmpty ||
+        rawProfileIds.any(
+          (value) => value is! String || value.trim().isEmpty,
+        )) {
+      throw const WhisperQualityProtocolException(
+        'model.profileIds 必须是非空字符串数组',
+      );
+    }
+    final path = json['path'];
+    if (source == WhisperQualityModelSource.deviceFile &&
+        (path is! String || path.trim().isEmpty)) {
+      throw const WhisperQualityProtocolException('deviceFile model 必须提供 path');
+    }
+    return WhisperQualityDeviceModel(
+      modelId: _requiredText(json['modelId'], 'model.modelId'),
+      modelVersion: _requiredText(json['modelVersion'], 'model.modelVersion'),
+      source: source,
+      path: path is String ? path.trim() : null,
+      profileIds: List.unmodifiable(rawProfileIds.cast<String>()),
+    );
+  }
+
+  final String modelId;
+  final String modelVersion;
+  final WhisperQualityModelSource source;
+  final String? path;
+  final List<String> profileIds;
+}
 
 final class WhisperQualityProtocolException implements Exception {
   const WhisperQualityProtocolException(this.message);
