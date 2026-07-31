@@ -54,6 +54,10 @@ const _vadLifecycleCycles = int.fromEnvironment(
   'MEETTRACE_VAD_LIFECYCLE_CYCLES',
   defaultValue: 100,
 );
+const _meetingLifecycleCycles = int.fromEnvironment(
+  'MEETTRACE_MEETING_LIFECYCLE_CYCLES',
+  defaultValue: 10,
+);
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -165,37 +169,18 @@ void main() {
     final modelPath = p.join(root.path, 'ggml-base-q5_1.bin');
     await root.create(recursive: true);
     await _copyAsset(_modelAsset, modelPath);
-    final rssSamples = <int>[];
-    var emittedSegmentCount = 0;
 
     try {
-      for (var cycle = 0; cycle < _nativeLifecycleCycles; cycle++) {
-        final context = WhisperNativeContext.open(
-          modelPath: modelPath,
-          threadCount: 2,
-          language: 'zh',
-        );
-        try {
-          final result = context.transcribe(Float32List(16000));
-          emittedSegmentCount += result.segments.length;
-          for (final segment in result.segments) {
-            expect(segment.endMs, greaterThan(segment.startMs));
-          }
-        } finally {
-          context.dispose();
-          context.dispose();
-        }
-        rssSamples.add(ProcessInfo.currentRss);
-      }
-
-      final growthBytes = rssSamples.length < 2
-          ? 0
-          : rssSamples.last - rssSamples.first;
-      final warmupIndex = rssSamples.length > 10 ? 9 : 0;
-      final steadyStateGrowthBytes = rssSamples.last - rssSamples[warmupIndex];
-      expect(steadyStateGrowthBytes, lessThan(32 * 1024 * 1024));
+      final metrics = await compute(_runNativeLifecycle, {
+        'modelPath': modelPath,
+        'cycles': _nativeLifecycleCycles,
+      });
+      expect(
+        metrics['steadyStateGrowthBytes']! as int,
+        lessThan(32 * 1024 * 1024),
+      );
       debugPrintSynchronously(
-        'MEETTRACE_ANDROID_NATIVE_CYCLES:${jsonEncode({'schemaVersion': 1, 'cycles': _nativeLifecycleCycles, 'runtimeVersion': WhisperNativeContext.runtimeVersion, 'rssSamplesBytes': rssSamples, 'rssGrowthBytes': growthBytes, 'steadyStateGrowthBytes': steadyStateGrowthBytes, 'steadyStateGrowthLimitBytes': 32 * 1024 * 1024, 'silenceSegmentCount': emittedSegmentCount, 'disposeIdempotent': true})}',
+        'MEETTRACE_ANDROID_NATIVE_CYCLES:${jsonEncode(metrics)}',
         wrapWidth: null,
       );
     } finally {
@@ -216,47 +201,17 @@ void main() {
     final modelPath = p.join(root.path, 'ggml-silero-v6.2.0.bin');
     await root.create(recursive: true);
     await _copyAsset(_vadAsset, modelPath);
-    final samples = Float32List(4 * 16000);
-    for (var index = 16000; index < 3 * 16000; index++) {
-      samples[index] = (index ~/ 40).isEven ? 0.25 : -0.25;
-    }
 
     try {
       expect(_vadLifecycleCycles, greaterThanOrEqualTo(1));
-      final rssSamples = <int>[];
-      var syntheticSegmentCount = 0;
-      for (var cycle = 0; cycle < _vadLifecycleCycles; cycle++) {
-        final context = WhisperVadNativeContext.open(modelPath: modelPath);
-        if (cycle == 0) {
-          context.cancel();
-          expect(
-            () => context.segment(Float32List(16000)),
-            throwsA(
-              isA<WhisperNativeException>().having(
-                (error) => error.code,
-                'code',
-                'cancelled',
-              ),
-            ),
-          );
-          context.reset();
-          final synthetic = context.segment(samples);
-          syntheticSegmentCount = synthetic.length;
-          for (final segment in synthetic) {
-            expect(segment.startSample, greaterThanOrEqualTo(0));
-            expect(segment.endSample, greaterThan(segment.startSample));
-            expect(segment.endSample, lessThanOrEqualTo(samples.length));
-          }
-        }
-        final silence = context.segment(Float32List(16000));
-        expect(silence, isEmpty);
-        context.dispose();
-        context.dispose();
-        rssSamples.add(ProcessInfo.currentRss);
-      }
-      final warmupIndex = rssSamples.length > 10 ? 9 : 0;
-      final steadyStateGrowthBytes = rssSamples.last - rssSamples[warmupIndex];
-      expect(steadyStateGrowthBytes, lessThan(32 * 1024 * 1024));
+      final nativeMetrics = await compute(_runNativeVadLifecycle, {
+        'modelPath': modelPath,
+        'cycles': _vadLifecycleCycles,
+      });
+      expect(
+        nativeMetrics['steadyStateGrowthBytes']! as int,
+        lessThan(32 * 1024 * 1024),
+      );
 
       final streaming = WhisperVadSegmenter(modelPath: modelPath);
       final streamingSegments = <VadSpeechSegment>[];
@@ -266,7 +221,7 @@ void main() {
       expect(streamingSegments, isEmpty);
 
       debugPrintSynchronously(
-        'MEETTRACE_ANDROID_NATIVE_VAD:${jsonEncode({'schemaVersion': 1, 'model': 'ggml-silero-v6.2.0', 'cycles': _vadLifecycleCycles, 'silenceSegmentCount': 0, 'syntheticSegmentCount': syntheticSegmentCount, 'streamingSilenceSegmentCount': streamingSegments.length, 'rssSamplesBytes': rssSamples, 'steadyStateGrowthBytes': steadyStateGrowthBytes, 'cancelResetVerified': true, 'workerIsolateVerified': true, 'disposeIdempotent': true})}',
+        'MEETTRACE_ANDROID_NATIVE_VAD:${jsonEncode({...nativeMetrics, 'streamingSilenceSegmentCount': streamingSegments.length, 'workerIsolateVerified': true})}',
         wrapWidth: null,
       );
     } finally {
@@ -326,6 +281,156 @@ void main() {
       }
     }
   }, timeout: const Timeout(Duration(minutes: 2)));
+
+  testWidgets('完整会议连续开始、停止且释放模型租约与预览资源', (_) async {
+    expect(_meetingLifecycleCycles, greaterThanOrEqualTo(10));
+    var sealedMeetings = 0;
+    var totalBytes = 0;
+    var allCaptureStreamsClosed = true;
+    var allPreviewSessionsDisposed = true;
+    var allModelLeasesReleased = true;
+
+    for (var cycle = 0; cycle < _meetingLifecycleCycles; cycle++) {
+      final fixture = await _MeetingFlowFixture.create();
+      try {
+        await fixture.startMeeting();
+        final started = await fixture.recordingViewModel!.start();
+        expect(started, isTrue, reason: '第 $cycle 次会议未能开始录音');
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        final completed = await fixture.recordingViewModel!.stop();
+        expect(completed, isNotNull, reason: '第 $cycle 次会议未能封存事实录音');
+        expect(completed!.status, MeetingState.processing);
+        expect(fixture.recording.persistedBytes, greaterThan(0));
+        expect(
+          await File(completed.audioPath!).length(),
+          fixture.recording.persistedBytes,
+        );
+        final captureStreamClosed = fixture.capture.isStopped;
+        final previewSessionDisposed =
+            fixture.preview.metrics.state == AsrPreviewState.disposed;
+        final modelLeaseReleased = await fixture.hasNoActiveModelLeases();
+        expect(captureStreamClosed, isTrue);
+        expect(previewSessionDisposed, isTrue);
+        expect(modelLeaseReleased, isTrue);
+        allCaptureStreamsClosed &= captureStreamClosed;
+        allPreviewSessionsDisposed &= previewSessionDisposed;
+        allModelLeasesReleased &= modelLeaseReleased;
+        totalBytes += fixture.recording.persistedBytes;
+      } finally {
+        await fixture.dispose();
+      }
+      sealedMeetings++;
+    }
+
+    debugPrintSynchronously(
+      'MEETTRACE_ANDROID_MEETING_CYCLES:${jsonEncode({'schemaVersion': 1, 'cycles': _meetingLifecycleCycles, 'sealedMeetings': sealedMeetings, 'totalBytes': totalBytes, 'allCaptureStreamsClosed': allCaptureStreamsClosed, 'allPreviewSessionsDisposed': allPreviewSessionsDisposed, 'allModelLeasesReleased': allModelLeasesReleased})}',
+      wrapWidth: null,
+    );
+  }, timeout: const Timeout(Duration(minutes: 10)));
+}
+
+Map<String, Object> _runNativeLifecycle(Map<String, Object> input) {
+  final modelPath = input['modelPath']! as String;
+  final cycles = input['cycles']! as int;
+  final rssSamples = <int>[];
+  var emittedSegmentCount = 0;
+
+  for (var cycle = 0; cycle < cycles; cycle++) {
+    final context = WhisperNativeContext.open(
+      modelPath: modelPath,
+      threadCount: 2,
+      language: 'zh',
+    );
+    try {
+      final result = context.transcribe(Float32List(16000));
+      emittedSegmentCount += result.segments.length;
+      for (final segment in result.segments) {
+        if (segment.endMs <= segment.startMs) {
+          throw StateError('Native ASR 返回了非正时长片段');
+        }
+      }
+    } finally {
+      context.dispose();
+      context.dispose();
+    }
+    rssSamples.add(ProcessInfo.currentRss);
+  }
+
+  final growthBytes = rssSamples.length < 2
+      ? 0
+      : rssSamples.last - rssSamples.first;
+  final warmupIndex = rssSamples.length > 10 ? 9 : 0;
+  final steadyStateGrowthBytes = rssSamples.last - rssSamples[warmupIndex];
+  return {
+    'schemaVersion': 1,
+    'cycles': cycles,
+    'runtimeVersion': WhisperNativeContext.runtimeVersion,
+    'rssSamplesBytes': rssSamples,
+    'rssGrowthBytes': growthBytes,
+    'steadyStateGrowthBytes': steadyStateGrowthBytes,
+    'steadyStateGrowthLimitBytes': 32 * 1024 * 1024,
+    'silenceSegmentCount': emittedSegmentCount,
+    'workerIsolateVerified': true,
+    'disposeIdempotent': true,
+  };
+}
+
+Map<String, Object> _runNativeVadLifecycle(Map<String, Object> input) {
+  final modelPath = input['modelPath']! as String;
+  final cycles = input['cycles']! as int;
+  final samples = Float32List(4 * 16000);
+  for (var index = 16000; index < 3 * 16000; index++) {
+    samples[index] = (index ~/ 40).isEven ? 0.25 : -0.25;
+  }
+  final rssSamples = <int>[];
+  var syntheticSegmentCount = 0;
+
+  for (var cycle = 0; cycle < cycles; cycle++) {
+    final context = WhisperVadNativeContext.open(modelPath: modelPath);
+    try {
+      if (cycle == 0) {
+        context.cancel();
+        try {
+          context.segment(Float32List(16000));
+          throw StateError('VAD cancel 后仍允许 segment');
+        } on WhisperNativeException catch (error) {
+          if (error.code != 'cancelled') {
+            rethrow;
+          }
+        }
+        context.reset();
+        final synthetic = context.segment(samples);
+        syntheticSegmentCount = synthetic.length;
+        for (final segment in synthetic) {
+          if (segment.startSample < 0 ||
+              segment.endSample <= segment.startSample ||
+              segment.endSample > samples.length) {
+            throw StateError('Native VAD 返回了越界片段');
+          }
+        }
+      }
+      if (context.segment(Float32List(16000)).isNotEmpty) {
+        throw StateError('Native VAD 在纯静音上产生了片段');
+      }
+    } finally {
+      context.dispose();
+      context.dispose();
+    }
+    rssSamples.add(ProcessInfo.currentRss);
+  }
+
+  final warmupIndex = rssSamples.length > 10 ? 9 : 0;
+  return {
+    'schemaVersion': 1,
+    'model': 'ggml-silero-v6.2.0',
+    'cycles': cycles,
+    'silenceSegmentCount': 0,
+    'syntheticSegmentCount': syntheticSegmentCount,
+    'rssSamplesBytes': rssSamples,
+    'steadyStateGrowthBytes': rssSamples.last - rssSamples[warmupIndex],
+    'cancelResetVerified': true,
+    'disposeIdempotent': true,
+  };
 }
 
 final class _MeetingFlowFixture {
@@ -341,6 +446,7 @@ final class _MeetingFlowFixture {
     required this.layout,
     required this.preview,
     required this.recording,
+    required this.capture,
   });
 
   final Directory root;
@@ -357,6 +463,7 @@ final class _MeetingFlowFixture {
 
   AsrPreviewCoordinator preview;
   ReliableRecordingService recording;
+  final _DeterministicPcmAudioCapture capture;
   RecordingSessionViewModel? recordingViewModel;
   StartedMeetingSession? _session;
 
@@ -425,8 +532,9 @@ final class _MeetingFlowFixture {
       vad: _FailingVoiceActivitySegmenter(),
       engine: session.engine,
     );
+    final capture = _DeterministicPcmAudioCapture();
     final recording = ReliableRecordingService(
-      capture: _DeterministicPcmAudioCapture(),
+      capture: capture,
       layout: layout,
       checkpoints: JsonRecordingCheckpointStore(layout),
       storageCapacity: const DeviceRecordingStorageCapacityProvider(),
@@ -451,6 +559,7 @@ final class _MeetingFlowFixture {
       layout: layout,
       preview: preview,
       recording: recording,
+      capture: capture,
     );
     fixture._session = session;
     return fixture;
@@ -471,6 +580,16 @@ final class _MeetingFlowFixture {
     );
   }
 
+  Future<bool> hasNoActiveModelLeases() async {
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    final active = await leases.listActive(
+      modelId: descriptor.modelId,
+      version: descriptor.version,
+      now: DateTime.now(),
+    );
+    return active.isEmpty;
+  }
+
   Future<void> dispose() async {
     recordingViewModel?.dispose();
     if (recording.canFinalize) {
@@ -484,14 +603,7 @@ final class _MeetingFlowFixture {
       await preview.dispose();
     }
     await _session?.engine.dispose();
-    expect(
-      await leases.listActive(
-        modelId: AsrModelRegistry.alpha.defaultModel.modelId,
-        version: AsrModelRegistry.alpha.defaultModel.version,
-        now: DateTime.now(),
-      ),
-      isEmpty,
-    );
+    expect(await hasNoActiveModelLeases(), isTrue);
     await meetings.dispose();
     await installations.dispose();
     await database.close();
@@ -554,18 +666,18 @@ final class _FailingVoiceActivitySegmenter implements VoiceActivitySegmenter {
   int get sampleRate => 16000;
 
   @override
-  List<VadSpeechSegment> accept(Float32List samples) {
+  Future<List<VadSpeechSegment>> accept(Float32List samples) async {
     throw StateError('injected VAD failure after PCM persistence');
   }
 
   @override
-  List<VadSpeechSegment> flush() => const [];
+  Future<List<VadSpeechSegment>> flush() async => const [];
 
   @override
-  void reset({required int nextStartSample}) {}
+  Future<void> reset({required int nextStartSample}) async {}
 
   @override
-  void dispose() {}
+  Future<void> dispose() async {}
 }
 
 final class _ReadyMeetingChecker implements MeetingReadinessChecker {

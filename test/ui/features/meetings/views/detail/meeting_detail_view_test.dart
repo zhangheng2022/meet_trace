@@ -22,7 +22,7 @@ import '../../../../../support/final_transcription_fakes.dart';
 import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
-  testWidgets('完成页显示最终事实文本并可选择高级模型生成独立快照', (tester) async {
+  testWidgets('完成页只能使用本场锁定模型生成独立快照', (tester) async {
     final old = _snapshot(id: 'old');
     final fixture = _fixture(
       _meeting(
@@ -35,17 +35,10 @@ void main() {
     fixture.runner.onCall =
         ({
           required meetingId,
-          required modelId,
-          required modelVersion,
           required retrySnapshotId,
           required onProgress,
         }) async {
-          final completed = _snapshot(
-            id: 'qwen-new',
-            modelId: whisperSmallAdvancedModelId,
-            modelVersion: 'v1.9.1-q5_1',
-            text: '高级模型最终文本',
-          );
+          final completed = _snapshot(id: 'locked-new', text: '锁定模型最终文本');
           final meeting = fixture.meetings.value!
               .beginFinalTranscription()
               .activateFinalTranscript(completed);
@@ -63,6 +56,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(fixture.viewModel.canRetranscribe, isTrue);
     expect(find.textContaining('最终事实文本'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('segment-text-old-segment')),
@@ -70,27 +64,27 @@ void main() {
     );
     await tester.tap(find.text('录音'));
     await tester.pumpAndSettle();
-    expect(find.text('标准模型（Whisper Base）'), findsOneWidget);
-    expect(find.text('高级模型（Whisper Small）'), findsOneWidget);
+    expect(find.textContaining('本场锁定的标准模型（Whisper Base）'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey('retranscribe-model-whisper-cpp-small-q5_1-v1.9.1'),
+      ),
+      findsNothing,
+    );
 
-    final advanced = find.text('高级模型（Whisper Small）');
-    await tester.ensureVisible(advanced);
-    await tester.tap(advanced);
-    await tester.pump();
-    final retranscribe = find.text('使用所选模型重新转录');
+    final retranscribe = find.text('使用本场锁定模型重新转录');
     await tester.ensureVisible(retranscribe);
     await tester.tap(retranscribe);
     await tester.pumpAndSettle();
 
-    expect(fixture.runner.calls.single.modelId, whisperSmallAdvancedModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
     final transcriptTab = find.text('转录');
     await tester.ensureVisible(transcriptTab);
     await tester.pumpAndSettle();
     await tester.tap(transcriptTab);
     await tester.pumpAndSettle();
-    expect(find.textContaining('高级模型最终文本'), findsOneWidget);
-    expect(find.textContaining('来源模型：高级模型（Whisper Small）'), findsOneWidget);
+    expect(find.textContaining('锁定模型最终文本'), findsOneWidget);
+    expect(find.textContaining('来源模型：标准模型（Whisper Base）'), findsOneWidget);
     await fixture.dispose();
   });
 
@@ -104,8 +98,6 @@ void main() {
     fixture.runner.onCall =
         ({
           required meetingId,
-          required modelId,
-          required modelVersion,
           required retrySnapshotId,
           required onProgress,
         }) async {
@@ -318,13 +310,8 @@ void main() {
     final fixture = _fixture(_meeting());
     final completion = Completer<FinalTranscriptionResult>();
     fixture.runner.onCall =
-        ({
-          required meetingId,
-          required modelId,
-          required modelVersion,
-          required retrySnapshotId,
-          required onProgress,
-        }) => completion.future;
+        ({required meetingId, required retrySnapshotId, required onProgress}) =>
+            completion.future;
 
     await tester.pumpWidget(
       Application(
@@ -496,13 +483,8 @@ _Fixture _fixture(
     );
   }
   final runner = DetailTranscriptionRunner(
-    ({
-      required meetingId,
-      required modelId,
-      required modelVersion,
-      required retrySnapshotId,
-      required onProgress,
-    }) => throw UnimplementedError(),
+    ({required meetingId, required retrySnapshotId, required onProgress}) =>
+        throw UnimplementedError(),
   );
   return _Fixture(
     meetings: meetings,

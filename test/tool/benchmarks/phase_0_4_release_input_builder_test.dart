@@ -34,11 +34,11 @@ void main() {
     test('生命周期不足时生成 failed 值而不是伪造通过', () {
       final android = _androidEvidence();
       final measurements = android['measurements']! as Map<String, Object?>;
-      final recordingLifecycle =
-          measurements['recordingLifecycle']! as Map<String, Object?>;
+      final meetingLifecycle =
+          measurements['meetingLifecycle']! as Map<String, Object?>;
       final asrLifecycle =
           measurements['asrLifecycle']! as Map<String, Object?>;
-      recordingLifecycle['cycles'] = 9;
+      meetingLifecycle['cycles'] = 9;
       asrLifecycle['steadyStateGrowthBytes'] = 40 * 1024 * 1024;
 
       final input = const Phase04ReleaseInputBuilder().build(
@@ -156,6 +156,13 @@ Map<String, Object?> _androidEvidence() => {
     'recordingLifecycle': <String, Object?>{
       'cycles': 100,
       'allCaptureStreamsClosed': true,
+    },
+    'meetingLifecycle': <String, Object?>{
+      'cycles': 10,
+      'sealedMeetings': 10,
+      'allCaptureStreamsClosed': true,
+      'allPreviewSessionsDisposed': true,
+      'allModelLeasesReleased': true,
     },
   },
 };

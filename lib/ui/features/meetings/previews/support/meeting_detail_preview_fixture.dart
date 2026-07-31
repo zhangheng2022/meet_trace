@@ -115,8 +115,6 @@ final class _UnavailableTranscriptionRunner
   @override
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   }) => throw UnsupportedError('组件预览不运行最终转录');
@@ -128,8 +126,6 @@ final class _PendingTranscriptionRunner implements FinalTranscriptionRunner {
   @override
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   }) => Completer<FinalTranscriptionResult>().future;

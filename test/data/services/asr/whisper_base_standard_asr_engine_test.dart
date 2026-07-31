@@ -560,19 +560,19 @@ final class _ScriptedFinalVad implements VoiceActivitySegmenter {
   int get sampleRate => 16000;
 
   @override
-  List<VadSpeechSegment> accept(Float32List samples) {
+  Future<List<VadSpeechSegment>> accept(Float32List samples) async {
     acceptedSamples += samples.length;
     return const [];
   }
 
   @override
-  List<VadSpeechSegment> flush() => _segments;
+  Future<List<VadSpeechSegment>> flush() async => _segments;
 
   @override
-  void reset({required int nextStartSample}) {}
+  Future<void> reset({required int nextStartSample}) async {}
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     disposed = true;
   }
 }

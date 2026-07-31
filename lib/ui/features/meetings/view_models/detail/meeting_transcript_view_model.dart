@@ -5,14 +5,11 @@ final class MeetingTranscriptViewModel {
   final MeetingDetailViewModel _owner;
 
   TranscriptSnapshot? get snapshot => _owner.snapshot;
-  List<AsrModelDescriptor> get installedModels => _owner.installedModels;
-  String get selectedModelId => _owner.selectedModelId;
   bool get isTranscribing => _owner.isTranscribing;
   bool get isDiarizing => _owner.isDiarizing;
   bool get canRetry => _owner.canRetry;
   bool get canRetranscribe => _owner.canRetranscribe;
 
-  void selectModel(String modelId) => _owner._selectModel(modelId);
   Future<void> retry() => _owner._retry();
   Future<void> retranscribe() => _owner._retranscribe();
   Future<void> setDiarizationEnabled(bool enabled) =>
@@ -25,31 +22,15 @@ final class MeetingTranscriptViewModel {
 }
 
 extension _MeetingTranscriptOperations on MeetingDetailViewModel {
-  void _selectModel(String modelId) {
-    if (isProcessing ||
-        !_installedModels.any((model) => model.modelId == modelId)) {
-      return;
-    }
-    _selectedModelId = modelId;
-    _notify();
-  }
-
   Future<void> _retry() {
     final failed = _failedAttempt;
     if (failed == null) {
       return Future.value();
     }
-    return _run(
-      modelId: failed.actualModelId,
-      modelVersion: failed.actualModelVersion,
-      retrySnapshotId: failed.id,
-    );
+    return _run(retrySnapshotId: failed.id);
   }
 
-  Future<void> _retranscribe() {
-    final descriptor = registry.requireById(_selectedModelId);
-    return _run(modelId: descriptor.modelId, modelVersion: descriptor.version);
-  }
+  Future<void> _retranscribe() => _run();
 
   Future<void> _setDiarizationEnabled(bool enabled) async {
     final preferences = diarizationPreferences;
@@ -164,28 +145,16 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
       }
     }
     _installedModels = List.unmodifiable(installed);
-    if (!_installedModels.any((model) => model.modelId == _selectedModelId) &&
-        _installedModels.isNotEmpty) {
-      _selectedModelId = _installedModels.first.modelId;
-    }
     _notify();
   }
 
-  Future<void> _run({
-    String? modelId,
-    String? modelVersion,
-    String? retrySnapshotId,
-  }) {
+  Future<void> _run({String? retrySnapshotId}) {
     final current = _operation;
     if (current != null) {
       return current;
     }
-    final operation = _transcribe(
-      modelId: modelId,
-      modelVersion: modelVersion,
-      retrySnapshotId: retrySnapshotId,
-    );
-    _operationModelId = modelId ?? _meeting.recordingModelId;
+    final operation = _transcribe(retrySnapshotId: retrySnapshotId);
+    _operationModelId = _meeting.recordingModelId;
     _operation = operation;
     _notify();
     return operation.whenComplete(() {
@@ -198,19 +167,13 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
     });
   }
 
-  Future<void> _transcribe({
-    required String? modelId,
-    required String? modelVersion,
-    required String? retrySnapshotId,
-  }) async {
+  Future<void> _transcribe({required String? retrySnapshotId}) async {
     _errorMessage = null;
     _progress = 0;
     _notify();
     try {
       final result = await transcription.transcribe(
         meetingId: _meeting.id,
-        modelId: modelId,
-        modelVersion: modelVersion,
         retrySnapshotId: retrySnapshotId,
         onProgress: _applyProgress,
       );
@@ -305,7 +268,9 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
             .where(
               (snapshot) =>
                   snapshot.kind == TranscriptSnapshotKind.finalTranscript &&
-                  snapshot.status == TranscriptSnapshotStatus.failed,
+                  snapshot.status == TranscriptSnapshotStatus.failed &&
+                  snapshot.actualModelId == _meeting.recordingModelId &&
+                  snapshot.actualModelVersion == _meeting.recordingModelVersion,
             )
             .toList()
           ..sort((left, right) {
@@ -318,7 +283,9 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
             .where(
               (snapshot) =>
                   snapshot.kind == TranscriptSnapshotKind.finalTranscript &&
-                  snapshot.status == TranscriptSnapshotStatus.processing,
+                  snapshot.status == TranscriptSnapshotStatus.processing &&
+                  snapshot.actualModelId == _meeting.recordingModelId &&
+                  snapshot.actualModelVersion == _meeting.recordingModelVersion,
             )
             .toList()
           ..sort((left, right) {

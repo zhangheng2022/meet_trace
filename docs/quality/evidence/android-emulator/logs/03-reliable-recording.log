@@ -25,7 +25,7 @@ Running Gradle task 'assembleDebug'...
 flutter.bat : WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): flutter_foreground_ta
 sk
 At <workspace>\tool\benchmarks\run_android_
-emulator_smoke.ps1:75 char:9
+emulator_smoke.ps1:76 char:9
 +         & flutter @Arguments 2>&1 | Tee-Object -FilePath $LogPath
 +         ~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : NotSpecified: (WARNING: Your a...foreground_task:String) [], RemoteException
@@ -40,10 +40,13 @@ ers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
 
 If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/re
 lease/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
-Running Gradle task 'assembleDebug'...                             14.5s
+Running Gradle task 'assembleDebug'...                             16.1s
 √ Built build\app\outputs\flutter-apk\app-debug.apk
-Installing build\app\outputs\flutter-apk\app-debug.apk...        1,210ms
+Installing build\app\outputs\flutter-apk\app-debug.apk...        1,541ms
 00:00 +0: 前后台切换时事实 PCM 持续写入并原子封存
-MEETTRACE_STEP07_RECORDING:{"schemaVersion":1,"recordingSeconds":30,"fileBytes":960512,"persistedBytes":960512,"persistenceRatio":1.0,"captureCompletenessRatio":1.0004259959608501,"droppedPreviewChunks":0,"pcmDiagnostics":{"sampleRate":16000,"channelCount":1,"bitsPerSample":16,"chunkCount":469,"totalBytes":960512,"sampleCount":480256,"durationMicros":30016000,"peakNormalized":1.0,"rmsNormalized":0.7074000526674378,"dcOffsetNormalized":0.000042596097185667646,"clippedSampleCount":4406,"clippingRatio":0.009174273720682302}}
-00:37 +1: (tearDownAll)
-00:37 +1: All tests passed!
+MEETTRACE_STEP07_STAGE:recording_started
+MEETTRACE_STEP07_STAGE:stopping;persistedBytes=950272
+MEETTRACE_STEP07_STAGE:recording_finalized
+MEETTRACE_STEP07_RECORDING:{"schemaVersion":1,"recordingSeconds":30,"fileBytes":960512,"persistedBytes":960512,"persistenceRatio":1.0,"captureCompletenessRatio":1.00044892045567,"droppedPreviewChunks":0,"pcmDiagnostics":{"sampleRate":16000,"channelCount":1,"bitsPerSample":16,"chunkCount":469,"totalBytes":960512,"sampleCount":480256,"durationMicros":30016000,"peakNormalized":1.0,"rmsNormalized":0.7074000526674378,"dcOffsetNormalized":0.000042596097185667646,"clippedSampleCount":4406,"clippingRatio":0.009174273720682302}}
+00:31 +1: (tearDownAll)
+00:31 +1: All tests passed!

@@ -46,9 +46,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     this.playback,
     this.shareBuilder = const BuildMeetingShareUseCase(),
     AsrModelRegistry? registry,
-  }) : _meeting = meeting,
-       registry = registry ?? AsrModelRegistry.alpha,
-       _selectedModelId = meeting.recordingModelId {
+  }) : _meeting = _requireLockedMeeting(meeting),
+       registry = registry ?? AsrModelRegistry.alpha {
     transcriptSection = MeetingTranscriptViewModel._(this);
     summarySection = MeetingSummaryViewModel._(this);
     audioSection = MeetingAudioViewModel._(this);
@@ -90,7 +89,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   Future<void>? _resultOperation;
   double _progress = 0;
   String? _errorMessage;
-  String _selectedModelId;
   String? _operationModelId;
   bool _isLoading = true;
   bool _diarizationEnabled = false;
@@ -127,7 +125,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       List.unmodifiable(_installedModels);
   double get progress => _progress;
   String? get errorMessage => _errorMessage;
-  String get selectedModelId => _selectedModelId;
   bool get isLoading => _isLoading;
   bool get isProcessing =>
       _operation != null ||
@@ -195,7 +192,11 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   bool get canRetranscribe =>
       !isProcessing &&
       _meeting.status == MeetingState.completed &&
-      _installedModels.isNotEmpty;
+      _installedModels.any(
+        (model) =>
+            model.modelId == _meeting.recordingModelId &&
+            model.version == _meeting.recordingModelVersion,
+      );
 
   AsrModelDescriptor get sourceModel => registry.requireById(
     _operationModelId ??
@@ -206,7 +207,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
 
   Future<void> load() => _loading ??= _load();
 
-  void selectModel(String modelId) => transcriptSection.selectModel(modelId);
   Future<void> retry() => transcriptSection.retry();
   Future<void> retranscribe() => transcriptSection.retranscribe();
   Future<void> setDiarizationEnabled(bool enabled) =>
@@ -242,11 +242,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       if (_meeting.status == MeetingState.processing &&
           _snapshot?.status != TranscriptSnapshotStatus.complete) {
         final pending = _processingAttempt;
-        await _run(
-          modelId: pending?.actualModelId,
-          modelVersion: pending?.actualModelVersion,
-          retrySnapshotId: pending?.id,
-        );
+        await _run(retrySnapshotId: pending?.id);
       } else {
         await _runDiarizationIfNeeded();
         if (_shouldAutoGenerateSummary) {
@@ -283,4 +279,12 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     unawaited(playback?.dispose());
     super.dispose();
   }
+}
+
+Meeting _requireLockedMeeting(Meeting meeting) {
+  if (meeting.recordingModelId.trim().isEmpty ||
+      meeting.recordingModelVersion.trim().isEmpty) {
+    throw ArgumentError('会议缺少锁定的 ASR 模型身份');
+  }
+  return meeting;
 }

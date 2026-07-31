@@ -163,7 +163,7 @@ final class WhisperVadSegmenter implements VoiceActivitySegmenter {
   }
 
   @override
-  void reset({required int nextStartSample}) {
+  Future<void> reset({required int nextStartSample}) async {
     _throwIfDisposed();
     if (nextStartSample < 0) {
       throw ArgumentError.value(nextStartSample, 'nextStartSample', '不能为负数');

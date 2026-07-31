@@ -7,6 +7,10 @@
 
 - Flutter/Forui 自适应 UI、SQLite 数据层、可靠 PCM 录音、checkpoint 与启动恢复。
 - 统一 `AsrEngine`、会议模型锁定、有界预览队列、最终转录快照与失败重试。
+- 最终转录端口已移除模型覆盖参数；完成页重试和重新转录始终使用本场锁定模型，
+  不允许选择已安装的另一模型。
+- VAD 端口已统一为严格异步契约；事实录音使用 250 ms 有界提交窗口合并写入，
+  不通过暂停平台采集流制造背压，仍保持落盘/checkpoint 先于预览。
 - 说话人可降级、AI 总结证据链、分享与本地删除。
 - 官方 `whisper.cpp` v1.9.1 Native Assets 接入、Base 内置、Small 下载管理和旧偏好迁移。
 - Android 模拟器已完成 Base/Small 的固定版本 ASCEND 回归，以及 fixed-window、
@@ -29,6 +33,10 @@
   Profile/Pipeline 矩阵门禁，质量指标只能由脱敏聚合报告自动写入。该报告显式使用
   `evaluationScope=phase-0-4`，不会让阶段 5 以后的 Android 真机、iOS 和 Release
   门槛污染本阶段结论；Android 模拟器证据由完整日志自动推导，并以 SHA-256 绑定。
+- API 36 x86_64 模拟器已重新通过 30 秒真实录音（完整率 1.00045）、100 次 Base
+  Native 生命周期、100 次 VAD 生命周期、100 次事实录音生命周期和 10 次完整会议
+  生命周期；Base/VAD 原生压力均在 worker isolate 执行，10 次会议均封存并释放采集流、
+  预览会话和模型租约。
 
 ## 当前交付顺序
 

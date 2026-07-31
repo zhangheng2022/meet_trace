@@ -34,6 +34,7 @@ void main() {
       expect(evidence['status'], 'passed');
       expect(evidence['nativeLifecycleCycles'], 100);
       expect(evidence['vadLifecycleCycles'], 100);
+      expect(evidence['meetingLifecycleCycles'], 10);
       expect(
         results.cast<Map<String, Object?>>().every(
           (result) => (result['logSha256']! as String).length == 64,
@@ -97,6 +98,32 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('拒绝没有实测资源释放结论的完整会议标记', () async {
+      final report = await _fixture(root);
+      final results = report['results']! as List<Object?>;
+      final flow = results.cast<Map<String, Object?>>().singleWhere(
+        (result) => result['name'] == 'android-emulator-meeting-flow',
+      );
+      final log = File(p.join(root.path, flow['log']! as String));
+      final content = await log.readAsString();
+      await log.writeAsString(
+        content.replaceFirst(
+          '"allModelLeasesReleased":true',
+          '"allModelLeasesReleased":false',
+        ),
+      );
+
+      expect(
+        () => rebuildAndroidEmulatorSmokeEvidence(
+          interruptedReport: report,
+          repositoryRoot: root,
+          apiLevel: 36,
+          abi: 'x86_64',
+        ),
+        throwsFormatException,
+      );
+    });
   });
 }
 
@@ -118,7 +145,12 @@ Future<Map<String, Object?>> _fixture(Directory root) async {
         '{"schemaVersion":1,"cycles":100}\n'
         'MEETTRACE_ANDROID_RECORDING_CYCLES:'
         '{"schemaVersion":1,"cycles":100}\n'
-        '00:01 +4: All tests passed!',
+        'MEETTRACE_ANDROID_MEETING_CYCLES:'
+        '{"schemaVersion":1,"cycles":10,"sealedMeetings":10,'
+        '"allCaptureStreamsClosed":true,'
+        '"allPreviewSessionsDisposed":true,'
+        '"allModelLeasesReleased":true}\n'
+        '00:01 +5: All tests passed!',
   };
   final results = <Map<String, Object?>>[];
   const commands = {

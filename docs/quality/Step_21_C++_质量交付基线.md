@@ -39,13 +39,14 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | `flutter pub get` | 通过 |
 | `flutter analyze` | 通过，0 diagnostics |
-| `flutter test` | 通过，人工晋级、可恢复矩阵、失败诊断与重复 PCM 防绕过补强后共 428 tests |
+| `flutter test` | 通过，模型锁定、异步 VAD、录音批量提交和完整会议生命周期补强后共 431 tests |
 | `flutter build apk --debug` | 通过，本轮 80.4 秒 |
 | `tool/benchmarks/inspect_debug_apk.ps1` | 通过，报告写入忽略目录 `.spike/results/apk-inspection.json` |
 | Base 模拟器集成测试 | 通过，真实 Native Assets 初始化/推理/释放 |
-| 30 秒模拟器录音测试 | 通过，960,512 bytes，完整率 1.00042，0 个预览丢弃 |
+| 30 秒模拟器录音测试 | 通过，960,512 bytes，完整率 1.00045，0 个预览丢弃 |
 | 端到端会议流 | 通过，真实 `Application`/`FTheme`、临时数据库、Base 最终快照 |
-| Native context 生命周期 | 通过，连续 100 次创建/推理/幂等释放；首尾 RSS +15,822,848 bytes，预热后 RSS +6,242,304 bytes |
+| 完整会议生命周期 | 通过，连续 10 次创建、录音、停止和封存；采集流、预览会话与模型租约全部释放 |
+| Native context 生命周期 | 通过，worker isolate 连续 100 次创建/推理/幂等释放；首尾 RSS +6,971,392 bytes，预热后 RSS -3,125,248 bytes |
 | Small 模拟器原生冒烟 | 通过，固定 SHA-256 权重完成初始化、窗口推理和释放，67 秒 |
 
 首次 `flutter test` 因 Dart 下载 `sqlite3.x64.windows.dll` 时 TLS 握手中断而失败；
@@ -151,7 +152,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 
 ### 5.3 阶段 0～4 自动发布评估
 
-- `AlphaReleaseEvaluationInput` schema 已升级为 `6`，输出报告 schema 为 `3`；旧输入
+- `AlphaReleaseEvaluationInput` schema 已升级为 `7`，输出报告 schema 为 `3`；旧输入
   schema 或缺少新增字段时返回 `blocked`，不会沿用旧默认值。
 - 正式质量门槛要求 `corpus.evidenceClass=product-meeting`，并校验 manifest
   SHA-256、来源和授权标识。`public-regression` 与 `synthetic-smoke` 会明确失败，
@@ -216,15 +217,28 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 | x86_64 Debug 构建 | 通过 |
 | Base Native Assets 初始化、推理、释放 | 通过 |
 | Small Native Assets 初始化、推理、释放 | 通过；本机忽略目录权重，未进入 APK |
-| 30 秒真实麦克风 PCM | 960,512 bytes，完整率 1.00042，持久化比 1.0 |
+| 30 秒真实麦克风 PCM | 960,512 bytes，完整率 1.00045，持久化比 1.0 |
 | 预览故障注入 | `asr.preview.vad_failed`，事实 PCM 继续增长 |
 | 最终快照 | `complete`，实际模型/版本与会议锁定 Base 一致 |
-| Native context 100 次生命周期 | 通过；第 10→100 次 RSS +6,242,304 bytes，小于 32 MiB 上限 |
+| Native context 100 次生命周期 | 通过；worker isolate 第 10→100 次 RSS -3,125,248 bytes，小于 32 MiB 上限 |
 | 事实 PCM 100 次开始/停止 | 通过，所有采集流关闭、checkpoint 均 finalized |
+| 完整会议 10 次开始/停止 | 通过，10/10 封存；采集流、预览会话、模型租约全部释放 |
 
 端到端会议测试通过 `PcmAudioCapture` 注入确定性 PCM，同时使用真实写盘、真实 SQLite、
 真实 Base 推理与最终快照原子激活；真实麦克风完整率由独立 30 秒测试负责。两类证据分开，
 避免把宿主麦克风的非确定输入当成转录正确性语料。
+
+原生生命周期压力测试曾在测试/UI isolate 直接调用同步 `mt_whisper_transcribe`，API 36
+模拟器因焦点事件 5 秒未响应产生真实 ANR。Base 与 VAD 的原生百次循环现均通过
+`compute` worker isolate 执行，主 isolate 只接收可序列化指标、校验门槛和输出标记；
+干净重启后的完整链连续运行 23 分钟通过，未再出现 ANR 或 Flutter VM 通道中断。
+
+录音服务不再为每个写盘任务暂停平台音频订阅。平台采集持续进入内存队列，默认最多等待
+250 ms 后把当前 PCM 块合并为一次文件写入、一次 `flush` 和一次 checkpoint，再逐块投递
+可丢弃预览；停止录音会先停止采集再等待最后一批事实音频落盘。该顺序保留
+`write → flush → checkpoint → preview`，同时避免 Android `record` 流在 Dart
+subscription 背压期间丢失 PCM。单元测试覆盖“不暂停平台采集”和“提交窗口只生成一次
+checkpoint”，模拟器 30 秒实测负责验证完整率门槛。
 
 ## 8. 会议启动失败诊断
 
@@ -253,6 +267,7 @@ Engine 初始化或会议持久化失败时会 best-effort 释放已创建 Engin
 | 预览故障后 PCM 继续增长 | 通过 |
 | 不少于 10 次 Native context 无持续增长 | 通过，实际 100 次 |
 | 不少于 10 次事实 PCM 开始/停止无采集流残留 | 通过，实际 100 次 |
+| 不少于 10 次完整会议无预览会话或模型租约残留 | 通过，实际 10 次 |
 | 启动失败有稳定错误码和动作 | 通过 |
 | 30 分钟 Android 真机录音 | 留待阶段 5，不属于本模拟器 Gate |
 

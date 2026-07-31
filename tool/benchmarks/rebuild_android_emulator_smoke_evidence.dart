@@ -9,6 +9,7 @@ const _meetingFlowMarker = 'MEETTRACE_ANDROID_EMULATOR_FLOW:';
 const _asrLifecycleMarker = 'MEETTRACE_ANDROID_NATIVE_CYCLES:';
 const _vadLifecycleMarker = 'MEETTRACE_ANDROID_NATIVE_VAD:';
 const _recordingLifecycleMarker = 'MEETTRACE_ANDROID_RECORDING_CYCLES:';
+const _meetingLifecycleMarker = 'MEETTRACE_ANDROID_MEETING_CYCLES:';
 
 Future<void> main(List<String> arguments) async {
   final inputPath = _valueOf(arguments, '--input');
@@ -138,12 +139,14 @@ Future<Map<String, Object?>> rebuildAndroidEmulatorSmokeEvidence({
   final asrLifecycle = _readMarker(flowLog, _asrLifecycleMarker);
   final vadLifecycle = _readMarker(flowLog, _vadLifecycleMarker);
   final recordingLifecycle = _readMarker(flowLog, _recordingLifecycleMarker);
+  final meetingLifecycle = _readMarker(flowLog, _meetingLifecycleMarker);
   for (final marker in [
     recording,
     meetingFlow,
     asrLifecycle,
     vadLifecycle,
     recordingLifecycle,
+    meetingLifecycle,
   ]) {
     if (marker['schemaVersion'] != 1) {
       throw const FormatException('证据 marker schemaVersion 必须为 1');
@@ -153,6 +156,14 @@ Future<Map<String, Object?>> rebuildAndroidEmulatorSmokeEvidence({
   final nativeCycles = _integer(asrLifecycle, 'cycles');
   if (_integer(recordingLifecycle, 'cycles') != nativeCycles) {
     throw const FormatException('ASR 与录音生命周期次数不一致');
+  }
+  final meetingCycles = _integer(meetingLifecycle, 'cycles');
+  if (meetingCycles < 10 ||
+      _integer(meetingLifecycle, 'sealedMeetings') != meetingCycles ||
+      meetingLifecycle['allCaptureStreamsClosed'] != true ||
+      meetingLifecycle['allPreviewSessionsDisposed'] != true ||
+      meetingLifecycle['allModelLeasesReleased'] != true) {
+    throw const FormatException('完整会议生命周期证据未证明资源全部释放');
   }
 
   return {
@@ -165,6 +176,7 @@ Future<Map<String, Object?>> rebuildAndroidEmulatorSmokeEvidence({
     'recordingSeconds': recordingSeconds,
     'nativeLifecycleCycles': nativeCycles,
     'vadLifecycleCycles': _integer(vadLifecycle, 'cycles'),
+    'meetingLifecycleCycles': meetingCycles,
     'results': results,
     'measurements': {
       'recording': recording,
@@ -172,6 +184,7 @@ Future<Map<String, Object?>> rebuildAndroidEmulatorSmokeEvidence({
       'asrLifecycle': asrLifecycle,
       'vadLifecycle': vadLifecycle,
       'recordingLifecycle': recordingLifecycle,
+      'meetingLifecycle': meetingLifecycle,
     },
     'evidenceAssembly': {
       'source': 'completed-sanitized-logs',

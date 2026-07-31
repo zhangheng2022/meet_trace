@@ -41,7 +41,7 @@ void main() {
   test('时间轴中断后从 reset 的全局样本位置重新开始', () async {
     final segmenter = _segmenter();
     await segmenter.accept(Float32List(2 * whisperVadSampleRate));
-    segmenter.reset(nextStartSample: 8 * whisperVadSampleRate);
+    await segmenter.reset(nextStartSample: 8 * whisperVadSampleRate);
     final speech = Float32List(2 * whisperVadSampleRate)
       ..fillRange(0, 2 * whisperVadSampleRate, 0.8);
 

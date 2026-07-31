@@ -4,6 +4,7 @@ param(
     [int]$RecordingSeconds = 30,
     [int]$NativeLifecycleCycles = 100,
     [int]$VadLifecycleCycles = 100,
+    [int]$MeetingLifecycleCycles = 10,
     [string]$EvidenceDirectory = "docs/quality/evidence/android-emulator",
     [string]$ReleaseInputPath = "docs/quality/evidence/android-emulator/phase-0-4-release-input.json",
     [string]$ReleaseReportPath = "docs/quality/evidence/android-emulator/phase-0-4-release-report.json"
@@ -147,6 +148,23 @@ function Read-JsonMarker {
     return $line.Substring($Marker.Length) | ConvertFrom-Json
 }
 
+function Write-JsonFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Value,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $json = ($Value | ConvertTo-Json -Depth 10).Replace("`r`n", "`n") + "`n"
+    [System.IO.File]::WriteAllText(
+        $Path,
+        $json,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+}
+
 if ($RecordingSeconds -lt 1) {
     throw "RecordingSeconds must be greater than zero."
 }
@@ -155,6 +173,9 @@ if ($NativeLifecycleCycles -lt 1) {
 }
 if ($VadLifecycleCycles -lt 1) {
     throw "VadLifecycleCycles must be greater than zero."
+}
+if ($MeetingLifecycleCycles -lt 10) {
+    throw "MeetingLifecycleCycles must be at least 10."
 }
 
 $smokeReportWritten = $false
@@ -227,7 +248,8 @@ try {
             "-d",
             $resolvedDeviceId,
             "--dart-define=MEETTRACE_NATIVE_LIFECYCLE_CYCLES=$NativeLifecycleCycles",
-            "--dart-define=MEETTRACE_VAD_LIFECYCLE_CYCLES=$VadLifecycleCycles"
+            "--dart-define=MEETTRACE_VAD_LIFECYCLE_CYCLES=$VadLifecycleCycles",
+            "--dart-define=MEETTRACE_MEETING_LIFECYCLE_CYCLES=$MeetingLifecycleCycles"
         ) `
         -LogPath $meetingFlowLogPath
 
@@ -247,6 +269,9 @@ try {
         recordingLifecycle = Read-JsonMarker `
             -LogPath $meetingFlowLogPath `
             -Marker "MEETTRACE_ANDROID_RECORDING_CYCLES:"
+        meetingLifecycle = Read-JsonMarker `
+            -LogPath $meetingFlowLogPath `
+            -Marker "MEETTRACE_ANDROID_MEETING_CYCLES:"
     }
 
     $finishedAt = [DateTimeOffset]::UtcNow
@@ -262,12 +287,12 @@ try {
         recordingSeconds = $RecordingSeconds
         nativeLifecycleCycles = $NativeLifecycleCycles
         vadLifecycleCycles = $VadLifecycleCycles
+        meetingLifecycleCycles = $MeetingLifecycleCycles
         results = $script:results
         measurements = $measurements
     }
     $reportPath = Join-Path $evidenceRoot "android-emulator-smoke.json"
-    $report | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding utf8
-    $smokeReportWritten = $true
+    Write-JsonFile -Value $report -Path $reportPath
     $androidEvidenceRef = (
         Resolve-Path -LiteralPath $reportPath -Relative
     ) -replace "^[.][\\/]", ""
@@ -290,6 +315,7 @@ try {
     if ($releaseExitCode -ne 0 -and $releaseExitCode -ne 2) {
         throw "Phase 0-4 release evaluation failed with exit code $releaseExitCode."
     }
+    $smokeReportWritten = $true
     Write-Output "Android emulator evidence: $reportPath"
     Write-Output "Phase 0-4 release report: $ReleaseReportPath"
 }
@@ -303,7 +329,7 @@ catch {
             results = $script:results
         }
         $failurePath = Join-Path $evidenceRoot "android-emulator-smoke.json"
-        $failureReport | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $failurePath -Encoding utf8
+        Write-JsonFile -Value $failureReport -Path $failurePath
     }
     throw
 }

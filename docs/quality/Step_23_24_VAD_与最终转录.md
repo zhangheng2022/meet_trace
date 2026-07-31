@@ -19,6 +19,8 @@ SHA-256 均匹配；未包含 Small、sherpa、ONNX、用户音频或数据库�
 ## 2. 会中预览
 
 - `WhisperVadSegmenter` 在专用 isolate 中持有原生 VAD context。
+- `VoiceActivitySegmenter` 的 `accept/flush/reset/dispose` 均为严格异步契约；
+  测试替身和固定窗口分段器也遵守同一端口，不再允许同步实现掩盖 worker 等待。
 - 输入按全局采样点对齐分析，保留 1 秒未决尾段，输出全局、单调的语音区间。
 - 滚动缓冲有上限；超过 15 秒的语音区间仍由预览规划器分窗。
 - 事实 PCM 先写盘，再把副本投递给有界预览 dispatcher；VAD/ASR 慢、失败或 worker
@@ -32,6 +34,9 @@ SHA-256 均匹配；未包含 Small、sherpa、ONNX、用户音频或数据库�
 - 重叠 VAD 区间在识别前确定性合并；输出时间戳始终使用会议全局时间轴。
 - 纯静音生成 `complete` 的零片段最终快照，不调用 ASR。
 - 只有完整快照通过身份、时间戳、排序校验后才原子激活；失败继续保留旧活动快照。
+- 完成页的重试和重新转录不再接受模型覆盖参数，也不显示模型选择器；Domain Use Case
+  始终读取会议创建时保存的 `recordingModelId` 和 `recordingModelVersion`。即使另一模型
+  已安装，也只能使用本场锁定模型生成新的独立快照。
 
 ## 4. 自动化与模拟器证据
 
@@ -40,12 +45,13 @@ SHA-256 均匹配；未包含 Small、sherpa、ONNX、用户音频或数据库�
 | 不同 chunk 边界 | 单元测试得到相同最终 VAD 区间 |
 | 纯静音 | 单元测试及 API 36 x86_64 原生 VAD 均为 0 片段 |
 | VAD isolate | API 36 x86_64 成功加载、检测、幂等释放 |
-| VAD 生命周期 | 100 次 create/detect/cancel-reset/destroy 通过，预热后 RSS -5,836,800 bytes |
+| VAD 生命周期 | worker isolate 100 次 create/detect/cancel-reset/destroy 通过，预热后 RSS -892,928 bytes |
 | Android 双管线评测 | 固定窗口与生产 VAD 分段可在同设备、模型、Profile、语料上直接比较 |
 | 预览故障 | 事实 PCM 继续增长，最终快照仍 `complete` |
 | 最终重新分段 | 只识别从完整 PCM 得到的脚本化语音区间 |
 | 快照原子性 | 数据库冲突/推理失败测试保留旧活动快照 |
 | 总结事实源 | 现有测试只允许读取已激活的完整最终快照 |
+| 完整会议生命周期 | 10/10 封存，采集流、预览会话和模型租约全部释放 |
 
 入口：
 
@@ -144,6 +150,7 @@ Small 在严格整句回归上提高 10.53 个百分点，但模拟器 P50 RTF �
 | 官方 VAD 资产、C ABI、isolate、chunk 一致性、静音零片段 | 通过 |
 | 会中预览和最终转录使用同一 VAD 参数语义 | 通过 |
 | 预览丢弃不改变最终完整 PCM 重跑 | 通过 |
+| 重试和重新转录只能使用本场锁定模型/版本 | 通过 |
 | 时间戳、排序、旧快照原子保留、总结事实源 | 通过 |
 | 噪声幻觉相对阶段 0 下降至少 80% | `blocked`：缺少真实语料 |
 | 语音首尾关键事实不丢失 | `blocked`：缺少真实语料 |

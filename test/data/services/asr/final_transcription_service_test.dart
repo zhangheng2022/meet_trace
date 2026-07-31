@@ -113,7 +113,7 @@ void main() {
     expect(transcripts.saved.last.status, TranscriptSnapshotStatus.failed);
   });
 
-  test('重新转录可显式选择另一已安装模型并生成独立快照', () async {
+  test('重新转录仍使用本场锁定模型并生成独立快照', () async {
     meetings.value = _meeting(
       status: MeetingState.completed,
       activeTranscriptSnapshotId: 'old-snapshot',
@@ -128,20 +128,15 @@ void main() {
             createdAt: now,
           );
         };
-    final qwen = AsrModelRegistry.alpha.requireById(
-      whisperSmallAdvancedModelId,
-    );
+    final result = await service.transcribe(meetingId: 'meeting-1');
 
-    final result = await service.transcribe(
-      meetingId: 'meeting-1',
-      modelId: qwen.modelId,
-      modelVersion: qwen.version,
-    );
-
-    expect(engines.createCalls.single, (qwen.modelId, qwen.version));
+    expect(engines.createCalls.single, (
+      whisperBaseStandardModelId,
+      'v1.9.1-q5_1',
+    ));
     expect(result.snapshot.id, 'snapshot-attempt-1');
     expect(result.snapshot.id, isNot('old-snapshot'));
-    expect(result.snapshot.actualModelId, qwen.modelId);
+    expect(result.snapshot.actualModelId, whisperBaseStandardModelId);
     expect(result.meeting.activeSummaryId, isNull);
   });
 

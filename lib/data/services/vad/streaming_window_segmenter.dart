@@ -45,7 +45,7 @@ final class StreamingWindowSegmenter implements VoiceActivitySegmenter {
   bool _disposed = false;
 
   @override
-  List<VadSpeechSegment> accept(Float32List samples) {
+  Future<List<VadSpeechSegment>> accept(Float32List samples) async {
     _throwIfDisposed();
     if (samples.isEmpty) {
       return const [];
@@ -66,7 +66,7 @@ final class StreamingWindowSegmenter implements VoiceActivitySegmenter {
   }
 
   @override
-  List<VadSpeechSegment> flush() {
+  Future<List<VadSpeechSegment>> flush() async {
     _throwIfDisposed();
     final remaining = _availableEndSample - _nextWindowStartSample;
     if (remaining < _minimumFlushSamples) {
@@ -82,7 +82,7 @@ final class StreamingWindowSegmenter implements VoiceActivitySegmenter {
   }
 
   @override
-  void reset({required int nextStartSample}) {
+  Future<void> reset({required int nextStartSample}) async {
     _throwIfDisposed();
     if (nextStartSample < 0) {
       throw ArgumentError.value(nextStartSample, 'nextStartSample', '不能为负数');
@@ -92,7 +92,7 @@ final class StreamingWindowSegmenter implements VoiceActivitySegmenter {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _disposed = true;
   }
 

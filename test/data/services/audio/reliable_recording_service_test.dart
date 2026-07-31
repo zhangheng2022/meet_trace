@@ -36,10 +36,12 @@ void main() {
     RecordingPreviewSink preview = const DiscardingRecordingPreviewSink(),
     int freeBytes = 512 * 1024 * 1024,
     RecordingCheckpointStore? checkpointStore,
+    PcmAudioCapture? captureOverride,
     Duration captureStopTimeout = const Duration(milliseconds: 20),
+    Duration factCommitInterval = Duration.zero,
   }) {
     return ReliableRecordingService(
-      capture: capture,
+      capture: captureOverride ?? capture,
       layout: layout,
       checkpoints: checkpointStore ?? checkpoints,
       storageCapacity: FixedRecordingStorageCapacity(freeBytes),
@@ -47,6 +49,7 @@ void main() {
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
       captureStopTimeout: captureStopTimeout,
+      factCommitInterval: factCommitInterval,
       now: () => DateTime.utc(2026, 7, 24, 8),
     );
   }
@@ -123,6 +126,41 @@ void main() {
     expect(await File(result.audioPath).length(), 9600);
     expect(previewCalls, 1);
     firstPreview.complete();
+  });
+
+  test('内部写盘排队不会暂停平台采集流', () async {
+    final pauseAwareCapture = _PauseAwarePcmAudioCapture();
+    addTearDown(pauseAwareCapture.dispose);
+    final service = createService(captureOverride: pauseAwareCapture);
+
+    await service.start(meetingId: 'meeting-no-capture-backpressure');
+    for (var index = 0; index < 20; index++) {
+      pauseAwareCapture.add(_pcmBytes(3200));
+    }
+    await _waitFor(() => service.persistedBytes == 64000);
+    final result = await service.stop();
+
+    expect(result.bytes, 64000);
+    expect(pauseAwareCapture.subscriptionPauseCount, 0);
+  });
+
+  test('提交窗口内的 PCM 块合并为一次事实落盘 checkpoint', () async {
+    final countingCheckpoints = _CountingRecordingCheckpointStore(checkpoints);
+    final service = createService(
+      checkpointStore: countingCheckpoints,
+      factCommitInterval: const Duration(milliseconds: 20),
+    );
+
+    await service.start(meetingId: 'meeting-batched-fact-commit');
+    for (var index = 0; index < 20; index++) {
+      capture.add(_pcmBytes(3200));
+    }
+    await _waitFor(() => service.persistedBytes == 64000);
+
+    expect(countingCheckpoints.saveCount, 2);
+    final result = await service.stop();
+    expect(result.bytes, 64000);
+    expect(countingCheckpoints.saveCount, 3);
   });
 
   test('暂停和恢复只按已持久化样本累计连续时间轴', () async {
@@ -392,6 +430,53 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
   }
 }
 
+final class _PauseAwarePcmAudioCapture implements PcmAudioCapture {
+  _PauseAwarePcmAudioCapture() {
+    _controller.onPause = () => subscriptionPauseCount++;
+  }
+
+  final StreamController<Uint8List> _controller = StreamController<Uint8List>();
+  int subscriptionPauseCount = 0;
+  bool _started = false;
+
+  void add(Uint8List bytes) {
+    if (!_started) {
+      throw StateError('capture has not started');
+    }
+    _controller.add(Uint8List.fromList(bytes));
+  }
+
+  @override
+  Future<bool> hasPermission({bool request = true}) async => true;
+
+  @override
+  Future<Stream<Uint8List>> start() async {
+    _started = true;
+    return _controller.stream;
+  }
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> resume() async {}
+
+  @override
+  Future<void> stop() async {
+    if (!_controller.isClosed) {
+      await _controller.close();
+    }
+    _started = false;
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (!_controller.isClosed) {
+      await _controller.close();
+    }
+  }
+}
+
 final class FixedRecordingStorageCapacity
     implements RecordingStorageCapacityProvider {
   const FixedRecordingStorageCapacity(this.freeBytes);
@@ -439,5 +524,26 @@ final class _FailingRecordingCheckpointStore
   @override
   Future<void> save(RecordingCheckpoint checkpoint) async {
     throw FileSystemException('checkpoint write failed');
+  }
+}
+
+final class _CountingRecordingCheckpointStore
+    implements RecordingCheckpointStore {
+  _CountingRecordingCheckpointStore(this.delegate);
+
+  final RecordingCheckpointStore delegate;
+  int saveCount = 0;
+
+  @override
+  Future<void> delete(String meetingId) => delegate.delete(meetingId);
+
+  @override
+  Future<RecordingCheckpoint?> load(String meetingId) =>
+      delegate.load(meetingId);
+
+  @override
+  Future<void> save(RecordingCheckpoint checkpoint) {
+    saveCount++;
+    return delegate.save(checkpoint);
   }
 }

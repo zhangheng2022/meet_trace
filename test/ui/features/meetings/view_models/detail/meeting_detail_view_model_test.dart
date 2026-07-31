@@ -23,8 +23,6 @@ void main() {
     fixture.runner.onCall =
         ({
           required meetingId,
-          required modelId,
-          required modelVersion,
           required retrySnapshotId,
           required onProgress,
         }) async {
@@ -41,8 +39,7 @@ void main() {
 
     await fixture.viewModel.load();
 
-    expect(fixture.runner.calls.single.modelId, isNull);
-    expect(fixture.runner.calls.single.modelVersion, isNull);
+    expect(fixture.runner.calls.single.retrySnapshotId, isNull);
     expect(fixture.viewModel.progress, 1);
     expect(fixture.viewModel.snapshot?.id, completed.id);
     expect(fixture.viewModel.meeting.status, MeetingState.completed);
@@ -59,8 +56,6 @@ void main() {
     fixture.runner.onCall =
         ({
           required meetingId,
-          required modelId,
-          required modelVersion,
           required retrySnapshotId,
           required onProgress,
         }) async {
@@ -90,8 +85,6 @@ void main() {
 
     final retry = fixture.runner.calls.last;
     expect(retry.retrySnapshotId, failed.id);
-    expect(retry.modelId, whisperBaseStandardModelId);
-    expect(retry.modelVersion, 'v1.9.1-q5_1');
     expect(
       fixture.viewModel.snapshot?.status,
       TranscriptSnapshotStatus.complete,
@@ -99,7 +92,7 @@ void main() {
     await fixture.dispose();
   });
 
-  test('完成后可选择当前已安装高级模型生成独立重转录', () async {
+  test('完成后即使高级模型已安装也只使用本场锁定模型重转录', () async {
     final active = _snapshot(id: 'old');
     final fixture = _fixture(
       _meeting(
@@ -112,16 +105,10 @@ void main() {
     fixture.runner.onCall =
         ({
           required meetingId,
-          required modelId,
-          required modelVersion,
           required retrySnapshotId,
           required onProgress,
         }) async {
-          final completed = _snapshot(
-            id: 'qwen-new',
-            modelId: whisperSmallAdvancedModelId,
-            modelVersion: 'v1.9.1-q5_1',
-          );
+          final completed = _snapshot(id: 'locked-new');
           final processing = fixture.meetings.value!.beginFinalTranscription();
           final meeting = processing.activateFinalTranscript(completed);
           fixture.meetings.value = meeting;
@@ -132,16 +119,18 @@ void main() {
         };
     await fixture.viewModel.load();
 
-    fixture.viewModel.selectModel(whisperSmallAdvancedModelId);
     await fixture.viewModel.retranscribe();
 
-    expect(fixture.runner.calls.single.modelId, whisperSmallAdvancedModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
-    expect(fixture.viewModel.snapshot?.id, 'qwen-new');
+    expect(fixture.viewModel.snapshot?.id, 'locked-new');
+    expect(
+      fixture.viewModel.snapshot?.actualModelId,
+      whisperBaseStandardModelId,
+    );
     await fixture.dispose();
   });
 
-  test('恢复 processing 快照时复用原 ID 和来源模型而不改回锁定模型', () async {
+  test('恢复时忽略异模型 processing 快照并使用本场锁定模型新建尝试', () async {
     final pending = _snapshot(
       id: 'qwen-pending',
       status: TranscriptSnapshotStatus.processing,
@@ -153,16 +142,10 @@ void main() {
     fixture.runner.onCall =
         ({
           required meetingId,
-          required modelId,
-          required modelVersion,
           required retrySnapshotId,
           required onProgress,
         }) async {
-          final completed = _snapshot(
-            id: pending.id,
-            modelId: whisperSmallAdvancedModelId,
-            modelVersion: 'v1.9.1-q5_1',
-          );
+          final completed = _snapshot(id: 'locked-resume');
           final meeting = fixture.meetings.value!.activateFinalTranscript(
             completed,
           );
@@ -176,9 +159,12 @@ void main() {
     await fixture.viewModel.load();
 
     final resumed = fixture.runner.calls.single;
-    expect(resumed.retrySnapshotId, pending.id);
-    expect(resumed.modelId, whisperSmallAdvancedModelId);
-    expect(resumed.modelVersion, 'v1.9.1-q5_1');
+    expect(resumed.retrySnapshotId, isNull);
+    expect(fixture.viewModel.snapshot?.id, 'locked-resume');
+    expect(
+      fixture.viewModel.snapshot?.actualModelId,
+      whisperBaseStandardModelId,
+    );
     await fixture.dispose();
   });
 
@@ -462,13 +448,8 @@ _Fixture _fixture(
   }
   late final DetailTranscriptionRunner runner;
   runner = DetailTranscriptionRunner(
-    ({
-      required meetingId,
-      required modelId,
-      required modelVersion,
-      required retrySnapshotId,
-      required onProgress,
-    }) => throw UnimplementedError(),
+    ({required meetingId, required retrySnapshotId, required onProgress}) =>
+        throw UnimplementedError(),
   );
   return _Fixture(
     meetings: meetings,

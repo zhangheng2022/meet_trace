@@ -45,8 +45,6 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
   @override
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   }) {
@@ -55,8 +53,6 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
     operation = _runAfter(
       previous,
       meetingId: meetingId,
-      modelId: modelId,
-      modelVersion: modelVersion,
       retrySnapshotId: retrySnapshotId,
       onProgress: onProgress,
     );
@@ -71,8 +67,6 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
   Future<FinalTranscriptionResult> _runAfter(
     Future<FinalTranscriptionResult>? previous, {
     required String meetingId,
-    required String? modelId,
-    required String? modelVersion,
     required String? retrySnapshotId,
     required FinalTranscriptionProgressCallback? onProgress,
   }) async {
@@ -85,8 +79,6 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
     }
     return _transcribe(
       meetingId: meetingId,
-      modelId: modelId,
-      modelVersion: modelVersion,
       retrySnapshotId: retrySnapshotId,
       onProgress: onProgress,
     );
@@ -94,8 +86,6 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
 
   Future<FinalTranscriptionResult> _transcribe({
     required String meetingId,
-    required String? modelId,
-    required String? modelVersion,
     required String? retrySnapshotId,
     required FinalTranscriptionProgressCallback? onProgress,
   }) async {
@@ -105,11 +95,7 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
         'final_transcription.meeting_not_found',
       );
     }
-    final selected = _selectedModel(
-      meeting,
-      modelId: modelId,
-      modelVersion: modelVersion,
-    );
+    final selected = (meeting.recordingModelId, meeting.recordingModelVersion);
 
     final retryId = retrySnapshotId?.trim();
     if (retryId != null && retryId.isNotEmpty) {
@@ -223,23 +209,6 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
       return;
     }
     await meetings.save(current.fail(errorCode: errorCode));
-  }
-
-  (String, String) _selectedModel(
-    Meeting meeting, {
-    required String? modelId,
-    required String? modelVersion,
-  }) {
-    final hasModelId = modelId?.trim().isNotEmpty == true;
-    final hasVersion = modelVersion?.trim().isNotEmpty == true;
-    if (hasModelId != hasVersion) {
-      throw const FinalTranscriptionException(
-        'final_transcription.incomplete_model_selection',
-      );
-    }
-    return hasModelId
-        ? (modelId!.trim(), modelVersion!.trim())
-        : (meeting.recordingModelId, meeting.recordingModelVersion);
   }
 
   void _validateRetry(

@@ -167,8 +167,6 @@ final class DetailProcessingTaskRepository implements ProcessingTaskRepository {
 typedef DetailTranscriptionCall =
     Future<FinalTranscriptionResult> Function({
       required String meetingId,
-      required String? modelId,
-      required String? modelVersion,
       required String? retrySnapshotId,
       required FinalTranscriptionProgressCallback? onProgress,
     });
@@ -177,30 +175,15 @@ final class DetailTranscriptionRunner implements FinalTranscriptionRunner {
   DetailTranscriptionRunner(this.onCall);
 
   DetailTranscriptionCall onCall;
-  final List<
-    ({
-      String meetingId,
-      String? modelId,
-      String? modelVersion,
-      String? retrySnapshotId,
-    })
-  >
-  calls = [];
+  final List<({String meetingId, String? retrySnapshotId})> calls = [];
 
   @override
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   }) {
-    calls.add((
-      meetingId: meetingId,
-      modelId: modelId,
-      modelVersion: modelVersion,
-      retrySnapshotId: retrySnapshotId,
-    ));
+    calls.add((meetingId: meetingId, retrySnapshotId: retrySnapshotId));
     onProgress?.call(
       const AsrFinalizationProgress(
         phase: AsrFinalizationPhase.processing,
@@ -210,8 +193,6 @@ final class DetailTranscriptionRunner implements FinalTranscriptionRunner {
     );
     return onCall(
       meetingId: meetingId,
-      modelId: modelId,
-      modelVersion: modelVersion,
       retrySnapshotId: retrySnapshotId,
       onProgress: onProgress,
     );

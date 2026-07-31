@@ -146,8 +146,7 @@ void main() {
 
       final tamperedReview =
           jsonDecode(jsonEncode(derivedJson)) as Map<String, Object?>;
-      final tamperedCorpus =
-          tamperedReview['corpus']! as Map<String, Object?>;
+      final tamperedCorpus = tamperedReview['corpus']! as Map<String, Object?>;
       final tamperedProvenance =
           tamperedCorpus['provenance']! as Map<String, Object?>;
       tamperedProvenance['reviewAttestationSha256'] = 'b' * 64;

@@ -44,10 +44,22 @@ void main() {
 
     try {
       await service.start(meetingId: 'device-recording');
+      debugPrintSynchronously(
+        'MEETTRACE_STEP07_STAGE:recording_started',
+        wrapWidth: null,
+      );
       watch.start();
       await Future<void>.delayed(const Duration(seconds: _recordingSeconds));
       watch.stop();
+      debugPrintSynchronously(
+        'MEETTRACE_STEP07_STAGE:stopping;persistedBytes=${service.persistedBytes}',
+        wrapWidth: null,
+      );
       final artifact = await service.stop();
+      debugPrintSynchronously(
+        'MEETTRACE_STEP07_STAGE:recording_finalized',
+        wrapWidth: null,
+      );
       final fileBytes = await File(artifact.audioPath).length();
       final metrics = RecordingContinuityMetrics(
         bytesWritten: artifact.bytes,

@@ -137,7 +137,7 @@
       "id": "evidence.androidSha256",
       "requirement": "Android 证据必须绑定 64 位十六进制 SHA-256",
       "status": "passed",
-      "value": "7944cf36bb8968951c09b8a894c4d7bbae611bf0bbee2292a3374313349b05f5"
+      "value": "f64f4ac48100531f78c9b475f5fcd70de3dd31e7ec6c0801b7a5b138a2bd61ae"
     },
     {
       "id": "quality.fixedWindowBothModels",

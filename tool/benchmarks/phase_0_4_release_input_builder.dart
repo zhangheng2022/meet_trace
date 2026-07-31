@@ -31,6 +31,7 @@ final class Phase04ReleaseInputBuilder {
     final asrLifecycle = _map(measurements, 'asrLifecycle');
     final vadLifecycle = _map(measurements, 'vadLifecycle');
     final recordingLifecycle = _map(measurements, 'recordingLifecycle');
+    final meetingLifecycle = _map(measurements, 'meetingLifecycle');
 
     final input = jsonDecode(jsonEncode(template)) as Map<String, Object?>;
     input['evaluationScope'] = 'phase-0-4';
@@ -56,6 +57,12 @@ final class Phase04ReleaseInputBuilder {
       'factPcmSoleSourcePassed',
     );
     phase04['emulatorLifecyclePassed'] =
+        _integer(meetingLifecycle, 'cycles') >= 10 &&
+        _integer(meetingLifecycle, 'sealedMeetings') ==
+            _integer(meetingLifecycle, 'cycles') &&
+        _isTrue(meetingLifecycle, 'allCaptureStreamsClosed') &&
+        _isTrue(meetingLifecycle, 'allPreviewSessionsDisposed') &&
+        _isTrue(meetingLifecycle, 'allModelLeasesReleased') &&
         _integer(recordingLifecycle, 'cycles') >= 10 &&
         _isTrue(recordingLifecycle, 'allCaptureStreamsClosed');
     phase04['asrFailureRecordingContinues'] =

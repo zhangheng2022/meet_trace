@@ -79,7 +79,7 @@
   },
   "evidence": {
     "android": "docs/quality/evidence/android-emulator/android-emulator-smoke.json",
-    "androidSha256": "7944cf36bb8968951c09b8a894c4d7bbae611bf0bbee2292a3374313349b05f5",
+    "androidSha256": "f64f4ac48100531f78c9b475f5fcd70de3dd31e7ec6c0801b7a5b138a2bd61ae",
     "iosBuild": null
   },
   "acceptanceEvidence": null,
