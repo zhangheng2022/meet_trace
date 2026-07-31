@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "docs/README.md": {
-    "mtime": 1785474735.1671872,
-    "ast_hash": "46ea2e679639c83909a16ff0968ea9b3",
+    "mtime": 1785482559.7601898,
+    "ast_hash": "d08120ff01f9626128278f3258a56d3e",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
@@ -2767,6 +2767,16 @@
   "tool/benchmarks/whisper_quality_observation_merger.dart": {
     "mtime": 1785472783.5352235,
     "ast_hash": "0a3a9098616a162c310666b91d103fb7",
+    "semantic_hash": ""
+  },
+  "docs/quality/\u9636\u6bb5_0_4_\u5b8c\u6210\u5ea6\u5ba1\u8ba1.md": {
+    "mtime": 1785482559.7587585,
+    "ast_hash": "8d5baa695aad123b5c33bc9494142660",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260731_072058_\u6839\u636e\u4e0a\u8ff0\u6587\u6863_\u5b8c\u62100\u52304\u9636\u6bb5\u76ee\u6807_\u9879\u76ee\u6574\u4f53\u8d28\u91cf\u67b6\u6784\u4f18\u5148.md": {
+    "mtime": 1785482458.630644,
+    "ast_hash": "dd3065f8193c0bfa07f24a9f3920c3cb",
     "semantic_hash": ""
   }
 }

@@ -9,8 +9,9 @@
 2. [端侧双模型转录技术方案 V0.8](./端侧双模型转录技术方案.md)：`whisper.cpp` 双模型、官方 Silero VAD、Native Assets、录音解耦、模型生命周期和降级设计。
 3. [Codex Alpha 开发步骤](./Codex_Alpha_开发步骤.md)：当前实现顺序与交付门槛。
 4. [whisper.cpp 质量强化与双平台交付计划](./plans/2026-07-30-whisper-cpp-quality-delivery.md)：Codex 可直接执行的文件级任务、测试、审查、硬门槛和提交点。
-5. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)：隔离开发、合并和安全清理规则。
-6. [交互与视觉系统](../DESIGN.md)：页面、响应式布局和交互契约。
+5. [阶段 0～4 完成度审计](./quality/阶段_0_4_完成度审计.md)：区分工程闭环、产品质量证据和当前阻断项。
+6. [Git 分支与 Worktree 约定](./Git_分支与_Worktree_约定.md)：隔离开发、合并和安全清理规则。
+7. [交互与视觉系统](../DESIGN.md)：页面、响应式布局和交互契约。
 
 ## 当前实现状态
 
@@ -58,6 +59,7 @@ macOS/Xcode 完成 arm64 无签名构建、产物审计和自动化验证，不�
 - [Step 21 C++ Whisper 质量交付基线](./quality/Step_21_C++_质量交付基线.md)
 - [Step 22 Whisper 解码参数评测](./quality/Step_22_Whisper_解码参数评测.md)
 - [Step 23～24 官方 VAD、预览与最终转录](./quality/Step_23_24_VAD_与最终转录.md)
+- [阶段 0～4 完成度审计](./quality/阶段_0_4_完成度审计.md)
 - [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md)
 - [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md)
 
