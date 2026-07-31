@@ -84,7 +84,7 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   指向仓库外或 `.spike/` 文件。
 - corpus manifest schema 为 `2`，除 corpus/sample ID、去敏状态、SHA-256、时长、
   标签和关键事实外，还必须保存证据类别与来源/许可标识：
-  - `product-meeting`：唯一可用于关闭正式产品质量门槛；
+  - `product-meeting`：唯一可形成产品会议质量观察结论；
   - `public-regression`：公开数据集回归，不替代产品会议证据；
   - `synthetic-smoke`：合成链路烟测，不用于识别质量结论。
 - `product-meeting` provenance 除来源与许可外，还必须携带人工复核证明 SHA-256 和
@@ -154,11 +154,11 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 
 ### 5.3 阶段 0～4 自动发布评估
 
-- `AlphaReleaseEvaluationInput` schema 已升级为 `7`，输出报告 schema 为 `3`；旧输入
+- `AlphaReleaseEvaluationInput` schema 已升级为 `8`，输出报告 schema 为 `4`；旧输入
   schema 或缺少新增字段时返回 `blocked`，不会沿用旧默认值。
-- 正式质量门槛要求 `corpus.evidenceClass=product-meeting`，并校验 manifest
-  SHA-256、来源和授权标识。`public-regression` 与 `synthetic-smoke` 会明确失败，
-  不能拼装成 `go`。
+- 产品会议语料、人工复核、准确率、噪声幻觉、语音首尾召回和 Preview 延迟改为
+  非阻断观察项；缺失时输出 `not_tested`，有无效或不达标数据时仍如实输出
+  `failed`，但 `blocking=false`。公开或合成证据仍不能冒充产品会议结果。
 - 评估器显式比较 Base VAD 相对固定窗口、Small 相对 Base 的关键事实召回，并要求
   20 个 Preview 延迟样本、完整 Profile/Pipeline 矩阵、语音首尾事实全部保留，以及
   ASR/VAD 百次生命周期、事实 PCM、模型锁定、预览丢弃、最终时间戳、快照原子性和
@@ -169,10 +169,10 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
   并逐字段验证输入，不能以手改 JSON 代替真实矩阵。
 - 当前机器可读输入和报告位于
   `docs/quality/evidence/android-emulator/phase-0-4-release-input.json` 与
-  `phase-0-4-release-report.json`。结果为 `blocked`：22 项通过、0 项失败、26 项
-  缺失。输入显式声明 `evaluationScope=phase-0-4`，只保留阶段 0～4 的真实产品语料
-  与产品质量缺口；阶段 5 以后的 Android 真机、iOS 和 Release 门槛不再污染本阶段
-  结论，也不以代理数据填充。Android 模拟器证据由完整通过日志推导，四份日志分别
+  `phase-0-4-release-report.json`。结果为 `go`：24 项通过、0 项失败、0 项阻断缺失、
+  18 项 `not_tested`。输入显式声明 `evaluationScope=phase-0-4`；阶段 5 以后的
+  Android 真机、iOS 和 Release 门槛不污染本阶段结论，产品会议观察项也不以代理数据
+  填充。Android 模拟器证据由完整通过日志推导，四份日志分别
   记录 SHA-256，评估输入再绑定聚合证据 SHA-256；CLI 会校验仓库边界、实际哈希和
   `status=passed`，Android 模拟器子集不能只手改布尔值关闭门槛。
 
@@ -182,15 +182,15 @@ Android/Flutter 交付。系统 PATH 未直接暴露 `java`/`adb`，设备脚本
 |---|---|
 | 产品边界批准并统一 | 通过 |
 | 工程基线可重复 | 通过 |
-| 发布评估可阻断缺失 VAD/16 KB/证据项 | 通过：schema 7 另显式阻断未绑定人工复核证明、代理语料、未绑定 Android/质量证据、矩阵缺项和阶段 0～4 不变量缺失 |
+| 发布评估区分硬门槛和观察项 | 通过：schema 8 / 报告 schema 4；工程缺项保持 `missing`，产品会议观察缺项为 `not_tested` |
 | Android 外部语料执行链 | 通过：x86_64 编译、安装与缺参跳过检查已完成 |
-| 正式产品会议矩阵可运行 | `blocked`：未提供 20 段静音、20 段噪声和 20 段带事实语音的环境变量 |
-| 固定窗口 Base/Small 原始指标已生成 | `blocked`：未提供真实语料 |
+| 正式产品会议矩阵可运行 | `not_tested`：非阻断观察项 |
+| 固定窗口 Base/Small 产品质量指标 | `not_tested`：非阻断观察项 |
 | Small 合成噪声固定窗口稳定性 | `No-Go`：当前 API 36 x86_64 模拟器完成 4/20 段后推理失败；未伪造完整报告 |
 | 固定窗口与 VAD 分段可同条件比较 | 通过：多管线 Android 执行、schema 4 可观测性及聚合链已实现 |
 
-在真实语料注入前，不得把 Hard Gate 0 或质量指标标记为通过；后续实现可以继续，但发布
-结论必须保持 `blocked`。
+未执行的产品会议质量不得标记为通过或用于宣传；它不再阻断阶段 0～4 集成或 Alpha
+发布。确定性静音、录音连续性、模型锁定和资源释放等工程门槛仍必须通过。
 
 ## 7. Android x86_64 模拟器交付
 
@@ -273,10 +273,11 @@ Engine 初始化或会议持久化失败时会 best-effort 释放已创建 Engin
 | 启动失败有稳定错误码和动作 | 通过 |
 | 30 分钟 Android 真机录音 | 留待阶段 5，不属于本模拟器 Gate |
 
-阶段 1 工程门槛通过；全局 Alpha 仍因 Hard Gate 0 的真实语料缺失保持 `blocked`。
+阶段 1 工程门槛通过；产品会议语料缺失现记录为非阻断 `not_tested`。全局 Alpha
+仍需阶段 5～7 的 Android 真机、16 KB、iOS 构建与产物审计门槛。
 
-阶段 2～4 的实施与门槛状态分别见 Step 22 和 Step 23～24；真实语料缺失仍会阻断候选
-Profile 激活、噪声幻觉下降率和关键事实召回结论。
+阶段 2～4 的实施与门槛状态分别见 Step 22 和 Step 23～24；真实语料缺失不阻断集成
+或发布，但仍禁止激活未验证候选 Profile、声称噪声幻觉下降或关键事实召回结论。
 
 ## 10. OCR 代码审查
 
@@ -340,7 +341,7 @@ JSON 不支持 `NaN/Infinity` 而无法输出；现已净化报告值并新增�
 或保留 Critical/High 或有实际影响的 Medium。
 
 本轮人工语料晋升与可恢复矩阵按 workspace 模式复审 27 个 reviewable 文件，并手工
-核对 OCR 不支持的五份 Markdown。审查补齐了人工证明向 schema 7 发布门禁的端到端
+核对 OCR 不支持的五份 Markdown。该历史轮次补齐了人工证明向当时 schema 7 门禁的端到端
 传递、未批准候选的冗余筛除、设备与线程复用绑定、transcript 哈希复算、重复 PCM
 防绕过、无效批次先暂存后切换、合并结果覆盖回滚，以及复核模板排他写入；同时移除
 “仅凭字段校验即可证明人工复核”的文档过度承诺。真实烟测继续修复了首次发布缺少

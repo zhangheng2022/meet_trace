@@ -25,6 +25,8 @@ void main() {
       expect(phase04['asrFailureRecordingContinues'], isTrue);
       expect(phase04['asrContextLifecyclePassed'], isTrue);
       expect(phase04['vadContextLifecyclePassed'], isTrue);
+      expect(vad['silenceSampleCount'], 100);
+      expect(vad['silenceFalsePositiveCount'], 0);
       expect(vad['failureRecordingContinues'], isTrue);
       expect(evidence['androidSha256'], 'a' * 64);
       expect(input.toString(), isNot(contains('.pcm')));
@@ -104,11 +106,31 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('拒绝可相互抵消的负数静音误检计数', () {
+      final android = _androidEvidence();
+      final measurements = android['measurements']! as Map<String, Object?>;
+      final vadLifecycle =
+          measurements['vadLifecycle']! as Map<String, Object?>;
+      vadLifecycle
+        ..['silenceSegmentCount'] = -1
+        ..['streamingSilenceSegmentCount'] = 1;
+
+      expect(
+        () => const Phase04ReleaseInputBuilder().build(
+          template: _template(),
+          androidEvidence: android,
+          androidEvidenceRef: 'evidence/android.json',
+          androidEvidenceSha256: 'e' * 64,
+        ),
+        throwsFormatException,
+      );
+    });
   });
 }
 
 Map<String, Object?> _template() => {
-  'schemaVersion': 7,
+  'schemaVersion': 8,
   'rawMetricsRef': null,
   'rawMetricsSha256': null,
   'environment': <String, Object?>{'deviceId': null},
@@ -148,6 +170,8 @@ Map<String, Object?> _androidEvidence() => {
     },
     'vadLifecycle': <String, Object?>{
       'cycles': 100,
+      'silenceSegmentCount': 0,
+      'streamingSilenceSegmentCount': 0,
       'cancelResetVerified': true,
       'workerIsolateVerified': true,
       'disposeIdempotent': true,

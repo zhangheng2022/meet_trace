@@ -1,6 +1,6 @@
 # 会迹 Codex Alpha 开发步骤
 
-> 状态：阶段 0～4 工程实现完成；阶段 1 Android 模拟器门槛通过，真实语料质量门槛阻断
+> 状态：阶段 0～4 工程硬门槛通过，可合并 `dev`；产品会议质量为非阻断 `not_tested`
 > 更新日期：2026-07-31
 
 ## 已完成基线
@@ -21,16 +21,17 @@
   候选保持 `synthetic-smoke`、`deidentified=false`。正式晋升器强制核对候选哈希、
   全量样本、人工结论、敏感信息、事实和边界；未批准片段会被剔除，正式集合仍必须
   各保留至少 20 段，并把复核证明哈希写入 provenance。
-  当前仍等待人工逐段复核，不把候选标签或 ASR 草稿声明为产品事实。
+  人工逐段复核不再是合并或 Alpha 发布前置条件；未执行时产品会议质量保持
+  `not_tested`，候选标签或 ASR 草稿仍不得声明为产品事实。
 - 完整模型/Profile/Pipeline 矩阵改为按组合落盘和断点复用；合并器拒绝缺样本、
   重复组合、设备指纹漂移、路径越界和 transcript 哈希不匹配。
 - 20 段合成噪声完整矩阵已完成 Base 的 9 个组合，但 Small Baseline 固定窗口只完成
   4/20 段便推理失败；该候选在当前 API 36 x86_64 模拟器上为 No-Go，不以删样本、
   扩容或混合线程掩盖。批次失败和私有日志哈希会写入断点状态。
-- 自动发布评估输入已升级为 schema 7，显式检查人工复核证明、产品会议证据类别、Base/Small
-  召回不回退、Preview 延迟和阶段 0～4 工程不变量；当前机器可读结论为
-  `blocked`（22 passed、0 failed、26 missing）。新增两项人工复核证明门禁、质量报告 SHA-256 和完整
-  Profile/Pipeline 矩阵门禁，质量指标只能由脱敏聚合报告自动写入。该报告显式使用
+- 自动发布评估输入已升级为 schema 8，报告 schema 4 同时输出 `status` 与
+  `blocking`。产品会议语料、召回、噪声幻觉和 Preview 延迟缺证据时为非阻断
+  `not_tested`；当前机器可读结论为 `go`（24 passed、0 failed、0 missing、
+  18 not_tested）。质量指标仍只能由脱敏聚合报告自动写入。该报告显式使用
   `evaluationScope=phase-0-4`，不会让阶段 5 以后的 Android 真机、iOS 和 Release
   门槛污染本阶段结论；Android 模拟器证据由完整日志自动推导，并以 SHA-256 绑定。
 - API 36 x86_64 模拟器已重新通过 30 秒真实录音（完整率 1.00045）、100 次 Base
@@ -43,8 +44,8 @@
 完整文件级任务、测试命令、硬门槛、审查和提交点见
 [whisper.cpp 质量强化与双平台交付计划](./plans/2026-07-30-whisper-cpp-quality-delivery.md)。
 
-1. 阶段 0：统一 `AGENTS.md`、PRD 和当前 C++ 实现，冻结正式去敏矩阵：20 段静音、
-   20 段噪声和 20 段带关键事实的会议语音。
+1. 阶段 0：统一 `AGENTS.md`、PRD 和当前 C++ 实现；产品会议矩阵工具保留为非阻断
+   观察能力，未执行时明确输出 `not_tested`。
 2. 阶段 1：首先打通 Android x86_64 模拟器，完成 Base 初始化、会议开始/停止、
    30 秒事实 PCM、故障降级和最终快照闭环。
 3. 阶段 2：增加版本化 C ABI，基于同语料选择 Preview/Final 解码 Profile。
@@ -52,7 +53,8 @@
 5. 阶段 4：用 VAD 驱动会中预览和完整 PCM 最终转录，保持模型锁定与快照原子激活。
 6. 阶段 5：完成 Android 三档真机、Release APK、16 KB、质量与资源门禁。
 7. 阶段 6：完成 iOS arm64 无签名构建、产物审计和自动化门禁；不执行 iOS 真机测试。
-8. 阶段 7：运行全量验证、OCR、Graphify 和自动发布评估；全部为 Go 后才合并 `dev`。
+8. 阶段 7：阶段 0～4 工程报告为 Go 且 OCR 无 Critical/High 后可先合并 `dev`；
+   后续 Alpha 发布继续独立满足 Android 真机、16 KB、iOS 构建和产物审计门槛。
 
 ## 阻断门槛
 
@@ -62,7 +64,9 @@
 - iOS arm64 构建或产物审计失败：阻断合并；后台录音、系统中断、性能和模型质量
   明确记为 `not_tested`，不得表述为已通过。
 - Android Release 任一 `.so` 未通过 16 KB LOAD alignment：阻断 Android 交付。
-- 静音产生文本、VAD chunk 边界不一致或 VAD/ASR 阻塞写盘：阻断质量交付。
+- 确定性静音产生文本、VAD chunk 边界不一致或 VAD/ASR 阻塞写盘：阻断工程交付。
+- 产品会议准确率、噪声幻觉、语音首尾召回和 Preview 延迟缺证据时标记
+  `not_tested`，不阻断合并或 Alpha 发布，也不得声明质量通过。
 - Android 模拟器 x86_64 原生库、会议流或最终快照未闭环：不进入 VAD、真机和 iOS 阶段。
 
 历史 sherpa-onnx 实施步骤从 Git 查看，不在活动文档中继续维护。

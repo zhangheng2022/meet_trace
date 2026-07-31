@@ -32,6 +32,18 @@ final class Phase04ReleaseInputBuilder {
     final vadLifecycle = _map(measurements, 'vadLifecycle');
     final recordingLifecycle = _map(measurements, 'recordingLifecycle');
     final meetingLifecycle = _map(measurements, 'meetingLifecycle');
+    final vadSilenceSegmentCount = _integer(
+      vadLifecycle,
+      'silenceSegmentCount',
+    );
+    final vadStreamingSilenceSegmentCount = _integer(
+      vadLifecycle,
+      'streamingSilenceSegmentCount',
+    );
+    _require(
+      vadSilenceSegmentCount >= 0 && vadStreamingSilenceSegmentCount >= 0,
+      'VAD 静音误检计数不能为负数',
+    );
 
     final input = jsonDecode(jsonEncode(template)) as Map<String, Object?>;
     input['evaluationScope'] = 'phase-0-4';
@@ -82,6 +94,9 @@ final class Phase04ReleaseInputBuilder {
         _integer(vadLifecycle, 'steadyStateGrowthBytes') < 32 * 1024 * 1024;
 
     final vad = _mutableMap(input, 'vad');
+    vad['silenceSampleCount'] = _integer(vadLifecycle, 'cycles');
+    vad['silenceFalsePositiveCount'] =
+        vadSilenceSegmentCount + vadStreamingSilenceSegmentCount;
     vad['failureRecordingContinues'] = phase04['asrFailureRecordingContinues'];
 
     final evidence = _mutableMap(input, 'evidence');

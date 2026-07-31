@@ -21,7 +21,7 @@ void main() {
       final vad = input['vad']! as Map<String, Object?>;
       final quality = input['quality']! as Map<String, Object?>;
 
-      expect(input['schemaVersion'], 7);
+      expect(input['schemaVersion'], 8);
       expect(corpus['sampleCount'], 60);
       expect(provenance['reviewAttestationSha256'], 'a' * 64);
       expect(provenance['reviewedAtUtc'], '2026-07-31T10:30:00Z');
@@ -154,7 +154,7 @@ void main() {
 
 Map<String, Object?> _template() => {
   'evaluationScope': 'phase-0-4',
-  'schemaVersion': 7,
+  'schemaVersion': 8,
   'rawMetricsRef': null,
   'rawMetricsSha256': null,
   'corpus': <String, Object?>{'provenance': <String, Object?>{}},

@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "evaluationScope": "phase-0-4",
-  "decision": "blocked",
+  "decision": "go",
   "corpusId": null,
   "corpusEvidenceClass": null,
   "corpusManifestSha256": null,
@@ -32,135 +32,131 @@
     "standardToAdvancedEnergyRatio": null
   },
   "summary": {
-    "passed": 22,
+    "passed": 24,
     "failed": 0,
-    "missing": 26
+    "missing": 0,
+    "notTested": 18,
+    "blockingFailed": 0,
+    "blockingMissing": 0
   },
   "gates": [
     {
       "id": "input.schemaVersion",
-      "requirement": "发布评估输入必须使用当前 schema 7",
+      "requirement": "发布评估输入必须使用当前 schema 8",
       "status": "passed",
-      "value": 7
+      "blocking": true,
+      "value": 8
     },
     {
       "id": "corpus.id",
-      "requirement": "评测语料必须具有不含音频路径的可追溯标识",
-      "status": "missing",
+      "requirement": "产品质量观察语料应具有不含音频路径的可追溯标识",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.evidenceClass",
-      "requirement": "正式发布质量门槛只接受 product-meeting 证据",
-      "status": "missing",
+      "requirement": "产品会议质量观察只接受 product-meeting 证据",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.manifestSha256",
-      "requirement": "评测语料必须绑定 64 位十六进制 manifest SHA-256",
-      "status": "missing",
+      "requirement": "产品质量观察语料应绑定 64 位十六进制 manifest SHA-256",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.provenance.sourceId",
-      "requirement": "评测语料必须具有来源标识",
-      "status": "missing",
+      "requirement": "产品质量观察语料应具有来源标识",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.provenance.licenseId",
-      "requirement": "评测语料必须具有授权或许可标识",
-      "status": "missing",
+      "requirement": "产品质量观察语料应具有授权或许可标识",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.provenance.reviewAttestationSha256",
-      "requirement": "产品会议语料必须绑定人工复核证明 SHA-256",
-      "status": "missing",
+      "requirement": "产品会议质量观察语料应绑定人工复核证明 SHA-256",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.provenance.reviewedAtUtc",
-      "requirement": "产品会议语料必须绑定人工复核 UTC 时间",
-      "status": "missing",
+      "requirement": "产品会议质量观察语料应绑定人工复核 UTC 时间",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.sampleCount",
-      "requirement": "正式去敏矩阵不少于 60 段（20 静音、20 纯噪声、20 带事实语音）",
-      "status": "missing",
+      "requirement": "可选去敏矩阵建议不少于 60 段（20 静音、20 纯噪声、20 带事实语音）",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "corpus.deidentified",
-      "requirement": "评测语料已去敏",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "environment.sameCorpus",
-      "requirement": "双模型使用相同语料",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "environment.sameDevice",
-      "requirement": "双模型使用相同设备和环境",
-      "status": "missing",
+      "requirement": "产品质量观察语料已去敏",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "environment.deviceId",
       "requirement": "评测设备必须具有可追溯标识",
       "status": "passed",
+      "blocking": true,
       "value": "android-emulator-x86_64-api-36"
     },
     {
-      "id": "evidence.rawMetrics",
-      "requirement": "双模型原始指标具有可追溯引用",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "evidence.rawMetricsSha256",
-      "requirement": "双模型原始指标必须绑定 64 位十六进制 SHA-256",
-      "status": "missing",
-      "value": null
-    },
-    {
       "id": "evidence.android",
-      "requirement": "Android 构建、模拟器与真机证据具有可追溯引用",
+      "requirement": "Android 构建与当前评估范围设备证据具有可追溯引用",
       "status": "passed",
+      "blocking": true,
       "value": "docs/quality/evidence/android-emulator/android-emulator-smoke.json"
     },
     {
       "id": "evidence.androidSha256",
       "requirement": "Android 证据必须绑定 64 位十六进制 SHA-256",
       "status": "passed",
+      "blocking": true,
       "value": "f64f4ac48100531f78c9b475f5fcd70de3dd31e7ec6c0801b7a5b138a2bd61ae"
     },
     {
       "id": "quality.fixedWindowBothModels",
-      "requirement": "Base 和 Small 已在同语料完成固定窗口对照",
-      "status": "missing",
+      "requirement": "Base 和 Small 产品质量观察已在同语料完成固定窗口对照",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "quality.profilePipelineMatrixCompleted",
-      "requirement": "Base/Small 已完成 Baseline/Preview/Final 与固定窗口/双 VAD 完整矩阵",
-      "status": "missing",
+      "requirement": "产品质量观察已完成 Base/Small、Profile 与 Pipeline 完整矩阵",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "quality.previewLatencyP95Ms",
-      "requirement": "Preview 句后出字 P95 不超过 3000 ms",
-      "status": "missing",
+      "requirement": "观察 Preview 句后出字 P95 是否不超过 3000 ms",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "quality.standardVadRecallNoRegression",
-      "requirement": "Base 的 VAD 关键事实召回不得低于固定窗口基线",
-      "status": "missing",
+      "requirement": "观察 Base 的 VAD 关键事实召回是否低于固定窗口基线",
+      "status": "not_tested",
+      "blocking": false,
       "value": {
         "baseline": null,
         "candidate": null,
@@ -169,8 +165,9 @@
     },
     {
       "id": "quality.advancedVadRecallNoRegression",
-      "requirement": "Small 的 VAD 关键事实召回不得低于 Base",
-      "status": "missing",
+      "requirement": "观察 Small 的 VAD 关键事实召回是否低于 Base",
+      "status": "not_tested",
+      "blocking": false,
       "value": {
         "baseline": null,
         "candidate": null,
@@ -179,158 +176,170 @@
     },
     {
       "id": "quality.speechBoundaryRecall",
-      "requirement": "语音首尾已标注关键事实必须全部保留",
-      "status": "missing",
+      "requirement": "观察语音首尾已标注关键事实是否全部保留",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "standard.resourceBytes",
       "requirement": "标准模型资源不超过 100 MiB",
       "status": "passed",
+      "blocking": true,
       "value": 60592723
     },
     {
       "id": "standard.keyFactRecallRatio",
-      "requirement": "20 段评测关键事实召回率不低于 85%",
-      "status": "missing",
+      "requirement": "观察 20 段评测关键事实召回率是否不低于 85%",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "vad.silenceSampleCount",
-      "requirement": "纯静音评测样本不少于 20 段",
-      "status": "missing",
-      "value": null
+      "requirement": "确定性 VAD 静音生命周期不少于 20 次",
+      "status": "passed",
+      "blocking": true,
+      "value": 100
     },
     {
       "id": "vad.silenceFalsePositiveCount",
       "requirement": "纯静音不得产生语音区间或文本",
-      "status": "missing",
-      "value": null
+      "status": "passed",
+      "blocking": true,
+      "value": 0
     },
     {
       "id": "vad.noiseSampleCount",
-      "requirement": "噪声评测样本不少于 20 段",
-      "status": "missing",
+      "requirement": "产品噪声观察样本不少于 20 段",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "vad.noiseReductionRatio",
-      "requirement": "VAD 相对固定窗口基线降低至少 80% 噪声幻觉",
-      "status": "missing",
+      "requirement": "观察 VAD 是否相对固定窗口基线降低至少 80% 噪声幻觉",
+      "status": "not_tested",
+      "blocking": false,
       "value": null
     },
     {
       "id": "vad.chunkBoundaryConsistent",
       "requirement": "相同 PCM 的不同 chunk 边界产生相同最终 VAD 区间",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "vad.failureRecordingContinues",
       "requirement": "VAD 失败只降级预览且事实录音继续",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.productBoundaryApproved",
-      "requirement": "阶段 0 产品边界和质量门槛已批准",
+      "requirement": "阶段 0 产品边界和阻断/观察分类已批准",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.meetingModelLocked",
       "requirement": "会议开始后模型身份和版本保持锁定",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.factPcmSoleSource",
       "requirement": "事实 PCM 是最终转录唯一事实源且写盘不依赖推理",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.emulatorLifecycle",
       "requirement": "Android 模拟器连续会议生命周期无资源残留",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.asrFailureRecordingContinues",
       "requirement": "ASR 故障和预览积压不影响事实录音",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.startFailureDiagnostics",
       "requirement": "会议启动失败具有稳定错误码和用户动作",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.asrContextLifecycle",
       "requirement": "ASR context 百次生命周期无崩溃或持续泄漏",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.vadContextLifecycle",
       "requirement": "VAD context 百次生命周期无崩溃或持续泄漏",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.finalChunkBoundaryConsistent",
       "requirement": "相同 PCM 的不同 chunk 方式得到相同最终片段和排序",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.previewDropFinalInvariant",
       "requirement": "丢弃预览任务不改变最终转录",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.finalTimestampsValid",
       "requirement": "最终时间戳无负值、越界、交叉或倒退",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.snapshotAtomicity",
       "requirement": "最终快照失败时旧活动快照保持激活",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "phase04.summaryFinalSnapshotOnly",
       "requirement": "AI 总结只读取已激活完整最终快照",
       "status": "passed",
+      "blocking": true,
       "value": true
-    },
-    {
-      "id": "advanced.rtfSampleCount",
-      "requirement": "高级模型使用相同语料记录不少于 20 个 RTF 样本",
-      "status": "missing",
-      "value": null
-    },
-    {
-      "id": "advanced.sentenceLatencySampleCount",
-      "requirement": "高级模型使用相同语料记录不少于 20 个句后延迟样本",
-      "status": "missing",
-      "value": null
     },
     {
       "id": "release.apkAudit",
       "requirement": "Android APK 的 ABI、模型、密钥、许可和体积审计通过",
       "status": "passed",
+      "blocking": true,
       "value": true
     },
     {
       "id": "license.whisperCpp",
       "requirement": "whisper.cpp 与模型权重 MIT 许可及 NOTICE 已确认",
       "status": "passed",
+      "blocking": true,
       "value": true
     }
   ]

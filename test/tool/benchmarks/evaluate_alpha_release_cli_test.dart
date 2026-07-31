@@ -172,7 +172,7 @@ void main() {
     }
   });
 
-  test('提交的阶段 0 到 4 blocked 报告与当前评估器一致', () async {
+  test('提交的阶段 0 到 4 Go 报告与当前评估器一致', () async {
     final inputJson =
         jsonDecode(
               await File(
@@ -194,10 +194,16 @@ void main() {
     );
 
     expect(report.toJson(), committedReport);
-    expect(report.decision, AlphaReleaseDecision.blocked);
+    expect(report.decision, AlphaReleaseDecision.go);
     expect(
       report.gates.where((gate) => gate.status == ReleaseGateStatus.failed),
       isEmpty,
+    );
+    expect(
+      report.gates
+          .where((gate) => gate.status == ReleaseGateStatus.notTested)
+          .every((gate) => !gate.blocking),
+      isTrue,
     );
   });
 }

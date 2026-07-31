@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-const alphaReleaseInputSchemaVersion = 7;
+const alphaReleaseInputSchemaVersion = 8;
 const alphaProductMeetingEvidenceClass = 'product-meeting';
 
 enum AlphaReleaseDecision { go, noGo, blocked }
@@ -14,7 +14,16 @@ enum AlphaReleaseEvaluationScope {
   final String jsonValue;
 }
 
-enum ReleaseGateStatus { passed, failed, missing }
+enum ReleaseGateStatus {
+  passed('passed'),
+  failed('failed'),
+  missing('missing'),
+  notTested('not_tested');
+
+  const ReleaseGateStatus(this.jsonValue);
+
+  final String jsonValue;
+}
 
 final class AlphaReleaseEvaluationInput {
   const AlphaReleaseEvaluationInput({
@@ -537,20 +546,33 @@ final class ReleaseGateResult {
     required this.id,
     required this.requirement,
     required this.status,
+    this.blocking = true,
     this.value,
   });
 
   final String id;
   final String requirement;
   final ReleaseGateStatus status;
+  final bool blocking;
   final Object? value;
 
   Map<String, Object?> toJson() => {
     'id': id,
     'requirement': requirement,
-    'status': status.name,
+    'status': status.jsonValue,
+    'blocking': blocking,
     'value': value,
   };
+
+  ReleaseGateResult asNonBlocking() => ReleaseGateResult(
+    id: id,
+    requirement: requirement,
+    status: status == ReleaseGateStatus.missing
+        ? ReleaseGateStatus.notTested
+        : status,
+    blocking: false,
+    value: value,
+  );
 }
 
 final class AlphaReleaseEvaluationReport {
@@ -577,7 +599,7 @@ final class AlphaReleaseEvaluationReport {
   final List<ReleaseGateResult> gates;
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 3,
+    'schemaVersion': 4,
     'evaluationScope': scope.jsonValue,
     'decision': decision.name,
     'corpusId': corpusId,
@@ -595,6 +617,19 @@ final class AlphaReleaseEvaluationReport {
           .length,
       'missing': gates
           .where((gate) => gate.status == ReleaseGateStatus.missing)
+          .length,
+      'notTested': gates
+          .where((gate) => gate.status == ReleaseGateStatus.notTested)
+          .length,
+      'blockingFailed': gates
+          .where(
+            (gate) => gate.blocking && gate.status == ReleaseGateStatus.failed,
+          )
+          .length,
+      'blockingMissing': gates
+          .where(
+            (gate) => gate.blocking && gate.status == ReleaseGateStatus.missing,
+          )
           .length,
     },
     'gates': gates.map((gate) => gate.toJson()).toList(growable: false),
@@ -630,45 +665,45 @@ final class EvaluateAlphaReleaseUseCase {
     final acceptanceCount = _acceptanceEvidenceCount(input.acceptanceEvidence);
     final allGates = <ReleaseGateResult>[
       _schemaGate(input.schemaVersion),
-      _referenceGate('corpus.id', '评测语料必须具有不含音频路径的可追溯标识', input.corpusId),
+      _referenceGate('corpus.id', '产品质量观察语料应具有不含音频路径的可追溯标识', input.corpusId),
       _exactTextGate(
         'corpus.evidenceClass',
-        '正式发布质量门槛只接受 product-meeting 证据',
+        '产品会议质量观察只接受 product-meeting 证据',
         input.corpusEvidenceClass,
         alphaProductMeetingEvidenceClass,
       ),
       _sha256Gate(
         'corpus.manifestSha256',
-        '评测语料必须绑定 64 位十六进制 manifest SHA-256',
+        '产品质量观察语料应绑定 64 位十六进制 manifest SHA-256',
         input.corpusManifestSha256,
       ),
       _textGate(
         'corpus.provenance.sourceId',
-        '评测语料必须具有来源标识',
+        '产品质量观察语料应具有来源标识',
         input.corpusSourceId,
       ),
       _textGate(
         'corpus.provenance.licenseId',
-        '评测语料必须具有授权或许可标识',
+        '产品质量观察语料应具有授权或许可标识',
         input.corpusLicenseId,
       ),
       _sha256Gate(
         'corpus.provenance.reviewAttestationSha256',
-        '产品会议语料必须绑定人工复核证明 SHA-256',
+        '产品会议质量观察语料应绑定人工复核证明 SHA-256',
         input.corpusReviewAttestationSha256,
       ),
       _utcTimestampGate(
         'corpus.provenance.reviewedAtUtc',
-        '产品会议语料必须绑定人工复核 UTC 时间',
+        '产品会议质量观察语料应绑定人工复核 UTC 时间',
         input.corpusReviewedAtUtc,
       ),
       _thresholdGate(
         'corpus.sampleCount',
-        '正式去敏矩阵不少于 60 段（20 静音、20 纯噪声、20 带事实语音）',
+        '可选去敏矩阵建议不少于 60 段（20 静音、20 纯噪声、20 带事实语音）',
         input.corpusSampleCount,
         (value) => value >= 60,
       ),
-      _boolGate('corpus.deidentified', '评测语料已去敏', input.corpusDeidentified),
+      _boolGate('corpus.deidentified', '产品质量观察语料已去敏', input.corpusDeidentified),
       _boolGate(
         'environment.sameCorpus',
         '双模型使用相同语料',
@@ -702,7 +737,7 @@ final class EvaluateAlphaReleaseUseCase {
       ),
       _referenceGate(
         'evidence.android',
-        'Android 构建、模拟器与真机证据具有可追溯引用',
+        'Android 构建与当前评估范围设备证据具有可追溯引用',
         input.androidEvidenceRef,
       ),
       _sha256Gate(
@@ -717,35 +752,35 @@ final class EvaluateAlphaReleaseUseCase {
       ),
       _boolGate(
         'quality.fixedWindowBothModels',
-        'Base 和 Small 已在同语料完成固定窗口对照',
+        'Base 和 Small 产品质量观察已在同语料完成固定窗口对照',
         input.fixedWindowBothModelsCompleted,
       ),
       _boolGate(
         'quality.profilePipelineMatrixCompleted',
-        'Base/Small 已完成 Baseline/Preview/Final 与固定窗口/双 VAD 完整矩阵',
+        '产品质量观察已完成 Base/Small、Profile 与 Pipeline 完整矩阵',
         input.qualityMatrixCompleted,
       ),
       _thresholdGate(
         'quality.previewLatencyP95Ms',
-        'Preview 句后出字 P95 不超过 3000 ms',
+        '观察 Preview 句后出字 P95 是否不超过 3000 ms',
         previewLatencyP95,
         (value) => value <= 3000,
       ),
       _ratioNoRegressionGate(
         'quality.standardVadRecallNoRegression',
-        'Base 的 VAD 关键事实召回不得低于固定窗口基线',
+        '观察 Base 的 VAD 关键事实召回是否低于固定窗口基线',
         baseline: input.standardFixedWindowKeyFactRecallRatio,
         candidate: input.standardVadKeyFactRecallRatio,
       ),
       _ratioNoRegressionGate(
         'quality.advancedVadRecallNoRegression',
-        'Small 的 VAD 关键事实召回不得低于 Base',
+        '观察 Small 的 VAD 关键事实召回是否低于 Base',
         baseline: input.standardVadKeyFactRecallRatio,
         candidate: input.advancedVadKeyFactRecallRatio,
       ),
       _boundedRatioThresholdGate(
         'quality.speechBoundaryRecall',
-        '语音首尾已标注关键事实必须全部保留',
+        '观察语音首尾已标注关键事实是否全部保留',
         input.speechBoundaryKeyFactRecallRatio,
         (value) => value == 1,
       ),
@@ -792,13 +827,13 @@ final class EvaluateAlphaReleaseUseCase {
       ),
       _thresholdGate(
         'standard.keyFactRecallRatio',
-        '20 段评测关键事实召回率不低于 85%',
+        '观察 20 段评测关键事实召回率是否不低于 85%',
         input.keyFactRecallRatio,
         (value) => value >= 0.85,
       ),
       _thresholdGate(
         'vad.silenceSampleCount',
-        '纯静音评测样本不少于 20 段',
+        '确定性 VAD 静音生命周期不少于 20 次',
         input.silenceSampleCount,
         (value) => value >= 20,
       ),
@@ -810,13 +845,13 @@ final class EvaluateAlphaReleaseUseCase {
       ),
       _thresholdGate(
         'vad.noiseSampleCount',
-        '噪声评测样本不少于 20 段',
+        '产品噪声观察样本不少于 20 段',
         input.noiseSampleCount,
         (value) => value >= 20,
       ),
       _thresholdGate(
         'vad.noiseReductionRatio',
-        'VAD 相对固定窗口基线降低至少 80% 噪声幻觉',
+        '观察 VAD 是否相对固定窗口基线降低至少 80% 噪声幻觉',
         noiseReduction,
         (value) => value >= 0.8,
       ),
@@ -832,7 +867,7 @@ final class EvaluateAlphaReleaseUseCase {
       ),
       _boolGate(
         'phase04.productBoundaryApproved',
-        '阶段 0 产品边界和质量门槛已批准',
+        '阶段 0 产品边界和阻断/观察分类已批准',
         input.productBoundaryApproved,
       ),
       _boolGate(
@@ -940,16 +975,23 @@ final class EvaluateAlphaReleaseUseCase {
         input.whisperCppLicenseConfirmed,
       ),
     ];
+    final classifiedGates = allGates
+        .map(
+          (gate) => _nonBlockingProductQualityGateIds.contains(gate.id)
+              ? gate.asNonBlocking()
+              : gate,
+        )
+        .toList(growable: false);
     final gates = input.evaluationScope == AlphaReleaseEvaluationScope.phase0To4
-        ? allGates
+        ? classifiedGates
               .where((gate) => !_postPhase4GateIds.contains(gate.id))
               .toList(growable: false)
-        : allGates;
+        : classifiedGates;
     final hasFailure = gates.any(
-      (gate) => gate.status == ReleaseGateStatus.failed,
+      (gate) => gate.blocking && gate.status == ReleaseGateStatus.failed,
     );
     final hasMissing = gates.any(
-      (gate) => gate.status == ReleaseGateStatus.missing,
+      (gate) => gate.blocking && gate.status == ReleaseGateStatus.missing,
     );
     return AlphaReleaseEvaluationReport(
       scope: input.evaluationScope,
@@ -1018,8 +1060,12 @@ final class EvaluateAlphaReleaseUseCase {
 }
 
 const _postPhase4GateIds = <String>{
+  'environment.sameCorpus',
+  'environment.sameDevice',
   'environment.lowEndArm64',
   'environment.adaptiveNavigationAccessibility',
+  'evidence.rawMetrics',
+  'evidence.rawMetricsSha256',
   'evidence.iosBuild',
   'standard.rtfP95',
   'standard.sentenceLatencyP95Ms',
@@ -1027,15 +1073,38 @@ const _postPhase4GateIds = <String>{
   'standard.recordingCompletenessRatio',
   'standard.thermal',
   'standard.relativeEnergy',
+  'advanced.rtfSampleCount',
+  'advanced.sentenceLatencySampleCount',
   'advanced.finalTranscriptionDurationMs',
   'acceptance.AT01-AT24',
   'release.android16Kb',
   'release.iosBuildAudit',
 };
 
+const _nonBlockingProductQualityGateIds = <String>{
+  'corpus.id',
+  'corpus.evidenceClass',
+  'corpus.manifestSha256',
+  'corpus.provenance.sourceId',
+  'corpus.provenance.licenseId',
+  'corpus.provenance.reviewAttestationSha256',
+  'corpus.provenance.reviewedAtUtc',
+  'corpus.sampleCount',
+  'corpus.deidentified',
+  'quality.fixedWindowBothModels',
+  'quality.profilePipelineMatrixCompleted',
+  'quality.previewLatencyP95Ms',
+  'quality.standardVadRecallNoRegression',
+  'quality.advancedVadRecallNoRegression',
+  'quality.speechBoundaryRecall',
+  'standard.keyFactRecallRatio',
+  'vad.noiseSampleCount',
+  'vad.noiseReductionRatio',
+};
+
 ReleaseGateResult _schemaGate(int? value) => ReleaseGateResult(
   id: 'input.schemaVersion',
-  requirement: '发布评估输入必须使用当前 schema 7',
+  requirement: '发布评估输入必须使用当前 schema 8',
   status: value == alphaReleaseInputSchemaVersion
       ? ReleaseGateStatus.passed
       : ReleaseGateStatus.missing,

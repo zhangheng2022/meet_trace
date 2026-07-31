@@ -35,8 +35,12 @@ void main() {
       expect(gateIds, isNot(contains('release.android16Kb')));
       expect(gateIds, isNot(contains('release.iosBuildAudit')));
       expect(fullGateIds.difference(gateIds), {
+        'environment.sameCorpus',
+        'environment.sameDevice',
         'environment.lowEndArm64',
         'environment.adaptiveNavigationAccessibility',
+        'evidence.rawMetrics',
+        'evidence.rawMetricsSha256',
         'evidence.iosBuild',
         'standard.rtfP95',
         'standard.sentenceLatencyP95Ms',
@@ -44,6 +48,8 @@ void main() {
         'standard.recordingCompletenessRatio',
         'standard.thermal',
         'standard.relativeEnergy',
+        'advanced.rtfSampleCount',
+        'advanced.sentenceLatencySampleCount',
         'advanced.finalTranscriptionDurationMs',
         'acceptance.AT01-AT24',
         'release.android16Kb',
@@ -112,7 +118,7 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.blocked);
     });
 
-    test('少于 60 段不能冒充正式产品会议三类矩阵', () {
+    test('少于 60 段会如实失败但不阻断工程或 Alpha 决策', () {
       final report = const EvaluateAlphaReleaseUseCase().execute(
         _passingInput().copyWith(corpusSampleCount: 59),
       );
@@ -122,10 +128,11 @@ void main() {
 
       expect(gate.value, 59);
       expect(gate.status, ReleaseGateStatus.failed);
-      expect(report.decision, AlphaReleaseDecision.noGo);
+      expect(gate.blocking, isFalse);
+      expect(report.decision, AlphaReleaseDecision.go);
     });
 
-    test('产品会议发布门禁拒绝缺失或无效的人工复核证明', () {
+    test('产品会议复核证明缺失标记 not_tested，无效值仍如实失败但不阻断', () {
       final missingJson = _passingInput().toJson();
       final missingProvenance =
           (missingJson['corpus']! as Map<String, Object?>)['provenance']!
@@ -140,10 +147,13 @@ void main() {
       expect(
         missing.gates
             .where((gate) => gate.id.startsWith('corpus.provenance.review'))
-            .every((gate) => gate.status == ReleaseGateStatus.missing),
+            .every(
+              (gate) =>
+                  gate.status == ReleaseGateStatus.notTested && !gate.blocking,
+            ),
         isTrue,
       );
-      expect(missing.decision, AlphaReleaseDecision.blocked);
+      expect(missing.decision, AlphaReleaseDecision.go);
 
       final invalid = const EvaluateAlphaReleaseUseCase().execute(
         _passingInput().copyWith(corpusReviewedAtUtc: '2026-07-31T10:30:00'),
@@ -154,7 +164,7 @@ void main() {
             .status,
         ReleaseGateStatus.failed,
       );
-      expect(invalid.decision, AlphaReleaseDecision.noGo);
+      expect(invalid.decision, AlphaReleaseDecision.go);
     });
 
     test('当前范围不执行 iOS 真机时真机字段不参与发布判定', () {
@@ -175,10 +185,9 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.go);
     });
 
-    test('静音、噪声、chunk 一致性或 16 KB 任一失败时 No-Go', () {
+    test('静音、chunk 一致性或 16 KB 任一工程硬门槛失败时 No-Go', () {
       final failingInputs = [
         _passingInput().copyWith(silenceFalsePositiveCount: 1),
-        _passingInput().copyWith(vadNoiseHallucinationCount: 3),
         _passingInput().copyWith(vadChunkBoundaryConsistent: false),
         _passingInput().copyWith(vadFailureRecordingContinues: false),
         _passingInput().copyWith(android16KbPassed: false),
@@ -188,6 +197,19 @@ void main() {
         final report = const EvaluateAlphaReleaseUseCase().execute(input);
         expect(report.decision, AlphaReleaseDecision.noGo);
       }
+    });
+
+    test('噪声幻觉失败作为非阻断观察结果保留', () {
+      final report = const EvaluateAlphaReleaseUseCase().execute(
+        _passingInput().copyWith(vadNoiseHallucinationCount: 3),
+      );
+      final gate = report.gates.singleWhere(
+        (candidate) => candidate.id == 'vad.noiseReductionRatio',
+      );
+
+      expect(gate.status, ReleaseGateStatus.failed);
+      expect(gate.blocking, isFalse);
+      expect(report.decision, AlphaReleaseDecision.go);
     });
 
     test('噪声幻觉相对固定窗口下降至少 80%', () {
@@ -230,8 +252,9 @@ void main() {
       );
 
       expect(gate.value, isNull);
-      expect(gate.status, ReleaseGateStatus.missing);
-      expect(report.decision, AlphaReleaseDecision.blocked);
+      expect(gate.status, ReleaseGateStatus.notTested);
+      expect(gate.blocking, isFalse);
+      expect(report.decision, AlphaReleaseDecision.go);
     });
 
     test('缺少真机、语料、许可或验收证据时阻塞发布而非伪造失败值', () {
@@ -241,7 +264,15 @@ void main() {
 
       expect(report.decision, AlphaReleaseDecision.blocked);
       expect(
-        report.gates.every((gate) => gate.status == ReleaseGateStatus.missing),
+        report.gates
+            .where((gate) => gate.blocking)
+            .every((gate) => gate.status == ReleaseGateStatus.missing),
+        isTrue,
+      );
+      expect(
+        report.gates
+            .where((gate) => !gate.blocking)
+            .every((gate) => gate.status == ReleaseGateStatus.notTested),
         isTrue,
       );
       expect(
@@ -270,7 +301,7 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.blocked);
     });
 
-    test('公开或合成证据不能关闭产品会议质量门槛', () {
+    test('公开或合成证据不能冒充产品会议结果，但不再阻断交付', () {
       for (final evidenceClass in ['public-regression', 'synthetic-smoke']) {
         final report = const EvaluateAlphaReleaseUseCase().execute(
           _passingInput().copyWith(corpusEvidenceClass: evidenceClass),
@@ -280,7 +311,8 @@ void main() {
         );
 
         expect(gate.status, ReleaseGateStatus.failed);
-        expect(report.decision, AlphaReleaseDecision.noGo);
+        expect(gate.blocking, isFalse);
+        expect(report.decision, AlphaReleaseDecision.go);
       }
     });
 
@@ -302,7 +334,7 @@ void main() {
       expect(report.decision, AlphaReleaseDecision.blocked);
     });
 
-    test('Base、Small 或语音首尾关键事实回退时 No-Go', () {
+    test('Base、Small 或语音首尾关键事实回退如实失败但不阻断', () {
       final regressions = <(AlphaReleaseEvaluationInput, String)>[
         (
           _passingInput().copyWith(
@@ -334,11 +366,15 @@ void main() {
           ReleaseGateStatus.failed,
           reason: regression.$2,
         );
-        expect(report.decision, AlphaReleaseDecision.noGo);
+        expect(
+          report.gates.singleWhere((gate) => gate.id == regression.$2).blocking,
+          isFalse,
+        );
+        expect(report.decision, AlphaReleaseDecision.go);
       }
     });
 
-    test('Preview 延迟必须有 20 个样本且 P95 不超过 3 秒', () {
+    test('Preview 延迟缺失为 not_tested，超标如实失败但不阻断', () {
       final missing = const EvaluateAlphaReleaseUseCase().execute(
         _passingInput().copyWith(previewSentenceLatencyMs: [100]),
       );
@@ -356,16 +392,16 @@ void main() {
         missing.gates
             .singleWhere((gate) => gate.id == 'quality.previewLatencyP95Ms')
             .status,
-        ReleaseGateStatus.missing,
+        ReleaseGateStatus.notTested,
       );
-      expect(missing.decision, AlphaReleaseDecision.blocked);
+      expect(missing.decision, AlphaReleaseDecision.go);
       expect(
         failed.gates
             .singleWhere((gate) => gate.id == 'quality.previewLatencyP95Ms')
             .status,
         ReleaseGateStatus.failed,
       );
-      expect(failed.decision, AlphaReleaseDecision.noGo);
+      expect(failed.decision, AlphaReleaseDecision.go);
     });
 
     test('语料 manifest 必须绑定有效 SHA-256 和来源授权', () {
@@ -377,7 +413,8 @@ void main() {
       );
 
       expect(gate.status, ReleaseGateStatus.failed);
-      expect(invalid.decision, AlphaReleaseDecision.noGo);
+      expect(gate.blocking, isFalse);
+      expect(invalid.decision, AlphaReleaseDecision.go);
     });
 
     test('非有限召回值判定失败且报告仍可 JSON 序列化', () {
@@ -402,7 +439,13 @@ void main() {
             .status,
         ReleaseGateStatus.failed,
       );
-      expect(report.decision, AlphaReleaseDecision.noGo);
+      expect(
+        report.gates
+            .where((gate) => gate.id.startsWith('quality.'))
+            .every((gate) => !gate.blocking),
+        isTrue,
+      );
+      expect(report.decision, AlphaReleaseDecision.go);
       expect(() => jsonEncode(report.toJson()), returnsNormally);
     });
 
@@ -442,7 +485,7 @@ void main() {
       expect(input.corpusReviewAttestationSha256, 'a' * 64);
       expect(input.corpusReviewedAtUtc, '2026-07-31T10:30:00Z');
       expect(input.deviceId, 'low-end-arm64-01');
-      expect(json['schemaVersion'], 3);
+      expect(json['schemaVersion'], 4);
       expect(json['decision'], 'go');
       expect(json['corpusEvidenceClass'], 'product-meeting');
       expect(json['corpusManifestSha256'], input.corpusManifestSha256);

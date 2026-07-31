@@ -725,8 +725,8 @@
     "semantic_hash": ""
   },
   "lib/domain/use_cases/evaluate_alpha_release.dart": {
-    "mtime": 1785483061.1951165,
-    "ast_hash": "edc3fbbaed11f2ade5027d9807b6005e",
+    "mtime": 1785484499.0782592,
+    "ast_hash": "21e0d4e61549a69931afde09411863f0",
     "semantic_hash": ""
   },
   "lib/domain/use_cases/generate_summary.dart": {
@@ -1020,8 +1020,8 @@
     "semantic_hash": "51b888c5cb372c6c627cba4f7c0df83c"
   },
   "test/domain/use_cases/evaluate_alpha_release_test.dart": {
-    "mtime": 1785483020.880644,
-    "ast_hash": "bbd51af9936d70070599463b052e9c21",
+    "mtime": 1785483958.624273,
+    "ast_hash": "4df36566e9ef238be2a53db2036cce2b",
     "semantic_hash": ""
   },
   "test/domain/use_cases/generate_summary_test.dart": {
@@ -1095,8 +1095,8 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/alpha_release_input.example.json": {
-    "mtime": 1785470392.8099089,
-    "ast_hash": "32c20d7868748a418b241a2600249d34",
+    "mtime": 1785483914.3857448,
+    "ast_hash": "c051f6bf582db10540e3f9c037ee2751",
     "semantic_hash": ""
   },
   "tool/benchmarks/build_spike_sample.dart": {
@@ -1115,8 +1115,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1785426365.915378,
-    "ast_hash": "abf5bede71f8bbfb129a2d1c52d7b414",
+    "mtime": 1785484057.927978,
+    "ast_hash": "bcd617d864c555b6bc7d45167144f5ae",
     "semantic_hash": ""
   },
   "design.md": {
@@ -1125,8 +1125,8 @@
     "semantic_hash": ""
   },
   "docs/Codex_Alpha_\u5f00\u53d1\u6b65\u9aa4.md": {
-    "mtime": 1785481924.1882682,
-    "ast_hash": "88f89170513a91124603435b6b65fa34",
+    "mtime": 1785484092.047186,
+    "ast_hash": "b8f49238ab67a31d4dabaf5504607d66",
     "semantic_hash": ""
   },
   "docs/Git_\u5206\u652f\u4e0e_Worktree_\u7ea6\u5b9a.md": {
@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "docs/README.md": {
-    "mtime": 1785482559.7601898,
-    "ast_hash": "d08120ff01f9626128278f3258a56d3e",
+    "mtime": 1785484072.3154428,
+    "ast_hash": "ea18aade9a1aeaf84cda31b1b25ab6f2",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
@@ -1150,8 +1150,8 @@
     "semantic_hash": ""
   },
   "docs/\u7aef\u4fa7\u53cc\u6a21\u578b\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1785453550.9554052,
-    "ast_hash": "a02a08833ed3a298a91e4d8003ba1369",
+    "mtime": 1785484046.1114972,
+    "ast_hash": "3f0cdc1ee23243e22e4d73fb9c690b18",
     "semantic_hash": ""
   },
   "forui.yaml": {
@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "docs/\u4f1a\u8ff9_MeetTrace_Alpha_PRD_\u65e0\u767b\u5f55\u7248.md": {
-    "mtime": 1785453550.9549036,
-    "ast_hash": "e8d01bc3e87332b2b757b999416b4647",
+    "mtime": 1785484466.3752131,
+    "ast_hash": "a9d63dd0ffb8e6f5bedff43a7a59a69d",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260727_034129_\u91cd\u6784\u6240\u6709ui\u8bbe\u8ba1\u90e8\u5206_\u5148\u7ed9\u6211\u65b9\u6848.md": {
@@ -2570,8 +2570,8 @@
     "semantic_hash": ""
   },
   "test/tool/benchmarks/evaluate_alpha_release_cli_test.dart": {
-    "mtime": 1785479135.6103032,
-    "ast_hash": "6ef7afae0f19739d52bd9a31a90349ae",
+    "mtime": 1785483998.8724382,
+    "ast_hash": "b6f212c79afc70fbdbf21a459d64a3aa",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/whisper_quality_metrics_test.dart": {
@@ -2600,23 +2600,23 @@
     "semantic_hash": ""
   },
   "docs/plans/2026-07-30-whisper-cpp-quality-delivery.md": {
-    "mtime": 1785479264.4146442,
-    "ast_hash": "cc56559eda0ca83ba053f17b8de0d599",
+    "mtime": 1785484196.93144,
+    "ast_hash": "2cf042d7b150d9b0f3732d8f6c480928",
     "semantic_hash": ""
   },
   "docs/quality/Step_21_C++_\u8d28\u91cf\u4ea4\u4ed8\u57fa\u7ebf.md": {
-    "mtime": 1785483061.1965332,
-    "ast_hash": "9c1d0d9c97f8f0e22974eb5d10b541a7",
+    "mtime": 1785484273.7900107,
+    "ast_hash": "8c57fc7aab5e10e511c96ecf03f0f10b",
     "semantic_hash": ""
   },
   "docs/quality/Step_22_Whisper_\u89e3\u7801\u53c2\u6570\u8bc4\u6d4b.md": {
-    "mtime": 1785474713.0451596,
-    "ast_hash": "f1f6f0642c717f57d19f8bfaa104d17e",
+    "mtime": 1785484273.791016,
+    "ast_hash": "8285fa8a78a03e567e9d2f7737a73a91",
     "semantic_hash": ""
   },
   "docs/quality/Step_23_24_VAD_\u4e0e\u6700\u7ec8\u8f6c\u5f55.md": {
-    "mtime": 1785481924.1882682,
-    "ast_hash": "e76866de7f83c375ce8ba8489c508aec",
+    "mtime": 1785484190.7211218,
+    "ast_hash": "e4637412c18b4df918c0e3e1d60a96c5",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260730_114643_start_meeting_readiness_model_installation_whisper.md": {
@@ -2680,18 +2680,18 @@
     "semantic_hash": ""
   },
   "docs/quality/evidence/android-emulator/phase-0-4-release-input.json": {
-    "mtime": 1785481892.282714,
-    "ast_hash": "dea88be169ed718e7f9fe94b5e495c7b",
+    "mtime": 1785483973.2185388,
+    "ast_hash": "aea5762f7a2eeae4fe98cf769264fab6",
     "semantic_hash": ""
   },
   "docs/quality/evidence/android-emulator/phase-0-4-release-report.json": {
-    "mtime": 1785481893.2082548,
-    "ast_hash": "fd38eacbc0a2fd362270f95c608c4dde",
+    "mtime": 1785484506.592015,
+    "ast_hash": "656b208b77b521756a0e9283adb1e4b5",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/phase_0_4_release_input_builder_test.dart": {
-    "mtime": 1785476124.4471533,
-    "ast_hash": "2b505718717528c2e1a9b8d94057f1b5",
+    "mtime": 1785484466.3752131,
+    "ast_hash": "1852cdb8684f6da77ea216906c1e9a2f",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/rebuild_android_emulator_smoke_evidence_test.dart": {
@@ -2705,8 +2705,8 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/phase_0_4_release_input_builder.dart": {
-    "mtime": 1785476124.4461532,
-    "ast_hash": "9b4cc32123c3b7f776d5fe6a19a966d7",
+    "mtime": 1785484466.373643,
+    "ast_hash": "57256ec746a417ba5762bbf2ee761af3",
     "semantic_hash": ""
   },
   "tool/benchmarks/rebuild_android_emulator_smoke_evidence.dart": {
@@ -2715,8 +2715,8 @@
     "semantic_hash": ""
   },
   "test/tool/benchmarks/phase_0_4_quality_input_builder_test.dart": {
-    "mtime": 1785470569.545831,
-    "ast_hash": "5b4737dcca4ab880e233993b28f93f8a",
+    "mtime": 1785484305.4256976,
+    "ast_hash": "8813242bfd3e85fa9e15f4de8c56c138",
     "semantic_hash": ""
   },
   "tool/benchmarks/build_phase_0_4_quality_input.dart": {
@@ -2770,8 +2770,8 @@
     "semantic_hash": ""
   },
   "docs/quality/\u9636\u6bb5_0_4_\u5b8c\u6210\u5ea6\u5ba1\u8ba1.md": {
-    "mtime": 1785483061.1965332,
-    "ast_hash": "3fef46256f4714b3b91b12a33c1d1420",
+    "mtime": 1785484122.6222959,
+    "ast_hash": "d4d991788cf94daefbb399b5a7e25453",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260731_072058_\u6839\u636e\u4e0a\u8ff0\u6587\u6863_\u5b8c\u62100\u52304\u9636\u6bb5\u76ee\u6807_\u9879\u76ee\u6574\u4f53\u8d28\u91cf\u67b6\u6784\u4f18\u5148.md": {

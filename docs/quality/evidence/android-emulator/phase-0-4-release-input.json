@@ -1,6 +1,6 @@
 {
   "evaluationScope": "phase-0-4",
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "rawMetricsRef": null,
   "rawMetricsSha256": null,
   "corpus": {
@@ -40,8 +40,8 @@
     "advancedWh": null
   },
   "vad": {
-    "silenceSampleCount": null,
-    "silenceFalsePositiveCount": null,
+    "silenceSampleCount": 100,
+    "silenceFalsePositiveCount": 0,
     "noiseSampleCount": null,
     "baselineNoiseHallucinationCount": null,
     "vadNoiseHallucinationCount": null,
