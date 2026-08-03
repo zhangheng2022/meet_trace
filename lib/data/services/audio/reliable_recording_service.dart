@@ -14,6 +14,8 @@ import 'recording_ports.dart';
 export 'pcm_audio_level_meter.dart';
 
 const defaultRecordingCaptureStopTimeout = Duration(seconds: 5);
+const defaultRecordingCheckpointSaveInterval = Duration(seconds: 5);
+const defaultRecordingCheckpointSaveBytesThreshold = 512 * 1024;
 
 final class ReliableRecordingService implements RecordingSessionService {
   ReliableRecordingService({
@@ -27,6 +29,9 @@ final class ReliableRecordingService implements RecordingSessionService {
     this.minimumFreeBytes = minimumRecordingFreeBytes,
     this.maxPendingPreviewChunks = 4,
     this.captureStopTimeout = defaultRecordingCaptureStopTimeout,
+    this.checkpointSaveInterval = defaultRecordingCheckpointSaveInterval,
+    this.checkpointSaveBytesThreshold =
+        defaultRecordingCheckpointSaveBytesThreshold,
     required PcmAudioLevelMeter audioLevelMeter,
     DateTime Function()? now,
   }) : now = now ?? DateTime.now,
@@ -45,6 +50,20 @@ final class ReliableRecordingService implements RecordingSessionService {
         '必须大于 0',
       );
     }
+    if (checkpointSaveInterval <= Duration.zero) {
+      throw ArgumentError.value(
+        checkpointSaveInterval,
+        'checkpointSaveInterval',
+        '必须大于 0',
+      );
+    }
+    if (checkpointSaveBytesThreshold < 0) {
+      throw ArgumentError.value(
+        checkpointSaveBytesThreshold,
+        'checkpointSaveBytesThreshold',
+        '不能为负数',
+      );
+    }
   }
 
   final PcmAudioCapture capture;
@@ -56,6 +75,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   final int minimumFreeBytes;
   final int maxPendingPreviewChunks;
   final Duration captureStopTimeout;
+  final Duration checkpointSaveInterval;
+  final int checkpointSaveBytesThreshold;
   final DateTime Function() now;
   final PcmAudioLevelMeter _audioLevelMeter;
   final RecordingPreviewDispatcher _preview;
@@ -71,6 +92,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   bool _userPaused = false;
   bool _captureStopTimedOut = false;
   int _persistedBytes = 0;
+  DateTime _lastCheckpointSavedAt = DateTime.fromMillisecondsSinceEpoch(0);
+  int _lastCheckpointSavedBytes = 0;
 
   @override
   RecordingState get state => _state;
@@ -299,11 +322,14 @@ final class ReliableRecordingService implements RecordingSessionService {
       await output.writeFrom(bytes);
       await output.flush();
       _persistedBytes += bytes.length;
-      await _saveCheckpoint(
-        _state == RecordingState.paused
-            ? RecordingCheckpointState.paused
-            : RecordingCheckpointState.recording,
-      );
+      // 进度 checkpoint 按时间/字节节流；暂停、恢复与封存等状态点仍强制落盘。
+      if (_progressCheckpointDue()) {
+        await _saveCheckpoint(
+          _state == RecordingState.paused
+              ? RecordingCheckpointState.paused
+              : RecordingCheckpointState.recording,
+        );
+      }
       _preview.offer(
         RecordingPcmChunk(bytes: bytes, startByteOffset: startByteOffset),
       );
@@ -315,8 +341,14 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
   }
 
-  Future<void> _saveCheckpoint(RecordingCheckpointState state) {
-    return checkpoints.save(
+  bool _progressCheckpointDue() {
+    return now().difference(_lastCheckpointSavedAt) >= checkpointSaveInterval ||
+        _persistedBytes - _lastCheckpointSavedBytes >=
+            checkpointSaveBytesThreshold;
+  }
+
+  Future<void> _saveCheckpoint(RecordingCheckpointState state) async {
+    await checkpoints.save(
       RecordingCheckpoint(
         meetingId: _meetingId!,
         state: state,
@@ -324,6 +356,8 @@ final class ReliableRecordingService implements RecordingSessionService {
         updatedAt: now().toUtc(),
       ),
     );
+    _lastCheckpointSavedAt = now();
+    _lastCheckpointSavedBytes = _persistedBytes;
   }
 
   Future<void> _flushOutput() async {

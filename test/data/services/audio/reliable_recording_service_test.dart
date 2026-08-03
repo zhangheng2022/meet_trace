@@ -38,6 +38,10 @@ void main() {
     int freeBytes = 512 * 1024 * 1024,
     RecordingCheckpointStore? checkpointStore,
     Duration captureStopTimeout = const Duration(milliseconds: 20),
+    Duration checkpointSaveInterval = defaultRecordingCheckpointSaveInterval,
+    int checkpointSaveBytesThreshold =
+        defaultRecordingCheckpointSaveBytesThreshold,
+    DateTime Function()? now,
   }) {
     return ReliableRecordingService(
       capture: capture,
@@ -48,17 +52,17 @@ void main() {
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
       captureStopTimeout: captureStopTimeout,
-      now: () => DateTime.utc(2026, 7, 24, 8),
+      checkpointSaveInterval: checkpointSaveInterval,
+      checkpointSaveBytesThreshold: checkpointSaveBytesThreshold,
+      now: now ?? () => DateTime.utc(2026, 7, 24, 8),
     );
   }
 
-  test('每个 PCM 块完成文件 flush 和 checkpoint 后才投递预览', () async {
+  test('每个 PCM 块完成文件 flush 后才投递预览', () async {
     final observed = <RecordingPcmChunk>[];
     final preview = CallbackRecordingPreviewSink((chunk) async {
       final file = File(layout.meetingAudioTempPath('meeting-1'));
-      final checkpoint = await checkpoints.load('meeting-1');
       expect(await file.length(), chunk.endByteOffset);
-      expect(checkpoint?.persistedBytes, chunk.endByteOffset);
       observed.add(chunk);
     });
     final service = createService(preview: preview);
@@ -159,6 +163,68 @@ void main() {
       'paused:false',
       'stop',
     ]);
+  });
+
+  test('进度 checkpoint 未到节流间隔时不落盘，暂停等状态点强制落盘', () async {
+    final clock = _FakeClock(DateTime.utc(2026, 7, 24, 8));
+    final service = createService(now: clock.read);
+
+    await service.start(meetingId: 'meeting-throttle');
+    capture.add(_pcmBytes(16000));
+    await _waitFor(() => service.persistedBytes == 16000);
+
+    // 时钟未推进且字节量未达阈值：checkpoint 仍停留在启动时的初始记录。
+    var checkpoint = await checkpoints.load('meeting-throttle');
+    expect(checkpoint?.persistedBytes, 0);
+    expect(checkpoint?.state, RecordingCheckpointState.recording);
+
+    clock.advance(const Duration(seconds: 5));
+    capture.add(_pcmBytes(16000));
+    await _waitFor(() => service.persistedBytes == 32000);
+    checkpoint = await checkpoints.load('meeting-throttle');
+    expect(checkpoint?.persistedBytes, 32000);
+
+    // 暂停不受节流约束，立即记录最新进度与状态。
+    await service.pause();
+    checkpoint = await checkpoints.load('meeting-throttle');
+    expect(checkpoint?.persistedBytes, 32000);
+    expect(checkpoint?.state, RecordingCheckpointState.paused);
+
+    final result = await service.stop();
+    expect(result.bytes, 32000);
+    checkpoint = await checkpoints.load('meeting-throttle');
+    expect(checkpoint?.state, RecordingCheckpointState.finalized);
+    expect(checkpoint?.persistedBytes, 32000);
+  });
+
+  test('累计字节达到阈值时提前落盘进度 checkpoint', () async {
+    final clock = _FakeClock(DateTime.utc(2026, 7, 24, 8));
+    final service = createService(
+      now: clock.read,
+      checkpointSaveBytesThreshold: 32000,
+    );
+
+    await service.start(meetingId: 'meeting-bytes');
+    capture.add(_pcmBytes(16000));
+    await _waitFor(() => service.persistedBytes == 16000);
+    expect((await checkpoints.load('meeting-bytes'))?.persistedBytes, 0);
+
+    capture.add(_pcmBytes(16000));
+    await _waitFor(() => service.persistedBytes == 32000);
+    expect((await checkpoints.load('meeting-bytes'))?.persistedBytes, 32000);
+
+    await service.stop();
+  });
+
+  test('节流参数非法时拒绝创建录音服务', () {
+    expect(
+      () => createService(checkpointSaveInterval: Duration.zero),
+      throwsArgumentError,
+    );
+    expect(
+      () => createService(checkpointSaveBytesThreshold: -1),
+      throwsArgumentError,
+    );
   });
 
   test('权限拒绝或空间不足时不创建临时事实音频', () async {
@@ -308,6 +374,18 @@ void main() {
 }
 
 Uint8List _pcmBytes(int length) => Uint8List(length);
+
+final class _FakeClock {
+  _FakeClock(this.current);
+
+  DateTime current;
+
+  DateTime read() => current;
+
+  void advance(Duration duration) {
+    current = current.add(duration);
+  }
+}
 
 Future<void> _waitFor(
   bool Function() condition, {

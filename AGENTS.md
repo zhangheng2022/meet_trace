@@ -65,10 +65,10 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 
 提交标题应简短并使用祈使语气，例如 `增加 ASR 积压恢复`。PR 必须引用对应 PRD 章节，说明用户影响，列出验证命令和 OCR 范围；保留 Medium 时说明原因与后续动作。UI 变更需附截图。禁止提交密钥、录音、下载的模型、`build/` 或 `coverage/`。
 
-## graphify
+<!-- ## graphify
 
 项目知识图谱位于 `graphify-out/`。用户输入 `/graphify` 时，必须先使用已安装的 Graphify 技能。
 
 - 代码库问题优先运行 `graphify query "<question>"`；关系和概念分别使用 `graphify path`、`graphify explain`。有 `graphify-out/wiki/index.md` 时优先用于宽泛导航，只有架构综述或查询信息不足时才读取 `GRAPH_REPORT.md`。
 - `graphify-out/` 的脏文件通常来自 hook 或增量更新，不是跳过查询的理由；仅在图谱本身错误、过期或用户明确禁止时跳过。
-- 修改代码后运行 `graphify update .`，保持图谱同步。
+- 修改代码后运行 `graphify update .`，保持图谱同步。 -->
