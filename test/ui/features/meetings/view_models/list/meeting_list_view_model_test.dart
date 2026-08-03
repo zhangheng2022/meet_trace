@@ -232,7 +232,6 @@ Meeting _meeting({MeetingState state = MeetingState.processing}) => Meeting(
   createdAt: DateTime.utc(2026, 7, 24),
   status: state,
   audioDurationMs: 60000,
-  requestedModelId: 'paraformer',
   recordingModelId: 'paraformer',
   recordingModelVersion: '1',
 );

@@ -44,7 +44,6 @@ Meeting _meeting() => Meeting(
   status: MeetingState.completed,
   audioPath: '/private/meetings/meeting-1/audio/fact.pcm',
   audioDurationMs: 1000,
-  requestedModelId: 'paraformer',
   recordingModelId: 'paraformer',
   recordingModelVersion: '1',
   activeTranscriptSnapshotId: 'final-1',

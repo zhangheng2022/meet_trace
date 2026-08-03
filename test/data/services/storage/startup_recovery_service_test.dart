@@ -54,7 +54,6 @@ void main() {
       createdAt: now.subtract(const Duration(hours: 1)),
       status: MeetingState.created,
       audioDurationMs: 0,
-      requestedModelId: 'paraformer',
       recordingModelId: 'paraformer',
       recordingModelVersion: '1',
     ).startRecording(startedAt: now.subtract(const Duration(minutes: 50)));

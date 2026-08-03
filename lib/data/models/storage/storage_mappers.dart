@@ -16,14 +16,12 @@ Map<String, Object?> meetingToRow(Meeting meeting) {
     'status': meeting.status.name,
     'audio_path': meeting.audioPath,
     'audio_duration_ms': meeting.audioDurationMs,
-    'requested_model_id': meeting.requestedModelId,
     'recording_model_id': meeting.recordingModelId,
     'recording_model_version': meeting.recordingModelVersion,
     'recording_model_language': meeting.recordingModelLanguage,
     'recording_model_use_itn': meeting.recordingModelUseInverseTextNormalization
         ? 1
         : 0,
-    'model_fallback_reason': meeting.modelFallbackReason,
     'active_transcript_snapshot_id': meeting.activeTranscriptSnapshotId,
     'active_summary_id': meeting.activeSummaryId,
     'last_error_code': meeting.lastErrorCode,
@@ -40,13 +38,11 @@ Meeting meetingFromRow(Map<String, Object?> row) {
     status: MeetingState.values.byName(row['status']! as String),
     audioPath: row['audio_path'] as String?,
     audioDurationMs: row['audio_duration_ms']! as int,
-    requestedModelId: row['requested_model_id']! as String,
     recordingModelId: row['recording_model_id']! as String,
     recordingModelVersion: row['recording_model_version']! as String,
     recordingModelLanguage: row['recording_model_language']! as String,
     recordingModelUseInverseTextNormalization:
         row['recording_model_use_itn']! as int == 1,
-    modelFallbackReason: row['model_fallback_reason'] as String?,
     activeTranscriptSnapshotId: row['active_transcript_snapshot_id'] as String?,
     activeSummaryId: row['active_summary_id'] as String?,
     lastErrorCode: row['last_error_code'] as String?,

@@ -283,7 +283,6 @@ Meeting _meeting({
     status: status,
     audioPath: '/audio/meeting-1.pcm',
     audioDurationMs: 2000,
-    requestedModelId: senseVoiceDefaultModelId,
     recordingModelId: senseVoiceDefaultModelId,
     recordingModelVersion: '2024-07-17',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,

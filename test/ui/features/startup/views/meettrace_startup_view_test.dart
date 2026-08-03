@@ -201,14 +201,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('启动失败页不显示免登录页脚并可重试', (tester) async {
+  testWidgets('数据读取失败页明确阻断清理并可重试', (tester) async {
     var retries = 0;
     await tester.pumpWidget(
-      Application(home: MeetTraceStartupErrorView(onRetry: () => retries++)),
+      Application(home: MeetTraceDataReadBlockedView(onRetry: () => retries++)),
     );
 
-    expect(find.text('本地能力准备未完成'), findsOneWidget);
-    expect(find.text('请确认设备空间充足后重试。已有会议数据不会被删除。'), findsOneWidget);
+    expect(find.text('无法读取本地数据'), findsOneWidget);
+    expect(find.text('自动清理未执行。请检查设备存储状态后重试。'), findsOneWidget);
+    expect(find.textContaining('已有会议数据不会被删除'), findsNothing);
+    expect(find.textContaining('事实音频不会因重试而改变'), findsNothing);
     expect(find.text('无需登录 · 事实音频仅保存在本机'), findsNothing);
 
     await tester.tap(find.text('重试'));
@@ -217,20 +219,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('旧 Alpha 数据提示先导出且承诺不自动删除', (tester) async {
+  testWidgets('初始化失败页不承诺保留历史数据', (tester) async {
     await tester.pumpWidget(
-      Application(
-        home: MeetTraceStartupErrorView(
-          title: '需要先导出旧 Alpha 录音',
-          message:
-              '检测到旧版数据。应用不会自动迁移或删除录音；请先退回原 Alpha 版本导出重要录音，再卸载或清除数据后安装当前版本。',
-          onRetry: () {},
-        ),
-      ),
+      Application(home: MeetTraceInitializationBlockedView(onRetry: () {})),
     );
 
-    expect(find.text('需要先导出旧 Alpha 录音'), findsOneWidget);
-    expect(find.textContaining('不会自动迁移或删除录音'), findsOneWidget);
+    expect(find.text('本地能力准备未完成'), findsOneWidget);
+    expect(find.text('请确认设备空间充足后重试。'), findsOneWidget);
+    expect(find.textContaining('已有会议数据不会被删除'), findsNothing);
+    expect(find.textContaining('事实音频不会因重试而改变'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }
 

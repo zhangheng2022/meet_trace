@@ -76,7 +76,6 @@ Meeting _previewMeeting({
   status: status,
   audioPath: 'preview://alpha-review.pcm',
   audioDurationMs: 42 * 60 * 1000 + 8 * 1000,
-  requestedModelId: senseVoiceDefaultModelId,
   recordingModelId: senseVoiceDefaultModelId,
   recordingModelVersion: AsrModelRegistry.alpha.defaultModel.version,
   activeTranscriptSnapshotId: activeTranscriptSnapshotId,

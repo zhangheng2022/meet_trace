@@ -191,7 +191,6 @@ RecordingSessionViewModel _viewModel({
     startedAt: DateTime.utc(2026, 7, 24, 1),
     status: MeetingState.recording,
     audioDurationMs: 0,
-    requestedModelId: descriptor.modelId,
     recordingModelId: descriptor.modelId,
     recordingModelVersion: descriptor.version,
   );

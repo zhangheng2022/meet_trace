@@ -84,25 +84,36 @@ final class MeetTraceRuntimeInitializationTransition extends StatelessWidget {
   }
 }
 
-/// 会迹的本地能力启动失败页。
-final class MeetTraceStartupErrorView extends StatelessWidget {
-  const MeetTraceStartupErrorView({
-    required this.onRetry,
-    this.title = '本地能力准备未完成',
-    this.message = '请确认设备空间充足后重试。已有会议数据不会被删除。',
-    super.key,
-  });
+/// 数据代标记无法读取时的保护性阻断页。
+final class MeetTraceDataReadBlockedView extends StatelessWidget {
+  const MeetTraceDataReadBlockedView({required this.onRetry, super.key});
 
   final VoidCallback onRetry;
-  final String title;
-  final String message;
 
   @override
   Widget build(BuildContext context) => _StartupFrame(
-    body: _StartupErrorContent(
+    body: _StartupBlockedContent(
       onRetry: onRetry,
-      title: title,
-      message: message,
+      lead: '为保护本地数据，启动已停止。',
+      title: '无法读取本地数据',
+      message: '自动清理未执行。请检查设备存储状态后重试。',
+    ),
+  );
+}
+
+/// 依赖或本地运行能力初始化失败时的阻断页。
+final class MeetTraceInitializationBlockedView extends StatelessWidget {
+  const MeetTraceInitializationBlockedView({required this.onRetry, super.key});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => _StartupFrame(
+    body: _StartupBlockedContent(
+      onRetry: onRetry,
+      lead: '本地能力未完成初始化。',
+      title: '本地能力准备未完成',
+      message: '请确认设备空间充足后重试。',
     ),
   );
 }
@@ -540,14 +551,16 @@ final class _RuntimeStageMark extends StatelessWidget {
   }
 }
 
-final class _StartupErrorContent extends StatelessWidget {
-  const _StartupErrorContent({
+final class _StartupBlockedContent extends StatelessWidget {
+  const _StartupBlockedContent({
     required this.onRetry,
+    required this.lead,
     required this.title,
     required this.message,
   });
 
   final VoidCallback onRetry;
+  final String lead;
   final String title;
   final String message;
 
@@ -568,7 +581,7 @@ final class _StartupErrorContent extends StatelessWidget {
           Text('启动需要你的处理', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceXs),
           Text(
-            '现有会议与事实音频不会因重试而改变。',
+            lead,
             style: theme.typography.body.sm.copyWith(
               color: theme.colors.app.inkSecondary,
             ),

@@ -57,7 +57,6 @@ final class _MeetingRepository implements MeetingRepository {
          createdAt: DateTime.utc(2026, 7, 25),
          status: state,
          audioDurationMs: 0,
-         requestedModelId: 'paraformer',
          recordingModelId: 'paraformer',
          recordingModelVersion: '1',
        );

@@ -8,6 +8,7 @@ import '../data/repositories/sqflite_summary_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/storage/app_database.dart';
 import '../data/services/storage/app_file_layout.dart';
+import '../data/services/storage/local_data_generation_gate.dart';
 import '../data/services/storage/platform_database_factory.dart';
 import '../data/services/storage/startup_recovery_service.dart';
 import '../domain/models/asr_model_registry.dart';
@@ -41,6 +42,8 @@ final class StorageDependencies {
     required AsrModelRegistry registry,
   }) async {
     final fileLayout = await AppFileLayout.forApplication();
+    // 数据代门必须先于数据库打开与运行资源初始化：旧数据代一律全清。
+    await LocalDataGenerationGate(layout: fileLayout).ensureCurrent();
     await fileLayout.createBaseDirectories();
     final database = AppDatabase(
       databaseFactory: createPlatformDatabaseFactory(),

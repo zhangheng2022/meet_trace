@@ -397,7 +397,6 @@ Meeting _meeting(
     createdAt: DateTime.utc(2026, 7, 24),
     status: status,
     audioDurationMs: 0,
-    requestedModelId: 'paraformer',
     recordingModelId: 'paraformer',
     recordingModelVersion: '1',
     activeSummaryId: activeSummaryId,

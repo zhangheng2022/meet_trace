@@ -79,9 +79,9 @@ UI 只依赖 domain Port/Use Case/Model。下载、文件、网络、SQLite 和�
 
 ## 7. 会议锁定与数据库
 
-`Meeting` 保存 `requested_model_id`、`recording_model_id`、`recording_model_version`、`recording_model_language` 和 `recording_model_use_itn`。开始会议时一次写入 `auto/true`；后续预览和最终转录从会议读取，不从设置重新解析。
+`Meeting` 保存 `recording_model_id`、`recording_model_version`、`recording_model_language` 和 `recording_model_use_itn`。开始会议时一次写入 `auto/true`；后续预览和最终转录从会议读取，不从设置重新解析。单模型基线已删除请求模型与回退原因字段，架构守卫禁止对应列名重新进入 `lib/`。
 
-schema v5 为干净安装基线。检测到 v1～v4 时抛出 `UnsupportedAlphaInstallationException`，提示用户先导出录音再卸载或清除数据。升级事务不会修改旧数据库，也不会删除录音。
+schema v6 为干净安装基线。升级不做原地迁移：`LocalDataGenerationGate` 在打开数据库与初始化运行资源之前校验数据代标记（`data_generation.json`），缺失或内容不一致时清空整个 `meettrace/` 数据根目录（数据库、会议音频与快照、模型、检查点）并重走首次初始化；文件系统读取异常通过 `LocalDataGenerationMarkerReadException` 阻断启动，绝不继续清理。数据库层对 v1～v5 升级抛出 `UnsupportedAlphaInstallationException` 作为兜底防线；生产路径上旧数据库在打开前已被全清。
 
 ## 8. 故障和降级
 

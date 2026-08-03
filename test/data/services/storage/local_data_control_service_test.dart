@@ -41,7 +41,6 @@ void main() {
       status: MeetingState.failed,
       audioPath: layout.meetingAudioPath('secret-id'),
       audioDurationMs: 1000,
-      requestedModelId: 'standard',
       recordingModelId: 'standard',
       recordingModelVersion: 'v1',
       lastErrorCode: 'asr.failed',

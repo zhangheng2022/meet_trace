@@ -46,7 +46,6 @@ Widget _recordingPreview(AsrPreviewState state) {
     startedAt: DateTime(2026, 7, 25, 9, 30),
     status: MeetingState.recording,
     audioDurationMs: 0,
-    requestedModelId: descriptor.modelId,
     recordingModelId: descriptor.modelId,
     recordingModelVersion: descriptor.version,
   );

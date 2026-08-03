@@ -15,33 +15,20 @@ final class Meeting {
     required this.status,
     this.audioPath,
     required this.audioDurationMs,
-    required this.requestedModelId,
     required this.recordingModelId,
     required this.recordingModelVersion,
     this.recordingModelLanguage = 'auto',
     this.recordingModelUseInverseTextNormalization = true,
-    this.modelFallbackReason,
     this.activeTranscriptSnapshotId,
     this.activeSummaryId,
     this.lastErrorCode,
   }) {
     _requireText(id, 'id');
-    _requireText(requestedModelId, 'requestedModelId');
     _requireText(recordingModelId, 'recordingModelId');
     _requireText(recordingModelVersion, 'recordingModelVersion');
     _requireText(recordingModelLanguage, 'recordingModelLanguage');
     if (audioDurationMs < 0) {
       throw ArgumentError.value(audioDurationMs, 'audioDurationMs', '不能为负数');
-    }
-    final fallbackReason = modelFallbackReason?.trim();
-    if (requestedModelId != recordingModelId &&
-        (fallbackReason == null || fallbackReason.isEmpty)) {
-      throw ArgumentError('requestedModelId 与 recordingModelId 不同时必须记录显式回退原因');
-    }
-    if (requestedModelId == recordingModelId &&
-        fallbackReason != null &&
-        fallbackReason.isNotEmpty) {
-      throw ArgumentError('未发生模型回退时不能记录回退原因');
     }
     if (startedAt != null && startedAt!.isBefore(createdAt)) {
       throw ArgumentError('startedAt 不能早于 createdAt');
@@ -60,12 +47,10 @@ final class Meeting {
   final MeetingState status;
   final String? audioPath;
   final int audioDurationMs;
-  final String requestedModelId;
   final String recordingModelId;
   final String recordingModelVersion;
   final String recordingModelLanguage;
   final bool recordingModelUseInverseTextNormalization;
-  final String? modelFallbackReason;
   final String? activeTranscriptSnapshotId;
   final String? activeSummaryId;
   final String? lastErrorCode;
@@ -83,7 +68,6 @@ final class Meeting {
     required String recordingModelVersion,
     String recordingModelLanguage = 'auto',
     bool recordingModelUseInverseTextNormalization = true,
-    String? fallbackReason,
   }) {
     if (isRecordingModelLocked) {
       throw InvalidStateTransitionException(
@@ -98,7 +82,6 @@ final class Meeting {
       recordingModelLanguage: recordingModelLanguage,
       recordingModelUseInverseTextNormalization:
           recordingModelUseInverseTextNormalization,
-      modelFallbackReason: fallbackReason,
     );
   }
 
@@ -185,7 +168,6 @@ final class Meeting {
     String? recordingModelVersion,
     String? recordingModelLanguage,
     bool? recordingModelUseInverseTextNormalization,
-    Object? modelFallbackReason = _notProvided,
     Object? activeTranscriptSnapshotId = _notProvided,
     Object? activeSummaryId = _notProvided,
     Object? lastErrorCode = _notProvided,
@@ -199,7 +181,6 @@ final class Meeting {
       status: status ?? this.status,
       audioPath: audioPath ?? this.audioPath,
       audioDurationMs: audioDurationMs ?? this.audioDurationMs,
-      requestedModelId: requestedModelId,
       recordingModelId: recordingModelId ?? this.recordingModelId,
       recordingModelVersion:
           recordingModelVersion ?? this.recordingModelVersion,
@@ -208,9 +189,6 @@ final class Meeting {
       recordingModelUseInverseTextNormalization:
           recordingModelUseInverseTextNormalization ??
           this.recordingModelUseInverseTextNormalization,
-      modelFallbackReason: identical(modelFallbackReason, _notProvided)
-          ? this.modelFallbackReason
-          : modelFallbackReason as String?,
       activeTranscriptSnapshotId:
           identical(activeTranscriptSnapshotId, _notProvided)
           ? this.activeTranscriptSnapshotId

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../data/services/storage/app_database.dart';
+import '../data/services/storage/local_data_generation_gate.dart';
 import '../domain/models/meeting.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../ui/core/app_dialog.dart';
@@ -33,17 +33,18 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
       future: _loading,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          final legacyInstallation =
-              snapshot.error is UnsupportedAlphaInstallationException;
-          return MeetTraceStartupErrorView(
-            title: legacyInstallation ? '需要先导出旧 Alpha 录音' : '本地能力准备未完成',
-            message: legacyInstallation
-                ? '检测到旧版数据。应用不会自动迁移或删除录音；请先退回原 Alpha 版本导出重要录音，再卸载或清除数据后安装当前版本。'
-                : '请确认设备空间充足后重试。已有会议数据不会被删除。',
+          void retry() {
+            setState(() {
+              _loading = MeetTraceDependencies.create();
+            });
+          }
+
+          if (snapshot.error is LocalDataGenerationMarkerReadException) {
+            return MeetTraceDataReadBlockedView(onRetry: retry);
+          }
+          return MeetTraceInitializationBlockedView(
             onRetry: () {
-              setState(() {
-                _loading = MeetTraceDependencies.create();
-              });
+              retry();
             },
           );
         }

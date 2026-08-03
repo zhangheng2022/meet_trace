@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: ""
-title: MeetTrace Flutter 多端应用根工程
+title: 会迹（MeetTrace）Flutter 聚合项目根
 scope:
     - README.md
     - PRODUCT.md

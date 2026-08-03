@@ -6,5 +6,4 @@ scope:
     - graphify-out/
 source_files: []
 depends_on: []
-related_to:
-    - path: shared_dart_code
+related_to: []

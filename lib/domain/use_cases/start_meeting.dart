@@ -73,7 +73,6 @@ final class StartMeetingUseCase {
         createdAt: timestamp,
         status: MeetingState.created,
         audioDurationMs: 0,
-        requestedModelId: descriptor.modelId,
         recordingModelId: descriptor.modelId,
         recordingModelVersion: descriptor.version,
         recordingModelLanguage: descriptor.language,

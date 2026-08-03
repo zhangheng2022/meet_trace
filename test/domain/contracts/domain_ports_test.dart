@@ -30,7 +30,6 @@ void main() {
       createdAt: DateTime.utc(2026, 7, 24),
       status: MeetingState.created,
       audioDurationMs: 0,
-      requestedModelId: 'paraformer',
       recordingModelId: 'paraformer',
       recordingModelVersion: '1',
     );

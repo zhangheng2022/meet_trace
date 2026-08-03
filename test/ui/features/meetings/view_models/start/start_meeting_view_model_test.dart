@@ -29,7 +29,6 @@ void main() {
 
     expect(session, isNotNull);
     expect(session!.meeting.title, pendingMeetingTitle);
-    expect(session.meeting.requestedModelId, senseVoice.modelId);
     expect(session.meeting.recordingModelId, senseVoice.modelId);
     expect(session.meeting.recordingModelVersion, senseVoice.version);
     expect(session.meeting.status, MeetingState.recording);
@@ -107,7 +106,6 @@ void main() {
       () => session!.meeting.changeRecordingModel(
         recordingModelId: senseVoiceDefaultModelId,
         recordingModelVersion: '2024-07-17',
-        fallbackReason: '不应允许',
       ),
       throwsA(isA<InvalidStateTransitionException>()),
     );

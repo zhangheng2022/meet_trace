@@ -359,7 +359,6 @@ Meeting _meeting({required String activeSnapshotId}) {
     status: MeetingState.completed,
     audioPath: '/audio/fact.pcm',
     audioDurationMs: 2000,
-    requestedModelId: 'paraformer',
     recordingModelId: 'paraformer',
     recordingModelVersion: '1',
     activeTranscriptSnapshotId: activeSnapshotId,

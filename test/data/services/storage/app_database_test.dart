@@ -22,6 +22,10 @@ void main() {
     final tables = tableRows.map((row) => row['name']).toSet();
     final versionRows = await db.rawQuery('PRAGMA user_version');
     final summaryColumns = await db.rawQuery('PRAGMA table_info(summaries)');
+    final meetingColumns = await db.rawQuery('PRAGMA table_info(meetings)');
+    final meetingColumnNames = meetingColumns
+        .map((column) => column['name'])
+        .toSet();
 
     expect(
       tables,
@@ -40,6 +44,9 @@ void main() {
       }),
     );
     expect(summaryColumns.map((column) => column['name']), contains('title'));
+    // 单模型基线：会议表不再保留请求模型与回退原因遗留列。
+    expect(meetingColumnNames, isNot(contains('requested_model_id')));
+    expect(meetingColumnNames, isNot(contains('model_fallback_reason')));
     expect(versionRows.single['user_version'], AppDatabase.schemaVersion);
   });
 
@@ -111,6 +118,42 @@ void main() {
 
     expect(marker.single['id'], 1);
     expect(await untouched.getVersion(), 1);
+  });
+
+  test('现有 v5 数据库拒绝原地升级且保留原表', () async {
+    final root = await Directory.systemTemp.createTemp('meettrace-v5-');
+    addTearDown(() => root.delete(recursive: true));
+    final path = p.join(root.path, 'v5.db');
+    final legacy = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 5,
+        onCreate: (db, _) async {
+          await db.execute(
+            'CREATE TABLE meetings (id TEXT PRIMARY KEY NOT NULL)',
+          );
+          await db.insert('meetings', {'id': 'meeting-legacy'});
+        },
+      ),
+    );
+    await legacy.close();
+
+    final database = AppDatabase(
+      databaseFactory: databaseFactoryFfi,
+      path: path,
+    );
+    addTearDown(database.close);
+    await expectLater(
+      database.open(),
+      throwsA(isA<UnsupportedAlphaInstallationException>()),
+    );
+    // 生产路径由数据代门在打开数据库前全清；此处验证数据库层自身的兜底拒绝。
+    final untouched = await databaseFactoryFfi.openDatabase(path);
+    addTearDown(untouched.close);
+    final rows = await untouched.query('meetings');
+
+    expect(rows.single['id'], 'meeting-legacy');
+    expect(await untouched.getVersion(), 5);
   });
 
   test('现有 v3 数据库拒绝原地升级且保留摘要', () async {

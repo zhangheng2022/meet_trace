@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: shared_dart_code
-title: MeetTrace Flutter 应用（分层架构与依赖注入）
+title: MeetTrace Flutter 应用主模块
 scope:
     - lib/
     - test/
@@ -10,6 +10,5 @@ related_to:
     - path: android_platform
     - path: assets_and_models
     - path: desktop_platforms
-    - path: development_tools
     - path: ios_platform
     - path: tooling_benchmarks

@@ -559,7 +559,6 @@ Meeting _meeting(
   createdAt: createdAt ?? DateTime.utc(2026, 7, 24),
   status: state,
   audioDurationMs: 12000,
-  requestedModelId: senseVoiceDefaultModelId,
   recordingModelId: senseVoiceDefaultModelId,
   recordingModelVersion: '2024-07-17',
   lastErrorCode: state == MeetingState.failed ? 'processing.failed' : null,

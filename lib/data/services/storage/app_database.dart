@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 final class AppDatabase {
   AppDatabase({required this.databaseFactory, required this.path});
 
-  static const schemaVersion = 5;
+  static const schemaVersion = 6;
 
   final DatabaseFactory databaseFactory;
   final String path;
@@ -67,13 +67,11 @@ final class AppDatabase {
         status TEXT NOT NULL,
         audio_path TEXT,
         audio_duration_ms INTEGER NOT NULL CHECK(audio_duration_ms >= 0),
-        requested_model_id TEXT NOT NULL,
         recording_model_id TEXT NOT NULL,
         recording_model_version TEXT NOT NULL,
         recording_model_language TEXT NOT NULL,
         recording_model_use_itn INTEGER NOT NULL
           CHECK(recording_model_use_itn IN (0, 1)),
-        model_fallback_reason TEXT,
         active_transcript_snapshot_id TEXT,
         active_summary_id TEXT,
         last_error_code TEXT
@@ -248,7 +246,9 @@ final class AppDatabase {
       await _createSchema(db, newVersion);
       return;
     }
-    if (oldVersion < 5 && newVersion >= 5) {
+    if (oldVersion < 6 && newVersion >= 6) {
+      // 单模型基线已删除两个遗留模型选择列（见架构守卫 legacy_schema_guard_test）；
+      // 旧数据库不做原地迁移，由数据代门在启动前全清。
       throw const UnsupportedAlphaInstallationException();
     }
     if (oldVersion < 2 && newVersion >= 2) {

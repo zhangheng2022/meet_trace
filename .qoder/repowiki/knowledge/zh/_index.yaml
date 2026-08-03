@@ -3,11 +3,11 @@ schema_version: 1
 locale: zh-CN
 branch: master
 nodes_managed: true
-exported_at: "2026-08-03T09:25:46Z"
+exported_at: "2026-08-03T10:56:01Z"
 modules:
     "":
-        dir_name: MeetTrace Flutter 多端应用根工程
-        title: MeetTrace Flutter 多端应用根工程
+        dir_name: 会迹（MeetTrace）Flutter 聚合项目根
+        title: 会迹（MeetTrace）Flutter 聚合项目根
         scope:
             - README.md
             - PRODUCT.md
@@ -23,6 +23,7 @@ modules:
             - skills-lock.json
         source_files: []
         children:
+            - agents_skills
             - android_platform
             - assets_and_models
             - desktop_platforms
@@ -31,6 +32,16 @@ modules:
             - ios_platform
             - shared_dart_code
             - tooling_benchmarks
+        depends_on: []
+        related_to: []
+    agents_skills:
+        dir_name: Agent Skills 依赖锁定文件
+        title: Agent Skills 依赖锁定文件
+        scope:
+            - .agents/
+            - skills-lock.json
+        source_files: []
+        children: []
         depends_on: []
         related_to: []
     android_platform:
@@ -53,6 +64,7 @@ modules:
         depends_on: []
         related_to:
             - path: shared_dart_code
+            - path: tooling_benchmarks
     desktop_platforms:
         dir_name: 桌面平台原生宿主（Linux _ macOS _ Windows）
         title: 桌面平台原生宿主（Linux / macOS / Windows）
@@ -74,11 +86,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: shared_dart_code
+        related_to: []
     documentation:
-        dir_name: 项目文档中心与质量证据库
-        title: 项目文档中心与质量证据库
+        dir_name: 会迹（MeetTrace）项目文档中心
+        title: 会迹（MeetTrace）项目文档中心
         scope:
             - docs/
         source_files: []
@@ -96,8 +107,8 @@ modules:
         related_to:
             - path: shared_dart_code
     shared_dart_code:
-        dir_name: MeetTrace Flutter 应用（分层架构与依赖注入）
-        title: MeetTrace Flutter 应用（分层架构与依赖注入）
+        dir_name: MeetTrace Flutter 应用主模块
+        title: MeetTrace Flutter 应用主模块
         scope:
             - lib/
             - test/
@@ -108,7 +119,6 @@ modules:
             - path: android_platform
             - path: assets_and_models
             - path: desktop_platforms
-            - path: development_tools
             - path: ios_platform
             - path: tooling_benchmarks
     tooling_benchmarks:
@@ -120,4 +130,5 @@ modules:
         children: []
         depends_on: []
         related_to:
+            - path: assets_and_models
             - path: shared_dart_code

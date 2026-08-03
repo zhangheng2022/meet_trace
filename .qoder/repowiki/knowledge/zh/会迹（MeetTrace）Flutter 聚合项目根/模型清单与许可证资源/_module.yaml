@@ -7,3 +7,4 @@ source_files: []
 depends_on: []
 related_to:
     - path: shared_dart_code
+    - path: tooling_benchmarks
