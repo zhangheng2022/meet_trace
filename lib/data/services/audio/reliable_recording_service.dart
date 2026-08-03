@@ -5,14 +5,12 @@ import 'dart:typed_data';
 import '../../../domain/models/meeting_readiness.dart';
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/workflow_states.dart';
+import '../../../domain/ports/recording_session.dart';
 import '../storage/app_file_layout.dart';
 import '../storage/durable_file_committer.dart';
 import 'pcm_audio_level_meter.dart';
 import 'recording_checkpoint_store.dart';
 import 'recording_ports.dart';
-import 'recording_session_service.dart';
-
-export 'recording_session_service.dart';
 export 'pcm_audio_level_meter.dart';
 
 const defaultRecordingCaptureStopTimeout = Duration(seconds: 5);

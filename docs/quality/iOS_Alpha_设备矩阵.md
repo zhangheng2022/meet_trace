@@ -1,8 +1,8 @@
 # 会迹（MeetTrace）iOS Alpha 设备矩阵
 
 > 状态：阻塞，等待 macOS/Xcode 与真机证据
-> 更新日期：2026-07-27
-> 上游需求：[Android + iOS Alpha PRD V0.6](../会迹_MeetTrace_Alpha_PRD_无登录版.md)
+> 更新日期：2026-08-03
+> 上游需求：[Android + iOS Alpha PRD V0.7](../会迹_MeetTrace_Alpha_PRD_无登录版.md)
 
 ## 平台基线
 
@@ -29,10 +29,10 @@
 - `flutter build ios --debug --no-codesign` 在 macOS/Xcode 环境通过。
 - 使用产品负责人确认的反向域名 Bundle ID 和 Apple Team 完成签名配置。
 - SenseVoice 和 Silero VAD 权重均不得进入 iOS 构建产物，首次初始化时下载。
-- 两个 ASR Engine 在 iOS arm64 真机完成初始化、识别、释放和重复创建。
+- SenseVoice Engine 在 iOS arm64 真机完成初始化、识别、释放和重复创建。
 - 30 分钟前台、锁屏和切后台录音完整率均为 100%。
 - 系统音频中断可恢复；用户强制结束后不显示“仍在录音”，重启可恢复已落盘事实音频。
 - Dynamic Type 2.0、VoiceOver、浅/深色、边缘返回和 iPad 多任务窗口通过。
 - 权限用途、官方原生库、NOTICE/隐私清单、密钥和用户数据完成构建产物审计。
 
-在以上证据闭环前，Step 19 与双平台 Alpha 发布门禁必须保持 `blocked`。
+在以上证据闭环前，双平台 Alpha 发布门禁必须保持 `blocked`。

@@ -1,6 +1,6 @@
 import '../../domain/models/model_usage_lease.dart';
 import '../services/storage/app_database.dart';
-import 'repository_contracts.dart';
+import '../../domain/ports/repositories.dart';
 
 final class SqfliteModelUsageLeaseRepository
     implements ModelUsageLeaseRepository {

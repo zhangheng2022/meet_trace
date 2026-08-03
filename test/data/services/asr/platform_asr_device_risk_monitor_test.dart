@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart';
-import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/data/services/asr/platform_asr_device_risk_monitor.dart';
 
 void main() {

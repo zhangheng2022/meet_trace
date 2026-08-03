@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
-import 'package:meettrace/data/services/asr/asr_engine.dart';
-import 'package:meettrace/data/services/asr/final_transcription_service.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
+import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/audio_source.dart';
@@ -112,7 +112,7 @@ void main() {
     expect(transcripts.saved.last.status, TranscriptSnapshotStatus.failed);
   });
 
-  test('重新转录可显式选择另一已安装模型并生成独立快照', () async {
+  test('重新转录始终使用本场锁定模型并生成独立快照', () async {
     meetings.value = _meeting(
       status: MeetingState.completed,
       activeTranscriptSnapshotId: 'old-snapshot',
@@ -129,11 +129,7 @@ void main() {
         };
     final qwen = AsrModelRegistry.alpha.requireById(senseVoiceDefaultModelId);
 
-    final result = await service.transcribe(
-      meetingId: 'meeting-1',
-      modelId: qwen.modelId,
-      modelVersion: qwen.version,
-    );
+    final result = await service.transcribe(meetingId: 'meeting-1');
 
     expect(engines.createCalls.single, (qwen.modelId, qwen.version));
     expect(result.snapshot.id, 'snapshot-attempt-1');

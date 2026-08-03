@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/data/services/asr/sense_voice_asr_engine.dart';
 import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';

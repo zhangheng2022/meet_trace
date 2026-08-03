@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
-import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/data/services/asr/sense_voice_asr_engine.dart';
 import 'package:meettrace/data/services/asr/sherpa_onnx_asr_engine_factory.dart';
 import 'package:meettrace/domain/models/asr_model.dart';

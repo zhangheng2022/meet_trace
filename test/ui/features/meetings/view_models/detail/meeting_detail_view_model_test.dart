@@ -1,7 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
-import 'package:meettrace/data/services/asr/final_transcription_service.dart';
-import 'package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart';
 import 'package:meettrace/data/services/summary/summary_generation_service.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
@@ -10,11 +7,13 @@ import 'package:meettrace/domain/models/speaker_diarization.dart';
 import 'package:meettrace/domain/models/summary.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/use_cases/generate_summary.dart';
+import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
+import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
 
 import '../../../../../support/final_transcription_fakes.dart';
-import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
   test('processing 会议自动使用锁定模型并接收完整音频进度', () async {
@@ -41,8 +40,8 @@ void main() {
 
     await fixture.viewModel.load();
 
-    expect(fixture.runner.calls.single.modelId, isNull);
-    expect(fixture.runner.calls.single.modelVersion, isNull);
+    expect(fixture.runner.calls.single.modelId, senseVoiceDefaultModelId);
+    expect(fixture.runner.calls.single.modelVersion, '2024-07-17');
     expect(fixture.viewModel.progress, 1);
     expect(fixture.viewModel.snapshot?.id, completed.id);
     expect(fixture.viewModel.meeting.status, MeetingState.completed);
@@ -99,7 +98,7 @@ void main() {
     await fixture.dispose();
   });
 
-  test('完成后可选择当前已安装 SenseVoice 生成独立重转录', () async {
+  test('完成后使用本场锁定 SenseVoice 生成独立重转录', () async {
     final active = _snapshot(id: 'old');
     final fixture = _fixture(
       _meeting(
@@ -131,7 +130,6 @@ void main() {
         };
     await fixture.viewModel.load();
 
-    fixture.viewModel.selectModel(senseVoiceDefaultModelId);
     await fixture.viewModel.retranscribe();
 
     expect(fixture.runner.calls.single.modelId, senseVoiceDefaultModelId);
@@ -176,6 +174,43 @@ void main() {
 
     final resumed = fixture.runner.calls.single;
     expect(resumed.retrySnapshotId, pending.id);
+    expect(resumed.modelId, senseVoiceDefaultModelId);
+    expect(resumed.modelVersion, '2024-07-17');
+    await fixture.dispose();
+  });
+
+  test('历史替代模型的 processing 快照不复用并改用本场锁定模型', () async {
+    final pending = _snapshot(
+      id: 'legacy-pending',
+      status: TranscriptSnapshotStatus.processing,
+      modelId: 'legacy-alternative-model',
+      modelVersion: '2025-01-01',
+    );
+    final fixture = _fixture(_meeting());
+    fixture.transcripts.records[pending.id] = pending;
+    fixture.runner.onCall =
+        ({
+          required meetingId,
+          required modelId,
+          required modelVersion,
+          required retrySnapshotId,
+          required onProgress,
+        }) async {
+          final completed = _snapshot(id: 'locked-model-attempt');
+          final meeting = fixture.meetings.value!.activateFinalTranscript(
+            completed,
+          );
+          fixture.meetings.value = meeting;
+          return FinalTranscriptionResult(
+            meeting: meeting,
+            snapshot: completed,
+          );
+        };
+
+    await fixture.viewModel.load();
+
+    final resumed = fixture.runner.calls.single;
+    expect(resumed.retrySnapshotId, isNull);
     expect(resumed.modelId, senseVoiceDefaultModelId);
     expect(resumed.modelVersion, '2024-07-17');
     await fixture.dispose();
@@ -446,11 +481,6 @@ _Fixture _fixture(
           service: summaryService,
           now: () => DateTime.utc(2026, 7, 25, 4),
         );
-  final installations = TestActiveInstallations();
-  final registry = AsrModelRegistry.alpha;
-  installations.install(
-    installations.installed(registry.requireById(senseVoiceDefaultModelId)),
-  );
   late final DetailTranscriptionRunner runner;
   runner = DetailTranscriptionRunner(
     ({
@@ -464,7 +494,6 @@ _Fixture _fixture(
   return _Fixture(
     meetings: meetings,
     transcripts: transcripts,
-    installations: installations,
     runner: runner,
     summaries: summaries,
     summaryTasks: summaryTasks,
@@ -472,7 +501,6 @@ _Fixture _fixture(
       meeting: meeting,
       meetings: meetings,
       transcripts: transcripts,
-      installations: installations,
       transcription: runner,
       diarization: diarization,
       diarizationPreferences: _DiarizationPreference(diarizationEnabled),
@@ -487,7 +515,6 @@ final class _Fixture {
   const _Fixture({
     required this.meetings,
     required this.transcripts,
-    required this.installations,
     required this.runner,
     required this.summaries,
     required this.summaryTasks,
@@ -496,7 +523,6 @@ final class _Fixture {
 
   final DetailMeetingRepository meetings;
   final DetailTranscriptRepository transcripts;
-  final TestActiveInstallations installations;
   final DetailTranscriptionRunner runner;
   final DetailSummaryRepository summaries;
   final DetailProcessingTaskRepository summaryTasks;
@@ -504,7 +530,6 @@ final class _Fixture {
 
   Future<void> dispose() async {
     viewModel.dispose();
-    await installations.dispose();
   }
 }
 

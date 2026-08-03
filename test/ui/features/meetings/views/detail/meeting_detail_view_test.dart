@@ -3,10 +3,6 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/app/application.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
-import 'package:meettrace/data/services/asr/final_transcription_service.dart';
-import 'package:meettrace/data/services/audio/pcm_evidence_playback_service.dart';
-import 'package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart';
 import 'package:meettrace/data/services/summary/summary_generation_service.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
@@ -14,12 +10,15 @@ import 'package:meettrace/domain/models/speaker_diarization.dart';
 import 'package:meettrace/domain/models/summary.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/ports/evidence_playback.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/use_cases/generate_summary.dart';
+import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
+import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart';
 
 import '../../../../../support/final_transcription_fakes.dart';
-import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
   testWidgets('完成页显示最终事实文本并可用锁定 SenseVoice 生成独立快照', (tester) async {
@@ -69,12 +68,8 @@ void main() {
     );
     await tester.tap(find.text('录音'));
     await tester.pumpAndSettle();
-    expect(find.text('SenseVoice'), findsOneWidget);
-    final model = find.text('SenseVoice');
-    await tester.ensureVisible(model);
-    await tester.tap(model);
-    await tester.pump();
-    final retranscribe = find.text('使用所选模型重新转录');
+    expect(find.textContaining('本场锁定的 SenseVoice'), findsOneWidget);
+    final retranscribe = find.text('使用本场锁定模型重新转录');
     await tester.ensureVisible(retranscribe);
     await tester.tap(retranscribe);
     await tester.pumpAndSettle();
@@ -479,11 +474,6 @@ _Fixture _fixture(
           service: summaryService,
           now: () => DateTime.utc(2026, 7, 25, 4),
         );
-  final installations = TestActiveInstallations();
-  final registry = AsrModelRegistry.alpha;
-  installations.install(
-    installations.installed(registry.requireById(senseVoiceDefaultModelId)),
-  );
   final runner = DetailTranscriptionRunner(
     ({
       required meetingId,
@@ -496,7 +486,6 @@ _Fixture _fixture(
   return _Fixture(
     meetings: meetings,
     transcripts: transcripts,
-    installations: installations,
     runner: runner,
     summaries: summaries,
     summaryTasks: summaryTasks,
@@ -504,7 +493,6 @@ _Fixture _fixture(
       meeting: meeting,
       meetings: meetings,
       transcripts: transcripts,
-      installations: installations,
       transcription: runner,
       diarization: diarization,
       diarizationPreferences: _DiarizationPreference(diarizationEnabled),
@@ -542,7 +530,6 @@ final class _Fixture {
   const _Fixture({
     required this.meetings,
     required this.transcripts,
-    required this.installations,
     required this.runner,
     required this.summaries,
     required this.summaryTasks,
@@ -551,7 +538,6 @@ final class _Fixture {
 
   final DetailMeetingRepository meetings;
   final DetailTranscriptRepository transcripts;
-  final TestActiveInstallations installations;
   final DetailTranscriptionRunner runner;
   final DetailSummaryRepository summaries;
   final DetailProcessingTaskRepository summaryTasks;
@@ -559,7 +545,6 @@ final class _Fixture {
 
   Future<void> dispose() async {
     viewModel.dispose();
-    await installations.dispose();
   }
 }
 

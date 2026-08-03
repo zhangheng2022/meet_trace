@@ -5,14 +5,11 @@ final class MeetingTranscriptViewModel {
   final MeetingDetailViewModel _owner;
 
   TranscriptSnapshot? get snapshot => _owner.snapshot;
-  List<AsrModelDescriptor> get installedModels => _owner.installedModels;
-  String get selectedModelId => _owner.selectedModelId;
   bool get isTranscribing => _owner.isTranscribing;
   bool get isDiarizing => _owner.isDiarizing;
   bool get canRetry => _owner.canRetry;
   bool get canRetranscribe => _owner.canRetranscribe;
 
-  void selectModel(String modelId) => _owner._selectModel(modelId);
   Future<void> retry() => _owner._retry();
   Future<void> retranscribe() => _owner._retranscribe();
   Future<void> setDiarizationEnabled(bool enabled) =>
@@ -25,30 +22,21 @@ final class MeetingTranscriptViewModel {
 }
 
 extension _MeetingTranscriptOperations on MeetingDetailViewModel {
-  void _selectModel(String modelId) {
-    if (isProcessing ||
-        !_installedModels.any((model) => model.modelId == modelId)) {
-      return;
-    }
-    _selectedModelId = modelId;
-    _notify();
-  }
-
   Future<void> _retry() {
     final failed = _failedAttempt;
     if (failed == null) {
       return Future.value();
     }
-    return _run(
-      modelId: failed.actualModelId,
-      modelVersion: failed.actualModelVersion,
-      retrySnapshotId: failed.id,
-    );
+    return _run(retrySnapshotId: _lockedRetrySnapshotId(failed));
   }
 
-  Future<void> _retranscribe() {
-    final descriptor = registry.requireById(_selectedModelId);
-    return _run(modelId: descriptor.modelId, modelVersion: descriptor.version);
+  Future<void> _retranscribe() => _run();
+
+  String? _lockedRetrySnapshotId(TranscriptSnapshot snapshot) {
+    return snapshot.actualModelId == _meeting.recordingModelId &&
+            snapshot.actualModelVersion == _meeting.recordingModelVersion
+        ? snapshot.id
+        : null;
   }
 
   Future<void> _setDiarizationEnabled(bool enabled) async {
@@ -126,71 +114,16 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
         _resultMessage = '转录修订已保存为新版本；原 AI 总结已标记为过期';
       }, failureMessage: '转录修订保存失败，请检查内容后重试');
 
-  Future<void> _loadInstalledModels() async {
-    final initial = Completer<void>();
-    _installationSubscription = installations.watchAll().listen(
-      (items) {
-        _applyInstallations(items);
-        if (!initial.isCompleted) {
-          initial.complete();
-        }
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!initial.isCompleted) {
-          initial.completeError(error, stackTrace);
-        }
-      },
-      onDone: () {
-        if (!initial.isCompleted) {
-          initial.completeError(StateError('模型安装状态流未返回初始值'));
-        }
-      },
-    );
-    await initial.future;
-  }
-
-  void _applyInstallations(List<ModelInstallation> items) {
-    final installed = <AsrModelDescriptor>[];
-    for (final descriptor in registry.models) {
-      final available = items.any(
-        (installation) =>
-            installation.modelId == descriptor.modelId &&
-            installation.version == descriptor.version &&
-            installation.state == ModelInstallationState.installed &&
-            installation.verifiedAt != null,
-      );
-      if (available) {
-        installed.add(descriptor);
-      }
-    }
-    _installedModels = List.unmodifiable(installed);
-    if (!_installedModels.any((model) => model.modelId == _selectedModelId) &&
-        _installedModels.isNotEmpty) {
-      _selectedModelId = _installedModels.first.modelId;
-    }
-    _notify();
-  }
-
-  Future<void> _run({
-    String? modelId,
-    String? modelVersion,
-    String? retrySnapshotId,
-  }) {
+  Future<void> _run({String? retrySnapshotId}) {
     final current = _operation;
     if (current != null) {
       return current;
     }
-    final operation = _transcribe(
-      modelId: modelId,
-      modelVersion: modelVersion,
-      retrySnapshotId: retrySnapshotId,
-    );
-    _operationModelId = modelId ?? _meeting.recordingModelId;
+    final operation = _transcribe(retrySnapshotId: retrySnapshotId);
     _operation = operation;
     _notify();
     return operation.whenComplete(() {
       _operation = null;
-      _operationModelId = null;
       _notify();
       if (_shouldAutoGenerateSummary) {
         unawaited(_runSummaryGeneration());
@@ -198,19 +131,13 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
     });
   }
 
-  Future<void> _transcribe({
-    required String? modelId,
-    required String? modelVersion,
-    required String? retrySnapshotId,
-  }) async {
+  Future<void> _transcribe({required String? retrySnapshotId}) async {
     _errorMessage = null;
     _progress = 0;
     _notify();
     try {
       final result = await transcription.transcribe(
         meetingId: _meeting.id,
-        modelId: modelId,
-        modelVersion: modelVersion,
         retrySnapshotId: retrySnapshotId,
         onProgress: _applyProgress,
       );

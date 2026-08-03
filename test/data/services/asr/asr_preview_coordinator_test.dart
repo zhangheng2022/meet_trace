@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/services/asr/asr_engine.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/data/services/asr/asr_preview_coordinator.dart';
 import 'package:meettrace/data/services/vad/silero_vad_segmenter.dart';
 import 'package:meettrace/domain/models/app_failure.dart';

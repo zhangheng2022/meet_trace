@@ -66,6 +66,7 @@ final class CheckMeetingReadinessUseCase implements MeetingReadinessChecker {
       microphonePermissionGranted: deviceReadiness.microphonePermissionGranted,
       freeBytes: deviceReadiness.freeBytes,
       defaultModelId: descriptor.modelId,
+      defaultModelVersion: descriptor.version,
       defaultModelName: descriptor.displayName,
       defaultModelAvailable: modelAvailable,
     );

@@ -326,6 +326,7 @@ end
 ended
 engine
 engines
+enhancement
 enter
 entry
 entrypoint
@@ -971,6 +972,7 @@ staged
 standard
 start
 started
+starter
 starting
 startup
 state

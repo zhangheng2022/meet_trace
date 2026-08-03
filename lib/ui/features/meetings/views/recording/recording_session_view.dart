@@ -8,21 +8,16 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
-import '../../../../../domain/models/asr_model_registry.dart';
-import '../../../../../domain/models/asr_preview.dart';
 import '../../../../../domain/models/meeting.dart';
-import '../../../../../domain/models/transcript.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../theme/theme.dart';
 import '../../../../core/app_back_icon.dart';
+import '../../../../core/app_dialog.dart';
 import '../../../../core/app_page_body.dart';
-import '../../../../core/app_status_notice.dart';
 import '../../view_models/recording/recording_session_view_model.dart';
-import 'widgets/recording_audio_waveform.dart';
-
-part 'widgets/recording_facts_panel.dart';
-part 'widgets/recording_controls.dart';
-part 'widgets/live_transcript_panel.dart';
+import 'widgets/live_transcript_panel.dart';
+import 'widgets/recording_controls.dart';
+import 'widgets/recording_facts_panel.dart';
 
 final class RecordingSessionView extends StatefulWidget {
   const RecordingSessionView({
@@ -73,7 +68,7 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
                 ),
               ],
             ),
-            footer: _RecordingBottomBar(
+            footer: RecordingBottomBar(
               viewModel: widget.viewModel,
               onEnd: () => unawaited(_requestEnd()),
             ),
@@ -89,11 +84,11 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= appStyle.wideLayoutMinWidth;
-        final facts = _RecordingFactsPanel(
+        final facts = RecordingFactsPanel(
           viewModel: widget.viewModel,
           wide: wide,
         );
-        final transcript = _LiveTranscriptPanel(
+        final transcript = LiveTranscriptPanel(
           viewModel: widget.viewModel,
           outlined: wide,
         );
@@ -130,46 +125,15 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
       return;
     }
     _endDialogOpen = true;
-    final confirmed = await showFDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
+      semanticsLabel: '结束并保存会议',
+      title: '结束并保存会议？',
+      message: '结束后会先封存本机事实音频，再进入最终转录。当前实时转录仅供预览。',
+      cancelLabel: '继续录音',
+      confirmLabel: '结束并保存',
       barrierDismissible: false,
-      useSafeArea: true,
-      builder: (context, style, animation) => FDialog(
-        animation: animation,
-        semanticsLabel: '结束并保存会议',
-        builder: (context, style) {
-          final appStyle = context.theme.style.app;
-          return Padding(
-            padding: EdgeInsets.all(appStyle.spaceLg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('结束并保存会议？', style: style.titleTextStyle),
-                SizedBox(height: appStyle.spaceSm),
-                Text(
-                  '结束后会先封存本机事实音频，再进入最终转录。当前实时转录仅供预览。',
-                  style: context.theme.typography.body.md,
-                ),
-                SizedBox(height: appStyle.spaceLg),
-                FButton(
-                  variant: FButtonVariant.outline,
-                  size: FButtonSizeVariant.lg,
-                  onPress: () => Navigator.of(context).pop(false),
-                  child: const Text('继续录音', maxLines: 1),
-                ),
-                SizedBox(height: appStyle.spaceSm),
-                FButton(
-                  size: FButtonSizeVariant.lg,
-                  autofocus: true,
-                  onPress: () => Navigator.of(context).pop(true),
-                  child: const Text('结束并保存', maxLines: 1),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+      confirmAutofocus: true,
     );
     _endDialogOpen = false;
     if (confirmed == true && mounted) {
@@ -184,3 +148,10 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
     }
   }
 }
+
+bool _isActive(RecordingState state) => {
+  RecordingState.starting,
+  RecordingState.recording,
+  RecordingState.paused,
+  RecordingState.finalizing,
+}.contains(state);

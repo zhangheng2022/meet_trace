@@ -3,10 +3,8 @@ import 'dart:typed_data';
 
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
+import '../../models/runtime/silero_vad_manifest.dart';
 import '../../../domain/models/asr_preview.dart';
-
-const sileroVadSampleRate = 16000;
-const sileroVadWindowSize = 512;
 
 typedef SherpaOnnxVadRuntimeFactory =
     SherpaOnnxVadRuntime Function({

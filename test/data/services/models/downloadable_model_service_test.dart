@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/data/services/models/downloadable_model_service.dart';
 import 'package:meettrace/data/services/models/model_file_verifier.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';

@@ -7,10 +7,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../../../../app/application.dart';
-import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
-import '../../../../domain/models/model_installation.dart';
 import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
@@ -36,7 +34,6 @@ Widget meetingProcessingPreview() {
         meeting: meeting,
         meetings: _PreviewMeetingRepository(meeting),
         transcripts: _PreviewTranscriptRepository(),
-        installations: const _PreviewInstallations(),
         transcription: const _PendingTranscriptionRunner(),
       ),
       onBack: () {},
@@ -58,7 +55,6 @@ Widget _resultPreview() {
         meeting: meeting,
         meetings: _PreviewMeetingRepository(meeting),
         transcripts: _PreviewTranscriptRepository(snapshot),
-        installations: const _PreviewInstallations(),
         transcription: const _UnavailableTranscriptionRunner(),
         summaries: _PreviewSummaryRepository(summary),
       ),

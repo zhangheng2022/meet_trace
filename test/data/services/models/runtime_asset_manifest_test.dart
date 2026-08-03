@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meettrace/data/models/runtime/silero_vad_manifest.dart';
 import 'package:meettrace/data/services/models/downloadable_model_service.dart';
 import 'package:meettrace/data/services/models/model_manifest_parser.dart';
-import 'package:meettrace/data/services/vad/downloadable_silero_vad_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:path/path.dart' as p;
 

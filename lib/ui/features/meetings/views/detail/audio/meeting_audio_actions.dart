@@ -167,23 +167,14 @@ final class _RetranscriptionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('重新转录会生成独立快照；成功后才替换当前结果。'),
+            Text(
+              '使用本场锁定的 ${viewModel.sourceModel.displayName} 重新转录，'
+              '生成独立快照；成功后才替换当前结果。',
+            ),
             SizedBox(height: appStyle.spaceMd),
-            for (final model in viewModel.installedModels)
-              Padding(
-                padding: EdgeInsets.only(bottom: appStyle.spaceSm),
-                child: FRadio(
-                  key: ValueKey('retranscribe-model-${model.modelId}'),
-                  value: model.modelId == viewModel.selectedModelId,
-                  onChange: (_) => viewModel.selectModel(model.modelId),
-                  label: Text(model.displayName),
-                  description: Text(_modelPositioning(model)),
-                ),
-              ),
-            SizedBox(height: appStyle.spaceSm),
             FButton(
               onPress: () => unawaited(viewModel.retranscribe()),
-              child: const Text('使用所选模型重新转录'),
+              child: const Text('使用本场锁定模型重新转录'),
             ),
           ],
         ),
@@ -191,8 +182,6 @@ final class _RetranscriptionCard extends StatelessWidget {
     );
   }
 }
-
-String _modelPositioning(AsrModelDescriptor _) => '自动识别中、粤、英、日、韩语 · ITN 已开启';
 
 String _timestamp(int milliseconds) {
   final value = Duration(milliseconds: milliseconds);

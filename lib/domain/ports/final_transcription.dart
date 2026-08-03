@@ -18,8 +18,6 @@ final class FinalTranscriptionResult {
 abstract interface class FinalTranscriptionRunner {
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   });

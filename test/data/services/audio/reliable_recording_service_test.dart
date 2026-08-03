@@ -9,6 +9,7 @@ import 'package:meettrace/data/services/audio/reliable_recording_service.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/domain/models/recording.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/ports/recording_session.dart';
 
 void main() {
   late Directory root;

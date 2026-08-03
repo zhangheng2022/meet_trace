@@ -2,7 +2,7 @@ import '../../../domain/models/asr_model_registry.dart';
 import '../../../domain/models/model_manifest.dart';
 import '../../../domain/models/runtime_initialization.dart';
 import '../../../domain/ports/runtime_asset_preparation.dart';
-import '../vad/downloadable_silero_vad_model.dart';
+import '../../models/runtime/silero_vad_manifest.dart';
 import 'downloadable_model_service.dart';
 import 'runtime_asset_installers.dart';
 

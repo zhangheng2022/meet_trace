@@ -1,14 +1,15 @@
 # Step 12：Silero VAD 与预览队列
 
-> 状态：已完成
-> 日期：2026-07-24
+> 状态：功能已完成；资源分发已按 PRD V0.7 更新
+> 初始日期：2026-07-24
+> 更新日期：2026-08-03
 
 ## 本轮结果
 
 - `SileroVadSegmenter` 只通过官方 `sherpa_onnx` Dart API 使用 `VoiceActivityDetector`，没有新增 JNI、FFI 或手工原生库。
-- 已将官方 `silero_vad.int8.onnx` 作为 APK 内置资产：`212,860` 字节，SHA-256 为 `c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20`。
+- 官方 `silero_vad.int8.onnx` 固定为 `212,860` 字节，SHA-256 为 `c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20`；权重不进入 APK/IPA。
 - 独立 VAD Manifest 固定模型版本 `2025-07-11`、GitHub release asset ID `271935990`、来源时间戳、16 kHz/512 样本契约、许可路径和完整性信息。
-- `BundledSileroVadModelService` 从 Flutter asset 复制到应用私有临时目录，严格校验文件集、大小和 SHA-256 后原子切换；已正确准备时直接复用。
+- `DownloadableSileroVadModelService` 按固定 HTTPS Manifest 下载到应用私有临时目录，严格校验文件集、大小和 SHA-256 后原子切换；已正确准备时直接复用。
 - 官方配置固定为 16 kHz、单线程 CPU、512 样本窗口、15 秒最大语音段；模型路径由上层装配，文件不存在时拒绝创建。
 - `AsrPreviewWindowPlanner` 默认加入前后各 200 ms 上下文；超过 15 秒时按 500 ms 重叠确定性切分。
 - `AsrPreviewCoordinator` 实现 PCM16 解码、统一全局样本时间轴、20 秒滚动缓冲、VAD 分段和模型无关的 Engine 投递。
@@ -21,12 +22,12 @@
 
 - 前后文扩展不越过事实音频范围。
 - 16 秒语音确定性切为 `0–15 s` 与 `14.5–16 s`。
-- 两个不同模型收到完全相同的 VAD 全局区间。
+- 两次独立 Coordinator/Engine 测试收到完全相同的 VAD 全局区间，证明窗口规划不依赖具体 Engine。
 - 高水位时只丢最旧待处理预览窗口，事实音频接口不受影响；低水位时恢复 `ready`。
 - Engine 失败后进入 `recordingOnly`，后续 PCM 不再进入 VAD/ASR。
 - 官方 VAD 局部样本位置在 reset 后正确映射到全局时间轴。
 - VAD 权重损坏时不形成最终目录，Manifest 偏离 16 kHz 固定契约时拒绝解析。
-- Android 使用真实内置权重连续两轮完成初始化、512 样本连续输入、尾段 `flush`、释放和资产复用。
+- Android 在运行时资源准备完成后，连续两轮完成 VAD 初始化、512 样本连续输入、尾段 `flush`、释放和资产复用。
 
 ## 验证
 
@@ -41,7 +42,7 @@ flutter build apk --debug --no-pub
 - 全量自动化测试：173/173 通过。
 - 静态分析：0 issue。
 - Debug APK：构建通过。
-- APK 检查：VAD Manifest、NOTICE、MIT 文本和 ONNX 权重均存在；包内权重为 `212,860` 字节且 SHA-256 匹配。
+- 当前 APK 门槛：VAD Manifest、NOTICE 和 MIT 文本存在，ONNX 权重不存在；运行时下载文件大小与 SHA-256 必须匹配。
 - Android 16 x86_64 模拟器集成测试：1/1 通过，官方 VAD 两轮初始化和释放成功。
 - 构建只保留 `flutter_foreground_task` 的上游 Built-in Kotlin 迁移警告。
 

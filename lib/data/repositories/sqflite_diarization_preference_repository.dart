@@ -1,5 +1,5 @@
 import '../services/storage/app_database.dart';
-import 'repository_contracts.dart';
+import '../../domain/ports/repositories.dart';
 
 final class SqfliteDiarizationPreferenceRepository
     implements DiarizationPreferenceRepository {

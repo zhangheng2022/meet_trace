@@ -7,9 +7,10 @@ import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/model_installation.dart';
 import '../../../domain/models/model_manifest.dart';
 import '../../../domain/models/workflow_states.dart';
-import '../../repositories/repository_contracts.dart';
+import '../../../domain/ports/repositories.dart';
 import '../storage/app_file_layout.dart';
 import 'model_file_verifier.dart';
+import 'runtime_artifact_install_transaction.dart';
 import 'runtime_asset_installers.dart';
 
 const minimumRuntimeInitializationFreeBytes = 768 * 1024 * 1024;
@@ -210,7 +211,6 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
     }
 
     var state = _retryableRecord(descriptor, current);
-    var integrityFailure = false;
     try {
       if (state.state == ModelInstallationState.notInstalled ||
           state.state == ModelInstallationState.failed ||
@@ -228,117 +228,51 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
 
       state = state.transitionTo(ModelInstallationState.downloading);
       await installations.save(state);
-      await Directory(tempPath).create(recursive: true);
-
-      var completedBeforeFile = 0;
-      var resumed = false;
-      for (final file in manifest.files) {
-        token.throwIfCanceled();
-        final destination = _resolveWithin(tempPath, file.path);
-        await Directory(p.dirname(destination)).create(recursive: true);
-        final output = File(destination);
-        var resumeFrom = await output.exists() ? await output.length() : 0;
-        if (resumeFrom > file.bytes) {
-          await output.delete();
-          resumeFrom = 0;
-        }
-        resumed = resumed || resumeFrom > 0;
-        _notify(
-          onProgress,
-          DownloadableModelPhase.downloading,
-          completedBeforeFile + resumeFrom,
-          manifest.requiredBytes,
-        );
-        if (resumeFrom < file.bytes) {
-          final result = await downloader.download(
-            source: Uri.parse(file.url),
-            destinationPath: destination,
-            resumeFrom: resumeFrom,
-            expectedBytes: file.bytes,
-            cancellation: token,
-            onProgress: (absoluteFileBytes) {
-              _notify(
-                onProgress,
-                DownloadableModelPhase.downloading,
-                completedBeforeFile + absoluteFileBytes,
-                manifest.requiredBytes,
-              );
-            },
-          );
-          resumed = resumed || result.resumed;
-          if (result.finalBytes != file.bytes) {
-            throw DownloadableModelException(
-              code: 'model.download.incomplete',
-              message: '${file.path} 下载不完整',
-            );
-          }
-        }
-        completedBeforeFile += file.bytes;
-      }
-
-      state = state.transitionTo(ModelInstallationState.verifying);
-      await installations.save(state);
-      _notify(
-        onProgress,
-        DownloadableModelPhase.verifying,
-        manifest.requiredBytes,
-        manifest.requiredBytes,
-      );
-      final verification = await verifier.verifyDirectory(
-        directoryPath: tempPath,
+      final installation = await _installArtifact(
         manifest: manifest,
+        token: token,
+        tempPath: tempPath,
+        finalPath: finalPath,
+        onProgress: onProgress,
+        onVerifying: () async {
+          state = state.transitionTo(ModelInstallationState.verifying);
+          await installations.save(state);
+          _notify(
+            onProgress,
+            DownloadableModelPhase.verifying,
+            manifest.requiredBytes,
+            manifest.requiredBytes,
+          );
+        },
+        onCommitting: (verifiedBytes) async {
+          _notify(
+            onProgress,
+            DownloadableModelPhase.committing,
+            verifiedBytes,
+            manifest.requiredBytes,
+          );
+        },
       );
-      if (!verification.isValid) {
-        integrityFailure = true;
-        throw DownloadableModelException(
-          code: 'model.integrity',
-          message: verification.issues
-              .map((issue) => '${issue.path}:${issue.kind.name}')
-              .join(', '),
-        );
-      }
-
-      _notify(
-        onProgress,
-        DownloadableModelPhase.committing,
-        verification.verifiedBytes,
-        manifest.requiredBytes,
-      );
-      await Directory(p.dirname(finalPath)).create(recursive: true);
-      final finalDirectory = Directory(finalPath);
-      if (await finalDirectory.exists()) {
-        await _deleteDirectoryWithin(
-          path: finalPath,
-          allowedRoot: fileLayout.modelsRoot,
-        );
-      }
-      await Directory(tempPath).rename(finalPath);
 
       final installed = state.transitionTo(
         ModelInstallationState.installed,
         installedPath: finalPath,
         verifiedAt: now().toUtc(),
-        bytes: verification.verifiedBytes,
+        bytes: installation.verifiedBytes,
       );
       await installations.saveInstalledAndActivate(installed);
       _notify(
         onProgress,
         DownloadableModelPhase.ready,
-        verification.verifiedBytes,
+        installation.verifiedBytes,
         manifest.requiredBytes,
       );
       return DownloadableModelResult(
         installedPath: finalPath,
         alreadyInstalled: false,
-        resumed: resumed,
+        resumed: installation.resumed,
       );
     } catch (error, stackTrace) {
-      if (integrityFailure) {
-        await _deleteDirectoryWithin(
-          path: tempPath,
-          allowedRoot: fileLayout.modelTempRoot,
-        );
-      }
       final canceled =
           error is ModelDownloadCanceledException || token.isCanceled;
       final failure = canceled
@@ -362,6 +296,68 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
         // 文件与数据库恢复由下次重试重新校验并收敛。
       }
       Error.throwWithStackTrace(failure, stackTrace);
+    }
+  }
+
+  Future<RuntimeArtifactInstallResult> _installArtifact({
+    required ModelManifestEntry manifest,
+    required ModelDownloadCancellationToken token,
+    required String tempPath,
+    required String finalPath,
+    required DownloadableModelProgressCallback? onProgress,
+    required Future<void> Function() onVerifying,
+    required Future<void> Function(int verifiedBytes) onCommitting,
+  }) async {
+    try {
+      return await RuntimeArtifactInstallTransaction(
+        verifier: verifier,
+      ).install(
+        manifest: manifest,
+        tempPath: tempPath,
+        finalPath: finalPath,
+        tempRoot: fileLayout.modelTempRoot,
+        finalRoot: fileLayout.modelsRoot,
+        throwIfCanceled: token.throwIfCanceled,
+        download:
+            ({
+              required file,
+              required destinationPath,
+              required resumeFrom,
+              required onProgress,
+            }) async {
+              final result = await downloader.download(
+                source: Uri.parse(file.url),
+                destinationPath: destinationPath,
+                resumeFrom: resumeFrom,
+                expectedBytes: file.bytes,
+                cancellation: token,
+                onProgress: onProgress,
+              );
+              return RuntimeArtifactDownloadOutcome(
+                finalBytes: result.finalBytes,
+                resumed: result.resumed,
+              );
+            },
+        onProgress: (completedBytes, totalBytes) => _notify(
+          onProgress,
+          DownloadableModelPhase.downloading,
+          completedBytes,
+          totalBytes,
+        ),
+        onVerifying: onVerifying,
+        onCommitting: onCommitting,
+      );
+    } on RuntimeArtifactInstallException catch (error) {
+      throw DownloadableModelException(
+        code: switch (error.failure) {
+          RuntimeArtifactInstallFailure.incomplete =>
+            'model.download.incomplete',
+          RuntimeArtifactInstallFailure.integrity => 'model.integrity',
+          RuntimeArtifactInstallFailure.invalidPath => 'model.path.invalid',
+        },
+        message: error.message,
+        cause: error,
+      );
     }
   }
 
@@ -703,20 +699,6 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
       ),
     );
   }
-}
-
-String _resolveWithin(String root, String relativePath) {
-  final normalizedRoot = p.normalize(p.absolute(root));
-  final candidate = p.normalize(
-    p.absolute(p.joinAll([normalizedRoot, ...relativePath.split('/')])),
-  );
-  if (candidate != normalizedRoot && !p.isWithin(normalizedRoot, candidate)) {
-    throw DownloadableModelException(
-      code: 'model.path.invalid',
-      message: '模型路径越界：$relativePath',
-    );
-  }
-  return candidate;
 }
 
 Future<void> _deleteDirectoryWithin({

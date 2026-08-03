@@ -1,10 +1,11 @@
-import 'package:meettrace/data/repositories/repository_contracts.dart';
-import 'package:meettrace/data/services/asr/asr_engine.dart';
-import 'package:meettrace/data/services/asr/final_transcription_service.dart';
 import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/processing_task.dart';
 import 'package:meettrace/domain/models/summary.dart';
 import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
+import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 
 final class DetailMeetingRepository implements MeetingRepository {
   DetailMeetingRepository(this.value);
@@ -174,9 +175,15 @@ typedef DetailTranscriptionCall =
     });
 
 final class DetailTranscriptionRunner implements FinalTranscriptionRunner {
-  DetailTranscriptionRunner(this.onCall);
+  DetailTranscriptionRunner(
+    this.onCall, {
+    this.lockedModelId = senseVoiceDefaultModelId,
+    this.lockedModelVersion = '2024-07-17',
+  });
 
   DetailTranscriptionCall onCall;
+  final String lockedModelId;
+  final String lockedModelVersion;
   final List<
     ({
       String meetingId,
@@ -190,15 +197,13 @@ final class DetailTranscriptionRunner implements FinalTranscriptionRunner {
   @override
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   }) {
     calls.add((
       meetingId: meetingId,
-      modelId: modelId,
-      modelVersion: modelVersion,
+      modelId: lockedModelId,
+      modelVersion: lockedModelVersion,
       retrySnapshotId: retrySnapshotId,
     ));
     onProgress?.call(
@@ -210,8 +215,8 @@ final class DetailTranscriptionRunner implements FinalTranscriptionRunner {
     );
     return onCall(
       meetingId: meetingId,
-      modelId: modelId,
-      modelVersion: modelVersion,
+      modelId: lockedModelId,
+      modelVersion: lockedModelVersion,
       retrySnapshotId: retrySnapshotId,
       onProgress: onProgress,
     );

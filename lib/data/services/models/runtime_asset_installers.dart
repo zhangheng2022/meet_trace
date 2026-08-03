@@ -1,6 +1,6 @@
 import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/model_manifest.dart';
-import '../vad/downloadable_silero_vad_model.dart';
+import '../../models/runtime/silero_vad_manifest.dart';
 import 'downloadable_model_service.dart';
 
 abstract interface class RuntimeAsrModelInstaller {

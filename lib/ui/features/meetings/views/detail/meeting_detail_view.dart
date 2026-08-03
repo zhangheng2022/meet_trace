@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
-import '../../../../../domain/models/asr_model.dart';
 import '../../../../../domain/models/speaker_diarization.dart';
 import '../../../../../domain/models/summary.dart';
 import '../../../../../domain/models/transcript.dart';

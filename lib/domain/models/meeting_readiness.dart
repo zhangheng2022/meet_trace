@@ -11,6 +11,7 @@ final class MeetingReadiness {
     required this.microphonePermissionGranted,
     required this.freeBytes,
     required this.defaultModelId,
+    required this.defaultModelVersion,
     required this.defaultModelName,
     required this.defaultModelAvailable,
   });
@@ -18,6 +19,7 @@ final class MeetingReadiness {
   final bool microphonePermissionGranted;
   final int freeBytes;
   final String defaultModelId;
+  final String defaultModelVersion;
   final String defaultModelName;
   final bool defaultModelAvailable;
 

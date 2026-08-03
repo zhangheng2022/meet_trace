@@ -11,37 +11,22 @@ import 'package:meettrace/ui/features/meetings/view_models/start/start_meeting_v
 import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
-  late TestModelPreferences preferences;
-  late TestActiveInstallations installations;
   late TestMeetingRepository meetings;
   late TestAsrEngineFactory factory;
 
   setUp(() {
-    preferences = TestModelPreferences(senseVoiceDefaultModelId);
-    installations = TestActiveInstallations();
     meetings = TestMeetingRepository();
     factory = TestAsrEngineFactory();
-    final standard = AsrModelRegistry.alpha.requireById(
-      senseVoiceDefaultModelId,
-    );
-    installations.install(installations.installed(standard), active: true);
   });
-
-  tearDown(() => installations.dispose());
 
   test('直接使用全局默认模型并以待生成标题创建会议', () async {
     final senseVoice = AsrModelRegistry.alpha.requireById(
       senseVoiceDefaultModelId,
     );
-    installations.install(installations.installed(senseVoice), active: true);
-    preferences = TestModelPreferences(senseVoice.modelId);
-    final viewModel = _viewModel(preferences, installations, meetings, factory);
-    await viewModel.load();
+    final viewModel = _viewModel(meetings, factory);
 
-    expect(viewModel.defaultModelId, senseVoice.modelId);
     final session = await viewModel.start();
 
-    expect(preferences.setCalls, isEmpty);
     expect(session, isNotNull);
     expect(session!.meeting.title, pendingMeetingTitle);
     expect(session.meeting.requestedModelId, senseVoice.modelId);
@@ -55,21 +40,23 @@ void main() {
   });
 
   test('SenseVoice 不可用时阻止开始且不静默回退', () async {
-    final emptyInstallations = TestActiveInstallations();
-    addTearDown(emptyInstallations.dispose);
-    final viewModel = _viewModel(
-      preferences,
-      emptyInstallations,
-      meetings,
-      factory,
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    final readiness = TestMeetingReadinessChecker(
+      result: MeetingReadiness(
+        microphonePermissionGranted: true,
+        freeBytes: minimumRecordingFreeBytes,
+        defaultModelId: descriptor.modelId,
+        defaultModelVersion: descriptor.version,
+        defaultModelName: descriptor.displayName,
+        defaultModelAvailable: false,
+      ),
     );
-    await viewModel.load();
+    final viewModel = _viewModel(meetings, factory, readiness: readiness);
 
     expect(await viewModel.start(), isNull);
     expect(viewModel.errorMessage, contains('SenseVoice 尚未准备完成'));
     expect(viewModel.requiresRuntimeRepair, isTrue);
     expect(factory.calls, isEmpty);
-    expect(preferences.setCalls, isEmpty);
     viewModel.dispose();
   });
 
@@ -82,8 +69,7 @@ void main() {
         userAction: FailureUserAction.downloadModel,
       ),
     );
-    final viewModel = _viewModel(preferences, installations, meetings, factory);
-    await viewModel.load();
+    final viewModel = _viewModel(meetings, factory);
 
     expect(await viewModel.start(), isNull);
     expect(viewModel.requiresRuntimeRepair, isTrue);
@@ -98,18 +84,12 @@ void main() {
         microphonePermissionGranted: false,
         freeBytes: minimumRecordingFreeBytes,
         defaultModelId: senseVoiceDefaultModelId,
+        defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
         defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
         defaultModelAvailable: true,
       ),
     );
-    final viewModel = _viewModel(
-      preferences,
-      installations,
-      meetings,
-      factory,
-      readiness: readiness,
-    );
-    await viewModel.load();
+    final viewModel = _viewModel(meetings, factory, readiness: readiness);
 
     expect(await viewModel.start(), isNull);
     expect(readiness.permissionRequests, [true]);
@@ -120,8 +100,7 @@ void main() {
   });
 
   test('开始后 Meeting 拒绝更改锁定模型', () async {
-    final viewModel = _viewModel(preferences, installations, meetings, factory);
-    await viewModel.load();
+    final viewModel = _viewModel(meetings, factory);
     final session = await viewModel.start();
 
     expect(
@@ -137,15 +116,11 @@ void main() {
 }
 
 StartMeetingViewModel _viewModel(
-  TestModelPreferences preferences,
-  TestActiveInstallations installations,
   TestMeetingRepository meetings,
   TestAsrEngineFactory factory, {
   TestMeetingReadinessChecker? readiness,
 }) {
   return StartMeetingViewModel(
-    preferences: preferences,
-    installations: installations,
     startMeeting: StartMeetingUseCase(
       meetings: meetings,
       engineFactory: factory,

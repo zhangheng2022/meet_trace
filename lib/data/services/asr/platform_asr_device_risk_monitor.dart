@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'android_proc_asr_device_risk_monitor.dart';
-import 'asr_engine.dart';
+import '../../../domain/ports/asr_engine.dart';
 
 enum AsrRiskPlatform { android, ios, windows }
 

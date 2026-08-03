@@ -1,13 +1,13 @@
 # Git 分支与 Worktree 约定
 
 > 状态：当前执行约定
-> 更新日期：2026-07-24
+> 更新日期：2026-08-03
 
 ## 分支职责
 
 - `master`：稳定集成线。只接收已经完成质量门槛的步骤，不直接承载开发。
-- `codex/alpha-step-<NN>-<topic>`：单个 Alpha 步骤的功能分支，从最新稳定基线创建。
-- `codex/alpha-step-03-baseline`：Step 01～03 已完成代码的当前本地基线；Step 04 从该提交开始。
+- `codex/<topic>`：默认功能、修复或文档分支，从最新稳定基线创建。
+- 需要对应交付步骤时可使用 `codex/alpha-step-<NN>-<topic>`，但步骤编号不替代 PRD 或 Issue 关联。
 
 分支名使用小写英文和连字符；一个功能分支只对应一个开发步骤。提交信息优先使用中文祈使语气。
 
@@ -21,20 +21,14 @@
 
 `.worktrees/` 必须由仓库根目录的 `.gitignore` 忽略。一个分支同一时间只能被一个 worktree 检出，不在主检出目录和 linked worktree 之间来回切换同一分支。
 
-当前规划：
+布局示例：
 
 ```text
 仓库根目录
-  └─ codex/alpha-step-03-baseline
+  └─ master
 
-.worktrees/alpha-step-04-model-registry
-  └─ codex/alpha-step-04-model-registry
-
-.worktrees/alpha-runtime-assets
-  └─ codex/alpha-runtime-assets
-
-.worktrees/alpha-sense-voice
-  └─ codex/alpha-sense-voice
+.worktrees/runtime-assets
+  └─ codex/runtime-assets
 ```
 
 ## 标准流程
@@ -50,9 +44,9 @@
 示例：
 
 ```powershell
-git worktree add ".worktrees/alpha-step-04-model-registry" `
-  -b "codex/alpha-step-04-model-registry" `
-  "codex/alpha-step-03-baseline"
+git worktree add ".worktrees/runtime-assets" `
+  -b "codex/runtime-assets" `
+  "master"
 ```
 
 查看当前关系：

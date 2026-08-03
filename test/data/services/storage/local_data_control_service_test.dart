@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/data/services/storage/device_free_space_service.dart';
 import 'package:meettrace/data/services/storage/local_data_control_service.dart';

@@ -4,7 +4,7 @@ import '../../domain/models/domain_exception.dart';
 import '../../domain/models/summary.dart';
 import '../../domain/models/transcript.dart';
 import '../services/storage/app_database.dart';
-import 'repository_contracts.dart';
+import '../../domain/ports/repositories.dart';
 
 final class SqfliteTranscriptRepository implements TranscriptRepository {
   SqfliteTranscriptRepository(this._appDatabase, {this.onMeetingChanged});

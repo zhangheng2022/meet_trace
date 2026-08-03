@@ -9,7 +9,7 @@ import '../../../domain/models/audio_source.dart';
 import '../../../domain/models/model_installation.dart';
 import '../../../domain/models/transcript.dart';
 import '../../../domain/models/workflow_states.dart';
-import 'asr_engine.dart';
+import '../../../domain/ports/asr_engine.dart';
 import 'sherpa_onnx/sherpa_onnx_adapter.dart';
 import 'sherpa_onnx/sherpa_onnx_asr_engine.dart';
 

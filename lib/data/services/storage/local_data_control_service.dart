@@ -2,7 +2,7 @@ import 'dart:io';
 
 import '../../../domain/models/data_control.dart';
 import '../../../domain/ports/local_data_control.dart';
-import '../../repositories/repository_contracts.dart';
+import '../../../domain/ports/repositories.dart';
 import 'app_file_layout.dart';
 import 'device_free_space_service.dart';
 

@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
+import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/ui/core/view_state.dart';
 import 'package:meettrace/ui/features/meetings/view_models/list/meeting_list_view_model.dart';
@@ -43,6 +44,7 @@ void main() {
         microphonePermissionGranted: false,
         freeBytes: minimumRecordingFreeBytes,
         defaultModelId: 'paraformer',
+        defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
         defaultModelName: 'SenseVoice',
         defaultModelAvailable: true,
       ),

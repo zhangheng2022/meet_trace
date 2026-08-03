@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:forui/forui.dart';
 
 import '../data/services/storage/app_database.dart';
 import '../domain/models/meeting.dart';
 import '../domain/use_cases/start_meeting.dart';
-import '../theme/theme.dart';
+import '../ui/core/app_dialog.dart';
 import '../ui/features/meetings/view_models/list/meeting_list_view_model.dart';
 import '../ui/features/meetings/views/detail/meeting_detail_view.dart';
 import '../ui/features/meetings/views/list/meeting_list_view.dart';
@@ -15,6 +14,7 @@ import '../ui/features/settings/views/model_settings_view.dart';
 import '../ui/features/startup/views/meettrace_startup_view.dart';
 import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
 import 'meettrace_dependencies.dart';
+import 'meettrace_dependency_factories.dart';
 
 final class MeetTraceBootstrap extends StatefulWidget {
   const MeetTraceBootstrap({super.key});
@@ -176,10 +176,6 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   Future<void> _performStartMeeting() async {
     final viewModel = widget.dependencies.createStartMeetingViewModel();
     try {
-      await viewModel.load();
-      if (!mounted) {
-        return;
-      }
       final session = await viewModel.start();
       if (!mounted) {
         return;
@@ -199,32 +195,11 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   }
 
   Future<void> _showStartFailure(String message) {
-    return showFDialog<void>(
+    return showAppAlertDialog(
       context: context,
-      builder: (context, style, animation) => FDialog(
-        animation: animation,
-        semanticsLabel: '无法开始会议',
-        builder: (context, style) {
-          final appStyle = context.theme.style.app;
-          return Padding(
-            padding: EdgeInsets.all(appStyle.spaceLg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('无法开始会议', style: style.titleTextStyle),
-                SizedBox(height: appStyle.spaceSm),
-                Text(message, style: context.theme.typography.body.md),
-                SizedBox(height: appStyle.spaceLg),
-                FButton(
-                  onPress: () => Navigator.of(context).pop(),
-                  child: const Text('知道了'),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+      semanticsLabel: '无法开始会议',
+      title: '无法开始会议',
+      message: message,
     );
   }
 

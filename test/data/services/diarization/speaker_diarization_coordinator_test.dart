@@ -1,6 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/repository_contracts.dart';
-import 'package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart';
 import 'package:meettrace/data/services/diarization/speaker_diarization_service.dart';
 import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/meeting.dart';
@@ -8,6 +6,8 @@ import 'package:meettrace/domain/models/processing_task.dart';
 import 'package:meettrace/domain/models/speaker_diarization.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
+import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 
 void main() {
   test('成功映射只更新说话人且保留原文、时间轴和模型归属', () async {

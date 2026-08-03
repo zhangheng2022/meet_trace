@@ -1,7 +1,7 @@
 import '../../domain/models/processing_task.dart';
 import '../models/storage/storage_mappers.dart';
 import '../services/storage/app_database.dart';
-import 'repository_contracts.dart';
+import '../../domain/ports/repositories.dart';
 
 final class SqfliteProcessingTaskRepository
     implements ProcessingTaskRepository {

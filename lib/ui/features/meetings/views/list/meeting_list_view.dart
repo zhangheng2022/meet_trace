@@ -16,6 +16,7 @@ import '../../../../../domain/models/meeting.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../theme/theme.dart';
 import '../../../../core/app_ledger.dart';
+import '../../../../core/app_dialog.dart';
 import '../../../../core/app_responsive.dart';
 import '../../../../core/app_state_panel.dart';
 import '../../../../core/app_swipe_action_row.dart';
@@ -113,47 +114,16 @@ final class _MeetingListViewState extends State<MeetingListView> {
       return;
     }
     _deleteDialogOpen = true;
-    final confirmed = await showFDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      useSafeArea: true,
-      builder: (context, style, animation) => FDialog(
-        animation: animation,
-        semanticsLabel: '永久删除${meeting.title}',
-        builder: (context, style) {
-          final appStyle = context.theme.style.app;
-          return Padding(
-            padding: EdgeInsets.all(appStyle.spaceLg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('永久删除「${meeting.title}」？', style: style.titleTextStyle),
-                SizedBox(height: appStyle.spaceSm),
-                Text(
-                  '将删除本场事实音频、转录、AI 总结、证据索引及处理记录。此操作无法撤销。',
-                  style: context.theme.typography.body.md,
-                ),
-                SizedBox(height: appStyle.spaceLg),
-                FButton(
-                  variant: FButtonVariant.outline,
-                  size: FButtonSizeVariant.lg,
-                  autofocus: true,
-                  onPress: () => Navigator.of(context).pop(false),
-                  child: const Text('取消', maxLines: 1),
-                ),
-                SizedBox(height: appStyle.spaceSm),
-                FButton(
-                  key: ValueKey('confirm-delete-meeting-${meeting.id}'),
-                  variant: FButtonVariant.destructive,
-                  size: FButtonSizeVariant.lg,
-                  onPress: () => Navigator.of(context).pop(true),
-                  child: const Text('永久删除', maxLines: 1),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
+      semanticsLabel: '永久删除${meeting.title}',
+      title: '永久删除「${meeting.title}」？',
+      message: '将删除本场事实音频、转录、AI 总结、证据索引及处理记录。此操作无法撤销。',
+      cancelLabel: '取消',
+      confirmLabel: '永久删除',
+      destructive: true,
+      cancelAutofocus: true,
+      confirmKey: ValueKey('confirm-delete-meeting-${meeting.id}'),
     );
     _deleteDialogOpen = false;
     if (confirmed != true || !mounted) {

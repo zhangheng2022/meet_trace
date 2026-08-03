@@ -35,6 +35,7 @@ final class _PreviewMeetingReadinessChecker implements MeetingReadinessChecker {
     microphonePermissionGranted: true,
     freeBytes: minimumRecordingFreeBytes,
     defaultModelId: senseVoiceDefaultModelId,
+    defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
     defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
     defaultModelAvailable: true,
   );

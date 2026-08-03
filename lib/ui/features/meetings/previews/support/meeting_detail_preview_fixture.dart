@@ -80,34 +80,6 @@ final class _PreviewSummaryRepository implements SummaryRepository {
   }) async {}
 }
 
-final class _PreviewInstallations implements ModelInstallationRepository {
-  const _PreviewInstallations();
-
-  ModelInstallation get _standard => ModelInstallation(
-    modelId: AsrModelRegistry.alpha.defaultModel.modelId,
-    version: AsrModelRegistry.alpha.defaultModel.version,
-    installationType: AsrInstallationType.bundled,
-    state: ModelInstallationState.installed,
-    installedPath: 'preview://standard-model',
-    verifiedAt: DateTime(2026, 7, 26),
-    bytes: 82 * 1024 * 1024,
-  );
-
-  @override
-  Future<ModelInstallation?> get({
-    required String modelId,
-    required String version,
-  }) async => modelId == _standard.modelId && version == _standard.version
-      ? _standard
-      : null;
-
-  @override
-  Future<void> save(ModelInstallation installation) async {}
-
-  @override
-  Stream<List<ModelInstallation>> watchAll() => Stream.value([_standard]);
-}
-
 final class _UnavailableTranscriptionRunner
     implements FinalTranscriptionRunner {
   const _UnavailableTranscriptionRunner();
@@ -115,8 +87,6 @@ final class _UnavailableTranscriptionRunner
   @override
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   }) => throw UnsupportedError('组件预览不运行最终转录');
@@ -128,8 +98,6 @@ final class _PendingTranscriptionRunner implements FinalTranscriptionRunner {
   @override
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
-    String? modelId,
-    String? modelVersion,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
   }) => Completer<FinalTranscriptionResult>().future;

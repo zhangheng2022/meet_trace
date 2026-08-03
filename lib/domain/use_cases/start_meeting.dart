@@ -5,7 +5,6 @@ import '../models/workflow_states.dart';
 import '../ports/asr_engine.dart';
 import '../ports/repositories.dart';
 import 'check_meeting_readiness.dart';
-import 'resolve_meeting_model_selection.dart';
 
 final class StartedMeetingSession {
   const StartedMeetingSession({required this.meeting, required this.engine});
@@ -14,7 +13,7 @@ final class StartedMeetingSession {
   final AsrEngine engine;
 }
 
-enum StartMeetingBlockReason { readiness, modelUnavailable }
+enum StartMeetingBlockReason { readiness }
 
 final class StartMeetingBlocked implements Exception {
   const StartMeetingBlocked(this.reason, {this.readiness});
@@ -32,13 +31,7 @@ final class StartMeetingUseCase {
     required this.meetingIdFactory,
     required this.now,
     AsrModelRegistry? registry,
-    ResolveMeetingModelSelection? resolveSelection,
-  }) : registry = registry ?? AsrModelRegistry.alpha,
-       resolveSelection =
-           resolveSelection ??
-           ResolveMeetingModelSelection(
-             registry: registry ?? AsrModelRegistry.alpha,
-           );
+  }) : registry = registry ?? AsrModelRegistry.alpha;
 
   final MeetingRepository meetings;
   final AsrEngineFactory engineFactory;
@@ -46,12 +39,8 @@ final class StartMeetingUseCase {
   final String Function() meetingIdFactory;
   final DateTime Function() now;
   final AsrModelRegistry registry;
-  final ResolveMeetingModelSelection resolveSelection;
 
-  Future<StartedMeetingSession> execute({
-    required String defaultModelId,
-    required Map<String, String> availableVersions,
-  }) async {
+  Future<StartedMeetingSession> execute() async {
     final readiness = await readinessChecker.check(
       requestMicrophonePermission: true,
     );
@@ -61,22 +50,20 @@ final class StartMeetingUseCase {
         readiness: readiness,
       );
     }
-    if (availableVersions[defaultModelId] == null) {
-      throw const StartMeetingBlocked(StartMeetingBlockReason.modelUnavailable);
+    final descriptor = registry.requireById(readiness.defaultModelId);
+    if (readiness.defaultModelVersion != descriptor.version) {
+      throw StateError(
+        '就绪检查返回的模型版本与 Registry 不一致：'
+        '${readiness.defaultModelId}@${readiness.defaultModelVersion}',
+      );
     }
-
-    final selection = resolveSelection(
-      globalDefaultModelId: defaultModelId,
-      availableVersions: availableVersions,
-    );
     AsrEngine? engine;
     try {
       engine = await engineFactory.create(
-        modelId: selection.recordingModelId,
-        modelVersion: selection.recordingModelVersion,
-        language: selection.recordingModelLanguage,
-        useInverseTextNormalization:
-            selection.recordingModelUseInverseTextNormalization,
+        modelId: descriptor.modelId,
+        modelVersion: descriptor.version,
+        language: descriptor.language,
+        useInverseTextNormalization: descriptor.useInverseTextNormalization,
       );
       await engine.initialize();
       final timestamp = now();
@@ -86,13 +73,12 @@ final class StartMeetingUseCase {
         createdAt: timestamp,
         status: MeetingState.created,
         audioDurationMs: 0,
-        requestedModelId: selection.requestedModelId,
-        recordingModelId: selection.recordingModelId,
-        recordingModelVersion: selection.recordingModelVersion,
-        recordingModelLanguage: selection.recordingModelLanguage,
+        requestedModelId: descriptor.modelId,
+        recordingModelId: descriptor.modelId,
+        recordingModelVersion: descriptor.version,
+        recordingModelLanguage: descriptor.language,
         recordingModelUseInverseTextNormalization:
-            selection.recordingModelUseInverseTextNormalization,
-        modelFallbackReason: selection.fallbackReason,
+            descriptor.useInverseTextNormalization,
       );
       final started = created.startRecording(startedAt: timestamp);
       await meetings.save(started);

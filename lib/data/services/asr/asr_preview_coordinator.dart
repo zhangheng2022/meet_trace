@@ -5,13 +5,11 @@ import 'dart:typed_data';
 import '../../../domain/models/asr_preview.dart';
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/transcript.dart';
+import '../../../domain/ports/asr_engine.dart';
+import '../../../domain/ports/asr_preview_session.dart';
 import '../../../domain/use_cases/plan_asr_preview_windows.dart';
 import '../audio/recording_ports.dart';
 import '../vad/silero_vad_segmenter.dart';
-import 'asr_engine.dart';
-import 'asr_preview_session.dart';
-
-export 'asr_preview_session.dart';
 
 const defaultMaximumQueuedPreviewAudioMs = 30000;
 const defaultPreviewHighWaterMs = 15000;

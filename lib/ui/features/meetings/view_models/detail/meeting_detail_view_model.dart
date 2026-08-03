@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' hide Summary;
 import '../../../../../domain/models/asr_model.dart';
 import '../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../domain/models/meeting.dart';
-import '../../../../../domain/models/model_installation.dart';
 import '../../../../../domain/models/processing_task.dart';
 import '../../../../../domain/models/speaker_diarization.dart';
 import '../../../../../domain/models/summary.dart';
@@ -29,11 +28,11 @@ part 'meeting_audio_view_model.dart';
 part 'meeting_actions_view_model.dart';
 
 final class MeetingDetailViewModel extends ChangeNotifier {
+  // 保留公开构造参数名 `meeting`，避免把内部字段名泄漏给调用方。
   MeetingDetailViewModel({
     required Meeting meeting,
     required this.meetings,
     required this.transcripts,
-    required this.installations,
     required this.transcription,
     this.diarization,
     this.diarizationPreferences,
@@ -46,9 +45,10 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     this.playback,
     this.shareBuilder = const BuildMeetingShareUseCase(),
     AsrModelRegistry? registry,
-  }) : _meeting = meeting,
-       registry = registry ?? AsrModelRegistry.alpha,
-       _selectedModelId = meeting.recordingModelId {
+  })
+    // ignore: prefer_initializing_formals
+    : _meeting = meeting,
+       registry = registry ?? AsrModelRegistry.alpha {
     transcriptSection = MeetingTranscriptViewModel._(this);
     summarySection = MeetingSummaryViewModel._(this);
     audioSection = MeetingAudioViewModel._(this);
@@ -57,7 +57,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
 
   final MeetingRepository meetings;
   final TranscriptRepository transcripts;
-  final ModelInstallationRepository installations;
   final FinalTranscriptionRunner transcription;
   final SpeakerDiarizationRunner? diarization;
   final DiarizationPreferenceRepository? diarizationPreferences;
@@ -80,8 +79,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   TranscriptSnapshot? _snapshot;
   TranscriptSnapshot? _failedAttempt;
   TranscriptSnapshot? _processingAttempt;
-  List<AsrModelDescriptor> _installedModels = const [];
-  StreamSubscription<List<ModelInstallation>>? _installationSubscription;
   StreamSubscription<EvidencePlaybackState>? _playbackSubscription;
   Future<void>? _loading;
   Future<void>? _operation;
@@ -90,8 +87,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   Future<void>? _resultOperation;
   double _progress = 0;
   String? _errorMessage;
-  String _selectedModelId;
-  String? _operationModelId;
   bool _isLoading = true;
   bool _diarizationEnabled = false;
   SpeakerDiarizationStatus _diarizationStatus =
@@ -123,11 +118,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
 
   Meeting get meeting => _meeting;
   TranscriptSnapshot? get snapshot => _snapshot;
-  List<AsrModelDescriptor> get installedModels =>
-      List.unmodifiable(_installedModels);
   double get progress => _progress;
   String? get errorMessage => _errorMessage;
-  String get selectedModelId => _selectedModelId;
   bool get isLoading => _isLoading;
   bool get isProcessing =>
       _operation != null ||
@@ -193,20 +185,16 @@ final class MeetingDetailViewModel extends ChangeNotifier {
 
   bool get canRetry => !isProcessing && _failedAttempt != null;
   bool get canRetranscribe =>
-      !isProcessing &&
-      _meeting.status == MeetingState.completed &&
-      _installedModels.isNotEmpty;
+      !isProcessing && _meeting.status == MeetingState.completed;
 
   AsrModelDescriptor get sourceModel => registry.requireById(
-    _operationModelId ??
-        _snapshot?.actualModelId ??
+    _snapshot?.actualModelId ??
         _failedAttempt?.actualModelId ??
         _meeting.recordingModelId,
   );
 
   Future<void> load() => _loading ??= _load();
 
-  void selectModel(String modelId) => transcriptSection.selectModel(modelId);
   Future<void> retry() => transcriptSection.retry();
   Future<void> retranscribe() => transcriptSection.retranscribe();
   Future<void> setDiarizationEnabled(bool enabled) =>
@@ -234,7 +222,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         _notify();
       });
       _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? false;
-      await _loadInstalledModels();
       await _refreshSnapshots();
       await _refreshDiarizationTask();
       await _refreshSummary();
@@ -243,9 +230,9 @@ final class MeetingDetailViewModel extends ChangeNotifier {
           _snapshot?.status != TranscriptSnapshotStatus.complete) {
         final pending = _processingAttempt;
         await _run(
-          modelId: pending?.actualModelId,
-          modelVersion: pending?.actualModelVersion,
-          retrySnapshotId: pending?.id,
+          retrySnapshotId: pending == null
+              ? null
+              : _lockedRetrySnapshotId(pending),
         );
       } else {
         await _runDiarizationIfNeeded();
@@ -278,7 +265,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    unawaited(_installationSubscription?.cancel());
     unawaited(_playbackSubscription?.cancel());
     unawaited(playback?.dispose());
     super.dispose();

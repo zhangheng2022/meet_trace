@@ -1,7 +1,19 @@
-part of '../recording_session_view.dart';
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
 
-final class _RecordingFactsPanel extends StatelessWidget {
-  const _RecordingFactsPanel({required this.viewModel, required this.wide});
+import '../../../../../../domain/models/asr_model_registry.dart';
+import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_status_notice.dart';
+import '../../../view_models/recording/recording_session_view_model.dart';
+import 'recording_audio_waveform.dart';
+
+final class RecordingFactsPanel extends StatelessWidget {
+  const RecordingFactsPanel({
+    required this.viewModel,
+    required this.wide,
+    super.key,
+  });
 
   final RecordingSessionViewModel viewModel;
   final bool wide;
@@ -195,39 +207,27 @@ final class _RecordingFactRow extends StatelessWidget {
   }
 }
 
-final class _PreviewStatusSummary extends StatelessWidget {
-  const _PreviewStatusSummary({required this.viewModel});
+String _recordingShortLabel(RecordingState state) => switch (state) {
+  RecordingState.idle || RecordingState.starting => '准备录音',
+  RecordingState.recording => '录音中',
+  RecordingState.paused => '已暂停',
+  RecordingState.finalizing => '正在保存',
+  RecordingState.completed => '已保存',
+  RecordingState.failed => '录音异常',
+};
 
-  final RecordingSessionViewModel viewModel;
+String _recordingLabel(RecordingState state) => switch (state) {
+  RecordingState.idle || RecordingState.starting => '正在启动事实录音',
+  RecordingState.recording => '事实音频正在安全写入',
+  RecordingState.paused => '事实录音已暂停',
+  RecordingState.finalizing => '正在封存事实音频',
+  RecordingState.completed => '事实音频已保存',
+  RecordingState.failed => '事实录音发生错误',
+};
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(
-          _previewTone(viewModel) == AppStatusTone.warning
-              ? FLucideIcons.triangleAlert
-              : FLucideIcons.radio,
-          size: 18,
-        ),
-        SizedBox(width: appStyle.spaceXs),
-        Expanded(
-          child: Text(
-            _previewLabel(viewModel),
-            style: theme.typography.body.sm.copyWith(
-              color: _previewTone(viewModel) == AppStatusTone.warning
-                  ? null
-                  : theme.colors.mutedForeground,
-              fontWeight: _previewTone(viewModel) == AppStatusTone.warning
-                  ? FontWeight.w600
-                  : null,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+String _durationLabel(Duration value) {
+  final hours = value.inHours.toString().padLeft(2, '0');
+  final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return '$hours:$minutes:$seconds';
 }

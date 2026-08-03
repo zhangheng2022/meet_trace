@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/audio/pcm_evidence_playback_service.dart';
+import 'package:meettrace/domain/ports/evidence_playback.dart';
 
 void main() {
   late Directory root;

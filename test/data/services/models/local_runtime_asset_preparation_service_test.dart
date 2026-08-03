@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meettrace/data/models/runtime/silero_vad_manifest.dart';
 import 'package:meettrace/data/services/models/downloadable_model_service.dart';
 import 'package:meettrace/data/services/models/local_runtime_asset_preparation_service.dart';
 import 'package:meettrace/data/services/models/model_manifest_parser.dart';
 import 'package:meettrace/data/services/models/runtime_asset_installers.dart';
-import 'package:meettrace/data/services/vad/downloadable_silero_vad_model.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/model_manifest.dart';
@@ -98,7 +98,7 @@ void main() {
   });
 
   test('移动网络同意标识包含每个固定文件的大小与哈希', () {
-    expect(service.resourceSetId, contains('model.int8.onnx:239233841:c45ba1'));
+    expect(service.resourceSetId, contains('model.int8.onnx:239233841:c71f0c'));
     expect(service.resourceSetId, contains('tokens.txt:315894:f449eb'));
     expect(
       service.resourceSetId,

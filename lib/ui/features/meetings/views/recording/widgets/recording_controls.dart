@@ -1,7 +1,18 @@
-part of '../recording_session_view.dart';
+import 'dart:async';
 
-final class _RecordingBottomBar extends StatelessWidget {
-  const _RecordingBottomBar({required this.viewModel, required this.onEnd});
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
+
+import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../theme/theme.dart';
+import '../../../view_models/recording/recording_session_view_model.dart';
+
+final class RecordingBottomBar extends StatelessWidget {
+  const RecordingBottomBar({
+    required this.viewModel,
+    required this.onEnd,
+    super.key,
+  });
 
   final RecordingSessionViewModel viewModel;
   final VoidCallback onEnd;

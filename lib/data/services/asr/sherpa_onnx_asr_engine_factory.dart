@@ -1,8 +1,8 @@
 import '../../../domain/models/app_failure.dart';
 import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/asr_model_registry.dart';
-import '../../repositories/repository_contracts.dart';
-import 'asr_engine.dart';
+import '../../../domain/ports/asr_engine.dart';
+import '../../../domain/ports/repositories.dart';
 import 'sense_voice_asr_engine.dart';
 import 'sherpa_onnx/sherpa_onnx_adapter.dart';
 

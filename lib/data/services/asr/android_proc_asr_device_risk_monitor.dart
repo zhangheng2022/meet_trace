@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'asr_engine.dart';
+import '../../../domain/ports/asr_engine.dart';
 
 const _supportedMemoryBytes = 6 * 1024 * 1024 * 1024;
 const _constrainedMemoryBytes = 4 * 1024 * 1024 * 1024;

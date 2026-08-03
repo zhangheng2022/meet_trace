@@ -6,7 +6,7 @@ import '../../../../domain/models/app_failure.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/audio_source.dart';
 import '../../../../domain/models/transcript.dart';
-import '../asr_engine.dart';
+import '../../../../domain/ports/asr_engine.dart';
 import 'sherpa_onnx_adapter.dart';
 
 const sherpaOnnxAsrSampleRate = 16000;

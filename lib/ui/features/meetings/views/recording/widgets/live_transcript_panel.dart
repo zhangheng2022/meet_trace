@@ -1,7 +1,19 @@
-part of '../recording_session_view.dart';
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
 
-final class _LiveTranscriptPanel extends StatelessWidget {
-  const _LiveTranscriptPanel({required this.viewModel, required this.outlined});
+import '../../../../../../domain/models/asr_preview.dart';
+import '../../../../../../domain/models/transcript.dart';
+import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_status_notice.dart';
+import '../../../view_models/recording/recording_session_view_model.dart';
+
+final class LiveTranscriptPanel extends StatelessWidget {
+  const LiveTranscriptPanel({
+    required this.viewModel,
+    required this.outlined,
+    super.key,
+  });
 
   final RecordingSessionViewModel viewModel;
   final bool outlined;
@@ -139,6 +151,38 @@ final class _LiveTranscriptEmptyState extends StatelessWidget {
   }
 }
 
+final class _PreviewStatusSummary extends StatelessWidget {
+  const _PreviewStatusSummary({required this.viewModel});
+
+  final RecordingSessionViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final warning = _previewTone(viewModel) == AppStatusTone.warning;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(
+          warning ? FLucideIcons.triangleAlert : FLucideIcons.radio,
+          size: 18,
+        ),
+        SizedBox(width: appStyle.spaceXs),
+        Expanded(
+          child: Text(
+            _previewLabel(viewModel),
+            style: theme.typography.body.sm.copyWith(
+              color: warning ? null : theme.colors.mutedForeground,
+              fontWeight: warning ? FontWeight.w600 : null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 final class _TranscriptRow extends StatelessWidget {
   const _TranscriptRow({required this.segment, required this.showDivider});
 
@@ -193,31 +237,6 @@ final class _TranscriptRow extends StatelessWidget {
   }
 }
 
-bool _isActive(RecordingState state) => {
-  RecordingState.starting,
-  RecordingState.recording,
-  RecordingState.paused,
-  RecordingState.finalizing,
-}.contains(state);
-
-String _recordingShortLabel(RecordingState state) => switch (state) {
-  RecordingState.idle || RecordingState.starting => '准备录音',
-  RecordingState.recording => '录音中',
-  RecordingState.paused => '已暂停',
-  RecordingState.finalizing => '正在保存',
-  RecordingState.completed => '已保存',
-  RecordingState.failed => '录音异常',
-};
-
-String _recordingLabel(RecordingState state) => switch (state) {
-  RecordingState.idle || RecordingState.starting => '正在启动事实录音',
-  RecordingState.recording => '事实音频正在安全写入',
-  RecordingState.paused => '事实录音已暂停',
-  RecordingState.finalizing => '正在封存事实音频',
-  RecordingState.completed => '事实音频已保存',
-  RecordingState.failed => '事实录音发生错误',
-};
-
 AppStatusTone _previewTone(RecordingSessionViewModel viewModel) {
   if (viewModel.recordingState == RecordingState.paused) {
     return AppStatusTone.info;
@@ -239,13 +258,6 @@ String _previewLabel(RecordingSessionViewModel viewModel) {
     AsrPreviewState.recordingOnly => '实时转录已停止，录音仍在继续',
     AsrPreviewState.disposed => '实时转录已结束',
   };
-}
-
-String _durationLabel(Duration value) {
-  final hours = value.inHours.toString().padLeft(2, '0');
-  final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$hours:$minutes:$seconds';
 }
 
 String _timestamp(int milliseconds) {

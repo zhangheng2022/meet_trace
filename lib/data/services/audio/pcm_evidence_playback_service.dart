@@ -5,9 +5,7 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path/path.dart' as p;
 
-import 'evidence_playback_service.dart';
-
-export 'evidence_playback_service.dart';
+import '../../../domain/ports/evidence_playback.dart';
 
 const _sampleRate = 16000;
 const _channels = 1;

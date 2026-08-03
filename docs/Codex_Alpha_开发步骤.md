@@ -5,8 +5,8 @@
 
 ## 1. 本轮完成范围
 
-- 用唯一 SenseVoice descriptor 替换 Paraformer/Qwen 双模型 Registry，并固定 `auto + ITN`。
-- 删除安装包内的 ASR/VAD 权重声明和旧 Engine/Spike 接入。
+- Registry 只保留唯一 SenseVoice descriptor，并固定 `auto + ITN`。
+- 删除安装包内的 ASR/VAD 权重声明和非活动 Engine/Spike 接入。
 - 固定 SenseVoice、Silero VAD HTTPS Manifest、大小、SHA-256、许可和十进制 300 MB 总量门禁。
 - 实现 768 MiB 空间预检、移动网络版本绑定同意、HTTP Range、暂停保留分片、严格校验和原子激活。
 - 实现第二次启动的完全离线快速检查和首次初始化阻断 UI。
@@ -37,7 +37,7 @@ flutter test
 flutter build apk --debug
 ```
 
-构建后解包/列出 APK 内容，确认不存在 `.onnx`、SenseVoice 权重、Silero VAD 权重、Paraformer 或 Qwen 模型资源。官方插件原生运行库不属于模型权重。
+构建后解包/列出 APK 内容，确认不存在 `.onnx`、SenseVoice 权重、Silero VAD 权重或其他模型资源。官方插件原生运行库不属于模型权重。
 
 ## 4. 发布状态
 
