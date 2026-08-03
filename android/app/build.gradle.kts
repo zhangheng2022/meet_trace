@@ -17,6 +17,20 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.meettrace"
+        val flutterTarget =
+            providers.gradleProperty("target").orNull?.replace('\\', '/')
+        val isLivePreviewReplayTarget =
+            flutterTarget?.endsWith(
+                "integration_test/live_preview_replay_test.dart"
+            ) == true
+        if (
+            isLivePreviewReplayTarget ||
+            providers.environmentVariable("MEETTRACE_REPLAY_TEST_PACKAGE").orNull ==
+                "true"
+        ) {
+            applicationIdSuffix = ".replaytest"
+            versionNameSuffix = "-replaytest"
+        }
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24

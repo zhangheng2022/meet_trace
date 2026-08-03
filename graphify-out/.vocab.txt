@@ -665,6 +665,7 @@ overlap
 overlapping
 overlay
 overview
+owned
 owner
 package
 pad
@@ -832,6 +833,7 @@ renewal
 repaint
 repair
 repeat
+replay
 report
 repositories
 repository
@@ -1225,6 +1227,7 @@ yue
 安装包与供应链门禁
 实时波形
 实时转录仅供参考
+实时转录调优
 展示职责拆分
 已保存与处理失败的可恢复状态
 平台敏感服务集合
