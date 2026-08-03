@@ -4,6 +4,7 @@ import '../../../domain/models/runtime_initialization.dart';
 import '../../../domain/ports/runtime_asset_preparation.dart';
 import '../../models/runtime/silero_vad_manifest.dart';
 import 'downloadable_model_service.dart';
+import 'model_download_types.dart';
 import 'runtime_asset_installers.dart';
 
 final class LocalRuntimeAssetPreparationService

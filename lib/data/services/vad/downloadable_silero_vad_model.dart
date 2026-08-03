@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import '../../models/runtime/silero_vad_manifest.dart';
 import '../models/downloadable_model_service.dart';
 import '../models/model_file_verifier.dart';
+import '../models/model_download_types.dart';
 import '../models/runtime_artifact_install_transaction.dart';
 import '../models/runtime_asset_installers.dart';
 import '../storage/app_file_layout.dart';

@@ -1,7 +1,7 @@
 import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/model_manifest.dart';
 import '../../models/runtime/silero_vad_manifest.dart';
-import 'downloadable_model_service.dart';
+import 'model_download_types.dart';
 
 abstract interface class RuntimeAsrModelInstaller {
   Future<bool> isReadyFast({

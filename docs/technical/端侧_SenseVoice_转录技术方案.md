@@ -105,7 +105,7 @@ schema v5 为干净安装基线。检测到 v1～v4 时抛出 `UnsupportedAlphaI
 
 ## 10. 验证
 
-自动化至少覆盖：Registry 单模型、固定 Manifest/hash/revision、300 MB 上限、768 MiB 空间差额、移动网络同意绑定、暂停续传、VAD 原子准备、快速离线启动、SenseVoice 配置、会议锁定、旧库阻断、录音连续性与最终快照。
+自动化至少覆盖：Registry 单模型、固定 Manifest/hash/revision、300 MB 上限、768 MiB 空间差额、移动网络同意绑定、暂停续传、VAD 原子准备、快速离线启动、SenseVoice 配置、会议锁定、旧库阻断、录音连续性与最终快照。`SherpaOnnxAsrEngine` 通过 fake worker 直接验证预览片段时间轴、空结果、无效窗口、推理错误诊断、PCM16 解码、15 秒最终转录分窗、设备风险阻断、取消终态及幂等释放；这些测试不加载真实模型权重，真机性能和识别准确率仍由外部门禁负责。
 
 交付运行：
 

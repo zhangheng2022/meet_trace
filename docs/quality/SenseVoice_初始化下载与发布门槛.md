@@ -28,10 +28,10 @@ SenseVoice 使用不可变 revision `2365baeacb507f821a0c8120fcee3d484dba7a07`�
 - [x] 会议锁定模型/版本/auto/ITN。
 - [x] 旧 Alpha schema 阻断且不自动删除。
 - [x] `flutter analyze` 最终复验：0 问题。
-- [x] `flutter test` 最终复验：2026-08-03 修正 `local_runtime_asset_preparation_service_test.dart:101` 的旧哈希断言（旧前缀 `c45ba1` → 当前固定 Manifest `c71f0c…`）后，328 项全部通过。
+- [x] `flutter test` 最终复验：337 项全部通过。历史 328 项全绿记录存在守卫盲区，未识别不带 `./` 的同目录相对 import，因此不能作为“data 无环”的证据；现已补强解析、自验证守卫并消除下载接口 2 节点环，同时新增 8 项 `SherpaOnnxAsrEngine` 核心推理路径单元测试。
 - [x] Android Debug APK 构建与权重审计：`app-debug.apk` 构建成功，ASR/VAD 权重和用户数据命中数均为 0。
-- [x] OCR workspace 模式复审全部 79 个可审文件；Critical/High 清零。
-- [ ] Graphify 完全同步：`graphify update .` 已把代码图更新为 4,676 nodes / 6,274 edges / 396 communities，代码关系已同步；CLI 仍提示 Markdown 语义更新需要 AI 管线，且已有标签数量与当前 communities 不一致，不能把文档语义图视为完全同步。
+- [x] OCR workspace 模式复审本轮循环依赖修复与 Engine 测试涉及的 13 个可审文件；Critical/High 清零。
+- [ ] Graphify 完全同步：`graphify update .` 已把代码图更新为 5,941 nodes / 7,450 edges / 487 communities，代码关系已同步；CLI 仍提示 Markdown 语义更新需要 AI 管线，且 490 个既有标签与当前 communities 不一致，不能把文档语义图视为完全同步。
 
 ## 外部门禁
 

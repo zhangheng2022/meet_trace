@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import 'downloadable_model_service.dart';
+import 'model_download_types.dart';
 
 final class HttpModelFileDownloader implements ModelFileDownloader {
   HttpModelFileDownloader({

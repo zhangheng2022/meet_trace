@@ -5,7 +5,7 @@ import '../data/services/audio/platform_recording_foreground_lifecycle.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
 import '../data/services/audio/recording_checkpoint_store.dart';
 import '../data/services/audio/reliable_recording_service.dart';
-import '../data/services/models/downloadable_model_service.dart';
+import '../data/services/models/model_download_types.dart';
 import '../data/services/sharing/text_share_service.dart';
 import '../data/services/storage/local_data_control_service.dart';
 import '../data/services/storage/meeting_directory_deletion_service.dart';

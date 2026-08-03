@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/models/runtime/silero_vad_manifest.dart';
 import 'package:meettrace/data/services/models/downloadable_model_service.dart';
 import 'package:meettrace/data/services/models/local_runtime_asset_preparation_service.dart';
+import 'package:meettrace/data/services/models/model_download_types.dart';
 import 'package:meettrace/data/services/models/model_manifest_parser.dart';
 import 'package:meettrace/data/services/models/runtime_asset_installers.dart';
 import 'package:meettrace/domain/models/asr_model.dart';

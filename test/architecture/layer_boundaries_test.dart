@@ -125,6 +125,19 @@ void main() {
     );
   });
 
+  test('循环依赖守卫覆盖无 ./ 前缀的相对 import', () async {
+    final root = await Directory.systemTemp.createTemp(
+      'meettrace-import-cycle-',
+    );
+    addTearDown(() => root.delete(recursive: true));
+    File(p.join(root.path, 'a.dart')).writeAsStringSync("import 'b.dart';\n");
+    File(p.join(root.path, 'b.dart')).writeAsStringSync("import 'a.dart';\n");
+
+    final cycles = _findImportCycles(root.path);
+
+    expect(cycles, hasLength(1));
+  });
+
   test('顶层组合根只编排子容器，不重新聚合 data 与 ui 依赖', () {
     final imports = _importsUnder(
       'lib/app/meettrace_dependencies.dart',
@@ -197,7 +210,7 @@ String? _resolveLocalImport(String projectRoot, String sourcePath, String uri) {
       p.join(projectRoot, 'lib', uri.substring('package:meettrace/'.length)),
     );
   }
-  if (uri.startsWith('.')) {
+  if (!uri.contains(':')) {
     return p.normalize(p.join(p.dirname(sourcePath), uri));
   }
   return null;

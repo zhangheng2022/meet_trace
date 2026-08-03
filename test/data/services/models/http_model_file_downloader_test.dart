@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/models/downloadable_model_service.dart';
 import 'package:meettrace/data/services/models/http_model_file_downloader.dart';
+import 'package:meettrace/data/services/models/model_download_types.dart';
 import 'package:path/path.dart' as p;
 
 void main() {

@@ -10,6 +10,7 @@ import '../../../domain/models/workflow_states.dart';
 import '../../../domain/ports/repositories.dart';
 import '../storage/app_file_layout.dart';
 import 'model_file_verifier.dart';
+import 'model_download_types.dart';
 import 'runtime_artifact_install_transaction.dart';
 import 'runtime_asset_installers.dart';
 
@@ -17,39 +18,6 @@ const minimumRuntimeInitializationFreeBytes = 768 * 1024 * 1024;
 const maximumRuntimeDownloadBytes = 300000000;
 
 enum DownloadNetworkKind { offline, unmetered, metered, unknown }
-
-enum DownloadableModelPhase {
-  checking,
-  downloading,
-  verifying,
-  committing,
-  ready,
-  deleting,
-}
-
-final class DownloadableModelProgress {
-  const DownloadableModelProgress({
-    required this.phase,
-    required this.completedBytes,
-    required this.totalBytes,
-  });
-
-  final DownloadableModelPhase phase;
-  final int completedBytes;
-  final int totalBytes;
-}
-
-final class DownloadableModelResult {
-  const DownloadableModelResult({
-    required this.installedPath,
-    required this.alreadyInstalled,
-    required this.resumed,
-  });
-
-  final String installedPath;
-  final bool alreadyInstalled;
-  final bool resumed;
-}
 
 final class DownloadableModelDeleteResult {
   const DownloadableModelDeleteResult({required this.deleted});
@@ -82,13 +50,6 @@ final class DownloadableModelException implements Exception {
   String toString() => 'DownloadableModelException($code, $message)';
 }
 
-final class ModelDownloadCanceledException implements Exception {
-  const ModelDownloadCanceledException();
-}
-
-typedef DownloadableModelProgressCallback =
-    void Function(DownloadableModelProgress progress);
-
 abstract interface class ModelStorageCapacityProvider {
   Future<int> getFreeBytes();
 }
@@ -106,42 +67,6 @@ abstract interface class ModelFileDownloader {
     required ModelDownloadCancellationToken cancellation,
     required void Function(int absoluteFileBytes) onProgress,
   });
-}
-
-final class ModelDownloadCancellationToken {
-  bool _isCanceled = false;
-  final Set<void Function()> _listeners = {};
-
-  bool get isCanceled => _isCanceled;
-
-  void cancel() {
-    if (_isCanceled) {
-      return;
-    }
-    _isCanceled = true;
-    for (final listener in List<void Function()>.of(_listeners)) {
-      listener();
-    }
-    _listeners.clear();
-  }
-
-  void throwIfCanceled() {
-    if (_isCanceled) {
-      throw const ModelDownloadCanceledException();
-    }
-  }
-
-  void addCancelListener(void Function() listener) {
-    if (_isCanceled) {
-      listener();
-      return;
-    }
-    _listeners.add(listener);
-  }
-
-  void removeCancelListener(void Function() listener) {
-    _listeners.remove(listener);
-  }
 }
 
 final class DownloadableModelService implements RuntimeAsrModelInstaller {

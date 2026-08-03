@@ -4,14 +4,15 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/data/services/models/downloadable_model_service.dart';
 import 'package:meettrace/data/services/models/model_file_verifier.dart';
+import 'package:meettrace/data/services/models/model_download_types.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
 import 'package:meettrace/domain/models/model_manifest.dart';
 import 'package:meettrace/domain/models/model_usage_lease.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:path/path.dart' as p;
 
