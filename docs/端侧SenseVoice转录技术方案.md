@@ -14,10 +14,10 @@ SenseVoice Manifest 位于 `assets/models/manifest.json`：
 
 | 文件 | 字节数 | SHA-256 |
 | --- | ---: | --- |
-| `model.int8.onnx` | 239,233,841 | `c45ba1d6a13329c4aca1dc118cabdc643ca09cb8192abb979648dd68f9917323` |
+| `model.int8.onnx` | 239,233,841 | `c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51` |
 | `tokens.txt` | 315,894 | `f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc` |
 
-URL 固定到 Hugging Face revision `2365baeacb507f821a0c8120fcee3d484dba7a07`。SenseVoice 合计 `239,549,735` 字节；Silero VAD 固定 `212,860` 字节；总计 `239,762,595` 字节。所有 URL 必须为 HTTPS，许可文本随安装包分发，权重不分发。
+运行时下载 URL 固定到 `https://mt.zhangheng.eu.org/models/SenseVoice/`，镜像文件与官方 SenseVoice revision `2365baeacb507f821a0c8120fcee3d484dba7a07` 及官方 Silero VAD 发布文件保持内容一致。SenseVoice 合计 `239,549,735` 字节；Silero VAD 固定 `212,860` 字节；总计 `239,762,595` 字节。所有 URL 必须为 HTTPS，许可文本随安装包分发，权重不分发。
 
 ## 3. 分层和依赖
 
@@ -115,4 +115,3 @@ flutter build apk --debug
 ```
 
 目标真机还必须完成 PRD 的 RTF P95、结果延迟 P95、关键事实召回率、30 分钟电量/温控/内存和后台录音验证。Windows 不能替代 iOS arm64 构建与真机证据。
-

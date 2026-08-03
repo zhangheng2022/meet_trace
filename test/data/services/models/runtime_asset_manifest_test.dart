@@ -10,7 +10,7 @@ import 'package:path/path.dart' as p;
 void main() {
   final projectRoot = Directory.current.path;
 
-  test('发布 Manifest 固定 SenseVoice 文件、哈希和不可变 revision', () {
+  test('发布 Manifest 固定 SenseVoice 文件、内容哈希和下载源', () {
     final manifest =
         ModelManifestParser(
           registry: AsrModelRegistry.alpha,
@@ -31,18 +31,16 @@ void main() {
     ]);
     expect(
       model.files.first.sha256,
-      'c45ba1d6a13329c4aca1dc118cabdc643ca09cb8192abb979648dd68f9917323',
+      'c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51',
     );
     expect(
       model.files.last.sha256,
       'f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc',
     );
-    expect(
-      model.files.every(
-        (file) => file.url.contains('2365baeacb507f821a0c8120fcee3d484dba7a07'),
-      ),
-      isTrue,
-    );
+    expect(model.files.map((file) => file.url), [
+      'https://mt.zhangheng.eu.org/models/SenseVoice/model.int8.onnx',
+      'https://mt.zhangheng.eu.org/models/SenseVoice/tokens.txt',
+    ]);
   });
 
   test('SenseVoice 与 VAD 下载总量不超过十进制 300 MB', () {
@@ -62,6 +60,11 @@ void main() {
       File(
         p.join(projectRoot, 'assets', 'models', 'silero-vad-manifest.json'),
       ).readAsStringSync(),
+    );
+
+    expect(
+      vad.files.single.url,
+      'https://mt.zhangheng.eu.org/models/SenseVoice/silero_vad.int8.onnx',
     );
 
     expect(model.requiredBytes + vad.requiredBytes, 239762595);

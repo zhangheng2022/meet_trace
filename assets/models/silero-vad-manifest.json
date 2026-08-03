@@ -10,7 +10,7 @@
       "path": "silero_vad.int8.onnx",
       "bytes": 212860,
       "sha256": "c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20",
-      "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.int8.onnx"
+      "url": "https://mt.zhangheng.eu.org/models/SenseVoice/silero_vad.int8.onnx"
     }
   ],
   "source": {

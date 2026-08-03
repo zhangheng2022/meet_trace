@@ -395,13 +395,13 @@
     "semantic_hash": "56d0607fa326e0821ba3572a92c848d9"
   },
   "assets/models/manifest.json": {
-    "mtime": 1785518269.8846598,
-    "ast_hash": "c6a00217ec28889ba048bdb07c5e9e31",
+    "mtime": 1785726097.3341036,
+    "ast_hash": "2c1148a127ac100e6563d759e18f80df",
     "semantic_hash": ""
   },
   "assets/models/silero-vad-manifest.json": {
-    "mtime": 1785518269.8846598,
-    "ast_hash": "8ea03aaf9fee7c42651e5a2d282d6d7e",
+    "mtime": 1785726097.3351083,
+    "ast_hash": "8b17cd6eb48668f6bfabb322e6bb3c3a",
     "semantic_hash": ""
   },
   "integration_test/reliable_recording_test.dart": {
@@ -1945,8 +1945,8 @@
     "semantic_hash": ""
   },
   "test/data/services/models/runtime_asset_manifest_test.dart": {
-    "mtime": 1785519452.282406,
-    "ast_hash": "e1bbba894ad23bdd8aee40b7a49c5760",
+    "mtime": 1785726108.6996045,
+    "ast_hash": "e4297b2b9002009e872b803596c9d3fc",
     "semantic_hash": ""
   },
   "test/data/services/vad/downloadable_silero_vad_model_test.dart": {
@@ -1975,8 +1975,8 @@
     "semantic_hash": ""
   },
   "docs/\u7aef\u4fa7SenseVoice\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1785519738.153471,
-    "ast_hash": "91f8373a0433c4e1149a07ba4d8bd414",
+    "mtime": 1785726097.3368526,
+    "ast_hash": "9646ebd920c5607e36e24ab95a254823",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260729_015723_\u5206\u6790\u5f53\u524d\u9879\u76ee\u7684\u672c\u5730\u6a21\u578b_\u662f\u5426\u9700\u8981\u66f4\u6362\u6a21\u578b\u6216\u7ec4\u5408\u6a21\u578b.md": {
