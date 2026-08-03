@@ -1,0 +1,19 @@
+schema_version: 1
+module_path: ""
+title: MeetTrace Flutter 多端应用根工程
+scope:
+    - README.md
+    - PRODUCT.md
+    - DESIGN.md
+    - pubspec.yaml
+    - analysis_options.yaml
+    - forui.yaml
+    - .gitignore
+    - .gitattributes
+    - .graphifyignore
+    - AGENTS.md
+    - pubspec.lock
+    - skills-lock.json
+source_files: []
+depends_on: []
+related_to: []

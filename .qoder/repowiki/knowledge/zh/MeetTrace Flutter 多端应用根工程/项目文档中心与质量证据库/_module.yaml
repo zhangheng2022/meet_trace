@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: documentation
+title: 项目文档中心与质量证据库
+scope:
+    - docs/
+source_files: []
+depends_on: []
+related_to: []

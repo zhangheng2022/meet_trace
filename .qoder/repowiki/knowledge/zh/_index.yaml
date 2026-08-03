@@ -1,0 +1,123 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: master
+nodes_managed: true
+exported_at: "2026-08-03T09:25:46Z"
+modules:
+    "":
+        dir_name: MeetTrace Flutter 多端应用根工程
+        title: MeetTrace Flutter 多端应用根工程
+        scope:
+            - README.md
+            - PRODUCT.md
+            - DESIGN.md
+            - pubspec.yaml
+            - analysis_options.yaml
+            - forui.yaml
+            - .gitignore
+            - .gitattributes
+            - .graphifyignore
+            - AGENTS.md
+            - pubspec.lock
+            - skills-lock.json
+        source_files: []
+        children:
+            - android_platform
+            - assets_and_models
+            - desktop_platforms
+            - development_tools
+            - documentation
+            - ios_platform
+            - shared_dart_code
+            - tooling_benchmarks
+        depends_on: []
+        related_to: []
+    android_platform:
+        dir_name: Android 原生宿主应用（Flutter 嵌入层）
+        title: Android 原生宿主应用（Flutter 嵌入层）
+        scope:
+            - android/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: shared_dart_code
+    assets_and_models:
+        dir_name: 模型清单与许可证资源
+        title: 模型清单与许可证资源
+        scope:
+            - assets/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: shared_dart_code
+    desktop_platforms:
+        dir_name: 桌面平台原生宿主（Linux _ macOS _ Windows）
+        title: 桌面平台原生宿主（Linux / macOS / Windows）
+        scope:
+            - linux/
+            - macos/
+            - windows/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: shared_dart_code
+    development_tools:
+        dir_name: Graphify 代码图谱与设计系统元数据
+        title: Graphify 代码图谱与设计系统元数据
+        scope:
+            - .impeccable/
+            - graphify-out/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: shared_dart_code
+    documentation:
+        dir_name: 项目文档中心与质量证据库
+        title: 项目文档中心与质量证据库
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    ios_platform:
+        dir_name: iOS 原生宿主工程（Runner）
+        title: iOS 原生宿主工程（Runner）
+        scope:
+            - ios/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: shared_dart_code
+    shared_dart_code:
+        dir_name: MeetTrace Flutter 应用（分层架构与依赖注入）
+        title: MeetTrace Flutter 应用（分层架构与依赖注入）
+        scope:
+            - lib/
+            - test/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: android_platform
+            - path: assets_and_models
+            - path: desktop_platforms
+            - path: development_tools
+            - path: ios_platform
+            - path: tooling_benchmarks
+    tooling_benchmarks:
+        dir_name: Alpha 发布评测与 APK 检查工具集
+        title: Alpha 发布评测与 APK 检查工具集
+        scope:
+            - tool/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: shared_dart_code

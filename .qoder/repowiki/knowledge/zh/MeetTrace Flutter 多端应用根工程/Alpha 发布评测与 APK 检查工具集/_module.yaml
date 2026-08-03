@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: tooling_benchmarks
+title: Alpha 发布评测与 APK 检查工具集
+scope:
+    - tool/
+source_files: []
+depends_on: []
+related_to:
+    - path: shared_dart_code
