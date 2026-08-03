@@ -82,38 +82,30 @@ final class _RuntimeInitializationGateState
   void initState() {
     super.initState();
     _viewModel = widget.dependencies.createRuntimeInitializationViewModel();
-    _viewModel.addListener(_onChanged);
     unawaited(_viewModel.start());
   }
 
-  void _onChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
   @override
-  Widget build(BuildContext context) => _viewModel.isReady
-      ? MeetTraceFlow(
+  Widget build(BuildContext context) =>
+      MeetTraceRuntimeInitializationTransition(
+        viewModel: _viewModel,
+        ready: MeetTraceFlow(
           dependencies: widget.dependencies,
           onRuntimeRepairRequired: _restartForRepair,
-        )
-      : MeetTraceStartupView(viewModel: _viewModel);
+        ),
+      );
 
   void _restartForRepair() {
-    _viewModel.removeListener(_onChanged);
     _viewModel.dispose();
     _viewModel = widget.dependencies.createRuntimeInitializationViewModel(
       forceRepair: true,
     );
-    _viewModel.addListener(_onChanged);
     setState(() {});
     unawaited(_viewModel.start());
   }
 
   @override
   void dispose() {
-    _viewModel.removeListener(_onChanged);
     _viewModel.dispose();
     super.dispose();
   }

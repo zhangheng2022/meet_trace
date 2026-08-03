@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
@@ -110,6 +112,68 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('快速检查沿用基础启动内容并平滑进入首页', (tester) async {
+    final preparation = _ControlledPreparation();
+    final viewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(preparation),
+    );
+    addTearDown(viewModel.dispose);
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetTraceRuntimeInitializationTransition(
+          viewModel: viewModel,
+          ready: const Text('会议首页'),
+        ),
+      ),
+    );
+    unawaited(viewModel.start());
+    await tester.pump();
+
+    final transition = tester.widget<AnimatedSwitcher>(
+      find.byType(AnimatedSwitcher),
+    );
+    expect(transition.duration, const Duration(milliseconds: 280));
+    expect(transition.reverseDuration, const Duration(milliseconds: 180));
+    expect(find.text('正在打开本地工作区'), findsOneWidget);
+    expect(find.text('准备离线转录'), findsNothing);
+
+    preparation.completeReady();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 280));
+
+    expect(find.text('会议首页'), findsOneWidget);
+    expect(find.text('准备离线转录'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('仅在确实需要准备资源时显示详细初始化步骤', (tester) async {
+    final preparation = _ControlledPreparation();
+    final viewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(preparation),
+    );
+    addTearDown(viewModel.dispose);
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetTraceRuntimeInitializationTransition(
+          viewModel: viewModel,
+          ready: const Text('会议首页'),
+        ),
+      ),
+    );
+    unawaited(viewModel.start());
+    await tester.pump();
+    preparation.showDownload();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 280));
+
+    expect(find.text('准备离线转录'), findsOneWidget);
+    expect(find.text('下载离线资源'), findsOneWidget);
+    expect(find.text('步骤 2 / 4'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('运行时下载布局适配紧凑手机与双倍字体', (tester) async {
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
@@ -184,6 +248,48 @@ final class _DownloadingPreparation implements RuntimeAssetPreparationPort {
         resourceName: 'SenseVoice',
       ),
     );
+  }
+
+  @override
+  Future<void> grantMobileConsent() async {}
+
+  @override
+  void pause() {}
+}
+
+final class _ControlledPreparation implements RuntimeAssetPreparationPort {
+  final Completer<void> _completion = Completer<void>();
+  void Function(RuntimeInitializationProgress progress)? _onProgress;
+
+  @override
+  Future<void> prepare({
+    required void Function(RuntimeInitializationProgress progress) onProgress,
+    bool forceRepair = false,
+  }) {
+    _onProgress = onProgress;
+    return _completion.future;
+  }
+
+  void showDownload() {
+    _onProgress?.call(
+      const RuntimeInitializationProgress(
+        phase: RuntimeInitializationPhase.downloading,
+        completedBytes: 100000000,
+        totalBytes: 239762595,
+        resourceName: 'SenseVoice',
+      ),
+    );
+  }
+
+  void completeReady() {
+    _onProgress?.call(
+      const RuntimeInitializationProgress(
+        phase: RuntimeInitializationPhase.ready,
+        completedBytes: 239762595,
+        totalBytes: 239762595,
+      ),
+    );
+    _completion.complete();
   }
 
   @override

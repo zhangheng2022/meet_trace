@@ -32,6 +32,58 @@ final class MeetTraceStartupView extends StatelessWidget {
   }
 }
 
+/// 在快速本地检查、资源准备和应用首页之间提供平滑过渡。
+final class MeetTraceRuntimeInitializationTransition extends StatelessWidget {
+  const MeetTraceRuntimeInitializationTransition({
+    required this.viewModel,
+    required this.ready,
+    super.key,
+  });
+
+  final RuntimeInitializationViewModel viewModel;
+  final Widget ready;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) {
+        final phase = viewModel.state.phase;
+        final child = switch (phase) {
+          RuntimeInitializationPhase.ready => KeyedSubtree(
+            key: const ValueKey('runtime-initialization-ready'),
+            child: ready,
+          ),
+          RuntimeInitializationPhase.checking => const KeyedSubtree(
+            key: ValueKey('runtime-initialization-checking'),
+            child: _StartupFrame(body: _CoreStartupContent()),
+          ),
+          _ => KeyedSubtree(
+            key: const ValueKey('runtime-initialization-details'),
+            child: _StartupFrame(
+              body: _RuntimeStartupContent(viewModel: viewModel),
+            ),
+          ),
+        };
+        return AnimatedSwitcher(
+          duration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 280),
+          reverseDuration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeOutCubic,
+          transitionBuilder: (child, animation) =>
+              FadeTransition(opacity: animation, child: child),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
 /// 会迹的本地能力启动失败页。
 final class MeetTraceStartupErrorView extends StatelessWidget {
   const MeetTraceStartupErrorView({
