@@ -75,6 +75,8 @@ UI 只依赖 domain Port/Use Case/Model。下载、文件、网络、SQLite 和�
 
 识别器在独立 isolate 中持有。会中和最终转录复用统一 `SherpaOnnxAsrEngine`：16 kHz 单声道 PCM16、15 秒窗口、全局时间轴事件、确定性排队、诊断、RTF、取消与释放。
 
+麦克风采集固定通过官方 `record` 插件请求平台自动增益、回声消除和噪声抑制。增强后的 16 kHz 单声道 PCM16 先写入事实音频，再分发给 VAD/ASR，保证最终录音、会中预览和最终转录使用同一音频事实。平台效果属于设备能力：Android 仅启用系统报告可用的 AGC/AEC/NS；iOS 流式录音通过系统 Voice Processing 启用回声消除和自动增益，不引入自建 DSP 或私有原生桥接。如增强录音启动失败，会以同样的 PCM16 规格关闭增强后重试一次，优先保证录音连续可用。
+
 ## 7. 会议锁定与数据库
 
 `Meeting` 保存 `requested_model_id`、`recording_model_id`、`recording_model_version`、`recording_model_language` 和 `recording_model_use_itn`。开始会议时一次写入 `auto/true`；后续预览和最终转录从会议读取，不从设置重新解析。
