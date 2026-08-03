@@ -387,8 +387,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "integration_test_reliable_recording_test",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "reliable_recording_test.dart"
     },
     {
@@ -398,8 +398,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "integration_test_reliable_recording_test_recordingseconds",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "_recordingseconds"
     },
     {
@@ -409,8 +409,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "integration_test_reliable_recording_test_main",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "main"
     },
     {
@@ -420,8 +420,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "dart_convert",
-      "community": 238,
-      "community_name": "dart:convert",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "dart:convert"
     },
     {
@@ -431,7 +431,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "dart_io",
-      "community": 98,
+      "community": 120,
       "community_name": "dart:io",
       "norm_label": "dart:io"
     },
@@ -442,8 +442,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_flutter_foundation_dart",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "package:flutter/foundation.dart"
     },
     {
@@ -453,7 +453,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_flutter_test_flutter_test_dart",
-      "community": 162,
+      "community": 90,
       "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "package:flutter_test/flutter_test.dart"
     },
@@ -464,8 +464,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_integration_test_integration_test_dart",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "package:integration_test/integration_test.dart"
     },
     {
@@ -475,8 +475,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_device_recording_storage_capacity_dart",
-      "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community": 51,
+      "community_name": "local_data_control_service_test.dart",
       "norm_label": "package:meettrace/data/services/audio/device_recording_storage_capacity.dart"
     },
     {
@@ -486,8 +486,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_flutter_foreground_recording_lifecycle_dart",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "package:meettrace/data/services/audio/flutter_foreground_recording_lifecycle.dart"
     },
     {
@@ -508,8 +508,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_recording_checkpoint_store_dart",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 39,
+      "community_name": "AppFileLayout",
       "norm_label": "package:meettrace/data/services/audio/recording_checkpoint_store.dart"
     },
     {
@@ -519,8 +519,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_reliable_recording_service_dart",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "package:meettrace/data/services/audio/reliable_recording_service.dart"
     },
     {
@@ -530,8 +530,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_spike_recording_continuity_metrics_dart",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "package:meettrace/data/services/audio/spike/recording_continuity_metrics.dart"
     },
     {
@@ -553,7 +553,7 @@
       "_origin": "ast",
       "id": "package_path_path_dart",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "package:path/path.dart"
     },
     {
@@ -563,8 +563,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_path_provider_path_provider_dart",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "package:path_provider/path_provider.dart"
     },
     {
@@ -575,7 +575,7 @@
       "_origin": "ast",
       "id": "ios_runnertests_runnertests",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "ios/runnertests/runnertests.swift"
     },
     {
@@ -587,7 +587,7 @@
       "_origin": "ast",
       "id": "flutter",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "flutter"
     },
     {
@@ -599,7 +599,7 @@
       "_origin": "ast",
       "id": "uikit",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "uikit"
     },
     {
@@ -611,7 +611,7 @@
       "_origin": "ast",
       "id": "xctest",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "xctest"
     },
     {
@@ -622,7 +622,7 @@
       "_origin": "ast",
       "id": "ios_runnertests_runnertests_runnertests",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "runnertests"
     },
     {
@@ -633,7 +633,7 @@
       "_origin": "ast",
       "id": "xctestcase",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "xctestcase"
     },
     {
@@ -644,7 +644,7 @@
       "_origin": "ast",
       "id": "ios_runnertests_runnertests_runnertests_testexample",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": ".testexample()"
     },
     {
@@ -655,7 +655,7 @@
       "_origin": "ast",
       "id": "ios_runner_appdelegate",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "ios/runner/appdelegate.swift"
     },
     {
@@ -665,8 +665,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "ios_runner_appdelegate_appdelegate",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "appdelegate"
     },
     {
@@ -676,8 +676,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "flutterappdelegate",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "flutterappdelegate"
     },
     {
@@ -687,8 +687,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "flutterimplicitenginedelegate",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "flutterimplicitenginedelegate"
     },
     {
@@ -698,8 +698,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "ios_runner_appdelegate_appdelegate_application",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": ".application()"
     },
     {
@@ -709,8 +709,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "uiapplication",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "uiapplication"
     },
     {
@@ -720,8 +720,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "any",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "any"
     },
     {
@@ -731,8 +731,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "ios_runner_appdelegate_swift_bool",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "bool"
     },
     {
@@ -742,8 +742,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "ios_runner_appdelegate_appdelegate_didinitializeimplicitflutterengine",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": ".didinitializeimplicitflutterengine()"
     },
     {
@@ -753,8 +753,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "flutterimplicitenginebridge",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "flutterimplicitenginebridge"
     },
     {
@@ -776,7 +776,7 @@
       "_origin": "ast",
       "id": "ios_runner_scenedelegate",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "scenedelegate.swift"
     },
     {
@@ -787,7 +787,7 @@
       "_origin": "ast",
       "id": "ios_runner_scenedelegate_scenedelegate",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "scenedelegate"
     },
     {
@@ -798,7 +798,7 @@
       "_origin": "ast",
       "id": "flutterscenedelegate",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "flutterscenedelegate"
     },
     {
@@ -1622,8 +1622,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "domain_models_model_manifest_dart",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "../../../domain/models/model_manifest.dart"
     },
     {
@@ -1700,7 +1700,7 @@
       "_origin": "ast",
       "id": "domain_use_cases_run_final_transcription_dart",
       "community": 38,
-      "community_name": "meeting_detail_previews.dart",
+      "community_name": "../../../../../domain/ports/final_transcription.dart",
       "norm_label": "../../../domain/use_cases/run_final_transcription.dart"
     },
     {
@@ -2249,8 +2249,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "theme_theme_dart",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "../../../../theme/theme.dart"
     },
     {
@@ -2502,8 +2502,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "domain_models_asr_model_dart",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "../../../../../domain/models/asr_model.dart"
     },
     {
@@ -2513,8 +2513,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "domain_models_model_installation_dart",
-      "community": 108,
-      "community_name": "sqflite_model_installation_repository.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "../../../../domain/models/model_installation.dart"
     },
     {
@@ -2546,8 +2546,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_repository_contracts",
-      "community": 58,
-      "community_name": "model_settings_view_model.dart",
+      "community": 148,
+      "community_name": "meeting_list_previews.dart",
       "norm_label": "repository_contracts.dart"
     },
     {
@@ -2557,8 +2557,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "domain_ports_repositories_dart",
-      "community": 58,
-      "community_name": "model_settings_view_model.dart",
+      "community": 148,
+      "community_name": "meeting_list_previews.dart",
       "norm_label": "../../../../domain/ports/repositories.dart"
     },
     {
@@ -2689,7 +2689,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "meetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "meetingrepository"
     },
@@ -2832,8 +2832,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_installation_repository_sqflitemodelinstallationrepository",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "sqflitemodelinstallationrepository"
     },
     {
@@ -3052,8 +3052,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "sqflite_model_usage_lease_repository.dart"
     },
     {
@@ -3063,8 +3063,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_sqflitemodelusageleaserepository",
-      "community": 220,
-      "community_name": "ModelUsageLeaseRepository",
+      "community": 97,
+      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
       "norm_label": "sqflitemodelusageleaserepository"
     },
     {
@@ -3074,8 +3074,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_appdatabase",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "_appdatabase"
     },
     {
@@ -3085,8 +3085,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_save",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "save"
     },
     {
@@ -3096,8 +3096,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_release",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "release"
     },
     {
@@ -3107,8 +3107,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_listactive",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "listactive"
     },
     {
@@ -3118,8 +3118,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_deleteexpired",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "deleteexpired"
     },
     {
@@ -3129,8 +3129,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_torow",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "_torow"
     },
     {
@@ -3140,8 +3140,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_model_usage_lease_repository_fromrow",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "_fromrow"
     },
     {
@@ -3151,8 +3151,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "domain_models_model_usage_lease_dart",
-      "community": 166,
-      "community_name": "sqflite_model_usage_lease_repository.dart",
+      "community": 32,
+      "community_name": "class",
       "norm_label": "../../domain/models/model_usage_lease.dart"
     },
     {
@@ -3239,8 +3239,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_repositories_sqflite_runtime_download_consent_repository_sqfliteruntimedownloadconsentrepository",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 9,
+      "community_name": "local_runtime_asset_preparation_service_test.dart",
       "norm_label": "sqfliteruntimedownloadconsentrepository"
     },
     {
@@ -3723,8 +3723,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_asr_android_proc_asr_device_risk_monitor_androidprocasrdeviceriskmonitor",
-      "community": 164,
-      "community_name": "AsrDeviceRiskMonitor",
+      "community": 162,
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "androidprocasrdeviceriskmonitor"
     },
     {
@@ -3998,8 +3998,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_asr_asr_engine",
-      "community": 396,
-      "community_name": "../../../../../domain/ports/asr_engine.dart",
+      "community": 61,
+      "community_name": "start_meeting_view_model.dart",
       "norm_label": "asr/asr_engine.dart"
     },
     {
@@ -4009,8 +4009,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "domain_ports_asr_engine_dart",
-      "community": 396,
-      "community_name": "../../../../../domain/ports/asr_engine.dart",
+      "community": 61,
+      "community_name": "start_meeting_view_model.dart",
       "norm_label": "../../../../../domain/ports/asr_engine.dart"
     },
     {
@@ -4839,15 +4839,15 @@
       "norm_label": "reset"
     },
     {
-      "label": "append",
+      "label": "appendOwned",
       "file_type": "code",
       "source_file": "lib/data/services/asr/asr_preview_coordinator.dart",
       "source_location": null,
       "_origin": "ast",
-      "id": "lib_data_services_asr_asr_preview_coordinator_append",
+      "id": "lib_data_services_asr_asr_preview_coordinator_appendowned",
       "community": 1,
       "community_name": "asr_preview_coordinator.dart",
-      "norm_label": "append"
+      "norm_label": "appendowned"
     },
     {
       "label": "read",
@@ -4933,7 +4933,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "dart_typed_data",
-      "community": 237,
+      "community": 136,
       "community_name": "dart:typed_data",
       "norm_label": "dart:typed_data"
     },
@@ -5033,7 +5033,7 @@
       "_origin": "ast",
       "id": "lib_data_services_asr_final_transcription_service",
       "community": 38,
-      "community_name": "meeting_detail_previews.dart",
+      "community_name": "../../../../../domain/ports/final_transcription.dart",
       "norm_label": "final_transcription_service.dart"
     },
     {
@@ -5044,7 +5044,7 @@
       "_origin": "ast",
       "id": "domain_ports_final_transcription_dart",
       "community": 38,
-      "community_name": "meeting_detail_previews.dart",
+      "community_name": "../../../../../domain/ports/final_transcription.dart",
       "norm_label": "../../../../../domain/ports/final_transcription.dart"
     },
     {
@@ -5076,8 +5076,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_asr_platform_asr_device_risk_monitor_portableasrdeviceriskmonitor",
-      "community": 164,
-      "community_name": "AsrDeviceRiskMonitor",
+      "community": 162,
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "portableasrdeviceriskmonitor"
     },
     {
@@ -5307,7 +5307,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "list",
-      "community": 143,
+      "community": 98,
       "community_name": "List",
       "norm_label": "list"
     },
@@ -7122,8 +7122,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_asr_sherpa_onnx_asr_engine_factory_sherpaonnxasrenginefactory",
-      "community": 385,
-      "community_name": "AsrEngineFactory",
+      "community": 93,
+      "community_name": "run_final_transcription.dart",
       "norm_label": "sherpaonnxasrenginefactory"
     },
     {
@@ -7298,8 +7298,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_audio_device_recording_storage_capacity_devicerecordingstoragecapacityprovider",
-      "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community": 102,
+      "community_name": "device_recording_storage_capacity.dart",
       "norm_label": "devicerecordingstoragecapacityprovider"
     },
     {
@@ -7386,8 +7386,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_audio_flutter_foreground_recording_lifecycle_flutterforegroundrecordinglifecycle",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "flutterforegroundrecordinglifecycle"
     },
     {
@@ -7969,8 +7969,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "string_get",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 66,
+      "community_name": "data_controls_view_model.dart",
       "norm_label": "string get"
     },
     {
@@ -8585,8 +8585,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_audio_recording_ports_recordingstoragecapacityprovider",
-      "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community": 102,
+      "community_name": "device_recording_storage_capacity.dart",
       "norm_label": "recordingstoragecapacityprovider"
     },
     {
@@ -8596,8 +8596,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_audio_recording_ports_recordingforegroundlifecycle",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "recordingforegroundlifecycle"
     },
     {
@@ -8607,8 +8607,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_audio_recording_ports_nooprecordingforegroundlifecycle",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "nooprecordingforegroundlifecycle"
     },
     {
@@ -9157,8 +9157,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "object",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "object?"
     },
     {
@@ -9498,7 +9498,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "domain_models_meeting_readiness_dart",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "../../../../../domain/models/meeting_readiness.dart"
     },
@@ -9895,7 +9895,7 @@
       "_origin": "ast",
       "id": "lib_data_services_models_downloadable_model_service_downloadablemodelexception",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "downloadablemodelexception"
     },
     {
@@ -9938,8 +9938,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_downloadable_model_service_modelfiledownloader",
-      "community": 391,
-      "community_name": "ModelFileDownloader",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "modelfiledownloader"
     },
     {
@@ -9960,8 +9960,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_downloadable_model_service_downloadablemodelservice",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "downloadablemodelservice"
     },
     {
@@ -10500,7 +10500,7 @@
       "_origin": "ast",
       "id": "lib_data_services_models_http_model_file_downloader",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "http_model_file_downloader.dart"
     },
     {
@@ -10510,8 +10510,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_http_model_file_downloader_httpmodelfiledownloader",
-      "community": 391,
-      "community_name": "ModelFileDownloader",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "httpmodelfiledownloader"
     },
     {
@@ -10522,7 +10522,7 @@
       "_origin": "ast",
       "id": "lib_data_services_models_http_model_file_downloader_requirehttps",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "requirehttps"
     },
     {
@@ -10533,7 +10533,7 @@
       "_origin": "ast",
       "id": "lib_data_services_models_http_model_file_downloader_download",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "download"
     },
     {
@@ -10565,8 +10565,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_local_runtime_asset_preparation_service_localruntimeassetpreparationservice",
-      "community": 392,
-      "community_name": "RuntimeAssetPreparationPort",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "localruntimeassetpreparationservice"
     },
     {
@@ -10774,8 +10774,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "vad_downloadable_silero_vad_model_dart",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "../vad/downloadable_silero_vad_model.dart"
     },
     {
@@ -10929,7 +10929,7 @@
       "_origin": "ast",
       "id": "file",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "file"
     },
     {
@@ -10950,8 +10950,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_model_manifest_parser_modelmanifestparser",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "modelmanifestparser"
     },
     {
@@ -11280,8 +11280,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_runtime_asset_installers",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "runtime_asset_installers.dart"
     },
     {
@@ -11291,8 +11291,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_runtime_asset_installers_runtimeasrmodelinstaller",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "runtimeasrmodelinstaller"
     },
     {
@@ -11302,8 +11302,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_runtime_asset_installers_runtimevadinstaller",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "runtimevadinstaller"
     },
     {
@@ -11313,8 +11313,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_runtime_asset_installers_isreadyfast",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "isreadyfast"
     },
     {
@@ -11324,8 +11324,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_runtime_asset_installers_download",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "download"
     },
     {
@@ -11335,8 +11335,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_models_runtime_asset_installers_prepare",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "prepare"
     },
     {
@@ -11434,8 +11434,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_app_database_unsupportedalphainstallationexception",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "unsupportedalphainstallationexception"
     },
     {
@@ -11841,8 +11841,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "device_free_space_service.dart"
     },
     {
@@ -11863,8 +11863,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service_bytespermebibyte",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "_bytespermebibyte"
     },
     {
@@ -11874,8 +11874,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service_freediskspaceinmebibytesreader",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "freediskspaceinmebibytesreader"
     },
     {
@@ -11885,8 +11885,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service_reader",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "reader"
     },
     {
@@ -11896,8 +11896,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service_supportdirectory",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "supportdirectory"
     },
     {
@@ -11907,8 +11907,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service_getfreebytes",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "getfreebytes"
     },
     {
@@ -11918,8 +11918,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service_readapplicationsupportvolume",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "_readapplicationsupportvolume"
     },
     {
@@ -11929,8 +11929,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_device_free_space_service_getfreediskspaceforpath",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "getfreediskspaceforpath"
     },
     {
@@ -11940,8 +11940,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_disk_space_2_disk_space_2_dart",
-      "community": 33,
-      "community_name": "typedef",
+      "community": 85,
+      "community_name": "app_file_layout.dart",
       "norm_label": "package:disk_space_2/disk_space_2.dart"
     },
     {
@@ -12193,8 +12193,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_meeting_directory_deletion_service_meetingdirectorydeletionservice",
-      "community": 88,
-      "community_name": "meeting_list_view_model_test.dart",
+      "community": 207,
+      "community_name": "MeetingFileDeletionService",
       "norm_label": "meetingdirectorydeletionservice"
     },
     {
@@ -12204,8 +12204,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "meetingfiledeletionservice",
-      "community": 88,
-      "community_name": "meeting_list_view_model_test.dart",
+      "community": 207,
+      "community_name": "MeetingFileDeletionService",
       "norm_label": "meetingfiledeletionservice"
     },
     {
@@ -12215,8 +12215,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_meeting_directory_deletion_service_noopstagedmeetingdeletion",
-      "community": 121,
-      "community_name": "delete_meeting_test.dart",
+      "community": 89,
+      "community_name": "meeting_directory_deletion_service.dart",
       "norm_label": "_noopstagedmeetingdeletion"
     },
     {
@@ -12226,8 +12226,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "stagedmeetingdeletion",
-      "community": 121,
-      "community_name": "delete_meeting_test.dart",
+      "community": 89,
+      "community_name": "meeting_directory_deletion_service.dart",
       "norm_label": "stagedmeetingdeletion"
     },
     {
@@ -12237,8 +12237,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_storage_meeting_directory_deletion_service_directorystagedmeetingdeletion",
-      "community": 121,
-      "community_name": "delete_meeting_test.dart",
+      "community": 89,
+      "community_name": "meeting_directory_deletion_service.dart",
       "norm_label": "_directorystagedmeetingdeletion"
     },
     {
@@ -12413,8 +12413,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_sqflite_common_ffi_sqflite_ffi_dart",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "package:sqflite_common_ffi/sqflite_ffi.dart"
     },
     {
@@ -12743,8 +12743,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_data_services_vad_downloadable_silero_vad_model_downloadablesilerovadmodelservice",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "downloadablesilerovadmodelservice"
     },
     {
@@ -13624,7 +13624,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "asr_model.dart"
     },
     {
@@ -13646,7 +13646,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_asrmodeldescriptor",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "asrmodeldescriptor"
     },
     {
@@ -13657,7 +13657,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_modelid",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "modelid"
     },
     {
@@ -13668,7 +13668,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_displayname",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "displayname"
     },
     {
@@ -13679,7 +13679,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_version",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "version"
     },
     {
@@ -13690,7 +13690,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_supportedlanguages",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "supportedlanguages"
     },
     {
@@ -13701,7 +13701,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_installationtype",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "installationtype"
     },
     {
@@ -13712,7 +13712,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_requiredbytes",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "requiredbytes"
     },
     {
@@ -13723,7 +13723,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_capabilities",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "capabilities"
     },
     {
@@ -13734,7 +13734,7 @@
       "_origin": "ast",
       "id": "set",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "set"
     },
     {
@@ -13745,7 +13745,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_language",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "language"
     },
     {
@@ -13756,7 +13756,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_useinversetextnormalization",
       "community": 143,
-      "community_name": "List",
+      "community_name": "asr_model.dart",
       "norm_label": "useinversetextnormalization"
     },
     {
@@ -13777,8 +13777,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_models_asr_model_registry_asrmodelregistry",
-      "community": 131,
-      "community_name": "asr_model_registry.dart",
+      "community": 115,
+      "community_name": "resolve_meeting_model_selection.dart",
       "norm_label": "asrmodelregistry"
     },
     {
@@ -13887,8 +13887,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "asr_model_dart",
-      "community": 132,
-      "community_name": "model_installation.dart",
+      "community": 131,
+      "community_name": "asr_model_registry.dart",
       "norm_label": "asr_model.dart"
     },
     {
@@ -14228,8 +14228,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_models_data_control_localstorageusage",
-      "community": 66,
-      "community_name": "data_controls_view_model.dart",
+      "community": 150,
+      "community_name": "Map",
       "norm_label": "localstorageusage"
     },
     {
@@ -15010,7 +15010,7 @@
       "_origin": "ast",
       "id": "lib_domain_models_model_manifest_modelmanifestentry",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "modelmanifestentry"
     },
     {
@@ -15713,8 +15713,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_models_runtime_initialization_runtimeinitializationexception",
-      "community": 129,
-      "community_name": "Exception",
+      "community": 81,
+      "community_name": "runtime_initialization.dart",
       "norm_label": "runtimeinitializationexception"
     },
     {
@@ -15889,8 +15889,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_models_speaker_diarization_speakerdiarizationexception",
-      "community": 129,
-      "community_name": "Exception",
+      "community": 92,
+      "community_name": "models/speaker_diarization.dart",
       "norm_label": "speakerdiarizationexception"
     },
     {
@@ -16648,8 +16648,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_models_workflow_states_recordingstate",
-      "community": 54,
-      "community_name": "recording_previews.dart",
+      "community": 107,
+      "community_name": "workflow_states.dart",
       "norm_label": "recordingstate"
     },
     {
@@ -16703,8 +16703,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_models_workflow_states_recordingstatetransition",
-      "community": 54,
-      "community_name": "recording_previews.dart",
+      "community": 107,
+      "community_name": "workflow_states.dart",
       "norm_label": "recordingstatetransition"
     },
     {
@@ -16824,8 +16824,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_asr_engine_asrengineexception",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "asrengineexception"
     },
     {
@@ -16879,8 +16879,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_asr_engine_asrdeviceriskmonitor",
-      "community": 164,
-      "community_name": "AsrDeviceRiskMonitor",
+      "community": 162,
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "asrdeviceriskmonitor"
     },
     {
@@ -16956,8 +16956,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_asr_engine_asrenginefactory",
-      "community": 385,
-      "community_name": "AsrEngineFactory",
+      "community": 93,
+      "community_name": "run_final_transcription.dart",
       "norm_label": "asrenginefactory"
     },
     {
@@ -18034,8 +18034,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "models_workflow_states_dart",
-      "community": 53,
-      "community_name": "check_meeting_readiness.dart",
+      "community": 104,
+      "community_name": "delete_meeting.dart",
       "norm_label": "../models/workflow_states.dart"
     },
     {
@@ -18089,8 +18089,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_repositories_modelinstallationrepository",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "modelinstallationrepository"
     },
     {
@@ -18100,8 +18100,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_repositories_activemodelinstallationrepository",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "activemodelinstallationrepository"
     },
     {
@@ -18111,8 +18111,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_repositories_modelusageleaserepository",
-      "community": 220,
-      "community_name": "ModelUsageLeaseRepository",
+      "community": 97,
+      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
       "norm_label": "modelusageleaserepository"
     },
     {
@@ -18408,8 +18408,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "runtime_asset_preparation.dart"
     },
     {
@@ -18419,8 +18419,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation_runtimeassetpreparationport",
-      "community": 392,
-      "community_name": "RuntimeAssetPreparationPort",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "runtimeassetpreparationport"
     },
     {
@@ -18430,8 +18430,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation_runtimedownloadconsentrepository",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 9,
+      "community_name": "local_runtime_asset_preparation_service_test.dart",
       "norm_label": "runtimedownloadconsentrepository"
     },
     {
@@ -18441,8 +18441,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation_prepare",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "prepare"
     },
     {
@@ -18452,8 +18452,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation_grantmobileconsent",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "grantmobileconsent"
     },
     {
@@ -18463,8 +18463,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation_pause",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "pause"
     },
     {
@@ -18474,8 +18474,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation_hasconsent",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "hasconsent"
     },
     {
@@ -18485,8 +18485,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_ports_runtime_asset_preparation_grant",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "grant"
     },
     {
@@ -18496,8 +18496,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "models_runtime_initialization_dart",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "../models/runtime_initialization.dart"
     },
     {
@@ -19365,8 +19365,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "ports_repositories_dart",
-      "community": 104,
-      "community_name": "delete_meeting.dart",
+      "community": 53,
+      "community_name": "check_meeting_readiness.dart",
       "norm_label": "../ports/repositories.dart"
     },
     {
@@ -19486,8 +19486,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "models_domain_exception_dart",
-      "community": 115,
-      "community_name": "resolve_meeting_model_selection.dart",
+      "community": 104,
+      "community_name": "delete_meeting.dart",
       "norm_label": "../models/domain_exception.dart"
     },
     {
@@ -20454,8 +20454,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_initialize_runtime_assets",
-      "community": 251,
-      "community_name": "initialize_runtime_assets.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "initialize_runtime_assets.dart"
     },
     {
@@ -20465,8 +20465,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_initialize_runtime_assets_initializeruntimeassetsusecase",
-      "community": 251,
-      "community_name": "initialize_runtime_assets.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "initializeruntimeassetsusecase"
     },
     {
@@ -20476,8 +20476,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_initialize_runtime_assets_preparation",
-      "community": 251,
-      "community_name": "initialize_runtime_assets.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "_preparation"
     },
     {
@@ -20487,8 +20487,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_initialize_runtime_assets_execute",
-      "community": 251,
-      "community_name": "initialize_runtime_assets.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "execute"
     },
     {
@@ -20498,8 +20498,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_initialize_runtime_assets_grantmobileconsent",
-      "community": 251,
-      "community_name": "initialize_runtime_assets.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "grantmobileconsent"
     },
     {
@@ -20509,8 +20509,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_initialize_runtime_assets_pause",
-      "community": 251,
-      "community_name": "initialize_runtime_assets.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "pause"
     },
     {
@@ -20520,8 +20520,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "ports_runtime_asset_preparation_dart",
-      "community": 251,
-      "community_name": "initialize_runtime_assets.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "../ports/runtime_asset_preparation.dart"
     },
     {
@@ -20542,8 +20542,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_manage_recording_session_managerecordingsessionexception",
-      "community": 83,
-      "community_name": "manage_recording_session.dart",
+      "community": 129,
+      "community_name": "Exception",
       "norm_label": "managerecordingsessionexception"
     },
     {
@@ -21037,8 +21037,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_domain_use_cases_revise_final_transcript_transcriptrevisionexception",
-      "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community": 129,
+      "community_name": "Exception",
       "norm_label": "transcriptrevisionexception"
     },
     {
@@ -23116,8 +23116,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "app_page_body.dart"
     },
     {
@@ -23127,8 +23127,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body_apppagewidth",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "apppagewidth"
     },
     {
@@ -23138,8 +23138,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body_apppagebody",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "apppagebody"
     },
     {
@@ -23149,8 +23149,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body_child",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "child"
     },
     {
@@ -23160,8 +23160,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body_width",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "width"
     },
     {
@@ -23171,8 +23171,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body_padding",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "padding"
     },
     {
@@ -23182,8 +23182,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "edgeinsetsgeometry",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "edgeinsetsgeometry?"
     },
     {
@@ -23193,8 +23193,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body_alignment",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "alignment"
     },
     {
@@ -23204,8 +23204,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "alignmentgeometry",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "alignmentgeometry"
     },
     {
@@ -23215,8 +23215,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_page_body_build",
-      "community": 14,
-      "community_name": "package:flutter/widgets.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "build"
     },
     {
@@ -23226,8 +23226,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "app_responsive.dart"
     },
     {
@@ -23237,8 +23237,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive_appwindowsizeclass",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "appwindowsizeclass"
     },
     {
@@ -23248,8 +23248,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive_appresponsivebuilder",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "appresponsivebuilder"
     },
     {
@@ -23259,8 +23259,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive_expanded",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "expanded"
     },
     {
@@ -23270,8 +23270,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "compact_medium",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "compact,\n  medium,"
     },
     {
@@ -23281,8 +23281,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive_appresponsivewidgetbuilder",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "appresponsivewidgetbuilder"
     },
     {
@@ -23292,8 +23292,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive_builder",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "builder"
     },
     {
@@ -23303,8 +23303,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive_fromwidth",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "fromwidth"
     },
     {
@@ -23314,8 +23314,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_app_responsive_build",
-      "community": 125,
-      "community_name": "app_status_notice.dart",
+      "community": 27,
+      "community_name": "../../../../theme/theme.dart",
       "norm_label": "build"
     },
     {
@@ -23469,7 +23469,7 @@
       "_origin": "ast",
       "id": "app_status_notice_dart",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "app_status_notice.dart"
     },
     {
@@ -23953,7 +23953,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "app_ui_previews.dart"
     },
     {
@@ -23964,7 +23964,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews_statusnoticepreviewcontent",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "_statusnoticepreviewcontent"
     },
     {
@@ -23975,7 +23975,7 @@
       "_origin": "ast",
       "id": "annotation_preview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "@preview"
     },
     {
@@ -23986,7 +23986,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews_samples",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "_samples"
     },
     {
@@ -23997,7 +23997,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews_appstatusnoticespreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "appstatusnoticespreview"
     },
     {
@@ -24008,7 +24008,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews_appstatusnoticesdarkpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "appstatusnoticesdarkpreview"
     },
     {
@@ -24019,7 +24019,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews_appemptystatepreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "appemptystatepreview"
     },
     {
@@ -24030,7 +24030,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews_apperrorstatepreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "apperrorstatepreview"
     },
     {
@@ -24041,7 +24041,7 @@
       "_origin": "ast",
       "id": "lib_ui_core_app_ui_previews_build",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "build"
     },
     {
@@ -24052,7 +24052,7 @@
       "_origin": "ast",
       "id": "package_flutter_widget_previews_dart",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "package:flutter/widget_previews.dart"
     },
     {
@@ -24063,7 +24063,7 @@
       "_origin": "ast",
       "id": "app_application_dart",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "../../../../app/application.dart"
     },
     {
@@ -24074,7 +24074,7 @@
       "_origin": "ast",
       "id": "app_page_body_dart",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "app_page_body.dart"
     },
     {
@@ -24085,7 +24085,7 @@
       "_origin": "ast",
       "id": "app_state_panel_dart",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "app_state_panel.dart"
     },
     {
@@ -24095,8 +24095,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "asr_model_option.dart"
     },
     {
@@ -24106,8 +24106,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_asrmodeluistatus",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "asrmodeluistatus"
     },
     {
@@ -24117,8 +24117,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_asrmodeloption",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "asrmodeloption"
     },
     {
@@ -24128,8 +24128,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_modelmaintenanceactions",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "modelmaintenanceactions"
     },
     {
@@ -24139,8 +24139,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_descriptor",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "descriptor"
     },
     {
@@ -24150,8 +24150,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_status",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "status"
     },
     {
@@ -24161,8 +24161,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_lasterrorcode",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "lasterrorcode"
     },
     {
@@ -24172,8 +24172,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_isinstalled",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "isinstalled"
     },
     {
@@ -24183,8 +24183,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_statuslabel",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "statuslabel"
     },
     {
@@ -24194,8 +24194,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_positioninglabel",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "positioninglabel"
     },
     {
@@ -24205,8 +24205,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_resourcelabel",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "resourcelabel"
     },
     {
@@ -24216,8 +24216,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_core_asr_model_option_frominstallation",
-      "community": 99,
-      "community_name": "asr_model_option.dart",
+      "community": 43,
+      "community_name": "storage_mappers.dart",
       "norm_label": "frominstallation"
     },
     {
@@ -24491,7 +24491,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "meeting_detail_previews.dart"
     },
@@ -24502,7 +24502,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_dart_lib_ui_features_meetings_previews_meeting_detail_previews_meeting",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "meeting"
     },
@@ -24513,7 +24513,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_dart_lib_ui_features_meetings_previews_meeting_detail_previews_snapshot",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "snapshot"
     },
@@ -24524,7 +24524,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_dart_lib_ui_features_meetings_previews_meeting_detail_previews_summary",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "summary"
     },
@@ -24536,7 +24536,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_meetingresultcompactpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "meetingresultcompactpreview"
     },
     {
@@ -24547,7 +24547,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_meetingresultexpandedpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "meetingresultexpandedpreview"
     },
     {
@@ -24558,7 +24558,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_meetingprocessingpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "meetingprocessingpreview"
     },
     {
@@ -24568,7 +24568,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_resultpreview",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "_resultpreview"
     },
@@ -24579,7 +24579,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_previewmeeting",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "_previewmeeting"
     },
@@ -24590,7 +24590,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_previewsnapshot",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "_previewsnapshot"
     },
@@ -24601,7 +24601,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_detail_previews_previewsummary",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "_previewsummary"
     },
@@ -24612,7 +24612,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "view_models_detail_meeting_detail_view_model_dart",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "../../view_models/detail/meeting_detail_view_model.dart"
     },
@@ -24623,7 +24623,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "views_detail_meeting_detail_view_dart",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "../views/detail/meeting_detail_view.dart"
     },
@@ -24634,7 +24634,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_list_previews",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "meeting_list_previews.dart"
     },
@@ -24645,7 +24645,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_list_previews_previewmeetings",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "_previewmeetings"
     },
@@ -24657,7 +24657,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_list_previews_meetinglistcompactpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "meetinglistcompactpreview"
     },
     {
@@ -24668,7 +24668,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_meeting_list_previews_meetinglistexpandedpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "meetinglistexpandedpreview"
     },
     {
@@ -24678,7 +24678,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "view_models_list_meeting_list_view_model_dart",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "../../view_models/list/meeting_list_view_model.dart"
     },
@@ -24689,7 +24689,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "views_list_meeting_list_view_dart",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "../views/list/meeting_list_view.dart"
     },
@@ -24756,7 +24756,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_recording_previews_recordingworkbenchcompactpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "recordingworkbenchcompactpreview"
     },
     {
@@ -24767,7 +24767,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_recording_previews_recordingbacklogpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "recordingbacklogpreview"
     },
     {
@@ -24778,7 +24778,7 @@
       "_origin": "ast",
       "id": "lib_ui_features_meetings_previews_recording_previews_recordingonlyexpandedpreview",
       "community": 22,
-      "community_name": "meeting_list_previews.dart",
+      "community_name": "meeting_detail_previews.dart",
       "norm_label": "recordingonlyexpandedpreview"
     },
     {
@@ -24821,7 +24821,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_previewmeetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_previewmeetingrepository"
     },
@@ -24854,8 +24854,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_previewinstallations",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "_previewinstallations"
     },
     {
@@ -24920,7 +24920,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_standard",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "_standard"
     },
@@ -24931,7 +24931,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "modelinstallation_get",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "modelinstallation get"
     },
@@ -24942,7 +24942,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_delete",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "delete"
     },
@@ -24953,7 +24953,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_getbyid",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "getbyid"
     },
@@ -24964,7 +24964,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_save",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "save"
     },
@@ -24975,7 +24975,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_watchall",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "watchall"
     },
@@ -24986,7 +24986,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_listbymeeting",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "listbymeeting"
     },
@@ -24997,7 +24997,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_savefinalandactivate",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "savefinalandactivate"
     },
@@ -25008,7 +25008,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_updatespeakerlabels",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "updatespeakerlabels"
     },
@@ -25019,7 +25019,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_saveandactivate",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "saveandactivate"
     },
@@ -25030,7 +25030,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_detail_previews_transcribe",
-      "community": 38,
+      "community": 22,
       "community_name": "meeting_detail_previews.dart",
       "norm_label": "transcribe"
     },
@@ -25041,7 +25041,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_previewmeetingrepository",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "_previewmeetingrepository"
     },
@@ -25063,8 +25063,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_previewmeetingfiledeletionservice",
-      "community": 88,
-      "community_name": "meeting_list_view_model_test.dart",
+      "community": 207,
+      "community_name": "MeetingFileDeletionService",
       "norm_label": "_previewmeetingfiledeletionservice"
     },
     {
@@ -25074,8 +25074,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_previewstagedmeetingdeletion",
-      "community": 121,
-      "community_name": "delete_meeting_test.dart",
+      "community": 89,
+      "community_name": "meeting_directory_deletion_service.dart",
       "norm_label": "_previewstagedmeetingdeletion"
     },
     {
@@ -25085,7 +25085,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_meetings",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "meetings"
     },
@@ -25096,7 +25096,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_delete",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "delete"
     },
@@ -25107,7 +25107,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_getbyid",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "getbyid"
     },
@@ -25118,7 +25118,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_save",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "save"
     },
@@ -25129,7 +25129,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_watchall",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "watchall"
     },
@@ -25140,7 +25140,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_check",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "check"
     },
@@ -25151,7 +25151,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_stage",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "stage"
     },
@@ -25162,7 +25162,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_commit",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "commit"
     },
@@ -25173,7 +25173,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_meeting_list_previews_rollback",
-      "community": 22,
+      "community": 148,
       "community_name": "meeting_list_previews.dart",
       "norm_label": "rollback"
     },
@@ -25184,7 +25184,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "c_users_96227_desktop_works_meetily_ai_lib_ui_features_meetings_previews_recording_previews_previewmeetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_previewmeetingrepository"
     },
@@ -32917,7 +32917,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "macos_flutter_generatedpluginregistrant",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "generatedpluginregistrant.swift"
     },
@@ -32930,7 +32930,7 @@
       "_origin": "ast",
       "id": "fluttermacos",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "fluttermacos"
     },
     {
@@ -32941,7 +32941,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "foundation",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "foundation"
     },
@@ -32953,7 +32953,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "audioplayers_darwin",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "audioplayers_darwin"
     },
@@ -32965,7 +32965,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "connectivity_plus",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "connectivity_plus"
     },
@@ -32977,7 +32977,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "record_macos",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "record_macos"
     },
@@ -32989,7 +32989,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "share_plus",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "share_plus"
     },
@@ -33001,7 +33001,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "shared_preferences_foundation",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "shared_preferences_foundation"
     },
@@ -33013,7 +33013,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "sqflite_darwin",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "sqflite_darwin"
     },
@@ -33024,7 +33024,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "macos_flutter_generatedpluginregistrant_registergeneratedplugins",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "registergeneratedplugins()"
     },
@@ -33035,7 +33035,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "flutterpluginregistry",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "flutterpluginregistry"
     },
@@ -33047,7 +33047,7 @@
       "_origin": "ast",
       "id": "macos_runnertests_runnertests",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "macos/runnertests/runnertests.swift"
     },
     {
@@ -33059,7 +33059,7 @@
       "_origin": "ast",
       "id": "cocoa",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "cocoa"
     },
     {
@@ -33070,7 +33070,7 @@
       "_origin": "ast",
       "id": "macos_runnertests_runnertests_runnertests",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "runnertests"
     },
     {
@@ -33081,7 +33081,7 @@
       "_origin": "ast",
       "id": "macos_runnertests_runnertests_runnertests_testexample",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": ".testexample()"
     },
     {
@@ -33092,7 +33092,7 @@
       "_origin": "ast",
       "id": "macos_runner_appdelegate",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "macos/runner/appdelegate.swift"
     },
     {
@@ -33102,8 +33102,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "macos_runner_appdelegate_appdelegate",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "appdelegate"
     },
     {
@@ -33113,8 +33113,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "macos_runner_appdelegate_appdelegate_applicationshouldterminateafterlastwindowclosed",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": ".applicationshouldterminateafterlastwindowclosed()"
     },
     {
@@ -33124,8 +33124,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "nsapplication",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "nsapplication"
     },
     {
@@ -33135,8 +33135,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "macos_runner_appdelegate_swift_bool",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": "bool"
     },
     {
@@ -33146,8 +33146,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "macos_runner_appdelegate_appdelegate_applicationsupportssecurerestorablestate",
-      "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community": 166,
+      "community_name": "AppDelegate",
       "norm_label": ".applicationsupportssecurerestorablestate()"
     },
     {
@@ -33158,7 +33158,7 @@
       "_origin": "ast",
       "id": "macos_runner_mainflutterwindow",
       "community": 17,
-      "community_name": "GeneratedPluginRegistrant.swift",
+      "community_name": "FlutterMacOS",
       "norm_label": "mainflutterwindow.swift"
     },
     {
@@ -33168,7 +33168,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "macos_runner_mainflutterwindow_mainflutterwindow",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "mainflutterwindow"
     },
@@ -33179,7 +33179,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "nswindow",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "nswindow"
     },
@@ -33190,7 +33190,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "macos_runner_mainflutterwindow_mainflutterwindow_awakefromnib",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": ".awakefromnib()"
     },
@@ -33235,7 +33235,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "layer_boundaries_test.dart"
     },
     {
@@ -33246,7 +33246,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_importentry",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "_importentry"
     },
     {
@@ -33257,7 +33257,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_pattern",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "pattern"
     },
     {
@@ -33268,7 +33268,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_path",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "path"
     },
     {
@@ -33279,7 +33279,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_file",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "file"
     },
     {
@@ -33290,7 +33290,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_uri",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "uri"
     },
     {
@@ -33301,7 +33301,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_main",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "main"
     },
     {
@@ -33312,7 +33312,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_importsunder",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "_importsunder"
     },
     {
@@ -33323,7 +33323,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_dartfilesunder",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "_dartfilesunder"
     },
     {
@@ -33334,7 +33334,7 @@
       "_origin": "ast",
       "id": "test_architecture_layer_boundaries_test_tostring",
       "community": 120,
-      "community_name": "layer_boundaries_test.dart",
+      "community_name": "dart:io",
       "norm_label": "tostring"
     },
     {
@@ -33432,8 +33432,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_storage_app_database_dart",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "package:meettrace/data/services/storage/app_database.dart"
     },
     {
@@ -33454,8 +33454,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_model_installation_dart",
-      "community": 122,
-      "community_name": "start_meeting_view_model_test.dart",
+      "community": 91,
+      "community_name": "sqflite_repositories_test.dart",
       "norm_label": "package:meettrace/domain/models/model_installation.dart"
     },
     {
@@ -33465,8 +33465,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_model_usage_lease_dart",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 97,
+      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
       "norm_label": "package:meettrace/domain/models/model_usage_lease.dart"
     },
     {
@@ -33476,8 +33476,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_workflow_states_dart",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "package:meettrace/domain/models/workflow_states.dart"
     },
     {
@@ -33487,8 +33487,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_repositories_sqflite_model_preference_repository_test",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "sqflite_model_preference_repository_test.dart"
     },
     {
@@ -33498,8 +33498,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_repositories_sqflite_model_preference_repository_test_database",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "database"
     },
     {
@@ -33509,8 +33509,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_repositories_sqflite_model_preference_repository_test_repository",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "repository"
     },
     {
@@ -33520,8 +33520,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_repositories_sqflite_model_preference_repository_test_main",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "main"
     },
     {
@@ -33531,8 +33531,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_repositories_sqflite_model_preference_repository_dart",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "package:meettrace/data/repositories/sqflite_model_preference_repository.dart"
     },
     {
@@ -33784,8 +33784,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_meeting_dart",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "package:meettrace/domain/models/meeting.dart"
     },
     {
@@ -33817,8 +33817,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_transcript_dart",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "package:meettrace/domain/models/transcript.dart"
     },
     {
@@ -33938,8 +33938,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_android_proc_asr_device_risk_monitor_test",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "android_proc_asr_device_risk_monitor_test.dart"
     },
     {
@@ -33949,8 +33949,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_android_proc_asr_device_risk_monitor_test_main",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "main"
     },
     {
@@ -33961,7 +33961,7 @@
       "_origin": "ast",
       "id": "package_meettrace_data_services_asr_android_proc_asr_device_risk_monitor_dart",
       "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart"
     },
     {
@@ -33971,8 +33971,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_asr_asr_engine_dart",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "package:meettrace/data/services/asr/asr_engine.dart"
     },
     {
@@ -34400,8 +34400,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_app_failure_dart",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "package:meettrace/domain/models/app_failure.dart"
     },
     {
@@ -34411,8 +34411,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_asr_preview_dart",
-      "community": 394,
-      "community_name": "package:meettrace/domain/models/asr_preview.dart",
+      "community": 35,
+      "community_name": "asr_preview_coordinator_test.dart",
       "norm_label": "package:meettrace/domain/models/asr_preview.dart"
     },
     {
@@ -34434,7 +34434,7 @@
       "_origin": "ast",
       "id": "package_meettrace_domain_models_recording_dart",
       "community": 237,
-      "community_name": "dart:typed_data",
+      "community_name": "pcm_audio_level_meter_test.dart",
       "norm_label": "package:meettrace/domain/models/recording.dart"
     },
     {
@@ -34444,8 +34444,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_use_cases_plan_asr_preview_windows_dart",
-      "community": 394,
-      "community_name": "package:meettrace/domain/models/asr_preview.dart",
+      "community": 35,
+      "community_name": "asr_preview_coordinator_test.dart",
       "norm_label": "package:meettrace/domain/use_cases/plan_asr_preview_windows.dart"
     },
     {
@@ -34466,7 +34466,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_final_transcription_service_test_meetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_meetingrepository"
     },
@@ -34488,8 +34488,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_final_transcription_service_test_enginefactory",
-      "community": 385,
-      "community_name": "AsrEngineFactory",
+      "community": 93,
+      "community_name": "run_final_transcription.dart",
       "norm_label": "_enginefactory"
     },
     {
@@ -35006,7 +35006,7 @@
       "_origin": "ast",
       "id": "stateerror",
       "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community_name": "view_state_test.dart",
       "norm_label": "stateerror"
     },
     {
@@ -35017,7 +35017,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_platform_asr_device_risk_monitor_test",
       "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "platform_asr_device_risk_monitor_test.dart"
     },
     {
@@ -35028,7 +35028,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_platform_asr_device_risk_monitor_test_main",
       "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "main"
     },
     {
@@ -35039,7 +35039,7 @@
       "_origin": "ast",
       "id": "package_meettrace_data_services_asr_platform_asr_device_risk_monitor_dart",
       "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "package:meettrace/data/services/asr/platform_asr_device_risk_monitor.dart"
     },
     {
@@ -35049,8 +35049,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "sense_voice_asr_engine_test.dart"
     },
     {
@@ -35082,8 +35082,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test_descriptor",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "descriptor"
     },
     {
@@ -35093,8 +35093,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test_configs",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "configs"
     },
     {
@@ -35104,8 +35104,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test_main",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "main"
     },
     {
@@ -35115,8 +35115,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test_installed",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "_installed"
     },
     {
@@ -35126,8 +35126,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test_create",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "create"
     },
     {
@@ -35137,8 +35137,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test_recognize",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "recognize"
     },
     {
@@ -35148,8 +35148,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sense_voice_asr_engine_test_dispose",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "dispose"
     },
     {
@@ -35159,8 +35159,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_asr_sense_voice_asr_engine_dart",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 62,
+      "community_name": "sherpa_onnx_asr_engine_factory_test.dart",
       "norm_label": "package:meettrace/data/services/asr/sense_voice_asr_engine.dart"
     },
     {
@@ -35170,7 +35170,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_dart",
-      "community": 162,
+      "community": 90,
       "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart"
     },
@@ -35182,7 +35182,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "sherpa_onnx_adapter_test.dart"
     },
     {
@@ -35215,7 +35215,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_config",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "config"
     },
     {
@@ -35226,7 +35226,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_worker",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "worker"
     },
     {
@@ -35237,7 +35237,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_workers",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "workers"
     },
     {
@@ -35248,7 +35248,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_createdworkers",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "createdworkers"
     },
     {
@@ -35259,7 +35259,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_initializeerror",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "initializeerror"
     },
     {
@@ -35270,7 +35270,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_recognizeerror",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "recognizeerror"
     },
     {
@@ -35281,7 +35281,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_recognitiongate",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "recognitiongate"
     },
     {
@@ -35292,7 +35292,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_recognitionstarted",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "recognitionstarted"
     },
     {
@@ -35303,7 +35303,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_disposecalls",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "disposecalls"
     },
     {
@@ -35314,7 +35314,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_activerecognitions",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "_activerecognitions"
     },
     {
@@ -35325,7 +35325,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_maximumconcurrentrecognitions",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "maximumconcurrentrecognitions"
     },
     {
@@ -35336,7 +35336,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_main",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "main"
     },
     {
@@ -35347,7 +35347,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_create",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "create"
     },
     {
@@ -35358,7 +35358,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_initialize",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "initialize"
     },
     {
@@ -35369,7 +35369,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_recognize",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "recognize"
     },
     {
@@ -35380,7 +35380,7 @@
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test_dispose",
       "community": 90,
-      "community_name": "sherpa_onnx_adapter_test.dart",
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "dispose"
     },
     {
@@ -35390,7 +35390,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_boundary_test",
-      "community": 98,
+      "community": 120,
       "community_name": "dart:io",
       "norm_label": "sherpa_onnx_boundary_test.dart"
     },
@@ -35401,7 +35401,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_boundary_test_main",
-      "community": 98,
+      "community": 120,
       "community_name": "dart:io",
       "norm_label": "main"
     },
@@ -35412,7 +35412,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_config_test",
-      "community": 162,
+      "community": 90,
       "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "sherpa_onnx_config_test.dart"
     },
@@ -35423,7 +35423,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_config_test_main",
-      "community": 162,
+      "community": 90,
       "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "main"
     },
@@ -35434,8 +35434,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_runtime_initializer_test",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "sherpa_onnx_runtime_initializer_test.dart"
     },
     {
@@ -35456,8 +35456,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_runtime_initializer_test_error",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "error"
     },
     {
@@ -35467,8 +35467,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_runtime_initializer_test_initializecalls",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "initializecalls"
     },
     {
@@ -35478,8 +35478,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_runtime_initializer_test_main",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "main"
     },
     {
@@ -35489,8 +35489,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_sherpa_onnx_runtime_initializer_test_initialize",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "initialize"
     },
     {
@@ -35511,8 +35511,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_asr_engine_factory_test_memoryinstallations",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "_memoryinstallations"
     },
     {
@@ -35522,8 +35522,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_asr_engine_factory_test_memoryleases",
-      "community": 220,
-      "community_name": "ModelUsageLeaseRepository",
+      "community": 97,
+      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
       "norm_label": "_memoryleases"
     },
     {
@@ -35533,8 +35533,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_asr_sherpa_onnx_asr_engine_factory_test_supportedriskmonitor",
-      "community": 164,
-      "community_name": "AsrDeviceRiskMonitor",
+      "community": 162,
+      "community_name": "platform_asr_device_risk_monitor_test.dart",
       "norm_label": "_supportedriskmonitor"
     },
     {
@@ -35819,8 +35819,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_android_recording_manifest_test",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 120,
+      "community_name": "dart:io",
       "norm_label": "android_recording_manifest_test.dart"
     },
     {
@@ -35830,8 +35830,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_android_recording_manifest_test_main",
-      "community": 162,
-      "community_name": "package:flutter_test/flutter_test.dart",
+      "community": 120,
+      "community_name": "dart:io",
       "norm_label": "main"
     },
     {
@@ -35841,7 +35841,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_ios_recording_configuration_test",
-      "community": 98,
+      "community": 120,
       "community_name": "dart:io",
       "norm_label": "ios_recording_configuration_test.dart"
     },
@@ -35852,7 +35852,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_ios_recording_configuration_test_main",
-      "community": 98,
+      "community": 120,
       "community_name": "dart:io",
       "norm_label": "main"
     },
@@ -35864,7 +35864,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_pcm_audio_level_meter_test",
       "community": 237,
-      "community_name": "dart:typed_data",
+      "community_name": "pcm_audio_level_meter_test.dart",
       "norm_label": "pcm_audio_level_meter_test.dart"
     },
     {
@@ -35875,7 +35875,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_pcm_audio_level_meter_test_bytes",
       "community": 237,
-      "community_name": "dart:typed_data",
+      "community_name": "pcm_audio_level_meter_test.dart",
       "norm_label": "bytes"
     },
     {
@@ -35886,7 +35886,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_pcm_audio_level_meter_test_data",
       "community": 237,
-      "community_name": "dart:typed_data",
+      "community_name": "pcm_audio_level_meter_test.dart",
       "norm_label": "data"
     },
     {
@@ -35897,7 +35897,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_pcm_audio_level_meter_test_main",
       "community": 237,
-      "community_name": "dart:typed_data",
+      "community_name": "pcm_audio_level_meter_test.dart",
       "norm_label": "main"
     },
     {
@@ -35908,7 +35908,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_pcm_audio_level_meter_test_constantpcm16",
       "community": 237,
-      "community_name": "dart:typed_data",
+      "community_name": "pcm_audio_level_meter_test.dart",
       "norm_label": "_constantpcm16"
     },
     {
@@ -35919,7 +35919,7 @@
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_pcm_audio_level_meter_dart",
       "community": 237,
-      "community_name": "dart:typed_data",
+      "community_name": "pcm_audio_level_meter_test.dart",
       "norm_label": "package:meettrace/data/services/audio/pcm_audio_level_meter.dart"
     },
     {
@@ -35963,7 +35963,7 @@
       "_origin": "ast",
       "id": "directory",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "directory"
     },
     {
@@ -36061,8 +36061,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_platform_recording_foreground_lifecycle_test",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "platform_recording_foreground_lifecycle_test.dart"
     },
     {
@@ -36072,8 +36072,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_platform_recording_foreground_lifecycle_test_main",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "main"
     },
     {
@@ -36083,8 +36083,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_platform_recording_foreground_lifecycle_dart",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "package:meettrace/data/services/audio/platform_recording_foreground_lifecycle.dart"
     },
     {
@@ -36094,8 +36094,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_recording_ports_dart",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "package:meettrace/data/services/audio/recording_ports.dart"
     },
     {
@@ -36127,8 +36127,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_recording_checkpoint_store_test",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 39,
+      "community_name": "AppFileLayout",
       "norm_label": "recording_checkpoint_store_test.dart"
     },
     {
@@ -36138,8 +36138,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_recording_checkpoint_store_test_root",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 39,
+      "community_name": "AppFileLayout",
       "norm_label": "root"
     },
     {
@@ -36149,8 +36149,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_recording_checkpoint_store_test_layout",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 39,
+      "community_name": "AppFileLayout",
       "norm_label": "layout"
     },
     {
@@ -36160,8 +36160,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_recording_checkpoint_store_test_store",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 39,
+      "community_name": "AppFileLayout",
       "norm_label": "store"
     },
     {
@@ -36171,8 +36171,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_recording_checkpoint_store_test_main",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 39,
+      "community_name": "AppFileLayout",
       "norm_label": "main"
     },
     {
@@ -36183,7 +36183,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "recording_device_readiness_probe_test.dart"
     },
     {
@@ -36204,8 +36204,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_capacity",
-      "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community": 102,
+      "community_name": "device_recording_storage_capacity.dart",
       "norm_label": "_capacity"
     },
     {
@@ -36216,7 +36216,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_permissionrequests",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "permissionrequests"
     },
     {
@@ -36227,7 +36227,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_disposecalls",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "disposecalls"
     },
     {
@@ -36238,7 +36238,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_freebytes",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "freebytes"
     },
     {
@@ -36249,7 +36249,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_main",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "main"
     },
     {
@@ -36260,7 +36260,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_haspermission",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "haspermission"
     },
     {
@@ -36271,7 +36271,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_dispose",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "dispose"
     },
     {
@@ -36282,7 +36282,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_pause",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "pause"
     },
     {
@@ -36293,7 +36293,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_resume",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "resume"
     },
     {
@@ -36304,7 +36304,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_start",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "start"
     },
     {
@@ -36315,7 +36315,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_stop",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "stop"
     },
     {
@@ -36326,7 +36326,7 @@
       "_origin": "ast",
       "id": "test_data_services_audio_recording_device_readiness_probe_test_getfreebytes",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "getfreebytes"
     },
     {
@@ -36337,8 +36337,63 @@
       "_origin": "ast",
       "id": "package_meettrace_data_services_audio_recording_device_readiness_probe_dart",
       "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community_name": "dart:typed_data",
       "norm_label": "package:meettrace/data/services/audio/recording_device_readiness_probe.dart"
+    },
+    {
+      "label": "recording_ports_test.dart",
+      "file_type": "code",
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "test_data_services_audio_recording_ports_test",
+      "community": 136,
+      "community_name": "dart:typed_data",
+      "norm_label": "recording_ports_test.dart"
+    },
+    {
+      "label": "timeout",
+      "file_type": "code",
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "test_data_services_audio_recording_ports_test_timeout",
+      "community": 136,
+      "community_name": "dart:typed_data",
+      "norm_label": "timeout"
+    },
+    {
+      "label": "main",
+      "file_type": "code",
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "test_data_services_audio_recording_ports_test_main",
+      "community": 136,
+      "community_name": "dart:typed_data",
+      "norm_label": "main"
+    },
+    {
+      "label": "_chunk",
+      "file_type": "code",
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "test_data_services_audio_recording_ports_test_chunk",
+      "community": 136,
+      "community_name": "dart:typed_data",
+      "norm_label": "_chunk"
+    },
+    {
+      "label": "_waitFor",
+      "file_type": "code",
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "test_data_services_audio_recording_ports_test_waitfor",
+      "community": 136,
+      "community_name": "dart:typed_data",
+      "norm_label": "_waitfor"
     },
     {
       "label": "reliable_recording_service_test.dart",
@@ -36369,8 +36424,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_reliable_recording_service_test_fixedrecordingstoragecapacity",
-      "community": 136,
-      "community_name": "recording_device_readiness_probe_test.dart",
+      "community": 102,
+      "community_name": "device_recording_storage_capacity.dart",
       "norm_label": "fixedrecordingstoragecapacity"
     },
     {
@@ -36380,8 +36435,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_reliable_recording_service_test_fakerecordingforegroundlifecycle",
-      "community": 169,
-      "community_name": "platform_recording_foreground_lifecycle_test.dart",
+      "community": 136,
+      "community_name": "dart:typed_data",
       "norm_label": "fakerecordingforegroundlifecycle"
     },
     {
@@ -36776,8 +36831,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_spike_recording_continuity_metrics_test",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "recording_continuity_metrics_test.dart"
     },
     {
@@ -36787,8 +36842,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_audio_spike_recording_continuity_metrics_test_main",
-      "community": 27,
-      "community_name": "reliable_recording_test.dart",
+      "community": 172,
+      "community_name": "dart:async",
       "norm_label": "main"
     },
     {
@@ -36831,7 +36886,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_diarization_speaker_diarization_coordinator_test_meetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_meetingrepository"
     },
@@ -37293,8 +37348,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_downloadable_model_service_test_fakedownloader",
-      "community": 391,
-      "community_name": "ModelFileDownloader",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "_fakedownloader"
     },
     {
@@ -37304,8 +37359,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_downloadable_model_service_test_memoryinstallations",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "_memoryinstallations"
     },
     {
@@ -37315,8 +37370,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_downloadable_model_service_test_memoryleases",
-      "community": 220,
-      "community_name": "ModelUsageLeaseRepository",
+      "community": 97,
+      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
       "norm_label": "_memoryleases"
     },
     {
@@ -37722,8 +37777,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_models_downloadable_model_service_dart",
-      "community": 252,
-      "community_name": "runtime_asset_manifest_test.dart",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "package:meettrace/data/services/models/downloadable_model_service.dart"
     },
     {
@@ -37734,7 +37789,7 @@
       "_origin": "ast",
       "id": "package_meettrace_data_services_models_model_file_verifier_dart",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "package:meettrace/data/services/models/model_file_verifier.dart"
     },
     {
@@ -37745,7 +37800,7 @@
       "_origin": "ast",
       "id": "package_meettrace_domain_models_model_manifest_dart",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "package:meettrace/domain/models/model_manifest.dart"
     },
     {
@@ -37756,7 +37811,7 @@
       "_origin": "ast",
       "id": "test_data_services_models_http_model_file_downloader_test",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "http_model_file_downloader_test.dart"
     },
     {
@@ -37767,7 +37822,7 @@
       "_origin": "ast",
       "id": "test_data_services_models_http_model_file_downloader_test_root",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "root"
     },
     {
@@ -37778,7 +37833,7 @@
       "_origin": "ast",
       "id": "test_data_services_models_http_model_file_downloader_test_main",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "main"
     },
     {
@@ -37789,7 +37844,7 @@
       "_origin": "ast",
       "id": "package_meettrace_data_services_models_http_model_file_downloader_dart",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "package:meettrace/data/services/models/http_model_file_downloader.dart"
     },
     {
@@ -37810,8 +37865,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_local_runtime_asset_preparation_service_test_modelinstaller",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "_modelinstaller"
     },
     {
@@ -37821,8 +37876,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_local_runtime_asset_preparation_service_test_vadinstaller",
-      "community": 95,
-      "community_name": "../../../../../domain/models/asr_model.dart",
+      "community": 19,
+      "community_name": "local_runtime_asset_preparation_service.dart",
       "norm_label": "_vadinstaller"
     },
     {
@@ -37854,8 +37909,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_local_runtime_asset_preparation_service_test_consents",
-      "community": 207,
-      "community_name": "runtime_asset_preparation.dart",
+      "community": 9,
+      "community_name": "local_runtime_asset_preparation_service_test.dart",
       "norm_label": "_consents"
     },
     {
@@ -38096,8 +38151,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_models_model_manifest_parser_dart",
-      "community": 252,
-      "community_name": "runtime_asset_manifest_test.dart",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "package:meettrace/data/services/models/model_manifest_parser.dart"
     },
     {
@@ -38118,8 +38173,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_vad_downloadable_silero_vad_model_dart",
-      "community": 252,
-      "community_name": "runtime_asset_manifest_test.dart",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "package:meettrace/data/services/vad/downloadable_silero_vad_model.dart"
     },
     {
@@ -38129,8 +38184,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_models_runtime_initialization_dart",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "package:meettrace/domain/models/runtime_initialization.dart"
     },
     {
@@ -38140,8 +38195,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_ports_runtime_asset_preparation_dart",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "package:meettrace/domain/ports/runtime_asset_preparation.dart"
     },
     {
@@ -38152,7 +38207,7 @@
       "_origin": "ast",
       "id": "test_data_services_models_model_file_verifier_test",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "model_file_verifier_test.dart"
     },
     {
@@ -38163,7 +38218,7 @@
       "_origin": "ast",
       "id": "test_data_services_models_model_file_verifier_test_root",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "root"
     },
     {
@@ -38174,7 +38229,7 @@
       "_origin": "ast",
       "id": "test_data_services_models_model_file_verifier_test_entry",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "entry"
     },
     {
@@ -38185,7 +38240,7 @@
       "_origin": "ast",
       "id": "test_data_services_models_model_file_verifier_test_main",
       "community": 98,
-      "community_name": "dart:io",
+      "community_name": "List",
       "norm_label": "main"
     },
     {
@@ -38195,8 +38250,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "model_manifest_parser_test.dart"
     },
     {
@@ -38206,8 +38261,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test_parser",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "parser"
     },
     {
@@ -38217,8 +38272,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test_models",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "models"
     },
     {
@@ -38228,8 +38283,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test_hash",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "hash"
     },
     {
@@ -38239,8 +38294,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test_main",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "main"
     },
     {
@@ -38250,8 +38305,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test_model",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "_model"
     },
     {
@@ -38261,8 +38316,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test_validmanifest",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "_validmanifest"
     },
     {
@@ -38272,8 +38327,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_model_manifest_parser_test_file",
-      "community": 208,
-      "community_name": "model_manifest_parser_test.dart",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "_file"
     },
     {
@@ -38283,8 +38338,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_runtime_asset_manifest_test",
-      "community": 252,
-      "community_name": "runtime_asset_manifest_test.dart",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "runtime_asset_manifest_test.dart"
     },
     {
@@ -38294,8 +38349,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_runtime_asset_manifest_test_projectroot",
-      "community": 252,
-      "community_name": "runtime_asset_manifest_test.dart",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "projectroot"
     },
     {
@@ -38305,8 +38360,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_models_runtime_asset_manifest_test_main",
-      "community": 252,
-      "community_name": "runtime_asset_manifest_test.dart",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "main"
     },
     {
@@ -38316,8 +38371,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_storage_app_database_test",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "app_database_test.dart"
     },
     {
@@ -38327,8 +38382,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_storage_app_database_test_main",
-      "community": 97,
-      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
+      "community": 77,
+      "community_name": "startup_recovery_service_test.dart",
       "norm_label": "main"
     },
     {
@@ -38338,8 +38393,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_storage_device_free_space_service_test",
-      "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community": 51,
+      "community_name": "local_data_control_service_test.dart",
       "norm_label": "device_free_space_service_test.dart"
     },
     {
@@ -38349,8 +38404,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_storage_device_free_space_service_test_main",
-      "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community": 51,
+      "community_name": "local_data_control_service_test.dart",
       "norm_label": "main"
     },
     {
@@ -38360,8 +38415,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_models_platform_download_preflight_providers_dart",
-      "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community": 51,
+      "community_name": "local_data_control_service_test.dart",
       "norm_label": "package:meettrace/data/services/models/platform_download_preflight_providers.dart"
     },
     {
@@ -38371,8 +38426,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_data_services_storage_device_free_space_service_dart",
-      "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community": 51,
+      "community_name": "local_data_control_service_test.dart",
       "norm_label": "package:meettrace/data/services/storage/device_free_space_service.dart"
     },
     {
@@ -38470,8 +38525,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_storage_local_data_control_service_test_installations",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "_installations"
     },
     {
@@ -38778,7 +38833,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_vad_downloadable_silero_vad_model_test",
-      "community": 143,
+      "community": 98,
       "community_name": "List",
       "norm_label": "downloadable_silero_vad_model_test.dart"
     },
@@ -38789,8 +38844,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_vad_downloadable_silero_vad_model_test_hellodownloader",
-      "community": 391,
-      "community_name": "ModelFileDownloader",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "_hellodownloader"
     },
     {
@@ -38800,8 +38855,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_vad_downloadable_silero_vad_model_test_resumingdownloader",
-      "community": 391,
-      "community_name": "ModelFileDownloader",
+      "community": 98,
+      "community_name": "List",
       "norm_label": "_resumingdownloader"
     },
     {
@@ -38811,7 +38866,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_vad_downloadable_silero_vad_model_test_resumeoffsets",
-      "community": 143,
+      "community": 98,
       "community_name": "List",
       "norm_label": "resumeoffsets"
     },
@@ -38822,7 +38877,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_vad_downloadable_silero_vad_model_test_main",
-      "community": 143,
+      "community": 98,
       "community_name": "List",
       "norm_label": "main"
     },
@@ -38833,7 +38888,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_vad_downloadable_silero_vad_model_test_manifest",
-      "community": 143,
+      "community": 98,
       "community_name": "List",
       "norm_label": "_manifest"
     },
@@ -38844,7 +38899,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_data_services_vad_downloadable_silero_vad_model_test_download",
-      "community": 143,
+      "community": 98,
       "community_name": "List",
       "norm_label": "download"
     },
@@ -39031,8 +39086,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_contracts_domain_ports_test_fakeasrenginefactory",
-      "community": 385,
-      "community_name": "AsrEngineFactory",
+      "community": 93,
+      "community_name": "run_final_transcription.dart",
       "norm_label": "_fakeasrenginefactory"
     },
     {
@@ -39053,7 +39108,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_contracts_domain_ports_test_inmemorymeetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_inmemorymeetingrepository"
     },
@@ -39273,8 +39328,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_app_failure_test",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "app_failure_test.dart"
     },
     {
@@ -39284,8 +39339,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_app_failure_test_main",
-      "community": 227,
-      "community_name": "Object?",
+      "community": 90,
+      "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "main"
     },
     {
@@ -39350,8 +39405,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_meeting_test",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "meeting_test.dart"
     },
     {
@@ -39361,8 +39416,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_meeting_test_requestedmodelid",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "requestedmodelid"
     },
     {
@@ -39372,8 +39427,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_meeting_test_recordingmodelid",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "recordingmodelid"
     },
     {
@@ -39383,8 +39438,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_meeting_test_status",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "status"
     },
     {
@@ -39394,8 +39449,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "string_activesummaryid_meetingstate",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "string? activesummaryid,\n  meetingstate"
     },
     {
@@ -39405,8 +39460,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_meeting_test_main",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "main"
     },
     {
@@ -39416,8 +39471,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_meeting_test_meeting",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "_meeting"
     },
     {
@@ -39427,8 +39482,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_meeting_test_snapshot",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "_snapshot"
     },
     {
@@ -39460,7 +39515,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_model_usage_lease_test",
-      "community": 162,
+      "community": 90,
       "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "model_usage_lease_test.dart"
     },
@@ -39471,7 +39526,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_model_usage_lease_test_main",
-      "community": 162,
+      "community": 90,
       "community_name": "package:flutter_test/flutter_test.dart",
       "norm_label": "main"
     },
@@ -39614,8 +39669,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_workflow_states_test",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "workflow_states_test.dart"
     },
     {
@@ -39625,8 +39680,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_models_workflow_states_test_main",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "main"
     },
     {
@@ -39636,8 +39691,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_build_meeting_share_test",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "build_meeting_share_test.dart"
     },
     {
@@ -39647,8 +39702,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_build_meeting_share_test_main",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "main"
     },
     {
@@ -39658,8 +39713,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_build_meeting_share_test_meeting",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "_meeting"
     },
     {
@@ -39669,8 +39724,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_build_meeting_share_test_snapshot",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "_snapshot"
     },
     {
@@ -39680,8 +39735,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_build_meeting_share_test_summary",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "_summary"
     },
     {
@@ -39691,8 +39746,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_use_cases_build_meeting_share_dart",
-      "community": 77,
-      "community_name": "startup_recovery_service_test.dart",
+      "community": 95,
+      "community_name": "package:meettrace/domain/models/workflow_states.dart",
       "norm_label": "package:meettrace/domain/use_cases/build_meeting_share.dart"
     },
     {
@@ -39834,8 +39889,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_delete_meeting_test_filedeletionservice",
-      "community": 88,
-      "community_name": "meeting_list_view_model_test.dart",
+      "community": 207,
+      "community_name": "MeetingFileDeletionService",
       "norm_label": "_filedeletionservice"
     },
     {
@@ -39845,8 +39900,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_delete_meeting_test_stageddeletion",
-      "community": 121,
-      "community_name": "delete_meeting_test.dart",
+      "community": 89,
+      "community_name": "meeting_directory_deletion_service.dart",
       "norm_label": "_stageddeletion"
     },
     {
@@ -39999,8 +40054,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_evaluate_alpha_release_test",
-      "community": 238,
-      "community_name": "dart:convert",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "evaluate_alpha_release_test.dart"
     },
     {
@@ -40010,8 +40065,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_evaluate_alpha_release_test_main",
-      "community": 238,
-      "community_name": "dart:convert",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "main"
     },
     {
@@ -40021,8 +40076,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_evaluate_alpha_release_test_passinginput",
-      "community": 238,
-      "community_name": "dart:convert",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "_passinginput"
     },
     {
@@ -40032,8 +40087,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_use_cases_evaluate_alpha_release_dart",
-      "community": 238,
-      "community_name": "dart:convert",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "package:meettrace/domain/use_cases/evaluate_alpha_release.dart"
     },
     {
@@ -40076,7 +40131,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_generate_summary_test_meetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_meetingrepository"
     },
@@ -40505,8 +40560,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_plan_asr_preview_windows_test",
-      "community": 394,
-      "community_name": "package:meettrace/domain/models/asr_preview.dart",
+      "community": 35,
+      "community_name": "asr_preview_coordinator_test.dart",
       "norm_label": "plan_asr_preview_windows_test.dart"
     },
     {
@@ -40516,8 +40571,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_domain_use_cases_plan_asr_preview_windows_test_main",
-      "community": 394,
-      "community_name": "package:meettrace/domain/models/asr_preview.dart",
+      "community": 35,
+      "community_name": "asr_preview_coordinator_test.dart",
       "norm_label": "main"
     },
     {
@@ -40572,7 +40627,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "revise_final_transcript_test.dart"
     },
     {
@@ -40583,7 +40638,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_meetingrepository",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "_meetingrepository"
     },
     {
@@ -40605,7 +40660,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_value",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "value"
     },
     {
@@ -40616,7 +40671,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_meetings",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "meetings"
     },
     {
@@ -40627,7 +40682,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_records",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "records"
     },
     {
@@ -40638,7 +40693,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_main",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "main"
     },
     {
@@ -40649,7 +40704,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_getbyid",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "getbyid"
     },
     {
@@ -40660,7 +40715,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_watchall",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "watchall"
     },
     {
@@ -40671,7 +40726,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_save",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "save"
     },
     {
@@ -40682,7 +40737,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_delete",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "delete"
     },
     {
@@ -40693,7 +40748,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_listbymeeting",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "listbymeeting"
     },
     {
@@ -40704,7 +40759,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_savefinalandactivate",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "savefinalandactivate"
     },
     {
@@ -40715,7 +40770,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_updatespeakerlabels",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "updatespeakerlabels"
     },
     {
@@ -40726,7 +40781,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_meeting",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "_meeting"
     },
     {
@@ -40737,7 +40792,7 @@
       "_origin": "ast",
       "id": "test_domain_use_cases_revise_final_transcript_test_snapshot",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "_snapshot"
     },
     {
@@ -40748,7 +40803,7 @@
       "_origin": "ast",
       "id": "package_meettrace_domain_use_cases_revise_final_transcript_dart",
       "community": 47,
-      "community_name": "revise_final_transcript_test.dart",
+      "community_name": "MeetingRepository",
       "norm_label": "package:meettrace/domain/use_cases/revise_final_transcript.dart"
     },
     {
@@ -40769,7 +40824,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_support_final_transcription_fakes_detailmeetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "detailmeetingrepository"
     },
@@ -41033,8 +41088,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_support_model_selection_fakes_testactiveinstallations",
-      "community": 51,
-      "community_name": "local_data_control_service_test.dart",
+      "community": 184,
+      "community_name": "ActiveModelInstallationRepository",
       "norm_label": "testactiveinstallations"
     },
     {
@@ -41055,8 +41110,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_support_model_selection_fakes_testasrenginefactory",
-      "community": 385,
-      "community_name": "AsrEngineFactory",
+      "community": 93,
+      "community_name": "run_final_transcription.dart",
       "norm_label": "testasrenginefactory"
     },
     {
@@ -41077,8 +41132,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_support_model_selection_fakes_testmodelleases",
-      "community": 220,
-      "community_name": "ModelUsageLeaseRepository",
+      "community": 97,
+      "community_name": "sqflite_model_lifecycle_repositories_test.dart",
       "norm_label": "testmodelleases"
     },
     {
@@ -41881,7 +41936,7 @@
       "_origin": "ast",
       "id": "test_ui_core_view_state_test",
       "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community_name": "view_state_test.dart",
       "norm_label": "view_state_test.dart"
     },
     {
@@ -41892,7 +41947,7 @@
       "_origin": "ast",
       "id": "test_ui_core_view_state_test_main",
       "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community_name": "view_state_test.dart",
       "norm_label": "main"
     },
     {
@@ -41903,7 +41958,7 @@
       "_origin": "ast",
       "id": "package_meettrace_ui_core_view_state_dart",
       "community": 200,
-      "community_name": "device_free_space_service_test.dart",
+      "community_name": "view_state_test.dart",
       "norm_label": "package:meettrace/ui/core/view_state.dart"
     },
     {
@@ -42430,7 +42485,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_meetings_view_models_list_meeting_list_view_model_test_streamingmeetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_streamingmeetingrepository"
     },
@@ -42441,8 +42496,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_meetings_view_models_list_meeting_list_view_model_test_immediatefiledeletionservice",
-      "community": 88,
-      "community_name": "meeting_list_view_model_test.dart",
+      "community": 207,
+      "community_name": "MeetingFileDeletionService",
       "norm_label": "_immediatefiledeletionservice"
     },
     {
@@ -42452,8 +42507,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_meetings_view_models_list_meeting_list_view_model_test_blockingfiledeletionservice",
-      "community": 88,
-      "community_name": "meeting_list_view_model_test.dart",
+      "community": 207,
+      "community_name": "MeetingFileDeletionService",
       "norm_label": "_blockingfiledeletionservice"
     },
     {
@@ -42463,8 +42518,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_meetings_view_models_list_meeting_list_view_model_test_teststageddeletion",
-      "community": 121,
-      "community_name": "delete_meeting_test.dart",
+      "community": 89,
+      "community_name": "meeting_directory_deletion_service.dart",
       "norm_label": "_teststageddeletion"
     },
     {
@@ -43662,7 +43717,7 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_meetings_views_list_meeting_list_view_test_meetingrepository",
-      "community": 184,
+      "community": 47,
       "community_name": "MeetingRepository",
       "norm_label": "_meetingrepository"
     },
@@ -43673,8 +43728,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_meetings_views_list_meeting_list_view_test_meetingfiledeletionservice",
-      "community": 88,
-      "community_name": "meeting_list_view_model_test.dart",
+      "community": 207,
+      "community_name": "MeetingFileDeletionService",
       "norm_label": "_meetingfiledeletionservice"
     },
     {
@@ -43684,8 +43739,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_meetings_views_list_meeting_list_view_test_stagedmeetingdeletion",
-      "community": 121,
-      "community_name": "delete_meeting_test.dart",
+      "community": 89,
+      "community_name": "meeting_directory_deletion_service.dart",
       "norm_label": "_stagedmeetingdeletion"
     },
     {
@@ -44465,8 +44520,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "runtime_initialization_view_model_test.dart"
     },
     {
@@ -44476,8 +44531,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_preparation",
-      "community": 392,
-      "community_name": "RuntimeAssetPreparationPort",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "_preparation"
     },
     {
@@ -44487,8 +44542,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_paused",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "paused"
     },
     {
@@ -44498,8 +44553,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_grants",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "grants"
     },
     {
@@ -44509,8 +44564,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_pauses",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "pauses"
     },
     {
@@ -44520,8 +44575,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_main",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "main"
     },
     {
@@ -44531,8 +44586,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_prepare",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "prepare"
     },
     {
@@ -44542,8 +44597,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_grantmobileconsent",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "grantmobileconsent"
     },
     {
@@ -44553,8 +44608,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_view_models_runtime_initialization_view_model_test_pause",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "pause"
     },
     {
@@ -44564,8 +44619,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_domain_use_cases_initialize_runtime_assets_dart",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "package:meettrace/domain/use_cases/initialize_runtime_assets.dart"
     },
     {
@@ -44575,8 +44630,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "package_meettrace_ui_features_startup_view_models_runtime_initialization_view_model_dart",
-      "community": 148,
-      "community_name": "runtime_initialization_view_model_test.dart",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "package:meettrace/ui/features/startup/view_models/runtime_initialization_view_model.dart"
     },
     {
@@ -44597,8 +44652,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_views_meettrace_startup_view_test_downloadingpreparation",
-      "community": 392,
-      "community_name": "RuntimeAssetPreparationPort",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "_downloadingpreparation"
     },
     {
@@ -44608,8 +44663,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "test_ui_features_startup_views_meettrace_startup_view_test_controlledpreparation",
-      "community": 392,
-      "community_name": "RuntimeAssetPreparationPort",
+      "community": 44,
+      "community_name": "meettrace_startup_view_test.dart",
       "norm_label": "_controlledpreparation"
     },
     {
@@ -44740,8 +44795,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "tool_benchmarks_evaluate_alpha_release",
-      "community": 238,
-      "community_name": "dart:convert",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "benchmarks/evaluate_alpha_release.dart"
     },
     {
@@ -44751,8 +44806,8 @@
       "source_location": null,
       "_origin": "ast",
       "id": "tool_benchmarks_evaluate_alpha_release_main",
-      "community": 238,
-      "community_name": "dart:convert",
+      "community": 80,
+      "community_name": "model_manifest_parser.dart",
       "norm_label": "main"
     },
     {
@@ -44894,8 +44949,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "windows_flutter_generated_plugin_registrant_cc_windows_flutter_generated_plugin_registrant",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 208,
+      "community_name": "RegisterPlugins",
       "norm_label": "windows/flutter/generated_plugin_registrant.cc"
     },
     {
@@ -44905,8 +44960,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "windows_flutter_generated_plugin_registrant_registerplugins",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 208,
+      "community_name": "RegisterPlugins",
       "norm_label": "registerplugins()"
     },
     {
@@ -44916,8 +44971,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "pluginregistry",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 208,
+      "community_name": "RegisterPlugins",
       "norm_label": "pluginregistry"
     },
     {
@@ -44927,8 +44982,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "windows_flutter_generated_plugin_registrant_h_windows_flutter_generated_plugin_registrant",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 208,
+      "community_name": "RegisterPlugins",
       "norm_label": "windows/flutter/generated_plugin_registrant.h"
     },
     {
@@ -44938,8 +44993,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_cpp_windows_runner_flutter_window",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "flutter_window.cpp"
     },
     {
@@ -44949,8 +45004,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_flutterwindow_flutterwindow",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "flutterwindow::flutterwindow()"
     },
     {
@@ -44960,8 +45015,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_cpp_dartproject",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "dartproject"
     },
     {
@@ -44971,8 +45026,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_cpp_lresult",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "lresult"
     },
     {
@@ -44982,8 +45037,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_cpp_hwnd",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "hwnd"
     },
     {
@@ -44993,8 +45048,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_cpp_uint",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "uint"
     },
     {
@@ -45004,8 +45059,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_cpp_wparam",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "wparam"
     },
     {
@@ -45015,8 +45070,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_cpp_lparam",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "lparam"
     },
     {
@@ -45026,8 +45081,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_h_windows_runner_flutter_window",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "flutter_window.h"
     },
     {
@@ -45037,8 +45092,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_flutterwindow",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "flutterwindow"
     },
     {
@@ -45059,8 +45114,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_flutterwindow_ondestroy",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "ondestroy"
     },
     {
@@ -45070,8 +45125,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_flutterwindow_messagehandler",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "messagehandler"
     },
     {
@@ -45081,8 +45136,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_h_dartproject",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "dartproject"
     },
     {
@@ -45092,8 +45147,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_flutterwindow_project",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "project_"
     },
     {
@@ -45103,8 +45158,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "unique_ptr",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "unique_ptr"
     },
     {
@@ -45114,7 +45169,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "flutterviewcontroller",
-      "community": 17,
+      "community": 169,
       "community_name": "GeneratedPluginRegistrant.swift",
       "norm_label": "flutterviewcontroller"
     },
@@ -45125,8 +45180,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "windows_runner_flutter_window_flutterwindow_flutter_controller",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "flutter_controller_"
     },
     {
@@ -45279,8 +45334,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "windows_runner_win32_window_scale",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "scale()"
     },
     {
@@ -45312,8 +45367,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "windows_runner_win32_window_windowclassregistrar",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "windowclassregistrar"
     },
     {
@@ -45323,8 +45378,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "windows_runner_win32_window_windowclassregistrar_windowclassregistrar",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": ".~windowclassregistrar()"
     },
     {
@@ -45334,8 +45389,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "windows_runner_win32_window_windowclassregistrar_getinstance",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": ".getinstance()"
     },
     {
@@ -45345,8 +45400,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "windows_runner_win32_window_windowclassregistrar_getwindowclass",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "getwindowclass"
     },
     {
@@ -45356,8 +45411,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "windows_runner_win32_window_windowclassregistrar_unregisterwindowclass",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "unregisterwindowclass"
     },
     {
@@ -45367,8 +45422,8 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "windows_runner_win32_window_windowclassregistrar_instance",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "instance_"
     },
     {
@@ -45378,8 +45433,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "windows_runner_win32_window_windowclassregistrar_class_registered",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "class_registered_"
     },
     {
@@ -45389,8 +45444,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "windows_runner_win32_window_cpp_wchar_t",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "wchar_t"
     },
     {
@@ -45400,8 +45455,8 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "windows_runner_win32_window_win32window_win32window",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "win32window::win32window()"
     },
     {
@@ -45411,8 +45466,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "wstring",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "wstring"
     },
     {
@@ -45422,8 +45477,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "point",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "point"
     },
     {
@@ -45433,8 +45488,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "size",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "size"
     },
     {
@@ -45499,8 +45554,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "windows_runner_win32_window_h_windows_runner_win32_window",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "win32_window.h"
     },
     {
@@ -45521,8 +45576,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "windows_runner_win32_window_win32window_create",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "create"
     },
     {
@@ -45543,8 +45598,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "windows_runner_win32_window_win32window_destroy",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 164,
+      "community_name": "Create",
       "norm_label": "destroy"
     },
     {
@@ -45620,8 +45675,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "windows_runner_win32_window_win32window_ondestroy",
-      "community": 6,
-      "community_name": "Win32Window",
+      "community": 99,
+      "community_name": "FlutterWindow",
       "norm_label": "ondestroy"
     },
     {
@@ -52902,6 +52957,17 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
+      "target": "package_flutter_test_flutter_test_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "test/data/services/audio/reliable_recording_service_test.dart",
       "source_location": null,
       "weight": 1.0,
@@ -56925,6 +56991,17 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "test_data_services_asr_sherpa_onnx_sherpa_onnx_adapter_test",
+      "target": "dart_async"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
       "target": "dart_async"
     },
     {
@@ -63636,7 +63713,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_data_services_asr_asr_preview_coordinator",
-      "target": "lib_data_services_asr_asr_preview_coordinator_append"
+      "target": "lib_data_services_asr_asr_preview_coordinator_appendowned"
     },
     {
       "relation": "defines",
@@ -65671,6 +65748,17 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "test_data_services_audio_recording_device_readiness_probe_test",
+      "target": "dart_typed_data"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
       "target": "dart_typed_data"
     },
     {
@@ -103357,6 +103445,17 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
+      "target": "package_meettrace_domain_models_recording_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "test/data/services/audio/reliable_recording_service_test.dart",
       "source_location": null,
       "weight": 1.0,
@@ -105327,6 +105426,17 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
+      "target": "package_meettrace_data_services_audio_recording_ports_dart"
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "test/data/services/audio/reliable_recording_service_test.dart",
       "source_location": null,
       "weight": 1.0,
@@ -105542,6 +105652,50 @@
       "_origin": "ast",
       "source": "test_data_services_audio_recording_device_readiness_probe_test",
       "target": "test_data_services_audio_recording_device_readiness_probe_test_stop"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
+      "target": "test_data_services_audio_recording_ports_test_chunk"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
+      "target": "test_data_services_audio_recording_ports_test_main"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
+      "target": "test_data_services_audio_recording_ports_test_timeout"
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "test/data/services/audio/recording_ports_test.dart",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "test_data_services_audio_recording_ports_test",
+      "target": "test_data_services_audio_recording_ports_test_waitfor"
     },
     {
       "relation": "defines",
@@ -120165,5 +120319,5 @@
       "source_file": ".tmp/meettrace-resting.png"
     }
   ],
-  "built_at_commit": "796b7640a32996eef8c8535790d31d8cbe0fdfb6"
+  "built_at_commit": "ffb61de67c85182143526fb460098ca94023452d"
 }

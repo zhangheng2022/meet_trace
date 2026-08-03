@@ -108,9 +108,10 @@ final class AsrPreviewCoordinator
       } else if (_timeline.isEmpty) {
         _timeline.reset(startSample: startSample);
       }
-      _timeline.append(startSample: startSample, samples: samples);
+      final segments = vad.accept(samples);
+      _timeline.appendOwned(startSample: startSample, samples: samples);
       _expectedNextSample = startSample + samples.length;
-      _acceptSegments(vad.accept(samples));
+      _acceptSegments(segments);
       _trimTimeline();
     } on Object catch (error) {
       _enterRecordingOnly(
@@ -412,7 +413,8 @@ final class _TimelineSampleBuffer {
     _endSample = startSample;
   }
 
-  void append({required int startSample, required Float32List samples}) {
+  /// 接管刚解码的样本；调用方不得在加入后继续修改该缓冲区。
+  void appendOwned({required int startSample, required Float32List samples}) {
     if (samples.isEmpty) {
       return;
     }
@@ -420,10 +422,7 @@ final class _TimelineSampleBuffer {
       throw StateError('预览音频时间轴不连续');
     }
     _blocks.addLast(
-      _TimelineSampleBlock(
-        startSample: startSample,
-        samples: Float32List.fromList(samples),
-      ),
+      _TimelineSampleBlock(startSample: startSample, samples: samples),
     );
     _endSample += samples.length;
     if (_blocks.length == 1) {

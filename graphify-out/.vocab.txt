@@ -207,6 +207,7 @@ contracts
 contrast
 contributor
 control
+controlled
 controller
 controls
 convert
@@ -757,7 +758,6 @@ production
 progress
 progressive
 project
-promise
 prompt
 provenance
 provided
@@ -1005,6 +1005,7 @@ surface
 sustained
 swift
 swipe
+switcher
 symbol
 sync
 system
@@ -1200,6 +1201,7 @@ yue
 初始化时再进行下
 初始化时再进行下载
 初始化状态机
+初始化页面
 单一设计源
 单条会议账本
 原子激活
@@ -1252,6 +1254,7 @@ yue
 日历空状态图标
 时间与时长元数据
 明暗主题
+是什么意思
 是否需要更换模型或组合模型
 最终快照
 最终转录快照

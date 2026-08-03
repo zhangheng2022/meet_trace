@@ -106,8 +106,14 @@ final class RecordingPreviewDispatcher {
       return;
     }
     if (_draining && _pending.length >= maxPendingChunks) {
-      _droppedChunks++;
-      return;
+      if (_pending.isNotEmpty) {
+        _pending.removeFirst();
+        _droppedChunks++;
+      } else {
+        // 零等待队列只能保留当前正在处理的块。
+        _droppedChunks++;
+        return;
+      }
     }
     _pending.addLast(chunk);
     if (!_draining) {
