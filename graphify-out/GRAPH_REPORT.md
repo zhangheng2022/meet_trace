@@ -1,16 +1,16 @@
-# Graph Report - meetily_ai  (2026-08-01)
+# Graph Report - meetily_ai  (2026-08-03)
 
 ## Corpus Check
-- 343 files · ~137,595 words
+- 344 files · ~137,587 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4566 nodes · 6119 edges · 386 communities (233 shown, 153 thin omitted)
+- 4569 nodes · 6120 edges · 379 communities (226 shown, 153 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 74 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e6e93d47`
+- Built from commit: `413fae51`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -28,7 +28,7 @@
 - downloadable_silero_vad_model.dart
 - reliable_recording_service.dart
 - ports/asr_engine.dart
-- startup_recovery_service_test.dart
+- sqflite_speaker_diarization_repository_test.dart
 - package:flutter/widgets.dart
 - final_transcription_service_test.dart
 - downloadable_model_service.dart
@@ -37,18 +37,18 @@
 - local_runtime_asset_preparation_service.dart
 - meeting_detail_view_model_test.dart
 - meeting_detail_view_test.dart
-- app_ui_previews.dart
+- meeting_detail_previews.dart
 - meeting_detail_view.dart
 - recording_session_view.dart
 - generate_summary_test.dart
-- StatelessWidget
-- package:flutter_test/flutter_test.dart
+- meettrace_startup_view.dart
+- reliable_recording_test.dart
 - recording_session_view_model.dart
 - downloadable_model_service_test.dart
 - speaker_diarization_coordinator_test.dart
 - recording_session_view_test.dart
-- ../../../../domain/models/asr_model_registry.dart
 - class
+- typedef
 - run_speaker_diarization.dart
 - asr_preview_coordinator_test.dart
 - recording_session_view_model_test.dart
@@ -84,12 +84,12 @@
 - data_controls_view_model.dart
 - summary.dart
 - final_transcription_fakes.dart
-- Meeting
+- State
 - pcm_evidence_playback_service_test.dart
 - asr_preview.dart
 - generate_summary.dart
 - domain_ports_test.dart
-- main.dart
+- system_ui.dart
 - app_ledger.dart
 - meeting_list_view_test.dart
 - package:meettrace/domain/models/workflow_states.dart
@@ -102,7 +102,7 @@
 - recording.dart
 - app_file_layout.dart
 - model_manifest.dart
-- transcript_test.dart
+- package:meettrace/domain/models/transcript.dart
 - meeting_list_view_model_test.dart
 - meeting_directory_deletion_service.dart
 - sherpa_onnx_adapter_test.dart
@@ -110,11 +110,11 @@
 - models/speaker_diarization.dart
 - run_final_transcription.dart
 - 会迹平板端会议主从界面
-- meeting_detail_previews.dart
+- startup_recovery_service_test.dart
 - recording_bootstrap_view.dart
 - app_state_panel.dart
-- List
-- asr_model_option.dart
+- package:path/path.dart
+- device_free_space_service.dart
 - plan_asr_preview_windows.dart
 - local_data_control_service.dart
 - meeting_list_previews.dart
@@ -135,9 +135,9 @@
 - dart:typed_data
 - _
 - 会迹（MeetTrace）端侧 SenseVoice 转录技术方案
-- ../../../../../domain/models/asr_model.dart
+- List
 - delete_meeting_test.dart
-- package:meettrace/domain/models/asr_model_registry.dart
+- package:flutter_test/flutter_test.dart
 - 会议事实说明区
 - MeetTrace Android and iOS Alpha PRD V0.6
 - app_status_notice.dart
@@ -150,7 +150,7 @@
 - model_installation.dart
 - sqflite_meeting_repository.dart
 - evidence_playback.dart
-- start_meeting_view_model_test.dart
+- AsrEngine
 - recording_device_readiness_probe_test.dart
 - MeetTrace Phone Home Screen with Pressed Primary Action
 - 移动端单栏首页布局
@@ -159,30 +159,27 @@
 - wWinMain
 - app_failure.dart
 - asr_model.dart
-- AsrPreviewSession
+- platform_database_factory.dart
 - MeetTrace Flutter Package Manifest
 - Duration
 - model_usage_lease.dart
-- ../../../../theme/theme.dart
+- main.dart
 - RecordingAudioWaveform
 - Map
 - bool get
 - web/manifest.json
 - Silero VAD INT8 2025-07-11
 - Alpha Step Dependency Chain
-- layer_boundaries_test.dart
+- Q: 初始化页面 步骤2/4 是什么意思
 - APPLY_STANDARD_SETTINGS
 - No Meetings Empty State
 - 会迹会议首页空状态设计
 - Blocked iOS and Dual-Platform Release
 - _
 - 增量架构优化
-- platform_asr_device_risk_monitor_test.dart
+- sense_voice_asr_engine_test.dart
 - RecordingSessionService
-- sqflite_model_usage_lease_repository.dart
 - audio_source.dart
-- Object?
-- TranscriptRepository
 - SenseVoice 初始化下载与发布门槛
 - platform_recording_foreground_lifecycle_test.dart
 - 真实录音条件预检
@@ -199,7 +196,6 @@
 - Windows databaseFactory 未初始化
 - 二次确认的永久会议删除
 - 录音连续性优先
-- sqflite_model_lifecycle_repositories_test.dart
 - Q: https://github.com/moonshine-ai/moonshine
 - Q: sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09
 - Q: ggml-org/whisper.cpp
@@ -214,7 +210,6 @@
 - models/manifest.json
 - Bounded ASR Preview Queue
 - 语义化本地日期标签
-- package:meettrace/domain/models/asr_preview.dart
 - view_state_test.dart
 - Strict Casts Inference and Raw Types
 - MainActivity
@@ -236,7 +231,6 @@
 - LocalFactFooter
 - DeviceAudioOutput
 - platform_download_preflight_providers.dart
-- local_data_control.dart
 - Flutter macOS App Icon
 - Flutter macOS App Icon (256×256)
 - Flutter macOS App Icon
@@ -251,7 +245,6 @@
 - MeetTraceDependencies
 - FColorsExtensions
 - FStyleExtensions
-- ModelPreferenceRepository
 - ../../../../../domain/ports/evidence_playback.dart
 - Flutter Brand Mark
 - Flutter Brand Mark
@@ -445,7 +438,7 @@
 - **本地事实音频的多层状态表达** — tmp_meettrace_resting_recording_readiness_strip, tmp_meettrace_resting_local_audio_saved_status, tmp_meettrace_resting_local_audio_source_of_truth, tmp_meettrace_resting_realtime_transcript_disclaimer [EXTRACTED 1.00]
 - **静止首页到开始会议的操作流** — tmp_meettrace_resting_recording_readiness_strip, tmp_meettrace_resting_meeting_ledger, tmp_meettrace_resting_persistent_start_meeting_action [INFERRED 0.85]
 
-## Communities (386 total, 153 thin omitted)
+## Communities (379 total, 153 thin omitted)
 
 ### Community 0 - "meeting_detail_view_model.dart"
 Cohesion: 0.02
@@ -457,7 +450,7 @@ Nodes (75): asr_preview_session.dart, ../audio/recording_ports.dart, ../../../do
 
 ### Community 2 - "meettrace_dependencies.dart"
 Cohesion: 0.03
-Nodes (71): createDataControlsViewModel, createMeetingDetailViewModel, createMeetingListViewModel, createModelSettingsViewModel, createRecordingSessionViewModel, createRuntimeInitializationViewModel, createStartMeetingViewModel, ../data/repositories/sqflite_diarization_preference_repository.dart (+63 more)
+Nodes (70): createDataControlsViewModel, createMeetingDetailViewModel, createMeetingListViewModel, createModelSettingsViewModel, createRecordingSessionViewModel, createRuntimeInitializationViewModel, createStartMeetingViewModel, ../data/repositories/sqflite_diarization_preference_repository.dart (+62 more)
 
 ### Community 3 - "sherpa_onnx_asr_engine.dart"
 Cohesion: 0.03
@@ -477,15 +470,15 @@ Nodes (53): PluginRegistry, Point, RECT, Size, unique_ptr, RegisterPlugins(), Da
 
 ### Community 7 - "meeting_list_view.dart"
 Cohesion: 0.03
-Nodes (66): _audioFactLabel, body, deletable, deleting, deletingMeetingIds, descriptor, didChangeDependencies, _disableAnimations (+58 more)
+Nodes (59): _audioFactLabel, body, deletable, deleting, deletingMeetingIds, descriptor, didChangeDependencies, _disableAnimations (+51 more)
 
 ### Community 8 - "theme.dart"
 Cohesion: 0.03
 Nodes (57): AppColors get, AppStyle get, _body, borderRadius, borderStrong, cardRadius, contentMaxWidth, controlHeight (+49 more)
 
 ### Community 9 - "local_runtime_asset_preparation_service_test.dart"
-Cohesion: 0.05
-Nodes (36): _Capacity, DownloadNetworkKind, download, requireHttps, ModelManifestEntry, package:meettrace/data/services/models/local_runtime_asset_preparation_service.dart, package:meettrace/data/services/models/model_file_verifier.dart, package:meettrace/data/services/models/model_manifest_parser.dart (+28 more)
+Cohesion: 0.07
+Nodes (28): _Capacity, DownloadNetworkKind, package:meettrace/data/services/models/downloadable_model_service.dart, package:meettrace/data/services/models/local_runtime_asset_preparation_service.dart, package:meettrace/data/services/models/model_manifest_parser.dart, package:meettrace/data/services/models/runtime_asset_installers.dart, package:meettrace/data/services/vad/downloadable_silero_vad_model.dart, calls (+20 more)
 
 ### Community 10 - "downloadable_silero_vad_model.dart"
 Cohesion: 0.05
@@ -499,13 +492,13 @@ Nodes (52): audioLevelChanges, _audioLevelMeter, _audioSubscription, canFinalize
 Cohesion: 0.04
 Nodes (53): acceptAudio, AsrDeviceRiskState, AsrDeviceSupport, AsrEngineMetrics, AsrFinalizationPhase, AsrFinalizationProgress, AsrMemoryPressure, AsrThermalState (+45 more)
 
-### Community 13 - "startup_recovery_service_test.dart"
-Cohesion: 0.08
-Nodes (24): StartupRecoveryService, TranscriptSnapshotStatus, package:meettrace/data/repositories/sqflite_diarization_preference_repository.dart, package:meettrace/data/repositories/sqflite_meeting_repository.dart, package:meettrace/data/repositories/sqflite_processing_task_repository.dart, package:meettrace/data/repositories/sqflite_transcript_repository.dart, package:meettrace/data/services/storage/startup_recovery_service.dart, package:meettrace/domain/models/processing_task.dart (+16 more)
+### Community 13 - "sqflite_speaker_diarization_repository_test.dart"
+Cohesion: 0.09
+Nodes (20): DomainInvariantViolation, message, toString, TranscriptSnapshotStatus, ResolveMeetingModelSelection, package:meettrace/data/repositories/sqflite_diarization_preference_repository.dart, package:meettrace/data/repositories/sqflite_meeting_repository.dart, package:meettrace/data/repositories/sqflite_transcript_repository.dart (+12 more)
 
 ### Community 14 - "package:flutter/widgets.dart"
-Cohesion: 0.06
-Nodes (35): Icon, appDisplayName, Application, build, home, AppBackIcon, build, semanticsLabel (+27 more)
+Cohesion: 0.04
+Nodes (44): AlignmentGeometry, EdgeInsetsGeometry?, Icon, appDisplayName, Application, build, home, AppBackIcon (+36 more)
 
 ### Community 15 - "final_transcription_service_test.dart"
 Cohesion: 0.05
@@ -525,43 +518,43 @@ Cohesion: 0.04
 Nodes (45): acceptAudio, _activeVersions, cancel, _changes, check, create, createError, delete (+37 more)
 
 ### Community 19 - "local_runtime_asset_preparation_service.dart"
-Cohesion: 0.10
-Nodes (20): ModelDownloadCancellationToken, _activeCancellation, capacity, consents, grantMobileConsent, hasMobileConsent, _mapPhase, modelDownloads (+12 more)
+Cohesion: 0.06
+Nodes (32): ../../../../../domain/models/asr_model.dart, ../../../domain/models/model_manifest.dart, DownloadableModelService, ModelDownloadCancellationToken, _activeCancellation, capacity, consents, grantMobileConsent (+24 more)
 
 ### Community 20 - "meeting_detail_view_model_test.dart"
 Cohesion: 0.05
-Nodes (37): capability, diarizationEnabled, dispose, enabled, errorCode, _Fixture, generate, getById (+29 more)
+Nodes (43): SqfliteProcessingTaskRepository, ProcessingTaskRepository, _TaskRepository, _TaskRepository, DetailProcessingTaskRepository, capability, diarizationEnabled, dispose (+35 more)
 
 ### Community 21 - "meeting_detail_view_test.dart"
 Cohesion: 0.05
-Nodes (41): SqfliteDiarizationPreferenceRepository, DiarizationPreferenceRepository, package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart, package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart, required String id,
+Nodes (37): package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart, package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart, required String id,
   TranscriptSnapshotStatus, SpeakerDiarizationRunner? diarization,
-  bool, ../../../../../support/final_transcription_fakes.dart, _DiarizationPreference (+33 more)
+  bool, ../../../../../support/final_transcription_fakes.dart, available, capability, diarizationEnabled (+29 more)
 
-### Community 22 - "app_ui_previews.dart"
-Cohesion: 0.10
-Nodes (21): @Preview, ../../../../app/application.dart, app_page_body.dart, app_state_panel.dart, app_status_notice.dart, appEmptyStatePreview, appErrorStatePreview, appStatusNoticesDarkPreview (+13 more)
+### Community 22 - "meeting_detail_previews.dart"
+Cohesion: 0.05
+Nodes (41): @Preview, ../../../../app/application.dart, app_page_body.dart, app_state_panel.dart, app_status_notice.dart, delete, getById, listByMeeting (+33 more)
 
 ### Community 23 - "meeting_detail_view.dart"
-Cohesion: 0.05
-Nodes (51): SpeakerLabelGroup, _confirmingDelete, _controller, detail, duration, editing, _evidenceKeys, group (+43 more)
+Cohesion: 0.03
+Nodes (70): SpeakerLabelGroup, _AudioCard, _confirmingDelete, _controller, detail, _DiarizationCard, duration, editing (+62 more)
 
 ### Community 24 - "recording_session_view.dart"
-Cohesion: 0.04
-Nodes (45): duration, _durationLabel, emphasized, enabled, finalizing, hours, icon, _isActive (+37 more)
+Cohesion: 0.05
+Nodes (43): duration, _durationLabel, emphasized, enabled, finalizing, hours, icon, _isActive (+35 more)
 
 ### Community 25 - "generate_summary_test.dart"
 Cohesion: 0.05
 Nodes (41): _PreviewSummaryRepository, SqfliteSummaryRepository, Object? error,
   bool, package:meettrace/data/services/summary/summary_generation_service.dart, package:meettrace/domain/use_cases/generate_summary.dart, SummaryRepository, _SummaryService, active (+33 more)
 
-### Community 26 - "StatelessWidget"
-Cohesion: 0.04
-Nodes (52): _AudioCard, _DiarizationCard, _FactLine, _FailureCard, _MeetingFactRail, _ProcessingCard, _ProcessingStage, _ProcessingView (+44 more)
-
-### Community 27 - "package:flutter_test/flutter_test.dart"
+### Community 26 - "meettrace_startup_view.dart"
 Cohesion: 0.09
-Nodes (18): main, _recordingSeconds, package:flutter/foundation.dart, package:flutter_test/flutter_test.dart, package:integration_test/integration_test.dart, package:meettrace/data/services/audio/device_recording_storage_capacity.dart, package:meettrace/data/services/audio/record_pcm_audio_capture.dart, package:meettrace/data/services/audio/recording_checkpoint_store.dart (+10 more)
+Nodes (22): ../../../core/app_responsive.dart, body, build, completedMb, _CoreStartupContent, MeetTraceStartupErrorView, MeetTraceStartupView, message (+14 more)
+
+### Community 27 - "reliable_recording_test.dart"
+Cohesion: 0.14
+Nodes (11): main, _recordingSeconds, package:flutter/foundation.dart, package:integration_test/integration_test.dart, package:meettrace/data/services/audio/record_pcm_audio_capture.dart, package:meettrace/data/services/audio/reliable_recording_service.dart, package:meettrace/data/services/audio/spike/recording_continuity_metrics.dart, package:path_provider/path_provider.dart (+3 more)
 
 ### Community 28 - "recording_session_view_model.dart"
 Cohesion: 0.05
@@ -573,28 +566,28 @@ Nodes (38): DownloadableModelProgress, active, activeVersions, bytesByUrl, calls
 
 ### Community 30 - "speaker_diarization_coordinator_test.dart"
 Cohesion: 0.05
-Nodes (40): SpeakerDiarizationRunner, SpeakerDiarizationCoordinator, package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart, package:meettrace/data/services/diarization/speaker_diarization_service.dart, package:meettrace/domain/models/speaker_diarization.dart, _TaskRepository, available, calls (+32 more)
+Nodes (44): _PreviewTranscriptRepository, SqfliteTranscriptRepository, package:meettrace/data/services/diarization/speaker_diarization_coordinator.dart, package:meettrace/data/services/diarization/speaker_diarization_service.dart, package:meettrace/domain/models/speaker_diarization.dart, _TaskRepository, _TranscriptRepository, available (+36 more)
 
 ### Community 31 - "recording_session_view_test.dart"
 Cohesion: 0.05
 Nodes (36): DecoratedBox, package:meettrace/ui/features/meetings/views/recording/recording_session_view.dart, _PreviewSession, _RecordingService, audioLevelChanges, _audioLevels, canFinalize, _changes (+28 more)
 
-### Community 32 - "../../../../domain/models/asr_model_registry.dart"
-Cohesion: 0.08
-Nodes (24): ../../../../domain/models/asr_model_registry.dart, ../../../../../domain/models/processing_task.dart, ../../../domain/ports/runtime_asset_preparation.dart, _appDatabase, _enabledKey, getEnabled, setEnabled, _appDatabase (+16 more)
+### Community 32 - "class"
+Cohesion: 0.05
+Nodes (42): class, ../../../../domain/models/asr_model_registry.dart, ../../domain/models/model_usage_lease.dart, ../../../../../domain/models/processing_task.dart, ../../../domain/ports/runtime_asset_preparation.dart, ../../../domain/ports/summary_generation.dart, _appDatabase, _enabledKey (+34 more)
 
-### Community 33 - "class"
-Cohesion: 0.07
-Nodes (26): class, ../../../../../domain/use_cases/check_meeting_readiness.dart, DeviceRecordingStorageCapacityProvider, freeSpace, getFreeBytes, captureFactory, check, DeviceRecordingReadinessProbe (+18 more)
+### Community 33 - "typedef"
+Cohesion: 0.20
+Nodes (9): ../../../../../domain/use_cases/check_meeting_readiness.dart, captureFactory, check, DeviceRecordingReadinessProbe, PcmAudioCaptureFactory, storageCapacity, RecordingDeviceReadinessProbe, _DeviceProbe (+1 more)
 
 ### Community 34 - "run_speaker_diarization.dart"
-Cohesion: 0.07
-Nodes (32): ../../../domain/models/audio_source.dart, ../../../../../domain/models/speaker_diarization.dart, capability, diarize, UnavailableSpeakerDiarizationService, capability, diarize, process (+24 more)
+Cohesion: 0.06
+Nodes (36): ../../../domain/models/audio_source.dart, ../../../../../domain/models/speaker_diarization.dart, capability, diarize, UnavailableSpeakerDiarizationService, capability, diarize, process (+28 more)
 
 ### Community 35 - "asr_preview_coordinator_test.dart"
-Cohesion: 0.06
-Nodes (34): package:meettrace/data/services/asr/asr_preview_coordinator.dart, required _ScriptedVad vad,
-  int, accept, acceptAudio, acceptCalls, cancel, canceled, _chunk (+26 more)
+Cohesion: 0.05
+Nodes (37): package:meettrace/data/services/asr/asr_preview_coordinator.dart, package:meettrace/domain/models/asr_preview.dart, package:meettrace/domain/use_cases/plan_asr_preview_windows.dart, required _ScriptedVad vad,
+  int, accept, acceptAudio, acceptCalls, cancel (+29 more)
 
 ### Community 36 - "recording_session_view_model_test.dart"
 Cohesion: 0.06
@@ -609,8 +602,8 @@ Cohesion: 0.12
 Nodes (15): package:meettrace/data/services/vad/silero_vad_segmenter.dart, SpeechSegment get, acceptedSampleCounts, acceptWaveform, flush, flushCalls, free, freeCalls (+7 more)
 
 ### Community 39 - "dart:io"
-Cohesion: 0.09
-Nodes (24): dart:io, Directory, AppFileLayout, commit, DurableFileCommitException, DurableFileCommitter, message, toString (+16 more)
+Cohesion: 0.07
+Nodes (29): dart:io, Directory, AppFileLayout, commit, DurableFileCommitException, DurableFileCommitter, message, toString (+21 more)
 
 ### Community 40 - "meeting_list_view_model.dart"
 Cohesion: 0.07
@@ -618,15 +611,15 @@ Nodes (29): ../../../../core/view_state.dart, canDeleteMeeting, checking, _check
 
 ### Community 41 - "meettrace_flow.dart"
 Cohesion: 0.06
-Nodes (35): ../data/services/storage/app_database.dart, build, createState, _dependencies, didChangeAppLifecycleState, dispose, initState, _loading (+27 more)
+Nodes (32): ../data/services/storage/app_database.dart, build, createState, _dependencies, didChangeAppLifecycleState, dispose, initState, _loading (+24 more)
 
 ### Community 42 - "summary_generation.dart"
 Cohesion: 0.08
 Nodes (25): actionItems, available, capability, code, evidenceSegmentIds, generate, GeneratedSummaryDraft, GeneratedSummaryItem (+17 more)
 
 ### Community 43 - "storage_mappers.dart"
-Cohesion: 0.13
-Nodes (14): ../../../../../domain/models/workflow_states.dart, _date, fromMillisecondsSinceEpoch, meetingFromRow, meetingToRow, modelInstallationFromRow, modelInstallationToRow, _nullableDate (+6 more)
+Cohesion: 0.07
+Nodes (26): ../../../../domain/models/model_installation.dart, ../../../../../domain/models/workflow_states.dart, _date, fromMillisecondsSinceEpoch, meetingFromRow, meetingToRow, modelInstallationFromRow, modelInstallationToRow (+18 more)
 
 ### Community 44 - "meettrace_startup_view_test.dart"
 Cohesion: 0.05
@@ -634,11 +627,11 @@ Nodes (37): FCircularProgress, FDeterminateProgress, SqfliteRuntimeDownloadConse
 
 ### Community 45 - "recording_audio_waveform.dart"
 Cohesion: 0.07
-Nodes (29): AnimationController, CustomPainter, active, baseline, build, _controller, createState, didUpdateWidget (+21 more)
+Nodes (27): AnimationController, CustomPainter, active, baseline, build, _controller, createState, didUpdateWidget (+19 more)
 
 ### Community 46 - "revise_final_transcript.dart"
-Cohesion: 0.11
-Nodes (18): code, execute, meeting, meetings, _normalizedSpeaker, _revisedSegment, ReviseFinalTranscriptUseCase, segmentId (+10 more)
+Cohesion: 0.08
+Nodes (26): Meeting, TranscriptSnapshot, FinalTranscriptionProgressCallback, FinalTranscriptionResult, meeting, snapshot, transcribe, code (+18 more)
 
 ### Community 47 - "MeetingRepository"
 Cohesion: 0.08
@@ -657,8 +650,8 @@ Cohesion: 0.07
 Nodes (29): activateFinalTranscript, activeSummaryId, activeTranscriptSnapshotId, audioDurationMs, audioPath, beginFinalTranscription, changeRecordingModel, _copyWith (+21 more)
 
 ### Community 51 - "local_data_control_service_test.dart"
-Cohesion: 0.17
-Nodes (11): package:meettrace/data/repositories/repository_contracts.dart, package:meettrace/data/services/storage/local_data_control_service.dart, delete, getById, layout, main, _Meetings, save (+3 more)
+Cohesion: 0.10
+Nodes (18): _PreviewInstallations, ModelInstallationRepository, package:meettrace/data/repositories/repository_contracts.dart, package:meettrace/data/services/audio/device_recording_storage_capacity.dart, package:meettrace/data/services/models/platform_download_preflight_providers.dart, package:meettrace/data/services/storage/device_free_space_service.dart, package:meettrace/data/services/storage/local_data_control_service.dart, main (+10 more)
 
 ### Community 52 - "pcm_evidence_playback_service.dart"
 Cohesion: 0.08
@@ -670,7 +663,7 @@ Nodes (15): _PreviewMeetingReadinessChecker, check, CheckMeetingReadinessUseCase
 
 ### Community 54 - "recording_previews.dart"
 Cohesion: 0.07
-Nodes (27): audioLevelChanges, canFinalize, _changes, delete, dispose, duration, _events, flush (+19 more)
+Nodes (26): audioLevelChanges, canFinalize, _changes, delete, dispose, duration, _events, flush (+18 more)
 
 ### Community 55 - "model_settings_view.dart"
 Cohesion: 0.06
@@ -693,24 +686,24 @@ Cohesion: 0.07
 Nodes (31): ../../../../../domain/models/asr_preview.dart, accept, acceptWaveform, bufferSizeInSeconds, config, _createOfficialVadRuntime, _detector, dispose (+23 more)
 
 ### Community 60 - "app_swipe_action_row.dart"
-Cohesion: 0.07
-Nodes (27): Key?, actionIcon, actionKey, actionLabel, AppSwipeActionRow, _AppSwipeActionRowState, build, child (+19 more)
+Cohesion: 0.08
+Nodes (25): Key?, actionIcon, actionKey, actionLabel, build, child, _closeDuration, _controller (+17 more)
 
 ### Community 61 - "start_meeting_view_model.dart"
 Cohesion: 0.07
-Nodes (27): ../../../../../domain/use_cases/start_meeting.dart, _applyInstallations, _availableVersions, _defaultModelId, dispose, _disposed, _errorMessage, firstIssue (+19 more)
+Nodes (28): ../../../../../domain/ports/asr_engine.dart, ../../../../../domain/use_cases/start_meeting.dart, _applyInstallations, _availableVersions, _defaultModelId, dispose, _disposed, _errorMessage (+20 more)
 
 ### Community 62 - "sherpa_onnx_asr_engine_factory_test.dart"
 Cohesion: 0.06
-Nodes (34): AsrEngineException, _MemoryInstallations, _MemoryLeases, package:meettrace/data/services/asr/sense_voice_asr_engine.dart, package:meettrace/data/services/asr/sherpa_onnx_asr_engine_factory.dart, configs, create, descriptor (+26 more)
+Nodes (32): SqfliteModelUsageLeaseRepository, ModelUsageLeaseRepository, _MemoryInstallations, _MemoryLeases, package:meettrace/data/services/asr/sherpa_onnx_asr_engine_factory.dart, package:meettrace/domain/models/model_usage_lease.dart, _activeVersions, changes (+24 more)
 
 ### Community 63 - "build_meeting_share.dart"
 Cohesion: 0.08
 Nodes (24): buffer, BuildMeetingShareUseCase, execute, fileName, _markdown, MeetingShareDocument, MeetingShareFormat, minutes (+16 more)
 
 ### Community 64 - "repositories.dart"
-Cohesion: 0.08
-Nodes (23): abstract interface class, delete, deleteAndDeactivate, deleteExpired, getActiveVersion, getById, getDefaultModelId, getEnabled (+15 more)
+Cohesion: 0.07
+Nodes (27): abstract interface class, SqfliteDiarizationPreferenceRepository, delete, deleteAndDeactivate, deleteExpired, DiarizationPreferenceRepository, getActiveVersion, getById (+19 more)
 
 ### Community 65 - "runtime_initialization_view_model.dart"
 Cohesion: 0.11
@@ -726,11 +719,11 @@ Nodes (23): actionItems, createdAt, endMs, evidence, id, isPendingReview, keyPoi
 
 ### Community 68 - "final_transcription_fakes.dart"
 Cohesion: 0.08
-Nodes (23): >, SqfliteProcessingTaskRepository, ProcessingTaskRepository, package:meettrace/data/services/asr/final_transcription_service.dart, _TaskRepository, _TaskRepository, calls, delete (+15 more)
+Nodes (24): >, _PendingTranscriptionRunner, _UnavailableTranscriptionRunner, FinalTranscriptionRunner, FinalTranscriptionService, package:meettrace/data/services/asr/final_transcription_service.dart, package:meettrace/domain/models/summary.dart, main (+16 more)
 
-### Community 69 - "Meeting"
-Cohesion: 0.15
-Nodes (12): _PendingTranscriptionRunner, _UnavailableTranscriptionRunner, Meeting, TranscriptSnapshot, FinalTranscriptionProgressCallback, FinalTranscriptionResult, FinalTranscriptionRunner, meeting (+4 more)
+### Community 69 - "State"
+Cohesion: 0.11
+Nodes (26): _ResultActionsCard, _ResultActionsCardState, _SpeakerLabelEditor, _SpeakerLabelEditorState, _TranscriptCard, _TranscriptCardState, MeetingListContent, _MeetingListContentState (+18 more)
 
 ### Community 70 - "pcm_evidence_playback_service_test.dart"
 Cohesion: 0.18
@@ -741,16 +734,16 @@ Cohesion: 0.09
 Nodes (22): Float32List, AsrPreviewMetrics, AsrPreviewWindow, audioDurationMs, droppedPreviewWindows, endMs, endSample, groupId (+14 more)
 
 ### Community 72 - "generate_summary.dart"
-Cohesion: 0.06
-Nodes (30): ../../../domain/ports/summary_generation.dart, capability, generate, UnavailableSummaryGenerationService, SummaryGenerationService, _buildEvidence, _buildItems, _buildRequest (+22 more)
+Cohesion: 0.07
+Nodes (26): UnavailableSummaryGenerationService, SummaryGenerationService, _buildEvidence, _buildItems, _buildRequest, _buildSummary, capability, code (+18 more)
 
 ### Community 73 - "domain_ports_test.dart"
-Cohesion: 0.08
-Nodes (22): package:meettrace/data/services/asr/asr_engine.dart, package:meettrace/domain/models/audio_source.dart, main, acceptAudio, cancel, create, delete, descriptor (+14 more)
+Cohesion: 0.10
+Nodes (20): package:meettrace/domain/models/audio_source.dart, acceptAudio, cancel, create, delete, descriptor, deviceRisk, deviceRisks (+12 more)
 
-### Community 74 - "main.dart"
-Cohesion: 0.12
-Nodes (13): enableAppEdgeToEdge, main, appSystemUiOverlayStyle, base, copyWith, enableAppEdgeToEdge, _transparentSystemBar, MethodCall (+5 more)
+### Community 74 - "system_ui.dart"
+Cohesion: 0.20
+Nodes (8): appSystemUiOverlayStyle, base, copyWith, enableAppEdgeToEdge, _transparentSystemBar, MethodCall, package:flutter/services.dart, main
 
 ### Community 75 - "app_ledger.dart"
 Cohesion: 0.09
@@ -761,9 +754,8 @@ Cohesion: 0.10
 Nodes (20): AnimatedContainer, FTappable, package:meettrace/ui/features/meetings/view_models/list/meeting_list_view_model.dart, RotationTransition, _changes, commit, delete, deleted (+12 more)
 
 ### Community 77 - "package:meettrace/domain/models/workflow_states.dart"
-Cohesion: 0.10
-Nodes (18): package:meettrace/domain/models/meeting.dart, package:meettrace/domain/models/summary.dart, package:meettrace/domain/models/transcript.dart, package:meettrace/domain/models/workflow_states.dart, package:meettrace/domain/use_cases/build_meeting_share.dart, String? activeSummaryId,
-  MeetingState, main, _meeting (+10 more)
+Cohesion: 0.07
+Nodes (29): SqfliteModelPreferenceRepository, InvalidStateTransitionException, ModelPreferenceRepository, package:meettrace/domain/models/meeting.dart, package:meettrace/domain/models/workflow_states.dart, package:meettrace/domain/ports/asr_engine.dart, package:meettrace/domain/use_cases/build_meeting_share.dart, package:meettrace/domain/use_cases/start_meeting.dart (+21 more)
 
 ### Community 78 - "android_proc_asr_device_risk_monitor.dart"
 Cohesion: 0.10
@@ -787,7 +779,7 @@ Nodes (18): app_database.dart, ../audio/recording_checkpoint_store.dart, durable
 
 ### Community 83 - "manage_recording_session.dart"
 Cohesion: 0.14
-Nodes (13): cause, _errorCode, finish, ManageRecordingSessionUseCase, meeting, meetings, preview, recording (+5 more)
+Nodes (13): cause, _errorCode, finish, ManageRecordingSessionException, ManageRecordingSessionUseCase, meeting, meetings, preview (+5 more)
 
 ### Community 84 - "recording.dart"
 Cohesion: 0.10
@@ -801,10 +793,10 @@ Nodes (19): createBaseDirectories, databaseDirectory, databasePath, forApplicati
 Cohesion: 0.11
 Nodes (18): bytes, files, installationType, license, minAppVersion, modelId, ModelLicense, ModelManifest (+10 more)
 
-### Community 87 - "transcript_test.dart"
-Cohesion: 0.20
-Nodes (9): required TranscriptSnapshotStatus status,
-  List, endMs, main, modelId, _segment, segments, _snapshot, snapshotId (+1 more)
+### Community 87 - "package:meettrace/domain/models/transcript.dart"
+Cohesion: 0.18
+Nodes (10): package:meettrace/domain/models/transcript.dart, required TranscriptSnapshotStatus status,
+  List, endMs, main, modelId, _segment, segments, _snapshot (+2 more)
 
 ### Community 88 - "meeting_list_view_model_test.dart"
 Cohesion: 0.10
@@ -815,16 +807,16 @@ Cohesion: 0.11
 Nodes (18): app_file_layout.dart, _PreviewStagedMeetingDeletion, ../../../../../domain/use_cases/delete_meeting.dart, commit, _DirectoryStagedMeetingDeletion, layout, meetingsRoot, _NoopStagedMeetingDeletion (+10 more)
 
 ### Community 90 - "sherpa_onnx_adapter_test.dart"
-Cohesion: 0.10
-Nodes (19): Completer, package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart, _activeRecognitions, config, create, createdWorkers, dispose, disposeCalls (+11 more)
+Cohesion: 0.08
+Nodes (24): Completer, Object?, package:meettrace/domain/models/app_failure.dart, _activeRecognitions, config, create, createdWorkers, dispose (+16 more)
 
 ### Community 91 - "sqflite_repositories_test.dart"
-Cohesion: 0.07
-Nodes (28): DomainInvariantViolation, message, toString, ResolveMeetingModelSelection, package:meettrace/data/repositories/sqflite_summary_repository.dart, package:meettrace/domain/models/asr_model.dart, package:meettrace/domain/models/domain_exception.dart, package:meettrace/domain/models/model_installation.dart (+20 more)
+Cohesion: 0.06
+Nodes (32): SqfliteModelInstallationRepository, UnsupportedAlphaInstallationException, ActiveModelInstallationRepository, package:meettrace/data/repositories/sqflite_model_installation_repository.dart, package:meettrace/data/repositories/sqflite_model_usage_lease_repository.dart, package:meettrace/data/repositories/sqflite_summary_repository.dart, package:meettrace/data/services/storage/app_database.dart, package:sqflite_common_ffi/sqflite_ffi.dart (+24 more)
 
 ### Community 92 - "models/speaker_diarization.dart"
 Cohesion: 0.11
-Nodes (18): available, code, endMs, errorCode, isAvailable, reasonCode, snapshot, SpeakerDiarizationCapability (+10 more)
+Nodes (17): available, code, endMs, errorCode, isAvailable, reasonCode, snapshot, SpeakerDiarizationCapability (+9 more)
 
 ### Community 93 - "run_final_transcription.dart"
 Cohesion: 0.11
@@ -834,9 +826,9 @@ Nodes (17): code, engineFactory, _errorCode, FinalTranscriptionSnapshotIdFactory
 Cohesion: 0.13
 Nodes (19): 自适应会议主从布局, 事实音频正在本机持续写入, 四场会议台账列表, 推理变慢或失败不会中断录音, 事实音频本地优先, 会迹平板端会议主从界面, 本场模型锁定, 会议开始时间与录音时长 (+11 more)
 
-### Community 95 - "meeting_detail_previews.dart"
-Cohesion: 0.10
-Nodes (20): delete, getById, listByMeeting, save, saveAndActivate, saveFinalAndActivate, _standard, transcribe (+12 more)
+### Community 95 - "startup_recovery_service_test.dart"
+Cohesion: 0.15
+Nodes (12): StartupRecoveryService, package:meettrace/data/repositories/sqflite_processing_task_repository.dart, package:meettrace/data/services/storage/startup_recovery_service.dart, package:meettrace/domain/models/processing_task.dart, database, layout, main, meetings (+4 more)
 
 ### Community 96 - "recording_bootstrap_view.dart"
 Cohesion: 0.12
@@ -846,21 +838,21 @@ Nodes (17): Animation, ../../../../core/app_state_panel.dart, build, createState
 Cohesion: 0.14
 Nodes (13): actionLabel, AppStatePanel, _AppStatePanelKind, build, empty, error, icon, _kind (+5 more)
 
-### Community 98 - "List"
-Cohesion: 0.13
-Nodes (15): DownloadableModelException, ModelFileDownloader, HttpModelFileDownloader, List, package:meettrace/data/services/models/downloadable_model_service.dart, package:meettrace/data/services/models/http_model_file_downloader.dart, _FakeDownloader, main (+7 more)
+### Community 98 - "package:path/path.dart"
+Cohesion: 0.10
+Nodes (19): DownloadableModelException, ModelFileDownloader, download, HttpModelFileDownloader, requireHttps, ModelManifestEntry, package:meettrace/data/services/models/model_file_verifier.dart, package:meettrace/domain/models/model_manifest.dart (+11 more)
 
-### Community 99 - "asr_model_option.dart"
-Cohesion: 0.15
-Nodes (12): ../../../../domain/models/model_installation.dart, AsrModelOption, AsrModelUiStatus, descriptor, fromInstallation, isInstalled, lastErrorCode, ModelMaintenanceActions (+4 more)
+### Community 99 - "device_free_space_service.dart"
+Cohesion: 0.22
+Nodes (8): _bytesPerMebibyte, FreeDiskSpaceInMebibytesReader, getFreeBytes, getFreeDiskSpaceForPath, _readApplicationSupportVolume, reader, supportDirectory, package:disk_space_2/disk_space_2.dart
 
 ### Community 100 - "plan_asr_preview_windows.dart"
 Cohesion: 0.11
 Nodes (17): asrPreviewContextAfterMs, asrPreviewContextBeforeMs, asrPreviewMaximumWindowMs, asrPreviewSampleRate, asrPreviewWindowOverlapMs, AsrPreviewWindowPlanner, contextAfterMs, contextBeforeMs (+9 more)
 
 ### Community 101 - "local_data_control_service.dart"
-Cohesion: 0.12
-Nodes (15): _PreviewInstallations, device_free_space_service.dart, ../../../../domain/models/data_control.dart, ../../../../domain/ports/local_data_control.dart, buildDiagnostics, freeSpace, installations, layout (+7 more)
+Cohesion: 0.11
+Nodes (17): device_free_space_service.dart, ../../../../domain/models/data_control.dart, ../../../../domain/ports/local_data_control.dart, buildDiagnostics, freeSpace, installations, layout, LocalDataControlService (+9 more)
 
 ### Community 102 - "meeting_list_previews.dart"
 Cohesion: 0.12
@@ -871,8 +863,8 @@ Cohesion: 0.12
 Nodes (16): check_meeting_readiness.dart, engine, engineFactory, execute, meeting, meetings, readiness, readinessChecker (+8 more)
 
 ### Community 104 - "delete_meeting.dart"
-Cohesion: 0.18
-Nodes (10): commit, DeleteMeetingUseCase, execute, files, MeetingFileDeletionService, meetings, rollback, stage (+2 more)
+Cohesion: 0.17
+Nodes (11): commit, DeleteMeetingUseCase, execute, files, MeetingFileDeletionService, meetings, rollback, stage (+3 more)
 
 ### Community 105 - "pcm_audio_level_meter.dart"
 Cohesion: 0.12
@@ -883,12 +875,12 @@ Cohesion: 0.12
 Nodes (15): Duration get, audioLevelChanges, canFinalize, cause, code, duration, message, pause (+7 more)
 
 ### Community 107 - "workflow_states.dart"
-Cohesion: 0.15
-Nodes (16): Enum, canTransitionTo, from, InvalidStateTransitionException, machine, MeetingState, MeetingStateTransition, ModelInstallationState (+8 more)
+Cohesion: 0.16
+Nodes (15): Enum, canTransitionTo, from, machine, MeetingState, MeetingStateTransition, ModelInstallationState, ModelInstallationStateTransition (+7 more)
 
 ### Community 108 - "sqflite_model_installation_repository.dart"
-Cohesion: 0.11
-Nodes (16): _appDatabase, _changes, deleteAndDeactivate, dispose, getActiveVersion, listAll, row, save (+8 more)
+Cohesion: 0.15
+Nodes (12): _appDatabase, _changes, deleteAndDeactivate, dispose, getActiveVersion, listAll, row, save (+4 more)
 
 ### Community 109 - "sqflite_summary_repository.dart"
 Cohesion: 0.12
@@ -903,8 +895,8 @@ Cohesion: 0.09
 Nodes (21): @pragma, flutter_foreground_recording_lifecycle.dart, meetTraceRecordingForegroundCallback, onDestroy, onRepeatEvent, onStart, _RecordingKeepAliveTaskHandler, _recordingServiceId (+13 more)
 
 ### Community 112 - "Stream"
-Cohesion: 0.25
-Nodes (7): AsrPreviewMetrics get, dispose, events, flush, metrics, metricsChanges, Stream
+Cohesion: 0.13
+Nodes (15): AsrPreviewMetrics get, _PreviewSession, AsrPreviewCoordinator, AsrPreviewState, AsrPreviewSession, dispose, events, flush (+7 more)
 
 ### Community 113 - "Android + iOS 自适应范围"
 Cohesion: 0.67
@@ -915,16 +907,16 @@ Cohesion: 0.12
 Nodes (15): ../../domain/models/domain_exception.dart, ../../../../../domain/models/summary.dart, ../../../../../domain/models/transcript.dart, _appDatabase, delete, getById, listByMeeting, row (+7 more)
 
 ### Community 115 - "resolve_meeting_model_selection.dart"
-Cohesion: 0.15
-Nodes (12): _availableVersion, call, fallbackReason, MeetingModelSelection, recordingModelId, recordingModelLanguage, recordingModelUseInverseTextNormalization, recordingModelVersion (+4 more)
+Cohesion: 0.17
+Nodes (11): _availableVersion, call, fallbackReason, MeetingModelSelection, recordingModelId, recordingModelLanguage, recordingModelUseInverseTextNormalization, recordingModelVersion (+3 more)
 
 ### Community 116 - "会迹手机端会议首页（有数据状态）"
 Cohesion: 0.17
 Nodes (16): 事实音频已保存, 事实音频本地保存为准, 会议日期、时间与时长元数据, 会迹（MeetTrace）应用标识, 离线转录恢复检查, 会迹手机端会议首页（有数据状态）, 处理失败但事实音频已保存, 产品 Alpha 评审 (+8 more)
 
 ### Community 117 - "dart:typed_data"
-Cohesion: 0.18
-Nodes (10): AudioRecorder, dart:typed_data, dispose, hasPermission, meettracePcmRecordConfig, pause, _recorder, resume (+2 more)
+Cohesion: 0.13
+Nodes (14): AudioRecorder, dart:typed_data, dispose, hasPermission, meettracePcmRecordConfig, pause, _recorder, RecordPcmAudioCapture (+6 more)
 
 ### Community 118 - "_"
 Cohesion: 0.15
@@ -934,17 +926,17 @@ Nodes (15): ../../../domain/models/app_failure.dart, _, _bindings, failed, failu
 Cohesion: 0.17
 Nodes (11): 10. 验证, 1. 目标, 2. 固定资源, 3. 分层和依赖, 4. 初始化状态机, 5. 下载一致性, 6. SenseVoice Engine, 7. 会议锁定与数据库 (+3 more)
 
-### Community 120 - "../../../../../domain/models/asr_model.dart"
-Cohesion: 0.15
-Nodes (12): ../../../../../domain/models/asr_model.dart, ../../../domain/models/model_manifest.dart, DownloadableModelService, download, isReadyFast, prepare, RuntimeAsrModelInstaller, RuntimeVadInstaller (+4 more)
+### Community 120 - "List"
+Cohesion: 0.22
+Nodes (8): List, package:meettrace/domain/models/meeting_readiness.dart, package:meettrace/domain/use_cases/check_meeting_readiness.dart, check, freeBytes, main, microphonePermissionGranted, permissionRequests
 
 ### Community 121 - "delete_meeting_test.dart"
 Cohesion: 0.13
 Nodes (14): package:meettrace/domain/use_cases/delete_meeting.dart, commit, delete, deleted, events, failDelete, getById, main (+6 more)
 
-### Community 122 - "package:meettrace/domain/models/asr_model_registry.dart"
-Cohesion: 0.11
-Nodes (18): package:meettrace/domain/models/asr_model_registry.dart, package:meettrace/domain/models/meeting_readiness.dart, package:meettrace/domain/use_cases/check_meeting_readiness.dart, package:meettrace/ui/core/asr_model_option.dart, package:meettrace/ui/features/settings/view_models/model_settings_view_model.dart, package:meettrace/ui/features/settings/views/model_settings_view.dart, ../../../../support/model_selection_fakes.dart, _descriptor (+10 more)
+### Community 122 - "package:flutter_test/flutter_test.dart"
+Cohesion: 0.12
+Nodes (17): package:flutter_test/flutter_test.dart, package:meettrace/domain/models/asr_model.dart, package:meettrace/domain/models/asr_model_registry.dart, package:meettrace/domain/models/model_installation.dart, package:meettrace/ui/core/asr_model_option.dart, package:meettrace/ui/features/settings/view_models/model_settings_view_model.dart, package:meettrace/ui/features/settings/views/model_settings_view.dart, ../../../../support/model_selection_fakes.dart (+9 more)
 
 ### Community 123 - "会议事实说明区"
 Cohesion: 0.18
@@ -955,16 +947,17 @@ Cohesion: 0.17
 Nodes (15): Forui-First UI Policy, View-ViewModel-Use Case-Port-Repository-Service Architecture, Repository Product Boundaries, MeetTrace Repository Guide, Adaptive Native Mobile and Tablet Layout, MeetTrace Design System, MeetTrace Alpha Codex Implementation Plan, MeetTrace Android and iOS Alpha PRD V0.6 (+7 more)
 
 ### Community 125 - "app_status_notice.dart"
-Cohesion: 0.14
-Nodes (13): Color, IconData, AppStatusNotice, AppStatusTone, _AppStatusVisual, build, color, icon (+5 more)
+Cohesion: 0.08
+Nodes (22): Color, compact,
+  medium,, IconData, AppResponsiveBuilder, AppResponsiveWidgetBuilder, AppWindowSizeClass, build, builder (+14 more)
 
 ### Community 126 - "app_database.dart"
-Cohesion: 0.07
-Nodes (29): Database?, DatabaseFactory, AppDatabase, close, _createSchema, _createVersion1Schema, _createVersion2Schema, _createVersion3Schema (+21 more)
+Cohesion: 0.11
+Nodes (17): Database?, close, _createSchema, _createVersion1Schema, _createVersion2Schema, _createVersion3Schema, _createVersion4Schema, _database (+9 more)
 
 ### Community 127 - "model_file_verifier.dart"
-Cohesion: 0.15
-Nodes (12): issues, isValid, kind, message, ModelFileIssue, ModelFileIssueKind, ModelFileVerificationResult, ModelFileVerifier (+4 more)
+Cohesion: 0.08
+Nodes (22): File, issues, isValid, kind, message, ModelFileIssue, ModelFileIssueKind, ModelFileVerificationResult (+14 more)
 
 ### Community 128 - "processing_task.dart"
 Cohesion: 0.14
@@ -972,7 +965,7 @@ Nodes (13): createdAt, id, kind, lastErrorCode, leaseExpiresAt, meetingId, model
 
 ### Community 129 - "Exception"
 Cohesion: 0.20
-Nodes (10): Exception, _RemoteWorkerError, SherpaOnnxAdapterException, ModelDownloadCanceledException, ReliableRecordingException, SummaryGenerationServiceException, SummaryGenerationException, ManageRecordingSessionException (+2 more)
+Nodes (10): Exception, _RemoteWorkerError, SherpaOnnxAdapterException, ModelDownloadCanceledException, SpeakerDiarizationException, ReliableRecordingException, SummaryGenerationServiceException, SummaryGenerationException (+2 more)
 
 ### Community 130 - "Chronological Meeting Ledger"
 Cohesion: 0.23
@@ -987,20 +980,20 @@ Cohesion: 0.14
 Nodes (13): asr_model.dart, domain_exception.dart, AsrInstallationType, bytes, installationType, installedPath, lastErrorCode, modelId (+5 more)
 
 ### Community 133 - "sqflite_meeting_repository.dart"
-Cohesion: 0.17
-Nodes (11): ../../../../../domain/models/meeting.dart, _appDatabase, _changes, delete, dispose, getById, listAll, notifyChanged (+3 more)
+Cohesion: 0.15
+Nodes (12): ../../../../../domain/models/meeting.dart, _appDatabase, _changes, delete, dispose, getById, listAll, notifyChanged (+4 more)
 
 ### Community 134 - "evidence_playback.dart"
 Cohesion: 0.15
 Nodes (12): int?, code, dispose, endMs, errorCode, EvidencePlaybackState, EvidencePlaybackStatus, play (+4 more)
 
-### Community 135 - "start_meeting_view_model_test.dart"
-Cohesion: 0.12
-Nodes (15): SqfliteModelInstallationRepository, ActiveModelInstallationRepository, package:meettrace/domain/ports/asr_engine.dart, package:meettrace/domain/use_cases/start_meeting.dart, package:meettrace/ui/features/meetings/view_models/start/start_meeting_view_model.dart, _MemoryInstallations, _MemoryInstallations, TestActiveInstallations (+7 more)
+### Community 135 - "AsrEngine"
+Cohesion: 0.25
+Nodes (8): _PreviewAsrEngine, SenseVoiceAsrEngine, SherpaOnnxAsrEngine, AsrEngine, _FakeAsrEngine, _Engine, _FakeAsrEngine, TestAsrEngine
 
 ### Community 136 - "recording_device_readiness_probe_test.dart"
 Cohesion: 0.12
-Nodes (16): RecordPcmAudioCapture, PcmAudioCapture, package:meettrace/data/services/audio/recording_device_readiness_probe.dart, _Capture, dispose, disposeCalls, freeBytes, getFreeBytes (+8 more)
+Nodes (16): DeviceRecordingStorageCapacityProvider, RecordingStorageCapacityProvider, package:meettrace/data/services/audio/recording_device_readiness_probe.dart, _Capacity, dispose, disposeCalls, freeBytes, getFreeBytes (+8 more)
 
 ### Community 137 - "MeetTrace Phone Home Screen with Pressed Primary Action"
 Cohesion: 0.23
@@ -1011,8 +1004,8 @@ Cohesion: 0.21
 Nodes (13): 会迹品牌页头, 事实音频已保存状态, 事实音频本地优先, 单条会议账本, 会议日期时间与时长元数据, 移动端单栏首页布局, 底部固定开始会议主操作, 实时转录仅供参考 (+5 more)
 
 ### Community 139 - "platform_asr_device_risk_monitor.dart"
-Cohesion: 0.17
-Nodes (11): android_proc_asr_device_risk_monitor.dart, asr_engine.dart, AsrRiskPlatform, changes, createPlatformAsrDeviceRiskMonitor, _currentPlatform, _currentRss, inspect (+3 more)
+Cohesion: 0.12
+Nodes (15): android_proc_asr_device_risk_monitor.dart, asr_engine.dart, AndroidProcAsrDeviceRiskMonitor, AsrRiskPlatform, changes, createPlatformAsrDeviceRiskMonitor, _currentPlatform, _currentRss (+7 more)
 
 ### Community 140 - "Atomic Final Transcript Snapshot"
 Cohesion: 0.25
@@ -1030,9 +1023,9 @@ Nodes (11): AppFailure, code, diagnosticContext, FailureRecoverability, FailureS
 Cohesion: 0.17
 Nodes (11): AsrModelDescriptor, capabilities, displayName, installationType, language, modelId, requiredBytes, supportedLanguages (+3 more)
 
-### Community 144 - "AsrPreviewSession"
+### Community 144 - "platform_database_factory.dart"
 Cohesion: 0.29
-Nodes (8): _PreviewSession, AsrPreviewCoordinator, AsrPreviewState, AsrPreviewSession, Metrics, Segment, _PreviewSession, _PreviewSession
+Nodes (6): DatabaseFactory, createPlatformDatabaseFactory, _createWindowsFactory, databaseFactory, databaseFactoryFfi, _windowsDatabaseFactory
 
 ### Community 145 - "MeetTrace Flutter Package Manifest"
 Cohesion: 0.15
@@ -1046,10 +1039,9 @@ Nodes (10): Duration, _bytesPerPcm16Sample, bytesWritten, channelCount, elapsed,
 Cohesion: 0.18
 Nodes (10): DateTime, acquiredAt, expiresAt, isActiveAt, leaseId, modelId, ModelUsageLease, ownerId (+2 more)
 
-### Community 148 - "../../../../theme/theme.dart"
-Cohesion: 0.10
-Nodes (18): AlignmentGeometry, compact,
-  medium,, EdgeInsetsGeometry?, alignment, AppPageBody, AppPageWidth, build, child (+10 more)
+### Community 148 - "main.dart"
+Cohesion: 0.33
+Nodes (5): enableAppEdgeToEdge, main, package:meettrace/app/meettrace_flow.dart, package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart, package:meettrace/theme/system_ui.dart
 
 ### Community 149 - "RecordingAudioWaveform"
 Cohesion: 0.18
@@ -1075,9 +1067,9 @@ Nodes (4): Pinned Silero VAD Asset Provenance, Silero VAD INT8 2025-07-11, Siler
 Cohesion: 0.29
 Nodes (7): Step 13 Meeting Main Flow and In-Meeting UI, Step 18 Evaluation and Release Gate, Step 19 iOS Parity and Dual-Platform Release, Alpha Step Dependency Chain, Android 16 Emulator Meeting-Flow Evidence, Independent Fact Recording and Preview Chains, Step 13 Meeting Main Flow and In-Meeting UI Evidence
 
-### Community 155 - "layer_boundaries_test.dart"
-Cohesion: 0.18
-Nodes (10): File, _dartFilesUnder, file, _ImportEntry, _importsUnder, main, path, pattern (+2 more)
+### Community 155 - "Q: 初始化页面 步骤2/4 是什么意思"
+Cohesion: 0.40
+Nodes (4): Answer, Outcome, Q: 初始化页面 步骤2/4 是什么意思, Source Nodes
 
 ### Community 156 - "APPLY_STANDARD_SETTINGS"
 Cohesion: 0.20
@@ -1096,36 +1088,24 @@ Cohesion: 0.50
 Nodes (4): Independent Android and iOS Acceptance, Blocked iOS and Dual-Platform Release, iPhone and iPad Validation Requirements, Current Android and iOS Implementation Status
 
 ### Community 160 - "_"
-Cohesion: 0.08
-Nodes (27): AsrDeviceRiskState get, AsrEngineMetrics get, _PreviewAsrEngine, _, acceptAudio, cancel, _core, descriptor (+19 more)
+Cohesion: 0.11
+Nodes (19): AsrDeviceRiskState get, AsrEngineMetrics get, _, acceptAudio, cancel, _core, descriptor, deviceRisk (+11 more)
 
 ### Community 161 - "增量架构优化"
 Cohesion: 0.22
 Nodes (9): Domain Port 边界, FinalTranscriptionService, GenerateSummaryUseCase, 增量架构优化, MeetingDetailViewModel, MeetTraceDependencies, RecordingSessionViewModel, Repository Contracts (+1 more)
 
-### Community 162 - "platform_asr_device_risk_monitor_test.dart"
-Cohesion: 0.29
-Nodes (7): AndroidProcAsrDeviceRiskMonitor, PortableAsrDeviceRiskMonitor, AsrDeviceRiskMonitor, package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart, package:meettrace/data/services/asr/platform_asr_device_risk_monitor.dart, main, _SupportedRiskMonitor
+### Community 162 - "sense_voice_asr_engine_test.dart"
+Cohesion: 0.11
+Nodes (16): AsrEngineException, package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor.dart, package:meettrace/data/services/asr/asr_engine.dart, package:meettrace/data/services/asr/platform_asr_device_risk_monitor.dart, package:meettrace/data/services/asr/sense_voice_asr_engine.dart, package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart, main, main (+8 more)
 
 ### Community 163 - "RecordingSessionService"
 Cohesion: 0.33
 Nodes (6): AudioLevel, _PreviewRecordingService, ReliableRecordingService, RecordingSessionService, _RecordingService, _RecordingService
 
-### Community 164 - "sqflite_model_usage_lease_repository.dart"
-Cohesion: 0.22
-Nodes (8): ../../domain/models/model_usage_lease.dart, _appDatabase, deleteExpired, _fromRow, listActive, release, save, _toRow
-
 ### Community 165 - "audio_source.dart"
 Cohesion: 0.33
 Nodes (5): AudioSource, channelCount, durationMs, path, sampleRate
-
-### Community 166 - "Object?"
-Cohesion: 0.22
-Nodes (7): Object?, package:meettrace/domain/models/app_failure.dart, error, initialize, initializeCalls, main, main
-
-### Community 167 - "TranscriptRepository"
-Cohesion: 0.25
-Nodes (8): _PreviewTranscriptRepository, SqfliteTranscriptRepository, _TranscriptRepository, _TranscriptRepository, _TranscriptRepository, _TranscriptRepository, DetailTranscriptRepository, TranscriptRepository
 
 ### Community 168 - "SenseVoice 初始化下载与发布门槛"
 Cohesion: 0.40
@@ -1191,10 +1171,6 @@ Nodes (6): 二次确认的永久会议删除, 会议删除事务数据范围, �
 Cohesion: 0.33
 Nodes (6): 录音连续性优先, RecordingPreviewDispatcher, RecordingSessionViewModel, 有界停止与后台清理, RecordPcmAudioCapture, ReliableRecordingService
 
-### Community 184 - "sqflite_model_lifecycle_repositories_test.dart"
-Cohesion: 0.12
-Nodes (14): SqfliteModelUsageLeaseRepository, ModelUsageLeaseRepository, package:meettrace/data/repositories/sqflite_model_installation_repository.dart, package:meettrace/data/repositories/sqflite_model_usage_lease_repository.dart, package:meettrace/domain/models/model_usage_lease.dart, database, _installation, installations (+6 more)
-
 ### Community 185 - "Q: https://github.com/moonshine-ai/moonshine"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: https://github.com/moonshine-ai/moonshine, Source Nodes
@@ -1250,10 +1226,6 @@ Nodes (4): Bounded ASR Preview Queue, Deterministic Overlap Transcript Merge, Re
 ### Community 198 - "语义化本地日期标签"
 Cohesion: 0.50
 Nodes (4): AppLedgerRow, 可注入参考时间, Meeting List View, 语义化本地日期标签
-
-### Community 199 - "package:meettrace/domain/models/asr_preview.dart"
-Cohesion: 0.50
-Nodes (3): package:meettrace/domain/models/asr_preview.dart, package:meettrace/domain/use_cases/plan_asr_preview_windows.dart, main
 
 ### Community 200 - "view_state_test.dart"
 Cohesion: 0.50
@@ -1324,12 +1296,8 @@ Cohesion: 0.67
 Nodes (3): AudioplayersDeviceAudioOutput, DeviceAudioOutput, _PlaybackOutput
 
 ### Community 221 - "platform_download_preflight_providers.dart"
-Cohesion: 0.12
-Nodes (16): Connectivity, downloadable_model_service.dart, DownloadNetworkStatusProvider, ModelStorageCapacityProvider, _connectivity, ConnectivityDownloadNetworkStatusProvider, DeviceStorageCapacityProvider, freeSpace (+8 more)
-
-### Community 222 - "local_data_control.dart"
-Cohesion: 0.33
-Nodes (5): LocalDataControlService, buildDiagnostics, LocalDataControlPort, measure, ../models/data_control.dart
+Cohesion: 0.10
+Nodes (19): Connectivity, downloadable_model_service.dart, freeSpace, getFreeBytes, DownloadNetworkStatusProvider, ModelStorageCapacityProvider, _connectivity, ConnectivityDownloadNetworkStatusProvider (+11 more)
 
 ### Community 223 - "Flutter macOS App Icon"
 Cohesion: 0.67
@@ -1363,28 +1331,24 @@ Nodes (3): Flutter Logo Mark, Flutter Maskable Web Icon (192×192), Maskable Ico
 Cohesion: 0.67
 Nodes (3): Flutter Web Bootstrap, 本地优先会议录音与端侧转录应用, MeetTrace Web Shell
 
-### Community 237 - "ModelPreferenceRepository"
-Cohesion: 0.67
-Nodes (3): SqfliteModelPreferenceRepository, ModelPreferenceRepository, TestModelPreferences
-
 ## Knowledge Gaps
-- **3114 isolated node(s):** `schemaVersion`, `minAppVersion`, `models`, `_recordingSeconds`, `main` (+3109 more)
+- **3116 isolated node(s):** `schemaVersion`, `minAppVersion`, `models`, `_recordingSeconds`, `main` (+3111 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **153 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Work-memory lessons
 
 **Preferred sources** — corroborated by past sessions; start here.
-- `meeting_list_view.dart` (7× useful, score=6.43140252)
-- `Qwen Memory and Latency Risk` (6× useful, score=5.728802153) _(code changed — re-verify)_
-- `AsrModelRegistry` (6× useful, score=5.728802153) _(code changed — re-verify)_
-- `theme.dart` (5× useful, score=4.535169708)
-- `Application` (5× useful, score=4.534387232)
-- `Step 01 Preliminary Conditional Go` (4× useful, score=3.831999343) _(code changed — re-verify)_
-- `Meeting` (4× useful, score=3.642700936) _(code changed — re-verify)_
-- `supportedLanguages` (3× useful, score=2.845249292) _(code changed — re-verify)_
-- `meeting_detail_view.dart` (3× useful, score=2.72192783)
-- `AppDatabase` (3× useful, score=2.716726667) _(code changed — re-verify)_
+- `AsrModelRegistry` (7× useful, score=6.36174873)
+- `meeting_list_view.dart` (7× useful, score=6.080258692)
+- `theme.dart` (5× useful, score=4.287557022)
+- `Application` (5× useful, score=4.286817268)
+- `Meeting` (4× useful, score=3.443815553)
+- `supportedLanguages` (3× useful, score=2.689903436)
+- `meeting_detail_view.dart` (3× useful, score=2.57331512)
+- `AppDatabase` (3× useful, score=2.568397932)
+- `SherpaOnnxAsrEngine` (2× useful, score=1.786449272)
+- `AppTimeRuler` (2× useful, score=1.747266742)
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -1392,13 +1356,13 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `_string` connect `wWinMain` to `use_cases/evaluate_alpha_release.dart`?**
   _High betweenness centrality (0.038) - this node is a cross-community bridge._
 - **What connects `schemaVersion`, `minAppVersion`, `models` to the rest of the system?**
-  _3114 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _3116 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `meeting_detail_view_model.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.017241379310344827 - nodes in this community are weakly interconnected._
 - **Should `asr_preview_coordinator.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.02631578947368421 - nodes in this community are weakly interconnected._
 - **Should `meettrace_dependencies.dart` be split into smaller, more focused modules?**
-  _Cohesion score 0.027777777777777776 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.028169014084507043 - nodes in this community are weakly interconnected._
 - **Should `sherpa_onnx_asr_engine.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.029411764705882353 - nodes in this community are weakly interconnected._
 - **Should `use_cases/evaluate_alpha_release.dart` be split into smaller, more focused modules?**

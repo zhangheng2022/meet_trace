@@ -2,8 +2,7 @@
 // Impeccable · page: startup · world: Evidence Ledger
 // THESIS: startup is a short, trustworthy local preparation state, not a blank
 // app shell or a decorative brand animation.
-// STORY: identify MeetTrace, explain the real local work, then reinforce the
-// local-only evidence promise.
+// STORY: identify MeetTrace, then explain the real local preparation work.
 
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
@@ -23,17 +22,12 @@ final class MeetTraceStartupView extends StatelessWidget {
   Widget build(BuildContext context) {
     final model = viewModel;
     if (model == null) {
-      return const _StartupFrame(
-        body: _CoreStartupContent(),
-        footer: _LocalEvidencePromise(),
-      );
+      return const _StartupFrame(body: _CoreStartupContent());
     }
     return ListenableBuilder(
       listenable: model,
-      builder: (context, _) => _StartupFrame(
-        body: _RuntimeStartupContent(viewModel: model),
-        footer: const _LocalEvidencePromise(),
-      ),
+      builder: (context, _) =>
+          _StartupFrame(body: _RuntimeStartupContent(viewModel: model)),
     );
   }
 }
@@ -58,15 +52,13 @@ final class MeetTraceStartupErrorView extends StatelessWidget {
       title: title,
       message: message,
     ),
-    footer: const _LocalEvidencePromise(),
   );
 }
 
 final class _StartupFrame extends StatelessWidget {
-  const _StartupFrame({required this.body, required this.footer});
+  const _StartupFrame({required this.body});
 
   final Widget body;
-  final Widget footer;
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +106,6 @@ final class _StartupFrame extends StatelessWidget {
                           },
                         ),
                       ),
-                      SizedBox(height: appStyle.spaceLg),
-                      footer,
                     ],
                   ),
                 ),
@@ -614,47 +604,6 @@ final class _Wordmark extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-final class _LocalEvidencePromise extends StatelessWidget {
-  const _LocalEvidencePromise();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    return Semantics(
-      container: true,
-      label: '无需登录，事实音频仅保存在本机',
-      child: Container(
-        key: const ValueKey('meettrace-startup-local-evidence'),
-        padding: EdgeInsets.only(top: appStyle.spaceMd),
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: theme.colors.border,
-              width: appStyle.dividerWidth,
-            ),
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(FLucideIcons.shieldCheck),
-            SizedBox(width: appStyle.spaceSm),
-            Expanded(
-              child: Text(
-                '无需登录 · 事实音频仅保存在本机',
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.app.inkSecondary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
