@@ -144,7 +144,7 @@ components:
     width: "100%"
 ---
 
-# Design System: 会迹 · MeetTrace
+# 会迹（MeetTrace）交互与视觉设计系统
 
 ## Overview
 

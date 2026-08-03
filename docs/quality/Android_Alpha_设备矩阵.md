@@ -1,6 +1,6 @@
-# Android Alpha 设备矩阵
+# 会迹（MeetTrace）Android Alpha 设备矩阵
 
-> 状态：仓库实现已完成；SenseVoice 目标真机发布证据阻塞
+> 状态：活动；SenseVoice 目标真机发布证据阻塞
 > 更新日期：2026-08-03
 
 ## 平台基线

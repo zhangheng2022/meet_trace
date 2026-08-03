@@ -2,7 +2,7 @@
 
 > 状态：阻塞，等待 macOS/Xcode 与真机证据
 > 更新日期：2026-08-03
-> 上游需求：[Android + iOS Alpha PRD V0.7](../会迹_MeetTrace_Alpha_PRD_无登录版.md)
+> 上游需求：[Android + iOS Alpha PRD V0.7](../product/Alpha_PRD_无登录版.md)
 
 ## 平台基线
 

@@ -27,7 +27,7 @@
 
 ## 阅读与维护规则
 
-- 产品范围与验收标准以[PRD V0.7](../会迹_MeetTrace_Alpha_PRD_无登录版.md)为准。
-- 资源分发、模型锁定、录音与推理边界以[端侧 SenseVoice 转录技术方案](../端侧SenseVoice转录技术方案.md)为准。
+- 产品范围与验收标准以[PRD V0.7](../product/Alpha_PRD_无登录版.md)为准。
+- 资源分发、模型锁定、录音与推理边界以[端侧 SenseVoice 转录技术方案](../technical/端侧_SenseVoice_转录技术方案.md)为准。
 - 当前质量结论必须同时给出命令、日期、环境和产物；没有目标设备证据时标记为 `blocked`，不能推断为通过。
 - 旧方案不在 `docs/` 并列保留，历史从 Git 追溯。

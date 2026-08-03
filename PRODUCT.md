@@ -1,4 +1,4 @@
-# Product
+# 会迹（MeetTrace）产品上下文
 
 <!-- impeccable:product-schema 1 -->
 
@@ -91,9 +91,9 @@ AI 总结质量。推理变慢、积压、失败或不可用时，录音必须�
 
 ## Evidence on Hand
 
-- `docs/会迹_MeetTrace_Alpha_PRD_无登录版.md`：Android + iOS Alpha 的范围、用户流程、
+- `docs/product/Alpha_PRD_无登录版.md`：Android + iOS Alpha 的范围、用户流程、
   功能需求与验收标准。
-- `docs/端侧SenseVoice转录技术方案.md`：录音、初始化下载、模型锁定、存储与降级边界。
+- `docs/technical/端侧_SenseVoice_转录技术方案.md`：录音、初始化下载、模型锁定、存储与降级边界。
 - `docs/quality/`：可靠录音、端侧 ASR、模型锁定、最终快照、证据链、数据控制和
   发布门禁的实施证据。
 - `DESIGN.md`：当前多页面视觉系统、机器可读令牌、组件规范与双平台自适应规则。

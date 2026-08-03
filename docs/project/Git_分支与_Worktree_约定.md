@@ -1,4 +1,4 @@
-# Git 分支与 Worktree 约定
+# 会迹（MeetTrace）Git 分支与 Worktree 约定
 
 > 状态：当前执行约定
 > 更新日期：2026-08-03

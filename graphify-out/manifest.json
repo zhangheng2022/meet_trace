@@ -1105,8 +1105,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1785519580.4466374,
-    "ast_hash": "5c47c3938821fa0064af2dcb161aeba0",
+    "mtime": 1785747145.2432215,
+    "ast_hash": "1c3efffc89cec0a9e3a89aa4440a21da",
     "semantic_hash": ""
   },
   "assets/licenses/paraformer-small-NOTICE.txt": {
@@ -1134,59 +1134,49 @@
     "ast_hash": "ce3d92b1a9ab353547f40b4bf7a53ef7",
     "semantic_hash": "ce3d92b1a9ab353547f40b4bf7a53ef7"
   },
-  "docs/Codex_Alpha_\u5f00\u53d1\u6b65\u9aa4.md": {
-    "mtime": 1785741562.5647938,
-    "ast_hash": "a6b2b56a86fb2df011a4830263fa9640",
-    "semantic_hash": ""
-  },
-  "docs/Git_\u5206\u652f\u4e0e_Worktree_\u7ea6\u5b9a.md": {
-    "mtime": 1785741610.1585193,
-    "ast_hash": "1528c67d991a540b4b6080be76678730",
-    "semantic_hash": ""
-  },
   "docs/README.md": {
-    "mtime": 1785741562.5642798,
-    "ast_hash": "367fd14a7368c488b79c7c7de0d151db",
+    "mtime": 1785747314.4819427,
+    "ast_hash": "33f472d5ca8e187963a1efc73af2a533",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
-    "mtime": 1785741562.5658274,
-    "ast_hash": "2b75b4a4da6054aa0da84b0659a48623",
+    "mtime": 1785747178.000876,
+    "ast_hash": "4a9ebe820fe070b0e918fa1485b5e0eb",
     "semantic_hash": ""
   },
   "docs/quality/Step_07_\u53ef\u9760\u5f55\u97f3\u4e0e\u5d29\u6e83\u6062\u590d.md": {
-    "mtime": 1785741610.1599102,
-    "ast_hash": "ccce40908723ad66b4e0519e21815a9b",
+    "mtime": 1785747178.0033805,
+    "ast_hash": "92dd773dac1a2a94f40d5a9c81adffe6",
     "semantic_hash": ""
   },
   "docs/quality/Step_12_Silero_VAD\u4e0e\u9884\u89c8\u961f\u5217.md": {
-    "mtime": 1785741562.566354,
-    "ast_hash": "bc88cb5863edd469d721645a8c1e7e8b",
+    "mtime": 1785747178.0033805,
+    "ast_hash": "e6a990ccbe5b1fdea45b50ec66aac2f7",
     "semantic_hash": ""
   },
   "docs/quality/Step_13_\u4f1a\u8bae\u4e3b\u94fe\u4e0e\u4f1a\u4e2d_UI.md": {
-    "mtime": 1785741610.1609168,
-    "ast_hash": "f14e301ef2868449bda9c4978c024f74",
+    "mtime": 1785747178.005128,
+    "ast_hash": "c3980d2f168e03577d7fcbe2afe39bb4",
     "semantic_hash": ""
   },
   "docs/quality/Step_14_\u6700\u7ec8\u8f6c\u5f55\u5feb\u7167.md": {
-    "mtime": 1785519968.7484815,
-    "ast_hash": "e587996012a310fa4d21bfd5206c2678",
+    "mtime": 1785747178.0056324,
+    "ast_hash": "f44c00256da66eb5074a8cdb86948d92",
     "semantic_hash": ""
   },
   "docs/quality/Step_15_\u8bf4\u8bdd\u4eba\u5206\u79bb\u964d\u7ea7.md": {
-    "mtime": 1785519968.7497842,
-    "ast_hash": "82cd277803ee8091527cb909747b5f97",
+    "mtime": 1785747178.0066345,
+    "ast_hash": "39e721ba3fa5e2c2b3ac8a7b71890576",
     "semantic_hash": ""
   },
   "docs/quality/Step_16_AI\u603b\u7ed3\u4e0e\u8bc1\u636e\u94fe.md": {
-    "mtime": 1785519968.7497842,
-    "ast_hash": "092955741763b155f21e3b038a42c8c7",
+    "mtime": 1785747178.0076313,
+    "ast_hash": "7cef0cadf9a5ebe616fab8041146db2d",
     "semantic_hash": ""
   },
   "docs/quality/Step_17_\u7ed3\u679c\u9875\u4e0e\u6570\u636e\u63a7\u5236.md": {
-    "mtime": 1785741610.1609168,
-    "ast_hash": "82b3bcb98123c558fe64da57141d5289",
+    "mtime": 1785747178.0076313,
+    "ast_hash": "f90d9b09567799f08730da9e97d630f3",
     "semantic_hash": ""
   },
   "forui.yaml": {
@@ -1290,23 +1280,18 @@
     "semantic_hash": "1805faa954524002751d0c567cdb8923"
   },
   "DESIGN.md": {
-    "mtime": 1785228163.1887136,
-    "ast_hash": "84310838d46c535f681531709a1de650",
-    "semantic_hash": "84310838d46c535f681531709a1de650"
+    "mtime": 1785747145.2426949,
+    "ast_hash": "f4b36d94ec1c78a6c8c8e26940b45685",
+    "semantic_hash": ""
   },
   "PRODUCT.md": {
-    "mtime": 1785741624.7742007,
-    "ast_hash": "8476d90f57cdb6b68755849f68e963b6",
+    "mtime": 1785747314.4792778,
+    "ast_hash": "a323a8a53fc73c68f9ff2ef5fe0cf2b1",
     "semantic_hash": ""
   },
   "docs/quality/iOS_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
-    "mtime": 1785741610.1585193,
-    "ast_hash": "452ce775a1c8fbfc84ba54179f995055",
-    "semantic_hash": ""
-  },
-  "docs/\u4f1a\u8ff9_MeetTrace_Alpha_PRD_\u65e0\u767b\u5f55\u7248.md": {
-    "mtime": 1785520924.7758164,
-    "ast_hash": "b53c9bf69f7f6f808ea42c1b1bb95682",
+    "mtime": 1785747314.4814293,
+    "ast_hash": "a1471becc97178fbc795cc0cfe972250",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260727_034129_\u91cd\u6784\u6240\u6709ui\u8bbe\u8ba1\u90e8\u5206_\u5148\u7ed9\u6211\u65b9\u6848.md": {
@@ -1925,13 +1910,8 @@
     "semantic_hash": ""
   },
   "docs/quality/SenseVoice_\u521d\u59cb\u5316\u4e0b\u8f7d\u4e0e\u53d1\u5e03\u95e8\u69db.md": {
-    "mtime": 1785741943.7546546,
-    "ast_hash": "d0ee5a5c3b507673b067bd605252a5d8",
-    "semantic_hash": ""
-  },
-  "docs/\u7aef\u4fa7SenseVoice\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1785740531.5490634,
-    "ast_hash": "45cae1d88d89630c1376a3ab6de6a1f6",
+    "mtime": 1785747178.0033805,
+    "ast_hash": "925f03d82338f57412ff140cf2bb7a2d",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260729_015723_\u5206\u6790\u5f53\u524d\u9879\u76ee\u7684\u672c\u5730\u6a21\u578b_\u662f\u5426\u9700\u8981\u66f4\u6362\u6a21\u578b\u6216\u7ec4\u5408\u6a21\u578b.md": {
@@ -1990,13 +1970,13 @@
     "semantic_hash": ""
   },
   "docs/architecture/\u4ee3\u7801\u67b6\u6784\u4e0e\u5197\u4f59\u5ba1\u8ba1.md": {
-    "mtime": 1785744614.6547866,
-    "ast_hash": "76f6013ab681db454aee1afe47ad5f61",
+    "mtime": 1785747314.4797823,
+    "ast_hash": "977e684aa7ed6a5f862e03bbb0409e9f",
     "semantic_hash": ""
   },
   "docs/quality/README.md": {
-    "mtime": 1785741562.566997,
-    "ast_hash": "4e1cd6264f804134b5f57f64477b9977",
+    "mtime": 1785747314.4809084,
+    "ast_hash": "f8e3888c5e780855d9b246149ae1f82f",
     "semantic_hash": ""
   },
   "lib/app/meettrace_meeting_dependencies.dart": {
@@ -2037,6 +2017,26 @@
   "graphify-out/memory/query_20260803_072530_\u5206\u6790\u5f53\u524d\u9879\u76ee\u7684\u4ee3\u7801\u67b6\u6784_\u8bbe\u8ba1\u5197\u4f59_\u4ee3\u7801\u5197\u4f59_\u6574\u7406\u6240\u6709\u5173\u8054\u6587\u6863.md": {
     "mtime": 1785741930.5726798,
     "ast_hash": "f7f8a740664b12b13240db92feedfe19",
+    "semantic_hash": ""
+  },
+  "docs/product/Alpha_PRD_\u65e0\u767b\u5f55\u7248.md": {
+    "mtime": 1785747145.2374778,
+    "ast_hash": "fcb38a011bb42d6fcf6c410dc10c861e",
+    "semantic_hash": ""
+  },
+  "docs/project/Alpha_\u5f00\u53d1\u6b65\u9aa4.md": {
+    "mtime": 1785747145.2400782,
+    "ast_hash": "cf5f4db06aae42ff6046953f4187a4e3",
+    "semantic_hash": ""
+  },
+  "docs/project/Git_\u5206\u652f\u4e0e_Worktree_\u7ea6\u5b9a.md": {
+    "mtime": 1785747145.2411308,
+    "ast_hash": "68a0a82aec499a3825aef222732584da",
+    "semantic_hash": ""
+  },
+  "docs/technical/\u7aef\u4fa7_SenseVoice_\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
+    "mtime": 1785747145.2384963,
+    "ast_hash": "efb0405c5291955de90c72ed194883a9",
     "semantic_hash": ""
   }
 }

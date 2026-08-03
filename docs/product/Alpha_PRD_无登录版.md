@@ -2,8 +2,8 @@
 
 > 版本：V0.7
 > 日期：2026-08-01
-> 状态：SenseVoice 初始化下载基线
-> 技术方案：[端侧 SenseVoice 转录技术方案](./端侧SenseVoice转录技术方案.md)
+> 状态：活动；产品范围与验收标准的唯一事实源
+> 技术方案：[端侧 SenseVoice 转录技术方案](../technical/端侧_SenseVoice_转录技术方案.md)
 
 ## 1. 产品目标与边界
 

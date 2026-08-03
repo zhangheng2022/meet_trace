@@ -1,7 +1,8 @@
-# SenseVoice 初始化下载与发布门槛
+# 会迹（MeetTrace）SenseVoice 初始化下载与发布门槛
 
-> 日期：2026-08-01  
-> 状态：仓库实现验证中；目标真机证据待执行
+> 更新日期：2026-08-03
+>
+> 状态：活动；仓库门槛已通过，双平台目标真机证据阻塞
 
 ## 固定资产
 
@@ -27,10 +28,10 @@ SenseVoice 使用不可变 revision `2365baeacb507f821a0c8120fcee3d484dba7a07`�
 - [x] 会议锁定模型/版本/auto/ITN。
 - [x] 旧 Alpha schema 阻断且不自动删除。
 - [x] `flutter analyze` 最终复验：0 问题。
-- [ ] `flutter test` 最终复验：2026-08-03 为 321 项通过、1 项失败；`local_runtime_asset_preparation_service_test.dart:101` 仍断言旧哈希前缀 `c45ba1`，当前固定 Manifest 为 `c71f0ce…`。
+- [x] `flutter test` 最终复验：2026-08-03 修正 `local_runtime_asset_preparation_service_test.dart:101` 的旧哈希断言（旧前缀 `c45ba1` → 当前固定 Manifest `c71f0c…`）后，328 项全部通过。
 - [x] Android Debug APK 构建与权重审计：`app-debug.apk` 构建成功，ASR/VAD 权重和用户数据命中数均为 0。
-- [x] OCR workspace 模式复审全部 77 个可审文件；Critical/High 清零。
-- [ ] Graphify 完全同步：`graphify update .` 已把代码图更新为 4,627 nodes / 6,206 edges，但 CLI 提示本轮 Markdown 语义更新仍需 AI 管线。
+- [x] OCR workspace 模式复审全部 79 个可审文件；Critical/High 清零。
+- [ ] Graphify 完全同步：`graphify update .` 已把代码图更新为 4,676 nodes / 6,274 edges / 396 communities，代码关系已同步；CLI 仍提示 Markdown 语义更新需要 AI 管线，且已有标签数量与当前 communities 不一致，不能把文档语义图视为完全同步。
 
 ## 外部门禁
 

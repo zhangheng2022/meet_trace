@@ -1,10 +1,12 @@
-# Step 07 可靠录音与崩溃恢复
+# 会迹（MeetTrace）Step 07：可靠录音与崩溃恢复
 
-> 状态：已完成
+> 状态：历史实现证据（已完成）
 >
 > 日期：2026-07-24
 >
 > 分支：`codex/alpha-step-07-reliable-recording`
+
+> 本文记录当时的实现与验证快照，不定义当前产品范围或发布状态；当前要求以 [PRD V0.7](../product/Alpha_PRD_无登录版.md) 和[质量证据索引](./README.md)为准。
 
 ## 结论
 
