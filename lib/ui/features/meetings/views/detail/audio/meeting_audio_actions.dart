@@ -192,8 +192,7 @@ final class _RetranscriptionCard extends StatelessWidget {
   }
 }
 
-String _modelPositioning(AsrModelDescriptor model) =>
-    model.tier == AsrModelTier.advanced ? '准确率优先，资源占用更高' : '速度与资源占用优先';
+String _modelPositioning(AsrModelDescriptor _) => '自动识别中、粤、英、日、韩语 · ITN 已开启';
 
 String _timestamp(int milliseconds) {
   final value = Duration(milliseconds: milliseconds);

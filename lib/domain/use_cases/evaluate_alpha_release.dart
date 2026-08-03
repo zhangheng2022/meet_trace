@@ -11,37 +11,33 @@ final class AlphaReleaseEvaluationInput {
     this.rawMetricsRef,
     this.corpusSampleCount,
     this.corpusDeidentified,
-    this.sameCorpusForBothModels,
-    this.sameDeviceForBothModels,
-    this.lowEndArm64DeviceTested,
+    this.androidArm64DeviceTested,
     this.iosArm64DeviceTested,
+    this.androidBackgroundRecordingPassed,
     this.iosBackgroundRecordingPassed,
     this.iosInterruptionRecoveryPassed,
     this.adaptiveNavigationAccessibilityPassed,
-    this.standardModelResourceBytes,
-    this.standardRtfSamples,
-    this.standardSentenceLatencyMs,
+    this.runtimeDownloadBytes,
+    this.rtfSamples,
+    this.sentenceLatencyMs,
     this.finalTranscriptionDurationMs,
     this.recordingCompletenessRatio,
     this.sustainedSevereOrCriticalThermal,
-    this.standardEnergyWh,
-    this.advancedEnergyWh,
-    this.advancedRtfSamples,
-    this.advancedSentenceLatencyMs,
-    this.advancedFinalTranscriptionDurationMs,
+    this.batteryDeltaPercent,
+    this.startTemperatureC,
+    this.peakTemperatureC,
+    this.peakRssBytes,
     this.keyFactRecallRatio,
     this.acceptanceEvidence,
     this.apkAuditPassed,
     this.iosBuildAuditPassed,
-    this.paraformerRedistributionConfirmed,
+    this.senseVoiceLicenseConfirmed,
   });
 
   factory AlphaReleaseEvaluationInput.fromJson(Map<String, Object?> json) {
     final corpus = _map(json['corpus']);
     final environment = _map(json['environment']);
-    final standard = _map(json['standardModel']);
-    final advanced = _map(json['advancedModel']);
-    final energy = _map(json['energy']);
+    final model = _map(json['senseVoice']);
     final release = _map(json['release']);
     return AlphaReleaseEvaluationInput(
       corpusId: _string(corpus?['id']),
@@ -49,16 +45,13 @@ final class AlphaReleaseEvaluationInput {
       rawMetricsRef: _string(json['rawMetricsRef']),
       corpusSampleCount: _integer(corpus?['sampleCount']),
       corpusDeidentified: _boolean(corpus?['deidentified']),
-      sameCorpusForBothModels: _boolean(
-        environment?['sameCorpusForBothModels'],
-      ),
-      sameDeviceForBothModels: _boolean(
-        environment?['sameDeviceForBothModels'],
-      ),
-      lowEndArm64DeviceTested: _boolean(
-        environment?['lowEndArm64DeviceTested'],
+      androidArm64DeviceTested: _boolean(
+        environment?['androidArm64DeviceTested'],
       ),
       iosArm64DeviceTested: _boolean(environment?['iosArm64DeviceTested']),
+      androidBackgroundRecordingPassed: _boolean(
+        environment?['androidBackgroundRecordingPassed'],
+      ),
       iosBackgroundRecordingPassed: _boolean(
         environment?['iosBackgroundRecordingPassed'],
       ),
@@ -68,31 +61,26 @@ final class AlphaReleaseEvaluationInput {
       adaptiveNavigationAccessibilityPassed: _boolean(
         environment?['adaptiveNavigationAccessibilityPassed'],
       ),
-      standardModelResourceBytes: _integer(standard?['resourceBytes']),
-      standardRtfSamples: _numbers(standard?['rtfSamples']),
-      standardSentenceLatencyMs: _numbers(standard?['sentenceLatencyMs']),
+      runtimeDownloadBytes: _integer(model?['runtimeDownloadBytes']),
+      rtfSamples: _numbers(model?['rtfSamples']),
+      sentenceLatencyMs: _numbers(model?['sentenceLatencyMs']),
       finalTranscriptionDurationMs: _number(
-        standard?['finalTranscriptionDurationMs'],
+        model?['finalTranscriptionDurationMs'],
       ),
-      recordingCompletenessRatio: _number(
-        standard?['recordingCompletenessRatio'],
-      ),
+      recordingCompletenessRatio: _number(model?['recordingCompletenessRatio']),
       sustainedSevereOrCriticalThermal: _boolean(
-        standard?['sustainedSevereOrCriticalThermal'],
+        model?['sustainedSevereOrCriticalThermal'],
       ),
-      standardEnergyWh: _number(energy?['standardWh']),
-      advancedEnergyWh: _number(energy?['advancedWh']),
-      advancedRtfSamples: _numbers(advanced?['rtfSamples']),
-      advancedSentenceLatencyMs: _numbers(advanced?['sentenceLatencyMs']),
-      advancedFinalTranscriptionDurationMs: _number(
-        advanced?['finalTranscriptionDurationMs'],
-      ),
-      keyFactRecallRatio: _number(standard?['keyFactRecallRatio']),
+      batteryDeltaPercent: _number(model?['batteryDeltaPercent']),
+      startTemperatureC: _number(model?['startTemperatureC']),
+      peakTemperatureC: _number(model?['peakTemperatureC']),
+      peakRssBytes: _integer(model?['peakRssBytes']),
+      keyFactRecallRatio: _number(model?['keyFactRecallRatio']),
       acceptanceEvidence: _strings(json['acceptanceEvidence']),
       apkAuditPassed: _boolean(release?['apkAuditPassed']),
       iosBuildAuditPassed: _boolean(release?['iosBuildAuditPassed']),
-      paraformerRedistributionConfirmed: _boolean(
-        release?['paraformerRedistributionConfirmed'],
+      senseVoiceLicenseConfirmed: _boolean(
+        release?['senseVoiceLicenseConfirmed'],
       ),
     );
   }
@@ -102,75 +90,65 @@ final class AlphaReleaseEvaluationInput {
   final String? rawMetricsRef;
   final int? corpusSampleCount;
   final bool? corpusDeidentified;
-  final bool? sameCorpusForBothModels;
-  final bool? sameDeviceForBothModels;
-  final bool? lowEndArm64DeviceTested;
+  final bool? androidArm64DeviceTested;
   final bool? iosArm64DeviceTested;
+  final bool? androidBackgroundRecordingPassed;
   final bool? iosBackgroundRecordingPassed;
   final bool? iosInterruptionRecoveryPassed;
   final bool? adaptiveNavigationAccessibilityPassed;
-  final int? standardModelResourceBytes;
-  final List<double>? standardRtfSamples;
-  final List<double>? standardSentenceLatencyMs;
+  final int? runtimeDownloadBytes;
+  final List<double>? rtfSamples;
+  final List<double>? sentenceLatencyMs;
   final double? finalTranscriptionDurationMs;
   final double? recordingCompletenessRatio;
   final bool? sustainedSevereOrCriticalThermal;
-  final double? standardEnergyWh;
-  final double? advancedEnergyWh;
-  final List<double>? advancedRtfSamples;
-  final List<double>? advancedSentenceLatencyMs;
-  final double? advancedFinalTranscriptionDurationMs;
+  final double? batteryDeltaPercent;
+  final double? startTemperatureC;
+  final double? peakTemperatureC;
+  final int? peakRssBytes;
   final double? keyFactRecallRatio;
   final Map<String, String>? acceptanceEvidence;
   final bool? apkAuditPassed;
   final bool? iosBuildAuditPassed;
-  final bool? paraformerRedistributionConfirmed;
+  final bool? senseVoiceLicenseConfirmed;
 
   AlphaReleaseEvaluationInput copyWith({
-    List<double>? standardRtfSamples,
+    List<double>? rtfSamples,
     String? rawMetricsRef,
-    bool? iosArm64DeviceTested,
     bool? iosBackgroundRecordingPassed,
-    bool? iosInterruptionRecoveryPassed,
-    bool? adaptiveNavigationAccessibilityPassed,
-    bool? iosBuildAuditPassed,
   }) => AlphaReleaseEvaluationInput(
     corpusId: corpusId,
     deviceId: deviceId,
     rawMetricsRef: rawMetricsRef ?? this.rawMetricsRef,
     corpusSampleCount: corpusSampleCount,
     corpusDeidentified: corpusDeidentified,
-    sameCorpusForBothModels: sameCorpusForBothModels,
-    sameDeviceForBothModels: sameDeviceForBothModels,
-    lowEndArm64DeviceTested: lowEndArm64DeviceTested,
-    iosArm64DeviceTested: iosArm64DeviceTested ?? this.iosArm64DeviceTested,
+    androidArm64DeviceTested: androidArm64DeviceTested,
+    iosArm64DeviceTested: iosArm64DeviceTested,
+    androidBackgroundRecordingPassed: androidBackgroundRecordingPassed,
     iosBackgroundRecordingPassed:
         iosBackgroundRecordingPassed ?? this.iosBackgroundRecordingPassed,
-    iosInterruptionRecoveryPassed:
-        iosInterruptionRecoveryPassed ?? this.iosInterruptionRecoveryPassed,
+    iosInterruptionRecoveryPassed: iosInterruptionRecoveryPassed,
     adaptiveNavigationAccessibilityPassed:
-        adaptiveNavigationAccessibilityPassed ??
-        this.adaptiveNavigationAccessibilityPassed,
-    standardModelResourceBytes: standardModelResourceBytes,
-    standardRtfSamples: standardRtfSamples ?? this.standardRtfSamples,
-    standardSentenceLatencyMs: standardSentenceLatencyMs,
+        adaptiveNavigationAccessibilityPassed,
+    runtimeDownloadBytes: runtimeDownloadBytes,
+    rtfSamples: rtfSamples ?? this.rtfSamples,
+    sentenceLatencyMs: sentenceLatencyMs,
     finalTranscriptionDurationMs: finalTranscriptionDurationMs,
     recordingCompletenessRatio: recordingCompletenessRatio,
     sustainedSevereOrCriticalThermal: sustainedSevereOrCriticalThermal,
-    standardEnergyWh: standardEnergyWh,
-    advancedEnergyWh: advancedEnergyWh,
-    advancedRtfSamples: advancedRtfSamples,
-    advancedSentenceLatencyMs: advancedSentenceLatencyMs,
-    advancedFinalTranscriptionDurationMs: advancedFinalTranscriptionDurationMs,
+    batteryDeltaPercent: batteryDeltaPercent,
+    startTemperatureC: startTemperatureC,
+    peakTemperatureC: peakTemperatureC,
+    peakRssBytes: peakRssBytes,
     keyFactRecallRatio: keyFactRecallRatio,
     acceptanceEvidence: acceptanceEvidence,
     apkAuditPassed: apkAuditPassed,
-    iosBuildAuditPassed: iosBuildAuditPassed ?? this.iosBuildAuditPassed,
-    paraformerRedistributionConfirmed: paraformerRedistributionConfirmed,
+    iosBuildAuditPassed: iosBuildAuditPassed,
+    senseVoiceLicenseConfirmed: senseVoiceLicenseConfirmed,
   );
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 2,
+    'schemaVersion': 3,
     'rawMetricsRef': rawMetricsRef,
     'corpus': {
       'id': corpusId,
@@ -179,35 +157,32 @@ final class AlphaReleaseEvaluationInput {
     },
     'environment': {
       'deviceId': deviceId,
-      'sameCorpusForBothModels': sameCorpusForBothModels,
-      'sameDeviceForBothModels': sameDeviceForBothModels,
-      'lowEndArm64DeviceTested': lowEndArm64DeviceTested,
+      'androidArm64DeviceTested': androidArm64DeviceTested,
       'iosArm64DeviceTested': iosArm64DeviceTested,
+      'androidBackgroundRecordingPassed': androidBackgroundRecordingPassed,
       'iosBackgroundRecordingPassed': iosBackgroundRecordingPassed,
       'iosInterruptionRecoveryPassed': iosInterruptionRecoveryPassed,
       'adaptiveNavigationAccessibilityPassed':
           adaptiveNavigationAccessibilityPassed,
     },
-    'standardModel': {
-      'resourceBytes': standardModelResourceBytes,
-      'rtfSamples': standardRtfSamples,
-      'sentenceLatencyMs': standardSentenceLatencyMs,
+    'senseVoice': {
+      'runtimeDownloadBytes': runtimeDownloadBytes,
+      'rtfSamples': rtfSamples,
+      'sentenceLatencyMs': sentenceLatencyMs,
       'finalTranscriptionDurationMs': finalTranscriptionDurationMs,
       'recordingCompletenessRatio': recordingCompletenessRatio,
       'sustainedSevereOrCriticalThermal': sustainedSevereOrCriticalThermal,
+      'batteryDeltaPercent': batteryDeltaPercent,
+      'startTemperatureC': startTemperatureC,
+      'peakTemperatureC': peakTemperatureC,
+      'peakRssBytes': peakRssBytes,
       'keyFactRecallRatio': keyFactRecallRatio,
-    },
-    'energy': {'standardWh': standardEnergyWh, 'advancedWh': advancedEnergyWh},
-    'advancedModel': {
-      'rtfSamples': advancedRtfSamples,
-      'sentenceLatencyMs': advancedSentenceLatencyMs,
-      'finalTranscriptionDurationMs': advancedFinalTranscriptionDurationMs,
     },
     'acceptanceEvidence': acceptanceEvidence,
     'release': {
       'apkAuditPassed': apkAuditPassed,
       'iosBuildAuditPassed': iosBuildAuditPassed,
-      'paraformerRedistributionConfirmed': paraformerRedistributionConfirmed,
+      'senseVoiceLicenseConfirmed': senseVoiceLicenseConfirmed,
     },
   };
 }
@@ -239,7 +214,7 @@ final class AlphaReleaseEvaluationReport {
     required this.corpusId,
     required this.deviceId,
     required this.rawMetricsRef,
-    required this.comparison,
+    required this.metrics,
     required this.gates,
   });
 
@@ -247,27 +222,16 @@ final class AlphaReleaseEvaluationReport {
   final String? corpusId;
   final String? deviceId;
   final String? rawMetricsRef;
-  final Map<String, Object?> comparison;
+  final Map<String, Object?> metrics;
   final List<ReleaseGateResult> gates;
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'decision': decision.name,
     'corpusId': corpusId,
     'deviceId': deviceId,
     'rawMetricsRef': rawMetricsRef,
-    'comparison': comparison,
-    'summary': {
-      'passed': gates
-          .where((gate) => gate.status == ReleaseGateStatus.passed)
-          .length,
-      'failed': gates
-          .where((gate) => gate.status == ReleaseGateStatus.failed)
-          .length,
-      'missing': gates
-          .where((gate) => gate.status == ReleaseGateStatus.missing)
-          .length,
-    },
+    'metrics': metrics,
     'gates': gates.map((gate) => gate.toJson()).toList(growable: false),
   };
 }
@@ -276,206 +240,156 @@ final class EvaluateAlphaReleaseUseCase {
   const EvaluateAlphaReleaseUseCase();
 
   AlphaReleaseEvaluationReport execute(AlphaReleaseEvaluationInput input) {
-    final rtfP95 = _p95(input.standardRtfSamples, minimumSamples: 20);
-    final latencyP95 = _p95(
-      input.standardSentenceLatencyMs,
-      minimumSamples: 20,
-    );
-    final advancedRtfP95 = _p95(input.advancedRtfSamples, minimumSamples: 20);
-    final advancedLatencyP95 = _p95(
-      input.advancedSentenceLatencyMs,
-      minimumSamples: 20,
-    );
-    final relativeEnergy = _ratio(
-      input.standardEnergyWh,
-      input.advancedEnergyWh,
-    );
-    final acceptanceCount = _acceptanceEvidenceCount(input.acceptanceEvidence);
+    final rtfP95 = _percentile(input.rtfSamples, 0.95);
+    final latencyP95 = _percentile(input.sentenceLatencyMs, 0.95);
+    final evidenceCount = _acceptanceEvidenceCount(input.acceptanceEvidence);
     final gates = <ReleaseGateResult>[
-      _referenceGate('corpus.id', '评测语料必须具有不含音频路径的可追溯标识', input.corpusId),
+      _referenceGate('corpus.id', '评测语料必须具有去敏可追溯标识', input.corpusId),
       _thresholdGate(
         'corpus.sampleCount',
-        '去敏会议语料不少于 20 段',
+        '去敏语料不少于 20 段',
         input.corpusSampleCount,
-        (value) => value >= 20,
+        (v) => v >= 20,
       ),
       _boolGate('corpus.deidentified', '评测语料已去敏', input.corpusDeidentified),
+      _textGate('environment.deviceId', '评测设备具有可追溯标识', input.deviceId),
       _boolGate(
-        'environment.sameCorpus',
-        '双模型使用相同语料',
-        input.sameCorpusForBothModels,
-      ),
-      _boolGate(
-        'environment.sameDevice',
-        '双模型使用相同设备和环境',
-        input.sameDeviceForBothModels,
-      ),
-      _textGate('environment.deviceId', '评测设备必须具有可追溯标识', input.deviceId),
-      _boolGate(
-        'environment.lowEndArm64',
-        '已在最低目标 Android arm64 实体设备验证',
-        input.lowEndArm64DeviceTested,
+        'environment.androidArm64',
+        'Android arm64 目标真机已验证',
+        input.androidArm64DeviceTested,
       ),
       _boolGate(
         'environment.iosArm64',
-        '已在最低目标 iOS arm64 实体设备验证',
+        'iOS arm64 目标真机已验证',
         input.iosArm64DeviceTested,
       ),
       _boolGate(
+        'environment.androidBackgroundRecording',
+        'Android 30 分钟后台录音完整',
+        input.androidBackgroundRecordingPassed,
+      ),
+      _boolGate(
         'environment.iosBackgroundRecording',
-        'iOS 30 分钟后台录音完整率为 100%',
+        'iOS 30 分钟后台录音完整',
         input.iosBackgroundRecordingPassed,
       ),
       _boolGate(
         'environment.iosInterruptionRecovery',
-        'iOS 系统音频中断可恢复且强制结束边界准确',
+        'iOS 系统音频中断恢复通过',
         input.iosInterruptionRecoveryPassed,
       ),
       _boolGate(
-        'environment.adaptiveNavigationAccessibility',
-        'Android/iOS 原生返回、字体缩放和辅助技术验收通过',
+        'environment.accessibility',
+        '双平台导航、字体和辅助技术通过',
         input.adaptiveNavigationAccessibilityPassed,
       ),
-      _referenceGate(
-        'evidence.rawMetrics',
-        '双模型原始指标具有可追溯引用',
-        input.rawMetricsRef,
+      _referenceGate('evidence.rawMetrics', '原始指标具有可追溯引用', input.rawMetricsRef),
+      _thresholdGate(
+        'senseVoice.runtimeDownloadBytes',
+        'ASR 与 VAD 固定下载量不超过 300,000,000 字节',
+        input.runtimeDownloadBytes,
+        (v) => v <= 300000000,
       ),
       _thresholdGate(
-        'standard.resourceBytes',
-        '标准模型资源不超过 100 MiB',
-        input.standardModelResourceBytes,
-        (value) => value <= 100 * 1024 * 1024,
-      ),
-      _thresholdGate(
-        'standard.rtfP95',
-        '最低目标设备 RTF P95 严格小于 0.5',
+        'senseVoice.rtfP95',
+        'RTF P95 严格小于 0.5',
         rtfP95,
-        (value) => value < 0.5,
+        (v) => v < 0.5,
       ),
       _thresholdGate(
-        'standard.sentenceLatencyP95Ms',
+        'senseVoice.sentenceLatencyP95Ms',
         '句后出字 P95 不超过 3000 ms',
         latencyP95,
-        (value) => value <= 3000,
+        (v) => v <= 3000,
       ),
       _thresholdGate(
-        'standard.finalTranscriptionDurationMs',
+        'senseVoice.finalTranscriptionDurationMs',
         '30 分钟最终转录不超过 300000 ms',
         input.finalTranscriptionDurationMs,
-        (value) => value <= 300000,
+        (v) => v <= 300000,
       ),
       _thresholdGate(
-        'standard.recordingCompletenessRatio',
+        'senseVoice.recordingCompletenessRatio',
         '30 分钟录音完整率为 100%',
         input.recordingCompletenessRatio,
-        (value) => value >= 1,
+        (v) => v >= 1,
       ),
       _inverseBoolGate(
-        'standard.thermal',
-        '30 分钟内不持续进入 Severe/Critical',
+        'senseVoice.thermal',
+        '30 分钟内不持续 Severe/Critical',
         input.sustainedSevereOrCriticalThermal,
       ),
-      _thresholdGate(
-        'standard.relativeEnergy',
-        '标准模型能耗不高于高级模型的 70%',
-        relativeEnergy,
-        (value) => value <= 0.7,
+      _measurementGate(
+        'senseVoice.batteryDeltaPercent',
+        '记录 30 分钟绝对电量变化',
+        input.batteryDeltaPercent,
+      ),
+      _measurementGate(
+        'senseVoice.startTemperatureC',
+        '记录测试起始温度',
+        input.startTemperatureC,
+      ),
+      _measurementGate(
+        'senseVoice.peakTemperatureC',
+        '记录测试最高温度',
+        input.peakTemperatureC,
       ),
       _thresholdGate(
-        'standard.keyFactRecallRatio',
-        '20 段评测关键事实召回率不低于 85%',
+        'senseVoice.peakRssBytes',
+        '记录正数内存峰值',
+        input.peakRssBytes,
+        (v) => v > 0,
+      ),
+      _thresholdGate(
+        'senseVoice.keyFactRecallRatio',
+        '关键事实召回率不低于 85%',
         input.keyFactRecallRatio,
-        (value) => value >= 0.85,
+        (v) => v >= 0.85,
       ),
       _thresholdGate(
-        'advanced.rtfSampleCount',
-        '高级模型使用相同语料记录不少于 20 个 RTF 样本',
-        _sampleCount(input.advancedRtfSamples),
-        (value) => value >= 20,
-      ),
-      _thresholdGate(
-        'advanced.sentenceLatencySampleCount',
-        '高级模型使用相同语料记录不少于 20 个句后延迟样本',
-        _sampleCount(input.advancedSentenceLatencyMs),
-        (value) => value >= 20,
-      ),
-      _thresholdGate(
-        'advanced.finalTranscriptionDurationMs',
-        '高级模型记录 30 分钟最终转录耗时供支持分级',
-        input.advancedFinalTranscriptionDurationMs,
-        (value) => value >= 0,
-      ),
-      _thresholdGate(
-        'acceptance.AT01-AT20',
-        'AT-01 至 AT-20 均有非空证据引用',
-        acceptanceCount,
-        (value) => value == 20,
+        'acceptance.AT01-AT15',
+        'AT-01 至 AT-15 均有证据引用',
+        evidenceCount,
+        (v) => v == 15,
       ),
       _boolGate(
         'release.apkAudit',
-        'Android APK 的 ABI、模型、密钥、许可和体积审计通过',
+        'Android APK 不包含 ASR/VAD 权重',
         input.apkAuditPassed,
       ),
       _boolGate(
         'release.iosBuildAudit',
-        'iOS 构建的 arm64、模型、密钥、许可和体积审计通过',
+        'iOS 构建不包含 ASR/VAD 权重',
         input.iosBuildAuditPassed,
       ),
       _boolGate(
-        'license.paraformer',
-        'Paraformer 转换权重再分发许可已确认',
-        input.paraformerRedistributionConfirmed,
+        'license.senseVoice',
+        'SenseVoice 分发许可与 NOTICE 已确认',
+        input.senseVoiceLicenseConfirmed,
       ),
     ];
-    final hasFailure = gates.any(
-      (gate) => gate.status == ReleaseGateStatus.failed,
-    );
-    final hasMissing = gates.any(
+    final failed = gates.any((gate) => gate.status == ReleaseGateStatus.failed);
+    final missing = gates.any(
       (gate) => gate.status == ReleaseGateStatus.missing,
     );
     return AlphaReleaseEvaluationReport(
-      decision: hasFailure
+      decision: failed
           ? AlphaReleaseDecision.noGo
-          : hasMissing
+          : missing
           ? AlphaReleaseDecision.blocked
           : AlphaReleaseDecision.go,
       corpusId: input.corpusId,
       deviceId: input.deviceId,
       rawMetricsRef: input.rawMetricsRef,
-      comparison: {
-        'standardModel': {
-          'rtfP50': _percentile(
-            input.standardRtfSamples,
-            percentile: 0.5,
-            minimumSamples: 20,
-          ),
-          'rtfP95': rtfP95,
-          'sentenceLatencyP50Ms': _percentile(
-            input.standardSentenceLatencyMs,
-            percentile: 0.5,
-            minimumSamples: 20,
-          ),
-          'sentenceLatencyP95Ms': latencyP95,
-          'finalTranscriptionDurationMs': input.finalTranscriptionDurationMs,
-        },
-        'advancedModel': {
-          'rtfP50': _percentile(
-            input.advancedRtfSamples,
-            percentile: 0.5,
-            minimumSamples: 20,
-          ),
-          'rtfP95': advancedRtfP95,
-          'sentenceLatencyP50Ms': _percentile(
-            input.advancedSentenceLatencyMs,
-            percentile: 0.5,
-            minimumSamples: 20,
-          ),
-          'sentenceLatencyP95Ms': advancedLatencyP95,
-          'finalTranscriptionDurationMs':
-              input.advancedFinalTranscriptionDurationMs,
-        },
-        'standardToAdvancedEnergyRatio': relativeEnergy,
+      metrics: {
+        'rtfP50': _percentile(input.rtfSamples, 0.5),
+        'rtfP95': rtfP95,
+        'sentenceLatencyP50Ms': _percentile(input.sentenceLatencyMs, 0.5),
+        'sentenceLatencyP95Ms': latencyP95,
+        'batteryDeltaPercent': input.batteryDeltaPercent,
+        'startTemperatureC': input.startTemperatureC,
+        'peakTemperatureC': input.peakTemperatureC,
+        'peakRssBytes': input.peakRssBytes,
       },
       gates: List.unmodifiable(gates),
     );
@@ -496,7 +410,7 @@ ReleaseGateResult _textGate(String id, String requirement, String? value) {
 
 ReleaseGateResult _referenceGate(String id, String requirement, String? value) {
   final normalized = value?.trim();
-  final containsAudioPath =
+  final unsafe =
       normalized != null &&
       RegExp(
         r'\.(wav|pcm|m4a|aac|mp3|ogg|flac)(?:$|[?#])',
@@ -507,7 +421,7 @@ ReleaseGateResult _referenceGate(String id, String requirement, String? value) {
     requirement: requirement,
     status: normalized == null || normalized.isEmpty
         ? ReleaseGateStatus.missing
-        : containsAudioPath
+        : unsafe
         ? ReleaseGateStatus.failed
         : ReleaseGateStatus.passed,
     value: normalized,
@@ -557,44 +471,29 @@ ReleaseGateResult _thresholdGate<T extends num>(
   value: value,
 );
 
-double? _p95(List<double>? samples, {required int minimumSamples}) {
-  return _percentile(samples, percentile: 0.95, minimumSamples: minimumSamples);
-}
+ReleaseGateResult _measurementGate(
+  String id,
+  String requirement,
+  double? value,
+) => ReleaseGateResult(
+  id: id,
+  requirement: requirement,
+  status: value == null || !value.isFinite || value < 0
+      ? value == null
+            ? ReleaseGateStatus.missing
+            : ReleaseGateStatus.failed
+      : ReleaseGateStatus.passed,
+  value: value,
+);
 
-double? _percentile(
-  List<double>? samples, {
-  required double percentile,
-  required int minimumSamples,
-}) {
-  if (samples == null || samples.length < minimumSamples) {
-    return null;
-  }
-  if (samples.any((sample) => !sample.isFinite || sample < 0)) {
+double? _percentile(List<double>? samples, double percentile) {
+  if (samples == null ||
+      samples.length < 20 ||
+      samples.any((v) => !v.isFinite || v < 0)) {
     return null;
   }
   final sorted = [...samples]..sort();
-  final rank = math.max(1, (sorted.length * percentile).ceil());
-  return sorted[rank - 1];
-}
-
-int? _sampleCount(List<double>? samples) {
-  if (samples == null ||
-      samples.any((sample) => !sample.isFinite || sample < 0)) {
-    return null;
-  }
-  return samples.length;
-}
-
-double? _ratio(double? numerator, double? denominator) {
-  if (numerator == null ||
-      denominator == null ||
-      !numerator.isFinite ||
-      !denominator.isFinite ||
-      numerator < 0 ||
-      denominator <= 0) {
-    return null;
-  }
-  return numerator / denominator;
+  return sorted[math.max(1, (sorted.length * percentile).ceil()) - 1];
 }
 
 int? _acceptanceEvidenceCount(Map<String, String>? evidence) {
@@ -602,38 +501,28 @@ int? _acceptanceEvidenceCount(Map<String, String>? evidence) {
     return null;
   }
   return [
-    for (var index = 1; index <= 20; index++)
-      'AT-${index.toString().padLeft(2, '0')}',
+    for (var i = 1; i <= 15; i++) 'AT-${i.toString().padLeft(2, '0')}',
   ].where((id) => evidence[id]?.trim().isNotEmpty == true).length;
 }
 
 Map<String, Object?>? _map(Object? value) =>
     value is Map<String, Object?> ? value : null;
-
 String? _string(Object? value) => value is String ? value : null;
-
 bool? _boolean(Object? value) => value is bool ? value : null;
-
 int? _integer(Object? value) => value is int ? value : null;
-
 double? _number(Object? value) => value is num ? value.toDouble() : null;
-
 List<double>? _numbers(Object? value) {
-  if (value is! List<Object?>) {
+  if (value is! List<Object?> || value.any((item) => item is! num)) {
     return null;
   }
-  final numbers = value.whereType<num>().map((number) => number.toDouble());
-  if (numbers.length != value.length) {
-    return null;
-  }
-  return List.unmodifiable(numbers);
+  return List.unmodifiable(
+    value.cast<num>().map((number) => number.toDouble()),
+  );
 }
 
 Map<String, String>? _strings(Object? value) {
-  if (value is! Map<String, Object?>) {
-    return null;
-  }
-  if (value.values.any((item) => item is! String)) {
+  if (value is! Map<String, Object?> ||
+      value.values.any((item) => item is! String)) {
     return null;
   }
   return Map.unmodifiable(

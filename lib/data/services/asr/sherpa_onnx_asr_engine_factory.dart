@@ -3,8 +3,7 @@ import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/asr_model_registry.dart';
 import '../../repositories/repository_contracts.dart';
 import 'asr_engine.dart';
-import 'paraformer_standard_asr_engine.dart';
-import 'qwen_advanced_asr_engine.dart';
+import 'sense_voice_asr_engine.dart';
 import 'sherpa_onnx/sherpa_onnx_adapter.dart';
 
 /// 只根据会议已经确认并锁定的模型 ID/版本组装具体 Engine。
@@ -44,6 +43,8 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    String language = 'auto',
+    bool useInverseTextNormalization = true,
   }) async {
     final descriptor = registry.findById(modelId);
     if (descriptor == null) {
@@ -63,37 +64,33 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
         context: {'expectedVersion': descriptor.version},
       );
     }
+    if (language != descriptor.language ||
+        useInverseTextNormalization != descriptor.useInverseTextNormalization) {
+      throw _failure(
+        code: 'asr.factory.configuration_mismatch',
+        modelId: modelId,
+        modelVersion: modelVersion,
+        action: FailureUserAction.downloadModel,
+      );
+    }
 
-    return switch (descriptor.tier) {
-      AsrModelTier.standard => _createStandard(descriptor),
-      AsrModelTier.advanced => QwenAdvancedAsrEngine.create(
-        installations: installations,
-        leases: leases,
-        riskMonitor: riskMonitor,
-        ownerId: ownerId,
-        workerFactory: workerFactory,
-        now: now,
-        leaseDuration: leaseDuration,
-        leaseRenewalLead: leaseRenewalLead,
-        leaseIdFactory: leaseIdFactory,
-      ),
-    };
+    return _createSenseVoice(descriptor);
   }
 
-  Future<AsrEngine> _createStandard(AsrModelDescriptor descriptor) async {
+  Future<AsrEngine> _createSenseVoice(AsrModelDescriptor descriptor) async {
     final installation = await installations.get(
       modelId: descriptor.modelId,
       version: descriptor.version,
     );
     if (installation == null) {
       throw _failure(
-        code: 'asr.paraformer.model_not_verified',
+        code: 'asr.senseVoice.model_not_verified',
         modelId: descriptor.modelId,
         modelVersion: descriptor.version,
-        action: FailureUserAction.reinstallApp,
+        action: FailureUserAction.downloadModel,
       );
     }
-    return ParaformerStandardAsrEngine(
+    return SenseVoiceAsrEngine(
       installation: installation,
       workerFactory: workerFactory,
       now: now,

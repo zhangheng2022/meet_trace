@@ -6,7 +6,7 @@ import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../../../domain/models/app_failure.dart';
 
-enum SherpaOnnxRecognizerKind { paraformer, qwen3Asr }
+enum SherpaOnnxRecognizerKind { senseVoice }
 
 final class SherpaOnnxRecognizerConfig {
   SherpaOnnxRecognizerConfig._({
@@ -16,105 +16,54 @@ final class SherpaOnnxRecognizerConfig {
     required this.numThreads,
     required this.modelPath,
     required this.tokensPath,
-    required this.convFrontendPath,
-    required this.encoderPath,
-    required this.decoderPath,
-    required this.tokenizerPath,
-    required this.maxTotalLength,
-    required this.maxNewTokens,
+    required this.language,
+    required this.useInverseTextNormalization,
   }) {
     _requireText(modelId, 'modelId');
     _requireText(modelVersion, 'modelVersion');
     if (numThreads <= 0) {
       throw ArgumentError.value(numThreads, 'numThreads', '必须大于 0');
     }
-    switch (kind) {
-      case SherpaOnnxRecognizerKind.paraformer:
-        _requireText(modelPath, 'modelPath');
-        _requireText(tokensPath, 'tokensPath');
-      case SherpaOnnxRecognizerKind.qwen3Asr:
-        _requireText(convFrontendPath, 'convFrontendPath');
-        _requireText(encoderPath, 'encoderPath');
-        _requireText(decoderPath, 'decoderPath');
-        _requireText(tokenizerPath, 'tokenizerPath');
-        if (maxTotalLength <= 0 || maxNewTokens <= 0) {
-          throw ArgumentError('Qwen 长度上限必须大于 0');
-        }
-    }
+    _requireText(modelPath, 'modelPath');
+    _requireText(tokensPath, 'tokensPath');
+    _requireText(language, 'language');
   }
 
-  factory SherpaOnnxRecognizerConfig.paraformer({
+  factory SherpaOnnxRecognizerConfig.senseVoice({
     required String modelId,
     required String modelVersion,
     required String modelPath,
     required String tokensPath,
+    String language = 'auto',
+    bool useInverseTextNormalization = true,
     int numThreads = 2,
   }) {
     return SherpaOnnxRecognizerConfig._(
-      kind: SherpaOnnxRecognizerKind.paraformer,
+      kind: SherpaOnnxRecognizerKind.senseVoice,
       modelId: modelId,
       modelVersion: modelVersion,
       numThreads: numThreads,
       modelPath: modelPath,
       tokensPath: tokensPath,
-      convFrontendPath: '',
-      encoderPath: '',
-      decoderPath: '',
-      tokenizerPath: '',
-      maxTotalLength: 0,
-      maxNewTokens: 0,
-    );
-  }
-
-  factory SherpaOnnxRecognizerConfig.qwen3Asr({
-    required String modelId,
-    required String modelVersion,
-    required String convFrontendPath,
-    required String encoderPath,
-    required String decoderPath,
-    required String tokenizerPath,
-    int numThreads = 2,
-    int maxTotalLength = 512,
-    int maxNewTokens = 512,
-  }) {
-    return SherpaOnnxRecognizerConfig._(
-      kind: SherpaOnnxRecognizerKind.qwen3Asr,
-      modelId: modelId,
-      modelVersion: modelVersion,
-      numThreads: numThreads,
-      modelPath: '',
-      tokensPath: '',
-      convFrontendPath: convFrontendPath,
-      encoderPath: encoderPath,
-      decoderPath: decoderPath,
-      tokenizerPath: tokenizerPath,
-      maxTotalLength: maxTotalLength,
-      maxNewTokens: maxNewTokens,
+      language: language,
+      useInverseTextNormalization: useInverseTextNormalization,
     );
   }
 
   factory SherpaOnnxRecognizerConfig.fromMessage(Map<Object?, Object?> map) {
     final kind = SherpaOnnxRecognizerKind.values.byName(map['kind']! as String);
     return switch (kind) {
-      SherpaOnnxRecognizerKind.paraformer =>
-        SherpaOnnxRecognizerConfig.paraformer(
+      SherpaOnnxRecognizerKind.senseVoice =>
+        SherpaOnnxRecognizerConfig.senseVoice(
           modelId: map['modelId']! as String,
           modelVersion: map['modelVersion']! as String,
           modelPath: map['modelPath']! as String,
           tokensPath: map['tokensPath']! as String,
           numThreads: map['numThreads']! as int,
+          language: map['language']! as String,
+          useInverseTextNormalization:
+              map['useInverseTextNormalization']! as bool,
         ),
-      SherpaOnnxRecognizerKind.qwen3Asr => SherpaOnnxRecognizerConfig.qwen3Asr(
-        modelId: map['modelId']! as String,
-        modelVersion: map['modelVersion']! as String,
-        convFrontendPath: map['convFrontendPath']! as String,
-        encoderPath: map['encoderPath']! as String,
-        decoderPath: map['decoderPath']! as String,
-        tokenizerPath: map['tokenizerPath']! as String,
-        numThreads: map['numThreads']! as int,
-        maxTotalLength: map['maxTotalLength']! as int,
-        maxNewTokens: map['maxNewTokens']! as int,
-      ),
     };
   }
 
@@ -124,12 +73,8 @@ final class SherpaOnnxRecognizerConfig {
   final int numThreads;
   final String modelPath;
   final String tokensPath;
-  final String convFrontendPath;
-  final String encoderPath;
-  final String decoderPath;
-  final String tokenizerPath;
-  final int maxTotalLength;
-  final int maxNewTokens;
+  final String language;
+  final bool useInverseTextNormalization;
 
   Map<String, Object> toMessage() => {
     'kind': kind.name,
@@ -138,12 +83,8 @@ final class SherpaOnnxRecognizerConfig {
     'numThreads': numThreads,
     'modelPath': modelPath,
     'tokensPath': tokensPath,
-    'convFrontendPath': convFrontendPath,
-    'encoderPath': encoderPath,
-    'decoderPath': decoderPath,
-    'tokenizerPath': tokenizerPath,
-    'maxTotalLength': maxTotalLength,
-    'maxNewTokens': maxNewTokens,
+    'language': language,
+    'useInverseTextNormalization': useInverseTextNormalization,
   };
 }
 
@@ -622,28 +563,14 @@ sherpa.OfflineRecognizerConfig _officialConfig(
   SherpaOnnxRecognizerConfig config,
 ) {
   return switch (config.kind) {
-    SherpaOnnxRecognizerKind.paraformer => sherpa.OfflineRecognizerConfig(
+    SherpaOnnxRecognizerKind.senseVoice => sherpa.OfflineRecognizerConfig(
       model: sherpa.OfflineModelConfig(
-        paraformer: sherpa.OfflineParaformerModelConfig(
+        senseVoice: sherpa.OfflineSenseVoiceModelConfig(
           model: config.modelPath,
+          language: config.language,
+          useInverseTextNormalization: config.useInverseTextNormalization,
         ),
         tokens: config.tokensPath,
-        numThreads: config.numThreads,
-        debug: false,
-        provider: 'cpu',
-      ),
-    ),
-    SherpaOnnxRecognizerKind.qwen3Asr => sherpa.OfflineRecognizerConfig(
-      model: sherpa.OfflineModelConfig(
-        qwen3Asr: sherpa.OfflineQwen3AsrModelConfig(
-          convFrontend: config.convFrontendPath,
-          encoder: config.encoderPath,
-          decoder: config.decoderPath,
-          tokenizer: config.tokenizerPath,
-          maxTotalLen: config.maxTotalLength,
-          maxNewTokens: config.maxNewTokens,
-        ),
-        tokens: '',
         numThreads: config.numThreads,
         debug: false,
         provider: 'cpu',

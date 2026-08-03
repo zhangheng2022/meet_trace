@@ -10,8 +10,10 @@ import '../../../domain/models/workflow_states.dart';
 import '../../repositories/repository_contracts.dart';
 import '../storage/app_file_layout.dart';
 import 'model_file_verifier.dart';
+import 'runtime_asset_installers.dart';
 
-const minimumAdvancedModelFreeBytes = 2 * 1024 * 1024 * 1024;
+const minimumRuntimeInitializationFreeBytes = 768 * 1024 * 1024;
+const maximumRuntimeDownloadBytes = 300000000;
 
 enum DownloadNetworkKind { offline, unmetered, metered, unknown }
 
@@ -141,7 +143,7 @@ final class ModelDownloadCancellationToken {
   }
 }
 
-final class DownloadableModelService {
+final class DownloadableModelService implements RuntimeAsrModelInstaller {
   DownloadableModelService({
     required this.fileLayout,
     required this.installations,
@@ -162,12 +164,15 @@ final class DownloadableModelService {
   final ModelFileVerifier verifier;
   final DateTime Function() now;
 
+  @override
   Future<DownloadableModelResult> download({
     required AsrModelDescriptor descriptor,
     required ModelManifestEntry manifest,
     bool allowMeteredNetwork = false,
     ModelDownloadCancellationToken? cancellation,
     DownloadableModelProgressCallback? onProgress,
+    bool skipPreflight = false,
+    bool forceDownload = false,
   }) async {
     _validateInputs(descriptor, manifest);
     final token = cancellation ?? ModelDownloadCancellationToken();
@@ -190,16 +195,18 @@ final class DownloadableModelService {
       0,
       manifest.requiredBytes,
     );
-    final existingResult = await _adoptExistingIfValid(
-      descriptor: descriptor,
-      manifest: manifest,
-      current: current,
-      finalPath: finalPath,
-      tempPath: tempPath,
-      onProgress: onProgress,
-    );
-    if (existingResult != null) {
-      return existingResult;
+    if (!forceDownload) {
+      final existingResult = await _adoptExistingIfValid(
+        descriptor: descriptor,
+        manifest: manifest,
+        current: current,
+        finalPath: finalPath,
+        tempPath: tempPath,
+        onProgress: onProgress,
+      );
+      if (existingResult != null) {
+        return existingResult;
+      }
     }
 
     var state = _retryableRecord(descriptor, current);
@@ -212,10 +219,12 @@ final class DownloadableModelService {
         await installations.save(state);
       }
 
-      await _validatePreflight(
-        allowMeteredNetwork: allowMeteredNetwork,
-        cancellation: token,
-      );
+      if (!skipPreflight) {
+        await _validatePreflight(
+          allowMeteredNetwork: allowMeteredNetwork,
+          cancellation: token,
+        );
+      }
 
       state = state.transitionTo(ModelInstallationState.downloading);
       await installations.save(state);
@@ -335,13 +344,13 @@ final class DownloadableModelService {
       final failure = canceled
           ? const DownloadableModelException(
               code: 'model.download.canceled',
-              message: '高级模型下载已取消，可稍后继续',
+              message: '模型下载已暂停，可稍后继续',
             )
           : error is DownloadableModelException
           ? error
           : DownloadableModelException(
               code: 'model.download.failed',
-              message: '高级模型下载失败，可重试',
+              message: '模型下载失败，可重试',
               cause: error,
             );
       try {
@@ -356,14 +365,55 @@ final class DownloadableModelService {
     }
   }
 
+  /// 启动快速路径：只读取安装记录、活动版本、固定文件集合和字节数。
+  /// 首次安装、显式修复和 Engine 初始化失败时仍执行完整 SHA-256 校验。
+  @override
+  Future<bool> isReadyFast({
+    required AsrModelDescriptor descriptor,
+    required ModelManifestEntry manifest,
+  }) async {
+    _validateInputs(descriptor, manifest);
+    final installation = await installations.get(
+      modelId: descriptor.modelId,
+      version: descriptor.version,
+    );
+    if (installation?.state != ModelInstallationState.installed ||
+        installation?.installedPath?.trim().isEmpty != false ||
+        installation?.bytes != descriptor.requiredBytes ||
+        await installations.getActiveVersion(descriptor.modelId) !=
+            descriptor.version) {
+      return false;
+    }
+    final root = Directory(installation!.installedPath!);
+    if (!await root.exists()) {
+      return false;
+    }
+    final expected = {for (final file in manifest.files) file.path: file.bytes};
+    final actual = <String, int>{};
+    await for (final entity in root.list(recursive: true, followLinks: false)) {
+      if (entity is File) {
+        actual[p.relative(entity.path, from: root.path).replaceAll(r'\', '/')] =
+            await entity.length();
+      }
+    }
+    return actual.length == expected.length &&
+        expected.entries.every((entry) => actual[entry.key] == entry.value);
+  }
+
   Future<DownloadableModelDeleteResult> delete({
     required AsrModelDescriptor descriptor,
     DownloadableModelProgressCallback? onProgress,
   }) async {
+    if (descriptor.capabilities.contains('required-runtime')) {
+      throw const DownloadableModelException(
+        code: 'model.delete.requiredRuntime',
+        message: '当前唯一转录模型不能删除，只能校验和修复',
+      );
+    }
     if (descriptor.installationType != AsrInstallationType.downloadable) {
       throw const DownloadableModelException(
         code: 'model.delete.bundled',
-        message: '内置标准模型不能删除',
+        message: '内置模型不能删除',
       );
     }
     final activeLeases = await leases.listActive(
@@ -443,7 +493,7 @@ final class DownloadableModelService {
       Error.throwWithStackTrace(
         DownloadableModelException(
           code: 'model.delete.failed',
-          message: '高级模型删除失败，可重试',
+          message: '模型删除失败，可重试',
           cause: error,
         ),
         stackTrace,
@@ -509,10 +559,11 @@ final class DownloadableModelService {
   }) async {
     cancellation.throwIfCanceled();
     final freeBytes = await capacity.getFreeBytes();
-    if (freeBytes < minimumAdvancedModelFreeBytes) {
+    if (freeBytes < minimumRuntimeInitializationFreeBytes) {
+      final shortage = minimumRuntimeInitializationFreeBytes - freeBytes;
       throw DownloadableModelException(
         code: 'model.storage.insufficient',
-        message: '至少需要 2 GiB 可用空间，当前为 $freeBytes 字节',
+        message: '初始化至少需要 768 MiB 可用空间，还缺少 $shortage 字节',
       );
     }
     final kind = await network.getCurrentKind();
@@ -554,7 +605,7 @@ final class DownloadableModelService {
     if (manifest.files.any((file) => Uri.parse(file.url).scheme != 'https')) {
       throw const DownloadableModelException(
         code: 'model.download.url',
-        message: '高级模型文件必须使用 HTTPS',
+        message: '模型文件必须使用 HTTPS',
       );
     }
   }

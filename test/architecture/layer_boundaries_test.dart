@@ -38,11 +38,7 @@ void main() {
   });
 
   test('具体 ASR Engine 不泄漏到 ui', () {
-    const concreteTypes = [
-      'ParaformerStandardAsrEngine',
-      'QwenAdvancedAsrEngine',
-      'SherpaOnnxAsrEngine',
-    ];
+    const concreteTypes = ['SenseVoiceAsrEngine', 'SherpaOnnxAsrEngine'];
     final violations = <String>[];
     for (final file in _dartFilesUnder('lib/ui')) {
       final content = file.readAsStringSync();

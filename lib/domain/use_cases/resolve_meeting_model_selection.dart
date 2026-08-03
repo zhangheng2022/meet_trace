@@ -6,12 +6,16 @@ final class MeetingModelSelection {
     required this.requestedModelId,
     required this.recordingModelId,
     required this.recordingModelVersion,
+    required this.recordingModelLanguage,
+    required this.recordingModelUseInverseTextNormalization,
     this.fallbackReason,
   });
 
   final String requestedModelId;
   final String recordingModelId;
   final String recordingModelVersion;
+  final String recordingModelLanguage;
+  final bool recordingModelUseInverseTextNormalization;
   final String? fallbackReason;
 }
 
@@ -33,10 +37,14 @@ final class ResolveMeetingModelSelection {
       throw DomainInvariantViolation('默认模型不可用：$globalDefaultModelId');
     }
 
+    final descriptor = registry.requireById(globalDefaultModelId);
     return MeetingModelSelection(
       requestedModelId: globalDefaultModelId,
       recordingModelId: globalDefaultModelId,
       recordingModelVersion: defaultVersion,
+      recordingModelLanguage: descriptor.language,
+      recordingModelUseInverseTextNormalization:
+          descriptor.useInverseTextNormalization,
     );
   }
 

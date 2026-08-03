@@ -8,7 +8,8 @@
 
 - 会迹（MeetTrace）是 Android + iOS 自适应 Alpha，不提供登录或跨设备同步；双平台排期以 PRD 门槛评估为准，不继承原 Android 两周假设。
 - 本地音频是唯一事实源；推理变慢或失败时，录音必须继续。说话人分离属于可降级能力。
-- 端侧 ASR 仅使用官方 sherpa-onnx 双模型：内置标准模型 `sherpa-onnx-paraformer-zh-small-2024-03-09` INT8，高级模型 `sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25` 按需下载。
+- 端侧 ASR 当前仅使用官方 sherpa-onnx `sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17`；其他模型待定，不得以占位项或隐藏入口提前暴露。
+- SenseVoice 与 Silero VAD 权重均不得进入 APK/IPA；首次初始化时按固定 Manifest 下载并严格校验，未就绪前首页保持阻断。
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
 - 新会议使用“待生成标题”，最终转录完成后由 AI 总结生成标题。AI 总结只能基于最终转录；使用云端 AI 时仅上传最终文本，并为关键结论保留带时间戳的原文证据。
 - 扩展 P0 前必须先更新 PRD。
@@ -47,7 +48,7 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - `flutter build apk --debug`：构建 Alpha 调试 APK。
 - `flutter build ios --debug --no-codesign`：在 macOS/Xcode 环境构建 iOS Alpha 调试产物。
 
-测试文件使用 `*_test.dart`。优先覆盖录音连续性、模型校验、会议模型锁定、积压恢复、转录排序、快照原子切换、证据映射，以及 Forui 的加载、空白和错误状态。双模型必须在相同语料与设备上对比 RTF、延迟、内存、能耗、温控和关键事实召回率。
+测试文件使用 `*_test.dart`。优先覆盖录音连续性、模型校验、初始化下载与续传、会议模型锁定、积压恢复、转录排序、快照原子切换、证据映射，以及 Forui 的加载、空白和错误状态。SenseVoice 必须在目标设备上记录 RTF、延迟、内存、能耗、温控和关键事实召回率。
 
 ## OCR 代码审查
 

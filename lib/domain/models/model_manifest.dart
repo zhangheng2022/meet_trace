@@ -14,7 +14,6 @@ final class ModelManifestEntry {
   ModelManifestEntry({
     required this.modelId,
     required this.version,
-    required this.tier,
     required this.installationType,
     required this.requiredBytes,
     required List<ModelManifestFile> files,
@@ -23,7 +22,6 @@ final class ModelManifestEntry {
 
   final String modelId;
   final String version;
-  final String tier;
   final String installationType;
   final int requiredBytes;
   final List<ModelManifestFile> files;

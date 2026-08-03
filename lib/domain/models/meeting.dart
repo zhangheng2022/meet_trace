@@ -18,6 +18,8 @@ final class Meeting {
     required this.requestedModelId,
     required this.recordingModelId,
     required this.recordingModelVersion,
+    this.recordingModelLanguage = 'auto',
+    this.recordingModelUseInverseTextNormalization = true,
     this.modelFallbackReason,
     this.activeTranscriptSnapshotId,
     this.activeSummaryId,
@@ -27,6 +29,7 @@ final class Meeting {
     _requireText(requestedModelId, 'requestedModelId');
     _requireText(recordingModelId, 'recordingModelId');
     _requireText(recordingModelVersion, 'recordingModelVersion');
+    _requireText(recordingModelLanguage, 'recordingModelLanguage');
     if (audioDurationMs < 0) {
       throw ArgumentError.value(audioDurationMs, 'audioDurationMs', '不能为负数');
     }
@@ -60,6 +63,8 @@ final class Meeting {
   final String requestedModelId;
   final String recordingModelId;
   final String recordingModelVersion;
+  final String recordingModelLanguage;
+  final bool recordingModelUseInverseTextNormalization;
   final String? modelFallbackReason;
   final String? activeTranscriptSnapshotId;
   final String? activeSummaryId;
@@ -76,6 +81,8 @@ final class Meeting {
   Meeting changeRecordingModel({
     required String recordingModelId,
     required String recordingModelVersion,
+    String recordingModelLanguage = 'auto',
+    bool recordingModelUseInverseTextNormalization = true,
     String? fallbackReason,
   }) {
     if (isRecordingModelLocked) {
@@ -88,6 +95,9 @@ final class Meeting {
     return _copyWith(
       recordingModelId: recordingModelId,
       recordingModelVersion: recordingModelVersion,
+      recordingModelLanguage: recordingModelLanguage,
+      recordingModelUseInverseTextNormalization:
+          recordingModelUseInverseTextNormalization,
       modelFallbackReason: fallbackReason,
     );
   }
@@ -173,6 +183,8 @@ final class Meeting {
     int? audioDurationMs,
     String? recordingModelId,
     String? recordingModelVersion,
+    String? recordingModelLanguage,
+    bool? recordingModelUseInverseTextNormalization,
     Object? modelFallbackReason = _notProvided,
     Object? activeTranscriptSnapshotId = _notProvided,
     Object? activeSummaryId = _notProvided,
@@ -191,6 +203,11 @@ final class Meeting {
       recordingModelId: recordingModelId ?? this.recordingModelId,
       recordingModelVersion:
           recordingModelVersion ?? this.recordingModelVersion,
+      recordingModelLanguage:
+          recordingModelLanguage ?? this.recordingModelLanguage,
+      recordingModelUseInverseTextNormalization:
+          recordingModelUseInverseTextNormalization ??
+          this.recordingModelUseInverseTextNormalization,
       modelFallbackReason: identical(modelFallbackReason, _notProvided)
           ? this.modelFallbackReason
           : modelFallbackReason as String?,

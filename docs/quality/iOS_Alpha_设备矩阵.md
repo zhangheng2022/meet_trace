@@ -20,15 +20,15 @@
 
 | 设备层级 | 目标 | 状态 | 必验内容 |
 |---|---|---|---|
-| 最低 iPhone | 待指定真实型号与系统版本 | 阻塞 | 30 分钟后台录音、标准模型、内存/温控、系统中断 |
-| 当前 iPhone | 待指定真实型号与系统版本 | 阻塞 | 双模型、锁屏、切后台、分享、删除、VoiceOver |
+| 最低 iPhone | 待指定真实型号与系统版本 | 阻塞 | 30 分钟后台录音、SenseVoice、内存/温控、系统中断 |
+| 当前 iPhone | 待指定真实型号与系统版本 | 阻塞 | SenseVoice 初始化下载、锁屏、切后台、分享、删除、VoiceOver |
 | iPad | 待指定真实型号与系统版本 | 阻塞 | 横竖屏、Split View、Dynamic Type、主从布局 |
 
 ## 发布门槛
 
 - `flutter build ios --debug --no-codesign` 在 macOS/Xcode 环境通过。
 - 使用产品负责人确认的反向域名 Bundle ID 和 Apple Team 完成签名配置。
-- 标准模型和 Silero VAD 进入 iOS 构建产物，高级模型权重不进入安装包。
+- SenseVoice 和 Silero VAD 权重均不得进入 iOS 构建产物，首次初始化时下载。
 - 两个 ASR Engine 在 iOS arm64 真机完成初始化、识别、释放和重复创建。
 - 30 分钟前台、锁屏和切后台录音完整率均为 100%。
 - 系统音频中断可恢复；用户强制结束后不显示“仍在录音”，重启可恢复已落盘事实音频。

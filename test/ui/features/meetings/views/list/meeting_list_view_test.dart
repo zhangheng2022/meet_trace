@@ -64,7 +64,7 @@ void main() {
     final title = find.byKey(const ValueKey('recording-setup-title'));
     final detail = find.byKey(const ValueKey('recording-setup-detail'));
     expect(find.text('录音条件已就绪'), findsOneWidget);
-    expect(find.text('音频仅保存在本机 · 标准模型（Paraformer）可用'), findsOneWidget);
+    expect(find.text('音频仅保存在本机 · SenseVoice可用'), findsOneWidget);
     expect(
       tester.getBottomLeft(title).dy,
       lessThan(tester.getTopLeft(detail).dy),
@@ -234,7 +234,7 @@ void main() {
     expect(find.byType(AppLedgerRow), findsNWidgets(2));
     expect(find.text('处理中'), findsOneWidget);
     expect(find.text('失败 · 打开查看事实音频状态'), findsOneWidget);
-    expect(find.text('标准模型（Paraformer） · 2024-03-09'), findsOneWidget);
+    expect(find.text('SenseVoice · 2024-07-17'), findsOneWidget);
     expect(find.byIcon(FLucideIcons.audioLines), findsWidgets);
     expect(find.byIcon(FLucideIcons.circleAlert), findsWidgets);
     expect(find.text('开始会议'), findsOneWidget);
@@ -375,7 +375,7 @@ void main() {
     expect(find.text('开始会议'), findsOneWidget);
     expect(find.text('录音中'), findsOneWidget);
     expect(find.text('录音条件已就绪'), findsOneWidget);
-    expect(find.text('音频仅保存在本机 · 标准模型（Paraformer）可用'), findsOneWidget);
+    expect(find.text('音频仅保存在本机 · SenseVoice可用'), findsOneWidget);
     expect(tester.takeException(), isNull);
     viewModel.dispose();
     await repository.dispose();
@@ -559,8 +559,8 @@ Meeting _meeting(
   createdAt: createdAt ?? DateTime.utc(2026, 7, 24),
   status: state,
   audioDurationMs: 12000,
-  requestedModelId: paraformerStandardModelId,
-  recordingModelId: paraformerStandardModelId,
-  recordingModelVersion: '2024-03-09',
+  requestedModelId: senseVoiceDefaultModelId,
+  recordingModelId: senseVoiceDefaultModelId,
+  recordingModelVersion: '2024-07-17',
   lastErrorCode: state == MeetingState.failed ? 'processing.failed' : null,
 );

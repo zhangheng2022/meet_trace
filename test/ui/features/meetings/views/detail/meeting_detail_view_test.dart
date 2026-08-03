@@ -22,7 +22,7 @@ import '../../../../../support/final_transcription_fakes.dart';
 import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
-  testWidgets('完成页显示最终事实文本并可选择高级模型生成独立快照', (tester) async {
+  testWidgets('完成页显示最终事实文本并可用锁定 SenseVoice 生成独立快照', (tester) async {
     final old = _snapshot(id: 'old');
     final fixture = _fixture(
       _meeting(
@@ -30,7 +30,6 @@ void main() {
         activeTranscriptSnapshotId: old.id,
       ),
       active: old,
-      installQwen: true,
     );
     fixture.runner.onCall =
         ({
@@ -41,10 +40,10 @@ void main() {
           required onProgress,
         }) async {
           final completed = _snapshot(
-            id: 'qwen-new',
-            modelId: qwenAdvancedModelId,
-            modelVersion: '2026-03-25',
-            text: '高级模型最终文本',
+            id: 'sense-voice-new',
+            modelId: senseVoiceDefaultModelId,
+            modelVersion: '2024-07-17',
+            text: 'SenseVoice 新最终文本',
           );
           final meeting = fixture.meetings.value!
               .beginFinalTranscription()
@@ -70,27 +69,25 @@ void main() {
     );
     await tester.tap(find.text('录音'));
     await tester.pumpAndSettle();
-    expect(find.text('标准模型（Paraformer）'), findsOneWidget);
-    expect(find.text('高级模型（Qwen3-ASR）'), findsOneWidget);
-
-    final advanced = find.text('高级模型（Qwen3-ASR）');
-    await tester.ensureVisible(advanced);
-    await tester.tap(advanced);
+    expect(find.text('SenseVoice'), findsOneWidget);
+    final model = find.text('SenseVoice');
+    await tester.ensureVisible(model);
+    await tester.tap(model);
     await tester.pump();
     final retranscribe = find.text('使用所选模型重新转录');
     await tester.ensureVisible(retranscribe);
     await tester.tap(retranscribe);
     await tester.pumpAndSettle();
 
-    expect(fixture.runner.calls.single.modelId, qwenAdvancedModelId);
+    expect(fixture.runner.calls.single.modelId, senseVoiceDefaultModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
     final transcriptTab = find.text('转录');
     await tester.ensureVisible(transcriptTab);
     await tester.pumpAndSettle();
     await tester.tap(transcriptTab);
     await tester.pumpAndSettle();
-    expect(find.textContaining('高级模型最终文本'), findsOneWidget);
-    expect(find.textContaining('来源模型：高级模型（Qwen3-ASR）'), findsOneWidget);
+    expect(find.textContaining('SenseVoice 新最终文本'), findsOneWidget);
+    expect(find.textContaining('来源模型：SenseVoice'), findsOneWidget);
     await fixture.dispose();
   });
 
@@ -456,7 +453,6 @@ void main() {
 _Fixture _fixture(
   Meeting meeting, {
   TranscriptSnapshot? active,
-  bool installQwen = false,
   SpeakerDiarizationRunner? diarization,
   bool diarizationEnabled = false,
   Summary? summary,
@@ -486,13 +482,8 @@ _Fixture _fixture(
   final installations = TestActiveInstallations();
   final registry = AsrModelRegistry.alpha;
   installations.install(
-    installations.installed(registry.requireById(paraformerStandardModelId)),
+    installations.installed(registry.requireById(senseVoiceDefaultModelId)),
   );
-  if (installQwen) {
-    installations.install(
-      installations.installed(registry.requireById(qwenAdvancedModelId)),
-    );
-  }
   final runner = DetailTranscriptionRunner(
     ({
       required meetingId,
@@ -586,9 +577,9 @@ Meeting _meeting({
     status: status,
     audioPath: '/audio/fact.pcm',
     audioDurationMs: 2000,
-    requestedModelId: paraformerStandardModelId,
-    recordingModelId: paraformerStandardModelId,
-    recordingModelVersion: '2024-03-09',
+    requestedModelId: senseVoiceDefaultModelId,
+    recordingModelId: senseVoiceDefaultModelId,
+    recordingModelVersion: '2024-07-17',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
     activeSummaryId: activeSummaryId,
   );
@@ -597,8 +588,8 @@ Meeting _meeting({
 TranscriptSnapshot _snapshot({
   required String id,
   TranscriptSnapshotStatus status = TranscriptSnapshotStatus.complete,
-  String modelId = paraformerStandardModelId,
-  String modelVersion = '2024-03-09',
+  String modelId = senseVoiceDefaultModelId,
+  String modelVersion = '2024-07-17',
   String text = '最终事实文本',
   String? speakerId,
 }) {

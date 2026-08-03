@@ -151,6 +151,9 @@ final class FinalTranscriptionService implements FinalTranscriptionRunner {
       engine = await engineFactory.create(
         modelId: selected.$1,
         modelVersion: selected.$2,
+        language: processingMeeting.recordingModelLanguage,
+        useInverseTextNormalization:
+            processingMeeting.recordingModelUseInverseTextNormalization,
       );
       _validateEngine(engine, selected);
       if (onProgress != null) {

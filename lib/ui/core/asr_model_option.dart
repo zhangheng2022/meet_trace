@@ -69,27 +69,14 @@ final class AsrModelOption {
     AsrModelUiStatus.insufficientStorage => '空间不足',
   };
 
-  String get positioningLabel => switch (descriptor.tier) {
-    AsrModelTier.standard => '默认、低功耗，适合普通话与英语',
-    AsrModelTier.advanced => '准确率优先，资源占用较高',
-  };
+  String get positioningLabel => '默认离线转录模型 · 自动识别中、粤、英、日、韩语';
 
-  String? get resourceLabel => switch (descriptor.tier) {
-    AsrModelTier.standard => null,
-    AsrModelTier.advanced => '约 941 MB · 至少需要 2 GB 空间 · 建议使用 Wi-Fi',
-  };
+  String get resourceLabel => '239.5 MB · language=auto · ITN 已开启';
 }
 
-final class AdvancedModelActions {
-  const AdvancedModelActions({
-    this.download,
-    this.cancel,
-    this.retry,
-    this.delete,
-  });
+final class ModelMaintenanceActions {
+  const ModelMaintenanceActions({this.repair, this.pause});
 
-  final Future<void> Function()? download;
-  final void Function()? cancel;
-  final Future<void> Function()? retry;
-  final Future<void> Function()? delete;
+  final Future<void> Function()? repair;
+  final void Function()? pause;
 }

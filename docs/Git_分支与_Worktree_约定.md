@@ -30,11 +30,11 @@
 .worktrees/alpha-step-04-model-registry
   └─ codex/alpha-step-04-model-registry
 
-.worktrees/alpha-step-05-bundled-paraformer
-  └─ codex/alpha-step-05-bundled-paraformer
+.worktrees/alpha-runtime-assets
+  └─ codex/alpha-runtime-assets
 
-.worktrees/alpha-step-06-qwen-download
-  └─ codex/alpha-step-06-qwen-download
+.worktrees/alpha-sense-voice
+  └─ codex/alpha-sense-voice
 ```
 
 ## 标准流程

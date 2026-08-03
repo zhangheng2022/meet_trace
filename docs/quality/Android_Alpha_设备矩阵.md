@@ -20,15 +20,15 @@
 
 | 角色 | 设备 | 系统/ABI | 当前状态 | 用途 |
 |---|---|---|---|---|
-| 主开发机 | Xiaomi Mi 10（约 8 GB RAM） | Android 11 / API 30 / arm64-v8a | 录音并发与双模型各两轮合并复跑通过；Qwen 有显著内存/延迟风险 | UI、录音和模型功能冒烟 |
+| 主开发机 | Xiaomi Mi 10（约 8 GB RAM） | Android 11 / API 30 / arm64-v8a | 旧模型历史证据不可作为 SenseVoice 验收 | SenseVoice 下载、UI、录音和模型功能冒烟 |
 | 最低系统设备 | 待提供的 API 24 arm64 真机 | Android 7.0 / arm64 | 未就绪 | 最低系统安装、权限、录音恢复 |
-| 低端性能设备 | 待选择的 4 GB RAM arm64 真机 | Android 9～11 / arm64 | 未就绪 | 标准模型 RTF、内存、耗电和温控 |
+| 低端性能设备 | 待选择的 4 GB RAM arm64 真机 | Android 9～11 / arm64 | 未就绪 | SenseVoice RTF、延迟、内存、耗电和温控 |
 
 ## 使用规则
 
 - 模拟器不能替代 ASR、录音连续性、耗电和温控验收。
 - 通用 Debug APK 可以包含多个 ABI；发布产物的 ABI 拆分策略在 Step 18 确认。
 - Mi 10 只能证明主开发链可运行，不能代表最低设备门槛。
-- Step 01 必须补齐低端性能设备，才能对标准模型做 Go/No-Go。
+- 必须补齐低端性能设备和当前 SenseVoice 指标，才能做 Go/No-Go。
 - Step 18 发布前必须补齐最低系统设备，并保存设备型号、系统、ABI、内存和测试结果。
 - 设备序列号不进入仓库。

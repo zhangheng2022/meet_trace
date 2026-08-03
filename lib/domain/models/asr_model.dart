@@ -1,17 +1,16 @@
-enum AsrModelTier { standard, advanced }
-
 enum AsrInstallationType { bundled, downloadable }
 
 final class AsrModelDescriptor {
   AsrModelDescriptor({
     required this.modelId,
     required this.displayName,
-    required this.tier,
     required this.version,
     required List<String> supportedLanguages,
     required this.installationType,
     required this.requiredBytes,
     required Set<String> capabilities,
+    this.language = 'auto',
+    this.useInverseTextNormalization = true,
   }) : supportedLanguages = List.unmodifiable(supportedLanguages),
        capabilities = Set.unmodifiable(capabilities) {
     if (modelId.trim().isEmpty) {
@@ -37,14 +36,18 @@ final class AsrModelDescriptor {
     if (this.capabilities.any((capability) => capability.trim().isEmpty)) {
       throw ArgumentError.value(capabilities, 'capabilities', '不能包含空能力');
     }
+    if (language.trim().isEmpty) {
+      throw ArgumentError.value(language, 'language', '不能为空');
+    }
   }
 
   final String modelId;
   final String displayName;
-  final AsrModelTier tier;
   final String version;
   final List<String> supportedLanguages;
   final AsrInstallationType installationType;
   final int requiredBytes;
   final Set<String> capabilities;
+  final String language;
+  final bool useInverseTextNormalization;
 }

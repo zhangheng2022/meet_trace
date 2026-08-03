@@ -78,7 +78,7 @@ void main() {
     expect(await db.getVersion(), AppDatabase.schemaVersion);
   });
 
-  test('现有 v1 数据库升级到当前版本并保留原表', () async {
+  test('现有 v1 数据库拒绝原地升级且不删除原表', () async {
     final root = await Directory.systemTemp.createTemp('meettrace-v1-');
     addTearDown(() => root.delete(recursive: true));
     final path = p.join(root.path, 'v1.db');
@@ -101,19 +101,19 @@ void main() {
       path: path,
     );
     addTearDown(database.close);
-    final db = await database.open();
-    final settings = await db.rawQuery(
-      "SELECT name FROM sqlite_master "
-      "WHERE type = 'table' AND name = 'app_settings'",
+    await expectLater(
+      database.open(),
+      throwsA(isA<UnsupportedAlphaInstallationException>()),
     );
-    final marker = await db.query('legacy_marker');
+    final untouched = await databaseFactoryFfi.openDatabase(path);
+    addTearDown(untouched.close);
+    final marker = await untouched.query('legacy_marker');
 
-    expect(settings, hasLength(1));
     expect(marker.single['id'], 1);
-    expect(await db.getVersion(), AppDatabase.schemaVersion);
+    expect(await untouched.getVersion(), 1);
   });
 
-  test('现有 v3 摘要升级后补充空标题并保留数据', () async {
+  test('现有 v3 数据库拒绝原地升级且保留摘要', () async {
     final root = await Directory.systemTemp.createTemp('meettrace-v3-');
     addTearDown(() => root.delete(recursive: true));
     final path = p.join(root.path, 'v3.db');
@@ -136,11 +136,16 @@ void main() {
       path: path,
     );
     addTearDown(database.close);
-    final db = await database.open();
-    final rows = await db.query('summaries');
+    await expectLater(
+      database.open(),
+      throwsA(isA<UnsupportedAlphaInstallationException>()),
+    );
+    final untouched = await databaseFactoryFfi.openDatabase(path);
+    addTearDown(untouched.close);
+    final rows = await untouched.query('summaries');
 
     expect(rows.single['id'], 'summary-legacy');
-    expect(rows.single['title'], '');
-    expect(await db.getVersion(), AppDatabase.schemaVersion);
+    expect(rows.single.containsKey('title'), isFalse);
+    expect(await untouched.getVersion(), 3);
   });
 }

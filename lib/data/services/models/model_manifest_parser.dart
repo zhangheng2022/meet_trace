@@ -61,7 +61,6 @@ final class ModelManifestParser {
   ModelManifestEntry _parseEntry(Map<String, dynamic> json) {
     final modelId = _requiredText(json, 'modelId');
     final version = _requiredText(json, 'version');
-    final tier = _requiredText(json, 'tier');
     final installationType = _requiredText(json, 'installationType');
     final requiredBytes = _positiveInt(json, 'requiredBytes');
     final descriptor = registry.findById(modelId);
@@ -69,7 +68,6 @@ final class ModelManifestParser {
       throw FormatException('Manifest 包含 Registry 外模型：$modelId');
     }
     if (descriptor.version != version ||
-        descriptor.tier.name != tier ||
         descriptor.installationType.name != installationType ||
         descriptor.requiredBytes != requiredBytes) {
       throw FormatException('Manifest 与 Registry 元数据不一致：$modelId@$version');
@@ -111,7 +109,6 @@ final class ModelManifestParser {
     return ModelManifestEntry(
       modelId: modelId,
       version: version,
-      tier: tier,
       installationType: installationType,
       requiredBytes: requiredBytes,
       files: files,

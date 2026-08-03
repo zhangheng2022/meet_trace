@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 
+import '../data/services/storage/app_database.dart';
 import '../domain/models/meeting.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../theme/theme.dart';
@@ -12,6 +13,7 @@ import '../ui/features/meetings/views/list/meeting_list_view.dart';
 import '../ui/features/meetings/views/recording/recording_bootstrap_view.dart';
 import '../ui/features/settings/views/model_settings_view.dart';
 import '../ui/features/startup/views/meettrace_startup_view.dart';
+import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
 import 'meettrace_dependencies.dart';
 
 final class MeetTraceBootstrap extends StatefulWidget {
@@ -31,7 +33,13 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
       future: _loading,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
+          final legacyInstallation =
+              snapshot.error is UnsupportedAlphaInstallationException;
           return MeetTraceStartupErrorView(
+            title: legacyInstallation ? '需要先导出旧 Alpha 录音' : '本地能力准备未完成',
+            message: legacyInstallation
+                ? '检测到旧版数据。应用不会自动迁移或删除录音；请先退回原 Alpha 版本导出重要录音，再卸载或清除数据后安装当前版本。'
+                : '请确认设备空间充足后重试。已有会议数据不会被删除。',
             onRetry: () {
               setState(() {
                 _loading = MeetTraceDependencies.create();
@@ -44,7 +52,7 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
           return const MeetTraceStartupView();
         }
         _dependencies ??= dependencies;
-        return MeetTraceFlow(dependencies: dependencies);
+        return _RuntimeInitializationGate(dependencies: dependencies);
       },
     );
   }
@@ -56,10 +64,70 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
   }
 }
 
-final class MeetTraceFlow extends StatefulWidget {
-  const MeetTraceFlow({required this.dependencies, super.key});
+final class _RuntimeInitializationGate extends StatefulWidget {
+  const _RuntimeInitializationGate({required this.dependencies});
 
   final MeetTraceDependencies dependencies;
+
+  @override
+  State<_RuntimeInitializationGate> createState() =>
+      _RuntimeInitializationGateState();
+}
+
+final class _RuntimeInitializationGateState
+    extends State<_RuntimeInitializationGate> {
+  late RuntimeInitializationViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = widget.dependencies.createRuntimeInitializationViewModel();
+    _viewModel.addListener(_onChanged);
+    unawaited(_viewModel.start());
+  }
+
+  void _onChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _viewModel.isReady
+      ? MeetTraceFlow(
+          dependencies: widget.dependencies,
+          onRuntimeRepairRequired: _restartForRepair,
+        )
+      : MeetTraceStartupView(viewModel: _viewModel);
+
+  void _restartForRepair() {
+    _viewModel.removeListener(_onChanged);
+    _viewModel.dispose();
+    _viewModel = widget.dependencies.createRuntimeInitializationViewModel(
+      forceRepair: true,
+    );
+    _viewModel.addListener(_onChanged);
+    setState(() {});
+    unawaited(_viewModel.start());
+  }
+
+  @override
+  void dispose() {
+    _viewModel.removeListener(_onChanged);
+    _viewModel.dispose();
+    super.dispose();
+  }
+}
+
+final class MeetTraceFlow extends StatefulWidget {
+  const MeetTraceFlow({
+    required this.dependencies,
+    required this.onRuntimeRepairRequired,
+    super.key,
+  });
+
+  final MeetTraceDependencies dependencies;
+  final VoidCallback onRuntimeRepairRequired;
 
   @override
   State<MeetTraceFlow> createState() => _MeetTraceFlowState();
@@ -125,6 +193,10 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
         return;
       }
       if (session == null) {
+        if (viewModel.requiresRuntimeRepair) {
+          widget.onRuntimeRepairRequired();
+          return;
+        }
         await _showStartFailure(viewModel.errorMessage ?? '默认模型暂时不可用，请前往设置检查');
         return;
       }

@@ -23,14 +23,14 @@ void main() {
 
   tearDown(() => database.close());
 
-  test('没有设置时返回标准模型初始值', () async {
-    expect(await repository.getDefaultModelId(), paraformerStandardModelId);
+  test('没有设置时返回 SenseVoice 初始值', () async {
+    expect(await repository.getDefaultModelId(), senseVoiceDefaultModelId);
   });
 
   test('保存高级默认模型并持久化读取', () async {
-    await repository.setDefaultModelId(qwenAdvancedModelId);
+    await repository.setDefaultModelId(senseVoiceDefaultModelId);
 
-    expect(await repository.getDefaultModelId(), qwenAdvancedModelId);
+    expect(await repository.getDefaultModelId(), senseVoiceDefaultModelId);
   });
 
   test('拒绝 Registry 外的模型 ID', () async {

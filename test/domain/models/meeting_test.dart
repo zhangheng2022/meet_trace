@@ -16,7 +16,7 @@ void main() {
       final meeting = _meeting(
         requestedModelId: 'qwen',
         recordingModelId: 'paraformer',
-        modelFallbackReason: '高级模型未安装，用户确认改用标准模型',
+        modelFallbackReason: '请求模型不可用，用户确认使用实际模型',
       );
 
       expect(meeting.requestedModelId, 'qwen');

@@ -46,6 +46,8 @@ final class _FakeAsrEngineFactory implements AsrEngineFactory {
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    String language = 'auto',
+    bool useInverseTextNormalization = true,
   }) async {
     return _FakeAsrEngine(modelId: modelId, modelVersion: modelVersion);
   }
@@ -56,7 +58,6 @@ final class _FakeAsrEngine implements AsrEngine {
     : descriptor = AsrModelDescriptor(
         modelId: modelId,
         displayName: '测试模型',
-        tier: AsrModelTier.standard,
         version: modelVersion,
         supportedLanguages: const ['zh'],
         installationType: AsrInstallationType.bundled,

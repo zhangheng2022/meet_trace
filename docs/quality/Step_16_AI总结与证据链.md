@@ -60,7 +60,7 @@ flutter build apk --debug --no-pub
 
 1. 隔离 worktree 首次构建缺少 Git 忽略的 Flutter `GeneratedPluginRegistrant`，日志明确报类未找到；补齐与上一步一致的生成文件并重建后，插件注册和本地模型准备恢复。该生成文件不进入提交。
 2. 使用 `adb install -r` 覆盖安装，保留既有已完成会议和最终转录。
-3. 冷启动后会议列表和详情页均使用中文，既有 Paraformer 最终转录、说话人标签和事实音频继续可见。
+3. 冷启动后会议列表和详情页均使用中文，既有最终转录、说话人标签和事实音频继续可见。
 4. AI 总结卡明确显示“只基于当前最终转录生成；不会上传音频或会中临时文本”。
 5. 生产能力明确显示“安全总结网关未配置”和“当前构建已关闭云端总结”，页面没有生成按钮。
 6. 日志不再出现 `GeneratedPluginRegistrant`、`MissingPluginException` 或 `AndroidRuntime` 崩溃。

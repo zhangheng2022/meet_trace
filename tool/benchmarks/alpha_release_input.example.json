@@ -1,43 +1,33 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "rawMetricsRef": null,
-  "corpus": {
-    "id": null,
-    "sampleCount": null,
-    "deidentified": null
-  },
+  "corpus": {"id": null, "sampleCount": null, "deidentified": null},
   "environment": {
     "deviceId": null,
-    "sameCorpusForBothModels": null,
-    "sameDeviceForBothModels": null,
-    "lowEndArm64DeviceTested": null,
+    "androidArm64DeviceTested": null,
     "iosArm64DeviceTested": null,
+    "androidBackgroundRecordingPassed": null,
     "iosBackgroundRecordingPassed": null,
     "iosInterruptionRecoveryPassed": null,
     "adaptiveNavigationAccessibilityPassed": null
   },
-  "standardModel": {
-    "resourceBytes": 81904027,
+  "senseVoice": {
+    "runtimeDownloadBytes": 239762595,
     "rtfSamples": null,
     "sentenceLatencyMs": null,
     "finalTranscriptionDurationMs": null,
     "recordingCompletenessRatio": null,
     "sustainedSevereOrCriticalThermal": null,
+    "batteryDeltaPercent": null,
+    "startTemperatureC": null,
+    "peakTemperatureC": null,
+    "peakRssBytes": null,
     "keyFactRecallRatio": null
-  },
-  "energy": {
-    "standardWh": null,
-    "advancedWh": null
-  },
-  "advancedModel": {
-    "rtfSamples": null,
-    "sentenceLatencyMs": null,
-    "finalTranscriptionDurationMs": null
   },
   "acceptanceEvidence": null,
   "release": {
     "apkAuditPassed": null,
     "iosBuildAuditPassed": null,
-    "paraformerRedistributionConfirmed": null
+    "senseVoiceLicenseConfirmed": true
   }
 }

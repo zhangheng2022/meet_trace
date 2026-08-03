@@ -21,7 +21,7 @@ final class TestMeetingReadinessChecker implements MeetingReadinessChecker {
           MeetingReadiness(
             microphonePermissionGranted: true,
             freeBytes: minimumRecordingFreeBytes,
-            defaultModelId: paraformerStandardModelId,
+            defaultModelId: senseVoiceDefaultModelId,
             defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
             defaultModelAvailable: true,
           );
@@ -188,6 +188,8 @@ final class TestAsrEngineFactory implements AsrEngineFactory {
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    String language = 'auto',
+    bool useInverseTextNormalization = true,
   }) async {
     calls.add((modelId, modelVersion));
     final error = createError;

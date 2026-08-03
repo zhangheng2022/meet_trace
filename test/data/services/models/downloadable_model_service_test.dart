@@ -47,8 +47,8 @@ void main() {
 
   tearDown(() => root.delete(recursive: true));
 
-  test('可用空间不足 2 GiB 时在发起网络请求前失败', () async {
-    capacity.freeBytes = 2 * 1024 * 1024 * 1024 - 1;
+  test('可用空间不足 768 MiB 时在发起网络请求前失败', () async {
+    capacity.freeBytes = minimumRuntimeInitializationFreeBytes - 1;
 
     await expectLater(
       service.download(descriptor: _descriptor, manifest: _manifest),
@@ -135,7 +135,26 @@ void main() {
     );
   });
 
-  test('取消下载保留临时文件和 paused 状态且不产生最终目录', () async {
+  test('强制修复绕过同大小快速路径并重新下载后原子替换', () async {
+    final installedPath = await _install(service);
+    await File(p.join(installedPath, 'a.bin')).writeAsString('HELLO');
+    final callsBeforeRepair = downloader.calls.length;
+
+    final repaired = await service.download(
+      descriptor: _descriptor,
+      manifest: _manifest,
+      forceDownload: true,
+    );
+
+    expect(downloader.calls.length, callsBeforeRepair + 2);
+    expect(
+      File(p.join(repaired.installedPath, 'a.bin')).readAsStringSync(),
+      'hello',
+    );
+    expect(installations.current?.state, ModelInstallationState.installed);
+  });
+
+  test('暂停下载保留临时文件和 paused 状态且不产生最终目录', () async {
     final cancellation = ModelDownloadCancellationToken();
     downloader.cancelAfterBytes = 2;
     downloader.cancellation = cancellation;
@@ -268,7 +287,7 @@ void main() {
     expect(installations.current, isNotNull);
   });
 
-  test('删除高级模型只移除版本目录、安装记录和活动指针', () async {
+  test('删除可下载模型只移除版本目录、安装记录和活动指针', () async {
     final installedPath = await _install(service);
     final unrelated = File(p.join(root.path, 'meetings', 'history.json'));
     await unrelated.create(recursive: true);
@@ -281,6 +300,29 @@ void main() {
     expect(installations.current, isNull);
     expect(await installations.getActiveVersion(_descriptor.modelId), isNull);
     expect(unrelated.readAsStringSync(), 'keep');
+  });
+
+  test('拒绝删除 required-runtime 唯一模型', () async {
+    final required = AsrModelDescriptor(
+      modelId: 'required-model',
+      displayName: 'Required',
+      version: '1',
+      supportedLanguages: const ['auto'],
+      installationType: AsrInstallationType.downloadable,
+      requiredBytes: 10,
+      capabilities: const {'offline', 'required-runtime'},
+    );
+
+    await expectLater(
+      service.delete(descriptor: required),
+      throwsA(
+        isA<DownloadableModelException>().having(
+          (error) => error.code,
+          'code',
+          'model.delete.requiredRuntime',
+        ),
+      ),
+    );
   });
 }
 
@@ -299,8 +341,7 @@ final _sourceBytes = <String, List<int>>{
 
 final _descriptor = AsrModelDescriptor(
   modelId: 'qwen',
-  displayName: '高级模型',
-  tier: AsrModelTier.advanced,
+  displayName: '测试模型',
   version: '2',
   supportedLanguages: const ['multilingual'],
   installationType: AsrInstallationType.downloadable,
@@ -311,7 +352,6 @@ final _descriptor = AsrModelDescriptor(
 final _manifest = ModelManifestEntry(
   modelId: 'qwen',
   version: '2',
-  tier: 'advanced',
   installationType: 'downloadable',
   requiredBytes: 10,
   files: [

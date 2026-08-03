@@ -12,7 +12,7 @@ void main() {
     late _DeviceProbe device;
 
     setUp(() {
-      preferences = TestModelPreferences(paraformerStandardModelId);
+      preferences = TestModelPreferences(senseVoiceDefaultModelId);
       installations = TestActiveInstallations();
       device = _DeviceProbe();
     });

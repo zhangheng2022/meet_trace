@@ -1,7 +1,7 @@
 import 'asr_model.dart';
 
-const paraformerStandardModelId = 'sherpa-onnx-paraformer-zh-small-2024-03-09';
-const qwenAdvancedModelId = 'sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25';
+const senseVoiceDefaultModelId =
+    'sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17';
 
 final class AsrModelRegistry {
   AsrModelRegistry({
@@ -17,19 +17,11 @@ final class AsrModelRegistry {
     if (_byId.length != models.length) {
       throw ArgumentError.value(models, 'models', 'modelId 不能重复');
     }
-    final defaultModel = _byId[defaultModelId];
-    if (defaultModel == null) {
+    if (_byId[defaultModelId] == null) {
       throw ArgumentError.value(
         defaultModelId,
         'defaultModelId',
         '必须存在于 Registry',
-      );
-    }
-    if (defaultModel.tier != AsrModelTier.standard) {
-      throw ArgumentError.value(
-        defaultModelId,
-        'defaultModelId',
-        '默认模型必须是标准模型',
       );
     }
   }
@@ -37,27 +29,25 @@ final class AsrModelRegistry {
   static final alpha = AsrModelRegistry(
     models: [
       AsrModelDescriptor(
-        modelId: paraformerStandardModelId,
-        displayName: '标准模型（Paraformer）',
-        tier: AsrModelTier.standard,
-        version: '2024-03-09',
-        supportedLanguages: const ['zh', 'en'],
-        installationType: AsrInstallationType.bundled,
-        requiredBytes: 81904027,
-        capabilities: const {'offline', 'meeting-preview', 'final-transcript'},
-      ),
-      AsrModelDescriptor(
-        modelId: qwenAdvancedModelId,
-        displayName: '高级模型（Qwen3-ASR）',
-        tier: AsrModelTier.advanced,
-        version: '2026-03-25',
-        supportedLanguages: const ['multilingual'],
+        modelId: senseVoiceDefaultModelId,
+        displayName: 'SenseVoice',
+        version: '2024-07-17',
+        supportedLanguages: const ['zh', 'yue', 'en', 'ja', 'ko'],
         installationType: AsrInstallationType.downloadable,
-        requiredBytes: 987015347,
-        capabilities: const {'offline', 'high-accuracy', 'final-transcript'},
+        requiredBytes: 239549735,
+        capabilities: const {
+          'offline',
+          'meeting-preview',
+          'final-transcript',
+          'auto-language',
+          'inverse-text-normalization',
+          'required-runtime',
+        },
+        language: 'auto',
+        useInverseTextNormalization: true,
       ),
     ],
-    defaultModelId: paraformerStandardModelId,
+    defaultModelId: senseVoiceDefaultModelId,
   );
 
   final List<AsrModelDescriptor> models;

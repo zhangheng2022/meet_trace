@@ -182,7 +182,7 @@ RecordingSessionViewModel _viewModel({
   required _PreviewSession preview,
 }) {
   final descriptor = AsrModelRegistry.alpha.requireById(
-    paraformerStandardModelId,
+    senseVoiceDefaultModelId,
   );
   final meeting = Meeting(
     id: 'meeting-1',
@@ -315,7 +315,7 @@ final class _PreviewSession implements AsrPreviewSession {
         startMs: startMs,
         endMs: startMs + 1000,
         text: text,
-        modelId: paraformerStandardModelId,
+        modelId: senseVoiceDefaultModelId,
         modelVersion: '1',
         isFinalForWindow: true,
       ),

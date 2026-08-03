@@ -34,7 +34,7 @@ final class _PreviewMeetingReadinessChecker implements MeetingReadinessChecker {
   }) async => MeetingReadiness(
     microphonePermissionGranted: true,
     freeBytes: minimumRecordingFreeBytes,
-    defaultModelId: paraformerStandardModelId,
+    defaultModelId: senseVoiceDefaultModelId,
     defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
     defaultModelAvailable: true,
   );

@@ -7,6 +7,7 @@ import '../../../../../domain/models/meeting_readiness.dart';
 import '../../../../../domain/models/model_installation.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../domain/ports/repositories.dart';
+import '../../../../../domain/ports/asr_engine.dart';
 import '../../../../../domain/use_cases/start_meeting.dart';
 
 /// 使用全局默认模型直接创建会议，不提供本场标题或模型覆盖。
@@ -32,6 +33,7 @@ final class StartMeetingViewModel extends ChangeNotifier {
   bool _isLoading = true;
   bool _isBusy = false;
   bool _disposed = false;
+  bool _requiresRuntimeRepair = false;
   StartedMeetingSession? _startedSession;
 
   bool get isLoading => _isLoading;
@@ -40,6 +42,7 @@ final class StartMeetingViewModel extends ChangeNotifier {
   String get defaultModelId => _defaultModelId;
   StartedMeetingSession? get startedSession => _startedSession;
   bool get isModelLocked => _startedSession != null;
+  bool get requiresRuntimeRepair => _requiresRuntimeRepair;
 
   Future<void> load() => _loadingOperation ??= _load();
 
@@ -137,11 +140,21 @@ final class StartMeetingViewModel extends ChangeNotifier {
   Future<void> _runBusy(Future<void> Function() operation) async {
     _isBusy = true;
     _errorMessage = null;
+    _requiresRuntimeRepair = false;
     _notify();
     try {
       await operation();
     } on StartMeetingBlocked catch (error) {
       _errorMessage = _startBlockedMessage(error);
+      _requiresRuntimeRepair =
+          error.reason == StartMeetingBlockReason.modelUnavailable ||
+          error.readiness?.issues.contains(
+                MeetingReadinessIssue.defaultModelUnavailable,
+              ) ==
+              true;
+    } on AsrEngineException {
+      _requiresRuntimeRepair = true;
+      _errorMessage = 'SenseVoice 初始化失败，正在返回资源修复流程';
     } on Object {
       _errorMessage = '会议启动失败，请检查录音权限、存储空间和默认模型后重试';
     } finally {
@@ -167,9 +180,8 @@ final class StartMeetingViewModel extends ChangeNotifier {
 String _startBlockedMessage(StartMeetingBlocked error) {
   return switch (error.reason) {
     StartMeetingBlockReason.readiness => _readinessMessage(error.readiness!),
-    StartMeetingBlockReason.advancedModelUnavailable =>
-      '默认高级模型尚未安装，请先在设置中下载或切换默认模型',
-    StartMeetingBlockReason.standardModelUnavailable => '默认标准模型尚未准备完成，暂时无法开始会议',
+    StartMeetingBlockReason.modelUnavailable =>
+      'SenseVoice 尚未准备完成，请返回初始化流程校验并修复',
   };
 }
 
@@ -180,8 +192,6 @@ String _readinessMessage(MeetingReadiness readiness) {
       '需要麦克风权限。授权后才能开始会议，未授权时不会创建会议。',
     MeetingReadinessIssue.insufficientStorage => '存储空间不足。请至少保留 128 MB 可用空间后重试。',
     MeetingReadinessIssue.defaultModelUnavailable =>
-      readiness.defaultModelId == qwenAdvancedModelId
-          ? '默认高级模型不可用，请先在设置中下载或切换默认模型'
-          : '默认标准模型尚未准备完成，暂时无法开始会议',
+      'SenseVoice 尚未准备完成，请返回初始化流程校验并修复',
   };
 }

@@ -1,7 +1,5 @@
-import 'dart:async';
-
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
@@ -13,151 +11,63 @@ import 'package:meettrace/ui/features/settings/views/model_settings_view.dart';
 import '../../../../support/model_selection_fakes.dart';
 
 void main() {
-  final cases = <(ModelInstallation?, String)>[
-    (null, '未下载'),
-    (_qwenState(ModelInstallationState.downloading), '下载中'),
-    (_qwenState(ModelInstallationState.verifying), '校验中'),
-    (_qwenState(ModelInstallationState.installed), '已安装'),
-    (
-      _qwenState(
-        ModelInstallationState.failed,
-        errorCode: 'model.download.failed',
-      ),
-      '下载失败',
-    ),
-    (
-      _qwenState(
-        ModelInstallationState.failed,
-        errorCode: 'model.storage.insufficient',
-      ),
-      '空间不足',
-    ),
-  ];
-
-  for (final (installation, expectedStatus) in cases) {
-    testWidgets('设置页显示高级模型状态：$expectedStatus', (tester) async {
-      final installations = TestActiveInstallations();
-      final standard = AsrModelRegistry.alpha.requireById(
-        paraformerStandardModelId,
-      );
-      installations.install(installations.installed(standard), active: true);
-      if (installation != null) {
-        installations.install(
-          installation,
-          active: installation.state == ModelInstallationState.installed,
-        );
-      }
-      final viewModel = ModelSettingsViewModel(
-        preferences: TestModelPreferences(paraformerStandardModelId),
-        installations: installations,
-      );
-
-      await tester.pumpWidget(
-        Application(home: ModelSettingsView(viewModel: viewModel)),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byType(FScaffold), findsOneWidget);
-      expect(find.text('转录模型'), findsWidgets);
-      expect(find.text('标准模型（Paraformer）'), findsOneWidget);
-      expect(find.text('已安装'), findsWidgets);
-      expect(find.text('高级模型（Qwen3-ASR）'), findsOneWidget);
-      expect(
-        find.text(expectedStatus),
-        expectedStatus == '已安装' ? findsNWidgets(2) : findsOneWidget,
-      );
-      expect(find.textContaining('约 941 MB'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-
-      viewModel.dispose();
-      await installations.dispose();
-    });
-  }
-
-  testWidgets('未下载时下载按钮触发高级模型动作', (tester) async {
-    var downloadCalls = 0;
+  testWidgets('设置页只显示真实 SenseVoice 且没有删除或占位模型', (tester) async {
     final installations = TestActiveInstallations();
-    final standard = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
-    );
-    installations.install(installations.installed(standard), active: true);
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(installations.installed(descriptor), active: true);
     final viewModel = ModelSettingsViewModel(
-      preferences: TestModelPreferences(paraformerStandardModelId),
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
       installations: installations,
-      actions: AdvancedModelActions(download: () async => downloadCalls++),
+      actions: const ModelMaintenanceActions(),
     );
 
     await tester.pumpWidget(
       Application(home: ModelSettingsView(viewModel: viewModel)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('下载高级模型'));
-    await tester.pumpAndSettle();
 
-    expect(downloadCalls, 1);
+    expect(find.text('SenseVoice'), findsOneWidget);
+    expect(find.textContaining('239.5 MB'), findsOneWidget);
+    expect(find.textContaining('高级'), findsNothing);
+    expect(find.textContaining('标准'), findsNothing);
+    expect(find.textContaining('即将'), findsNothing);
+    expect(find.textContaining('删除'), findsNothing);
     viewModel.dispose();
     await installations.dispose();
   });
 
-  testWidgets('高级模型下载进行中仍可取消', (tester) async {
-    final download = Completer<void>();
-    var cancelCalls = 0;
+  testWidgets('下载中可以暂停并保留分片', (tester) async {
+    var pauseCalls = 0;
     final installations = TestActiveInstallations();
-    final registry = AsrModelRegistry.alpha;
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
     installations.install(
-      installations.installed(registry.requireById(paraformerStandardModelId)),
-      active: true,
-    );
-    final viewModel = ModelSettingsViewModel(
-      preferences: TestModelPreferences(paraformerStandardModelId),
-      installations: installations,
-      actions: AdvancedModelActions(
-        download: () => download.future,
-        cancel: () {
-          cancelCalls++;
-          download.complete();
-        },
+      ModelInstallation(
+        modelId: descriptor.modelId,
+        version: descriptor.version,
+        installationType: descriptor.installationType,
+        state: ModelInstallationState.downloading,
+        bytes: 0,
       ),
     );
+    final viewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
+      installations: installations,
+      actions: ModelMaintenanceActions(pause: () => pauseCalls++),
+    );
+
     await tester.pumpWidget(
       Application(home: ModelSettingsView(viewModel: viewModel)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('下载高级模型'));
-    installations.install(
-      _qwenState(ModelInstallationState.downloading),
-      notify: true,
-    );
+    final pause = find.text('暂停下载');
+    await tester.ensureVisible(pause);
+    await tester.tap(pause);
     await tester.pump();
 
-    await tester.tap(find.text('取消下载'));
+    expect(pauseCalls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
-
-    expect(cancelCalls, 1);
     viewModel.dispose();
     await installations.dispose();
   });
-}
-
-ModelInstallation _qwenState(
-  ModelInstallationState state, {
-  String? errorCode,
-}) {
-  final descriptor = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
-  return ModelInstallation(
-    modelId: descriptor.modelId,
-    version: descriptor.version,
-    installationType: descriptor.installationType,
-    state: state,
-    installedPath: state == ModelInstallationState.installed
-        ? 'models/qwen'
-        : null,
-    verifiedAt: state == ModelInstallationState.installed
-        ? DateTime.utc(2026, 7, 24)
-        : null,
-    bytes: state == ModelInstallationState.installed
-        ? descriptor.requiredBytes
-        : 0,
-    lastErrorCode: errorCode,
-  );
 }

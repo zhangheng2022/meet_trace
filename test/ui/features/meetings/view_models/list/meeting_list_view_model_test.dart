@@ -43,7 +43,7 @@ void main() {
         microphonePermissionGranted: false,
         freeBytes: minimumRecordingFreeBytes,
         defaultModelId: 'paraformer',
-        defaultModelName: '标准模型（Paraformer）',
+        defaultModelName: 'SenseVoice',
         defaultModelAvailable: true,
       ),
     );

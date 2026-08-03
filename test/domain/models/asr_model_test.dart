@@ -8,8 +8,7 @@ void main() {
       final capabilities = {'offline'};
       final descriptor = AsrModelDescriptor(
         modelId: 'paraformer',
-        displayName: '标准模型',
-        tier: AsrModelTier.standard,
+        displayName: '测试模型',
         version: '1',
         supportedLanguages: languages,
         installationType: AsrInstallationType.bundled,
@@ -37,7 +36,6 @@ void main() {
         () => AsrModelDescriptor(
           modelId: '',
           displayName: '模型',
-          tier: AsrModelTier.standard,
           version: '1',
           supportedLanguages: const ['zh'],
           installationType: AsrInstallationType.bundled,

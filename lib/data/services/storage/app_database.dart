@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 final class AppDatabase {
   AppDatabase({required this.databaseFactory, required this.path});
 
-  static const schemaVersion = 4;
+  static const schemaVersion = 5;
 
   final DatabaseFactory databaseFactory;
   final String path;
@@ -70,6 +70,9 @@ final class AppDatabase {
         requested_model_id TEXT NOT NULL,
         recording_model_id TEXT NOT NULL,
         recording_model_version TEXT NOT NULL,
+        recording_model_language TEXT NOT NULL,
+        recording_model_use_itn INTEGER NOT NULL
+          CHECK(recording_model_use_itn IN (0, 1)),
         model_fallback_reason TEXT,
         active_transcript_snapshot_id TEXT,
         active_summary_id TEXT,
@@ -245,6 +248,9 @@ final class AppDatabase {
       await _createSchema(db, newVersion);
       return;
     }
+    if (oldVersion < 5 && newVersion >= 5) {
+      throw const UnsupportedAlphaInstallationException();
+    }
     if (oldVersion < 2 && newVersion >= 2) {
       await _createVersion2Schema(db);
     }
@@ -255,4 +261,11 @@ final class AppDatabase {
       await _createVersion4Schema(db);
     }
   }
+}
+
+final class UnsupportedAlphaInstallationException implements Exception {
+  const UnsupportedAlphaInstallationException();
+
+  @override
+  String toString() => '当前 Alpha 数据基线不支持原地升级；请先导出重要内容，再卸载或清除应用数据。';
 }

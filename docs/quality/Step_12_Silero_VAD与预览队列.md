@@ -11,7 +11,7 @@
 - `BundledSileroVadModelService` 从 Flutter asset 复制到应用私有临时目录，严格校验文件集、大小和 SHA-256 后原子切换；已正确准备时直接复用。
 - 官方配置固定为 16 kHz、单线程 CPU、512 样本窗口、15 秒最大语音段；模型路径由上层装配，文件不存在时拒绝创建。
 - `AsrPreviewWindowPlanner` 默认加入前后各 200 ms 上下文；超过 15 秒时按 500 ms 重叠确定性切分。
-- `AsrPreviewCoordinator` 实现 PCM16 解码、统一全局样本时间轴、20 秒滚动缓冲、VAD 分段和双模型无关的 Engine 投递。
+- `AsrPreviewCoordinator` 实现 PCM16 解码、统一全局样本时间轴、20 秒滚动缓冲、VAD 分段和模型无关的 Engine 投递。
 - 预览队列按排队音频时长计量：默认最大 30 秒、高水位 15 秒、低水位 5 秒；超限时丢弃最旧待处理窗口，回落到低水位后恢复。
 - 指标暴露 `vadSegmentCount`、`queuedAudioMs`、`processedPreviewWindows`、`droppedPreviewWindows`、`previewLagMs` 和最后错误码。
 - Engine 或 VAD 失败后进入 `recordingOnly`，停止后续预览推理，但 `RecordingPreviewSink.add` 不向可靠录音链传播异常。

@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
+import 'package:meettrace/domain/models/app_failure.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/domain/use_cases/start_meeting.dart';
 import 'package:meettrace/ui/features/meetings/view_models/start/start_meeting_view_model.dart';
 
@@ -15,12 +17,12 @@ void main() {
   late TestAsrEngineFactory factory;
 
   setUp(() {
-    preferences = TestModelPreferences(paraformerStandardModelId);
+    preferences = TestModelPreferences(senseVoiceDefaultModelId);
     installations = TestActiveInstallations();
     meetings = TestMeetingRepository();
     factory = TestAsrEngineFactory();
     final standard = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
+      senseVoiceDefaultModelId,
     );
     installations.install(installations.installed(standard), active: true);
   });
@@ -28,37 +30,65 @@ void main() {
   tearDown(() => installations.dispose());
 
   test('直接使用全局默认模型并以待生成标题创建会议', () async {
-    final qwen = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
-    installations.install(installations.installed(qwen), active: true);
-    preferences = TestModelPreferences(qwen.modelId);
+    final senseVoice = AsrModelRegistry.alpha.requireById(
+      senseVoiceDefaultModelId,
+    );
+    installations.install(installations.installed(senseVoice), active: true);
+    preferences = TestModelPreferences(senseVoice.modelId);
     final viewModel = _viewModel(preferences, installations, meetings, factory);
     await viewModel.load();
 
-    expect(viewModel.defaultModelId, qwen.modelId);
+    expect(viewModel.defaultModelId, senseVoice.modelId);
     final session = await viewModel.start();
 
     expect(preferences.setCalls, isEmpty);
     expect(session, isNotNull);
     expect(session!.meeting.title, pendingMeetingTitle);
-    expect(session.meeting.requestedModelId, qwen.modelId);
-    expect(session.meeting.recordingModelId, qwen.modelId);
-    expect(session.meeting.recordingModelVersion, qwen.version);
+    expect(session.meeting.requestedModelId, senseVoice.modelId);
+    expect(session.meeting.recordingModelId, senseVoice.modelId);
+    expect(session.meeting.recordingModelVersion, senseVoice.version);
     expect(session.meeting.status, MeetingState.recording);
     expect(session.meeting.isRecordingModelLocked, isTrue);
-    expect(factory.calls, [(qwen.modelId, qwen.version)]);
+    expect(factory.calls, [(senseVoice.modelId, senseVoice.version)]);
     expect(factory.engines.single.initializeCalls, 1);
     viewModel.dispose();
   });
 
-  test('默认高级模型不可用时阻止开始且不静默回退', () async {
-    preferences = TestModelPreferences(qwenAdvancedModelId);
+  test('SenseVoice 不可用时阻止开始且不静默回退', () async {
+    final emptyInstallations = TestActiveInstallations();
+    addTearDown(emptyInstallations.dispose);
+    final viewModel = _viewModel(
+      preferences,
+      emptyInstallations,
+      meetings,
+      factory,
+    );
+    await viewModel.load();
+
+    expect(await viewModel.start(), isNull);
+    expect(viewModel.errorMessage, contains('SenseVoice 尚未准备完成'));
+    expect(viewModel.requiresRuntimeRepair, isTrue);
+    expect(factory.calls, isEmpty);
+    expect(preferences.setCalls, isEmpty);
+    viewModel.dispose();
+  });
+
+  test('Engine 初始化失败时要求返回资源修复流程', () async {
+    factory.createError = AsrEngineException(
+      AppFailure(
+        code: 'asr.senseVoice.initialization',
+        stage: FailureStage.asrInitialization,
+        recoverability: FailureRecoverability.userActionRequired,
+        userAction: FailureUserAction.downloadModel,
+      ),
+    );
     final viewModel = _viewModel(preferences, installations, meetings, factory);
     await viewModel.load();
 
     expect(await viewModel.start(), isNull);
-    expect(viewModel.errorMessage, contains('默认高级模型尚未安装'));
-    expect(factory.calls, isEmpty);
-    expect(preferences.setCalls, isEmpty);
+    expect(viewModel.requiresRuntimeRepair, isTrue);
+    expect(viewModel.errorMessage, contains('资源修复流程'));
+    expect(meetings.saved, isEmpty);
     viewModel.dispose();
   });
 
@@ -67,7 +97,7 @@ void main() {
       result: MeetingReadiness(
         microphonePermissionGranted: false,
         freeBytes: minimumRecordingFreeBytes,
-        defaultModelId: paraformerStandardModelId,
+        defaultModelId: senseVoiceDefaultModelId,
         defaultModelName: AsrModelRegistry.alpha.defaultModel.displayName,
         defaultModelAvailable: true,
       ),
@@ -96,8 +126,8 @@ void main() {
 
     expect(
       () => session!.meeting.changeRecordingModel(
-        recordingModelId: qwenAdvancedModelId,
-        recordingModelVersion: '2026-03-25',
+        recordingModelId: senseVoiceDefaultModelId,
+        recordingModelVersion: '2024-07-17',
         fallbackReason: '不应允许',
       ),
       throwsA(isA<InvalidStateTransitionException>()),

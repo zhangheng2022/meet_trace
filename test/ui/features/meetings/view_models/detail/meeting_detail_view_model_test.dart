@@ -90,8 +90,8 @@ void main() {
 
     final retry = fixture.runner.calls.last;
     expect(retry.retrySnapshotId, failed.id);
-    expect(retry.modelId, paraformerStandardModelId);
-    expect(retry.modelVersion, '2024-03-09');
+    expect(retry.modelId, senseVoiceDefaultModelId);
+    expect(retry.modelVersion, '2024-07-17');
     expect(
       fixture.viewModel.snapshot?.status,
       TranscriptSnapshotStatus.complete,
@@ -99,7 +99,7 @@ void main() {
     await fixture.dispose();
   });
 
-  test('完成后可选择当前已安装高级模型生成独立重转录', () async {
+  test('完成后可选择当前已安装 SenseVoice 生成独立重转录', () async {
     final active = _snapshot(id: 'old');
     final fixture = _fixture(
       _meeting(
@@ -107,7 +107,6 @@ void main() {
         activeTranscriptSnapshotId: active.id,
       ),
       active: active,
-      installQwen: true,
     );
     fixture.runner.onCall =
         ({
@@ -118,9 +117,9 @@ void main() {
           required onProgress,
         }) async {
           final completed = _snapshot(
-            id: 'qwen-new',
-            modelId: qwenAdvancedModelId,
-            modelVersion: '2026-03-25',
+            id: 'sense-voice-new',
+            modelId: senseVoiceDefaultModelId,
+            modelVersion: '2024-07-17',
           );
           final processing = fixture.meetings.value!.beginFinalTranscription();
           final meeting = processing.activateFinalTranscript(completed);
@@ -132,23 +131,23 @@ void main() {
         };
     await fixture.viewModel.load();
 
-    fixture.viewModel.selectModel(qwenAdvancedModelId);
+    fixture.viewModel.selectModel(senseVoiceDefaultModelId);
     await fixture.viewModel.retranscribe();
 
-    expect(fixture.runner.calls.single.modelId, qwenAdvancedModelId);
+    expect(fixture.runner.calls.single.modelId, senseVoiceDefaultModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
-    expect(fixture.viewModel.snapshot?.id, 'qwen-new');
+    expect(fixture.viewModel.snapshot?.id, 'sense-voice-new');
     await fixture.dispose();
   });
 
   test('恢复 processing 快照时复用原 ID 和来源模型而不改回锁定模型', () async {
     final pending = _snapshot(
-      id: 'qwen-pending',
+      id: 'sense-voice-pending',
       status: TranscriptSnapshotStatus.processing,
-      modelId: qwenAdvancedModelId,
-      modelVersion: '2026-03-25',
+      modelId: senseVoiceDefaultModelId,
+      modelVersion: '2024-07-17',
     );
-    final fixture = _fixture(_meeting(), installQwen: true);
+    final fixture = _fixture(_meeting());
     fixture.transcripts.records[pending.id] = pending;
     fixture.runner.onCall =
         ({
@@ -160,8 +159,8 @@ void main() {
         }) async {
           final completed = _snapshot(
             id: pending.id,
-            modelId: qwenAdvancedModelId,
-            modelVersion: '2026-03-25',
+            modelId: senseVoiceDefaultModelId,
+            modelVersion: '2024-07-17',
           );
           final meeting = fixture.meetings.value!.activateFinalTranscript(
             completed,
@@ -177,8 +176,8 @@ void main() {
 
     final resumed = fixture.runner.calls.single;
     expect(resumed.retrySnapshotId, pending.id);
-    expect(resumed.modelId, qwenAdvancedModelId);
-    expect(resumed.modelVersion, '2026-03-25');
+    expect(resumed.modelId, senseVoiceDefaultModelId);
+    expect(resumed.modelVersion, '2024-07-17');
     await fixture.dispose();
   });
 
@@ -420,7 +419,6 @@ void main() {
 _Fixture _fixture(
   Meeting meeting, {
   TranscriptSnapshot? active,
-  bool installQwen = false,
   SpeakerDiarizationRunner? diarization,
   bool diarizationEnabled = false,
   ProcessingTaskRepository? processingTasks,
@@ -451,13 +449,8 @@ _Fixture _fixture(
   final installations = TestActiveInstallations();
   final registry = AsrModelRegistry.alpha;
   installations.install(
-    installations.installed(registry.requireById(paraformerStandardModelId)),
+    installations.installed(registry.requireById(senseVoiceDefaultModelId)),
   );
-  if (installQwen) {
-    installations.install(
-      installations.installed(registry.requireById(qwenAdvancedModelId)),
-    );
-  }
   late final DetailTranscriptionRunner runner;
   runner = DetailTranscriptionRunner(
     ({
@@ -530,9 +523,9 @@ Meeting _meeting({
     status: status,
     audioPath: '/audio/fact.pcm',
     audioDurationMs: 2000,
-    requestedModelId: paraformerStandardModelId,
-    recordingModelId: paraformerStandardModelId,
-    recordingModelVersion: '2024-03-09',
+    requestedModelId: senseVoiceDefaultModelId,
+    recordingModelId: senseVoiceDefaultModelId,
+    recordingModelVersion: '2024-07-17',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
     activeSummaryId: activeSummaryId,
   );
@@ -541,8 +534,8 @@ Meeting _meeting({
 TranscriptSnapshot _snapshot({
   required String id,
   TranscriptSnapshotStatus status = TranscriptSnapshotStatus.complete,
-  String modelId = paraformerStandardModelId,
-  String modelVersion = '2024-03-09',
+  String modelId = senseVoiceDefaultModelId,
+  String modelVersion = '2024-07-17',
   String? speakerId,
 }) {
   return TranscriptSnapshot(

@@ -12,14 +12,14 @@ final class ModelSettingsViewModel extends ChangeNotifier {
     required this.preferences,
     required this.installations,
     AsrModelRegistry? registry,
-    this.actions = const AdvancedModelActions(),
+    this.actions = const ModelMaintenanceActions(),
   }) : registry = registry ?? AsrModelRegistry.alpha,
        _defaultModelId = (registry ?? AsrModelRegistry.alpha).defaultModelId;
 
   final ModelPreferenceRepository preferences;
   final ModelInstallationRepository installations;
   final AsrModelRegistry registry;
-  final AdvancedModelActions actions;
+  final ModelMaintenanceActions actions;
 
   StreamSubscription<List<ModelInstallation>>? _subscription;
   Future<void>? _loadingOperation;
@@ -51,9 +51,7 @@ final class ModelSettingsViewModel extends ChangeNotifier {
     registry.requireById(modelId);
     final option = optionFor(modelId);
     if (!option.isInstalled) {
-      _errorMessage = option.descriptor.modelId == qwenAdvancedModelId
-          ? '请先下载并校验高级模型'
-          : '标准模型尚未准备完成';
+      _errorMessage = 'SenseVoice 尚未安装或校验未通过';
       notifyListeners();
       return;
     }
@@ -63,18 +61,14 @@ final class ModelSettingsViewModel extends ChangeNotifier {
     });
   }
 
-  Future<void> downloadAdvanced() => _runAction(actions.download);
+  Future<void> repairModel() => _runAction(actions.repair);
 
-  void cancelAdvanced() {
+  void pauseRepair() {
     if (_disposed) {
       return;
     }
-    actions.cancel?.call();
+    actions.pause?.call();
   }
-
-  Future<void> retryAdvanced() => _runAction(actions.retry);
-
-  Future<void> deleteAdvanced() => _runAction(actions.delete);
 
   Future<void> _load() async {
     _isLoading = true;

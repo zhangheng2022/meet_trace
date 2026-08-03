@@ -56,7 +56,7 @@ flutter build apk --debug --no-pub
 
 1. fresh install 后首次 worktree 构建因 Windows 软链接检查中断，缺失 Git 忽略的 Flutter `GeneratedPluginRegistrant`，页面显示本地能力准备失败；补齐与 Step 14 相同的 Flutter 生成文件并重建后，插件注册、冷启动和本地模型准备正常。该生成文件不进入提交。
 2. 新建会议，授予麦克风和通知权限，录音持续并显示实时转录正常。
-3. 结束会议后由本场锁定的标准 Paraformer 生成已完成最终快照，详情页显示来源模型、带时间戳原文和“说话人 1”。
+3. 结束会议后由本场锁定的 SenseVoice 生成已完成最终快照，详情页显示来源模型、带时间戳原文和“说话人 1”。
 4. 自动开关明确显示“当前构建未配置已验证的本地说话人模型，可继续手工标注”，没有静默加载未知权重或切换其他模型。
 5. 页面提供按说话人聚合的人工标签输入和保存动作，保存后显示“说话人标签已保存”；进程保持存活，日志无 `GeneratedPluginRegistrant`、Flutter 或 AndroidRuntime 崩溃。
 6. APK 清单、Android 桌面名称、应用标题、启动页和录音通知统一使用中文名称“会迹”；英文工程标识统一使用 `MeetTrace`。本次全量重命名同时更新 `applicationId`，需要作为新应用安装，旧 Alpha 数据仍保留在旧应用沙箱中。

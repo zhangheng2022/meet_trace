@@ -11,28 +11,27 @@ void main() {
   });
 
   test('只选择全局默认模型', () {
-    const globalDefault = qwenAdvancedModelId;
+    const globalDefault = senseVoiceDefaultModelId;
 
     final selection = resolver(
       globalDefaultModelId: globalDefault,
-      availableVersions: const {
-        paraformerStandardModelId: '2024-03-09',
-        qwenAdvancedModelId: '2026-03-25',
-      },
+      availableVersions: const {senseVoiceDefaultModelId: '2024-07-17'},
     );
 
-    expect(globalDefault, qwenAdvancedModelId);
-    expect(selection.requestedModelId, qwenAdvancedModelId);
-    expect(selection.recordingModelId, qwenAdvancedModelId);
-    expect(selection.recordingModelVersion, '2026-03-25');
+    expect(globalDefault, senseVoiceDefaultModelId);
+    expect(selection.requestedModelId, senseVoiceDefaultModelId);
+    expect(selection.recordingModelId, senseVoiceDefaultModelId);
+    expect(selection.recordingModelVersion, '2024-07-17');
+    expect(selection.recordingModelLanguage, 'auto');
+    expect(selection.recordingModelUseInverseTextNormalization, isTrue);
     expect(selection.fallbackReason, isNull);
   });
 
   test('默认模型不可用时禁止自动回退', () {
     expect(
       () => resolver(
-        globalDefaultModelId: qwenAdvancedModelId,
-        availableVersions: const {paraformerStandardModelId: '2024-03-09'},
+        globalDefaultModelId: senseVoiceDefaultModelId,
+        availableVersions: const {},
       ),
       throwsA(isA<DomainInvariantViolation>()),
     );

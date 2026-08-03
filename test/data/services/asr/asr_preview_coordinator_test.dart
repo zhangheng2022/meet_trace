@@ -19,7 +19,7 @@ void main() {
   test('两个模型使用完全相同的 VAD 全局区间', () async {
     final standard = _FakeAsrEngine(AsrModelRegistry.alpha.defaultModel);
     final advanced = _FakeAsrEngine(
-      AsrModelRegistry.alpha.requireById(qwenAdvancedModelId),
+      AsrModelRegistry.alpha.requireById(senseVoiceDefaultModelId),
     );
     final standardCoordinator = _coordinator(
       engine: standard,

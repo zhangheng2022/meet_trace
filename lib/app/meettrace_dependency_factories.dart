@@ -1,6 +1,15 @@
 part of 'meettrace_dependencies.dart';
 
 extension MeetTraceViewModelFactories on MeetTraceDependencies {
+  RuntimeInitializationViewModel createRuntimeInitializationViewModel({
+    bool forceRepair = false,
+  }) {
+    return RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(runtimeAssets),
+      forceRepair: forceRepair,
+    );
+  }
+
   MeetingListViewModel createMeetingListViewModel() {
     return MeetingListViewModel(
       meetings: meetings,
@@ -43,9 +52,9 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
   }
 
   ModelSettingsViewModel createModelSettingsViewModel() {
-    final advanced = registry.requireById(qwenAdvancedModelId);
+    final model = registry.defaultModel;
     final manifest = modelManifest.models.singleWhere(
-      (entry) => entry.modelId == advanced.modelId,
+      (entry) => entry.modelId == model.modelId,
     );
     ModelDownloadCancellationToken? cancellation;
 
@@ -53,8 +62,9 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       cancellation = ModelDownloadCancellationToken();
       try {
         await modelDownloads.download(
-          descriptor: advanced,
+          descriptor: model,
           manifest: manifest,
+          allowMeteredNetwork: await runtimeAssets.hasMobileConsent(),
           cancellation: cancellation,
         );
       } finally {
@@ -66,16 +76,9 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       preferences: preferences,
       installations: installations,
       registry: registry,
-      actions: AdvancedModelActions(
-        download: download,
-        cancel: () => cancellation?.cancel(),
-        retry: download,
-        delete: () async {
-          await modelDownloads.delete(descriptor: advanced);
-          if (await preferences.getDefaultModelId() == advanced.modelId) {
-            await preferences.setDefaultModelId(registry.defaultModelId);
-          }
-        },
+      actions: ModelMaintenanceActions(
+        repair: download,
+        pause: () => cancellation?.cancel(),
       ),
     );
   }

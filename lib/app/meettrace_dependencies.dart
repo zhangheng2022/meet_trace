@@ -8,6 +8,7 @@ import '../data/repositories/sqflite_model_installation_repository.dart';
 import '../data/repositories/sqflite_model_preference_repository.dart';
 import '../data/repositories/sqflite_model_usage_lease_repository.dart';
 import '../data/repositories/sqflite_processing_task_repository.dart';
+import '../data/repositories/sqflite_runtime_download_consent_repository.dart';
 import '../data/repositories/sqflite_summary_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
@@ -21,12 +22,11 @@ import '../data/services/audio/recording_checkpoint_store.dart';
 import '../data/services/audio/recording_device_readiness_probe.dart';
 import '../data/services/audio/reliable_recording_service.dart';
 import '../data/services/audio/pcm_evidence_playback_service.dart';
-import '../data/services/models/bundled_model_preparation_service.dart';
-import '../data/services/models/flutter_model_asset_source.dart';
 import '../data/services/models/model_file_verifier.dart';
 import '../data/services/models/model_manifest_parser.dart';
 import '../data/services/models/downloadable_model_service.dart';
 import '../data/services/models/http_model_file_downloader.dart';
+import '../data/services/models/local_runtime_asset_preparation_service.dart';
 import '../data/services/models/platform_download_preflight_providers.dart';
 import '../data/services/sharing/text_share_service.dart';
 import '../data/services/storage/app_database.dart';
@@ -36,7 +36,7 @@ import '../data/services/storage/startup_recovery_service.dart';
 import '../data/services/storage/local_data_control_service.dart';
 import '../data/services/storage/meeting_directory_deletion_service.dart';
 import '../data/services/summary/summary_generation_service.dart';
-import '../data/services/vad/bundled_silero_vad_model.dart';
+import '../data/services/vad/downloadable_silero_vad_model.dart';
 import '../data/services/vad/silero_vad_segmenter.dart';
 import '../domain/models/asr_model_registry.dart';
 import '../domain/models/meeting.dart';
@@ -44,6 +44,7 @@ import '../domain/models/model_manifest.dart';
 import '../domain/use_cases/delete_meeting.dart';
 import '../domain/use_cases/check_meeting_readiness.dart';
 import '../domain/use_cases/generate_summary.dart';
+import '../domain/use_cases/initialize_runtime_assets.dart';
 import '../domain/use_cases/manage_recording_session.dart';
 import '../domain/use_cases/revise_final_transcript.dart';
 import '../domain/use_cases/run_final_transcription.dart';
@@ -56,6 +57,7 @@ import '../ui/features/meetings/view_models/recording/recording_session_view_mod
 import '../ui/features/meetings/view_models/start/start_meeting_view_model.dart';
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
+import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
 
 part 'meettrace_dependency_factories.dart';
 
@@ -77,6 +79,7 @@ final class MeetTraceDependencies {
     required this.registry,
     required this.modelManifest,
     required this.modelDownloads,
+    required this.runtimeAssets,
     required this.meetingReadiness,
     required this.vadModelPath,
   });
@@ -97,6 +100,7 @@ final class MeetTraceDependencies {
   final AsrModelRegistry registry;
   final ModelManifest modelManifest;
   final DownloadableModelService modelDownloads;
+  final LocalRuntimeAssetPreparationService runtimeAssets;
   final CheckMeetingReadinessUseCase meetingReadiness;
   final String vadModelPath;
 
@@ -133,34 +137,13 @@ final class MeetTraceDependencies {
       );
       final processingTasks = SqfliteProcessingTaskRepository(database);
       final summaries = SqfliteSummaryRepository(database);
-      final assetSource = FlutterModelAssetSource(rootBundle);
       final manifest = ModelManifestParser(
         registry: registry,
         currentAppVersion: '1.0.0',
       ).parse(await rootBundle.loadString('assets/models/manifest.json'));
-      final standard = registry.requireById(paraformerStandardModelId);
-      final standardManifest = manifest.models.singleWhere(
-        (entry) => entry.modelId == standard.modelId,
+      final vadManifest = const SileroVadManifestParser().parse(
+        await rootBundle.loadString(sileroVadManifestAssetPath),
       );
-      await BundledModelPreparationService(
-        fileLayout: fileLayout,
-        installations: installations,
-        assetSource: assetSource,
-        verifier: const ModelFileVerifier(),
-      ).prepare(descriptor: standard, manifest: standardManifest);
-      final standardInstallation = await installations.get(
-        modelId: standard.modelId,
-        version: standard.version,
-      );
-      if (standardInstallation == null) {
-        throw StateError('内置标准模型准备后没有安装记录');
-      }
-      await installations.saveInstalledAndActivate(standardInstallation);
-
-      final vad = await BundledSileroVadModelService(
-        fileLayout: fileLayout,
-        assetSource: assetSource,
-      ).prepare();
       final leases = SqfliteModelUsageLeaseRepository(database);
       final engineFactory = SherpaOnnxAsrEngineFactory(
         installations: installations,
@@ -189,14 +172,31 @@ final class MeetTraceDependencies {
         service: const UnavailableSummaryGenerationService(),
         now: DateTime.now,
       );
+      final capacity = const DeviceStorageCapacityProvider();
+      final network = ConnectivityDownloadNetworkStatusProvider();
+      final downloader = HttpModelFileDownloader();
       final modelDownloads = DownloadableModelService(
         fileLayout: fileLayout,
         installations: installations,
         leases: leases,
-        capacity: const DeviceStorageCapacityProvider(),
-        network: ConnectivityDownloadNetworkStatusProvider(),
-        downloader: HttpModelFileDownloader(),
+        capacity: capacity,
+        network: network,
+        downloader: downloader,
         verifier: const ModelFileVerifier(),
+      );
+      final vadDownloads = DownloadableSileroVadModelService(
+        fileLayout: fileLayout,
+        downloader: downloader,
+      );
+      final runtimeAssets = LocalRuntimeAssetPreparationService(
+        registry: registry,
+        modelManifest: manifest,
+        vadManifest: vadManifest,
+        modelDownloads: modelDownloads,
+        vadDownloads: vadDownloads,
+        capacity: capacity,
+        network: network,
+        consents: SqfliteRuntimeDownloadConsentRepository(database),
       );
       final meetingReadiness = CheckMeetingReadinessUseCase(
         device: DeviceRecordingReadinessProbe(
@@ -224,8 +224,9 @@ final class MeetTraceDependencies {
         registry: registry,
         modelManifest: manifest,
         modelDownloads: modelDownloads,
+        runtimeAssets: runtimeAssets,
         meetingReadiness: meetingReadiness,
-        vadModelPath: vad.modelPath,
+        vadModelPath: vadDownloads.modelPath(vadManifest),
       );
     } on Object catch (error, stackTrace) {
       for (final dispose in rollback.reversed) {

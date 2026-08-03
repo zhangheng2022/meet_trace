@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/repositories/repository_contracts.dart';
 import 'package:meettrace/data/services/asr/asr_engine.dart';
-import 'package:meettrace/data/services/asr/paraformer_standard_asr_engine.dart';
-import 'package:meettrace/data/services/asr/qwen_advanced_asr_engine.dart';
+import 'package:meettrace/data/services/asr/sense_voice_asr_engine.dart';
 import 'package:meettrace/data/services/asr/sherpa_onnx_asr_engine_factory.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
@@ -21,9 +20,9 @@ void main() {
     leases = _MemoryLeases();
   });
 
-  test('只按锁定的标准模型 ID 和版本创建 Paraformer Engine', () async {
+  test('只按锁定的 SenseVoice ID、版本和配置创建 Engine', () async {
     final descriptor = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
+      senseVoiceDefaultModelId,
     );
     installations.install(_installed(descriptor));
     final factory = _factory(installations, leases);
@@ -33,26 +32,9 @@ void main() {
       modelVersion: descriptor.version,
     );
 
-    expect(engine, isA<ParaformerStandardAsrEngine>());
+    expect(engine, isA<SenseVoiceAsrEngine>());
     expect(engine.descriptor, same(descriptor));
     await engine.dispose();
-  });
-
-  test('只按锁定的高级模型 ID 和活动版本创建 Qwen Engine', () async {
-    final descriptor = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
-    installations.install(_installed(descriptor), active: true);
-    final factory = _factory(installations, leases);
-
-    final engine = await factory.create(
-      modelId: descriptor.modelId,
-      modelVersion: descriptor.version,
-    );
-
-    expect(engine, isA<QwenAdvancedAsrEngine>());
-    expect(engine.descriptor, same(descriptor));
-    expect(leases.saved.single.ownerId, 'meeting-11');
-    await engine.dispose();
-    expect(leases.released, [leases.saved.single.leaseId]);
   });
 
   test('Registry 版本不匹配时在读取安装记录前拒绝创建', () async {
@@ -60,7 +42,7 @@ void main() {
 
     await expectLater(
       factory.create(
-        modelId: paraformerStandardModelId,
+        modelId: senseVoiceDefaultModelId,
         modelVersion: 'wrong-version',
       ),
       throwsA(
@@ -80,27 +62,31 @@ void main() {
     expect(installations.getCalls, 0);
   });
 
-  test('高级模型不可用时返回高级模型错误且不自动创建标准模型', () async {
-    final standard = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
-    );
-    installations.install(_installed(standard));
-    final qwen = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
+  test('锁定配置不匹配时拒绝创建且不自动改写配置', () async {
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(_installed(descriptor));
     final factory = _factory(installations, leases);
 
     await expectLater(
-      factory.create(modelId: qwen.modelId, modelVersion: qwen.version),
+      factory.create(
+        modelId: descriptor.modelId,
+        modelVersion: descriptor.version,
+        language: 'zh',
+      ),
       throwsA(
         isA<AsrEngineException>()
             .having(
               (error) => error.failure.code,
               'code',
-              'asr.qwen.model_not_active',
+              'asr.factory.configuration_mismatch',
             )
-            .having((error) => error.failure.modelId, 'modelId', qwen.modelId),
+            .having(
+              (error) => error.failure.modelId,
+              'modelId',
+              descriptor.modelId,
+            ),
       ),
     );
-    expect(leases.saved, isEmpty);
   });
 }
 

@@ -10,17 +10,15 @@ void main() {
   late TestActiveInstallations installations;
 
   setUp(() {
-    preferences = TestModelPreferences(paraformerStandardModelId);
+    preferences = TestModelPreferences(senseVoiceDefaultModelId);
     installations = TestActiveInstallations();
-    final standard = AsrModelRegistry.alpha.requireById(
-      paraformerStandardModelId,
-    );
-    installations.install(installations.installed(standard), active: true);
   });
 
   tearDown(() => installations.dispose());
 
-  test('加载全局默认和双模型安装状态', () async {
+  test('加载唯一默认 SenseVoice 安装状态', () async {
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(installations.installed(descriptor), active: true);
     final viewModel = ModelSettingsViewModel(
       preferences: preferences,
       installations: installations,
@@ -28,65 +26,42 @@ void main() {
 
     await viewModel.load();
 
-    expect(viewModel.isLoading, isFalse);
-    expect(viewModel.defaultModelId, paraformerStandardModelId);
-    expect(viewModel.options, hasLength(2));
-    expect(
-      viewModel.optionFor(paraformerStandardModelId).status,
-      AsrModelUiStatus.installed,
-    );
-    expect(
-      viewModel.optionFor(qwenAdvancedModelId).status,
-      AsrModelUiStatus.notInstalled,
-    );
+    expect(viewModel.defaultModelId, senseVoiceDefaultModelId);
+    expect(viewModel.options, hasLength(1));
+    expect(viewModel.options.single.status, AsrModelUiStatus.installed);
     viewModel.dispose();
   });
 
-  test('只有已安装模型可以保存为后续会议默认值', () async {
-    final qwen = AsrModelRegistry.alpha.requireById(qwenAdvancedModelId);
+  test('未安装时不能选择为默认模型', () async {
     final viewModel = ModelSettingsViewModel(
       preferences: preferences,
       installations: installations,
     );
     await viewModel.load();
 
-    await viewModel.selectDefault(qwen.modelId);
+    await viewModel.selectDefault(senseVoiceDefaultModelId);
+
     expect(preferences.setCalls, isEmpty);
-    expect(viewModel.errorMessage, '请先下载并校验高级模型');
-
-    installations.install(
-      installations.installed(qwen),
-      active: true,
-      notify: true,
-    );
-    await Future<void>.delayed(Duration.zero);
-    await viewModel.selectDefault(qwen.modelId);
-
-    expect(preferences.setCalls, [qwen.modelId]);
-    expect(viewModel.defaultModelId, qwen.modelId);
+    expect(viewModel.errorMessage, 'SenseVoice 尚未安装或校验未通过');
     viewModel.dispose();
   });
 
-  test('下载、取消、重试和删除动作由 ViewModel 统一转发', () async {
+  test('校验修复与暂停动作由 ViewModel 转发', () async {
     final calls = <String>[];
     final viewModel = ModelSettingsViewModel(
       preferences: preferences,
       installations: installations,
-      actions: AdvancedModelActions(
-        download: () async => calls.add('download'),
-        cancel: () => calls.add('cancel'),
-        retry: () async => calls.add('retry'),
-        delete: () async => calls.add('delete'),
+      actions: ModelMaintenanceActions(
+        repair: () async => calls.add('repair'),
+        pause: () => calls.add('pause'),
       ),
     );
     await viewModel.load();
 
-    await viewModel.downloadAdvanced();
-    viewModel.cancelAdvanced();
-    await viewModel.retryAdvanced();
-    await viewModel.deleteAdvanced();
+    await viewModel.repairModel();
+    viewModel.pauseRepair();
 
-    expect(calls, ['download', 'cancel', 'retry', 'delete']);
+    expect(calls, ['repair', 'pause']);
     viewModel.dispose();
   });
 }

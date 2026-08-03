@@ -1,0 +1,9 @@
+SenseVoice model notice
+
+Model: sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17
+Converted model source:
+https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17
+Pinned revision: 2365baeacb507f821a0c8120fcee3d484dba7a07
+
+The converted model refers to the FunASR/SenseVoice license. The accompanying
+license text is packaged as assets/licenses/sense-voice-LICENSE.txt.

@@ -18,8 +18,8 @@ void main() {
     final manifest = parser.parse(jsonEncode(_validManifest()));
 
     expect(manifest.schemaVersion, 1);
-    expect(manifest.models.single.modelId, qwenAdvancedModelId);
-    expect(manifest.models.single.files, hasLength(6));
+    expect(manifest.models.single.modelId, senseVoiceDefaultModelId);
+    expect(manifest.models.single.files, hasLength(2));
     expect(
       manifest.models.single.files.fold<int>(
         0,
@@ -99,22 +99,17 @@ Map<String, Object?> _validManifest() {
     'minAppVersion': '1.0.0',
     'models': <Object?>[
       <String, Object?>{
-        'modelId': qwenAdvancedModelId,
-        'version': '2026-03-25',
-        'tier': 'advanced',
+        'modelId': senseVoiceDefaultModelId,
+        'version': '2024-07-17',
         'installationType': 'downloadable',
-        'requiredBytes': 987015347,
+        'requiredBytes': 239549735,
         'files': <Object?>[
-          _file('conv_frontend.onnx', 44148281, hash),
-          _file('decoder.int8.onnx', 755914231, hash),
-          _file('encoder.int8.onnx', 182491662, hash),
-          _file('tokenizer/merges.txt', 1671853, hash),
-          _file('tokenizer/tokenizer_config.json', 12487, hash),
-          _file('tokenizer/vocab.json', 2776833, hash),
+          _file('model.int8.onnx', 239233841, hash),
+          _file('tokens.txt', 315894, hash),
         ],
         'license': <String, Object?>{
-          'name': 'Apache-2.0',
-          'noticePath': 'licenses/qwen3-asr-NOTICE.txt',
+          'name': 'MIT',
+          'noticePath': 'licenses/sense-voice-NOTICE.txt',
         },
       },
     ],

@@ -37,7 +37,7 @@ void main() {
     expect(installed.installedPath, '/models/qwen/1');
   });
 
-  test('内置标准模型不能进入删除状态', () {
+  test('内置模型不能进入删除状态', () {
     final bundled = ModelInstallation(
       modelId: 'paraformer',
       version: '1',

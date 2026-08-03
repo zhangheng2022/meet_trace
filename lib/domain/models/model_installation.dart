@@ -45,7 +45,7 @@ final class ModelInstallation {
   }) {
     if (installationType == AsrInstallationType.bundled &&
         next == ModelInstallationState.deleting) {
-      throw const DomainInvariantViolation('内置标准模型不能删除');
+      throw const DomainInvariantViolation('内置模型不能删除');
     }
     return ModelInstallation(
       modelId: modelId,

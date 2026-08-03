@@ -6,8 +6,8 @@ import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart
 import 'package:meettrace/domain/models/app_failure.dart';
 
 void main() {
-  final config = SherpaOnnxRecognizerConfig.paraformer(
-    modelId: 'paraformer',
+  final config = SherpaOnnxRecognizerConfig.senseVoice(
+    modelId: 'sense-voice',
     modelVersion: '1',
     modelPath: '/models/model.int8.onnx',
     tokensPath: '/models/tokens.txt',

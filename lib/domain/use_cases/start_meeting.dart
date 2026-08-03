@@ -14,11 +14,7 @@ final class StartedMeetingSession {
   final AsrEngine engine;
 }
 
-enum StartMeetingBlockReason {
-  readiness,
-  standardModelUnavailable,
-  advancedModelUnavailable,
-}
+enum StartMeetingBlockReason { readiness, modelUnavailable }
 
 final class StartMeetingBlocked implements Exception {
   const StartMeetingBlocked(this.reason, {this.readiness});
@@ -66,11 +62,7 @@ final class StartMeetingUseCase {
       );
     }
     if (availableVersions[defaultModelId] == null) {
-      throw StartMeetingBlocked(
-        defaultModelId == qwenAdvancedModelId
-            ? StartMeetingBlockReason.advancedModelUnavailable
-            : StartMeetingBlockReason.standardModelUnavailable,
-      );
+      throw const StartMeetingBlocked(StartMeetingBlockReason.modelUnavailable);
     }
 
     final selection = resolveSelection(
@@ -82,6 +74,9 @@ final class StartMeetingUseCase {
       engine = await engineFactory.create(
         modelId: selection.recordingModelId,
         modelVersion: selection.recordingModelVersion,
+        language: selection.recordingModelLanguage,
+        useInverseTextNormalization:
+            selection.recordingModelUseInverseTextNormalization,
       );
       await engine.initialize();
       final timestamp = now();
@@ -94,6 +89,9 @@ final class StartMeetingUseCase {
         requestedModelId: selection.requestedModelId,
         recordingModelId: selection.recordingModelId,
         recordingModelVersion: selection.recordingModelVersion,
+        recordingModelLanguage: selection.recordingModelLanguage,
+        recordingModelUseInverseTextNormalization:
+            selection.recordingModelUseInverseTextNormalization,
         modelFallbackReason: selection.fallbackReason,
       );
       final started = created.startRecording(startedAt: timestamp);

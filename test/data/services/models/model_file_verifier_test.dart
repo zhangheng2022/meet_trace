@@ -74,7 +74,6 @@ ModelManifestEntry _entry() {
   return ModelManifestEntry(
     modelId: 'model',
     version: '1.0.0',
-    tier: 'standard',
     installationType: 'bundled',
     requiredBytes: 5,
     files: const [

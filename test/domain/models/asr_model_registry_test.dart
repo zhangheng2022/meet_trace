@@ -4,24 +4,29 @@ import 'package:meettrace/domain/models/asr_model_registry.dart';
 
 void main() {
   group('AsrModelRegistry', () {
-    test('Alpha Registry 恰有一个标准默认模型并注册双模型', () {
+    test('Alpha Registry 只登记唯一默认 SenseVoice', () {
       final registry = AsrModelRegistry.alpha;
 
-      expect(registry.models, hasLength(2));
-      expect(registry.defaultModel.modelId, paraformerStandardModelId);
-      expect(registry.defaultModel.tier, AsrModelTier.standard);
+      expect(registry.models, hasLength(1));
+      expect(registry.defaultModel.modelId, senseVoiceDefaultModelId);
       expect(
-        registry.requireById(qwenAdvancedModelId).installationType,
+        registry.defaultModel.installationType,
         AsrInstallationType.downloadable,
       );
+      expect(registry.defaultModel.supportedLanguages, [
+        'zh',
+        'yue',
+        'en',
+        'ja',
+        'ko',
+      ]);
+      expect(registry.defaultModel.language, 'auto');
+      expect(registry.defaultModel.useInverseTextNormalization, isTrue);
+      expect(registry.defaultModel.requiredBytes, 239549735);
     });
 
     test('拒绝重复模型 ID', () {
-      final model = _descriptor(
-        modelId: 'duplicate',
-        tier: AsrModelTier.standard,
-      );
-
+      final model = _descriptor('duplicate');
       expect(
         () => AsrModelRegistry(
           models: [model, model],
@@ -31,16 +36,11 @@ void main() {
       );
     });
 
-    test('默认模型必须是标准模型', () {
-      final advanced = _descriptor(
-        modelId: 'advanced',
-        tier: AsrModelTier.advanced,
-      );
-
+    test('默认模型必须存在于 Registry', () {
       expect(
         () => AsrModelRegistry(
-          models: [advanced],
-          defaultModelId: advanced.modelId,
+          models: [_descriptor('available')],
+          defaultModelId: 'missing',
         ),
         throwsArgumentError,
       );
@@ -48,20 +48,12 @@ void main() {
   });
 }
 
-AsrModelDescriptor _descriptor({
-  required String modelId,
-  required AsrModelTier tier,
-}) {
-  return AsrModelDescriptor(
-    modelId: modelId,
-    displayName: modelId,
-    tier: tier,
-    version: '1.0.0',
-    supportedLanguages: const ['zh'],
-    installationType: tier == AsrModelTier.standard
-        ? AsrInstallationType.bundled
-        : AsrInstallationType.downloadable,
-    requiredBytes: 5,
-    capabilities: const {'offline'},
-  );
-}
+AsrModelDescriptor _descriptor(String modelId) => AsrModelDescriptor(
+  modelId: modelId,
+  displayName: modelId,
+  version: '1.0.0',
+  supportedLanguages: const ['zh'],
+  installationType: AsrInstallationType.downloadable,
+  requiredBytes: 5,
+  capabilities: const {'offline'},
+);

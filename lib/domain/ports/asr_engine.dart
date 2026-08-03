@@ -168,5 +168,7 @@ abstract interface class AsrEngineFactory {
   Future<AsrEngine> create({
     required String modelId,
     required String modelVersion,
+    String language = 'auto',
+    bool useInverseTextNormalization = true,
   });
 }
