@@ -160,8 +160,8 @@
     "semantic_hash": "7569387d58711ab975940f4df3b4bcda"
   },
   "README.md": {
-    "mtime": 1785761017.7099571,
-    "ast_hash": "a7a0dbe4cee8f7ef9fc1d5fb80ccf407",
+    "mtime": 1785841480.2247043,
+    "ast_hash": "fd1a45b72534f4ba35c5e488403b514d",
     "semantic_hash": ""
   },
   "analysis_options.yaml": {
@@ -2195,12 +2195,12 @@
     "semantic_hash": ""
   },
   "lib/ui/core/branding/meettrace_brand_mark.dart": {
-    "mtime": 1785837530.3579903,
-    "ast_hash": "f8c10005e30561f801a8c0f12641f2a5",
+    "mtime": 1785839438.8473551,
+    "ast_hash": "5ecd07ff88b3f8569b77f75e701e6f85",
     "semantic_hash": ""
   },
   "test/ui/core/branding/meettrace_brand_mark_test.dart": {
-    "mtime": 1785837554.452494,
+    "mtime": 1785839438.8488686,
     "ast_hash": "642d321b700b18d7a0e762b91d17a0e2",
     "semantic_hash": ""
   },
@@ -2452,6 +2452,11 @@
   "tool/meettrace_brand_motion_lab.dart": {
     "mtime": 1785834104.921914,
     "ast_hash": "642f3e58155fe30f7286cf230816044e",
+    "semantic_hash": ""
+  },
+  "devtools_options.yaml": {
+    "mtime": 1785838401.930619,
+    "ast_hash": "d1ff5187b1b67653e7357395895e8449",
     "semantic_hash": ""
   }
 }
