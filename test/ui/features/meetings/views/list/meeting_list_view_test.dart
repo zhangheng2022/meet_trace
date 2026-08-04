@@ -80,6 +80,41 @@ void main() {
     await repository.dispose();
   });
 
+  testWidgets('会议列表不展示事实音频已保存状态文案', (WidgetTester tester) async {
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(home: MeetingListView(viewModel: viewModel)),
+    );
+    repository.emit([
+      _meeting(
+        'completed-with-audio',
+        '已完成会议',
+        MeetingState.completed,
+        audioPath: 'meetings/completed/fact.pcm',
+      ),
+      _meeting(
+        'failed-with-audio',
+        '处理失败会议',
+        MeetingState.failed,
+        audioPath: 'meetings/failed/fact.pcm',
+      ),
+    ]);
+    await tester.pump();
+
+    expect(find.text('事实音频已保存'), findsNothing);
+    expect(find.textContaining('· 事实音频已保存'), findsNothing);
+    expect(find.text('已完成'), findsOneWidget);
+    expect(find.text('处理失败'), findsOneWidget);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
   testWidgets('预检失败时可从状态条重新检查并恢复', (WidgetTester tester) async {
     final repository = _MeetingRepository();
     final readiness = TestMeetingReadinessChecker(
@@ -407,7 +442,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('永久删除「产品评审」？'), findsOneWidget);
-    expect(find.text('将删除本场事实音频、转录、AI 总结、证据索引及处理记录。此操作无法撤销。'), findsOneWidget);
+    expect(find.text('将删除本场事实音频、转录、说话人标签及处理记录。此操作无法撤销。'), findsOneWidget);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
 
@@ -553,11 +588,13 @@ Meeting _meeting(
   String title,
   MeetingState state, {
   DateTime? createdAt,
+  String? audioPath,
 }) => Meeting(
   id: id,
   title: title,
   createdAt: createdAt ?? DateTime.utc(2026, 7, 24),
   status: state,
+  audioPath: audioPath,
   audioDurationMs: 12000,
   recordingModelId: senseVoiceDefaultModelId,
   recordingModelVersion: '2024-07-17',

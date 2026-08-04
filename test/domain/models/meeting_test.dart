@@ -38,7 +38,6 @@ void main() {
       final meeting = _meeting(
         status: MeetingState.processing,
         activeTranscriptSnapshotId: 'old',
-        activeSummaryId: 'old-summary',
       );
       final snapshot = _snapshot(
         id: 'new',
@@ -48,7 +47,6 @@ void main() {
       final updated = meeting.activateFinalTranscript(snapshot);
 
       expect(updated.activeTranscriptSnapshotId, 'new');
-      expect(updated.activeSummaryId, isNull);
       expect(updated.status, MeetingState.completed);
       expect(meeting.activeTranscriptSnapshotId, 'old');
     });
@@ -71,7 +69,7 @@ void main() {
     });
   });
 
-  test('重新转录进入 processing 时保留旧快照、旧摘要和事实音频', () {
+  test('重新转录进入 processing 时保留旧快照和事实音频', () {
     final meeting = Meeting(
       id: 'meeting-1',
       title: '周会',
@@ -84,15 +82,20 @@ void main() {
       recordingModelId: 'paraformer',
       recordingModelVersion: '1',
       activeTranscriptSnapshotId: 'old',
-      activeSummaryId: 'old-summary',
     );
 
     final processing = meeting.beginFinalTranscription();
 
     expect(processing.status, MeetingState.processing);
     expect(processing.activeTranscriptSnapshotId, 'old');
-    expect(processing.activeSummaryId, 'old-summary');
     expect(processing.audioPath, meeting.audioPath);
+  });
+
+  test('会议标题由本地开始时间确定生成并补齐两位数字', () {
+    expect(
+      meetingTitleForStartTime(DateTime(2026, 8, 3, 9, 5)),
+      '2026-08-03 09:05 会议',
+    );
   });
 
   test('事实音频封存后记录结束时间、路径和时长并进入待处理', () {
@@ -131,7 +134,6 @@ void main() {
 Meeting _meeting({
   String recordingModelId = 'paraformer',
   String? activeTranscriptSnapshotId,
-  String? activeSummaryId,
   MeetingState status = MeetingState.created,
 }) {
   return Meeting(
@@ -143,7 +145,6 @@ Meeting _meeting({
     recordingModelId: recordingModelId,
     recordingModelVersion: '1',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
-    activeSummaryId: activeSummaryId,
   );
 }
 

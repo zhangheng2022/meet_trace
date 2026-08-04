@@ -98,7 +98,7 @@ AlphaReleaseEvaluationInput _passingInput() => AlphaReleaseEvaluationInput(
   iosBackgroundRecordingPassed: true,
   iosInterruptionRecoveryPassed: true,
   adaptiveNavigationAccessibilityPassed: true,
-  runtimeDownloadBytes: 239762595,
+  runtimeDownloadBytes: 286314800,
   rtfSamples: [for (var i = 1; i <= 18; i++) i / 100, 0.49, 0.8],
   sentenceLatencyMs: [for (var i = 1; i <= 20; i++) i * 100],
   finalTranscriptionDurationMs: 299000,

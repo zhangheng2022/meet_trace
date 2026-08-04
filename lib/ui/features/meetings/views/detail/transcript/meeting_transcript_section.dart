@@ -29,11 +29,6 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
         text: displaySpeakerLabel(segment.speakerId),
       ),
   };
-  late final Map<String, GlobalKey> _evidenceKeys = {
-    for (final segment in widget.snapshot.segments) segment.id: GlobalKey(),
-  };
-  String? _lastLocatedEvidenceId;
-
   @override
   void dispose() {
     for (final controller in [..._texts.values, ..._speakers.values]) {
@@ -46,7 +41,6 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    _scheduleEvidenceLocation();
     return FCard(
       child: Padding(
         padding: EdgeInsets.all(appStyle.spaceMd),
@@ -77,7 +71,7 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
             SizedBox(height: appStyle.spaceSm),
             Text(
               widget.editing
-                  ? '保存后会生成新的最终转录版本，已有 AI 总结将标记为过期。'
+                  ? '保存后会生成新的最终转录版本，事实音频保持不变。'
                   : '以下内容来自完整事实录音；点击“编辑转录”后才会进入修改状态。',
               style: theme.typography.body.sm.copyWith(
                 color: theme.colors.mutedForeground,
@@ -88,12 +82,6 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
               const Text('未识别到可显示的语音内容。')
             else
               for (final segment in widget.snapshot.segments) ...[
-                if (widget.viewModel.selectedEvidenceSegmentId == segment.id)
-                  Align(
-                    key: _evidenceKeys[segment.id],
-                    alignment: Alignment.centerLeft,
-                    child: FBadge(child: const Text('证据定位')),
-                  ),
                 Text(
                   '${displaySpeakerLabel(segment.speakerId)} · '
                   '${_timestamp(segment.startMs)}',
@@ -147,29 +135,6 @@ final class _TranscriptCardState extends State<_TranscriptCard> {
         ),
       ),
     );
-  }
-
-  void _scheduleEvidenceLocation() {
-    final selected = widget.viewModel.selectedEvidenceSegmentId;
-    if (selected == null || selected == _lastLocatedEvidenceId) {
-      return;
-    }
-    _lastLocatedEvidenceId = selected;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      final targetContext = _evidenceKeys[selected]?.currentContext;
-      if (targetContext != null) {
-        unawaited(
-          Scrollable.ensureVisible(
-            targetContext,
-            duration: Duration.zero,
-            alignment: 0.18,
-          ),
-        );
-      }
-    });
   }
 }
 

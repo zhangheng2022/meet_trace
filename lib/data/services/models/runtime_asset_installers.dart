@@ -1,6 +1,7 @@
 import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/model_manifest.dart';
 import '../../models/runtime/silero_vad_manifest.dart';
+import '../../models/runtime/speaker_diarization_manifest.dart';
 import 'model_download_types.dart';
 
 abstract interface class RuntimeAsrModelInstaller {
@@ -25,6 +26,26 @@ abstract interface class RuntimeVadInstaller {
 
   Future<String> prepare({
     required SileroVadManifest manifest,
+    required ModelDownloadCancellationToken cancellation,
+    void Function(int completedBytes, int totalBytes)? onProgress,
+  });
+}
+
+final class SpeakerDiarizationAssetPaths {
+  const SpeakerDiarizationAssetPaths({
+    required this.segmentationModelPath,
+    required this.embeddingModelPath,
+  });
+
+  final String segmentationModelPath;
+  final String embeddingModelPath;
+}
+
+abstract interface class RuntimeSpeakerDiarizationInstaller {
+  Future<bool> isReadyFast(SpeakerDiarizationManifest manifest);
+
+  Future<SpeakerDiarizationAssetPaths> prepare({
+    required SpeakerDiarizationManifest manifest,
     required ModelDownloadCancellationToken cancellation,
     void Function(int completedBytes, int totalBytes)? onProgress,
   });

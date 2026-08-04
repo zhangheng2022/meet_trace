@@ -348,11 +348,8 @@ String _meetingLedgerStatus(Meeting meeting) => switch (meeting.status) {
   MeetingState.created => '准备中',
   MeetingState.recording => '录音中',
   MeetingState.processing => '正在生成最终转录',
-  MeetingState.completed when meeting.audioPath?.isNotEmpty == true =>
-    '事实音频已保存',
   MeetingState.completed => '已完成',
-  MeetingState.failed when meeting.audioPath?.isNotEmpty == true =>
-    '处理失败 · 事实音频已保存',
+  MeetingState.failed when meeting.audioPath?.isNotEmpty == true => '处理失败',
   MeetingState.failed => '失败 · 打开查看事实音频状态',
 };
 
@@ -370,7 +367,7 @@ String _meetingFactDescription(Meeting meeting) => switch (meeting.status) {
   MeetingState.recording => '事实音频正在本机持续写入。推理变慢或失败不会中断录音。',
   MeetingState.processing => '事实音频已经封存，当前正在使用本场锁定模型生成最终转录。',
   MeetingState.completed when meeting.activeTranscriptSnapshotId != null =>
-    '最终转录已经就绪。打开完整记录可查看转录、总结与带时间戳的原文证据。',
+    '最终转录已经就绪。打开完整记录可查看带说话人标签和时间戳的转录。',
   MeetingState.completed => '会议处理已经完成。打开完整记录可查看当前可用结果。',
   MeetingState.failed when meeting.audioPath?.isNotEmpty == true =>
     '派生处理失败，但事实音频仍保存在本机。打开完整记录可查看原因并重试。',

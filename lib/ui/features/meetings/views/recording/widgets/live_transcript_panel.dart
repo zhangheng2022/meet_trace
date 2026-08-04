@@ -71,7 +71,7 @@ final class LiveTranscriptPanel extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: appStyle.spaceXs),
-                  _PreviewStatusSummary(viewModel: viewModel),
+                  _PreviewStatusOverview(viewModel: viewModel),
                 ],
               ),
             ),
@@ -151,8 +151,8 @@ final class _LiveTranscriptEmptyState extends StatelessWidget {
   }
 }
 
-final class _PreviewStatusSummary extends StatelessWidget {
-  const _PreviewStatusSummary({required this.viewModel});
+final class _PreviewStatusOverview extends StatelessWidget {
+  const _PreviewStatusOverview({required this.viewModel});
 
   final RecordingSessionViewModel viewModel;
 

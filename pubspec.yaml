@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  archive: 4.0.9
   audioplayers: 6.8.1
   flutter:
     sdk: flutter
@@ -74,10 +75,15 @@ flutter:
   assets:
     - assets/models/manifest.json
     - assets/models/silero-vad-manifest.json
+    - assets/models/speaker-diarization-manifest.json
     - assets/licenses/sense-voice-NOTICE.txt
     - assets/licenses/sense-voice-LICENSE.txt
     - assets/licenses/silero-vad-NOTICE.txt
     - assets/licenses/silero-vad-LICENSE.txt
+    - assets/licenses/pyannote-segmentation-NOTICE.txt
+    - assets/licenses/pyannote-segmentation-LICENSE.txt
+    - assets/licenses/3d-speaker-NOTICE.txt
+    - assets/licenses/3d-speaker-LICENSE.txt
 
   # To add assets to your application, add an assets section, like this:
   # assets:

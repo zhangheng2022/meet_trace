@@ -8,6 +8,15 @@ abstract interface class SpeakerDiarizationService {
   Future<List<SpeakerTurn>> diarize(AudioSource source);
 }
 
+/// 可终止本地原生推理并释放模型句柄的可选生命周期能力。
+///
+/// Domain 编排只依赖该抽象，不感知 isolate 或 sherpa-onnx 类型。
+abstract interface class SpeakerDiarizationServiceLifecycle {
+  Future<void> cancelActive();
+
+  Future<void> dispose();
+}
+
 abstract interface class SpeakerDiarizationRunner {
   SpeakerDiarizationCapability get capability;
 

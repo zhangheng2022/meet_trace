@@ -78,8 +78,8 @@ final class _Preparation implements RuntimeAssetPreparationPort {
     onProgress(
       const RuntimeInitializationProgress(
         phase: RuntimeInitializationPhase.ready,
-        completedBytes: 239762595,
-        totalBytes: 239762595,
+        completedBytes: 286314800,
+        totalBytes: 286314800,
       ),
     );
   }

@@ -69,7 +69,7 @@ final class StartMeetingUseCase {
       final timestamp = now();
       final created = Meeting(
         id: meetingIdFactory(),
-        title: pendingMeetingTitle,
+        title: meetingTitleForStartTime(timestamp),
         createdAt: timestamp,
         status: MeetingState.created,
         audioDurationMs: 0,

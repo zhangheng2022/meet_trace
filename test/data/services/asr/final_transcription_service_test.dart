@@ -9,24 +9,33 @@ import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/processing_task.dart';
+import 'package:meettrace/domain/models/speaker_diarization.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
+import 'package:meettrace/domain/ports/speaker_diarization.dart';
 
 void main() {
   late _MeetingRepository meetings;
   late _TranscriptRepository transcripts;
+  late _ProcessingTaskRepository tasks;
   late _EngineFactory engines;
-  late FinalTranscriptionService service;
+  late _SpeakerDiarizationService diarization;
+  late FinalResultCoordinator service;
   final now = DateTime.utc(2026, 7, 25, 8);
 
   setUp(() {
     meetings = _MeetingRepository();
     transcripts = _TranscriptRepository(meetings);
+    tasks = _ProcessingTaskRepository();
     engines = _EngineFactory();
-    service = FinalTranscriptionService(
+    diarization = _SpeakerDiarizationService();
+    service = FinalResultCoordinator(
       meetings: meetings,
       transcripts: transcripts,
+      tasks: tasks,
       engineFactory: engines,
+      diarization: diarization,
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-attempt-1',
     );
@@ -61,13 +70,12 @@ void main() {
     expect(result.meeting.status, MeetingState.completed);
     expect(result.meeting.activeTranscriptSnapshotId, 'snapshot-attempt-1');
     expect(result.snapshot.actualModelId, senseVoiceDefaultModelId);
+    expect(result.snapshot.segments.single.speakerId, 'speaker-1');
+    expect(result.diarizationStatus, SpeakerDiarizationStatus.degraded);
   });
 
   test('推理失败时保留旧活动快照、音频并保存失败尝试', () async {
-    meetings.value = _meeting(
-      activeTranscriptSnapshotId: 'old-snapshot',
-      activeSummaryId: 'old-summary',
-    );
+    meetings.value = _meeting(activeTranscriptSnapshotId: 'old-snapshot');
     engines.error = StateError('推理失败');
 
     await expectLater(
@@ -77,7 +85,6 @@ void main() {
 
     expect(meetings.value!.audioPath, '/audio/meeting-1.pcm');
     expect(meetings.value!.activeTranscriptSnapshotId, 'old-snapshot');
-    expect(meetings.value!.activeSummaryId, 'old-summary');
     expect(meetings.value!.status, MeetingState.failed);
     expect(transcripts.activeSnapshotId, 'old-snapshot');
     expect(transcripts.saved.last.status, TranscriptSnapshotStatus.failed);
@@ -116,7 +123,6 @@ void main() {
     meetings.value = _meeting(
       status: MeetingState.completed,
       activeTranscriptSnapshotId: 'old-snapshot',
-      activeSummaryId: 'old-summary',
     );
     engines.resultBuilder =
         ({required descriptor, required meetingId, required snapshotId}) {
@@ -135,7 +141,6 @@ void main() {
     expect(result.snapshot.id, 'snapshot-attempt-1');
     expect(result.snapshot.id, isNot('old-snapshot'));
     expect(result.snapshot.actualModelId, qwen.modelId);
-    expect(result.meeting.activeSummaryId, isNull);
   });
 
   test('同一 retrySnapshotId 已激活完成时直接返回且不重复推理', () async {
@@ -188,10 +193,12 @@ void main() {
             createdAt: now,
           );
         };
-    service = FinalTranscriptionService(
+    service = FinalResultCoordinator(
       meetings: meetings,
       transcripts: transcripts,
+      tasks: tasks,
       engineFactory: engines,
+      diarization: diarization,
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-${++snapshotSequence}',
     );
@@ -267,12 +274,148 @@ void main() {
     expect(meetings.value!.status, MeetingState.completed);
     expect(meetings.value!.activeTranscriptSnapshotId, 'snapshot-attempt-1');
   });
+
+  test('ASR 与说话人分离并行启动，两者结束前不发布快照', () async {
+    meetings.value = _meeting();
+    final asrStarted = Completer<void>();
+    final diarizationStarted = Completer<void>();
+    final releaseAsr = Completer<void>();
+    final releaseDiarization = Completer<void>();
+    engines.beforeFinalize = () async {
+      asrStarted.complete();
+      await releaseAsr.future;
+    };
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+    diarization
+      ..available = true
+      ..beforeDiarize = () async {
+        diarizationStarted.complete();
+        await releaseDiarization.future;
+      }
+      ..turns = const [
+        SpeakerTurn(startMs: 0, endMs: 2000, speakerId: 'speaker-a'),
+      ];
+
+    final operation = service.transcribe(meetingId: 'meeting-1');
+    await Future.wait([asrStarted.future, diarizationStarted.future]);
+
+    expect(transcripts.expectedActiveIds, isEmpty);
+    expect(
+      transcripts.saved.single.status,
+      TranscriptSnapshotStatus.processing,
+    );
+
+    releaseAsr.complete();
+    await Future<void>.delayed(Duration.zero);
+    expect(transcripts.expectedActiveIds, isEmpty);
+
+    releaseDiarization.complete();
+    final result = await operation;
+
+    expect(transcripts.expectedActiveIds, [null]);
+    expect(result.snapshot.segments.single.speakerId, 'speaker-a');
+    expect(result.diarizationStatus, SpeakerDiarizationStatus.completed);
+    expect(tasks.records.values.single.state, ProcessingState.completed);
+  });
+
+  test('说话人分离失败时以单一说话人和最终文本一起原子发布', () async {
+    meetings.value = _meeting(activeTranscriptSnapshotId: 'old-snapshot');
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+    diarization
+      ..available = true
+      ..error = const SpeakerDiarizationException(
+        'speaker_diarization.inference_failed',
+      );
+
+    final result = await service.transcribe(meetingId: 'meeting-1');
+
+    expect(transcripts.expectedActiveIds, ['old-snapshot']);
+    expect(result.snapshot.segments.single.speakerId, 'speaker-1');
+    expect(result.diarizationStatus, SpeakerDiarizationStatus.degraded);
+    expect(result.diarizationErrorCode, 'speaker_diarization.inference_failed');
+    expect(tasks.records.values.single.state, ProcessingState.failed);
+  });
+
+  test('可用但不可取消的分离实现不会启动并按单一说话人降级', () async {
+    meetings.value = _meeting();
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+    final nonCancelable = _NonCancelableDiarizationService();
+    service = FinalResultCoordinator(
+      meetings: meetings,
+      transcripts: transcripts,
+      tasks: tasks,
+      engineFactory: engines,
+      diarization: nonCancelable,
+      now: () => now,
+      snapshotIdFactory: (_, _) => 'snapshot-attempt-1',
+    );
+
+    final result = await service.transcribe(meetingId: 'meeting-1');
+
+    expect(nonCancelable.calls, 0);
+    expect(result.snapshot.segments.single.speakerId, 'speaker-1');
+    expect(
+      result.diarizationErrorCode,
+      'speaker_diarization.lifecycle_unavailable',
+    );
+  });
+
+  test('ASR 失败会终止仍在运行的分离且保留旧活动快照', () async {
+    meetings.value = _meeting(activeTranscriptSnapshotId: 'old-snapshot');
+    engines.error = StateError('推理失败');
+    final diarizationStarted = Completer<void>();
+    final releaseDiarization = Completer<void>();
+    diarization
+      ..available = true
+      ..beforeDiarize = () async {
+        diarizationStarted.complete();
+        await releaseDiarization.future;
+      }
+      ..onCancel = () {
+        if (!releaseDiarization.isCompleted) {
+          releaseDiarization.complete();
+        }
+      };
+
+    final operation = service.transcribe(meetingId: 'meeting-1');
+    await diarizationStarted.future;
+
+    await expectLater(operation, throwsA(isA<StateError>()));
+
+    expect(diarization.cancelCalls, 1);
+    expect(transcripts.expectedActiveIds, isEmpty);
+    expect(meetings.value!.activeTranscriptSnapshotId, 'old-snapshot');
+    expect(transcripts.activeSnapshotId, 'old-snapshot');
+  });
 }
 
 Meeting _meeting({
   MeetingState status = MeetingState.processing,
   String? activeTranscriptSnapshotId,
-  String? activeSummaryId,
 }) {
   return Meeting(
     id: 'meeting-1',
@@ -286,7 +429,6 @@ Meeting _meeting({
     recordingModelId: senseVoiceDefaultModelId,
     recordingModelVersion: '2024-07-17',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
-    activeSummaryId: activeSummaryId,
   );
 }
 
@@ -399,6 +541,73 @@ final class _TranscriptRepository implements TranscriptRepository {
     required Map<String, String?> labelsBySegmentId,
   }) async {
     return records[snapshotId]!;
+  }
+}
+
+final class _ProcessingTaskRepository implements ProcessingTaskRepository {
+  final Map<String, ProcessingTask> records = {};
+
+  @override
+  Future<ProcessingTask?> getById(String taskId) async => records[taskId];
+
+  @override
+  Future<List<ProcessingTask>> listByMeeting(String meetingId) async =>
+      records.values.where((task) => task.meetingId == meetingId).toList();
+
+  @override
+  Future<void> save(ProcessingTask task) async {
+    records[task.id] = task;
+  }
+}
+
+final class _SpeakerDiarizationService
+    implements SpeakerDiarizationService, SpeakerDiarizationServiceLifecycle {
+  bool available = false;
+  List<SpeakerTurn> turns = const [];
+  Object? error;
+  Future<void> Function()? beforeDiarize;
+  void Function()? onCancel;
+  int cancelCalls = 0;
+
+  @override
+  SpeakerDiarizationCapability get capability => available
+      ? const SpeakerDiarizationCapability.available()
+      : const SpeakerDiarizationCapability.unavailable(
+          reasonCode: 'speaker_diarization.test_unavailable',
+        );
+
+  @override
+  Future<List<SpeakerTurn>> diarize(AudioSource source) async {
+    await beforeDiarize?.call();
+    final failure = error;
+    if (failure != null) {
+      throw failure;
+    }
+    return turns;
+  }
+
+  @override
+  Future<void> cancelActive() async {
+    cancelCalls++;
+    onCancel?.call();
+  }
+
+  @override
+  Future<void> dispose() async {}
+}
+
+final class _NonCancelableDiarizationService
+    implements SpeakerDiarizationService {
+  int calls = 0;
+
+  @override
+  SpeakerDiarizationCapability get capability =>
+      const SpeakerDiarizationCapability.available();
+
+  @override
+  Future<List<SpeakerTurn>> diarize(AudioSource source) async {
+    calls++;
+    return const [];
   }
 }
 

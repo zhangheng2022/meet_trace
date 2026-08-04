@@ -46,7 +46,7 @@ void main() {
     }
   });
 
-  test('启动恢复器处理四类残留且重复运行结果不变', () async {
+  test('启动恢复器处理五类残留且重复运行结果不变', () async {
     final now = DateTime.utc(2026, 7, 24, 8);
     final recordingMeeting = Meeting(
       id: 'meeting-1',
@@ -99,6 +99,13 @@ void main() {
     await File(
       '${modelTemp.path}${Platform.pathSeparator}partial.onnx',
     ).writeAsBytes([1]);
+    final shareTemp = Directory(
+      layout.meetingShareTempDirectory(recordingMeeting.id),
+    );
+    await shareTemp.create(recursive: true);
+    await File(
+      '${shareTemp.path}${Platform.pathSeparator}stale.wav',
+    ).writeAsBytes([1]);
 
     final first = await recovery.recover(now: now);
     final second = await recovery.recover(now: now);
@@ -106,6 +113,7 @@ void main() {
     expect(first.recoveredRecordings, 1);
     expect(first.resetExpiredTasks, 1);
     expect(first.removedModelTempDirectories, 1);
+    expect(first.removedShareTempDirectories, 1);
     expect(first.activatedSnapshots, 1);
     expect(second.totalChanges, 0);
 
@@ -127,5 +135,6 @@ void main() {
     );
     expect((await tasks.getById('task-1'))!.state, ProcessingState.queued);
     expect(await modelTemp.exists(), false);
+    expect(await shareTemp.exists(), false);
   });
 }

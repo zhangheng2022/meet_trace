@@ -7,7 +7,6 @@ enum FailureStage {
   asrInference,
   finalTranscription,
   speakerDiarization,
-  summary,
 }
 
 enum FailureRecoverability { retryable, userActionRequired, unrecoverable }

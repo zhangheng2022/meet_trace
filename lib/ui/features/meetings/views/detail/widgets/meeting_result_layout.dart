@@ -7,7 +7,6 @@ final class _ResultView extends StatelessWidget {
     required this.editingTranscript,
     required this.onSectionChanged,
     required this.onEditingChanged,
-    required this.onEvidence,
     required this.onDeleted,
   });
 
@@ -16,7 +15,6 @@ final class _ResultView extends StatelessWidget {
   final bool editingTranscript;
   final ValueChanged<MeetingResultSection> onSectionChanged;
   final ValueChanged<bool> onEditingChanged;
-  final ValueChanged<SummaryEvidence> onEvidence;
   final VoidCallback? onDeleted;
 
   @override
@@ -74,10 +72,6 @@ final class _ResultView extends StatelessWidget {
               ),
             ),
             FTabEntry(
-              label: const Text('总结'),
-              child: _SummaryCard(viewModel: viewModel, onEvidence: onEvidence),
-            ),
-            FTabEntry(
               label: const Text('录音'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -113,7 +107,7 @@ final class _ResultView extends StatelessWidget {
               );
             }
             return Row(
-              key: const ValueKey('meeting-detail-evidence-workbench'),
+              key: const ValueKey('meeting-detail-audio-workbench'),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
@@ -173,7 +167,7 @@ final class _MeetingFactRail extends StatelessWidget {
             const AppStatusNotice(
               tone: AppStatusTone.success,
               title: '事实音频已保存',
-              message: '最终转录与证据均可回到本机原音频核对。',
+              message: '最终转录带有时间戳，可回到本机原音频核对。',
             ),
           ],
         ),

@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/app_failure.dart';
-import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/asr_engine.dart';
@@ -19,7 +18,7 @@ void main() {
     factory = TestAsrEngineFactory();
   });
 
-  test('直接使用全局默认模型并以待生成标题创建会议', () async {
+  test('直接使用全局默认模型并以本地开始时间生成标题', () async {
     final senseVoice = AsrModelRegistry.alpha.requireById(
       senseVoiceDefaultModelId,
     );
@@ -28,7 +27,7 @@ void main() {
     final session = await viewModel.start();
 
     expect(session, isNotNull);
-    expect(session!.meeting.title, pendingMeetingTitle);
+    expect(session!.meeting.title, '2026-07-24 09:05 会议');
     expect(session.meeting.recordingModelId, senseVoice.modelId);
     expect(session.meeting.recordingModelVersion, senseVoice.version);
     expect(session.meeting.status, MeetingState.recording);
@@ -124,7 +123,7 @@ StartMeetingViewModel _viewModel(
       engineFactory: factory,
       readinessChecker: readiness ?? TestMeetingReadinessChecker(),
       meetingIdFactory: () => 'meeting-step-11',
-      now: () => DateTime.utc(2026, 7, 24, 9),
+      now: () => DateTime(2026, 7, 24, 9, 5),
     ),
   );
 }

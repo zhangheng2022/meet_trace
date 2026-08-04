@@ -3,11 +3,11 @@ schema_version: 1
 locale: zh-CN
 branch: master
 nodes_managed: true
-exported_at: "2026-08-03T10:56:01Z"
+exported_at: "2026-08-03T12:25:09Z"
 modules:
     "":
-        dir_name: 会迹（MeetTrace）Flutter 聚合项目根
-        title: 会迹（MeetTrace）Flutter 聚合项目根
+        dir_name: 会迹（MeetTrace）Flutter 多端应用聚合根
+        title: 会迹（MeetTrace）Flutter 多端应用聚合根
         scope:
             - README.md
             - PRODUCT.md
@@ -88,8 +88,8 @@ modules:
         depends_on: []
         related_to: []
     documentation:
-        dir_name: 会迹（MeetTrace）项目文档中心
-        title: 会迹（MeetTrace）项目文档中心
+        dir_name: 会迹项目文档中心（MeetTrace Documentation Hub）
+        title: 会迹项目文档中心（MeetTrace Documentation Hub）
         scope:
             - docs/
         source_files: []
@@ -107,8 +107,8 @@ modules:
         related_to:
             - path: shared_dart_code
     shared_dart_code:
-        dir_name: MeetTrace Flutter 应用主模块
-        title: MeetTrace Flutter 应用主模块
+        dir_name: 会迹（MeetTrace）Flutter 应用主模块
+        title: 会迹（MeetTrace）Flutter 应用主模块
         scope:
             - lib/
             - test/

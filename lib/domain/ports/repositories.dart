@@ -2,7 +2,6 @@ import '../models/meeting.dart';
 import '../models/model_installation.dart';
 import '../models/model_usage_lease.dart';
 import '../models/processing_task.dart';
-import '../models/summary.dart';
 import '../models/transcript.dart';
 
 abstract interface class MeetingRepository {
@@ -30,19 +29,6 @@ abstract interface class TranscriptRepository {
   Future<TranscriptSnapshot> updateSpeakerLabels({
     required String snapshotId,
     required Map<String, String?> labelsBySegmentId,
-  });
-}
-
-abstract interface class SummaryRepository {
-  Future<Summary?> getById(String summaryId);
-
-  Future<List<Summary>> listByMeeting(String meetingId);
-
-  Future<void> save(Summary summary);
-
-  Future<void> saveAndActivate({
-    required Summary summary,
-    required String expectedTranscriptSnapshotId,
   });
 }
 

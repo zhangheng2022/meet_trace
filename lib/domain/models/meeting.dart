@@ -2,8 +2,18 @@ import 'domain_exception.dart';
 import 'transcript.dart';
 import 'workflow_states.dart';
 
-const pendingMeetingTitle = '待生成标题';
 const _notProvided = Object();
+
+String meetingStartTimeLabel(DateTime startedAt) {
+  final local = startedAt.toLocal();
+  String twoDigits(int value) => value.toString().padLeft(2, '0');
+  return '${local.year.toString().padLeft(4, '0')}-'
+      '${twoDigits(local.month)}-${twoDigits(local.day)} '
+      '${twoDigits(local.hour)}:${twoDigits(local.minute)}';
+}
+
+String meetingTitleForStartTime(DateTime startedAt) =>
+    '${meetingStartTimeLabel(startedAt)} 会议';
 
 final class Meeting {
   Meeting({
@@ -20,10 +30,10 @@ final class Meeting {
     this.recordingModelLanguage = 'auto',
     this.recordingModelUseInverseTextNormalization = true,
     this.activeTranscriptSnapshotId,
-    this.activeSummaryId,
     this.lastErrorCode,
   }) {
     _requireText(id, 'id');
+    _requireText(title, 'title');
     _requireText(recordingModelId, 'recordingModelId');
     _requireText(recordingModelVersion, 'recordingModelVersion');
     _requireText(recordingModelLanguage, 'recordingModelLanguage');
@@ -52,16 +62,9 @@ final class Meeting {
   final String recordingModelLanguage;
   final bool recordingModelUseInverseTextNormalization;
   final String? activeTranscriptSnapshotId;
-  final String? activeSummaryId;
   final String? lastErrorCode;
 
   bool get isRecordingModelLocked => status != MeetingState.created;
-
-  Meeting rename(String value) {
-    final normalized = value.trim();
-    _requireText(normalized, 'title');
-    return _copyWith(title: normalized);
-  }
 
   Meeting changeRecordingModel({
     required String recordingModelId,
@@ -152,7 +155,6 @@ final class Meeting {
     return _copyWith(
       status: status.transitionTo(MeetingState.completed),
       activeTranscriptSnapshotId: snapshot.id,
-      activeSummaryId: null,
       lastErrorCode: null,
     );
   }
@@ -169,7 +171,6 @@ final class Meeting {
     String? recordingModelLanguage,
     bool? recordingModelUseInverseTextNormalization,
     Object? activeTranscriptSnapshotId = _notProvided,
-    Object? activeSummaryId = _notProvided,
     Object? lastErrorCode = _notProvided,
   }) {
     return Meeting(
@@ -193,9 +194,6 @@ final class Meeting {
           identical(activeTranscriptSnapshotId, _notProvided)
           ? this.activeTranscriptSnapshotId
           : activeTranscriptSnapshotId as String?,
-      activeSummaryId: identical(activeSummaryId, _notProvided)
-          ? this.activeSummaryId
-          : activeSummaryId as String?,
       lastErrorCode: identical(lastErrorCode, _notProvided)
           ? this.lastErrorCode
           : lastErrorCode as String?,

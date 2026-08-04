@@ -10,29 +10,32 @@ void main() {
   });
 
   group('TranscriptSnapshot', () {
-    test('临时快照不能作为总结输入', () {
+    test('临时快照不能作为当前最终转录', () {
       final snapshot = _snapshot(
         kind: TranscriptSnapshotKind.temporary,
         status: TranscriptSnapshotStatus.complete,
       );
 
       expect(
-        snapshot.isEligibleForSummary(activeSnapshotId: snapshot.id),
+        snapshot.isCurrentFinalTranscript(activeSnapshotId: snapshot.id),
         false,
       );
     });
 
-    test('只有已完成且当前激活的最终快照能作为总结输入', () {
+    test('只有已完成且当前激活的最终快照能对外使用', () {
       final snapshot = _snapshot(
         kind: TranscriptSnapshotKind.finalTranscript,
         status: TranscriptSnapshotStatus.complete,
       );
 
       expect(
-        snapshot.isEligibleForSummary(activeSnapshotId: snapshot.id),
+        snapshot.isCurrentFinalTranscript(activeSnapshotId: snapshot.id),
         true,
       );
-      expect(snapshot.isEligibleForSummary(activeSnapshotId: 'other'), false);
+      expect(
+        snapshot.isCurrentFinalTranscript(activeSnapshotId: 'other'),
+        false,
+      );
     });
 
     test('拒绝混入其他快照或其他模型的片段', () {

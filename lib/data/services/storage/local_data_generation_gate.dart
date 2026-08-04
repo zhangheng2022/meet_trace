@@ -20,7 +20,7 @@ final class LocalDataGenerationGate {
   });
 
   /// 当前数据代。引入数据不兼容变更时必须递增，并在 PRD 记录清数据原因。
-  static const currentGeneration = 2;
+  static const currentGeneration = 3;
 
   static const markerFileName = 'data_generation.json';
 

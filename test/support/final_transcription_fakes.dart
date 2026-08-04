@@ -1,7 +1,6 @@
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/processing_task.dart';
-import 'package:meettrace/domain/models/summary.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
@@ -92,58 +91,6 @@ final class DetailTranscriptRepository implements TranscriptRepository {
     );
     records[snapshotId] = updated;
     return updated;
-  }
-}
-
-final class DetailSummaryRepository implements SummaryRepository {
-  DetailSummaryRepository(this.meetings);
-
-  final DetailMeetingRepository meetings;
-  final Map<String, Summary> records = {};
-
-  @override
-  Future<Summary?> getById(String summaryId) async => records[summaryId];
-
-  @override
-  Future<List<Summary>> listByMeeting(String meetingId) async => records.values
-      .where((summary) => summary.meetingId == meetingId)
-      .toList();
-
-  @override
-  Future<void> save(Summary summary) async {
-    records[summary.id] = summary;
-  }
-
-  @override
-  Future<void> saveAndActivate({
-    required Summary summary,
-    required String expectedTranscriptSnapshotId,
-  }) async {
-    final meeting = meetings.value;
-    if (meeting == null ||
-        meeting.activeTranscriptSnapshotId != expectedTranscriptSnapshotId) {
-      throw StateError('最终转录已变化');
-    }
-    records[summary.id] = summary;
-    meetings.value = Meeting(
-      id: meeting.id,
-      title:
-          meeting.title == pendingMeetingTitle &&
-              summary.title.trim().isNotEmpty
-          ? summary.title.trim()
-          : meeting.title,
-      createdAt: meeting.createdAt,
-      startedAt: meeting.startedAt,
-      endedAt: meeting.endedAt,
-      status: meeting.status,
-      audioPath: meeting.audioPath,
-      audioDurationMs: meeting.audioDurationMs,
-      recordingModelId: meeting.recordingModelId,
-      recordingModelVersion: meeting.recordingModelVersion,
-      activeTranscriptSnapshotId: meeting.activeTranscriptSnapshotId,
-      activeSummaryId: summary.id,
-      lastErrorCode: meeting.lastErrorCode,
-    );
   }
 }
 

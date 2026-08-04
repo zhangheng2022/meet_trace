@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.meettrace"
+    namespace = "com.meettrace.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,8 +15,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.meettrace"
+        applicationId = "com.meettrace.app"
         val flutterTarget =
             providers.gradleProperty("target").orNull?.replace('\\', '/')
         val isLivePreviewReplayTarget =

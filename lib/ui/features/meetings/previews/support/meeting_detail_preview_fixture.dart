@@ -57,29 +57,6 @@ final class _PreviewTranscriptRepository implements TranscriptRepository {
   }) async => _snapshot!;
 }
 
-final class _PreviewSummaryRepository implements SummaryRepository {
-  const _PreviewSummaryRepository(this.summary);
-
-  final Summary summary;
-
-  @override
-  Future<Summary?> getById(String summaryId) async =>
-      summary.id == summaryId ? summary : null;
-
-  @override
-  Future<List<Summary>> listByMeeting(String meetingId) async =>
-      summary.meetingId == meetingId ? [summary] : const [];
-
-  @override
-  Future<void> save(Summary summary) async {}
-
-  @override
-  Future<void> saveAndActivate({
-    required Summary summary,
-    required String expectedTranscriptSnapshotId,
-  }) async {}
-}
-
 final class _UnavailableTranscriptionRunner
     implements FinalTranscriptionRunner {
   const _UnavailableTranscriptionRunner();

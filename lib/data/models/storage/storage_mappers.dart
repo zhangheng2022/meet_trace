@@ -23,7 +23,6 @@ Map<String, Object?> meetingToRow(Meeting meeting) {
         ? 1
         : 0,
     'active_transcript_snapshot_id': meeting.activeTranscriptSnapshotId,
-    'active_summary_id': meeting.activeSummaryId,
     'last_error_code': meeting.lastErrorCode,
   };
 }
@@ -44,7 +43,6 @@ Meeting meetingFromRow(Map<String, Object?> row) {
     recordingModelUseInverseTextNormalization:
         row['recording_model_use_itn']! as int == 1,
     activeTranscriptSnapshotId: row['active_transcript_snapshot_id'] as String?,
-    activeSummaryId: row['active_summary_id'] as String?,
     lastErrorCode: row['last_error_code'] as String?,
   );
 }

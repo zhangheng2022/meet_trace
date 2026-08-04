@@ -1,29 +1,28 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' hide Summary;
+import 'package:flutter/foundation.dart';
 
 import '../../../../../domain/models/asr_model.dart';
 import '../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../domain/models/meeting.dart';
 import '../../../../../domain/models/processing_task.dart';
 import '../../../../../domain/models/speaker_diarization.dart';
-import '../../../../../domain/models/summary.dart';
 import '../../../../../domain/models/transcript.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../domain/ports/asr_engine.dart';
-import '../../../../../domain/ports/evidence_playback.dart';
+import '../../../../../domain/ports/audio_playback.dart';
+import '../../../../../domain/ports/audio_share.dart';
 import '../../../../../domain/ports/final_transcription.dart';
 import '../../../../../domain/ports/repositories.dart';
 import '../../../../../domain/ports/speaker_diarization.dart';
 import '../../../../../domain/ports/text_share.dart';
-import '../../../../../domain/use_cases/generate_summary.dart';
 import '../../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../../domain/use_cases/delete_meeting.dart';
 import '../../../../../domain/use_cases/revise_final_transcript.dart';
+import '../../../../../domain/use_cases/share_meeting_audio.dart';
 
 part 'meeting_detail_state.dart';
 part 'meeting_transcript_view_model.dart';
-part 'meeting_summary_view_model.dart';
 part 'meeting_audio_view_model.dart';
 part 'meeting_actions_view_model.dart';
 
@@ -37,10 +36,9 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     this.diarization,
     this.diarizationPreferences,
     this.processingTasks,
-    this.summaries,
-    this.summaryGeneration,
     this.transcriptRevision,
     this.sharing,
+    this.audioSharing,
     this.deletion,
     this.playback,
     this.shareBuilder = const BuildMeetingShareUseCase(),
@@ -50,7 +48,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     : _meeting = meeting,
        registry = registry ?? AsrModelRegistry.alpha {
     transcriptSection = MeetingTranscriptViewModel._(this);
-    summarySection = MeetingSummaryViewModel._(this);
     audioSection = MeetingAudioViewModel._(this);
     actions = MeetingActionsViewModel._(this);
   }
@@ -61,17 +58,15 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   final SpeakerDiarizationRunner? diarization;
   final DiarizationPreferenceRepository? diarizationPreferences;
   final ProcessingTaskRepository? processingTasks;
-  final SummaryRepository? summaries;
-  final GenerateSummaryUseCase? summaryGeneration;
   final ReviseFinalTranscriptUseCase? transcriptRevision;
   final TextShareService? sharing;
+  final ShareMeetingAudioUseCase? audioSharing;
   final DeleteMeetingUseCase? deletion;
-  final EvidencePlaybackService? playback;
+  final AudioPlaybackService? playback;
   final BuildMeetingShareUseCase shareBuilder;
   final AsrModelRegistry registry;
 
   late final MeetingTranscriptViewModel transcriptSection;
-  late final MeetingSummaryViewModel summarySection;
   late final MeetingAudioViewModel audioSection;
   late final MeetingActionsViewModel actions;
 
@@ -79,11 +74,10 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   TranscriptSnapshot? _snapshot;
   TranscriptSnapshot? _failedAttempt;
   TranscriptSnapshot? _processingAttempt;
-  StreamSubscription<EvidencePlaybackState>? _playbackSubscription;
+  StreamSubscription<AudioPlaybackState>? _playbackSubscription;
   Future<void>? _loading;
   Future<void>? _operation;
   Future<void>? _diarizationOperation;
-  Future<void>? _summaryOperation;
   Future<void>? _resultOperation;
   double _progress = 0;
   String? _errorMessage;
@@ -92,26 +86,21 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   SpeakerDiarizationStatus _diarizationStatus =
       SpeakerDiarizationStatus.disabled;
   String? _diarizationMessage;
-  Summary? _summary;
-  String? _summaryMessage;
   String? _resultMessage;
-  EvidencePlaybackState _playbackState = const EvidencePlaybackState(
-    status: EvidencePlaybackStatus.idle,
+  AudioPlaybackState _playbackState = const AudioPlaybackState(
+    status: AudioPlaybackStatus.idle,
   );
-  String? _selectedEvidenceSegmentId;
   bool _deleted = false;
   bool _disposed = false;
 
   MeetingDetailState get state => MeetingDetailState(
     meeting: _meeting,
     snapshot: _snapshot,
-    summary: _summary,
     isLoading: _isLoading,
     isProcessing: isProcessing,
     progress: _progress,
     errorMessage: _errorMessage,
     resultMessage: _resultMessage,
-    summaryMessage: _summaryMessage,
     diarizationMessage: _diarizationMessage,
     playbackState: _playbackState,
   );
@@ -124,7 +113,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   bool get isProcessing =>
       _operation != null ||
       _diarizationOperation != null ||
-      _summaryOperation != null ||
       _resultOperation != null;
   bool get isTranscribing => _operation != null;
   bool get isDiarizing => _diarizationOperation != null;
@@ -137,36 +125,15 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       _snapshot?.status == TranscriptSnapshotStatus.complete;
   SpeakerDiarizationStatus get diarizationStatus => _diarizationStatus;
   String? get diarizationMessage => _diarizationMessage;
-  Summary? get summary => _summary;
-  String? get summaryMessage => _summaryMessage;
-  bool get isGeneratingSummary => _summaryOperation != null;
-  bool get summaryAvailable =>
-      summaryGeneration?.capability.isAvailable == true;
   String? get resultMessage => _resultMessage;
-  EvidencePlaybackState get playbackState => _playbackState;
-  String? get selectedEvidenceSegmentId => _selectedEvidenceSegmentId;
+  AudioPlaybackState get playbackState => _playbackState;
   bool get isDeleted => _deleted;
   bool get canShare =>
       sharing != null &&
-      _snapshot?.isEligibleForSummary(
+      _snapshot?.isCurrentFinalTranscript(
             activeSnapshotId: _meeting.activeTranscriptSnapshotId,
           ) ==
           true;
-  bool get canGenerateSummary {
-    final snapshot = _snapshot;
-    return summaryAvailable &&
-        !isProcessing &&
-        snapshot != null &&
-        snapshot.isEligibleForSummary(
-          activeSnapshotId: _meeting.activeTranscriptSnapshotId,
-        );
-  }
-
-  bool get _shouldAutoGenerateSummary =>
-      _meeting.title == pendingMeetingTitle &&
-      _meeting.activeSummaryId == null &&
-      _summary == null &&
-      canGenerateSummary;
 
   List<SpeakerLabelGroup> get speakerGroups {
     final groups = <String?, int>{};
@@ -204,13 +171,13 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       transcriptSection.renameSpeaker(currentSpeakerId, newLabel);
   Future<void> reviseTranscript(List<TranscriptSegmentRevision> revisions) =>
       transcriptSection.reviseTranscript(revisions);
-  Future<void> generateSummary() => summarySection.generate();
-  Future<void> playEvidence(SummaryEvidence evidence) =>
-      audioSection.playEvidence(evidence);
   Future<void> playFullAudio() => audioSection.playFullAudio();
   Future<void> stopPlayback() => audioSection.stop();
-  Future<void> renameMeeting(String title) => actions.renameMeeting(title);
   Future<void> share(MeetingShareFormat format) => actions.share(format);
+  Future<AudioSharePreparation?> prepareAudioShare() =>
+      actions.prepareAudioShare();
+  Future<void> shareAudio(AudioSharePreparation preparation) =>
+      actions.shareAudio(preparation);
   Future<void> deleteMeeting() => actions.deleteMeeting();
 
   Future<void> _load() async {
@@ -224,8 +191,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? false;
       await _refreshSnapshots();
       await _refreshDiarizationTask();
-      await _refreshSummary();
-      await _refreshSummaryTask();
       if (_meeting.status == MeetingState.processing &&
           _snapshot?.status != TranscriptSnapshotStatus.complete) {
         final pending = _processingAttempt;
@@ -236,9 +201,6 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         );
       } else {
         await _runDiarizationIfNeeded();
-        if (_shouldAutoGenerateSummary) {
-          await _runSummaryGeneration();
-        }
       }
     } on Object {
       _errorMessage ??= '最终转录状态加载失败，请重试';

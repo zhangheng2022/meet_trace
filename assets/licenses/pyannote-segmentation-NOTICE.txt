@@ -1,0 +1,22 @@
+MeetTrace runtime model notice: Pyannote segmentation 3.0
+
+Runtime artifact:
+  sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+  Runtime mirror:
+  https://mt.zhangheng.eu.org/models/SpeakerDiarization/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+  Official source:
+  https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+  bytes: 6958444
+  sha256: 24615ee884c897d9d2ba09bb4d30da6bb1b15e685065962db5b02e76e4996488
+
+Installed model:
+  model.int8.onnx
+  bytes: 1540506
+  sha256: d582f4b4c6b48205de7e0643c57df0df5615a3c176189be3fc461e9d18827b5d
+
+The sherpa-onnx artifact is converted from pyannote/segmentation-3.0.
+The archive includes an MIT license with copyright attributed to CNRS.
+MeetTrace distributes this notice and the corresponding license text, but not
+the model weights. The runtime installer downloads the pinned mirror, verifies
+that it is byte-identical to the official sherpa-onnx release artifact, and
+extracts only the INT8 model and its license.

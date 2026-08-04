@@ -15,6 +15,7 @@ final class RecoveryReport {
     required this.failedRecordings,
     required this.resetExpiredTasks,
     required this.removedModelTempDirectories,
+    required this.removedShareTempDirectories,
     required this.activatedSnapshots,
   });
 
@@ -22,6 +23,7 @@ final class RecoveryReport {
   final int failedRecordings;
   final int resetExpiredTasks;
   final int removedModelTempDirectories;
+  final int removedShareTempDirectories;
   final int activatedSnapshots;
 
   int get totalChanges =>
@@ -29,6 +31,7 @@ final class RecoveryReport {
       failedRecordings +
       resetExpiredTasks +
       removedModelTempDirectories +
+      removedShareTempDirectories +
       activatedSnapshots;
 }
 
@@ -51,6 +54,7 @@ final class StartupRecoveryService {
     final resetExpiredTasks = await _resetExpiredTasks(now);
     final removedModelTempDirectories =
         await _removeIncompleteModelDirectories();
+    final removedShareTempDirectories = await _removeShareTempDirectories();
     final activatedSnapshots = await _activateCompletedSnapshots();
 
     return RecoveryReport(
@@ -58,6 +62,7 @@ final class StartupRecoveryService {
       failedRecordings: recoveredRecordings.failures,
       resetExpiredTasks: resetExpiredTasks,
       removedModelTempDirectories: removedModelTempDirectories,
+      removedShareTempDirectories: removedShareTempDirectories,
       activatedSnapshots: activatedSnapshots,
     );
   }
@@ -200,6 +205,44 @@ final class StartupRecoveryService {
     return removed;
   }
 
+  Future<int> _removeShareTempDirectories() async {
+    final meetingsRoot = Directory(layout.meetingsRoot);
+    if (!await meetingsRoot.exists()) {
+      return 0;
+    }
+    final normalizedRoot = p.normalize(p.absolute(meetingsRoot.path));
+    var removed = 0;
+    await for (final meetingEntity in meetingsRoot.list(followLinks: false)) {
+      if (meetingEntity is! Directory) {
+        continue;
+      }
+      final target = p.normalize(
+        p.absolute(p.join(meetingEntity.path, '.share')),
+      );
+      if (!p.isWithin(normalizedRoot, target)) {
+        throw StateError('拒绝清理会议根目录之外的分享临时路径：$target');
+      }
+      final type = await FileSystemEntity.type(target, followLinks: false);
+      if (type == FileSystemEntityType.notFound) {
+        continue;
+      }
+      switch (type) {
+        case FileSystemEntityType.directory:
+          await Directory(target).delete(recursive: true);
+        case FileSystemEntityType.link:
+          await Link(target).delete();
+        case FileSystemEntityType.file:
+          await File(target).delete();
+        case FileSystemEntityType.notFound:
+          continue;
+        default:
+          throw StateError('无法识别分享临时路径类型：$target');
+      }
+      removed++;
+    }
+    return removed;
+  }
+
   Future<int> _activateCompletedSnapshots() async {
     final db = await database.open();
     final rows = await db.rawQuery(
@@ -228,7 +271,6 @@ final class StartupRecoveryService {
         'meetings',
         {
           'active_transcript_snapshot_id': row['id'],
-          'active_summary_id': null,
           'status': MeetingState.completed.name,
           'last_error_code': null,
         },

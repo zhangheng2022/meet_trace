@@ -75,6 +75,8 @@ void main() {
       'lib/data/services/asr/asr_engine.dart',
       'lib/data/services/asr/asr_preview_session.dart',
       'lib/data/services/audio/evidence_playback_service.dart',
+      'lib/data/services/audio/pcm_evidence_playback_service.dart',
+      'lib/domain/ports/evidence_playback.dart',
       'lib/data/services/audio/recording_session_service.dart',
       'lib/data/services/asr/final_transcription_service.dart',
       'lib/data/services/diarization/speaker_diarization_coordinator.dart',

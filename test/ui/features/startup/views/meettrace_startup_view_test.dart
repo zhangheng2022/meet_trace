@@ -94,8 +94,8 @@ void main() {
     expect(find.text('下载离线资源'), findsOneWidget);
     expect(find.text('步骤 2 / 4'), findsOneWidget);
     expect(find.text('SenseVoice'), findsOneWidget);
-    expect(find.text('41%'), findsOneWidget);
-    expect(find.text('100.0 MB / 239.8 MB'), findsOneWidget);
+    expect(find.text('34%'), findsOneWidget);
+    expect(find.text('100.0 MB / 286.3 MB'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('runtime-download-progress')),
       findsOneWidget,
@@ -106,7 +106,7 @@ void main() {
             find.byKey(const ValueKey('runtime-download-progress-bar')),
           )
           .value,
-      closeTo(100000000 / 239762595, 0.000001),
+      closeTo(100000000 / 286314800, 0.000001),
     );
     expect(find.byType(FCircularProgress), findsNothing);
     expect(tester.takeException(), isNull);
@@ -197,7 +197,7 @@ void main() {
       find.byKey(const ValueKey('runtime-download-percentage')),
       findsOneWidget,
     );
-    expect(find.text('41%'), findsOneWidget);
+    expect(find.text('34%'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -242,7 +242,7 @@ final class _DownloadingPreparation implements RuntimeAssetPreparationPort {
       const RuntimeInitializationProgress(
         phase: RuntimeInitializationPhase.downloading,
         completedBytes: 100000000,
-        totalBytes: 239762595,
+        totalBytes: 286314800,
         resourceName: 'SenseVoice',
       ),
     );
@@ -273,7 +273,7 @@ final class _ControlledPreparation implements RuntimeAssetPreparationPort {
       const RuntimeInitializationProgress(
         phase: RuntimeInitializationPhase.downloading,
         completedBytes: 100000000,
-        totalBytes: 239762595,
+        totalBytes: 286314800,
         resourceName: 'SenseVoice',
       ),
     );
@@ -283,8 +283,8 @@ final class _ControlledPreparation implements RuntimeAssetPreparationPort {
     _onProgress?.call(
       const RuntimeInitializationProgress(
         phase: RuntimeInitializationPhase.ready,
-        completedBytes: 239762595,
-        totalBytes: 239762595,
+        completedBytes: 286314800,
+        totalBytes: 286314800,
       ),
     );
     _completion.complete();

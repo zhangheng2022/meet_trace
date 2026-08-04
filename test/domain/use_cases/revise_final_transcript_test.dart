@@ -33,7 +33,6 @@ void main() {
     expect(result.snapshot.segments.single.text, '修订后的事实');
     expect(result.snapshot.segments.single.speakerId, '张三');
     expect(result.meeting.activeTranscriptSnapshotId, 'revision-1');
-    expect(result.meeting.activeSummaryId, isNull);
     expect(transcripts.records[source.id], same(source));
   });
 
@@ -158,7 +157,6 @@ Meeting _meeting(String snapshotId) => Meeting(
   recordingModelId: 'paraformer',
   recordingModelVersion: '1',
   activeTranscriptSnapshotId: snapshotId,
-  activeSummaryId: 'summary-1',
 );
 
 TranscriptSnapshot _snapshot() => TranscriptSnapshot(

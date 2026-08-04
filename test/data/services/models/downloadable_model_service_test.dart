@@ -48,7 +48,7 @@ void main() {
 
   tearDown(() => root.delete(recursive: true));
 
-  test('可用空间不足 768 MiB 时在发起网络请求前失败', () async {
+  test('可用空间不足 1 GiB 时在发起网络请求前失败', () async {
     capacity.freeBytes = minimumRuntimeInitializationFreeBytes - 1;
 
     await expectLater(

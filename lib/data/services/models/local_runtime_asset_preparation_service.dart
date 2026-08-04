@@ -3,6 +3,7 @@ import '../../../domain/models/model_manifest.dart';
 import '../../../domain/models/runtime_initialization.dart';
 import '../../../domain/ports/runtime_asset_preparation.dart';
 import '../../models/runtime/silero_vad_manifest.dart';
+import '../../models/runtime/speaker_diarization_manifest.dart';
 import 'downloadable_model_service.dart';
 import 'model_download_types.dart';
 import 'runtime_asset_installers.dart';
@@ -13,8 +14,10 @@ final class LocalRuntimeAssetPreparationService
     required this.registry,
     required this.modelManifest,
     required this.vadManifest,
+    required this.speakerManifest,
     required this.modelDownloads,
     required this.vadDownloads,
+    required this.speakerDownloads,
     required this.capacity,
     required this.network,
     required this.consents,
@@ -23,8 +26,10 @@ final class LocalRuntimeAssetPreparationService
   final AsrModelRegistry registry;
   final ModelManifest modelManifest;
   final SileroVadManifest vadManifest;
+  final SpeakerDiarizationManifest speakerManifest;
   final RuntimeAsrModelInstaller modelDownloads;
   final RuntimeVadInstaller vadDownloads;
+  final RuntimeSpeakerDiarizationInstaller speakerDownloads;
   final ModelStorageCapacityProvider capacity;
   final DownloadNetworkStatusProvider network;
   final RuntimeDownloadConsentRepository consents;
@@ -35,7 +40,10 @@ final class LocalRuntimeAssetPreparationService
     (entry) => entry.modelId == registry.defaultModel.modelId,
   );
 
-  int get totalBytes => _modelEntry.requiredBytes + vadManifest.requiredBytes;
+  int get totalBytes =>
+      _modelEntry.requiredBytes +
+      vadManifest.requiredBytes +
+      speakerManifest.requiredBytes;
 
   String get resourceSetId {
     final resources = <String>[
@@ -44,6 +52,9 @@ final class LocalRuntimeAssetPreparationService
             '${file.bytes}:${file.sha256}',
       for (final file in vadManifest.files)
         '${vadManifest.modelId}@${vadManifest.version}/${file.path}:'
+            '${file.bytes}:${file.sha256}',
+      for (final file in speakerManifest.downloadManifest.files)
+        '${speakerManifest.modelId}@${speakerManifest.version}/${file.path}:'
             '${file.bytes}:${file.sha256}',
     ]..sort();
     return resources.join('|');
@@ -69,7 +80,7 @@ final class LocalRuntimeAssetPreparationService
         phase: RuntimeInitializationPhase.checking,
         completedBytes: 0,
         totalBytes: totalBytes,
-        message: '正在检查本地转录资源',
+        message: '正在检查本地运行资源',
       ),
     );
     final modelReady = forceRepair
@@ -78,8 +89,13 @@ final class LocalRuntimeAssetPreparationService
             descriptor: descriptor,
             manifest: manifest,
           );
-    final vadReady = await vadDownloads.isReadyFast(vadManifest);
-    if (modelReady && vadReady) {
+    final vadReady = forceRepair
+        ? false
+        : await vadDownloads.isReadyFast(vadManifest);
+    final speakerReady = forceRepair
+        ? false
+        : await speakerDownloads.isReadyFast(speakerManifest);
+    if (modelReady && vadReady && speakerReady) {
       onProgress(
         RuntimeInitializationProgress(
           phase: RuntimeInitializationPhase.ready,
@@ -95,7 +111,7 @@ final class LocalRuntimeAssetPreparationService
       final shortage = minimumRuntimeInitializationFreeBytes - freeBytes;
       throw RuntimeInitializationException(
         code: 'runtime.storage.insufficient',
-        message: '初始化至少需要 768 MiB 可用空间，还缺少 $shortage 字节',
+        message: '初始化至少需要 1 GiB 可用空间，还缺少 $shortage 字节',
         shortageBytes: shortage,
       );
     }
@@ -103,7 +119,7 @@ final class LocalRuntimeAssetPreparationService
     if (networkKind == DownloadNetworkKind.offline) {
       throw const RuntimeInitializationException(
         code: 'runtime.network.offline',
-        message: '首次初始化需要联网下载离线转录资源',
+        message: '首次初始化需要联网下载离线运行资源',
       );
     }
     final metered =
@@ -148,9 +164,28 @@ final class LocalRuntimeAssetPreparationService
             onProgress(
               RuntimeInitializationProgress(
                 phase: RuntimeInitializationPhase.downloading,
-                completedBytes: descriptor.requiredBytes + completed,
+                completedBytes: manifest.requiredBytes + completed,
                 totalBytes: totalBytes,
                 resourceName: 'Silero VAD',
+              ),
+            );
+          },
+        );
+      }
+      if (!speakerReady) {
+        await speakerDownloads.prepare(
+          manifest: speakerManifest,
+          cancellation: cancellation,
+          onProgress: (completed, _) {
+            onProgress(
+              RuntimeInitializationProgress(
+                phase: RuntimeInitializationPhase.downloading,
+                completedBytes:
+                    manifest.requiredBytes +
+                    vadManifest.requiredBytes +
+                    completed,
+                totalBytes: totalBytes,
+                resourceName: '说话人分离',
               ),
             );
           },

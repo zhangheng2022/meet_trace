@@ -119,6 +119,7 @@ final class DownloadableSileroVadModelService implements RuntimeVadInstaller {
           RuntimeArtifactInstallFailure.incomplete => 'vad.download.incomplete',
           RuntimeArtifactInstallFailure.integrity => 'vad.integrity',
           RuntimeArtifactInstallFailure.invalidPath => 'vad.path.invalid',
+          RuntimeArtifactInstallFailure.preparation => 'vad.prepare.failed',
         },
         message: error.message,
         cause: error,

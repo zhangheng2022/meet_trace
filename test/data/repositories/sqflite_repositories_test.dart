@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/repositories/sqflite_model_installation_repository.dart';
 import 'package:meettrace/data/repositories/sqflite_meeting_repository.dart';
+import 'package:meettrace/data/repositories/sqflite_model_installation_repository.dart';
 import 'package:meettrace/data/repositories/sqflite_processing_task_repository.dart';
-import 'package:meettrace/data/repositories/sqflite_summary_repository.dart';
 import 'package:meettrace/data/repositories/sqflite_transcript_repository.dart';
 import 'package:meettrace/data/services/storage/app_database.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
@@ -10,7 +9,6 @@ import 'package:meettrace/domain/models/domain_exception.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
 import 'package:meettrace/domain/models/processing_task.dart';
-import 'package:meettrace/domain/models/summary.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -21,7 +19,6 @@ void main() {
   late AppDatabase database;
   late SqfliteMeetingRepository meetings;
   late SqfliteTranscriptRepository transcripts;
-  late SqfliteSummaryRepository summaries;
   late SqfliteModelInstallationRepository modelInstallations;
   late SqfliteProcessingTaskRepository tasks;
 
@@ -33,7 +30,6 @@ void main() {
     await database.open();
     meetings = SqfliteMeetingRepository(database);
     transcripts = SqfliteTranscriptRepository(database);
-    summaries = SqfliteSummaryRepository(database);
     modelInstallations = SqfliteModelInstallationRepository(database);
     tasks = SqfliteProcessingTaskRepository(database);
   });
@@ -72,14 +68,8 @@ void main() {
     expect(await transcripts.getById('failed'), isNull);
   });
 
-  test('成功激活最终快照时原子完成会议并使旧摘要失效', () async {
-    await meetings.save(
-      _meeting(
-        'meeting-1',
-        status: MeetingState.processing,
-        activeSummaryId: 'old-summary',
-      ),
-    );
+  test('成功激活最终快照时原子完成会议', () async {
+    await meetings.save(_meeting('meeting-1', status: MeetingState.processing));
     final snapshot = _snapshot(
       id: 'snapshot-1',
       meetingId: 'meeting-1',
@@ -94,7 +84,6 @@ void main() {
     final completed = (await meetings.getById('meeting-1'))!;
     expect(completed.status, MeetingState.completed);
     expect(completed.activeTranscriptSnapshotId, snapshot.id);
-    expect(completed.activeSummaryId, isNull);
     expect(completed.lastErrorCode, isNull);
   });
 
@@ -109,20 +98,6 @@ void main() {
     await transcripts.saveFinalAndActivate(
       snapshot: snapshot,
       expectedActiveSnapshotId: null,
-    );
-    await summaries.save(
-      Summary(
-        id: 'summary-1',
-        meetingId: 'meeting-1',
-        transcriptSnapshotId: snapshot.id,
-        provider: 'local',
-        model: 'test',
-        createdAt: DateTime.utc(2026, 7, 24),
-        overview: '概览',
-        keyPoints: const [],
-        actionItems: const [],
-        status: SummaryStatus.complete,
-      ),
     );
     await tasks.save(
       ProcessingTask(
@@ -140,11 +115,10 @@ void main() {
     expect(await meetings.getById('meeting-1'), isNull);
     expect(await meetings.getById('meeting-2'), isNotNull);
     expect(await transcripts.listByMeeting('meeting-1'), isEmpty);
-    expect(await summaries.listByMeeting('meeting-1'), isEmpty);
     expect(await tasks.listByMeeting('meeting-1'), isEmpty);
   });
 
-  test('转录片段、总结证据和模型安装可以无损往返', () async {
+  test('转录片段和模型安装可以无损往返', () async {
     await meetings.save(_meeting('meeting-1'));
     final snapshot = _snapshot(
       id: 'snapshot-1',
@@ -156,32 +130,6 @@ void main() {
       snapshot: snapshot,
       expectedActiveSnapshotId: null,
     );
-    final summary = Summary(
-      id: 'summary-1',
-      meetingId: 'meeting-1',
-      transcriptSnapshotId: snapshot.id,
-      provider: 'local',
-      model: 'test',
-      createdAt: DateTime.utc(2026, 7, 24),
-      overview: '概览',
-      keyPoints: [
-        SummaryItem(
-          id: 'point-1',
-          text: '结论',
-          evidence: [
-            SummaryEvidence(
-              segmentId: 'segment-1',
-              startMs: 0,
-              endMs: 1000,
-              quote: '原文',
-            ),
-          ],
-        ),
-      ],
-      actionItems: const [],
-      status: SummaryStatus.complete,
-    );
-    await summaries.save(summary);
     final installation = ModelInstallation(
       modelId: 'qwen',
       version: '1',
@@ -194,212 +142,25 @@ void main() {
     await modelInstallations.save(installation);
 
     final restoredSnapshot = await transcripts.getById(snapshot.id);
-    final restoredSummary = await summaries.getById(summary.id);
     final restoredInstallation = await modelInstallations.get(
       modelId: 'qwen',
       version: '1',
     );
 
     expect(restoredSnapshot!.segments.single.text, '测试');
-    expect(
-      restoredSummary!.keyPoints.single.evidence.single.segmentId,
-      'segment-1',
-    );
     expect(restoredInstallation!.installedPath, '/models/qwen/1');
-  });
-
-  test('已完成摘要与当前最终快照在同一事务中激活', () async {
-    await meetings.save(_meeting('meeting-1', title: pendingMeetingTitle));
-    final snapshot = _snapshot(
-      id: 'snapshot-1',
-      meetingId: 'meeting-1',
-      status: TranscriptSnapshotStatus.complete,
-      withSegment: true,
-    );
-    await transcripts.saveFinalAndActivate(
-      snapshot: snapshot,
-      expectedActiveSnapshotId: null,
-    );
-    final summary = _summary(
-      id: 'summary-1',
-      meetingId: 'meeting-1',
-      snapshotId: snapshot.id,
-    );
-
-    await summaries.saveAndActivate(
-      summary: summary,
-      expectedTranscriptSnapshotId: snapshot.id,
-    );
-
-    final activated = (await meetings.getById('meeting-1'))!;
-    expect(activated.activeSummaryId, summary.id);
-    expect(activated.title, 'AI 生成标题');
-    expect((await summaries.getById(summary.id))!.title, 'AI 生成标题');
-    expect(
-      (await summaries.getById(summary.id))!.status,
-      SummaryStatus.complete,
-    );
-  });
-
-  test('AI 摘要激活时不覆盖用户已有的会议标题', () async {
-    await meetings.save(_meeting('meeting-1', title: '人工命名的会议'));
-    final snapshot = _snapshot(
-      id: 'snapshot-1',
-      meetingId: 'meeting-1',
-      status: TranscriptSnapshotStatus.complete,
-      withSegment: true,
-    );
-    await transcripts.saveFinalAndActivate(
-      snapshot: snapshot,
-      expectedActiveSnapshotId: null,
-    );
-
-    await summaries.saveAndActivate(
-      summary: _summary(
-        id: 'summary-1',
-        meetingId: 'meeting-1',
-        snapshotId: snapshot.id,
-      ),
-      expectedTranscriptSnapshotId: snapshot.id,
-    );
-
-    expect((await meetings.getById('meeting-1'))!.title, '人工命名的会议');
-  });
-
-  test('伪造的证据时间或引文不能写入并激活', () async {
-    await meetings.save(_meeting('meeting-1'));
-    final snapshot = _snapshot(
-      id: 'snapshot-1',
-      meetingId: 'meeting-1',
-      status: TranscriptSnapshotStatus.complete,
-      withSegment: true,
-    );
-    await transcripts.saveFinalAndActivate(
-      snapshot: snapshot,
-      expectedActiveSnapshotId: null,
-    );
-    final summary = Summary(
-      id: 'summary-forged',
-      meetingId: 'meeting-1',
-      transcriptSnapshotId: snapshot.id,
-      provider: 'test-provider',
-      model: 'test-model',
-      createdAt: DateTime.utc(2026, 7, 25),
-      overview: '概览',
-      keyPoints: [
-        SummaryItem(
-          id: 'summary-forged-point-1',
-          text: '结论',
-          evidence: [
-            SummaryEvidence(
-              segmentId: 'segment-1',
-              startMs: 0,
-              endMs: 1000,
-              quote: '被篡改的引文',
-            ),
-          ],
-        ),
-      ],
-      actionItems: const [],
-      status: SummaryStatus.complete,
-    );
-
-    await expectLater(
-      summaries.saveAndActivate(
-        summary: summary,
-        expectedTranscriptSnapshotId: snapshot.id,
-      ),
-      throwsA(isA<DomainInvariantViolation>()),
-    );
-
-    expect(await summaries.getById(summary.id), isNull);
-    expect((await meetings.getById('meeting-1'))!.activeSummaryId, isNull);
-  });
-
-  test('最终快照已变化时摘要写入和激活一起回滚', () async {
-    await meetings.save(_meeting('meeting-1'));
-    final snapshot = _snapshot(
-      id: 'snapshot-1',
-      meetingId: 'meeting-1',
-      status: TranscriptSnapshotStatus.complete,
-      withSegment: true,
-    );
-    await transcripts.saveFinalAndActivate(
-      snapshot: snapshot,
-      expectedActiveSnapshotId: null,
-    );
-    final summary = _summary(
-      id: 'summary-1',
-      meetingId: 'meeting-1',
-      snapshotId: snapshot.id,
-    );
-
-    await expectLater(
-      summaries.saveAndActivate(
-        summary: summary,
-        expectedTranscriptSnapshotId: 'other-snapshot',
-      ),
-      throwsA(isA<DomainInvariantViolation>()),
-    );
-
-    expect(await summaries.getById(summary.id), isNull);
-    expect((await meetings.getById('meeting-1'))!.activeSummaryId, isNull);
-  });
-
-  test('激活新最终转录时旧摘要标记为过期', () async {
-    await meetings.save(_meeting('meeting-1'));
-    final first = _snapshot(
-      id: 'snapshot-1',
-      meetingId: 'meeting-1',
-      status: TranscriptSnapshotStatus.complete,
-      withSegment: true,
-    );
-    await transcripts.saveFinalAndActivate(
-      snapshot: first,
-      expectedActiveSnapshotId: null,
-    );
-    final summary = _summary(
-      id: 'summary-1',
-      meetingId: 'meeting-1',
-      snapshotId: first.id,
-    );
-    await summaries.saveAndActivate(
-      summary: summary,
-      expectedTranscriptSnapshotId: first.id,
-    );
-    final second = _snapshot(
-      id: 'snapshot-2',
-      meetingId: 'meeting-1',
-      status: TranscriptSnapshotStatus.complete,
-    );
-
-    await transcripts.saveFinalAndActivate(
-      snapshot: second,
-      expectedActiveSnapshotId: first.id,
-    );
-
-    expect((await summaries.getById(summary.id))!.status, SummaryStatus.stale);
-    final meeting = (await meetings.getById('meeting-1'))!;
-    expect(meeting.activeTranscriptSnapshotId, second.id);
-    expect(meeting.activeSummaryId, isNull);
   });
 }
 
-Meeting _meeting(
-  String id, {
-  MeetingState status = MeetingState.created,
-  String? activeSummaryId,
-  String title = '会议',
-}) {
+Meeting _meeting(String id, {MeetingState status = MeetingState.created}) {
   return Meeting(
     id: id,
-    title: title,
+    title: '2026-07-24 09:00 会议',
     createdAt: DateTime.utc(2026, 7, 24),
     status: status,
     audioDurationMs: 0,
     recordingModelId: 'paraformer',
     recordingModelVersion: '1',
-    activeSummaryId: activeSummaryId,
   );
 }
 
@@ -431,38 +192,5 @@ TranscriptSnapshot _snapshot({
             ),
           ]
         : const [],
-  );
-}
-
-Summary _summary({
-  required String id,
-  required String meetingId,
-  required String snapshotId,
-}) {
-  return Summary(
-    id: id,
-    meetingId: meetingId,
-    transcriptSnapshotId: snapshotId,
-    provider: 'test-provider',
-    model: 'test-model',
-    createdAt: DateTime.utc(2026, 7, 25),
-    title: 'AI 生成标题',
-    overview: '概览',
-    keyPoints: [
-      SummaryItem(
-        id: '$id-point-1',
-        text: '结论',
-        evidence: [
-          SummaryEvidence(
-            segmentId: 'segment-1',
-            startMs: 0,
-            endMs: 1000,
-            quote: '测试',
-          ),
-        ],
-      ),
-    ],
-    actionItems: const [],
-    status: SummaryStatus.complete,
   );
 }

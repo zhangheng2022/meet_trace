@@ -1,12 +1,13 @@
 import '../data/services/asr/asr_preview_coordinator.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
-import '../data/services/audio/pcm_evidence_playback_service.dart';
+import '../data/services/audio/pcm_audio_playback_service.dart';
 import '../data/services/audio/platform_recording_foreground_lifecycle.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
 import '../data/services/audio/recording_checkpoint_store.dart';
 import '../data/services/audio/reliable_recording_service.dart';
 import '../data/services/models/model_download_types.dart';
 import '../data/services/sharing/text_share_service.dart';
+import '../data/services/sharing/pcm_wav_audio_share_service.dart';
 import '../data/services/storage/local_data_control_service.dart';
 import '../data/services/storage/meeting_directory_deletion_service.dart';
 import '../data/services/vad/silero_vad_segmenter.dart';
@@ -15,6 +16,7 @@ import '../domain/use_cases/delete_meeting.dart';
 import '../domain/use_cases/initialize_runtime_assets.dart';
 import '../domain/use_cases/manage_recording_session.dart';
 import '../domain/use_cases/revise_final_transcript.dart';
+import '../domain/use_cases/share_meeting_audio.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../ui/core/asr_model_option.dart';
 import '../ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
@@ -57,19 +59,20 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       diarization: meeting.diarization,
       diarizationPreferences: storage.diarizationPreferences,
       processingTasks: storage.processingTasks,
-      summaries: storage.summaries,
-      summaryGeneration: meeting.summaryGeneration,
       transcriptRevision: ReviseFinalTranscriptUseCase(
         meetings: storage.meetings,
         transcripts: storage.transcripts,
         now: DateTime.now,
       ),
       sharing: sharing,
+      audioSharing: ShareMeetingAudioUseCase(
+        PcmWavAudioShareService(layout: storage.fileLayout),
+      ),
       deletion: DeleteMeetingUseCase(
         meetings: storage.meetings,
         files: MeetingDirectoryDeletionService(layout: storage.fileLayout),
       ),
-      playback: PcmEvidencePlaybackService(
+      playback: PcmAudioPlaybackService(
         output: AudioplayersDeviceAudioOutput(),
         temporaryDirectory: storage.fileLayout.rootPath,
       ),

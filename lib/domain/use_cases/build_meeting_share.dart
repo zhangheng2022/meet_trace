@@ -1,5 +1,4 @@
 import '../models/meeting.dart';
-import '../models/summary.dart';
 import '../models/transcript.dart';
 
 enum MeetingShareFormat { plainText, markdown }
@@ -22,18 +21,18 @@ final class BuildMeetingShareUseCase {
   MeetingShareDocument execute({
     required Meeting meeting,
     required TranscriptSnapshot snapshot,
-    required Summary? summary,
     required MeetingShareFormat format,
   }) {
-    if (!snapshot.isEligibleForSummary(
+    if (!snapshot.isCurrentFinalTranscript(
       activeSnapshotId: meeting.activeTranscriptSnapshotId,
     )) {
       throw ArgumentError('分享只能读取当前已完成的最终转录');
     }
     final title = meeting.title.trim().isEmpty ? '未命名会议' : meeting.title;
+    final startedAt = meetingStartTimeLabel(meeting.createdAt);
     final text = switch (format) {
-      MeetingShareFormat.plainText => _plainText(title, snapshot, summary),
-      MeetingShareFormat.markdown => _markdown(title, snapshot, summary),
+      MeetingShareFormat.plainText => _plainText(title, startedAt, snapshot),
+      MeetingShareFormat.markdown => _markdown(title, startedAt, snapshot),
     };
     return MeetingShareDocument(
       subject: title,
@@ -45,9 +44,10 @@ final class BuildMeetingShareUseCase {
   }
 }
 
-String _plainText(String title, TranscriptSnapshot snapshot, Summary? summary) {
+String _plainText(String title, String startedAt, TranscriptSnapshot snapshot) {
   final buffer = StringBuffer()
     ..writeln(title)
+    ..writeln('会议时间：$startedAt')
     ..writeln()
     ..writeln('最终转录');
   for (final segment in snapshot.segments) {
@@ -56,16 +56,17 @@ String _plainText(String title, TranscriptSnapshot snapshot, Summary? summary) {
       '${_speaker(segment.speakerId)}：${segment.text}',
     );
   }
-  _writePlainSummary(buffer, summary);
   buffer
     ..writeln()
     ..writeln('由会迹从本机最终转录导出；不包含原始音频。');
   return buffer.toString().trimRight();
 }
 
-String _markdown(String title, TranscriptSnapshot snapshot, Summary? summary) {
+String _markdown(String title, String startedAt, TranscriptSnapshot snapshot) {
   final buffer = StringBuffer()
     ..writeln('# $title')
+    ..writeln()
+    ..writeln('**会议时间**：$startedAt')
     ..writeln()
     ..writeln('## 最终转录')
     ..writeln();
@@ -75,79 +76,10 @@ String _markdown(String title, TranscriptSnapshot snapshot, Summary? summary) {
       '${_speaker(segment.speakerId)}**：${segment.text}',
     );
   }
-  _writeMarkdownSummary(buffer, summary);
   buffer
     ..writeln()
     ..writeln('> 由会迹从本机最终转录导出；不包含原始音频。');
   return buffer.toString().trimRight();
-}
-
-void _writePlainSummary(StringBuffer buffer, Summary? summary) {
-  if (summary == null) {
-    return;
-  }
-  buffer
-    ..writeln()
-    ..writeln('AI 生成总结${summary.status == SummaryStatus.stale ? '（已过期）' : ''}')
-    ..writeln(summary.overview);
-  _writePlainItems(buffer, '关键结论', summary.keyPoints);
-  _writePlainItems(buffer, '行动项', summary.actionItems);
-}
-
-void _writePlainItems(
-  StringBuffer buffer,
-  String title,
-  List<SummaryItem> items,
-) {
-  if (items.isEmpty) {
-    return;
-  }
-  buffer.writeln(title);
-  for (final item in items) {
-    buffer.writeln('- ${item.text}${item.isPendingReview ? '【待核对】' : ''}');
-    for (final evidence in item.evidence) {
-      buffer.writeln(
-        '  证据 ${_range(evidence.startMs, evidence.endMs)}：${evidence.quote}',
-      );
-    }
-  }
-}
-
-void _writeMarkdownSummary(StringBuffer buffer, Summary? summary) {
-  if (summary == null) {
-    return;
-  }
-  buffer
-    ..writeln()
-    ..writeln(
-      '## AI 生成总结${summary.status == SummaryStatus.stale ? '（已过期）' : ''}',
-    )
-    ..writeln()
-    ..writeln(summary.overview);
-  _writeMarkdownItems(buffer, '关键结论', summary.keyPoints);
-  _writeMarkdownItems(buffer, '行动项', summary.actionItems);
-}
-
-void _writeMarkdownItems(
-  StringBuffer buffer,
-  String title,
-  List<SummaryItem> items,
-) {
-  if (items.isEmpty) {
-    return;
-  }
-  buffer
-    ..writeln()
-    ..writeln('### $title');
-  for (final item in items) {
-    buffer.writeln('- ${item.text}${item.isPendingReview ? ' **【待核对】**' : ''}');
-    for (final evidence in item.evidence) {
-      buffer.writeln(
-        '  - 证据 ${_range(evidence.startMs, evidence.endMs)}：'
-        '${evidence.quote}',
-      );
-    }
-  }
 }
 
 String _speaker(String? speakerId) =>

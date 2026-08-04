@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-27T11:03:48.515Z",
+  "generatedAt": "2026-08-03T20:49:15.6449856+08:00",
   "title": "Design System: 会迹 · MeetTrace",
   "extensions": {
     "colorMeta": {
@@ -170,16 +170,16 @@
       "name": "Text Field",
       "kind": "input",
       "refersTo": "text-field",
-      "description": "会议标题、说话人名称和转录修订的有标签输入。",
-      "html": "<label class=\"ds-field\"><span>会议标题</span><input value=\"产品评审会\" aria-label=\"会议标题\"></label>",
+      "description": "说话人名称和转录修订的有标签输入；Alpha 不提供会议标题编辑。",
+      "html": "<label class=\"ds-field\"><span>说话人名称</span><input value=\"说话人 1\" aria-label=\"说话人名称\"></label>",
       "css": ".ds-field{display:grid;gap:8px;color:#111111;font:500 13px/1.35 system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif}.ds-field input{box-sizing:border-box;min-height:48px;width:100%;padding:12px;border:1px solid #8B8B85;border-radius:6px;background:#FFFFFF;color:#111111;font:400 16px/1.55 system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif;transition:border-color 120ms ease-out,background 120ms ease-out}.ds-field input:hover{background:#F7F7F5}.ds-field input:focus-visible{outline:2px solid #111111;outline-offset:2px}.ds-field input:disabled{border-color:#D8D8D3;background:#EFEFEC;color:#52524E}"
     },
     {
       "name": "Ledger Row",
       "kind": "custom",
       "refersTo": "ledger-row",
-      "description": "会议、转录和证据共享的连续时间记录条。",
-      "html": "<button class=\"ds-ledger-row\"><span class=\"ds-ledger-time\"><small>05-20</small><b>09:41</b></span><span class=\"ds-ledger-track\"><i></i></span><span class=\"ds-ledger-copy\"><strong>产品评审会</strong><small>00:24:17</small></span><span class=\"ds-ledger-status\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m5 12 4 4L19 6\"/></svg>事实音频已保存</span></button>",
+      "description": "会议、带说话人标签的转录和事实音频共享的连续时间记录条。",
+      "html": "<button class=\"ds-ledger-row\"><span class=\"ds-ledger-time\"><small>08-03</small><b>14:30</b></span><span class=\"ds-ledger-track\"><i></i></span><span class=\"ds-ledger-copy\"><strong>2026-08-03 14:30 会议</strong><small>00:24:17</small></span><span class=\"ds-ledger-status\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m5 12 4 4L19 6\"/></svg>事实音频已保存</span></button>",
       "css": ".ds-ledger-row{box-sizing:border-box;display:grid;width:100%;grid-template-columns:64px 16px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 16px;border:0;border-bottom:1px solid #D8D8D3;background:#FFFFFF;color:#111111;text-align:left;font-family:system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif;transition:background 120ms ease-out}.ds-ledger-row:hover,.ds-ledger-row:active{background:#EFEFEC}.ds-ledger-row:focus-visible{outline:2px solid #111111;outline-offset:-2px}.ds-ledger-time,.ds-ledger-copy{display:grid;gap:4px}.ds-ledger-time small,.ds-ledger-copy small,.ds-ledger-status{color:#52524E;font-size:13px;line-height:1.35}.ds-ledger-time b{font-size:15px;font-weight:400;font-variant-numeric:tabular-nums}.ds-ledger-copy strong{font-size:18px;line-height:1.35;font-weight:600}.ds-ledger-copy small{font-variant-numeric:tabular-nums}.ds-ledger-track{position:relative;height:52px}.ds-ledger-track::before{content:\"\";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#D8D8D3}.ds-ledger-track i{position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:#8B8B85;transform:translate(-50%,-50%)}.ds-ledger-status{display:flex;align-items:center;gap:4px}.ds-ledger-status svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}@media(max-width:520px){.ds-ledger-row{grid-template-columns:64px 16px minmax(0,1fr)}.ds-ledger-status{grid-column:3}}"
     },
     {
@@ -195,7 +195,7 @@
       "kind": "custom",
       "refersTo": "recorder-instrument",
       "description": "稳定展示录音状态与会议标题、唯一计时、真实麦克风输入波形，以及无内嵌卡片的两行事实摘要；录音控制固定在底部操作区。",
-      "html": "<section class=\"ds-recorder\"><header><span>■ 录音中</span><small>产品评审会</small></header><strong>01:23:45</strong><div class=\"ds-waveform\" aria-label=\"麦克风输入波形，实时反馈\"><i style=\"--level:.18\"></i><i style=\"--level:.42\"></i><i style=\"--level:.76\"></i><i style=\"--level:.31\"></i><i style=\"--level:.58\"></i><i style=\"--level:.9\"></i><i style=\"--level:.47\"></i><i style=\"--level:.68\"></i></div><small>麦克风输入 · 实时反馈</small><p>▣ 事实音频正在安全写入</p><p class=\"is-muted\">▢ 标准模型（Paraformer） · 本场锁定</p></section>",
+      "html": "<section class=\"ds-recorder\"><header><span>■ 录音中</span><small>2026-08-03 14:30 会议</small></header><strong>01:23:45</strong><div class=\"ds-waveform\" aria-label=\"麦克风输入波形，实时反馈\"><i style=\"--level:.18\"></i><i style=\"--level:.42\"></i><i style=\"--level:.76\"></i><i style=\"--level:.31\"></i><i style=\"--level:.58\"></i><i style=\"--level:.9\"></i><i style=\"--level:.47\"></i><i style=\"--level:.68\"></i></div><small>麦克风输入 · 实时反馈</small><p>▣ 事实音频正在安全写入</p><p class=\"is-muted\">▢ SenseVoice · 本场锁定</p></section>",
       "css": ".ds-recorder{box-sizing:border-box;width:100%;padding:24px;border:1px solid #8B8B85;border-radius:12px;background:#FFFFFF;color:#111111;font-family:system-ui,-apple-system,\"Segoe UI\",Roboto,\"Noto Sans SC\",sans-serif}.ds-recorder header{display:flex;align-items:center;justify-content:space-between;gap:12px}.ds-recorder header span,.ds-recorder p{font-size:15px;line-height:1.4}.ds-recorder small,.ds-recorder .is-muted{color:#52524E;font-size:13px;line-height:1.35}.ds-recorder strong{display:block;margin:28px 0 14px;font-size:56px;font-weight:400;line-height:1;letter-spacing:-1.8px;font-variant-numeric:tabular-nums}.ds-waveform{display:flex;height:84px;align-items:center;justify-content:center;gap:4px;border-block:1px solid #D8D8D3}.ds-waveform i{display:block;width:4px;height:calc(4px + var(--level)*70px);border-radius:3px;background:#111111;transition:height 140ms cubic-bezier(.16,1,.3,1)}.ds-recorder>small{display:block;margin-top:4px;text-align:center}.ds-recorder p{margin:18px 0 0}.ds-recorder p+p{margin-top:12px}@media (prefers-reduced-motion:reduce){.ds-waveform i{transition:none}}"
     },
     {
@@ -225,9 +225,9 @@
   ],
   "narrative": {
     "northStar": "安静的事实账本 / The Quiet Evidence Ledger",
-    "overview": "会迹把会议呈现为一本正在持续写入、可以逐层回溯的事实账本。纸面、时间轨道与专业录音设备的秩序感构成品牌识别；界面不靠品牌色或 AI 装饰制造“智能感”，而是让用户先确认录音是否安全，再阅读实时预览，最后回到最终转录与证据。\n\n这套系统的气质是冷静、明确、可靠、低噪声。信息密度接近原生记录工具：手机保持克制单列，平板将会议索引与事实详情并置；动效只确认操作与状态变化，不承担装饰。已确认的反向参照是卡片仪表盘、装饰性波形、彩色状态、渐变、玻璃、发光、漂浮阴影和虚构 AI 可视化。",
+    "overview": "会迹把会议呈现为一本正在持续写入、可以逐层回溯的事实账本。纸面、时间轨道与专业录音设备的秩序感构成品牌识别；界面不靠品牌色或 AI 装饰制造“智能感”，而是让用户先确认录音是否安全，再阅读实时预览，最后一次看到带说话人标签的最终转录，并可分别分享文本或事实音频。\n\n这套系统的气质是冷静、明确、可靠、低噪声。信息密度接近原生记录工具：手机保持克制单列，平板将会议索引与事实详情并置；动效只确认操作与状态变化，不承担装饰。已确认的反向参照是卡片仪表盘、装饰性波形、彩色状态、渐变、玻璃、发光、漂浮阴影和虚构 AI 可视化。",
     "keyCharacteristics": [
-      "连续记录条取代卡片网格，时间轨道贯穿会议、转录与证据。",
+      "连续记录条取代卡片网格，时间轨道贯穿会议、带说话人标签的转录与事实音频。",
       "纯灰阶语义，状态通过文字、图标、边界、位置和填充共同编码。",
       "录音计时器是唯一允许占据超大字号的动态数字。",
       "低曲率、细分隔线、静止状态零阴影。",
@@ -297,8 +297,8 @@
       }
     ],
     "dos": [
-      "Do 把会议、转录和证据组织到时间轨道，而不是创建新的卡片类型。",
-      "Do 让事实音频状态、计时和结束操作永远先于实时转录与 AI 派生内容。",
+      "Do 把会议、带说话人标签的转录和事实音频组织到时间轨道，而不是创建新的卡片类型。",
+      "Do 让事实音频状态、计时和结束操作永远先于实时转录与说话人分离处理。",
       "Do 使用文字、图标、边界、位置和填充共同编码所有状态。",
       "Do 使用 Forui、`context.theme` 与 `AppStyle` 令牌实现组件。",
       "Do 保留 Android 与 iOS 原生返回、手势、安全区、字体缩放和辅助技术行为。",

@@ -1,0 +1,22 @@
+MeetTrace runtime model notice: 3D-Speaker ERes2Net-Base
+
+Runtime artifact:
+  3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
+  Runtime mirror:
+  https://mt.zhangheng.eu.org/models/SpeakerDiarization/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
+  Official source:
+  https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
+  bytes: 39593761
+  sha256: 1a331345f04805badbb495c775a6ddffcdd1a732567d5ec8b3d5749e3c7a5e4b
+
+Model source:
+  https://modelscope.cn/models/iic/speech_eres2net_base_sv_zh-cn_3dspeaker_16k
+  ModelScope model ID: iic/speech_eres2net_base_sv_zh-cn_3dspeaker_16k
+  ModelScope license metadata: Apache License 2.0
+  Upstream toolkit: https://github.com/modelscope/3D-Speaker
+
+The ONNX artifact is distributed by the official sherpa-onnx speaker model
+release and is converted from the named 3D-Speaker model. MeetTrace distributes
+this notice and the corresponding Apache-2.0 license text, but not the model
+weights. The runtime installer downloads the pinned mirror and verifies that it
+is byte-identical to the official release artifact.

@@ -20,14 +20,19 @@ if ($LASTEXITCODE -ne 0) {
 $requiredAssets = @(
     'assets/flutter_assets/assets/models/manifest.json',
     'assets/flutter_assets/assets/models/silero-vad-manifest.json',
+    'assets/flutter_assets/assets/models/speaker-diarization-manifest.json',
     'assets/flutter_assets/assets/licenses/sense-voice-NOTICE.txt',
     'assets/flutter_assets/assets/licenses/sense-voice-LICENSE.txt',
     'assets/flutter_assets/assets/licenses/silero-vad-NOTICE.txt',
-    'assets/flutter_assets/assets/licenses/silero-vad-LICENSE.txt'
+    'assets/flutter_assets/assets/licenses/silero-vad-LICENSE.txt',
+    'assets/flutter_assets/assets/licenses/pyannote-segmentation-NOTICE.txt',
+    'assets/flutter_assets/assets/licenses/pyannote-segmentation-LICENSE.txt',
+    'assets/flutter_assets/assets/licenses/3d-speaker-NOTICE.txt',
+    'assets/flutter_assets/assets/licenses/3d-speaker-LICENSE.txt'
 )
 $missingAssets = @($requiredAssets | Where-Object { $_ -notin $entries })
 $forbiddenWeights = @($entries | Where-Object {
-    $_ -match '(?i)(\.onnx$|\.tflite$|/tokens\.txt$|/model\.int8(?:\.bin)?$|paraformer|qwen3-asr|sense-voice-.*/model|silero_vad.*\.onnx)'
+    $_ -match '(?i)(\.onnx$|\.tflite$|\.tar\.bz2$|/tokens\.txt$|/model\.int8(?:\.bin)?$|paraformer|qwen3-asr|sense-voice-.*/model|silero_vad.*\.onnx)'
 })
 $forbiddenUserData = @($entries | Where-Object {
     $_ -match '(?i)\.(wav|pcm|m4a|aac|mp3|ogg|flac|sqlite|sqlite3|db)$'

@@ -2,7 +2,7 @@
 
 > 状态：活动；项目 Markdown 文档唯一导航入口
 >
-> 盘点日期：2026-08-03
+> 盘点日期：2026-08-04
 >
 > 盘点范围：仓库根目录 `*.md` 与 `docs/**/*.md`，共 21 份
 >
@@ -62,7 +62,7 @@ flowchart TD
 
 | ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
 |---|---|---|---|---|---|
-| PRD-01 | [Android + iOS Alpha 产品需求文档（无登录版）](./product/Alpha_PRD_无登录版.md) | `docs/product/Alpha_PRD_无登录版.md` | V0.7 产品目标、单模型决策、P0、FR、AT 和完成定义 | 产品范围与验收标准的唯一事实源 | 活动，2026-08-01 / A0 |
+| PRD-01 | [Android + iOS Alpha 产品需求文档（无登录版）](./product/Alpha_PRD_无登录版.md) | `docs/product/Alpha_PRD_无登录版.md` | V0.9 产品目标、固定 ASR/说话人模型、P0、FR、AT 和完成定义 | 产品范围与验收标准的唯一事实源 | 活动，2026-08-03 / A0 |
 | PROD-01 | [产品上下文](../PRODUCT.md) | `PRODUCT.md` | 用户、定位、能力边界、品牌承诺、产品原则和可访问性 | 为设计与实现工具提供 PRD 摘要，不独立扩展范围 | 活动，随 PRD 同步 / A2 |
 
 ### 3.3 设计规范
@@ -75,8 +75,8 @@ flowchart TD
 
 | ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
 |---|---|---|---|---|---|
-| TECH-01 | [端侧 SenseVoice 转录技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | `docs/technical/端侧_SenseVoice_转录技术方案.md` | 固定资源、分层、初始化状态机、下载一致性、Engine、数据库和降级 | 当前 ASR/VAD、录音和资源分发实现契约 | 活动，2026-08-01 / A1 |
-| ARCH-01 | [代码架构与冗余审计](./architecture/代码架构与冗余审计.md) | `docs/architecture/代码架构与冗余审计.md` | 当前分层、已收敛冗余、保留设计、剩余风险和验证结果 | 架构维护与后续重构的当前快照 | 活动维护快照，2026-08-03 / A2 |
+| TECH-01 | [端侧 SenseVoice 与说话人分离技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | `docs/technical/端侧_SenseVoice_转录技术方案.md` | 全部固定资源、初始化、官方 Engine、联合最终快照、分享、数据库和降级 | V0.9 目标实现契约 | 活动，2026-08-04 / A1 |
+| ARCH-01 | [代码架构与冗余审计](./architecture/代码架构与冗余审计.md) | `docs/architecture/代码架构与冗余审计.md` | 当前分层、已收敛冗余、保留设计、剩余风险和验证结果 | 架构维护与后续重构的当前快照 | 活动维护快照，2026-08-04 / A2 |
 
 ### 3.5 质量保证与发布证据
 
@@ -85,7 +85,7 @@ flowchart TD
 | ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
 |---|---|---|---|---|---|
 | QA-00 | [质量证据索引](./quality/README.md) | `docs/quality/README.md` | 当前门槛、设备矩阵和 Step 证据入口 | 质量文档的二级导航 | 活动，2026-08-03 / A2 |
-| QA-01 | [SenseVoice 初始化下载与发布门槛](./quality/SenseVoice_初始化下载与发布门槛.md) | `docs/quality/SenseVoice_初始化下载与发布门槛.md` | 固定资产、仓库门禁、Android/iOS 外部门禁及阻塞项 | 当前 Go/No-Go 检查表 | 活动；真机证据阻塞，2026-08-03 / A2 |
+| QA-01 | [运行时模型初始化与发布门槛](./quality/运行时模型初始化与发布门槛.md) | `docs/quality/运行时模型初始化与发布门槛.md` | ASR/VAD/说话人固定资产、仓库门禁、Android/iOS 外部门禁及阻塞项 | 当前 Go/No-Go 检查表 | 活动；仓库实现与真机证据阻塞，2026-08-04 / A2 |
 | QA-02 | [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md) | `docs/quality/Android_Alpha_设备矩阵.md` | Android 平台基线、设备角色和必验指标 | Android 真机验收计划与证据状态 | 活动；目标设备阻塞，2026-08-03 / A2 |
 | QA-03 | [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md) | `docs/quality/iOS_Alpha_设备矩阵.md` | iOS 工具链、设备矩阵、签名和发布门槛 | iOS 构建与真机验收计划 | 活动；macOS/Xcode/真机阻塞，2026-08-03 / A2 |
 
@@ -97,15 +97,15 @@ flowchart TD
 | QA-H12 | [Step 12：Silero VAD 与预览队列](./quality/Step_12_Silero_VAD与预览队列.md) | `docs/quality/Step_12_Silero_VAD与预览队列.md` | VAD、窗口规划、预览队列、积压和仅录音降级 | 追溯预览链与录音隔离实现 | 历史证据；分发口径更新至 2026-08-03 / A3 |
 | QA-H13 | [Step 13：会议主链与会中 UI](./quality/Step_13_会议主链与会中_UI.md) | `docs/quality/Step_13_会议主链与会中_UI.md` | 会议创建、会中状态、录音封存和模拟器证据 | 追溯会议主链；模型覆盖描述已过时 | 历史证据，2026-07-24 / A3 |
 | QA-H14 | [Step 14：最终转录快照](./quality/Step_14_最终转录快照.md) | `docs/quality/Step_14_最终转录快照.md` | 完整音频重处理、快照 CAS、失败保留和重转录 | 追溯最终转录一致性设计 | 历史证据，2026-07-25 / A3 |
-| QA-H15 | [Step 15：说话人分离降级](./quality/Step_15_说话人分离降级.md) | `docs/quality/Step_15_说话人分离降级.md` | 分离端口、单说话人降级、人工标签和能力关闭 | 追溯可降级说话人能力 | 历史证据，2026-07-25 / A3 |
-| QA-H16 | [Step 16：AI 总结与证据链](./quality/Step_16_AI总结与证据链.md) | `docs/quality/Step_16_AI总结与证据链.md` | 最终转录输入约束、证据映射、隐私和网关关闭 | 追溯总结安全边界 | 历史证据，2026-07-25 / A3 |
-| QA-H17 | [Step 17：结果页与数据控制](./quality/Step_17_结果页与数据控制.md) | `docs/quality/Step_17_结果页与数据控制.md` | 修订、证据播放、分享、删除、诊断与隐私 | 追溯结果页和本地数据控制 | 历史证据，2026-07-25 / A3 |
+| QA-H15 | [Step 15：说话人分离降级](./quality/Step_15_说话人分离降级.md) | `docs/quality/Step_15_说话人分离降级.md` | 旧版分离端口、单说话人降级、人工标签和能力关闭 | 历史证据；真实模型要求已由 V0.9 替代 | 历史证据，2026-07-25 / A3 |
+| QA-H16 | [Step 16：AI 总结与证据链](./quality/Step_16_AI总结与证据链.md) | `docs/quality/Step_16_AI总结与证据链.md` | 旧版总结输入、证据映射、隐私和网关关闭 | 历史证据；AI 总结已移出 V0.9 | 历史证据，2026-07-25 / A3 |
+| QA-H17 | [Step 17：结果页与数据控制](./quality/Step_17_结果页与数据控制.md) | `docs/quality/Step_17_结果页与数据控制.md` | 旧版修订、播放、文本分享、删除、诊断与隐私 | 追溯可复用结果页基础；音频分享由 V0.9 新增 | 历史证据，2026-07-25 / A3 |
 
 ### 3.6 项目管理与执行治理
 
 | ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
 |---|---|---|---|---|---|
-| PM-01 | [Alpha 开发步骤](./project/Alpha_开发步骤.md) | `docs/project/Alpha_开发步骤.md` | 当前实现基线、交付顺序、验证命令和外部设备门槛 | 开发与交付操作清单 | 活动，2026-08-01 / A2 |
+| PM-01 | [Alpha 开发步骤](./project/Alpha_开发步骤.md) | `docs/project/Alpha_开发步骤.md` | V0.9 串行阶段、阻塞清单、完成证据和双平台门槛 | 单人开发与交付操作清单 | 活动，2026-08-04 / A2 |
 | PM-02 | [Git 分支与 Worktree 约定](./project/Git_分支与_Worktree_约定.md) | `docs/project/Git_分支与_Worktree_约定.md` | 分支职责、worktree 布局、标准流程和安全规则 | 团队 Git 协作规范 | 活动，2026-08-03 / A2 |
 | GOV-01 | [仓库协作指南](../AGENTS.md) | `AGENTS.md` | 产品边界、架构规则、技能流程、质量门槛和安全约束 | AI 代理与仓库协作者的执行规则 | 活动，随上游同步 / A1 |
 
@@ -122,7 +122,7 @@ flowchart TD
 
 - 14 份活动或活动维护文档：导航 2、产品 2、设计 1、技术/架构 2、质量 4、项目管理/治理 3；其中导航不承担权威结论。
 - 7 份 Step 文档为历史实现证据，不应滚动修改测试数量、APK 大小或设备结果。
-- Android 与 iOS Alpha 的目标真机证据尚未闭环，当前发布状态仍为 `blocked`。
+- V0.9 仓库实现、Android 完整设备矩阵与 iOS 证据均未闭环，当前发布状态为 `blocked`。
 - `graphify-out/`、`.agents/` 内技能说明和构建产物不属于本次 21 份正式项目文档盘点。
 
 ## 5. 命名与目录规范
@@ -140,7 +140,7 @@ flowchart TD
 | 变更内容 | 必须同步检查 |
 |---|---|
 | P0、FR、AT、平台或模型范围 | PRD、PRODUCT、DESIGN、技术方案、质量门槛、AGENTS |
-| Manifest、下载、空间、网络同意或模型锁定 | PRD、技术方案、SenseVoice 发布门槛、相关设备矩阵 |
+| Manifest、下载、空间、网络同意或模型锁定 | PRD、技术方案、运行时模型发布门槛、相关设备矩阵 |
 | UI 结构、令牌、组件或响应式规则 | DESIGN、PRODUCT、相关组件测试；必要时 PRD |
 | 分层、Port、Repository、组合根或持久化结构 | 技术方案、架构审计、AGENTS、自动化架构守卫 |
 | 发布工具链、设备、签名或性能指标 | 对应设备矩阵、发布门槛、开发步骤 |

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/models/runtime/silero_vad_manifest.dart';
+import 'package:meettrace/data/models/runtime/speaker_diarization_manifest.dart';
 import 'package:meettrace/data/services/models/downloadable_model_service.dart';
 import 'package:meettrace/data/services/models/model_manifest_parser.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
@@ -43,7 +44,7 @@ void main() {
     ]);
   });
 
-  test('SenseVoice 与 VAD 下载总量不超过十进制 300 MB', () {
+  test('SenseVoice、VAD 与说话人资源下载总量不超过十进制 300 MB', () {
     final model =
         ModelManifestParser(
               registry: AsrModelRegistry.alpha,
@@ -61,20 +62,51 @@ void main() {
         p.join(projectRoot, 'assets', 'models', 'silero-vad-manifest.json'),
       ).readAsStringSync(),
     );
+    final speaker = const SpeakerDiarizationManifestParser().parse(
+      File(
+        p.join(
+          projectRoot,
+          'assets',
+          'models',
+          'speaker-diarization-manifest.json',
+        ),
+      ).readAsStringSync(),
+    );
 
     expect(
       vad.files.single.url,
       'https://mt.zhangheng.eu.org/models/SenseVoice/silero_vad.int8.onnx',
     );
 
-    expect(model.requiredBytes + vad.requiredBytes, 239762595);
+    expect(speaker.requiredBytes, 46552205);
     expect(
-      model.requiredBytes + vad.requiredBytes,
+      speaker.segmentationArchive.download.sha256,
+      speakerSegmentationArchiveSha256,
+    );
+    expect(speaker.embeddingModel.download.sha256, speakerEmbeddingModelSha256);
+    expect(
+      speaker.downloadManifest.files.map((file) => file.url),
+      everyElement(startsWith('https://mt.zhangheng.eu.org/models/')),
+    );
+    expect(
+      [
+        ...model.files,
+        ...vad.files,
+        ...speaker.downloadManifest.files,
+      ].map((file) => Uri.parse(file.url).host).toSet(),
+      {'mt.zhangheng.eu.org'},
+    );
+    expect(
+      model.requiredBytes + vad.requiredBytes + speaker.requiredBytes,
+      286314800,
+    );
+    expect(
+      model.requiredBytes + vad.requiredBytes + speaker.requiredBytes,
       lessThanOrEqualTo(maximumRuntimeDownloadBytes),
     );
   });
 
-  test('Flutter 安装包资产不声明任何 ASR 或 VAD 权重', () {
+  test('Flutter 安装包资产只声明 Manifest 与许可，不声明任何模型权重', () {
     final pubspec = File(
       p.join(projectRoot, 'pubspec.yaml'),
     ).readAsStringSync();
@@ -82,5 +114,24 @@ void main() {
     expect(pubspec, isNot(contains('.onnx')));
     expect(pubspec, isNot(contains('assets/models/sherpa-onnx-')));
     expect(pubspec, isNot(contains('assets/models/silero-vad-int8-')));
+    expect(pubspec, contains(speakerDiarizationManifestAssetPath));
+    expect(pubspec, contains('assets/licenses/3d-speaker-LICENSE.txt'));
+    expect(
+      pubspec,
+      contains('assets/licenses/pyannote-segmentation-LICENSE.txt'),
+    );
+  });
+
+  test('说话人模型许可与 NOTICE 文件均已入库', () {
+    for (final path in [
+      'assets/licenses/pyannote-segmentation-NOTICE.txt',
+      'assets/licenses/pyannote-segmentation-LICENSE.txt',
+      'assets/licenses/3d-speaker-NOTICE.txt',
+      'assets/licenses/3d-speaker-LICENSE.txt',
+    ]) {
+      final file = File(p.joinAll([projectRoot, ...path.split('/')]));
+      expect(file.existsSync(), isTrue, reason: path);
+      expect(file.lengthSync(), greaterThan(100), reason: path);
+    }
   });
 }

@@ -4,7 +4,6 @@ import '../data/repositories/sqflite_model_installation_repository.dart';
 import '../data/repositories/sqflite_model_preference_repository.dart';
 import '../data/repositories/sqflite_model_usage_lease_repository.dart';
 import '../data/repositories/sqflite_processing_task_repository.dart';
-import '../data/repositories/sqflite_summary_repository.dart';
 import '../data/repositories/sqflite_transcript_repository.dart';
 import '../data/services/storage/app_database.dart';
 import '../data/services/storage/app_file_layout.dart';
@@ -23,7 +22,6 @@ final class StorageDependencies {
     required this.preferences,
     required this.diarizationPreferences,
     required this.processingTasks,
-    required this.summaries,
     required this.leases,
   });
 
@@ -35,7 +33,6 @@ final class StorageDependencies {
   final SqfliteModelPreferenceRepository preferences;
   final SqfliteDiarizationPreferenceRepository diarizationPreferences;
   final SqfliteProcessingTaskRepository processingTasks;
-  final SqfliteSummaryRepository summaries;
   final SqfliteModelUsageLeaseRepository leases;
 
   static Future<StorageDependencies> create({
@@ -76,7 +73,6 @@ final class StorageDependencies {
           database,
         ),
         processingTasks: SqfliteProcessingTaskRepository(database),
-        summaries: SqfliteSummaryRepository(database),
         leases: SqfliteModelUsageLeaseRepository(database),
       );
     } on Object catch (error, stackTrace) {

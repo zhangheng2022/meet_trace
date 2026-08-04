@@ -4,27 +4,23 @@ final class MeetingDetailState {
   const MeetingDetailState({
     required this.meeting,
     required this.snapshot,
-    required this.summary,
     required this.isLoading,
     required this.isProcessing,
     required this.progress,
     required this.errorMessage,
     required this.resultMessage,
-    required this.summaryMessage,
     required this.diarizationMessage,
     required this.playbackState,
   });
   final Meeting meeting;
   final TranscriptSnapshot? snapshot;
-  final Summary? summary;
   final bool isLoading;
   final bool isProcessing;
   final double progress;
   final String? errorMessage;
   final String? resultMessage;
-  final String? summaryMessage;
   final String? diarizationMessage;
-  final EvidencePlaybackState playbackState;
+  final AudioPlaybackState playbackState;
 }
 
 final class SpeakerLabelGroup {

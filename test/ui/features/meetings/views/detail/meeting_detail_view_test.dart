@@ -3,18 +3,17 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/app/application.dart';
-import 'package:meettrace/data/services/summary/summary_generation_service.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/speaker_diarization.dart';
-import 'package:meettrace/domain/models/summary.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
-import 'package:meettrace/domain/ports/evidence_playback.dart';
+import 'package:meettrace/domain/ports/audio_playback.dart';
+import 'package:meettrace/domain/ports/audio_share.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
-import 'package:meettrace/domain/use_cases/generate_summary.dart';
 import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
+import 'package:meettrace/domain/use_cases/share_meeting_audio.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart';
 
@@ -215,74 +214,15 @@ void main() {
     await fixture.dispose();
   });
 
-  testWidgets('未配置安全网关时中文说明总结已关闭且最终转录可见', (tester) async {
+  testWidgets('录音页播放完整事实音频区间', (tester) async {
     final active = _snapshot(id: 'active');
-    final fixture = _fixture(
-      _meeting(
-        status: MeetingState.completed,
-        activeTranscriptSnapshotId: active.id,
-      ),
-      active: active,
-      summaryService: const UnavailableSummaryGenerationService(),
-    );
-
-    await tester.pumpWidget(
-      Application(
-        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('最终事实文本'), findsOneWidget);
-    await tester.tap(find.text('总结'));
-    await tester.pumpAndSettle();
-    expect(find.text('安全总结网关未配置'), findsOneWidget);
-    expect(find.textContaining('不会上传音频或会中临时文本'), findsOneWidget);
-    expect(find.byKey(const ValueKey('generate-summary')), findsNothing);
-    await fixture.dispose();
-  });
-
-  testWidgets('已完成总结显示本地原文证据并标记待核对项', (tester) async {
-    final active = _snapshot(id: 'active');
-    final summary = _summary(id: 'summary-active', snapshot: active);
-    final fixture = _fixture(
-      _meeting(
-        status: MeetingState.completed,
-        activeTranscriptSnapshotId: active.id,
-        activeSummaryId: summary.id,
-      ),
-      active: active,
-      summary: summary,
-    );
-
-    await tester.pumpWidget(
-      Application(
-        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('总结'));
-    await tester.pumpAndSettle();
-    expect(find.text('会议概览'), findsOneWidget);
-    expect(find.text('关键结论'), findsOneWidget);
-    expect(find.text('证据 00:00–00:01：最终事实文本'), findsOneWidget);
-    expect(find.text('待核对：未找到有效原文证据'), findsOneWidget);
-    await fixture.dispose();
-  });
-
-  testWidgets('点击证据只播放当前片段的准确时间区间', (tester) async {
-    final active = _snapshot(id: 'active');
-    final summary = _summary(id: 'summary-active', snapshot: active);
     final playback = _Playback();
     final fixture = _fixture(
       _meeting(
         status: MeetingState.completed,
         activeTranscriptSnapshotId: active.id,
-        activeSummaryId: summary.id,
       ),
       active: active,
-      summary: summary,
       playback: playback,
     );
     await tester.pumpWidget(
@@ -292,17 +232,122 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('总结'));
+    await tester.tap(find.text('录音'));
     await tester.pumpAndSettle();
-    final evidence = find.text('证据 00:00–00:01：最终事实文本');
-    await tester.ensureVisible(evidence);
-    await tester.tap(evidence);
-    await tester.pump();
+    final playButton = find.byKey(const ValueKey('toggle-audio-playback'));
+    await tester.ensureVisible(playButton);
+    await tester.tap(playButton);
+    await tester.pump(const Duration(milliseconds: 200));
 
-    expect(playback.calls, [('/audio/fact.pcm', 0, 1000)]);
-    expect(fixture.viewModel.selectedEvidenceSegmentId, 'active-segment');
-    expect(find.textContaining('最终事实文本'), findsOneWidget);
-    expect(find.text('证据定位'), findsOneWidget);
+    expect(playback.calls, [('/audio/fact.pcm', 0, 2000)]);
+    await fixture.dispose();
+  });
+
+  testWidgets('音频分享先展示元数据和敏感提醒，二次确认后才调用独立分享', (tester) async {
+    final active = _snapshot(id: 'active');
+    final audioShare = _AudioShare();
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      audioShare: audioShare,
+    );
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('录音'));
+    await tester.pumpAndSettle();
+    final request = find.byKey(const ValueKey('request-share-audio'));
+    await tester.ensureVisible(request);
+    await tester.tap(request);
+    await tester.pumpAndSettle();
+
+    expect(audioShare.shareCalls, 0);
+    expect(find.text('确认单独分享音频？'), findsOneWidget);
+    expect(find.textContaining('会议：周会'), findsOneWidget);
+    expect(find.textContaining('时长：00:02'), findsOneWidget);
+    expect(find.textContaining('31.3 KiB WAV'), findsOneWidget);
+    expect(find.textContaining('敏感或私密信息'), findsOneWidget);
+    expect(find.textContaining('不会附带转录文本'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('confirm-share-audio')));
+    await tester.pumpAndSettle();
+
+    expect(audioShare.inspectCalls, 1);
+    expect(audioShare.shareCalls, 1);
+    expect(find.text('音频分享操作已完成，临时文件已清理'), findsOneWidget);
+    await fixture.dispose();
+  });
+
+  testWidgets('音频分享空间不足显示精确差额且不显示确认操作', (tester) async {
+    final active = _snapshot(id: 'active');
+    final audioShare = _AudioShare(freeBytes: 32000);
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      audioShare: audioShare,
+    );
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('录音'));
+    await tester.pumpAndSettle();
+    final request = find.byKey(const ValueKey('request-share-audio'));
+    await tester.ensureVisible(request);
+    await tester.tap(request);
+    await tester.pumpAndSettle();
+
+    expect(find.text('可用空间不足'), findsOneWidget);
+    expect(find.textContaining('还缺少 44 B'), findsOneWidget);
+    expect(find.byKey(const ValueKey('confirm-share-audio')), findsNothing);
+    expect(audioShare.shareCalls, 0);
+    await fixture.dispose();
+  });
+
+  testWidgets('插件缓存清理失败时不显示已清理', (tester) async {
+    final active = _snapshot(id: 'active');
+    final audioShare = _AudioShare(
+      shareError: const AudioShareException('audio_share.cleanup_failed'),
+    );
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      audioShare: audioShare,
+    );
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('录音'));
+    await tester.pumpAndSettle();
+    final request = find.byKey(const ValueKey('request-share-audio'));
+    await tester.ensureVisible(request);
+    await tester.tap(request);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('confirm-share-audio')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('音频分享临时文件清理失败，请重启应用后重试'), findsOneWidget);
+    expect(find.textContaining('临时文件已清理'), findsNothing);
     await fixture.dispose();
   });
 
@@ -326,10 +371,12 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('正在生成最终转录'), findsOneWidget);
+    expect(find.text('正在生成联合最终结果'), findsOneWidget);
     expect(find.text('最终转录'), findsOneWidget);
     expect(find.text('说话人整理'), findsOneWidget);
-    expect(find.text('AI 总结'), findsOneWidget);
+    expect(find.textContaining('全部结束后才会发布结果'), findsOneWidget);
+    expect(find.textContaining('单一说话人发布最终文本'), findsOneWidget);
+    expect(find.text('AI 总结'), findsNothing);
     expect(find.textContaining('%'), findsNothing);
     expect(find.textContaining('事实音频'), findsWidgets);
 
@@ -405,8 +452,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('转录'), findsWidgets);
-    expect(find.text('总结'), findsOneWidget);
     expect(find.text('录音'), findsOneWidget);
+    expect(find.text('总结'), findsNothing);
     expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
@@ -436,7 +483,7 @@ void main() {
       expect(find.textContaining('最终事实文本'), findsOneWidget);
       expect(find.byKey(const ValueKey('meeting-result-tabs')), findsOneWidget);
       expect(
-        find.byKey(const ValueKey('meeting-detail-evidence-workbench')),
+        find.byKey(const ValueKey('meeting-detail-audio-workbench')),
         width >= 840 ? findsOneWidget : findsNothing,
       );
       expect(tester.takeException(), isNull);
@@ -450,30 +497,15 @@ _Fixture _fixture(
   TranscriptSnapshot? active,
   SpeakerDiarizationRunner? diarization,
   bool diarizationEnabled = false,
-  Summary? summary,
-  SummaryGenerationService? summaryService,
-  EvidencePlaybackService? playback,
+  AudioPlaybackService? playback,
+  AudioShareService? audioShare,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
   if (active != null) {
     transcripts.records[active.id] = active;
   }
-  final summaries = DetailSummaryRepository(meetings);
-  if (summary != null) {
-    summaries.records[summary.id] = summary;
-  }
-  final summaryTasks = DetailProcessingTaskRepository();
-  final summaryGeneration = summaryService == null
-      ? null
-      : GenerateSummaryUseCase(
-          meetings: meetings,
-          transcripts: transcripts,
-          summaries: summaries,
-          tasks: summaryTasks,
-          service: summaryService,
-          now: () => DateTime.utc(2026, 7, 25, 4),
-        );
+  final tasks = DetailProcessingTaskRepository();
   final runner = DetailTranscriptionRunner(
     ({
       required meetingId,
@@ -487,8 +519,6 @@ _Fixture _fixture(
     meetings: meetings,
     transcripts: transcripts,
     runner: runner,
-    summaries: summaries,
-    summaryTasks: summaryTasks,
     viewModel: MeetingDetailViewModel(
       meeting: meeting,
       meetings: meetings,
@@ -496,19 +526,20 @@ _Fixture _fixture(
       transcription: runner,
       diarization: diarization,
       diarizationPreferences: _DiarizationPreference(diarizationEnabled),
-      processingTasks: summaryTasks,
-      summaries: summaries,
-      summaryGeneration: summaryGeneration,
+      processingTasks: tasks,
       playback: playback,
+      audioSharing: audioShare == null
+          ? null
+          : ShareMeetingAudioUseCase(audioShare),
     ),
   );
 }
 
-final class _Playback implements EvidencePlaybackService {
+final class _Playback implements AudioPlaybackService {
   final List<(String, int, int)> calls = [];
 
   @override
-  Stream<EvidencePlaybackState> get states => const Stream.empty();
+  Stream<AudioPlaybackState> get states => const Stream.empty();
 
   @override
   Future<void> play({
@@ -526,21 +557,50 @@ final class _Playback implements EvidencePlaybackService {
   Future<void> dispose() async {}
 }
 
+final class _AudioShare implements AudioShareService {
+  _AudioShare({this.freeBytes = 1024 * 1024, this.shareError});
+
+  final int freeBytes;
+  final Object? shareError;
+  int inspectCalls = 0;
+  int shareCalls = 0;
+
+  @override
+  Future<AudioShareStorageSnapshot> inspect({required String audioPath}) async {
+    inspectCalls++;
+    return AudioShareStorageSnapshot(
+      pcmBytes: 32000,
+      wavBytes: 32044,
+      freeBytes: freeBytes,
+    );
+  }
+
+  @override
+  Future<AudioShareOutcome> share({
+    required String meetingId,
+    required String meetingTitle,
+    required String audioPath,
+    required int expectedPcmBytes,
+  }) async {
+    shareCalls++;
+    if (shareError case final error?) {
+      throw error;
+    }
+    return AudioShareOutcome.completed;
+  }
+}
+
 final class _Fixture {
   const _Fixture({
     required this.meetings,
     required this.transcripts,
     required this.runner,
-    required this.summaries,
-    required this.summaryTasks,
     required this.viewModel,
   });
 
   final DetailMeetingRepository meetings;
   final DetailTranscriptRepository transcripts;
   final DetailTranscriptionRunner runner;
-  final DetailSummaryRepository summaries;
-  final DetailProcessingTaskRepository summaryTasks;
   final MeetingDetailViewModel viewModel;
 
   Future<void> dispose() async {
@@ -551,7 +611,6 @@ final class _Fixture {
 Meeting _meeting({
   MeetingState status = MeetingState.processing,
   String? activeTranscriptSnapshotId,
-  String? activeSummaryId,
 }) {
   return Meeting(
     id: 'meeting-1',
@@ -565,7 +624,6 @@ Meeting _meeting({
     recordingModelId: senseVoiceDefaultModelId,
     recordingModelVersion: '2024-07-17',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
-    activeSummaryId: activeSummaryId,
   );
 }
 
@@ -599,35 +657,6 @@ TranscriptSnapshot _snapshot({
             ),
           ]
         : const [],
-  );
-}
-
-Summary _summary({required String id, required TranscriptSnapshot snapshot}) {
-  final segment = snapshot.segments.single;
-  return Summary(
-    id: id,
-    meetingId: snapshot.meetingId,
-    transcriptSnapshotId: snapshot.id,
-    provider: 'test-provider',
-    model: 'test-model',
-    createdAt: DateTime.utc(2026, 7, 25, 3),
-    overview: '会议概览',
-    keyPoints: [
-      SummaryItem(
-        id: '$id-key-point-1',
-        text: '已确认结论',
-        evidence: [
-          SummaryEvidence(
-            segmentId: segment.id,
-            startMs: segment.startMs,
-            endMs: segment.endMs,
-            quote: segment.text,
-          ),
-        ],
-      ),
-    ],
-    actionItems: [SummaryItem(id: '$id-action-item-1', text: '待核对行动项')],
-    status: SummaryStatus.complete,
   );
 }
 

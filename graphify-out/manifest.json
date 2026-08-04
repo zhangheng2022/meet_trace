@@ -1,7 +1,7 @@
 {
   "android/app/build.gradle.kts": {
-    "mtime": 1785730788.4611225,
-    "ast_hash": "0606de7961396d66c5718b129bbc331d",
+    "mtime": 1785775855.2403207,
+    "ast_hash": "3e5b634471bf951f8aa06a3ad5663772",
     "semantic_hash": ""
   },
   "android/build.gradle.kts": {
@@ -160,8 +160,8 @@
     "semantic_hash": "7569387d58711ab975940f4df3b4bcda"
   },
   "README.md": {
-    "mtime": 1785741562.5621736,
-    "ast_hash": "0c4182cda5b9366904ce0872a0a0bbb8",
+    "mtime": 1785761017.7099571,
+    "ast_hash": "a7a0dbe4cee8f7ef9fc1d5fb80ccf407",
     "semantic_hash": ""
   },
   "analysis_options.yaml": {
@@ -190,8 +190,8 @@
     "semantic_hash": "30cc1614b16214b66c014af09ba699eb"
   },
   "pubspec.yaml": {
-    "mtime": 1785722696.8879175,
-    "ast_hash": "c5d112e5f9871a4e46153eeece154a29",
+    "mtime": 1785764901.6029027,
+    "ast_hash": "e65b22499392959e69b78a6864c4d48e",
     "semantic_hash": ""
   },
   "web/index.html": {
@@ -415,8 +415,8 @@
     "semantic_hash": "3b0c1097457c286b2154ede7d6e6d9a7"
   },
   "lib/data/models/storage/storage_mappers.dart": {
-    "mtime": 1785518701.0794818,
-    "ast_hash": "ad820ddbd719432842bcf399b41607d0",
+    "mtime": 1785762416.8266654,
+    "ast_hash": "e021e63cd80168357c62f28be0a3cd56",
     "semantic_hash": ""
   },
   "lib/data/repositories/sqflite_diarization_preference_repository.dart": {
@@ -449,14 +449,9 @@
     "ast_hash": "e6a18ef3a0a92fef4380120931a00854",
     "semantic_hash": ""
   },
-  "lib/data/repositories/sqflite_summary_repository.dart": {
-    "mtime": 1785742672.8909233,
-    "ast_hash": "f1b064a2d0a63f681578acdb53a0b8ee",
-    "semantic_hash": ""
-  },
   "lib/data/repositories/sqflite_transcript_repository.dart": {
-    "mtime": 1785742672.8951385,
-    "ast_hash": "3c9a7170c14d2a9fdce73576a061b6ea",
+    "mtime": 1785762416.8376696,
+    "ast_hash": "2e4898c1e4056bde1834c54e11048775",
     "semantic_hash": ""
   },
   "lib/data/services/asr/android_proc_asr_device_risk_monitor.dart": {
@@ -499,11 +494,6 @@
     "ast_hash": "98104a55dae1d68e6abe6f6f1d37a309",
     "semantic_hash": "98104a55dae1d68e6abe6f6f1d37a309"
   },
-  "lib/data/services/audio/pcm_evidence_playback_service.dart": {
-    "mtime": 1785742672.946462,
-    "ast_hash": "46c17c9e5afc2e0cb3a275bfbc5b4efa",
-    "semantic_hash": ""
-  },
   "lib/data/services/audio/record_pcm_audio_capture.dart": {
     "mtime": 1785740538.4135716,
     "ast_hash": "608a13c6c6a003a71d21e978084da5c9",
@@ -535,13 +525,13 @@
     "semantic_hash": "4a3c953d8e42f3e6208146ddfde04f81"
   },
   "lib/data/services/diarization/speaker_diarization_service.dart": {
-    "mtime": 1785218881.9457967,
-    "ast_hash": "65290e842a212a60ce27a686985efca2",
-    "semantic_hash": "65290e842a212a60ce27a686985efca2"
+    "mtime": 1785771003.404385,
+    "ast_hash": "3b69ea2fb8ff3d3b9184f16ff258a3aa",
+    "semantic_hash": ""
   },
   "lib/data/services/models/downloadable_model_service.dart": {
-    "mtime": 1785752042.6125486,
-    "ast_hash": "8cd0884ce9d7b7a4cb4976297c9af4bd",
+    "mtime": 1785765563.9241848,
+    "ast_hash": "7a8e1ac9095a839229c9ef7aeffda803",
     "semantic_hash": ""
   },
   "lib/data/services/models/http_model_file_downloader.dart": {
@@ -570,14 +560,14 @@
     "semantic_hash": "be4c7e45514ada551d477f46cb172cc1"
   },
   "lib/data/services/storage/app_database.dart": {
-    "mtime": 1785518701.1829212,
-    "ast_hash": "eb290d3f54921ec149040757758d534b",
+    "mtime": 1785763325.5472367,
+    "ast_hash": "c00670cad9485fbe7419a29d4453774e",
     "semantic_hash": ""
   },
   "lib/data/services/storage/app_file_layout.dart": {
-    "mtime": 1785126484.2408187,
-    "ast_hash": "781355bac0cf5b8ae7f8f9de0249d4a8",
-    "semantic_hash": "781355bac0cf5b8ae7f8f9de0249d4a8"
+    "mtime": 1785775162.9282806,
+    "ast_hash": "5a60654f0f464738962c2a2f202d72d7",
+    "semantic_hash": ""
   },
   "lib/data/services/storage/device_free_space_service.dart": {
     "mtime": 1785121361.0085666,
@@ -600,14 +590,9 @@
     "semantic_hash": "0ed615381c8ec051d982b1be95000e39"
   },
   "lib/data/services/storage/startup_recovery_service.dart": {
-    "mtime": 1785121361.0095718,
-    "ast_hash": "aa2b6043de0649c41e3bb37f837e345f",
-    "semantic_hash": "aa2b6043de0649c41e3bb37f837e345f"
-  },
-  "lib/data/services/summary/summary_generation_service.dart": {
-    "mtime": 1785218915.861528,
-    "ast_hash": "fe6e75fdd9552b8a846c110cd51c01e2",
-    "semantic_hash": "fe6e75fdd9552b8a846c110cd51c01e2"
+    "mtime": 1785775193.322733,
+    "ast_hash": "6f8ad8b03efd5a55e60ffeb4a7fb4804",
+    "semantic_hash": ""
   },
   "lib/data/services/vad/silero_vad_segmenter.dart": {
     "mtime": 1785743095.354181,
@@ -615,9 +600,9 @@
     "semantic_hash": ""
   },
   "lib/domain/models/app_failure.dart": {
-    "mtime": 1784866716.4882505,
-    "ast_hash": "452f5028073144268d0b9f4966578bd8",
-    "semantic_hash": "452f5028073144268d0b9f4966578bd8"
+    "mtime": 1785762416.927464,
+    "ast_hash": "ef08b33d3710dfd781f6f1746e15bc62",
+    "semantic_hash": ""
   },
   "lib/domain/models/asr_model.dart": {
     "mtime": 1785518701.2047381,
@@ -650,8 +635,8 @@
     "semantic_hash": "9b371b8d4468965ae8b6557e140ac930"
   },
   "lib/domain/models/meeting.dart": {
-    "mtime": 1785518701.20959,
-    "ast_hash": "b30ecd471933996466b551061d55dbb6",
+    "mtime": 1785763325.5632434,
+    "ast_hash": "864e8ac507f1302b4103b6f11646453d",
     "semantic_hash": ""
   },
   "lib/domain/models/model_installation.dart": {
@@ -670,9 +655,9 @@
     "semantic_hash": "dda6a83042833aabd616abbcc8723b3b"
   },
   "lib/domain/models/processing_task.dart": {
-    "mtime": 1784866716.4882505,
-    "ast_hash": "9301e1fef0f42166f702acc3dfa64e1b",
-    "semantic_hash": "9301e1fef0f42166f702acc3dfa64e1b"
+    "mtime": 1785762416.9356952,
+    "ast_hash": "684e8ea6c013ec874b975b5f506c2e79",
+    "semantic_hash": ""
   },
   "lib/domain/models/recording.dart": {
     "mtime": 1785222574.8676574,
@@ -684,15 +669,10 @@
     "ast_hash": "0eedd2d3d048c05b9c000cc0712a1599",
     "semantic_hash": "0eedd2d3d048c05b9c000cc0712a1599"
   },
-  "lib/domain/models/summary.dart": {
-    "mtime": 1785159664.46958,
-    "ast_hash": "1f5b692aa2d19d976a0ab226f3ad7011",
-    "semantic_hash": "1f5b692aa2d19d976a0ab226f3ad7011"
-  },
   "lib/domain/models/transcript.dart": {
-    "mtime": 1784866716.4882505,
-    "ast_hash": "920a33ddb8d3afbec8d8dd2cfd119dca",
-    "semantic_hash": "920a33ddb8d3afbec8d8dd2cfd119dca"
+    "mtime": 1785762416.9396877,
+    "ast_hash": "33665c157adeb841ccb281d11314b45a",
+    "semantic_hash": ""
   },
   "lib/domain/models/workflow_states.dart": {
     "mtime": 1785121361.0125713,
@@ -700,9 +680,9 @@
     "semantic_hash": "e07091ea03bdac483a701cfe4e1b5a53"
   },
   "lib/domain/use_cases/build_meeting_share.dart": {
-    "mtime": 1785126715.073892,
-    "ast_hash": "1052a0db080789c47d4c78a5c6373b4e",
-    "semantic_hash": "1052a0db080789c47d4c78a5c6373b4e"
+    "mtime": 1785763325.5806527,
+    "ast_hash": "cba1c835913930c96a10a8dbddd7c1b8",
+    "semantic_hash": ""
   },
   "lib/domain/use_cases/delete_meeting.dart": {
     "mtime": 1785218609.8558626,
@@ -714,20 +694,15 @@
     "ast_hash": "1c39d17c20f71195f108a9c29de4dc71",
     "semantic_hash": ""
   },
-  "lib/domain/use_cases/generate_summary.dart": {
-    "mtime": 1785218882.0129335,
-    "ast_hash": "d975921b4739b0944c7d812073586142",
-    "semantic_hash": "d975921b4739b0944c7d812073586142"
-  },
   "lib/domain/use_cases/plan_asr_preview_windows.dart": {
     "mtime": 1785515502.9464898,
     "ast_hash": "14650478630ced8b342236edcf61d3b1",
     "semantic_hash": "14650478630ced8b342236edcf61d3b1"
   },
   "lib/domain/use_cases/revise_final_transcript.dart": {
-    "mtime": 1785218882.0164373,
-    "ast_hash": "84648f06b6e4162a0ba2788bc971108d",
-    "semantic_hash": "84648f06b6e4162a0ba2788bc971108d"
+    "mtime": 1785762120.2894208,
+    "ast_hash": "a182c22eaf1a593b0cbf0de58b77d1b8",
+    "semantic_hash": ""
   },
   "lib/theme/colors.dart": {
     "mtime": 1785204665.6284537,
@@ -820,14 +795,14 @@
     "semantic_hash": ""
   },
   "test/data/repositories/sqflite_repositories_test.dart": {
-    "mtime": 1785160715.8257904,
-    "ast_hash": "0ef37dd9a68ebaadf78999516dd30bfa",
-    "semantic_hash": "0ef37dd9a68ebaadf78999516dd30bfa"
+    "mtime": 1785762782.025355,
+    "ast_hash": "65cf915354ef14d5fd455c6aa17e9f01",
+    "semantic_hash": ""
   },
   "test/data/repositories/sqflite_speaker_diarization_repository_test.dart": {
-    "mtime": 1785126484.223241,
-    "ast_hash": "7a462d331431b671526d6a5995f14174",
-    "semantic_hash": "7a462d331431b671526d6a5995f14174"
+    "mtime": 1785755879.3441942,
+    "ast_hash": "bb3af7994affe464d4092689c7fcf609",
+    "semantic_hash": ""
   },
   "test/data/services/asr/android_proc_asr_device_risk_monitor_test.dart": {
     "mtime": 1785742673.3198798,
@@ -840,8 +815,8 @@
     "semantic_hash": ""
   },
   "test/data/services/asr/final_transcription_service_test.dart": {
-    "mtime": 1785744317.6119926,
-    "ast_hash": "1c94b83ccd89304f426157d6d0d41939",
+    "mtime": 1785774461.164733,
+    "ast_hash": "479d17a6f966af23e36ee15a724aeba9",
     "semantic_hash": ""
   },
   "test/data/services/asr/sherpa_onnx/sherpa_onnx_adapter_test.dart": {
@@ -874,11 +849,6 @@
     "ast_hash": "26faf9919b860acd990706efcee91b67",
     "semantic_hash": "26faf9919b860acd990706efcee91b67"
   },
-  "test/data/services/audio/pcm_evidence_playback_service_test.dart": {
-    "mtime": 1785744471.5771945,
-    "ast_hash": "be452bec5c1f247ac3054840280a45ef",
-    "semantic_hash": ""
-  },
   "test/data/services/audio/record_pcm_audio_capture_test.dart": {
     "mtime": 1785740552.7357507,
     "ast_hash": "eb673a087ef0c127134ce9671120fca6",
@@ -900,13 +870,13 @@
     "semantic_hash": "4ad86134e99f1182073e45a9c5d58aa4"
   },
   "test/data/services/diarization/speaker_diarization_coordinator_test.dart": {
-    "mtime": 1785742673.368287,
-    "ast_hash": "692825d850ed897c98f348f56f48bd9e",
+    "mtime": 1785770118.5546238,
+    "ast_hash": "d351020a58680b4f6834bfe63c38bcc7",
     "semantic_hash": ""
   },
   "test/data/services/models/downloadable_model_service_test.dart": {
-    "mtime": 1785752042.6342945,
-    "ast_hash": "a961c7af2f16fec9040f9afe3fb0cea6",
+    "mtime": 1785765564.192634,
+    "ast_hash": "318f207e120d81e411f6a5e5e502f086",
     "semantic_hash": ""
   },
   "test/data/services/models/http_model_file_downloader_test.dart": {
@@ -925,8 +895,8 @@
     "semantic_hash": ""
   },
   "test/data/services/storage/app_database_test.dart": {
-    "mtime": 1785519065.307076,
-    "ast_hash": "a39f5ba503def2e1382a10ea4f225df4",
+    "mtime": 1785763325.8877594,
+    "ast_hash": "ae8bcf1da491fb441bc0927d961054c4",
     "semantic_hash": ""
   },
   "test/data/services/storage/device_free_space_service_test.dart": {
@@ -940,8 +910,8 @@
     "semantic_hash": "ce4f8f5eb981590df8b28bf7a0a6a98a"
   },
   "test/data/services/storage/local_data_control_service_test.dart": {
-    "mtime": 1785742673.400134,
-    "ast_hash": "e49e9c5adb5ae036fb7293e45ff2fbbf",
+    "mtime": 1785755784.4508972,
+    "ast_hash": "53e715092a2f5f280e3511ac10a02c63",
     "semantic_hash": ""
   },
   "test/data/services/storage/meeting_directory_deletion_service_test.dart": {
@@ -950,9 +920,9 @@
     "semantic_hash": "704d1141fe41b2ec72ae3366ad5c71d6"
   },
   "test/data/services/storage/startup_recovery_service_test.dart": {
-    "mtime": 1785126484.1965437,
-    "ast_hash": "c13a02079b160d7f2652c1b28440a93c",
-    "semantic_hash": "c13a02079b160d7f2652c1b28440a93c"
+    "mtime": 1785775308.2871704,
+    "ast_hash": "185a29952139bbaeea2a89af83e6ca56",
+    "semantic_hash": ""
   },
   "test/data/services/vad/silero_vad_segmenter_test.dart": {
     "mtime": 1785515502.9740596,
@@ -960,8 +930,8 @@
     "semantic_hash": "97f1fb9d459344edbd7e84452dcb8fd3"
   },
   "test/domain/contracts/domain_ports_test.dart": {
-    "mtime": 1785742673.4146245,
-    "ast_hash": "c53c1352ac4521ab73f80923db2f3bb8",
+    "mtime": 1785755784.4508972,
+    "ast_hash": "6fbc0807c7e9433b7871d338922b9691",
     "semantic_hash": ""
   },
   "test/domain/models/app_failure_test.dart": {
@@ -980,8 +950,8 @@
     "semantic_hash": ""
   },
   "test/domain/models/meeting_test.dart": {
-    "mtime": 1785520112.3046534,
-    "ast_hash": "34811a0655c472446fa64b26f3ef6c22",
+    "mtime": 1785762782.1256523,
+    "ast_hash": "7c654c5d223d65679d9b68b4d30cb6a0",
     "semantic_hash": ""
   },
   "test/domain/models/model_installation_test.dart": {
@@ -994,15 +964,10 @@
     "ast_hash": "cca42c907cf4a3a797a299a99e7d0d94",
     "semantic_hash": "cca42c907cf4a3a797a299a99e7d0d94"
   },
-  "test/domain/models/summary_test.dart": {
-    "mtime": 1785126484.1894703,
-    "ast_hash": "fef07c6c93ec236933689b5056a1efea",
-    "semantic_hash": "fef07c6c93ec236933689b5056a1efea"
-  },
   "test/domain/models/transcript_test.dart": {
-    "mtime": 1785126484.1857512,
-    "ast_hash": "b4962995665e4873e1ca74b92e129756",
-    "semantic_hash": "b4962995665e4873e1ca74b92e129756"
+    "mtime": 1785762782.1281798,
+    "ast_hash": "c8f95e4e29011424e05dcbae1f92f3d1",
+    "semantic_hash": ""
   },
   "test/domain/models/workflow_states_test.dart": {
     "mtime": 1785126484.1857512,
@@ -1010,23 +975,18 @@
     "semantic_hash": "f20ec4a166071dbb7c620f90e6c4c722"
   },
   "test/domain/use_cases/build_meeting_share_test.dart": {
-    "mtime": 1785126484.1857512,
-    "ast_hash": "d803f8a0fd77b88e023e8b1ca984b02d",
-    "semantic_hash": "d803f8a0fd77b88e023e8b1ca984b02d"
+    "mtime": 1785763232.2429724,
+    "ast_hash": "0d5caf88520048207bb27d9a83113565",
+    "semantic_hash": ""
   },
   "test/domain/use_cases/delete_meeting_test.dart": {
-    "mtime": 1785742673.4313142,
-    "ast_hash": "24673dac839e675cee44fed19015a545",
+    "mtime": 1785755813.3573465,
+    "ast_hash": "4bf40849bfa9cd6798fe9aaa99ff5e4c",
     "semantic_hash": ""
   },
   "test/domain/use_cases/evaluate_alpha_release_test.dart": {
-    "mtime": 1785520112.3194737,
-    "ast_hash": "51d4ac90c8605f41e8b76a3f42da76e0",
-    "semantic_hash": ""
-  },
-  "test/domain/use_cases/generate_summary_test.dart": {
-    "mtime": 1785742673.4403396,
-    "ast_hash": "2087d165a7fcd3ee8a771bcc44d126a7",
+    "mtime": 1785765557.4060268,
+    "ast_hash": "ce3f7970b59a2bb9b57c759dde1f7c53",
     "semantic_hash": ""
   },
   "test/domain/use_cases/plan_asr_preview_windows_test.dart": {
@@ -1035,13 +995,13 @@
     "semantic_hash": "508ca0224cb533dc1822a52cc11b6e20"
   },
   "test/domain/use_cases/revise_final_transcript_test.dart": {
-    "mtime": 1785742673.44435,
-    "ast_hash": "9a335b26f7095338f0eda18c54cb2eb5",
+    "mtime": 1785762782.13877,
+    "ast_hash": "c970379545fa1b61bbf0410dd101fe87",
     "semantic_hash": ""
   },
   "test/support/final_transcription_fakes.dart": {
-    "mtime": 1785744231.8971055,
-    "ast_hash": "91ccbc0b6a5803011e8ce823de733ac2",
+    "mtime": 1785762507.8151212,
+    "ast_hash": "d7c52219e190916d4f4cd1daa98cf258",
     "semantic_hash": ""
   },
   "test/support/model_selection_fakes.dart": {
@@ -1100,13 +1060,13 @@
     "semantic_hash": "408251dd7473285243552c3107b156ac"
   },
   "tool/benchmarks/inspect_debug_apk.ps1": {
-    "mtime": 1785520298.1836245,
-    "ast_hash": "e2f4baa5dae3ec60012b38e09f7dce6e",
+    "mtime": 1785765788.0053995,
+    "ast_hash": "282eb865330c0b29085ccee4a190554d",
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1785747145.2432215,
-    "ast_hash": "1c3efffc89cec0a9e3a89aa4440a21da",
+    "mtime": 1785761547.199816,
+    "ast_hash": "bd5cc87c84899fd4dd90b97f468d2a8c",
     "semantic_hash": ""
   },
   "assets/licenses/paraformer-small-NOTICE.txt": {
@@ -1135,13 +1095,13 @@
     "semantic_hash": "ce3d92b1a9ab353547f40b4bf7a53ef7"
   },
   "docs/README.md": {
-    "mtime": 1785747412.9053931,
-    "ast_hash": "1e647a4468e536f850e4ebcf96dbe1f2",
+    "mtime": 1785774613.763236,
+    "ast_hash": "135e739adf652cda0bf3d8267a3f9555",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
-    "mtime": 1785747178.000876,
-    "ast_hash": "4a9ebe820fe070b0e918fa1485b5e0eb",
+    "mtime": 1785805308.3504217,
+    "ast_hash": "64b8925cb76255e4c35f0107cd20d9aa",
     "semantic_hash": ""
   },
   "docs/quality/Step_07_\u53ef\u9760\u5f55\u97f3\u4e0e\u5d29\u6e83\u6062\u590d.md": {
@@ -1210,14 +1170,9 @@
     "semantic_hash": "1dca24217a6922de72168367655cd214"
   },
   ".impeccable/design.json": {
-    "mtime": 1785228163.1897125,
-    "ast_hash": "c075d77674f7565e6de83f5a728c5c50",
-    "semantic_hash": "c075d77674f7565e6de83f5a728c5c50"
-  },
-  "android/app/src/main/kotlin/com/example/meettrace/MainActivity.kt": {
-    "mtime": 1785126484.1781776,
-    "ast_hash": "733e4a35d4e7d9083c640352078f5c1a",
-    "semantic_hash": "733e4a35d4e7d9083c640352078f5c1a"
+    "mtime": 1785761390.5908613,
+    "ast_hash": "03cb2242a4eb871e25144af1dab82413",
+    "semantic_hash": ""
   },
   "lib/app/meettrace_dependencies.dart": {
     "mtime": 1785744742.4787009,
@@ -1225,8 +1180,8 @@
     "semantic_hash": ""
   },
   "lib/app/meettrace_flow.dart": {
-    "mtime": 1785744013.254377,
-    "ast_hash": "192d9829ece211c307805ad6a7db918f",
+    "mtime": 1785804573.2916381,
+    "ast_hash": "ecb7cda23806d23e47913935f49bc582",
     "semantic_hash": ""
   },
   "lib/data/services/asr/platform_asr_device_risk_monitor.dart": {
@@ -1280,18 +1235,18 @@
     "semantic_hash": "1805faa954524002751d0c567cdb8923"
   },
   "DESIGN.md": {
-    "mtime": 1785747145.2426949,
-    "ast_hash": "f4b36d94ec1c78a6c8c8e26940b45685",
+    "mtime": 1785760915.5123022,
+    "ast_hash": "45fd0224d776ffb41fd052aef70599cc",
     "semantic_hash": ""
   },
   "PRODUCT.md": {
-    "mtime": 1785747314.4792778,
-    "ast_hash": "a323a8a53fc73c68f9ff2ef5fe0cf2b1",
+    "mtime": 1785760874.8938825,
+    "ast_hash": "e028b3e6921285178e89b11997c35bc7",
     "semantic_hash": ""
   },
   "docs/quality/iOS_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
-    "mtime": 1785747314.4814293,
-    "ast_hash": "a1471becc97178fbc795cc0cfe972250",
+    "mtime": 1785775990.402508,
+    "ast_hash": "cbec647bccd7ff2dbdf1f3121e7471b9",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260727_034129_\u91cd\u6784\u6240\u6709ui\u8bbe\u8ba1\u90e8\u5206_\u5148\u7ed9\u6211\u65b9\u6848.md": {
@@ -1480,13 +1435,13 @@
     "semantic_hash": "912a5429246fa02d596f7e998d5b02a9"
   },
   "lib/ui/features/startup/views/meettrace_startup_view.dart": {
-    "mtime": 1785728413.6571221,
-    "ast_hash": "265bf029392f70e19af23e41bc2ca2d6",
+    "mtime": 1785757608.8351228,
+    "ast_hash": "631de58d89198db1568e17abebb63714",
     "semantic_hash": ""
   },
   "test/ui/features/startup/views/meettrace_startup_view_test.dart": {
-    "mtime": 1785728427.1768062,
-    "ast_hash": "691191a19482812d9de6e7026f65e8e5",
+    "mtime": 1785765582.8570201,
+    "ast_hash": "c2a13aad213e35f54a734f1ea17b1af6",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260728_031933_\u786e\u8ba4_\u5b9e\u73b0\u4f1a\u8bae\u5217\u8868\u5de6\u6ed1\u5220\u9664.md": {
@@ -1500,8 +1455,8 @@
     "semantic_hash": "47d166baf233703bb871ee570394d6e1"
   },
   "lib/app/meettrace_dependency_factories.dart": {
-    "mtime": 1785752161.058985,
-    "ast_hash": "02bff7dbec50cd9c3fdbb30b05ace93c",
+    "mtime": 1785775153.2673566,
+    "ast_hash": "bf1f98574acdd1cfeae03e6c31d591da",
     "semantic_hash": ""
   },
   "lib/domain/ports/asr_engine.dart": {
@@ -1514,14 +1469,9 @@
     "ast_hash": "36d2b82820df4c5f4ad5711de2750cb2",
     "semantic_hash": "36d2b82820df4c5f4ad5711de2750cb2"
   },
-  "lib/domain/ports/evidence_playback.dart": {
-    "mtime": 1785218881.9999285,
-    "ast_hash": "938736a4d9e649cf270ec5131f889292",
-    "semantic_hash": "938736a4d9e649cf270ec5131f889292"
-  },
   "lib/domain/ports/final_transcription.dart": {
-    "mtime": 1785744317.5694785,
-    "ast_hash": "8cdff1a4c174801f419da514b9496198",
+    "mtime": 1785774041.0052524,
+    "ast_hash": "67fafe7ce29abe9adb77cae8ff4a5d6f",
     "semantic_hash": ""
   },
   "lib/domain/ports/local_data_control.dart": {
@@ -1535,19 +1485,14 @@
     "semantic_hash": "1735daad6890cddc93d60d56705dafc3"
   },
   "lib/domain/ports/repositories.dart": {
-    "mtime": 1785218882.0019338,
-    "ast_hash": "dec15e123bbf22f2697cd8342e3743a9",
-    "semantic_hash": "dec15e123bbf22f2697cd8342e3743a9"
+    "mtime": 1785762120.2882993,
+    "ast_hash": "6a18929d2d7f500c558f564101ea1d9a",
+    "semantic_hash": ""
   },
   "lib/domain/ports/speaker_diarization.dart": {
-    "mtime": 1785218915.8605278,
-    "ast_hash": "1f928c6fecc917284f02787d6a5b17db",
-    "semantic_hash": "1f928c6fecc917284f02787d6a5b17db"
-  },
-  "lib/domain/ports/summary_generation.dart": {
-    "mtime": 1785218915.8605278,
-    "ast_hash": "07d31b03dcba4fe5d395c65661b84688",
-    "semantic_hash": "07d31b03dcba4fe5d395c65661b84688"
+    "mtime": 1785769883.3981135,
+    "ast_hash": "d6d3f95cc80edc8c5a9deecc9f1000da",
+    "semantic_hash": ""
   },
   "lib/domain/ports/text_share.dart": {
     "mtime": 1785218478.0237656,
@@ -1560,23 +1505,23 @@
     "semantic_hash": "c0b93f68ca2be5afeda485ef6ebfe6c4"
   },
   "lib/domain/use_cases/run_final_transcription.dart": {
-    "mtime": 1785744317.5778844,
-    "ast_hash": "3418c812e50dcfba9d0491ea666498ff",
+    "mtime": 1785774461.1563308,
+    "ast_hash": "e884504c2d26c5241ddcb9afc6e41b95",
     "semantic_hash": ""
   },
   "lib/domain/use_cases/run_speaker_diarization.dart": {
-    "mtime": 1785219181.381448,
-    "ast_hash": "7f83bd112ae2eaeb5831a84ee5f1cf84",
-    "semantic_hash": "7f83bd112ae2eaeb5831a84ee5f1cf84"
+    "mtime": 1785770118.5306237,
+    "ast_hash": "fb3dd7671c68769935ae1ff10ac13524",
+    "semantic_hash": ""
   },
   "lib/domain/use_cases/start_meeting.dart": {
-    "mtime": 1785743240.5895717,
-    "ast_hash": "87a530ca95facd29bfce0e7cb6f2d2fa",
+    "mtime": 1785762416.9761453,
+    "ast_hash": "5df6fd76dfa5343e70f5e4cb3266451c",
     "semantic_hash": ""
   },
   "test/architecture/layer_boundaries_test.dart": {
-    "mtime": 1785752085.180791,
-    "ast_hash": "0aeae69f1de35072b4d5ab3bf3b25c62",
+    "mtime": 1785763303.3481338,
+    "ast_hash": "14101696f8282ec670bd7d19d88e739e",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260728_050901_\u5206\u6790\u5f53\u524d\u9879\u76ee\u67b6\u6784\u5c42\u662f\u5426\u9700\u8981\u4f18\u5316.md": {
@@ -1630,23 +1575,23 @@
     "semantic_hash": "493253dbfd59a9662c23d08fe572b888"
   },
   "lib/ui/features/meetings/previews/meeting_detail_previews.dart": {
-    "mtime": 1785744368.2203693,
-    "ast_hash": "b8578a618922cd9adaa672ad183f9ff0",
+    "mtime": 1785762417.030427,
+    "ast_hash": "31ec131539cfc6bd8f983c0916737c3f",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/previews/meeting_list_previews.dart": {
-    "mtime": 1785518773.1247919,
-    "ast_hash": "e2a7fbd9e35563fda3febed1bb85a0f5",
+    "mtime": 1785755704.88228,
+    "ast_hash": "e56d176022e9899d69e81b9a81d77dc6",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/previews/recording_previews.dart": {
-    "mtime": 1785232721.518533,
-    "ast_hash": "eb27bd90d1d3cfc50bfdc6dd73e5f530",
-    "semantic_hash": "eb27bd90d1d3cfc50bfdc6dd73e5f530"
+    "mtime": 1785755704.8785882,
+    "ast_hash": "130d63f4d3e1a260a82121423086c9aa",
+    "semantic_hash": ""
   },
   "lib/ui/features/meetings/previews/support/meeting_detail_preview_fixture.dart": {
-    "mtime": 1785744368.2135544,
-    "ast_hash": "572abcd433579df94eb815939c712d62",
+    "mtime": 1785762393.5695376,
+    "ast_hash": "b967a3925ef03a3ceac65878b1954d28",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/previews/support/meeting_list_preview_fixture.dart": {
@@ -1660,33 +1605,28 @@
     "semantic_hash": "a74026acdebb5270b2b30978b8b7627f"
   },
   "lib/ui/features/meetings/view_models/detail/meeting_actions_view_model.dart": {
-    "mtime": 1785232356.5388913,
-    "ast_hash": "ca7ed2951dcef399fa05559b4c10e3ab",
-    "semantic_hash": "ca7ed2951dcef399fa05559b4c10e3ab"
-  },
-  "lib/ui/features/meetings/view_models/detail/meeting_audio_view_model.dart": {
-    "mtime": 1785232514.8441577,
-    "ast_hash": "232d2f7ce42656a2771a6ff3b74028dc",
-    "semantic_hash": "232d2f7ce42656a2771a6ff3b74028dc"
-  },
-  "lib/ui/features/meetings/view_models/detail/meeting_detail_state.dart": {
-    "mtime": 1785232514.8451583,
-    "ast_hash": "d2777089df6ae90e99db9ff9a046083f",
-    "semantic_hash": "d2777089df6ae90e99db9ff9a046083f"
-  },
-  "lib/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart": {
-    "mtime": 1785744782.0758832,
-    "ast_hash": "093242ad5ff717ecf6759f24500054d0",
+    "mtime": 1785804101.128103,
+    "ast_hash": "a34f5a435e2a11b9ebdc6ae3349d0864",
     "semantic_hash": ""
   },
-  "lib/ui/features/meetings/view_models/detail/meeting_summary_view_model.dart": {
-    "mtime": 1785232356.5378973,
-    "ast_hash": "73af2f16a802b721bcec7a4a07b80f87",
-    "semantic_hash": "73af2f16a802b721bcec7a4a07b80f87"
+  "lib/ui/features/meetings/view_models/detail/meeting_audio_view_model.dart": {
+    "mtime": 1785763290.0781817,
+    "ast_hash": "95975d6ac5da51bb6dea3044e52b3ffc",
+    "semantic_hash": ""
+  },
+  "lib/ui/features/meetings/view_models/detail/meeting_detail_state.dart": {
+    "mtime": 1785763290.0781817,
+    "ast_hash": "43e3e2337aa877b4a79d6d9a0a4951b5",
+    "semantic_hash": ""
+  },
+  "lib/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart": {
+    "mtime": 1785775162.9362805,
+    "ast_hash": "ccb69bd2a97e38adc6c084e4f45da1be",
+    "semantic_hash": ""
   },
   "lib/ui/features/meetings/view_models/detail/meeting_transcript_view_model.dart": {
-    "mtime": 1785744782.0789075,
-    "ast_hash": "0a7411be0bf7b537ae420189feaf77f6",
+    "mtime": 1785774041.0147624,
+    "ast_hash": "c4dc6f628f6db5a192045be346bdfd42",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/view_models/list/meeting_list_view_model.dart": {
@@ -1705,34 +1645,29 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/audio/meeting_audio_actions.dart": {
-    "mtime": 1785744317.5944343,
-    "ast_hash": "8748a5267919154dc93d299315a9b15c",
+    "mtime": 1785775193.333106,
+    "ast_hash": "1f858e3e00b167423e602bfeb9ebcd97",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/meeting_detail_view.dart": {
-    "mtime": 1785744368.2261474,
-    "ast_hash": "b4295d998678045244df0b818145d1c6",
+    "mtime": 1785775184.1924877,
+    "ast_hash": "a4a86cff0983cbe9802ba5248cdb648d",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/processing/meeting_processing_view.dart": {
-    "mtime": 1785231757.519322,
-    "ast_hash": "8861c71e3f526534026d04fe9eae7499",
-    "semantic_hash": "8861c71e3f526534026d04fe9eae7499"
-  },
-  "lib/ui/features/meetings/views/detail/summary/meeting_summary_section.dart": {
-    "mtime": 1785231757.522992,
-    "ast_hash": "f18dd6c08bbd98044efdc6915d9557ab",
-    "semantic_hash": "f18dd6c08bbd98044efdc6915d9557ab"
+    "mtime": 1785774315.3328667,
+    "ast_hash": "c99d2578522f6c3fd56732f6dd76856c",
+    "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/transcript/meeting_transcript_section.dart": {
-    "mtime": 1785231757.5219862,
-    "ast_hash": "f7b2beec1c09963de6a29da6ee8c2647",
-    "semantic_hash": "f7b2beec1c09963de6a29da6ee8c2647"
+    "mtime": 1785762417.0904267,
+    "ast_hash": "bb488de17962cc6708c931784b141ae0",
+    "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/widgets/meeting_result_layout.dart": {
-    "mtime": 1785231757.5207205,
-    "ast_hash": "f4e0434b878bcce041b59cdea031676a",
-    "semantic_hash": "f4e0434b878bcce041b59cdea031676a"
+    "mtime": 1785763290.080254,
+    "ast_hash": "99e4bea052a8bfe94faaa6bd0d733bf0",
+    "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/list/meeting_list_content.dart": {
     "mtime": 1785231692.9680493,
@@ -1740,8 +1675,8 @@
     "semantic_hash": "1a2cca2fbc9635a456bf3e1b1d11ca0e"
   },
   "lib/ui/features/meetings/views/list/meeting_list_view.dart": {
-    "mtime": 1785743914.338725,
-    "ast_hash": "6ee26d0cfbba67a84f975724816a506a",
+    "mtime": 1785762393.5706663,
+    "ast_hash": "79e832b7a3723c56aecfd20bbcd7562d",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/list/widgets/meeting_ledger_row.dart": {
@@ -1755,9 +1690,9 @@
     "semantic_hash": "cc7873177fa452e6fd03ac85f87d44da"
   },
   "lib/ui/features/meetings/views/list/widgets/meeting_preview_pane.dart": {
-    "mtime": 1785231723.9350789,
-    "ast_hash": "b7f6c9ac7cfc2a1abc77295d8ba7dc69",
-    "semantic_hash": "b7f6c9ac7cfc2a1abc77295d8ba7dc69"
+    "mtime": 1785805927.0795138,
+    "ast_hash": "2d675c5ee54fabb94618dc01d972af54",
+    "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/recording_bootstrap_view.dart": {
     "mtime": 1785232663.382157,
@@ -1770,8 +1705,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/live_transcript_panel.dart": {
-    "mtime": 1785744013.2579195,
-    "ast_hash": "fc1e60932c1f5b94bea1f11406de9371",
+    "mtime": 1785762407.6005914,
+    "ast_hash": "9bc59332ff59873c4940c03aedfbf2d8",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/recording_audio_waveform.dart": {
@@ -1790,38 +1725,38 @@
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/detail/meeting_detail_view_model_test.dart": {
-    "mtime": 1785744782.0859632,
-    "ast_hash": "591f8a1b3e91819f817a95fc12e9ee7e",
+    "mtime": 1785762782.1712751,
+    "ast_hash": "fa4a012ae607894513334e4821a86fd7",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/list/meeting_list_view_model_test.dart": {
-    "mtime": 1785743271.4608963,
-    "ast_hash": "f41816c66b2c7c50ca154bde73a40aa6",
+    "mtime": 1785755813.3996453,
+    "ast_hash": "55b3c7559a5ad1274e4587ee8d932e51",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/recording/recording_session_view_model_test.dart": {
-    "mtime": 1785744471.6734166,
-    "ast_hash": "591c4512d9d33e36cbf76f2e3ac1c6e5",
+    "mtime": 1785755813.4052584,
+    "ast_hash": "4569542f58bb003da30f49a3ffb582e1",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/start/start_meeting_view_model_test.dart": {
-    "mtime": 1785743240.610791,
-    "ast_hash": "2c936d03b6de1314bdea927d7e784123",
+    "mtime": 1785762979.8180158,
+    "ast_hash": "5a7a71d932ca86e8d4a988f1a885da71",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/views/detail/meeting_detail_view_test.dart": {
-    "mtime": 1785744436.180094,
-    "ast_hash": "f81f6b16ceff103f4dc9382739e010d5",
+    "mtime": 1785804244.5294156,
+    "ast_hash": "7f9479816daad302e2f04ceb4408f133",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/views/list/meeting_list_view_test.dart": {
-    "mtime": 1785742673.5383797,
-    "ast_hash": "7df1c5c9e4626f53a4853bb10992c391",
+    "mtime": 1785805927.0880277,
+    "ast_hash": "10d742e19db81861b419eebb92fa6218",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/views/recording/recording_session_view_test.dart": {
-    "mtime": 1785744471.695557,
-    "ast_hash": "658db57ea7aeae675d46f18ccab25869",
+    "mtime": 1785755799.9989004,
+    "ast_hash": "46da83adaef87e072ae5aac8518034c3",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/views/recording/widgets/recording_audio_waveform_test.dart": {
@@ -1840,18 +1775,18 @@
     "semantic_hash": ""
   },
   "lib/data/services/models/local_runtime_asset_preparation_service.dart": {
-    "mtime": 1785752024.003917,
-    "ast_hash": "c91e976f8bc57fde632f7b76ac17973a",
+    "mtime": 1785765236.9926717,
+    "ast_hash": "5274745232ce7e520950226d952bb340",
     "semantic_hash": ""
   },
   "lib/data/services/models/runtime_asset_installers.dart": {
-    "mtime": 1785751979.767288,
-    "ast_hash": "742ef333efad43ea98e4cb14c89a1251",
+    "mtime": 1785765211.3329718,
+    "ast_hash": "41140b2c474e7a7615b6d7f5571cf6d7",
     "semantic_hash": ""
   },
   "lib/data/services/vad/downloadable_silero_vad_model.dart": {
-    "mtime": 1785752024.003917,
-    "ast_hash": "5cef76a42bf05e8f55266c46aba33287",
+    "mtime": 1785765211.3349726,
+    "ast_hash": "6b14fac555f4a2c596b92c5b685f2387",
     "semantic_hash": ""
   },
   "lib/domain/models/runtime_initialization.dart": {
@@ -1880,13 +1815,13 @@
     "semantic_hash": ""
   },
   "test/data/services/models/local_runtime_asset_preparation_service_test.dart": {
-    "mtime": 1785752036.5463085,
-    "ast_hash": "c8caf1666f171eaa55cf17b9fdcbd6e7",
+    "mtime": 1785765296.6431687,
+    "ast_hash": "512d969ada3480a7771e25433481c0a7",
     "semantic_hash": ""
   },
   "test/data/services/models/runtime_asset_manifest_test.dart": {
-    "mtime": 1785743053.583272,
-    "ast_hash": "79b2922ce77575d80b3e9b4286ea9ff3",
+    "mtime": 1785767650.5615883,
+    "ast_hash": "ea8d6e0c80d37e9662e485c4f50357a9",
     "semantic_hash": ""
   },
   "test/data/services/vad/downloadable_silero_vad_model_test.dart": {
@@ -1895,8 +1830,8 @@
     "semantic_hash": ""
   },
   "test/ui/features/startup/view_models/runtime_initialization_view_model_test.dart": {
-    "mtime": 1785520840.3768113,
-    "ast_hash": "e7a2539b66abefb166e86228668ce695",
+    "mtime": 1785765557.4050267,
+    "ast_hash": "657bacb8b0bdfee020db048aa5554b24",
     "semantic_hash": ""
   },
   "assets/licenses/sense-voice-LICENSE.txt": {
@@ -1907,11 +1842,6 @@
   "assets/licenses/sense-voice-NOTICE.txt": {
     "mtime": 1785518269.8867927,
     "ast_hash": "7e12beb836a38fc4666a75aad30ab3a3",
-    "semantic_hash": ""
-  },
-  "docs/quality/SenseVoice_\u521d\u59cb\u5316\u4e0b\u8f7d\u4e0e\u53d1\u5e03\u95e8\u69db.md": {
-    "mtime": 1785752797.091769,
-    "ast_hash": "c408051255fe44d0581e53dd7c1f6b4d",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260729_015723_\u5206\u6790\u5f53\u524d\u9879\u76ee\u7684\u672c\u5730\u6a21\u578b_\u662f\u5426\u9700\u8981\u66f4\u6362\u6a21\u578b\u6216\u7ec4\u5408\u6a21\u578b.md": {
@@ -1970,28 +1900,28 @@
     "semantic_hash": ""
   },
   "docs/architecture/\u4ee3\u7801\u67b6\u6784\u4e0e\u5197\u4f59\u5ba1\u8ba1.md": {
-    "mtime": 1785752797.0907342,
-    "ast_hash": "8899ffe47497ba9d615e5588278ae80b",
+    "mtime": 1785805308.3529074,
+    "ast_hash": "446faa330c598fcdcc722d674b227d9e",
     "semantic_hash": ""
   },
   "docs/quality/README.md": {
-    "mtime": 1785747314.4809084,
-    "ast_hash": "f8e3888c5e780855d9b246149ae1f82f",
+    "mtime": 1785761069.8675935,
+    "ast_hash": "1f4894e7108506848532888acffc5515",
     "semantic_hash": ""
   },
   "lib/app/meettrace_meeting_dependencies.dart": {
-    "mtime": 1785743701.8184977,
-    "ast_hash": "1fb1c6dd1cbb99d06c5630ebd3117eb6",
+    "mtime": 1785773972.9181209,
+    "ast_hash": "60a1818001a584cbf19e44eca16d0a20",
     "semantic_hash": ""
   },
   "lib/app/meettrace_runtime_dependencies.dart": {
-    "mtime": 1785743742.4086282,
-    "ast_hash": "cd4b03c4af08f1b0051c6c9d323b8c47",
+    "mtime": 1785770155.6191752,
+    "ast_hash": "c889ff2e8f6b3e85eb164b40fa0034db",
     "semantic_hash": ""
   },
   "lib/app/meettrace_storage_dependencies.dart": {
-    "mtime": 1785744742.4787009,
-    "ast_hash": "ae9d8992a77506de4d58fb74ccd8ca23",
+    "mtime": 1785762216.795826,
+    "ast_hash": "a33d185e171934ec2447b8f26b44477e",
     "semantic_hash": ""
   },
   "lib/data/models/runtime/silero_vad_manifest.dart": {
@@ -2000,8 +1930,8 @@
     "semantic_hash": ""
   },
   "lib/data/services/models/runtime_artifact_install_transaction.dart": {
-    "mtime": 1785743398.3769405,
-    "ast_hash": "cc3684c9b6f42fc150344dc73a50c168",
+    "mtime": 1785765038.2646642,
+    "ast_hash": "961676956751c9e2c19679882e68bf4c",
     "semantic_hash": ""
   },
   "lib/ui/core/app_dialog.dart": {
@@ -2020,13 +1950,13 @@
     "semantic_hash": ""
   },
   "docs/product/Alpha_PRD_\u65e0\u767b\u5f55\u7248.md": {
-    "mtime": 1785747145.2374778,
-    "ast_hash": "fcb38a011bb42d6fcf6c410dc10c861e",
+    "mtime": 1785770982.8951218,
+    "ast_hash": "053e9c107da0ac900da3a22316f12560",
     "semantic_hash": ""
   },
   "docs/project/Alpha_\u5f00\u53d1\u6b65\u9aa4.md": {
-    "mtime": 1785747145.2400782,
-    "ast_hash": "cf5f4db06aae42ff6046953f4187a4e3",
+    "mtime": 1785805308.3504217,
+    "ast_hash": "9b65489b8ebc89d0e9b4b3b365709f67",
     "semantic_hash": ""
   },
   "docs/project/Git_\u5206\u652f\u4e0e_Worktree_\u7ea6\u5b9a.md": {
@@ -2035,13 +1965,13 @@
     "semantic_hash": ""
   },
   "docs/technical/\u7aef\u4fa7_SenseVoice_\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1785752741.97792,
-    "ast_hash": "28a2f7f244befcc9e48de2de58ad99c8",
+    "mtime": 1785805308.3534248,
+    "ast_hash": "ccbdc145f962778a70346d541e496e4b",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/meta/repowiki-metadata.json": {
-    "mtime": 1785749146.5155804,
-    "ast_hash": "6a7f6c798e63bba05ca13e6cecd5b979",
+    "mtime": 1785759909.7280927,
+    "ast_hash": "760807ebe1b80bcd429ac7c1abb849d3",
     "semantic_hash": ""
   },
   "lib/data/services/models/model_download_types.dart": {
@@ -2050,617 +1980,342 @@
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/Flutter \u4f9d\u8d56\u7ba1\u7406\uff08pubspec + lockfile + skills-lock\uff09/Flutter \u4f9d\u8d56\u7ba1\u7406\uff08pubspec + lockfile + skills-lock\uff09.md": {
-    "mtime": 1785749146.5806854,
+    "mtime": 1785759909.807837,
     "ast_hash": "20dc91ee2cf2653055cdce951428c3f8",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/Flutter \u591a\u7aef\u6784\u5efa\u4e0e\u53d1\u5e03\u4f53\u7cfb/Flutter \u591a\u7aef\u6784\u5efa\u4e0e\u53d1\u5e03\u4f53\u7cfb.md": {
-    "mtime": 1785749146.581741,
+    "mtime": 1785759909.809399,
     "ast_hash": "457c0df46e148df0281f7eaeb9294da5",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/Flutter \u5e94\u7528\u9519\u8bef\u5904\u7406\u4f53\u7cfb\uff1a\u81ea\u5b9a\u4e49\u5f02\u5e38\u3001\u4f9d\u8d56\u88c5\u914d\u4e0e UI \u53cd\u9988/Flutter \u5e94\u7528\u9519\u8bef\u5904\u7406\u4f53\u7cfb\uff1a\u81ea\u5b9a\u4e49\u5f02\u5e38\u3001\u4f9d\u8d56\u88c5\u914d\u4e0e UI \u53cd\u9988.md": {
-    "mtime": 1785749146.582262,
+    "mtime": 1785759909.8104436,
     "ast_hash": "b9af3d1640518b56e0f95cde9818e742",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/Forui \u8bbe\u8ba1\u4ee4\u724c\u7cfb\u7edf/Forui \u8bbe\u8ba1\u4ee4\u724c\u7cfb\u7edf.md": {
-    "mtime": 1785749146.5827887,
+    "mtime": 1785759909.811481,
     "ast_hash": "743fccdc1a932f3dd73cf8536018b3b8",
     "semantic_hash": ""
   },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/_module.yaml": {
-    "mtime": 1785749146.5730243,
-    "ast_hash": "395149b818ca834f1b0b736b4f8a00e1",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5696292,
-    "ast_hash": "8866630f7e9c91e86cdbae3f99865e1d",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5709274,
-    "ast_hash": "cf5bec848e2f13638952290460bc0905",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u6982\u8ff0.md": {
-    "mtime": 1785749146.5688808,
-    "ast_hash": "df238e99cdc7c9567b866e82049b0744",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5726168,
-    "ast_hash": "02861552025ff93a01b55d9d3b646ae8",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5720615,
-    "ast_hash": "c6523bb0c3e9c58221987a96f2ad7517",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/_module.yaml": {
-    "mtime": 1785749146.5683494,
-    "ast_hash": "455bb977b552bc593e908e0693197f41",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5673077,
-    "ast_hash": "35b6f45a461d4bc97e40aeb3c0b819d9",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5662425,
-    "ast_hash": "b0e0458336fb19c313a9401f44e17b54",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u6982\u8ff0.md": {
-    "mtime": 1785749146.565714,
-    "ast_hash": "a2722e584071181f3f8480b84d30d2a1",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.565714,
-    "ast_hash": "7ff508c86398cfa6112478ff8631b242",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5678363,
-    "ast_hash": "7eb6b7cea65f42bbb43f38291a5dd187",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/_module.yaml": {
-    "mtime": 1785749146.5613642,
-    "ast_hash": "778498f55cf6b03a13013b6c43c78913",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.560801,
-    "ast_hash": "007cdba5f37b152415323283688fa105",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5575752,
-    "ast_hash": "82e94c09a8b279268fa920fcf471c35e",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u6982\u8ff0.md": {
-    "mtime": 1785749146.5575752,
-    "ast_hash": "b55037e64d712171e88c77ddff245884",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5586035,
-    "ast_hash": "f805fca4576407b65c51ff5ea3603b0d",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5580957,
-    "ast_hash": "f04426cf7a8748179b1a89ea6411abcc",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/MeetTrace Flutter \u5e94\u7528\uff08\u5206\u5c42\u67b6\u6784\u4e0e\u4f9d\u8d56\u6ce8\u5165\uff09/_module.yaml": {
-    "mtime": 1785749146.579631,
-    "ast_hash": "4d0f273af89687229de1117eb1f7667f",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/MeetTrace Flutter \u5e94\u7528\uff08\u5206\u5c42\u67b6\u6784\u4e0e\u4f9d\u8d56\u6ce8\u5165\uff09/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5773613,
-    "ast_hash": "4a74d606d542baa1f6f4f2f740b7c9d7",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/MeetTrace Flutter \u5e94\u7528\uff08\u5206\u5c42\u67b6\u6784\u4e0e\u4f9d\u8d56\u6ce8\u5165\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5784004,
-    "ast_hash": "422dc3e53b7114d445cee9dc0aa20bed",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/MeetTrace Flutter \u5e94\u7528\uff08\u5206\u5c42\u67b6\u6784\u4e0e\u4f9d\u8d56\u6ce8\u5165\uff09/\u6982\u8ff0.md": {
-    "mtime": 1785749146.5768342,
-    "ast_hash": "752f2e3254bf32e7282bd3078583902f",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/MeetTrace Flutter \u5e94\u7528\uff08\u5206\u5c42\u67b6\u6784\u4e0e\u4f9d\u8d56\u6ce8\u5165\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5768342,
-    "ast_hash": "3535a831cf96c4db4c48faed898d9ce1",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/MeetTrace Flutter \u5e94\u7528\uff08\u5206\u5c42\u67b6\u6784\u4e0e\u4f9d\u8d56\u6ce8\u5165\uff09/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5789194,
-    "ast_hash": "39ffc9755933a4103b5f8d7922c29bd8",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/_module.yaml": {
-    "mtime": 1785749146.5641444,
-    "ast_hash": "b58b38ad39e43dee592e7e533d1d1e2c",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/_module.yaml": {
-    "mtime": 1785749146.5763137,
-    "ast_hash": "32cb22e8d69bf27a16888e42f76bc7ac",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5747185,
-    "ast_hash": "9ae92dc48206251d6aaf057f5683b1d1",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5752666,
-    "ast_hash": "05f8b45aa79a71a870af14000c75144d",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u6982\u8ff0.md": {
-    "mtime": 1785749146.5741634,
-    "ast_hash": "48f7fd3e1120125d0eb87143e1a7ae51",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5757926,
-    "ast_hash": "c39f6e3bc495da0724172b5fbc9885d3",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5747185,
-    "ast_hash": "e3f60d6a90c2edeac3bd181e0df4e36a",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5636199,
-    "ast_hash": "9dff497a669d7677c96c0887a1ea8a4e",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5624232,
-    "ast_hash": "d22f7c4246e149049fe3af36a640a010",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/_module.yaml": {
-    "mtime": 1785749146.5530598,
-    "ast_hash": "295e7cd54183fc6eb1a5f50a10985025",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5507624,
-    "ast_hash": "db2a3251b145218c8286406a88380b1d",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5530598,
-    "ast_hash": "f9d76717f45733a6dfec2852cae3d52c",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u6982\u8ff0.md": {
-    "mtime": 1785749146.5507624,
-    "ast_hash": "8e58a5a9b5570c4cc7c16bc1b8870f8a",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5517685,
-    "ast_hash": "36f951b87304026dcbd499f6eedaaab7",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5530598,
-    "ast_hash": "e478100af77179188c376dbed77f7f62",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6982\u8ff0.md": {
-    "mtime": 1785749146.5618985,
-    "ast_hash": "183ee42ee3f6308ed55707b97cffc480",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/_module.yaml": {
-    "mtime": 1785749146.557048,
-    "ast_hash": "da85abfb3c1baf956499dfd5ba2f0363",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5565412,
-    "ast_hash": "d74d86a941fdc83e8650673abedeefb1",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5560193,
-    "ast_hash": "55176fad1eb502aead313f0a06b0411e",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u6982\u8ff0.md": {
-    "mtime": 1785749146.554974,
-    "ast_hash": "3e0939d7252f24e9d1632569d42fbc46",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5560193,
-    "ast_hash": "a9ed33928b367968d01ec3c6ae0b6862",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.555496,
-    "ast_hash": "70f1a60a20de00dce66c5f3d34cdb78d",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5641444,
-    "ast_hash": "26fd1e1841d172e573d0dcab777df847",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5630887,
-    "ast_hash": "4c16d1974f3aa1fdd5b21e5e932c76cd",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\u4e0e\u8d28\u91cf\u8bc1\u636e\u5e93/_module.yaml": {
-    "mtime": 1785749146.5491116,
-    "ast_hash": "3c24e0da6ec4371c34cdf2d0872fe0ed",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\u4e0e\u8d28\u91cf\u8bc1\u636e\u5e93/\u6280\u672f\u6808.md": {
-    "mtime": 1785749146.5470126,
-    "ast_hash": "d02b459b69c81332102062205e5fc011",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\u4e0e\u8d28\u91cf\u8bc1\u636e\u5e93/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.5459647,
-    "ast_hash": "15bf4d51d2ca84fbc241c99f6bef33e1",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\u4e0e\u8d28\u91cf\u8bc1\u636e\u5e93/\u6982\u8ff0.md": {
-    "mtime": 1785749146.5454433,
-    "ast_hash": "2896ad2d32c8aaa53c0f1dda4416fc95",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\u4e0e\u8d28\u91cf\u8bc1\u636e\u5e93/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
-    "mtime": 1785749146.5491116,
-    "ast_hash": "dc52eaec4e28270b852ac6802465f099",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/knowledge/zh/MeetTrace Flutter \u591a\u7aef\u5e94\u7528\u6839\u5de5\u7a0b/\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\u4e0e\u8d28\u91cf\u8bc1\u636e\u5e93/\u7f16\u7801\u89c4\u8303.md": {
-    "mtime": 1785749146.5475361,
-    "ast_hash": "68b23f0052fd0b20d4872314bf994ce3",
-    "semantic_hash": ""
-  },
   ".qoder/repowiki/knowledge/zh/SenseVoice \u7aef\u4fa7\u8bed\u97f3\u8bc6\u522b\u6a21\u578b/SenseVoice \u7aef\u4fa7\u8bed\u97f3\u8bc6\u522b\u6a21\u578b.md": {
-    "mtime": 1785749146.5838368,
+    "mtime": 1785759909.8125196,
     "ast_hash": "c8d47177adb2dbcdfca6233037d36d96",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/Silero \u8bed\u97f3\u6d3b\u52a8\u68c0\u6d4b\u6a21\u578b/Silero \u8bed\u97f3\u6d3b\u52a8\u68c0\u6d4b\u6a21\u578b.md": {
-    "mtime": 1785749146.584965,
+    "mtime": 1785759909.8135626,
     "ast_hash": "fecc7c242cb3b6d295b2e1ddf9732e76",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/_index.yaml": {
-    "mtime": 1785749146.590136,
-    "ast_hash": "665ec5bfef5a007caa9bbead440ca6d8",
+    "mtime": 1785759909.820388,
+    "ast_hash": "b66383a174f34cd98499085c78cfa4c5",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/\u4e1a\u52a1\u672f\u8bed\u8868/\u4e1a\u52a1\u672f\u8bed\u8868.md": {
-    "mtime": 1785749146.5854888,
+    "mtime": 1785759909.8151193,
     "ast_hash": "2ccf3cdad1fe4f1b3cb88ad3e31f1787",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09\u524d\u7aef\u6837\u5f0f\u7cfb\u7edf\uff1aForui \u8bbe\u8ba1\u4ee4\u724c\u4e0e\u7070\u9636\u8d26\u672c\u98ce\u683c/\u4f1a\u8ff9\uff08MeetTrace\uff09\u524d\u7aef\u6837\u5f0f\u7cfb\u7edf\uff1aForui \u8bbe\u8ba1\u4ee4\u724c\u4e0e\u7070\u9636\u8d26\u672c\u98ce\u683c.md": {
-    "mtime": 1785749146.5865397,
+    "mtime": 1785759909.8166935,
     "ast_hash": "7e729e28f5a4e17e1b20e5e548e56900",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/\u65e5\u5fd7\u7cfb\u7edf \u2014 \u65e0\u4e13\u7528\u6846\u67b6\uff0c\u4ec5\u4f7f\u7528 Flutter \u8c03\u8bd5\u6253\u5370/\u65e5\u5fd7\u7cfb\u7edf \u2014 \u65e0\u4e13\u7528\u6846\u67b6\uff0c\u4ec5\u4f7f\u7528 Flutter \u8c03\u8bd5\u6253\u5370.md": {
-    "mtime": 1785749146.5875869,
+    "mtime": 1785759909.81773,
     "ast_hash": "bcca6dfed69eaffd02c70ebf86d8c9a0",
     "semantic_hash": ""
   },
   ".qoder/repowiki/knowledge/zh/\u914d\u7f6e\u7cfb\u7edf \u2014 \u672c\u5730 SQLite \u504f\u597d\u4e0e\u8fd0\u884c\u65f6\u521d\u59cb\u5316\u914d\u7f6e/\u914d\u7f6e\u7cfb\u7edf \u2014 \u672c\u5730 SQLite \u504f\u597d\u4e0e\u8fd0\u884c\u65f6\u521d\u59cb\u5316\u914d\u7f6e.md": {
-    "mtime": 1785749146.588636,
+    "mtime": 1785759909.819323,
     "ast_hash": "07e8aa75413a6ef31e12276ef129caa5",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/API \u53c2\u8003/API \u53c2\u8003.md": {
-    "mtime": 1785749146.454685,
+    "mtime": 1785759909.6552434,
     "ast_hash": "f3ecdec686893c7e89a03d9780462a68",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/API \u53c2\u8003/ASR \u5f15\u64ce\u63a5\u53e3.md": {
-    "mtime": 1785749146.4607086,
+    "mtime": 1785759909.6617079,
     "ast_hash": "2dfc18420a114297571ba217faebf2a6",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/API \u53c2\u8003/\u4ed3\u5e93\u63a5\u53e3\u5b9a\u4e49.md": {
-    "mtime": 1785749146.4761987,
+    "mtime": 1785759909.6870391,
     "ast_hash": "7e612fd26435a5772c127b898873dd09",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/API \u53c2\u8003/\u6570\u636e\u6a21\u578b\u5b9a\u4e49.md": {
-    "mtime": 1785749146.4724863,
-    "ast_hash": "6a0c327698e17f50c8a7f694a1084d64",
+    "mtime": 1785759909.6806872,
+    "ast_hash": "07523374a5dc1b5b6fe46895cf72ebd3",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/API \u53c2\u8003/\u97f3\u9891\u5f55\u5236\u7aef\u53e3\u63a5\u53e3.md": {
-    "mtime": 1785749146.4671903,
+    "mtime": 1785759909.669642,
     "ast_hash": "c638732dd0b53a605e7393474460d4ab",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5b89\u5168\u4e0e\u9690\u79c1.md": {
-    "mtime": 1785749146.4518418,
+    "mtime": 1785759909.651534,
     "ast_hash": "d10c5c076faf4209a9c57367aae34a7d",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5e73\u53f0\u7279\u5b9a\u5b9e\u73b0/Android \u5e73\u53f0\u96c6\u6210.md": {
-    "mtime": 1785749146.4568732,
+    "mtime": 1785759909.6574807,
     "ast_hash": "639d93ceee6cb159d1abc1f52078bebf",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5e73\u53f0\u7279\u5b9a\u5b9e\u73b0/iOS \u5e73\u53f0\u96c6\u6210.md": {
-    "mtime": 1785749146.4623616,
+    "mtime": 1785759909.6643312,
     "ast_hash": "d43e3cf7a127f9c85b4ca655efb164ae",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5e73\u53f0\u7279\u5b9a\u5b9e\u73b0/\u5e73\u53f0\u7279\u5b9a\u5b9e\u73b0.md": {
-    "mtime": 1785749146.4496405,
+    "mtime": 1785759909.6483526,
     "ast_hash": "963c64e1cfd96b4d16cd69d90ade58ac",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5e73\u53f0\u7279\u5b9a\u5b9e\u73b0/\u5e73\u53f0\u901a\u4fe1\u673a\u5236.md": {
-    "mtime": 1785749146.4696174,
+    "mtime": 1785759909.672343,
     "ast_hash": "c455a631f9618e33b8603cb373762e83",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5f00\u53d1\u8005\u6307\u5357/\u4ee3\u7801\u89c4\u8303\u4e0e\u6700\u4f73\u5b9e\u8df5.md": {
-    "mtime": 1785749146.4649832,
+    "mtime": 1785759909.6674812,
     "ast_hash": "e628fa34a94dba4d3b7a982b9492e83f",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5f00\u53d1\u8005\u6307\u5357/\u5f00\u53d1\u73af\u5883\u642d\u5efa.md": {
-    "mtime": 1785749146.459651,
+    "mtime": 1785759909.661179,
     "ast_hash": "c90357747661f6922baf0a5515748c72",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5f00\u53d1\u8005\u6307\u5357/\u5f00\u53d1\u8005\u6307\u5357.md": {
-    "mtime": 1785749146.4530666,
+    "mtime": 1785759909.6536653,
     "ast_hash": "b93aa835a1cd2f8c609a2c9e16b563a2",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5f00\u53d1\u8005\u6307\u5357/\u6269\u5c55\u5f00\u53d1\u6307\u5357.md": {
-    "mtime": 1785749146.4823208,
-    "ast_hash": "f35d9aa49623b0f866b698153de3ac40",
+    "mtime": 1785759909.6943057,
+    "ast_hash": "c95d8e47b6f15403cee509ec9507a97c",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5f00\u53d1\u8005\u6307\u5357/\u8c03\u8bd5\u4e0e\u6545\u969c\u6392\u9664.md": {
-    "mtime": 1785749146.4778235,
+    "mtime": 1785759909.6884959,
     "ast_hash": "5282838818197dccd56cca7227e5bcc5",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5f00\u53d1\u8005\u6307\u5357/\u8d21\u732e\u6307\u5357.md": {
-    "mtime": 1785749146.4817414,
+    "mtime": 1785759909.6932547,
     "ast_hash": "66d19b5fd93190ec8d86bb4c65a01619",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u5f00\u53d1\u8005\u6307\u5357/\u9879\u76ee\u5f00\u53d1\u6d41\u7a0b.md": {
-    "mtime": 1785749146.4718053,
+    "mtime": 1785759909.679637,
     "ast_hash": "779f6d9b1173b708f5f166489d269004",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6027\u80fd\u4f18\u5316/\u5185\u5b58\u7ba1\u7406\u4f18\u5316.md": {
-    "mtime": 1785749146.4589655,
+    "mtime": 1785759909.660652,
     "ast_hash": "276b5af4923dd7bcdfa6b2389b6d9942",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6027\u80fd\u4f18\u5316/\u5b58\u50a8\u4f18\u5316.md": {
-    "mtime": 1785749146.4712222,
+    "mtime": 1785759909.678466,
     "ast_hash": "990b3c9bc01f8e490f086b94ca407b46",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6027\u80fd\u4f18\u5316/\u6027\u80fd\u4f18\u5316.md": {
-    "mtime": 1785749146.4507728,
+    "mtime": 1785759909.6504705,
     "ast_hash": "e619d734b2891ae5af1bd9d4ef4a478c",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6027\u80fd\u4f18\u5316/\u6027\u80fd\u76d1\u63a7\u4e0e\u5206\u6790.md": {
-    "mtime": 1785749146.4806626,
+    "mtime": 1785759909.6927245,
     "ast_hash": "e7acd599cabe03ab3277324d87c68792",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6027\u80fd\u4f18\u5316/\u6a21\u578b\u52a0\u8f7d\u4f18\u5316.md": {
-    "mtime": 1785749146.4772952,
+    "mtime": 1785759909.6870391,
     "ast_hash": "c81e92eb568a877e874dd765207f9616",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6027\u80fd\u4f18\u5316/\u97f3\u9891\u5904\u7406\u4f18\u5316.md": {
-    "mtime": 1785749146.466077,
+    "mtime": 1785759909.6685865,
     "ast_hash": "b7d2086100a607642428b3c432a5f5a8",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6545\u969c\u6392\u9664.md": {
-    "mtime": 1785749146.4557767,
+    "mtime": 1785759909.6557674,
     "ast_hash": "6521b1e0ce33b6b89754d35e616bab2f",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u67b6\u6784\u8bbe\u8ba1/MVVM \u6a21\u5f0f.md": {
-    "mtime": 1785749146.4612339,
+    "mtime": 1785759909.6627595,
     "ast_hash": "87f1b3d0b03467f723c948da5d414ef0",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u67b6\u6784\u8bbe\u8ba1/\u4f9d\u8d56\u6ce8\u5165.md": {
-    "mtime": 1785749146.467713,
-    "ast_hash": "f0025ca101106471f48d036e1652b5d6",
+    "mtime": 1785759909.670748,
+    "ast_hash": "979d60051c46e6074562a279183a9f98",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u67b6\u6784\u8bbe\u8ba1/\u5206\u5c42\u67b6\u6784.md": {
-    "mtime": 1785749146.4563394,
+    "mtime": 1785759909.6568573,
     "ast_hash": "dd6297bd70ff3b6a41670f68a6b48bee",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u67b6\u6784\u8bbe\u8ba1/\u5e94\u7528\u751f\u547d\u5468\u671f.md": {
-    "mtime": 1785749146.4741108,
+    "mtime": 1785759909.68279,
     "ast_hash": "18c41696275f46e016cd6182a99a1873",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u67b6\u6784\u8bbe\u8ba1/\u67b6\u6784\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.4462605,
+    "mtime": 1785759909.6416593,
     "ast_hash": "715fd4e5575436937cbc3535e28c4315",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u67b6\u6784\u8bbe\u8ba1/\u8bbe\u8ba1\u6a21\u5f0f.md": {
-    "mtime": 1785749146.4783428,
+    "mtime": 1785759909.6895492,
     "ast_hash": "8e99a52df627a0ca5cd1e4050e742079",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u4f1a\u8bae\u7ba1\u7406\u7cfb\u7edf.md": {
-    "mtime": 1785749146.4574018,
-    "ast_hash": "4c722b58e33cd91daebd133028473512",
-    "semantic_hash": ""
-  },
-  ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u6570\u636e\u5b58\u50a8\u7cfb\u7edf.md": {
-    "mtime": 1785749146.4756794,
-    "ast_hash": "52a38c06823c78ec6f51d11d46446fe1",
+    "mtime": 1785759909.6585274,
+    "ast_hash": "a964d487602a2cefdddd98be54f0f114",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u6838\u5fc3\u529f\u80fd\u6a21\u5757.md": {
-    "mtime": 1785749146.44745,
+    "mtime": 1785759909.6443467,
     "ast_hash": "d2569ef5a555ce1496cfcef6560dd5ac",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u6a21\u578b\u7ba1\u7406\u7cfb\u7edf.md": {
-    "mtime": 1785749146.478865,
-    "ast_hash": "1ca8b105cdaae6e382462b0464311498",
+    "mtime": 1785759909.690075,
+    "ast_hash": "dfcd42e28b03221c4b090b9bc01916ea",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u8bed\u97f3\u8bc6\u522b\u7cfb\u7edf.md": {
-    "mtime": 1785749146.4690833,
-    "ast_hash": "3bceaa413e9fc5349099b7173ce78c05",
+    "mtime": 1785759909.671791,
+    "ast_hash": "b2b85a2873cbad7bf45441514b5c35f1",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u97f3\u9891\u5f55\u5236\u7cfb\u7edf.md": {
-    "mtime": 1785749146.4628892,
-    "ast_hash": "0f9a99aa30a89f4901d739bd3e7c76c2",
+    "mtime": 1785759909.6648502,
+    "ast_hash": "22f7a91a48506b2a322358e9c9b3e2de",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u6d4b\u8bd5\u7b56\u7565.md": {
-    "mtime": 1785749146.4501667,
-    "ast_hash": "dd695b282de95c4a72dc0e38848cdb9a",
+    "mtime": 1785759909.6488729,
+    "ast_hash": "1bdb6508f36e48fb533400a124dc05dd",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/Forui \u6846\u67b6\u4f7f\u7528.md": {
-    "mtime": 1785749146.457926,
+    "mtime": 1785759909.6590502,
     "ast_hash": "68aa74073c0ed09a762efbb9723acfd6",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/ViewModel \u96c6\u6210.md": {
-    "mtime": 1785749146.468763,
+    "mtime": 1785759909.6712718,
     "ast_hash": "be83dc6c28645769ad0a33dba1da2bb4",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u4e3b\u8981\u89c6\u56fe\u7ec4\u4ef6/\u4e3b\u8981\u89c6\u56fe\u7ec4\u4ef6.md": {
-    "mtime": 1785749146.463937,
+    "mtime": 1785759909.6664336,
     "ast_hash": "075718e975e15c7505bfe50827bdfa1e",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u4e3b\u8981\u89c6\u56fe\u7ec4\u4ef6/\u4f1a\u8bae\u5217\u8868\u89c6\u56fe.md": {
-    "mtime": 1785749146.4828527,
+    "mtime": 1785759909.6948404,
     "ast_hash": "c5d5e92c2eaf64f64c458a64bbedfa1b",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u4e3b\u8981\u89c6\u56fe\u7ec4\u4ef6/\u4f1a\u8bae\u8be6\u60c5\u89c6\u56fe.md": {
-    "mtime": 1785749146.4839804,
+    "mtime": 1785759909.6958969,
     "ast_hash": "68fed41615f245faa160caf1a11a2f75",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u4e3b\u8981\u89c6\u56fe\u7ec4\u4ef6/\u542f\u52a8\u89c6\u56fe.md": {
-    "mtime": 1785749146.4850314,
-    "ast_hash": "aac19022ee3058bc903e6ac636ac830a",
+    "mtime": 1785759909.6969428,
+    "ast_hash": "5288970401d9eab4e76c7213a5da6a34",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u4e3b\u8981\u89c6\u56fe\u7ec4\u4ef6/\u5f55\u97f3\u4f1a\u8bdd\u89c6\u56fe.md": {
-    "mtime": 1785749146.4833827,
+    "mtime": 1785759909.6953702,
     "ast_hash": "910beaac85f70a02f0ab734959835029",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u54cd\u5e94\u5f0f\u8bbe\u8ba1.md": {
-    "mtime": 1785749146.479599,
+    "mtime": 1785759909.6911294,
     "ast_hash": "1d0f1c01c38a3f5dec1d09b924e7d681",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u7528\u6237\u754c\u9762\u7ec4\u4ef6.md": {
-    "mtime": 1785749146.448112,
+    "mtime": 1785759909.646633,
     "ast_hash": "59ef4577012423963f518bb9c8452279",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u7528\u6237\u754c\u9762\u7ec4\u4ef6/\u81ea\u5b9a\u4e49\u7ec4\u4ef6\u5f00\u53d1.md": {
-    "mtime": 1785749146.4761987,
+    "mtime": 1785759909.6865087,
     "ast_hash": "4d65e51f8728578bc4edb133aece835a",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u90e8\u7f72\u4e0e\u5206\u53d1/\u5e94\u7528\u5546\u5e97\u53d1\u5e03.md": {
-    "mtime": 1785749146.4746377,
+    "mtime": 1785759909.6844077,
     "ast_hash": "e1a27c1ce3d1b6973051293aee49b21d",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u90e8\u7f72\u4e0e\u5206\u53d1/\u6301\u7eed\u96c6\u6210\u4e0e\u4ea4\u4ed8.md": {
-    "mtime": 1785749146.4701476,
+    "mtime": 1785759909.6733918,
     "ast_hash": "8873f635c01d81c53d92cbda70e07b81",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u90e8\u7f72\u4e0e\u5206\u53d1/\u6784\u5efa\u914d\u7f6e.md": {
-    "mtime": 1785749146.4584458,
+    "mtime": 1785759909.6595764,
     "ast_hash": "35dc02d4d55bcc3807cc16a0efd7219f",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u90e8\u7f72\u4e0e\u5206\u53d1/\u7b7e\u540d\u4e0e\u8bc1\u4e66\u7ba1\u7406.md": {
-    "mtime": 1785749146.4644594,
+    "mtime": 1785759909.6664336,
     "ast_hash": "ca2d54c1dcbee614b3d67bc3d9a9de05",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u90e8\u7f72\u4e0e\u5206\u53d1/\u8d28\u91cf\u4fdd\u8bc1\u4e0e\u8bc4\u4f30.md": {
-    "mtime": 1785749146.4801223,
+    "mtime": 1785759909.6916523,
     "ast_hash": "a18a978995cf8e9146a0840699c6aa7e",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u90e8\u7f72\u4e0e\u5206\u53d1/\u90e8\u7f72\u4e0e\u5206\u53d1.md": {
-    "mtime": 1785749146.4525442,
+    "mtime": 1785759909.6526148,
     "ast_hash": "51ccb8022a4a3d034f4bfccd920b8d02",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u9879\u76ee\u6982\u8ff0/\u5feb\u901f\u5f00\u59cb.md": {
-    "mtime": 1785749146.4666686,
+    "mtime": 1785759909.6691136,
     "ast_hash": "39e2ea5f1adcc86d6b04586b808aa359",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u9879\u76ee\u6982\u8ff0/\u6280\u672f\u6808\u6982\u89c8.md": {
-    "mtime": 1785749146.4607086,
+    "mtime": 1785759909.662233,
     "ast_hash": "00546f6447ac172e6ac058a4d547d064",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u9879\u76ee\u6982\u8ff0/\u67b6\u6784\u8bbe\u8ba1\u7406\u5ff5.md": {
-    "mtime": 1785749146.4735858,
+    "mtime": 1785759909.6822653,
     "ast_hash": "df7d277227342bde425c88dc7b77bcd9",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u9879\u76ee\u6982\u8ff0/\u9879\u76ee\u4ecb\u7ecd.md": {
-    "mtime": 1785749146.4535928,
+    "mtime": 1785759909.6541998,
     "ast_hash": "a9073358a19dfcabdded8aeb29b7d47a",
     "semantic_hash": ""
   },
   ".qoder/repowiki/zh/content/\u9879\u76ee\u6982\u8ff0/\u9879\u76ee\u6982\u8ff0.md": {
-    "mtime": 1785749146.4452095,
+    "mtime": 1785759909.6393008,
     "ast_hash": "8af3b511f39fda48df9d828b640812d3",
     "semantic_hash": ""
   },
@@ -2677,6 +2332,516 @@
   "graphify-out/memory/query_20260803_102702_sherpaonnxasrengine_\u6838\u5fc3\u63a8\u7406\u8def\u5f84\u662f\u5426\u6709\u5355\u5143\u6d4b\u8bd5.md": {
     "mtime": 1785752822.4027925,
     "ast_hash": "3046404b8b5f9f0e1372f0034812acfa",
+    "semantic_hash": ""
+  },
+  "lib/data/services/storage/local_data_generation_gate.dart": {
+    "mtime": 1785762416.9158115,
+    "ast_hash": "3dec456fac95848ad164646bed0895fc",
+    "semantic_hash": ""
+  },
+  "test/architecture/legacy_schema_guard_test.dart": {
+    "mtime": 1785762979.6990125,
+    "ast_hash": "311604bc96f0499a44add4f14f353bd8",
+    "semantic_hash": ""
+  },
+  "test/data/services/storage/local_data_generation_gate_test.dart": {
+    "mtime": 1785757646.611941,
+    "ast_hash": "105d076d1693bd3dfd39fb1d61668dbb",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Agent Skills \u4f9d\u8d56\u9501\u5b9a\u6587\u4ef6/_module.yaml": {
+    "mtime": 1785759909.7979007,
+    "ast_hash": "db7126c1b53fe7b9d21e1a9d0389ad0c",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Agent Skills \u4f9d\u8d56\u9501\u5b9a\u6587\u4ef6/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.796866,
+    "ast_hash": "6fc8db371dd7516e94c423deb933c4a3",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Agent Skills \u4f9d\u8d56\u9501\u5b9a\u6587\u4ef6/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.79739,
+    "ast_hash": "772439e0582cebde73b995e77febc81b",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Agent Skills \u4f9d\u8d56\u9501\u5b9a\u6587\u4ef6/\u6982\u8ff0.md": {
+    "mtime": 1785759909.7958205,
+    "ast_hash": "85bde9b794ffac26fc4a6ce6284df62c",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Agent Skills \u4f9d\u8d56\u9501\u5b9a\u6587\u4ef6/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.7963376,
+    "ast_hash": "78d39fe49921b3ecfca0031914b123b7",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Agent Skills \u4f9d\u8d56\u9501\u5b9a\u6587\u4ef6/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.7963376,
+    "ast_hash": "aa9963a758f7b240d9ea6d4c7afead4f",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/_module.yaml": {
+    "mtime": 1785759909.7696857,
+    "ast_hash": "fc2ae5132b834c1e59030a6c65e2146c",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.7676585,
+    "ast_hash": "8866630f7e9c91e86cdbae3f99865e1d",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.7676585,
+    "ast_hash": "cf5bec848e2f13638952290460bc0905",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u6982\u8ff0.md": {
+    "mtime": 1785759909.767058,
+    "ast_hash": "df238e99cdc7c9567b866e82049b0744",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.7686377,
+    "ast_hash": "02861552025ff93a01b55d9d3b646ae8",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Alpha \u53d1\u5e03\u8bc4\u6d4b\u4e0e APK \u68c0\u67e5\u5de5\u5177\u96c6/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.7696857,
+    "ast_hash": "c6523bb0c3e9c58221987a96f2ad7517",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/_module.yaml": {
+    "mtime": 1785759909.7953053,
+    "ast_hash": "455bb977b552bc593e908e0693197f41",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.7926905,
+    "ast_hash": "35b6f45a461d4bc97e40aeb3c0b819d9",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.793233,
+    "ast_hash": "b0e0458336fb19c313a9401f44e17b54",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u6982\u8ff0.md": {
+    "mtime": 1785759909.7921646,
+    "ast_hash": "a2722e584071181f3f8480b84d30d2a1",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.7926905,
+    "ast_hash": "7ff508c86398cfa6112478ff8631b242",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Android \u539f\u751f\u5bbf\u4e3b\u5e94\u7528\uff08Flutter \u5d4c\u5165\u5c42\uff09/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.7942655,
+    "ast_hash": "7eb6b7cea65f42bbb43f38291a5dd187",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/_module.yaml": {
+    "mtime": 1785759909.7911162,
+    "ast_hash": "394b0dfc4b29c85d7b575754f4ea74a4",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.7884831,
+    "ast_hash": "007cdba5f37b152415323283688fa105",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.7905903,
+    "ast_hash": "82e94c09a8b279268fa920fcf471c35e",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u6982\u8ff0.md": {
+    "mtime": 1785759909.7879548,
+    "ast_hash": "b55037e64d712171e88c77ddff245884",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.790079,
+    "ast_hash": "f805fca4576407b65c51ff5ea3603b0d",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/Graphify \u4ee3\u7801\u56fe\u8c31\u4e0e\u8bbe\u8ba1\u7cfb\u7edf\u5143\u6570\u636e/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.7890112,
+    "ast_hash": "f04426cf7a8748179b1a89ea6411abcc",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/_module.yaml": {
+    "mtime": 1785759909.8020833,
+    "ast_hash": "a2b42480b4d6bebda61fb83c9d876974",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/_module.yaml": {
+    "mtime": 1785759909.7827382,
+    "ast_hash": "32cb22e8d69bf27a16888e42f76bc7ac",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.7801297,
+    "ast_hash": "9ae92dc48206251d6aaf057f5683b1d1",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.7822182,
+    "ast_hash": "05f8b45aa79a71a870af14000c75144d",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u6982\u8ff0.md": {
+    "mtime": 1785759909.7785723,
+    "ast_hash": "48f7fd3e1120125d0eb87143e1a7ae51",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.7806518,
+    "ast_hash": "c39f6e3bc495da0724172b5fbc9885d3",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/iOS \u539f\u751f\u5bbf\u4e3b\u5de5\u7a0b\uff08Runner\uff09/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.779099,
+    "ast_hash": "e3f60d6a90c2edeac3bd181e0df4e36a",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\uff08MeetTrace Documentation Hub\uff09/_module.yaml": {
+    "mtime": 1785759909.7868805,
+    "ast_hash": "823e2d1c05a052b04cae69f5326c669d",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\uff08MeetTrace Documentation Hub\uff09/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.7858462,
+    "ast_hash": "d02b459b69c81332102062205e5fc011",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\uff08MeetTrace Documentation Hub\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.7842927,
+    "ast_hash": "bd8040b133de4bda52111c7bfd1df88f",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\uff08MeetTrace Documentation Hub\uff09/\u6982\u8ff0.md": {
+    "mtime": 1785759909.783777,
+    "ast_hash": "110c9a3458d5a4dd24ee0c9f543ae211",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\uff08MeetTrace Documentation Hub\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.7863696,
+    "ast_hash": "dc52eaec4e28270b852ac6802465f099",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\u9879\u76ee\u6587\u6863\u4e2d\u5fc3\uff08MeetTrace Documentation Hub\uff09/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.7848165,
+    "ast_hash": "68b23f0052fd0b20d4872314bf994ce3",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u5e94\u7528\u4e3b\u6a21\u5757/_module.yaml": {
+    "mtime": 1785759909.778046,
+    "ast_hash": "51bfb039e5466dc7bb44d3b73ad67db2",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u5e94\u7528\u4e3b\u6a21\u5757/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.7775218,
+    "ast_hash": "4a74d606d542baa1f6f4f2f740b7c9d7",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u5e94\u7528\u4e3b\u6a21\u5757/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.7754242,
+    "ast_hash": "3b7d759d90c5823d741b6db4b5a108b4",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u5e94\u7528\u4e3b\u6a21\u5757/\u6982\u8ff0.md": {
+    "mtime": 1785759909.7743628,
+    "ast_hash": "bea4eac0b47721e8351394e0ae1dd692",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u5e94\u7528\u4e3b\u6a21\u5757/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.775939,
+    "ast_hash": "3535a831cf96c4db4c48faed898d9ce1",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u5e94\u7528\u4e3b\u6a21\u5757/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.7764711,
+    "ast_hash": "39ffc9755933a4103b5f8d7922c29bd8",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.801025,
+    "ast_hash": "a4b788a27384214b1711ef74a5ef1a2b",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.800503,
+    "ast_hash": "2c27d30d1b8174c7d0b91d988383d409",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/_module.yaml": {
+    "mtime": 1785759909.7733283,
+    "ast_hash": "295e7cd54183fc6eb1a5f50a10985025",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.772276,
+    "ast_hash": "db2a3251b145218c8286406a88380b1d",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.7728004,
+    "ast_hash": "f9d76717f45733a6dfec2852cae3d52c",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u6982\u8ff0.md": {
+    "mtime": 1785759909.770731,
+    "ast_hash": "8e58a5a9b5570c4cc7c16bc1b8870f8a",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.7717688,
+    "ast_hash": "36f951b87304026dcbd499f6eedaaab7",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u684c\u9762\u5e73\u53f0\u539f\u751f\u5bbf\u4e3b\uff08Linux _ macOS _ Windows\uff09/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.771249,
+    "ast_hash": "e478100af77179188c376dbed77f7f62",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6982\u8ff0.md": {
+    "mtime": 1785759909.7984176,
+    "ast_hash": "986989b72477aeeba02a8b604fd73be4",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/_module.yaml": {
+    "mtime": 1785759909.806285,
+    "ast_hash": "8dce459c7fb1f08ed8237abe46ba3ed4",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u6280\u672f\u6808.md": {
+    "mtime": 1785759909.805758,
+    "ast_hash": "d74d86a941fdc83e8650673abedeefb1",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u67b6\u6784\u8bbe\u8ba1.md": {
+    "mtime": 1785759909.8036559,
+    "ast_hash": "55176fad1eb502aead313f0a06b0411e",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u6982\u8ff0.md": {
+    "mtime": 1785759909.8031304,
+    "ast_hash": "3e0939d7252f24e9d1632569d42fbc46",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.804703,
+    "ast_hash": "a9ed33928b367968d01ec3c6ae0b6862",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u6a21\u578b\u6e05\u5355\u4e0e\u8bb8\u53ef\u8bc1\u8d44\u6e90/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.804174,
+    "ast_hash": "70f1a60a20de00dce66c5f3d34cdb78d",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u7279\u6b8a\u914d\u7f6e\u4e0e\u547d\u4ee4.md": {
+    "mtime": 1785759909.7999792,
+    "ast_hash": "26fd1e1841d172e573d0dcab777df847",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/knowledge/zh/\u4f1a\u8ff9\uff08MeetTrace\uff09Flutter \u591a\u7aef\u5e94\u7528\u805a\u5408\u6839/\u7f16\u7801\u89c4\u8303.md": {
+    "mtime": 1785759909.7989414,
+    "ast_hash": "4c16d1974f3aa1fdd5b21e5e932c76cd",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u6570\u636e\u5b58\u50a8\u7cfb\u7edf/\u6570\u636e\u5b58\u50a8\u7cfb\u7edf.md": {
+    "mtime": 1785759909.68547,
+    "ast_hash": "52a38c06823c78ec6f51d11d46446fe1",
+    "semantic_hash": ""
+  },
+  ".qoder/repowiki/zh/content/\u6838\u5fc3\u529f\u80fd\u6a21\u5757/\u6570\u636e\u5b58\u50a8\u7cfb\u7edf/\u672c\u5730\u6570\u636e\u751f\u6210\u95e8\u63a7.md": {
+    "mtime": 1785759909.697466,
+    "ast_hash": "2af6a576de2c41cae96b0de72079bb46",
+    "semantic_hash": ""
+  },
+  "docs/quality/\u8fd0\u884c\u65f6\u6a21\u578b\u521d\u59cb\u5316\u4e0e\u53d1\u5e03\u95e8\u69db.md": {
+    "mtime": 1785805328.2881012,
+    "ast_hash": "fb3d81bf08cb79822f6cd9194f46036c",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260803_115717_\u5f53\u524d_alpha_\u4ea4\u4ed8\u5bf9\u8c61_\u5b8c\u6210\u5b9a\u4e49\u548c\u4e3b\u8981\u963b\u585e\u94fe\u662f\u4ec0\u4e48.md": {
+    "mtime": 1785758237.6441443,
+    "ast_hash": "1d6e289117f01aa6236c947a60e0914f",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260803_121444_ai_\u603b\u7ed3\u548c\u81ea\u52a8\u6807\u9898\u5728\u5f53\u524d\u751f\u4ea7\u5b9e\u73b0\u4e2d\u662f\u5426\u53ef\u7528.md": {
+    "mtime": 1785759284.1594079,
+    "ast_hash": "d662418f29e452391b7c572f1fbc820f",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260803_121715_\u5f53\u524d_alpha_\u7684\u8bf4\u8bdd\u4eba\u5206\u79bb\u751f\u4ea7\u80fd\u529b\u662f\u5426\u771f\u5b9e\u53ef\u7528.md": {
+    "mtime": 1785759435.1715658,
+    "ast_hash": "34a3190158de47ca5f945440a0bb681e",
+    "semantic_hash": ""
+  },
+  "lib/data/services/audio/pcm_audio_playback_service.dart": {
+    "mtime": 1785775162.9212823,
+    "ast_hash": "017f02f5a8d475953d181cae66b25969",
+    "semantic_hash": ""
+  },
+  "lib/domain/ports/audio_playback.dart": {
+    "mtime": 1785763290.0751812,
+    "ast_hash": "517aa5c7d1b18496fdbcc5347832cc3e",
+    "semantic_hash": ""
+  },
+  "test/data/services/audio/pcm_audio_playback_service_test.dart": {
+    "mtime": 1785763325.8547606,
+    "ast_hash": "29327ada04a3b80470d918626991dcf8",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260803_132435_\u9636\u6bb5_1_\u4e2d_ai_\u603b\u7ed3_\u4f1a\u8bae\u6807\u9898_\u6570\u636e\u5e93_schema_\u4e0e\u6570\u636e\u4ee3\u901a\u8fc7\u54ea\u4e9b\u6587\u4ef6\u548c\u4f9d\u8d56\u5173\u7cfb\u8fde\u63a5.md": {
+    "mtime": 1785763475.5462222,
+    "ast_hash": "83732758ea45e11af89d51aa5a37a89d",
+    "semantic_hash": ""
+  },
+  "assets/models/speaker-diarization-manifest.json": {
+    "mtime": 1785769864.6726055,
+    "ast_hash": "6607aa9f5ebf02b1cdb92eccda8230bf",
+    "semantic_hash": ""
+  },
+  "lib/data/models/runtime/speaker_diarization_manifest.dart": {
+    "mtime": 1785769864.6740878,
+    "ast_hash": "285fc81fb52533deeb5a64e6cc91a2af",
+    "semantic_hash": ""
+  },
+  "lib/data/services/diarization/downloadable_speaker_diarization_model.dart": {
+    "mtime": 1785765279.572726,
+    "ast_hash": "e4b0ec0f898594b37f824a326cbbeba7",
+    "semantic_hash": ""
+  },
+  "lib/data/services/models/restricted_tar_bz2_extractor.dart": {
+    "mtime": 1785765437.007695,
+    "ast_hash": "ba9b75744ceb57b6affbc1a174a4e15d",
+    "semantic_hash": ""
+  },
+  "test/data/models/runtime/speaker_diarization_manifest_test.dart": {
+    "mtime": 1785769864.6755035,
+    "ast_hash": "1e1513b813def81cbad0e86d1c1f2ecc",
+    "semantic_hash": ""
+  },
+  "test/data/services/diarization/downloadable_speaker_diarization_model_test.dart": {
+    "mtime": 1785770155.6207552,
+    "ast_hash": "bdc7e2c5fddb81b401cb0a9ba322cc79",
+    "semantic_hash": ""
+  },
+  "test/data/services/models/restricted_tar_bz2_extractor_test.dart": {
+    "mtime": 1785765396.88526,
+    "ast_hash": "0e6317ad744c1be8fd2f13bfe86d63d5",
+    "semantic_hash": ""
+  },
+  "assets/licenses/3d-speaker-LICENSE.txt": {
+    "mtime": 1785764901.6052337,
+    "ast_hash": "d472d1e9e7350c5e62abd02e15041d2f",
+    "semantic_hash": ""
+  },
+  "assets/licenses/3d-speaker-NOTICE.txt": {
+    "mtime": 1785767650.5600843,
+    "ast_hash": "2f0651442d7ecd653741818ca081799c",
+    "semantic_hash": ""
+  },
+  "assets/licenses/pyannote-segmentation-LICENSE.txt": {
+    "mtime": 1785764901.6040466,
+    "ast_hash": "490418c2dd02008d8859a903b921cbcf",
+    "semantic_hash": ""
+  },
+  "assets/licenses/pyannote-segmentation-NOTICE.txt": {
+    "mtime": 1785767650.5590968,
+    "ast_hash": "f430cd6edc79685750034410403854eb",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260803_140447_\u9636\u6bb5_2_\u4e2d\u8bf4\u8bdd\u4eba_manifest_\u53d7\u9650\u5f52\u6863\u5b89\u88c5\u548c\u542f\u52a8\u963b\u65ad\u901a\u8fc7\u54ea\u4e9b\u6587\u4ef6\u4e0e\u4f9d\u8d56\u5173\u7cfb\u8fde\u63a5.md": {
+    "mtime": 1785765887.999228,
+    "ast_hash": "37618d41cd1567be215e315948372bae",
+    "semantic_hash": ""
+  },
+  "lib/data/services/diarization/sherpa_onnx_speaker_diarization_worker.dart": {
+    "mtime": 1785771142.4220042,
+    "ast_hash": "407021f0fd6d1c97c54f15d06a345b0e",
+    "semantic_hash": ""
+  },
+  "lib/data/services/diarization/speaker_diarization_worker.dart": {
+    "mtime": 1785769918.3784738,
+    "ast_hash": "522e94052987d581be70dd3a2249394a",
+    "semantic_hash": ""
+  },
+  "test/data/services/diarization/speaker_diarization_service_test.dart": {
+    "mtime": 1785770889.6103046,
+    "ast_hash": "70737bebbc9c687bc5145e02fab48fe4",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260803_153317_\u6a21\u578b\u955c\u50cf\u5df2\u4e0a\u4f20\u540e_meettrace_\u4e0b\u4e00\u6b65\u662f\u4ec0\u4e48.md": {
+    "mtime": 1785771197.787119,
+    "ast_hash": "fbaad6dbbc3e6c69ac46fd9f4aff1aae",
+    "semantic_hash": ""
+  },
+  "lib/data/services/audio/pcm_wav_file_writer.dart": {
+    "mtime": 1785775550.8232985,
+    "ast_hash": "b3d6fab5984e590a52e6fedad4333cf8",
+    "semantic_hash": ""
+  },
+  "lib/data/services/sharing/pcm_wav_audio_share_service.dart": {
+    "mtime": 1785804573.2916381,
+    "ast_hash": "79b03961cc2a730b396bc5f86b2847cf",
+    "semantic_hash": ""
+  },
+  "lib/domain/ports/audio_share.dart": {
+    "mtime": 1785775052.6640399,
+    "ast_hash": "90f1f5bd1f0b155ee6e353a4eaf36a72",
+    "semantic_hash": ""
+  },
+  "lib/domain/use_cases/share_meeting_audio.dart": {
+    "mtime": 1785775052.6640399,
+    "ast_hash": "42de9aafe2c60cbc6d37b2df10cdb7bf",
+    "semantic_hash": ""
+  },
+  "test/data/services/audio/pcm_wav_file_writer_test.dart": {
+    "mtime": 1785775550.8232985,
+    "ast_hash": "849d69c390c948789f042e0474997356",
+    "semantic_hash": ""
+  },
+  "test/data/services/sharing/pcm_wav_audio_share_service_test.dart": {
+    "mtime": 1785775626.5985086,
+    "ast_hash": "b6aaf9f67340948454178e2f721c11e7",
+    "semantic_hash": ""
+  },
+  "android/app/src/main/kotlin/com/meettrace/app/MainActivity.kt": {
+    "mtime": 1785775855.242961,
+    "ast_hash": "811a836995510651a47aff378f14fc1a",
+    "semantic_hash": ""
+  },
+  "test/architecture/application_identity_test.dart": {
+    "mtime": 1785775868.211668,
+    "ast_hash": "440f9ba0e5e0774f21eade1c95d533b2",
+    "semantic_hash": ""
+  },
+  "lib/data/services/sharing/share_plus_cache_cleaner.dart": {
+    "mtime": 1785804117.1431725,
+    "ast_hash": "a9b47a85d4efef5479a0ae3dc4996782",
+    "semantic_hash": ""
+  },
+  "lib/data/services/sharing/share_return_gate.dart": {
+    "mtime": 1785804588.753904,
+    "ast_hash": "a0680ec4be2b556760749d60b4022e38",
+    "semantic_hash": ""
+  },
+  "test/data/services/sharing/share_plus_cache_cleaner_test.dart": {
+    "mtime": 1785803981.43707,
+    "ast_hash": "7c1cc19279c64f004f74c4248bb80f41",
+    "semantic_hash": ""
+  },
+  "test/data/services/sharing/share_plus_system_audio_file_sharer_test.dart": {
+    "mtime": 1785804573.293185,
+    "ast_hash": "e6d3e0a1d4a87670412cbc42cf955bb5",
+    "semantic_hash": ""
+  },
+  "test/data/services/sharing/share_return_gate_test.dart": {
+    "mtime": 1785804631.6934805,
+    "ast_hash": "21052b5bdbc1071cbaaa2acd8c6499bd",
     "semantic_hash": ""
   }
 }

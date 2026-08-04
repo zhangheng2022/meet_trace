@@ -21,6 +21,18 @@ void main() {
     );
   });
 
+  test('lib 源码不得重新引入 AI 总结能力或存储结构', () {
+    final violations = _legacyColumnViolations('lib', const ['summary']);
+
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'Alpha 已完整移除 AI 总结；Port、Use Case、任务、UI 和表结构都不得恢复：'
+          '\n${violations.join('\n')}',
+    );
+  });
+
   test('meetings 建表语句不包含遗留列', () {
     final schema = File(
       'lib/data/services/storage/app_database.dart',
@@ -68,9 +80,9 @@ List<String> _legacyColumnViolations(
       .whereType<File>()
       .where((file) => file.path.endsWith('.dart'));
   for (final file in files) {
-    final content = file.readAsStringSync();
+    final content = file.readAsStringSync().toLowerCase();
     for (final column in legacyColumns) {
-      if (content.contains(column)) {
+      if (content.contains(column.toLowerCase())) {
         violations.add('${file.path}: $column');
       }
     }

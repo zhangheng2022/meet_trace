@@ -14,7 +14,7 @@ import 'model_download_types.dart';
 import 'runtime_artifact_install_transaction.dart';
 import 'runtime_asset_installers.dart';
 
-const minimumRuntimeInitializationFreeBytes = 768 * 1024 * 1024;
+const minimumRuntimeInitializationFreeBytes = 1024 * 1024 * 1024;
 const maximumRuntimeDownloadBytes = 300000000;
 
 enum DownloadNetworkKind { offline, unmetered, metered, unknown }
@@ -279,6 +279,7 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
             'model.download.incomplete',
           RuntimeArtifactInstallFailure.integrity => 'model.integrity',
           RuntimeArtifactInstallFailure.invalidPath => 'model.path.invalid',
+          RuntimeArtifactInstallFailure.preparation => 'model.prepare.failed',
         },
         message: error.message,
         cause: error,
@@ -484,7 +485,7 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
       final shortage = minimumRuntimeInitializationFreeBytes - freeBytes;
       throw DownloadableModelException(
         code: 'model.storage.insufficient',
-        message: '初始化至少需要 768 MiB 可用空间，还缺少 $shortage 字节',
+        message: '初始化至少需要 1 GiB 可用空间，还缺少 $shortage 字节',
       );
     }
     final kind = await network.getCurrentKind();

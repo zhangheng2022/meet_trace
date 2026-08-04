@@ -9,7 +9,6 @@ import 'package:flutter/widget_previews.dart';
 import '../../../../app/application.dart';
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
-import '../../../../domain/models/summary.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/ports/final_transcription.dart';
@@ -43,11 +42,9 @@ Widget meetingProcessingPreview() {
 
 Widget _resultPreview() {
   final snapshot = _previewSnapshot();
-  final summary = _previewSummary(snapshot);
   final meeting = _previewMeeting(
     status: MeetingState.completed,
     activeTranscriptSnapshotId: snapshot.id,
-    activeSummaryId: summary.id,
   );
   return Application(
     home: MeetingDetailView(
@@ -56,7 +53,6 @@ Widget _resultPreview() {
         meetings: _PreviewMeetingRepository(meeting),
         transcripts: _PreviewTranscriptRepository(snapshot),
         transcription: const _UnavailableTranscriptionRunner(),
-        summaries: _PreviewSummaryRepository(summary),
       ),
       onBack: () {},
     ),
@@ -66,7 +62,6 @@ Widget _resultPreview() {
 Meeting _previewMeeting({
   required MeetingState status,
   String? activeTranscriptSnapshotId,
-  String? activeSummaryId,
 }) => Meeting(
   id: 'preview-result',
   title: '产品 Alpha 评审',
@@ -79,7 +74,6 @@ Meeting _previewMeeting({
   recordingModelId: senseVoiceDefaultModelId,
   recordingModelVersion: AsrModelRegistry.alpha.defaultModel.version,
   activeTranscriptSnapshotId: activeTranscriptSnapshotId,
-  activeSummaryId: activeSummaryId,
 );
 
 TranscriptSnapshot _previewSnapshot() => TranscriptSnapshot(
@@ -112,32 +106,4 @@ TranscriptSnapshot _previewSnapshot() => TranscriptSnapshot(
       modelVersion: AsrModelRegistry.alpha.defaultModel.version,
     ),
   ],
-);
-
-Summary _previewSummary(TranscriptSnapshot snapshot) => Summary(
-  id: 'preview-summary',
-  meetingId: snapshot.meetingId,
-  transcriptSnapshotId: snapshot.id,
-  provider: 'preview',
-  model: 'preview',
-  createdAt: DateTime(2026, 7, 26, 9, 44),
-  overview: '会议确认了 Alpha 结果页与 SenseVoice 交付顺序。',
-  keyPoints: [
-    SummaryItem(
-      id: 'preview-key-point',
-      text: '先完成结果页与端侧回归。',
-      evidence: [
-        SummaryEvidence(
-          segmentId: snapshot.segments.first.id,
-          startMs: snapshot.segments.first.startMs,
-          endMs: snapshot.segments.first.endMs,
-          quote: snapshot.segments.first.text,
-        ),
-      ],
-    ),
-  ],
-  actionItems: [
-    SummaryItem(id: 'preview-action', text: '完成 Android + iOS Alpha 结果页回归。'),
-  ],
-  status: SummaryStatus.complete,
 );

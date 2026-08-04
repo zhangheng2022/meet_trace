@@ -45,8 +45,8 @@ final class _ProcessingCard extends StatelessWidget {
       children: [
         const AppStatusNotice(
           tone: AppStatusTone.info,
-          title: '正在生成最终转录',
-          message: '录音已经安全保存在本机。处理变慢或失败都不会影响事实音频。',
+          title: '正在生成联合最终结果',
+          message: '事实音频已经安全保存在本机。最终转录与说话人整理并行运行，全部结束后才会发布结果。',
         ),
         SizedBox(height: appStyle.spaceMd),
         FCard(
@@ -55,26 +55,13 @@ final class _ProcessingCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ProcessingStage(
-                  status: _ProcessingStageStatus.running,
-                  title: '最终转录',
-                  detail: '使用本场锁定模型完整读取事实录音',
-                ),
+                _ProcessingStage(title: '最终转录', detail: '使用本场锁定模型完整读取事实录音'),
                 SizedBox(height: appStyle.spaceMd),
                 _ProcessingStage(
-                  status: _ProcessingStageStatus.waiting,
                   title: '说话人整理',
                   detail: viewModel.diarizationAvailable
-                      ? '最终转录完成后尝试区分说话人'
-                      : '当前未配置本地分离模型，可稍后手工标注',
-                ),
-                SizedBox(height: appStyle.spaceMd),
-                _ProcessingStage(
-                  status: _ProcessingStageStatus.waiting,
-                  title: 'AI 总结',
-                  detail: viewModel.summaryAvailable
-                      ? '最终转录完成后可由你主动生成'
-                      : '当前未配置安全总结网关',
+                      ? '从同一份完整事实音频区分说话人'
+                      : '当前自动分离不可用，将按单一说话人发布最终文本',
                 ),
                 SizedBox(height: appStyle.spaceLg),
                 Text(
@@ -92,16 +79,9 @@ final class _ProcessingCard extends StatelessWidget {
   }
 }
 
-enum _ProcessingStageStatus { waiting, running }
-
 final class _ProcessingStage extends StatelessWidget {
-  const _ProcessingStage({
-    required this.status,
-    required this.title,
-    required this.detail,
-  });
+  const _ProcessingStage({required this.title, required this.detail});
 
-  final _ProcessingStageStatus status;
   final String title;
   final String detail;
 
@@ -109,23 +89,16 @@ final class _ProcessingStage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    final running = status == _ProcessingStageStatus.running;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox.square(
           dimension: appStyle.minimumTouchTarget,
           child: Center(
-            child: running
-                ? const SizedBox.square(
-                    dimension: 24,
-                    child: FProgress(semanticsLabel: '正在处理'),
-                  )
-                : Icon(
-                    FLucideIcons.circle,
-                    size: 20,
-                    color: theme.colors.mutedForeground,
-                  ),
+            child: const SizedBox.square(
+              dimension: 24,
+              child: FProgress(semanticsLabel: '正在处理'),
+            ),
           ),
         ),
         SizedBox(width: appStyle.spaceSm),

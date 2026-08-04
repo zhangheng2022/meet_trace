@@ -109,6 +109,7 @@ void main() {
     expect(result.snapshot.id, fixture.snapshot.id);
     expect(result.snapshot.actualModelId, fixture.snapshot.actualModelId);
     expect(result.snapshot.status, TranscriptSnapshotStatus.complete);
+    expect((fixture.coordinator.service as _FakeService).cancelCalls, 1);
   });
 
   test('关闭能力时不调用服务也不改写已有标签', () async {
@@ -212,7 +213,8 @@ final class _Fixture {
   final SpeakerDiarizationCoordinator coordinator;
 }
 
-final class _FakeService implements SpeakerDiarizationService {
+final class _FakeService
+    implements SpeakerDiarizationService, SpeakerDiarizationServiceLifecycle {
   _FakeService({
     this.turns = const [],
     this.error,
@@ -225,6 +227,8 @@ final class _FakeService implements SpeakerDiarizationService {
   final Duration delay;
   final bool available;
   int calls = 0;
+  int cancelCalls = 0;
+  int disposeCalls = 0;
 
   @override
   SpeakerDiarizationCapability get capability => available
@@ -243,6 +247,16 @@ final class _FakeService implements SpeakerDiarizationService {
       throw error;
     }
     return turns;
+  }
+
+  @override
+  Future<void> cancelActive() async {
+    cancelCalls++;
+  }
+
+  @override
+  Future<void> dispose() async {
+    disposeCalls++;
   }
 }
 

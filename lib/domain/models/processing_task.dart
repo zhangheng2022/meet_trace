@@ -4,7 +4,6 @@ enum ProcessingTaskKind {
   finalTranscription,
   modelInstallation,
   speakerDiarization,
-  summary,
 }
 
 final class ProcessingTask {

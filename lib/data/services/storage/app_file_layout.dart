@@ -48,6 +48,10 @@ final class AppFileLayout {
     return p.join(meetingAudioDirectory(meetingId), 'checkpoint.json.previous');
   }
 
+  String meetingShareTempDirectory(String meetingId) {
+    return p.join(meetingDirectory(meetingId), '.share');
+  }
+
   String modelTempDirectory(String modelId, String version) {
     return p.join(
       modelTempRoot,

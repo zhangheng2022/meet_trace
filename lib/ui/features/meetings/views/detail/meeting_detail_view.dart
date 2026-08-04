@@ -8,13 +8,13 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../domain/models/speaker_diarization.dart';
-import '../../../../../domain/models/summary.dart';
 import '../../../../../domain/models/transcript.dart';
-import '../../../../../domain/ports/evidence_playback.dart';
+import '../../../../../domain/ports/audio_playback.dart';
 import '../../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../../theme/theme.dart';
 import '../../../../core/app_back_icon.dart';
+import '../../../../core/app_dialog.dart';
 import '../../../../core/app_page_body.dart';
 import '../../../../core/app_responsive.dart';
 import '../../../../core/app_state_panel.dart';
@@ -24,10 +24,9 @@ import '../../view_models/detail/meeting_detail_view_model.dart';
 part 'processing/meeting_processing_view.dart';
 part 'widgets/meeting_result_layout.dart';
 part 'transcript/meeting_transcript_section.dart';
-part 'summary/meeting_summary_section.dart';
 part 'audio/meeting_audio_actions.dart';
 
-enum MeetingResultSection { transcript, summary, recording }
+enum MeetingResultSection { transcript, recording }
 
 final class MeetingDetailView extends StatefulWidget {
   const MeetingDetailView({
@@ -118,13 +117,6 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
       },
       onEditingChanged: (editing) {
         setState(() => _editingTranscript = editing);
-      },
-      onEvidence: (evidence) {
-        setState(() {
-          _section = MeetingResultSection.transcript;
-          _editingTranscript = false;
-        });
-        unawaited(viewModel.playEvidence(evidence));
       },
       onDeleted: widget.onDeleted,
     );

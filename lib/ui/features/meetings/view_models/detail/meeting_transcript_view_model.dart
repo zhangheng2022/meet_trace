@@ -101,17 +101,13 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
         if (useCase == null) {
           return;
         }
-        final previousSummaryId = _meeting.activeSummaryId;
         final result = await useCase.execute(
           meetingId: _meeting.id,
           revisions: revisions,
         );
         _meeting = result.meeting;
         _snapshot = result.snapshot;
-        _summary = previousSummaryId == null
-            ? null
-            : await summaries?.getById(previousSummaryId);
-        _resultMessage = '转录修订已保存为新版本；原 AI 总结已标记为过期';
+        _resultMessage = '转录修订已保存为新版本';
       }, failureMessage: '转录修订保存失败，请检查内容后重试');
 
   Future<void> _run({String? retrySnapshotId}) {
@@ -125,9 +121,6 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
     return operation.whenComplete(() {
       _operation = null;
       _notify();
-      if (_shouldAutoGenerateSummary) {
-        unawaited(_runSummaryGeneration());
-      }
     });
   }
 
@@ -146,9 +139,12 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
       _failedAttempt = null;
       _processingAttempt = null;
       _progress = 1;
-      _summary = null;
-      _summaryMessage = null;
-      await _runDiarizationIfNeeded();
+      _diarizationStatus = result.diarizationStatus;
+      _diarizationMessage = switch (result.diarizationStatus) {
+        SpeakerDiarizationStatus.disabled => null,
+        SpeakerDiarizationStatus.completed => '说话人分离已完成',
+        SpeakerDiarizationStatus.degraded => '说话人分离失败，已按单一说话人显示；最终转录不受影响',
+      };
     } on Object {
       _errorMessage = '最终转录失败，事实音频和旧结果均已保留';
       await _refreshMeeting();

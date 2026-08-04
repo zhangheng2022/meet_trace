@@ -10,7 +10,7 @@ final class _AudioCard extends StatelessWidget {
     final theme = context.theme;
     final appStyle = theme.style.app;
     final playing =
-        viewModel.playbackState.status == EvidencePlaybackStatus.playing;
+        viewModel.playbackState.status == AudioPlaybackStatus.playing;
     return FCard(
       child: Padding(
         padding: EdgeInsets.all(appStyle.spaceMd),
@@ -52,16 +52,7 @@ final class _ResultActionsCard extends StatefulWidget {
 }
 
 final class _ResultActionsCardState extends State<_ResultActionsCard> {
-  late final TextEditingController _title = TextEditingController(
-    text: widget.viewModel.meeting.title,
-  );
   bool _confirmingDelete = false;
-
-  @override
-  void dispose() {
-    _title.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,19 +66,6 @@ final class _ResultActionsCardState extends State<_ResultActionsCard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('结果与数据', style: theme.typography.display.md),
-            SizedBox(height: appStyle.spaceMd),
-            FTextField(
-              key: const ValueKey('meeting-title'),
-              control: FTextFieldControl.managed(controller: _title),
-              label: const Text('会议名称'),
-            ),
-            SizedBox(height: appStyle.spaceSm),
-            FButton(
-              onPress: viewModel.isProcessing
-                  ? null
-                  : () => unawaited(viewModel.renameMeeting(_title.text)),
-              child: const Text('保存会议名称'),
-            ),
             SizedBox(height: appStyle.spaceMd),
             FButton(
               key: const ValueKey('share-plain-text'),
@@ -105,6 +83,15 @@ final class _ResultActionsCardState extends State<_ResultActionsCard> {
                         unawaited(viewModel.share(MeetingShareFormat.markdown))
                   : null,
               child: const Text('分享 Markdown'),
+            ),
+            SizedBox(height: appStyle.spaceSm),
+            FButton(
+              key: const ValueKey('request-share-audio'),
+              onPress:
+                  viewModel.actions.canShareAudio && !viewModel.isProcessing
+                  ? () => unawaited(_requestAudioShare(viewModel))
+                  : null,
+              child: const Text('单独分享音频'),
             ),
             if (viewModel.resultMessage case final message?) ...[
               SizedBox(height: appStyle.spaceMd),
@@ -126,7 +113,7 @@ final class _ResultActionsCardState extends State<_ResultActionsCard> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text('将删除本场录音、转录、总结和处理记录，无法撤销。'),
+                    const Text('将删除本场录音、转录、说话人标签和处理记录，无法撤销。'),
                     SizedBox(height: appStyle.spaceMd),
                     FButton(
                       key: const ValueKey('confirm-delete-meeting'),
@@ -150,6 +137,40 @@ final class _ResultActionsCardState extends State<_ResultActionsCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _requestAudioShare(MeetingDetailViewModel viewModel) async {
+    final preparation = await viewModel.prepareAudioShare();
+    if (!mounted || preparation == null) {
+      return;
+    }
+    if (!preparation.canShare) {
+      await showAppAlertDialog(
+        context: context,
+        semanticsLabel: '音频分享空间不足',
+        title: '可用空间不足',
+        message:
+            '生成临时 WAV 还缺少 '
+            '${_byteLabel(preparation.storage.shortageBytes)}，未创建任何文件。',
+      );
+      return;
+    }
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      semanticsLabel: '确认分享会议音频',
+      title: '确认单独分享音频？',
+      message:
+          '会议：${preparation.meetingTitle}\n'
+          '时长：${_duration(preparation.durationMs)}\n'
+          '文件：${_byteLabel(preparation.storage.wavBytes)} WAV\n\n'
+          '录音可能包含敏感或私密信息。确认后才会生成临时副本并打开系统分享面板；不会附带转录文本。',
+      cancelLabel: '取消',
+      confirmLabel: '生成并分享',
+      confirmKey: const ValueKey('confirm-share-audio'),
+    );
+    if (confirmed == true && mounted) {
+      await viewModel.shareAudio(preparation);
+    }
   }
 }
 
@@ -195,4 +216,16 @@ String _duration(int milliseconds) {
   final minutes = duration.inMinutes.toString().padLeft(2, '0');
   final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
   return '$minutes:$seconds';
+}
+
+String _byteLabel(int bytes) {
+  const kib = 1024;
+  const mib = kib * 1024;
+  if (bytes >= mib) {
+    return '${(bytes / mib).toStringAsFixed(1)} MiB';
+  }
+  if (bytes >= kib) {
+    return '${(bytes / kib).toStringAsFixed(1)} KiB';
+  }
+  return '$bytes B';
 }

@@ -1,26 +1,182 @@
 import '../../../domain/models/audio_source.dart';
 import '../../../domain/models/speaker_diarization.dart';
 import '../../../domain/ports/speaker_diarization.dart';
+import 'sherpa_onnx_speaker_diarization_worker.dart';
+import 'speaker_diarization_worker.dart';
 
 export '../../../domain/ports/speaker_diarization.dart';
+export 'speaker_diarization_worker.dart';
 
-/// 当前 Alpha 未配置经过发布校验的本地说话人模型，显式关闭能力。
+/// 官方 Dart 绑定修复整段音频原生缓冲区泄漏前，生产环境显式关闭自动分离。
 ///
-/// 后续实现必须继续通过此 Dart 端口接入，不得绕过官方包自建原生桥接。
-final class UnavailableSpeakerDiarizationService
+/// 真实适配器保留用于可注入测试和后续版本验证，但不能绕过官方包私有 API 或
+/// 自建 FFI 释放该缓冲区。
+final class OfficialBindingBlockedSpeakerDiarizationService
     implements SpeakerDiarizationService {
-  const UnavailableSpeakerDiarizationService();
+  const OfficialBindingBlockedSpeakerDiarizationService();
+
+  static const reasonCode = 'speaker_diarization.official_binding_memory_leak';
 
   @override
   SpeakerDiarizationCapability get capability =>
-      const SpeakerDiarizationCapability.unavailable(
-        reasonCode: 'speaker_diarization.model_unavailable',
-      );
+      const SpeakerDiarizationCapability.unavailable(reasonCode: reasonCode);
 
   @override
   Future<List<SpeakerTurn>> diarize(AudioSource source) {
-    throw const SpeakerDiarizationException(
-      'speaker_diarization.model_unavailable',
+    return Future<List<SpeakerTurn>>.error(
+      const SpeakerDiarizationException(reasonCode),
     );
+  }
+}
+
+/// 通过官方 sherpa_onnx Dart API 运行 Pyannote + 3D-Speaker 离线分离。
+///
+/// 每次任务创建独立 worker/isolate。取消或超时时直接终止 worker，确保同步的
+/// 原生推理不会在 Domain 已经降级后继续占用内存和 CPU。
+final class SherpaOnnxSpeakerDiarizationService
+    implements SpeakerDiarizationService, SpeakerDiarizationServiceLifecycle {
+  SherpaOnnxSpeakerDiarizationService({
+    required this.config,
+    this.workerFactory = const OfficialSpeakerDiarizationWorkerFactory(),
+  });
+
+  final SherpaOnnxSpeakerDiarizationConfig config;
+  final SpeakerDiarizationWorkerFactory workerFactory;
+
+  SpeakerDiarizationWorker? _activeWorker;
+  var _operationActive = false;
+  var _cancellationGeneration = 0;
+  var _disposed = false;
+
+  @override
+  SpeakerDiarizationCapability get capability => _disposed
+      ? const SpeakerDiarizationCapability.unavailable(
+          reasonCode: 'speaker_diarization.disposed',
+        )
+      : const SpeakerDiarizationCapability.available();
+
+  @override
+  Future<List<SpeakerTurn>> diarize(AudioSource source) async {
+    _validateSource(source);
+    if (_disposed) {
+      throw const SpeakerDiarizationException('speaker_diarization.disposed');
+    }
+    if (_operationActive) {
+      throw const SpeakerDiarizationException('speaker_diarization.busy');
+    }
+
+    _operationActive = true;
+    final generation = _cancellationGeneration;
+    SpeakerDiarizationWorker? worker;
+    Object? failure;
+    StackTrace? failureStackTrace;
+    List<SpeakerDiarizationWorkerSegment>? segments;
+    try {
+      worker = await workerFactory.create(config);
+      if (_disposed || generation != _cancellationGeneration) {
+        await worker.cancel();
+        throw const SpeakerDiarizationException(
+          'speaker_diarization.cancelled',
+        );
+      }
+      _activeWorker = worker;
+      segments = await worker.diarize(source);
+    } on Object catch (error, stackTrace) {
+      failure = error;
+      failureStackTrace = stackTrace;
+    } finally {
+      if (identical(_activeWorker, worker)) {
+        _activeWorker = null;
+      }
+      _operationActive = false;
+      if (worker != null) {
+        try {
+          await worker.dispose();
+        } on Object catch (error, stackTrace) {
+          failure ??= error;
+          failureStackTrace ??= stackTrace;
+        }
+      }
+    }
+
+    if (failure case final error?) {
+      Error.throwWithStackTrace(
+        _mapFailure(error),
+        failureStackTrace ?? StackTrace.current,
+      );
+    }
+    return _mapSegments(segments!, source.durationMs);
+  }
+
+  @override
+  Future<void> cancelActive() async {
+    _cancellationGeneration++;
+    final worker = _activeWorker;
+    if (worker != null) {
+      await worker.cancel();
+    }
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (_disposed) {
+      return;
+    }
+    _disposed = true;
+    await cancelActive();
+  }
+
+  void _validateSource(AudioSource source) {
+    if (source.sampleRate != config.sampleRate || source.channelCount != 1) {
+      throw const SpeakerDiarizationException(
+        'speaker_diarization.invalid_audio',
+      );
+    }
+  }
+
+  List<SpeakerTurn> _mapSegments(
+    List<SpeakerDiarizationWorkerSegment> segments,
+    int audioDurationMs,
+  ) {
+    final turns = <SpeakerTurn>[];
+    for (final segment in segments) {
+      if (!segment.startSeconds.isFinite ||
+          !segment.endSeconds.isFinite ||
+          segment.startSeconds < 0 ||
+          segment.endSeconds <= segment.startSeconds ||
+          segment.speakerIndex < 0) {
+        throw const SpeakerDiarizationException(
+          'speaker_diarization.invalid_result',
+        );
+      }
+      final startMs = (segment.startSeconds * 1000).round();
+      final endMs = (segment.endSeconds * 1000).round();
+      if (endMs <= startMs || endMs > audioDurationMs) {
+        throw const SpeakerDiarizationException(
+          'speaker_diarization.invalid_result',
+        );
+      }
+      turns.add(
+        SpeakerTurn(
+          startMs: startMs,
+          endMs: endMs,
+          speakerId: 'speaker-${segment.speakerIndex + 1}',
+        ),
+      );
+    }
+    turns.sort((left, right) {
+      final byStart = left.startMs.compareTo(right.startMs);
+      return byStart != 0 ? byStart : left.speakerId.compareTo(right.speakerId);
+    });
+    return List.unmodifiable(turns);
+  }
+
+  SpeakerDiarizationException _mapFailure(Object error) {
+    return switch (error) {
+      SpeakerDiarizationException() => error,
+      SpeakerDiarizationWorkerException(:final code) =>
+        SpeakerDiarizationException(code),
+      _ => const SpeakerDiarizationException('speaker_diarization.unexpected'),
+    };
   }
 }

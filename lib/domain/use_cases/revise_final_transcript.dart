@@ -63,7 +63,7 @@ final class ReviseFinalTranscriptUseCase {
         source == null ||
         meeting.status != MeetingState.completed ||
         source.meetingId != meeting.id ||
-        !source.isEligibleForSummary(activeSnapshotId: activeSnapshotId)) {
+        !source.isCurrentFinalTranscript(activeSnapshotId: activeSnapshotId)) {
       throw const TranscriptRevisionException(
         'transcript.revision.not_eligible',
       );

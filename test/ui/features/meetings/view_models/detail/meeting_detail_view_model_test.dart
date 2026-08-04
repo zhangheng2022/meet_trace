@@ -1,14 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meettrace/data/services/summary/summary_generation_service.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/processing_task.dart';
 import 'package:meettrace/domain/models/speaker_diarization.dart';
-import 'package:meettrace/domain/models/summary.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
-import 'package:meettrace/domain/use_cases/generate_summary.dart';
 import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
@@ -317,48 +314,14 @@ void main() {
     await fixture.dispose();
   });
 
-  test('加载会议时恢复当前摘要和本地证据', () async {
-    final active = _snapshot(id: 'active');
-    final summary = _summary(
-      id: 'summary-active',
-      snapshot: active,
-      status: SummaryStatus.complete,
-    );
-    final fixture = _fixture(
-      _meeting(
-        status: MeetingState.completed,
-        activeTranscriptSnapshotId: active.id,
-        activeSummaryId: summary.id,
-      ),
-      active: active,
-      summary: summary,
-    );
-
-    await fixture.viewModel.load();
-
-    expect(fixture.viewModel.summary?.overview, '会议概览');
-    final evidence =
-        fixture.viewModel.summary!.keyPoints.single.evidence.single;
-    expect(evidence.segmentId, active.segments.single.id);
-    expect(evidence.quote, active.segments.single.text);
-    await fixture.dispose();
-  });
-
   test('详情 Facade 向分区 ViewModel 暴露一致状态', () async {
     final active = _snapshot(id: 'active');
-    final summary = _summary(
-      id: 'summary-active',
-      snapshot: active,
-      status: SummaryStatus.complete,
-    );
     final fixture = _fixture(
       _meeting(
         status: MeetingState.completed,
         activeTranscriptSnapshotId: active.id,
-        activeSummaryId: summary.id,
       ),
       active: active,
-      summary: summary,
     );
 
     await fixture.viewModel.load();
@@ -366,87 +329,9 @@ void main() {
     final viewModel = fixture.viewModel;
     expect(viewModel.state.meeting, same(viewModel.meeting));
     expect(viewModel.state.snapshot, same(viewModel.snapshot));
-    expect(viewModel.state.summary, same(viewModel.summary));
     expect(viewModel.transcriptSection.snapshot, same(viewModel.snapshot));
-    expect(viewModel.summarySection.summary, same(viewModel.summary));
     expect(viewModel.audioSection.state, viewModel.playbackState);
     expect(viewModel.actions.canShare, viewModel.canShare);
-    await fixture.dispose();
-  });
-
-  test('仅使用当前最终转录生成摘要并原子激活', () async {
-    final active = _snapshot(id: 'active');
-    final service = _SummaryService();
-    final fixture = _fixture(
-      _meeting(
-        status: MeetingState.completed,
-        activeTranscriptSnapshotId: active.id,
-      ),
-      active: active,
-      summaryService: service,
-    );
-    await fixture.viewModel.load();
-
-    await fixture.viewModel.generateSummary();
-
-    expect(service.requests.single.segments.single.id, 'active-segment');
-    expect(service.requests.single.toJson(), isNot(contains('audioPath')));
-    expect(fixture.viewModel.meeting.activeSummaryId, 'summary-active');
-    expect(fixture.viewModel.summary?.status, SummaryStatus.complete);
-    expect(
-      fixture.viewModel.summary!.keyPoints.single.evidence.single.quote,
-      '最终事实文本',
-    );
-    await fixture.dispose();
-  });
-
-  test('待生成标题的会议在最终转录就绪后自动生成总结和标题', () async {
-    final active = _snapshot(id: 'active');
-    final service = _SummaryService();
-    final fixture = _fixture(
-      _meeting(
-        title: pendingMeetingTitle,
-        status: MeetingState.completed,
-        activeTranscriptSnapshotId: active.id,
-      ),
-      active: active,
-      summaryService: service,
-    );
-
-    await fixture.viewModel.load();
-
-    expect(service.requests, hasLength(1));
-    expect(fixture.viewModel.meeting.title, '产品评审会');
-    expect(fixture.viewModel.meeting.activeSummaryId, 'summary-active');
-    expect(fixture.viewModel.summaryMessage, contains('会议标题已生成'));
-    await fixture.dispose();
-  });
-
-  test('摘要失败不隐藏最终转录且可重试', () async {
-    final active = _snapshot(id: 'active');
-    final service = _SummaryService(errorCode: 'summary.remote_failed');
-    final fixture = _fixture(
-      _meeting(
-        status: MeetingState.completed,
-        activeTranscriptSnapshotId: active.id,
-      ),
-      active: active,
-      summaryService: service,
-    );
-    await fixture.viewModel.load();
-
-    await fixture.viewModel.generateSummary();
-
-    expect(fixture.viewModel.snapshot?.segments.single.text, '最终事实文本');
-    expect(fixture.viewModel.summary?.status, SummaryStatus.failed);
-    expect(fixture.viewModel.summaryMessage, contains('最终转录不受影响'));
-
-    service.errorCode = null;
-    await fixture.viewModel.generateSummary();
-
-    expect(service.requests, hasLength(2));
-    expect(fixture.viewModel.summary?.status, SummaryStatus.complete);
-    expect(fixture.viewModel.meeting.activeSummaryId, 'summary-active');
     await fixture.dispose();
   });
 }
@@ -457,30 +342,14 @@ _Fixture _fixture(
   SpeakerDiarizationRunner? diarization,
   bool diarizationEnabled = false,
   ProcessingTaskRepository? processingTasks,
-  Summary? summary,
-  SummaryGenerationService? summaryService,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
   if (active != null) {
     transcripts.records[active.id] = active;
   }
-  final summaries = DetailSummaryRepository(meetings);
-  if (summary != null) {
-    summaries.records[summary.id] = summary;
-  }
-  final summaryTasks = DetailProcessingTaskRepository();
-  final selectedTasks = processingTasks ?? summaryTasks;
-  final summaryGeneration = summaryService == null
-      ? null
-      : GenerateSummaryUseCase(
-          meetings: meetings,
-          transcripts: transcripts,
-          summaries: summaries,
-          tasks: selectedTasks,
-          service: summaryService,
-          now: () => DateTime.utc(2026, 7, 25, 4),
-        );
+  final taskRepository = DetailProcessingTaskRepository();
+  final selectedTasks = processingTasks ?? taskRepository;
   late final DetailTranscriptionRunner runner;
   runner = DetailTranscriptionRunner(
     ({
@@ -495,8 +364,6 @@ _Fixture _fixture(
     meetings: meetings,
     transcripts: transcripts,
     runner: runner,
-    summaries: summaries,
-    summaryTasks: summaryTasks,
     viewModel: MeetingDetailViewModel(
       meeting: meeting,
       meetings: meetings,
@@ -505,8 +372,6 @@ _Fixture _fixture(
       diarization: diarization,
       diarizationPreferences: _DiarizationPreference(diarizationEnabled),
       processingTasks: selectedTasks,
-      summaries: summaries,
-      summaryGeneration: summaryGeneration,
     ),
   );
 }
@@ -516,16 +381,12 @@ final class _Fixture {
     required this.meetings,
     required this.transcripts,
     required this.runner,
-    required this.summaries,
-    required this.summaryTasks,
     required this.viewModel,
   });
 
   final DetailMeetingRepository meetings;
   final DetailTranscriptRepository transcripts;
   final DetailTranscriptionRunner runner;
-  final DetailSummaryRepository summaries;
-  final DetailProcessingTaskRepository summaryTasks;
   final MeetingDetailViewModel viewModel;
 
   Future<void> dispose() async {
@@ -537,7 +398,6 @@ Meeting _meeting({
   String title = '周会',
   MeetingState status = MeetingState.processing,
   String? activeTranscriptSnapshotId,
-  String? activeSummaryId,
 }) {
   return Meeting(
     id: 'meeting-1',
@@ -551,7 +411,6 @@ Meeting _meeting({
     recordingModelId: senseVoiceDefaultModelId,
     recordingModelVersion: '2024-07-17',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
-    activeSummaryId: activeSummaryId,
   );
 }
 
@@ -585,79 +444,6 @@ TranscriptSnapshot _snapshot({
           ]
         : const [],
   );
-}
-
-Summary _summary({
-  required String id,
-  required TranscriptSnapshot snapshot,
-  required SummaryStatus status,
-}) {
-  final segment = snapshot.segments.single;
-  return Summary(
-    id: id,
-    meetingId: snapshot.meetingId,
-    transcriptSnapshotId: snapshot.id,
-    provider: 'test-provider',
-    model: 'test-model',
-    createdAt: DateTime.utc(2026, 7, 25, 3),
-    overview: status == SummaryStatus.complete ? '会议概览' : '',
-    keyPoints: status == SummaryStatus.complete
-        ? [
-            SummaryItem(
-              id: '$id-key-point-1',
-              text: '关键结论',
-              evidence: [
-                SummaryEvidence(
-                  segmentId: segment.id,
-                  startMs: segment.startMs,
-                  endMs: segment.endMs,
-                  quote: segment.text,
-                ),
-              ],
-            ),
-          ]
-        : const [],
-    actionItems: const [],
-    status: status,
-  );
-}
-
-final class _SummaryService implements SummaryGenerationService {
-  _SummaryService({this.errorCode});
-
-  String? errorCode;
-  final List<SummaryGenerationRequest> requests = [];
-
-  @override
-  SummaryGenerationCapability get capability =>
-      const SummaryGenerationCapability.available(
-        provider: 'test-provider',
-        model: 'test-model',
-      );
-
-  @override
-  Future<GeneratedSummaryDraft> generate(
-    SummaryGenerationRequest request,
-  ) async {
-    requests.add(request);
-    final code = errorCode;
-    if (code != null) {
-      throw SummaryGenerationServiceException(code);
-    }
-    return GeneratedSummaryDraft(
-      title: '产品评审会',
-      overview: '会议概览',
-      keyPoints: [
-        GeneratedSummaryItem(
-          text: '关键结论',
-          evidenceSegmentIds: [request.segments.single.id],
-        ),
-      ],
-      actionItems: [
-        GeneratedSummaryItem(text: '待核对行动项', evidenceSegmentIds: const []),
-      ],
-    );
-  }
 }
 
 final class _DiarizationPreference implements DiarizationPreferenceRepository {

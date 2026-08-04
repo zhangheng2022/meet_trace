@@ -118,7 +118,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
       context: context,
       semanticsLabel: '永久删除${meeting.title}',
       title: '永久删除「${meeting.title}」？',
-      message: '将删除本场事实音频、转录、AI 总结、证据索引及处理记录。此操作无法撤销。',
+      message: '将删除本场事实音频、转录、说话人标签及处理记录。此操作无法撤销。',
       cancelLabel: '取消',
       confirmLabel: '永久删除',
       destructive: true,

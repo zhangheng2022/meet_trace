@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/services/storage/local_data_generation_gate.dart';
+import '../data/services/sharing/share_plus_cache_cleaner.dart';
 import '../domain/models/meeting.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../ui/core/app_dialog.dart';
@@ -24,8 +25,19 @@ final class MeetTraceBootstrap extends StatefulWidget {
 }
 
 final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
-  late Future<MeetTraceDependencies> _loading = MeetTraceDependencies.create();
+  late Future<MeetTraceDependencies> _loading;
   MeetTraceDependencies? _dependencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _loading = _createDependencies();
+  }
+
+  Future<MeetTraceDependencies> _createDependencies() async {
+    await const SharePlusCacheCleaner().clear();
+    return MeetTraceDependencies.create();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +47,7 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
         if (snapshot.hasError) {
           void retry() {
             setState(() {
-              _loading = MeetTraceDependencies.create();
+              _loading = _createDependencies();
             });
           }
 

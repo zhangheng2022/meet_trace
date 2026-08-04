@@ -84,7 +84,15 @@ final class SpeakerDiarizationCoordinator implements SpeakerDiarizationRunner {
               durationMs: eligible.$1.audioDurationMs,
             ),
           )
-          .timeout(timeout);
+          .timeout(
+            timeout,
+            onTimeout: () async {
+              if (service case final SpeakerDiarizationServiceLifecycle life) {
+                await life.cancelActive();
+              }
+              throw TimeoutException('说话人分离超时', timeout);
+            },
+          );
       _validateTurns(turns, eligible.$1.audioDurationMs);
       if (turns.isEmpty) {
         return _degrade(
@@ -130,6 +138,12 @@ final class SpeakerDiarizationCoordinator implements SpeakerDiarizationRunner {
           _ => 'speaker_diarization.unexpected',
         },
       );
+    }
+  }
+
+  Future<void> dispose() async {
+    if (service case final SpeakerDiarizationServiceLifecycle lifecycle) {
+      await lifecycle.dispose();
     }
   }
 

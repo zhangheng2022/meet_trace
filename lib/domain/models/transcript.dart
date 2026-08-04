@@ -102,7 +102,7 @@ final class TranscriptSnapshot {
   final TranscriptSnapshotStatus status;
   final List<TranscriptSegment> segments;
 
-  bool isEligibleForSummary({required String? activeSnapshotId}) {
+  bool isCurrentFinalTranscript({required String? activeSnapshotId}) {
     return kind == TranscriptSnapshotKind.finalTranscript &&
         status == TranscriptSnapshotStatus.complete &&
         activeSnapshotId == id;

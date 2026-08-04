@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "modelId": "sherpa-onnx-speaker-diarization-pyannote-3-0-3dspeaker-eres2net-base",
+  "version": "2024-10-14",
+  "requiredBytes": 46552205,
+  "segmentationArchive": {
+    "path": ".downloads/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2",
+    "bytes": 6958444,
+    "sha256": "24615ee884c897d9d2ba09bb4d30da6bb1b15e685065962db5b02e76e4996488",
+    "url": "https://mt.zhangheng.eu.org/models/SpeakerDiarization/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2",
+    "allowedEntries": [
+      "sherpa-onnx-pyannote-segmentation-3-0/model.int8.onnx",
+      "sherpa-onnx-pyannote-segmentation-3-0/LICENSE",
+      "sherpa-onnx-pyannote-segmentation-3-0/vad-onnx.py",
+      "sherpa-onnx-pyannote-segmentation-3-0/speaker-diarization-torch.py",
+      "sherpa-onnx-pyannote-segmentation-3-0/vad-torch.py",
+      "sherpa-onnx-pyannote-segmentation-3-0/run.sh",
+      "sherpa-onnx-pyannote-segmentation-3-0/README.md",
+      "sherpa-onnx-pyannote-segmentation-3-0/speaker-diarization-onnx.py",
+      "sherpa-onnx-pyannote-segmentation-3-0/model.onnx",
+      "sherpa-onnx-pyannote-segmentation-3-0/show-onnx.py",
+      "sherpa-onnx-pyannote-segmentation-3-0/export-onnx.py"
+    ],
+    "installFiles": [
+      {
+        "archivePath": "sherpa-onnx-pyannote-segmentation-3-0/model.int8.onnx",
+        "path": "segmentation/model.int8.onnx",
+        "bytes": 1540506,
+        "sha256": "d582f4b4c6b48205de7e0643c57df0df5615a3c176189be3fc461e9d18827b5d"
+      },
+      {
+        "archivePath": "sherpa-onnx-pyannote-segmentation-3-0/LICENSE",
+        "path": "segmentation/LICENSE",
+        "bytes": 1061,
+        "sha256": "14d7016ad68e7394d6e6b78d96cc2ae431c905287b89674cfdf021e79e62b8ba"
+      }
+    ]
+  },
+  "embeddingModel": {
+    "path": ".downloads/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx",
+    "installPath": "embedding/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx",
+    "bytes": 39593761,
+    "sha256": "1a331345f04805badbb495c775a6ddffcdd1a732567d5ec8b3d5749e3c7a5e4b",
+    "url": "https://mt.zhangheng.eu.org/models/SpeakerDiarization/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx"
+  },
+  "inference": {
+    "sampleRate": 16000,
+    "numThreads": 2,
+    "provider": "cpu",
+    "numClusters": -1,
+    "clusteringThreshold": 0.5,
+    "minDurationOn": 0.2,
+    "minDurationOff": 0.5
+  },
+  "licenses": {
+    "segmentation": {
+      "name": "MIT",
+      "noticePath": "assets/licenses/pyannote-segmentation-NOTICE.txt",
+      "licensePath": "assets/licenses/pyannote-segmentation-LICENSE.txt"
+    },
+    "embedding": {
+      "name": "Apache-2.0",
+      "noticePath": "assets/licenses/3d-speaker-NOTICE.txt",
+      "licensePath": "assets/licenses/3d-speaker-LICENSE.txt"
+    }
+  }
+}
