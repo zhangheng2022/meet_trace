@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: agents_skills
-title: Agent Skills 依赖锁定文件
-scope:
-    - .agents/
-    - skills-lock.json
-source_files: []
-depends_on: []
-related_to: []

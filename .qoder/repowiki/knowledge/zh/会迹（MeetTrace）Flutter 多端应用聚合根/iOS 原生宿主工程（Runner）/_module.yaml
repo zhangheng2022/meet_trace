@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: ios_platform
-title: iOS 原生宿主工程（Runner）
-scope:
-    - ios/
-source_files: []
-depends_on: []
-related_to:
-    - path: shared_dart_code
