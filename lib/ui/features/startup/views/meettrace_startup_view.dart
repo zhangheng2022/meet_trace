@@ -10,6 +10,7 @@ import 'package:forui/forui.dart';
 import '../../../../domain/models/runtime_initialization.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_responsive.dart';
+import '../../../core/branding/meettrace_brand_mark.dart';
 import '../view_models/runtime_initialization_view_model.dart';
 
 /// 会迹的本地能力加载页。
@@ -196,7 +197,7 @@ final class _CoreStartupContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Wordmark(),
+          const MeetTraceAnimatedWordmark(),
           SizedBox(height: appStyle.space2Xl),
           Text('正在打开本地工作区', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceXs),
@@ -280,7 +281,7 @@ final class _RuntimeStartupContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Wordmark(),
+          const MeetTraceAnimatedWordmark(),
           SizedBox(height: appStyle.space2Xl),
           Text('准备离线转录', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceXs),
@@ -576,7 +577,7 @@ final class _StartupBlockedContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Wordmark(),
+          const MeetTraceAnimatedWordmark(),
           SizedBox(height: appStyle.space2Xl),
           Text('启动需要你的处理', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceXs),
@@ -642,33 +643,6 @@ final class _StartupBlockedContent extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-final class _Wordmark extends StatelessWidget {
-  const _Wordmark();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    return Column(
-      key: const ValueKey('meettrace-startup-wordmark'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          header: true,
-          child: Text('会迹', style: theme.typography.display.xl2),
-        ),
-        SizedBox(height: appStyle.space2Xs),
-        Text(
-          'MeetTrace',
-          style: theme.typography.body.xs.copyWith(
-            color: theme.colors.app.inkSecondary,
-          ),
-        ),
-      ],
     );
   }
 }

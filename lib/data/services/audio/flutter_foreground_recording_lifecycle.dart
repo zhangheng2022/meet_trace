@@ -5,6 +5,9 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'recording_ports.dart';
 
 const _recordingServiceId = 7001;
+const _recordingNotificationIcon = NotificationIcon(
+  metaDataName: 'com.meettrace.app.service.RECORDING_ICON',
+);
 
 @pragma('vm:entry-point')
 void meetTraceRecordingForegroundCallback() {
@@ -55,6 +58,7 @@ final class FlutterForegroundRecordingLifecycle
         serviceTypes: const [ForegroundServiceTypes.microphone],
         notificationTitle: '会迹正在录音',
         notificationText: '事实音频正在安全保存',
+        notificationIcon: _recordingNotificationIcon,
         callback: meetTraceRecordingForegroundCallback,
       ),
     );
