@@ -97,12 +97,14 @@ void main() {
         '已完成会议',
         MeetingState.completed,
         audioPath: 'meetings/completed/fact.pcm',
+        audioDurationMs: 12000,
       ),
       _meeting(
         'failed-with-audio',
         '处理失败会议',
         MeetingState.failed,
         audioPath: 'meetings/failed/fact.pcm',
+        audioDurationMs: 34000,
       ),
     ]);
     await tester.pump();
@@ -111,6 +113,16 @@ void main() {
     expect(find.textContaining('· 事实音频已保存'), findsNothing);
     expect(find.text('已完成'), findsOneWidget);
     expect(find.text('处理失败'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('已完成会议')).dy,
+      lessThan(tester.getTopLeft(find.text('00:00:12')).dy),
+    );
+    expect(
+      (tester.getCenter(find.text('00:00:12')).dy -
+              tester.getCenter(find.text('已完成')).dy)
+          .abs(),
+      lessThan(2),
+    );
     viewModel.dispose();
     await repository.dispose();
   });
@@ -589,13 +601,14 @@ Meeting _meeting(
   MeetingState state, {
   DateTime? createdAt,
   String? audioPath,
+  int audioDurationMs = 12000,
 }) => Meeting(
   id: id,
   title: title,
   createdAt: createdAt ?? DateTime.utc(2026, 7, 24),
   status: state,
   audioPath: audioPath,
-  audioDurationMs: 12000,
+  audioDurationMs: audioDurationMs,
   recordingModelId: senseVoiceDefaultModelId,
   recordingModelVersion: '2024-07-17',
   lastErrorCode: state == MeetingState.failed ? 'processing.failed' : null,

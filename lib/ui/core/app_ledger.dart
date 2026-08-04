@@ -158,68 +158,68 @@ final class AppLedgerRow extends StatelessWidget {
             ),
             SizedBox(width: appStyle.spaceSm),
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final statusCanTrail =
-                      !emphasized &&
-                      constraints.maxWidth >= 260 &&
-                      title.runes.length <= 8 &&
-                      statusLabel.runes.length <= 10;
-                  final details = Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.display.md,
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.display.md,
+                        ),
+                      ),
+                      if (emphasized) ...[
+                        SizedBox(width: appStyle.spaceXs),
+                        _LedgerStatusBadge(label: statusLabel),
+                      ],
+                    ],
+                  ),
+                  if (emphasized) ...[
+                    if (metaLabel case final meta?) ...[
+                      SizedBox(height: appStyle.space2Xs),
+                      Text(
+                        meta,
+                        style: theme.typography.body.xs.copyWith(
+                          color: theme.colors.mutedForeground,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ] else ...[
+                    SizedBox(height: appStyle.spaceXs),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (metaLabel case final meta?)
+                          Text(
+                            meta,
+                            maxLines: 1,
+                            style: theme.typography.body.xs.copyWith(
+                              color: theme.colors.mutedForeground,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
-                          if (emphasized) ...[
-                            SizedBox(width: appStyle.spaceXs),
-                            _LedgerStatusBadge(label: statusLabel),
-                          ],
-                        ],
-                      ),
-                      if (metaLabel case final meta?) ...[
-                        SizedBox(height: appStyle.space2Xs),
-                        Text(
-                          meta,
-                          style: theme.typography.body.xs.copyWith(
-                            color: theme.colors.mutedForeground,
-                            fontFeatures: const [FontFeature.tabularFigures()],
+                        if (metaLabel != null)
+                          SizedBox(width: appStyle.spaceSm),
+                        Expanded(
+                          child: Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: _LedgerStatus(
+                              icon: statusIcon,
+                              label: statusLabel,
+                            ),
                           ),
                         ),
                       ],
-                    ],
-                  );
-
-                  if (statusCanTrail) {
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(child: details),
-                        SizedBox(width: appStyle.spaceSm),
-                        _LedgerStatus(icon: statusIcon, label: statusLabel),
-                      ],
-                    );
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      details,
-                      if (!emphasized) ...[
-                        SizedBox(height: appStyle.spaceXs),
-                        _LedgerStatus(icon: statusIcon, label: statusLabel),
-                      ],
-                    ],
-                  );
-                },
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
