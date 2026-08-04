@@ -38,7 +38,8 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - 活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留副本，历史由 Git 保存。
 
 ## 常用命令与质量门槛
-
+- 优先使用`flutter run -d <device-id>`：在 Android 或 iOS 设备上调试运行
+- 优先使用真机，真机不可用时使用模拟器
 - `flutter pub get`：解析依赖。
 - `flutter run -d <device-id>`：在 Android 或 iOS 设备上运行。
 - `dart format lib test integration_test`：格式化 Dart 源码。

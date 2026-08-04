@@ -23,12 +23,12 @@ final class MeetTraceStartupView extends StatelessWidget {
   Widget build(BuildContext context) {
     final model = viewModel;
     if (model == null) {
-      return const _StartupFrame(body: _CoreStartupContent());
+      return const _StartupFrame(body: _StartupProgressContent());
     }
     return ListenableBuilder(
       listenable: model,
       builder: (context, _) =>
-          _StartupFrame(body: _RuntimeStartupContent(viewModel: model)),
+          _StartupFrame(body: _StartupProgressContent(viewModel: model)),
     );
   }
 }
@@ -51,22 +51,15 @@ final class MeetTraceRuntimeInitializationTransition extends StatelessWidget {
       listenable: viewModel,
       builder: (context, _) {
         final phase = viewModel.state.phase;
-        final child = switch (phase) {
-          RuntimeInitializationPhase.ready => KeyedSubtree(
-            key: const ValueKey('runtime-initialization-ready'),
-            child: ready,
-          ),
-          RuntimeInitializationPhase.checking => const KeyedSubtree(
-            key: ValueKey('runtime-initialization-checking'),
-            child: _StartupFrame(body: _CoreStartupContent()),
-          ),
-          _ => KeyedSubtree(
-            key: const ValueKey('runtime-initialization-details'),
-            child: _StartupFrame(
-              body: _RuntimeStartupContent(viewModel: viewModel),
-            ),
-          ),
-        };
+        final child = phase == RuntimeInitializationPhase.ready
+            ? KeyedSubtree(
+                key: const ValueKey('runtime-initialization-ready'),
+                child: ready,
+              )
+            : KeyedSubtree(
+                key: const ValueKey('runtime-initialization-progress'),
+                child: MeetTraceStartupView(viewModel: viewModel),
+              );
         return AnimatedSwitcher(
           duration: reduceMotion
               ? Duration.zero
@@ -182,111 +175,34 @@ final class _StartupFrame extends StatelessWidget {
   }
 }
 
-final class _CoreStartupContent extends StatelessWidget {
-  const _CoreStartupContent();
+final class _StartupProgressContent extends StatelessWidget {
+  const _StartupProgressContent({this.viewModel});
+
+  final RuntimeInitializationViewModel? viewModel;
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
+    final model = viewModel;
+    final state = model?.state;
+    final stage = _stageForProgress(state);
+    final percentage = state == null ? 0 : _progressPercentage(state);
+    final description = state?.message ?? stage.description;
     return Semantics(
       container: true,
-      label: '正在启动会迹，准备本地数据与离线模型',
+      label: '正在准备会迹，${stage.title}',
       child: Column(
-        key: const ValueKey('meettrace-startup-loading'),
+        key: const ValueKey('meettrace-startup-progress-content'),
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const MeetTraceAnimatedWordmark(),
-          SizedBox(height: appStyle.space2Xl),
-          Text('正在打开本地工作区', style: theme.typography.display.md),
+          SizedBox(height: appStyle.spaceXl),
+          Text('正在准备会迹', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceXs),
           Text(
-            '恢复会议记录，并确认离线转录能力是否可用。',
-            style: theme.typography.body.sm.copyWith(
-              color: theme.colors.app.inkSecondary,
-            ),
-          ),
-          SizedBox(height: appStyle.spaceLg),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: theme.colors.card,
-              border: Border.all(
-                color: theme.colors.border,
-                width: appStyle.dividerWidth,
-              ),
-              borderRadius: BorderRadius.circular(appStyle.cardRadius),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(appStyle.spaceMd),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const FCircularProgress(
-                        key: ValueKey('meettrace-startup-progress'),
-                        size: FCircularProgressSizeVariant.lg,
-                        semanticsLabel: '正在读取本地数据',
-                      ),
-                      SizedBox(width: appStyle.spaceSm),
-                      Expanded(
-                        child: Text(
-                          '读取本地数据',
-                          style: theme.typography.display.sm,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: appStyle.spaceMd),
-                  const FProgress(
-                    key: ValueKey('meettrace-core-startup-progress'),
-                    semanticsLabel: '正在读取本地数据',
-                  ),
-                  SizedBox(height: appStyle.spaceSm),
-                  Text(
-                    '所有会议与事实音频仍保存在本机',
-                    style: theme.typography.body.xs.copyWith(
-                      color: theme.colors.app.inkSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _RuntimeStartupContent extends StatelessWidget {
-  const _RuntimeStartupContent({required this.viewModel});
-
-  final RuntimeInitializationViewModel viewModel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    final state = viewModel.state;
-    final stage = _stageFor(state.phase);
-    final percentage = _progressPercentage(state);
-    final description = state.message ?? stage.description;
-    return Semantics(
-      container: true,
-      label: stage.title,
-      child: Column(
-        key: const ValueKey('meettrace-runtime-initialization'),
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const MeetTraceAnimatedWordmark(),
-          SizedBox(height: appStyle.space2Xl),
-          Text('准备离线转录', style: theme.typography.display.md),
-          SizedBox(height: appStyle.spaceXs),
-          Text(
-            '设备需要准备 SenseVoice 与语音检测资源，完成后无需联网即可转录。',
+            '恢复本地会议并检查离线转录资源，完成后自动进入首页。',
             style: theme.typography.body.sm.copyWith(
               color: theme.colors.app.inkSecondary,
             ),
@@ -309,7 +225,7 @@ final class _RuntimeStartupContent extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _RuntimeStageMark(stage: stage),
+                      _StartupStageMark(stage: stage),
                       SizedBox(width: appStyle.spaceSm),
                       Expanded(
                         child: Column(
@@ -341,7 +257,7 @@ final class _RuntimeStartupContent extends StatelessWidget {
                       color: theme.colors.app.inkSecondary,
                     ),
                   ),
-                  if (state.totalBytes > 0) ...[
+                  if (state != null && state.totalBytes > 0) ...[
                     SizedBox(height: appStyle.spaceLg),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -380,8 +296,16 @@ final class _RuntimeStartupContent extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: appStyle.spaceSm),
+          Text(
+            '会议记录与事实音频仍保存在本机',
+            key: const ValueKey('meettrace-startup-local-evidence'),
+            style: theme.typography.body.xs.copyWith(
+              color: theme.colors.app.inkSecondary,
+            ),
+          ),
           SizedBox(height: appStyle.spaceLg),
-          if (state.phase == RuntimeInitializationPhase.awaitingMobileConsent)
+          if (state?.phase == RuntimeInitializationPhase.awaitingMobileConsent)
             Column(
               key: const ValueKey('runtime-mobile-actions'),
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -389,7 +313,7 @@ final class _RuntimeStartupContent extends StatelessWidget {
                 FButton(
                   key: const ValueKey('confirm-mobile-download'),
                   size: FButtonSizeVariant.lg,
-                  onPress: () => viewModel.confirmMobileDownload(),
+                  onPress: () => model?.confirmMobileDownload(),
                   child: const Text('同意并下载'),
                 ),
                 SizedBox(height: appStyle.spaceSm),
@@ -397,33 +321,33 @@ final class _RuntimeStartupContent extends StatelessWidget {
                   key: const ValueKey('decline-mobile-download'),
                   variant: FButtonVariant.outline,
                   size: FButtonSizeVariant.lg,
-                  onPress: viewModel.declineMobileDownload,
+                  onPress: model?.declineMobileDownload,
                   child: const Text('暂不使用移动网络'),
                 ),
               ],
             )
-          else if (state.phase == RuntimeInitializationPhase.downloading)
+          else if (state?.phase == RuntimeInitializationPhase.downloading)
             SizedBox(
               width: double.infinity,
               child: FButton(
                 key: const ValueKey('pause-runtime-download'),
                 variant: FButtonVariant.outline,
                 size: FButtonSizeVariant.lg,
-                onPress: viewModel.pause,
+                onPress: model?.pause,
                 child: const Text('暂停下载'),
               ),
             )
-          else if (state.phase == RuntimeInitializationPhase.paused ||
-              state.phase == RuntimeInitializationPhase.failed ||
-              state.phase == RuntimeInitializationPhase.insufficientSpace)
+          else if (state?.phase == RuntimeInitializationPhase.paused ||
+              state?.phase == RuntimeInitializationPhase.failed ||
+              state?.phase == RuntimeInitializationPhase.insufficientSpace)
             SizedBox(
               width: double.infinity,
               child: FButton(
                 key: const ValueKey('resume-runtime-download'),
                 size: FButtonSizeVariant.lg,
-                onPress: () => viewModel.resume(),
+                onPress: () => model?.resume(),
                 child: Text(
-                  state.phase == RuntimeInitializationPhase.paused
+                  state?.phase == RuntimeInitializationPhase.paused
                       ? '继续下载'
                       : '重试',
                 ),
@@ -452,11 +376,22 @@ int _progressPercentage(RuntimeInitializationProgress state) {
 }
 
 ({String title, String description, int step, IconData icon, bool active})
+_stageForProgress(RuntimeInitializationProgress? state) => state == null
+    ? (
+        title: '打开本地工作区',
+        description: '正在恢复会议记录并确认本地数据可用。',
+        step: 1,
+        icon: FLucideIcons.fileAudio,
+        active: true,
+      )
+    : _stageFor(state.phase);
+
+({String title, String description, int step, IconData icon, bool active})
 _stageFor(RuntimeInitializationPhase phase) => switch (phase) {
   RuntimeInitializationPhase.checking => (
-    title: '检查本地资源',
+    title: '检查离线资源',
     description: '正在核对本地文件与固定资源清单。',
-    step: 1,
+    step: 2,
     icon: FLucideIcons.fileAudio,
     active: true,
   ),
@@ -518,8 +453,8 @@ _stageFor(RuntimeInitializationPhase phase) => switch (phase) {
   ),
 };
 
-final class _RuntimeStageMark extends StatelessWidget {
-  const _RuntimeStageMark({required this.stage});
+final class _StartupStageMark extends StatelessWidget {
+  const _StartupStageMark({required this.stage});
 
   final ({
     String title,
@@ -543,9 +478,9 @@ final class _RuntimeStageMark extends StatelessWidget {
         borderRadius: BorderRadius.circular(appStyle.cardRadius),
       ),
       child: stage.active
-          ? const FCircularProgress(
+          ? FCircularProgress(
               size: FCircularProgressSizeVariant.sm,
-              semanticsLabel: '正在处理',
+              semanticsLabel: stage.title,
             )
           : Icon(stage.icon, size: 20),
     );
@@ -578,7 +513,7 @@ final class _StartupBlockedContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const MeetTraceAnimatedWordmark(),
-          SizedBox(height: appStyle.space2Xl),
+          SizedBox(height: appStyle.spaceXl),
           Text('启动需要你的处理', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceXs),
           Text(

@@ -1,0 +1,17 @@
+flutter_native_splash:
+  color: "#F7F7F5"
+  color_dark: "#0D0D0D"
+  image: assets/branding/splash/meettrace-splash.png
+  image_dark: assets/branding/splash/meettrace-splash-dark.png
+  android: true
+  ios: true
+  web: false
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: true
+
+  android_12:
+    color: "#F7F7F5"
+    color_dark: "#0D0D0D"
+    image: assets/branding/splash/meettrace-splash-android12.png
+    image_dark: assets/branding/splash/meettrace-splash-android12-dark.png

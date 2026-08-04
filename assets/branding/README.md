@@ -16,4 +16,7 @@ SVG 是唯一几何母版。`android/app/src/main/res/` 与
   不得直接按可见遮罩边缘放大。
 - iOS AppIcon 使用不含 Alpha 通道的黑底 PNG，由系统负责圆角遮罩。
 - 应用内品牌动效由 Flutter 路径绘制，最终帧必须与 SVG 标志一致。
+- `splash/` 中的 PNG 由 SVG 母版派生，只作为
+  `flutter_native_splash.yaml` 的生成输入；Android 与 iOS 平台启动文件统一通过
+  `dart run flutter_native_splash:create` 重新生成。
 - 原始 Stitch 截图只用于来源核对，不进入 Flutter `assets` 清单。

@@ -1,26 +1,20 @@
 import 'dart:math' as math;
+import 'dart:ui' show PathMetric;
 
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../theme/theme.dart';
 
-const meetTraceBrandMotionDuration = Duration(milliseconds: 680);
+const meetTraceBrandMotionDuration = Duration(milliseconds: 960);
 
 /// 会迹的共享品牌标志。
 ///
-/// [progress] 用于启动时的单次轨迹描画；`1` 始终渲染完整静态标志。
 final class MeetTraceBrandMark extends StatelessWidget {
-  const MeetTraceBrandMark({
-    this.size = 52,
-    this.color,
-    this.progress = 1,
-    super.key,
-  }) : assert(progress >= 0 && progress <= 1);
+  const MeetTraceBrandMark({this.size = 52, this.color, super.key});
 
   final double size;
   final Color? color;
-  final double progress;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -29,6 +23,36 @@ final class MeetTraceBrandMark extends StatelessWidget {
       dimension: size,
       child: CustomPaint(
         painter: _MeetTraceBrandMarkPainter(
+          color: color ?? context.theme.colors.foreground,
+        ),
+      ),
+    ),
+  );
+}
+
+/// 使用官方标志轮廓呈现连续墨带写入效果。
+///
+/// 该组件只负责绘制确定进度的单帧，不自行持有动画控制器，便于预览、
+/// 测试以及后续由启动流程决定是否采用。
+final class MeetTraceRibbonRevealMark extends StatelessWidget {
+  const MeetTraceRibbonRevealMark({
+    required this.progress,
+    this.size = 72,
+    this.color,
+    super.key,
+  }) : assert(progress >= 0 && progress <= 1);
+
+  final double progress;
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: SizedBox.square(
+      key: const ValueKey('meettrace-ribbon-reveal-mark'),
+      dimension: size,
+      child: CustomPaint(
+        painter: _MeetTraceRibbonRevealPainter(
           color: color ?? context.theme.colors.foreground,
           progress: progress,
         ),
@@ -39,12 +63,12 @@ final class MeetTraceBrandMark extends StatelessWidget {
 
 /// 启动页使用的一次性品牌动效。
 ///
-/// 动画只改变绘制进度、透明度和位移，不参与初始化状态或页面跳转。
+/// 960ms 内依次完成官方墨带写入、标志归位和中英文字标揭示。
+/// 动画不参与初始化状态或页面跳转，并遵循系统“减少动态效果”。
 final class MeetTraceAnimatedWordmark extends StatefulWidget {
   const MeetTraceAnimatedWordmark({
     this.duration = meetTraceBrandMotionDuration,
     this.disableAnimations,
-    this.playOncePerProcess = true,
     super.key,
   });
 
@@ -52,8 +76,6 @@ final class MeetTraceAnimatedWordmark extends StatefulWidget {
 
   /// 测试入口；生产环境为空时遵循系统“减少动态效果”。
   final bool? disableAnimations;
-
-  final bool playOncePerProcess;
 
   @override
   State<MeetTraceAnimatedWordmark> createState() =>
@@ -63,8 +85,6 @@ final class MeetTraceAnimatedWordmark extends StatefulWidget {
 final class _MeetTraceAnimatedWordmarkState
     extends State<MeetTraceAnimatedWordmark>
     with SingleTickerProviderStateMixin {
-  static bool _playedInProcess = false;
-
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: widget.duration,
@@ -85,14 +105,12 @@ final class _MeetTraceAnimatedWordmarkState
       return;
     }
     _configured = true;
-    if (widget.playOncePerProcess && _playedInProcess) {
-      _controller.value = 1;
-      return;
-    }
-    if (widget.playOncePerProcess) {
-      _playedInProcess = true;
-    }
-    _controller.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _controller.isCompleted) {
+        return;
+      }
+      _controller.forward();
+    });
   }
 
   @override
@@ -113,67 +131,147 @@ final class _MeetTraceAnimatedWordmarkState
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final accessibilityHeight = math.max(0, textScale - 1).toDouble() * 48;
     return Semantics(
       key: const ValueKey('meettrace-startup-wordmark'),
       container: true,
       header: true,
       label: '会迹，MeetTrace',
       child: ExcludeSemantics(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final markProgress = _emphasizedEaseOut(
-              const Interval(0, 0.76).transform(_controller.value),
-            );
-            final copyProgress = _emphasizedEaseOut(
-              const Interval(0.48, 1).transform(_controller.value),
-            );
-            return Wrap(
-              spacing: appStyle.spaceSm,
-              runSpacing: appStyle.spaceXs,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                MeetTraceBrandMark(progress: math.max(0.03, markProgress)),
-                Opacity(
-                  key: const ValueKey('meettrace-wordmark-copy'),
-                  opacity: copyProgress,
-                  child: Transform.translate(
-                    offset: Offset(0, 6 * (1 - copyProgress)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('会迹', style: theme.typography.display.xl2),
-                        SizedBox(height: appStyle.space2Xs),
-                        Text(
-                          'MeetTrace',
-                          style: theme.typography.body.xs.copyWith(
-                            color: theme.colors.app.inkSecondary,
-                          ),
+        child: SizedBox(
+          height: 84 + accessibilityHeight,
+          child: LayoutBuilder(
+            builder: (context, constraints) => AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                const startSize = 72.0;
+                const endSize = 52.0;
+                final startRect = Rect.fromLTWH(
+                  (constraints.maxWidth - startSize) / 2,
+                  4,
+                  startSize,
+                  startSize,
+                );
+                const endRect = Rect.fromLTWH(0, 10, endSize, endSize);
+                final dockProgress = _emphasizedInterval(
+                  _controller.value,
+                  0.595,
+                  0.929,
+                );
+                final markRect = Rect.lerp(startRect, endRect, dockProgress)!;
+                final ribbonProgress = _linearInterval(
+                  _controller.value,
+                  0,
+                  0.667,
+                );
+                final chineseProgress = _emphasizedInterval(
+                  _controller.value,
+                  0.774,
+                  0.952,
+                );
+                final englishProgress = _emphasizedInterval(
+                  _controller.value,
+                  0.857,
+                  1,
+                );
+
+                return ClipRect(
+                  child: Stack(
+                    children: [
+                      Positioned.fromRect(
+                        key: const ValueKey(
+                          'meettrace-startup-brand-mark-stage',
                         ),
-                      ],
-                    ),
+                        rect: markRect,
+                        child: MeetTraceRibbonRevealMark(
+                          progress: ribbonProgress,
+                          size: markRect.width,
+                        ),
+                      ),
+                      Positioned(
+                        left: endRect.right + appStyle.spaceSm,
+                        top: 4,
+                        right: 0,
+                        height: 64 + accessibilityHeight,
+                        child: _RevealedWordmark(
+                          chineseProgress: chineseProgress,
+                          englishProgress: englishProgress,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            );
-          },
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-double _emphasizedEaseOut(double value) =>
-    const Cubic(0.16, 1, 0.3, 1).transform(value);
-
-final class _MeetTraceBrandMarkPainter extends CustomPainter {
-  const _MeetTraceBrandMarkPainter({
-    required this.color,
-    required this.progress,
+final class _RevealedWordmark extends StatelessWidget {
+  const _RevealedWordmark({
+    required this.chineseProgress,
+    required this.englishProgress,
   });
 
+  final double chineseProgress;
+  final double englishProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ClipRect(
+          child: Align(
+            key: const ValueKey('meettrace-wordmark-chinese-reveal'),
+            alignment: Alignment.centerLeft,
+            widthFactor: chineseProgress,
+            child: Text(
+              '会迹',
+              maxLines: 1,
+              softWrap: false,
+              style: theme.typography.display.xl2,
+            ),
+          ),
+        ),
+        SizedBox(height: appStyle.space2Xs),
+        ClipRect(
+          child: Align(
+            key: const ValueKey('meettrace-wordmark-english-reveal'),
+            alignment: Alignment.centerLeft,
+            widthFactor: englishProgress,
+            child: Text(
+              'MeetTrace',
+              maxLines: 1,
+              softWrap: false,
+              style: theme.typography.body.xs.copyWith(
+                color: theme.colors.app.inkSecondary,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+double _linearInterval(double value, double begin, double end) =>
+    ((value - begin) / (end - begin)).clamp(0, 1);
+
+double _emphasizedInterval(double value, double begin, double end) =>
+    const Cubic(0.16, 1, 0.3, 1).transform(_linearInterval(value, begin, end));
+
+final class _MeetTraceBrandMarkPainter extends CustomPainter {
+  const _MeetTraceBrandMarkPainter({required this.color});
+
   final Color color;
-  final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -190,54 +288,95 @@ final class _MeetTraceBrandMarkPainter extends CustomPainter {
       ..translate(dx, dy)
       ..scale(scale);
 
-    final fillProgress = ((progress - 0.48) / 0.52).clamp(0.0, 1.0);
-    if (fillProgress > 0) {
-      canvas.drawPath(
-        _meetTraceMarkPath,
-        Paint()
-          ..color = color.withValues(alpha: fillProgress)
-          ..style = PaintingStyle.fill,
-      );
-    }
-
-    final outlineOpacity = (1 - ((progress - 0.82) / 0.18)).clamp(0.0, 1.0);
-    if (outlineOpacity > 0) {
-      canvas.drawPath(
-        _extractProgressivePath(_meetTraceMarkPath, progress),
-        Paint()
-          ..color = color.withValues(alpha: outlineOpacity)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round,
-      );
-    }
+    canvas.drawPath(
+      _meetTraceMarkPath,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
+    );
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(_MeetTraceBrandMarkPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+final class _MeetTraceRibbonRevealPainter extends CustomPainter {
+  const _MeetTraceRibbonRevealPainter({
+    required this.color,
+    required this.progress,
+  });
+
+  final Color color;
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) {
+      return;
+    }
+    final bounds = _meetTraceMarkPath.getBounds();
+    final scale = math.min(
+      size.width / bounds.width,
+      size.height / bounds.height,
+    );
+    final dx = (size.width - bounds.width * scale) / 2 - bounds.left * scale;
+    final dy = (size.height - bounds.height * scale) / 2 - bounds.top * scale;
+
+    canvas
+      ..save()
+      ..translate(dx, dy)
+      ..scale(scale);
+
+    if (progress >= 1) {
+      canvas.drawPath(
+        _meetTraceMarkPath,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill,
+      );
+      canvas.restore();
+      return;
+    }
+
+    canvas.clipPath(_meetTraceMarkPath);
+    canvas.drawPath(
+      _extractMeetTraceRibbonPath(progress),
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 62
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_MeetTraceRibbonRevealPainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.progress != progress;
 }
 
-Path _extractProgressivePath(Path source, double progress) {
-  final metrics = source.computeMetrics().toList(growable: false);
-  final totalLength = metrics.fold<double>(
-    0,
-    (sum, metric) => sum + metric.length,
+final Path _meetTraceMotionPath = Path()
+  ..moveTo(144, 342)
+  ..cubicTo(146, 292, 149, 220, 153, 176)
+  ..cubicTo(184, 202, 225, 237, 264, 273)
+  ..cubicTo(291, 247, 331, 205, 358, 177)
+  ..cubicTo(358, 222, 358, 294, 358, 342);
+
+final PathMetric _meetTraceMotionMetric = _meetTraceMotionPath
+    .computeMetrics()
+    .single;
+
+Path _extractMeetTraceRibbonPath(double progress) => Path()
+  ..addPath(
+    _meetTraceMotionMetric.extractPath(
+      0,
+      _meetTraceMotionMetric.length * progress,
+    ),
+    Offset.zero,
   );
-  var remainingLength = totalLength * progress;
-  final result = Path();
-  for (final metric in metrics) {
-    if (remainingLength <= 0) {
-      break;
-    }
-    final extractedLength = math.min(metric.length, remainingLength);
-    result.addPath(metric.extractPath(0, extractedLength), Offset.zero);
-    remainingLength -= extractedLength;
-  }
-  return result;
-}
 
 // Generated from assets/branding/stitch/meettrace-mark-black.svg.
 // Keep the SVG as the geometry source of truth and regenerate this path when it

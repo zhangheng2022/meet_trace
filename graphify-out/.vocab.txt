@@ -98,6 +98,7 @@ boundary
 bounded
 box
 brand
+branding
 bridge
 bridging
 buffer
@@ -194,6 +195,7 @@ confidence
 config
 configs
 configuration
+configured
 confirm
 confirmation
 confirmed
@@ -323,6 +325,7 @@ dual
 due
 durable
 duration
+ease
 edge
 editing
 editor
@@ -631,6 +634,7 @@ monitor
 mono
 monochrome
 moonshine
+motion
 msvc
 muted
 name
@@ -671,8 +675,10 @@ official
 offline
 offset
 offsets
+once
 only
 onnx
+opacity
 open
 operation
 operations
@@ -1237,16 +1243,19 @@ yue
 会议模型锁定
 会议锁定与数据库
 会迹会议首页空状态设计
+会迹品牌资源
 会迹品牌页头
 会迹平板端会议主从界面
 会迹平板首页最终设计
 会迹手机端会议首页
 会迹移动端静止首页
 低密度静止状态
+使用边界
 保持全宽边缘稳定的按下状态
 保留内部技术身份与本地数据
 保留的正确设计
 修复状态
+先给我方案
 全面调整查询
 全项目身份迁移
 其他模型待定

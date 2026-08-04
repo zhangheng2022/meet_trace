@@ -7,6 +7,7 @@ import 'package:meettrace/app/application.dart';
 import 'package:meettrace/domain/models/runtime_initialization.dart';
 import 'package:meettrace/domain/ports/runtime_asset_preparation.dart';
 import 'package:meettrace/domain/use_cases/initialize_runtime_assets.dart';
+import 'package:meettrace/ui/core/branding/meettrace_brand_mark.dart';
 import 'package:meettrace/ui/features/startup/view_models/runtime_initialization_view_model.dart';
 import 'package:meettrace/ui/features/startup/views/meettrace_startup_view.dart';
 
@@ -16,24 +17,22 @@ void main() {
 
     expect(find.text('会迹'), findsOneWidget);
     expect(find.text('MeetTrace'), findsOneWidget);
-    expect(find.text('正在打开本地工作区'), findsOneWidget);
-    expect(find.text('恢复会议记录，并确认离线转录能力是否可用。'), findsOneWidget);
+    expect(find.text('正在准备会迹'), findsOneWidget);
+    expect(find.text('恢复本地会议并检查离线转录资源，完成后自动进入首页。'), findsOneWidget);
+    expect(find.text('打开本地工作区'), findsOneWidget);
+    expect(find.text('步骤 1 / 4'), findsOneWidget);
+    expect(find.text('会议记录与事实音频仍保存在本机'), findsOneWidget);
     expect(find.text('无需登录 · 事实音频仅保存在本机'), findsNothing);
     expect(find.byType(FHeader), findsNothing);
-    expect(find.byType(FProgress), findsOneWidget);
+    expect(find.byType(FProgress), findsNothing);
     expect(find.byType(FCircularProgress), findsOneWidget);
     expect(
       tester
           .widget<FCircularProgress>(find.byType(FCircularProgress))
           .semanticsLabel,
-      '正在读取本地数据',
+      '打开本地工作区',
     );
-    expect(
-      tester
-          .getSize(find.byKey(const ValueKey('meettrace-startup-progress')))
-          .width,
-      lessThan(32),
-    );
+    expect(tester.getSize(find.byType(FCircularProgress)).width, lessThan(32));
     expect(tester.takeException(), isNull);
   });
 
@@ -50,12 +49,12 @@ void main() {
     await tester.pumpWidget(const Application(home: MeetTraceStartupView()));
 
     expect(
-      find.byKey(const ValueKey('meettrace-startup-loading')),
+      find.byKey(const ValueKey('meettrace-startup-progress-content')),
       findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey('meettrace-startup-local-evidence')),
-      findsNothing,
+      findsOneWidget,
     );
     expect(tester.takeException(), isNull);
   });
@@ -72,7 +71,9 @@ void main() {
 
     expect(
       tester
-          .getSize(find.byKey(const ValueKey('meettrace-startup-loading')))
+          .getSize(
+            find.byKey(const ValueKey('meettrace-startup-progress-content')),
+          )
           .width,
       lessThanOrEqualTo(520),
     );
@@ -90,7 +91,7 @@ void main() {
       Application(home: MeetTraceStartupView(viewModel: viewModel)),
     );
 
-    expect(find.text('准备离线转录'), findsOneWidget);
+    expect(find.text('正在准备会迹'), findsOneWidget);
     expect(find.text('下载离线资源'), findsOneWidget);
     expect(find.text('步骤 2 / 4'), findsOneWidget);
     expect(find.text('SenseVoice'), findsOneWidget);
@@ -135,19 +136,20 @@ void main() {
     );
     expect(transition.duration, const Duration(milliseconds: 280));
     expect(transition.reverseDuration, const Duration(milliseconds: 180));
-    expect(find.text('正在打开本地工作区'), findsOneWidget);
-    expect(find.text('准备离线转录'), findsNothing);
+    expect(find.text('正在准备会迹'), findsOneWidget);
+    expect(find.text('检查离线资源'), findsOneWidget);
+    expect(find.text('步骤 2 / 4'), findsOneWidget);
 
     preparation.completeReady();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 280));
 
     expect(find.text('会议首页'), findsOneWidget);
-    expect(find.text('准备离线转录'), findsNothing);
+    expect(find.text('正在准备会迹'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('仅在确实需要准备资源时显示详细初始化步骤', (tester) async {
+  testWidgets('初始化阶段只更新内容而不替换启动页面', (tester) async {
     final preparation = _ControlledPreparation();
     final viewModel = RuntimeInitializationViewModel(
       InitializeRuntimeAssetsUseCase(preparation),
@@ -164,13 +166,47 @@ void main() {
     );
     unawaited(viewModel.start());
     await tester.pump();
+    final progressPage = tester.element(
+      find.byKey(const ValueKey('runtime-initialization-progress')),
+    );
+    await tester.pump(meetTraceBrandMotionDuration);
+    final wordmark = tester.element(
+      find.byKey(const ValueKey('meettrace-startup-wordmark')),
+    );
+    expect(
+      tester
+          .widget<MeetTraceRibbonRevealMark>(
+            find.byType(MeetTraceRibbonRevealMark),
+          )
+          .progress,
+      1,
+    );
+
     preparation.showDownload();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 280));
 
-    expect(find.text('准备离线转录'), findsOneWidget);
+    expect(
+      tester.element(
+        find.byKey(const ValueKey('runtime-initialization-progress')),
+      ),
+      same(progressPage),
+    );
+    expect(
+      tester.element(find.byKey(const ValueKey('meettrace-startup-wordmark'))),
+      same(wordmark),
+    );
+    expect(
+      tester
+          .widget<MeetTraceRibbonRevealMark>(
+            find.byType(MeetTraceRibbonRevealMark),
+          )
+          .progress,
+      1,
+    );
+    expect(find.text('正在准备会迹'), findsOneWidget);
     expect(find.text('下载离线资源'), findsOneWidget);
     expect(find.text('步骤 2 / 4'), findsOneWidget);
+    expect(find.byType(AnimatedSwitcher), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

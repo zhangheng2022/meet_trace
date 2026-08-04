@@ -51,6 +51,7 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+  flutter_native_splash: 2.4.8
   sqlite3: 3.5.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
