@@ -23,6 +23,8 @@ final class LiveTranscriptPanel extends StatelessWidget {
     final theme = context.theme;
     final appStyle = theme.style.app;
     final segments = viewModel.segments;
+    final displaySegments = segments.reversed.toList(growable: false);
+    final sectionPadding = outlined ? appStyle.spaceMd : appStyle.spaceSm;
     return DecoratedBox(
       key: const ValueKey('live-transcript-ledger'),
       decoration: BoxDecoration(
@@ -50,16 +52,26 @@ final class LiveTranscriptPanel extends StatelessWidget {
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.all(appStyle.spaceMd),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+              padding: EdgeInsets.all(sectionPadding),
+              child: Semantics(
+                key: const ValueKey('live-transcript-heading'),
+                container: true,
+                header: true,
+                label: [
+                  '实时转录',
+                  _previewLabel(viewModel),
+                  if (segments.isNotEmpty) '${segments.length} 段',
+                ].join('，'),
+                child: ExcludeSemantics(
+                  child: Row(
                     children: [
+                      Text('实时转录', style: theme.typography.display.md),
+                      SizedBox(width: appStyle.spaceSm),
                       Expanded(
-                        child: Text('实时转录', style: theme.typography.display.md),
+                        child: _PreviewStatusOverview(viewModel: viewModel),
                       ),
-                      if (segments.isNotEmpty)
+                      if (segments.isNotEmpty) ...[
+                        SizedBox(width: appStyle.spaceSm),
                         Text(
                           '${segments.length} 段',
                           key: const ValueKey('live-transcript-count'),
@@ -68,24 +80,31 @@ final class LiveTranscriptPanel extends StatelessWidget {
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
+                      ],
                     ],
                   ),
-                  SizedBox(height: appStyle.spaceXs),
-                  _PreviewStatusOverview(viewModel: viewModel),
-                ],
+                ),
               ),
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(appStyle.spaceMd),
+            padding: EdgeInsets.all(sectionPadding),
             child: segments.isEmpty
-                ? _LiveTranscriptEmptyState(viewModel: viewModel)
+                ? _LiveTranscriptEmptyState(
+                    viewModel: viewModel,
+                    compact: !outlined,
+                  )
                 : Column(
                     children: [
-                      for (var index = 0; index < segments.length; index++)
+                      for (
+                        var index = 0;
+                        index < displaySegments.length;
+                        index++
+                      )
                         _TranscriptRow(
-                          segment: segments[index],
-                          showDivider: index != segments.length - 1,
+                          segment: displaySegments[index],
+                          showDivider: index != displaySegments.length - 1,
+                          compact: !outlined,
                         ),
                     ],
                   ),
@@ -100,7 +119,7 @@ final class LiveTranscriptPanel extends StatelessWidget {
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.all(appStyle.spaceMd),
+              padding: EdgeInsets.all(sectionPadding),
               child: Row(
                 children: [
                   Icon(
@@ -128,9 +147,13 @@ final class LiveTranscriptPanel extends StatelessWidget {
 }
 
 final class _LiveTranscriptEmptyState extends StatelessWidget {
-  const _LiveTranscriptEmptyState({required this.viewModel});
+  const _LiveTranscriptEmptyState({
+    required this.viewModel,
+    required this.compact,
+  });
 
   final RecordingSessionViewModel viewModel;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +162,9 @@ final class _LiveTranscriptEmptyState extends StatelessWidget {
     final stopped =
         viewModel.previewMetrics.state == AsrPreviewState.recordingOnly;
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: appStyle.spaceMd),
+      padding: EdgeInsets.symmetric(
+        vertical: compact ? appStyle.spaceXs : appStyle.spaceMd,
+      ),
       child: Text(
         stopped ? '结束后仍会基于完整音频生成最终转录。' : '检测到语音后在这里显示文字。',
         textAlign: TextAlign.center,
@@ -184,10 +209,15 @@ final class _PreviewStatusOverview extends StatelessWidget {
 }
 
 final class _TranscriptRow extends StatelessWidget {
-  const _TranscriptRow({required this.segment, required this.showDivider});
+  const _TranscriptRow({
+    required this.segment,
+    required this.showDivider,
+    required this.compact,
+  });
 
   final TranscriptSegmentEvent segment;
   final bool showDivider;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -205,29 +235,39 @@ final class _TranscriptRow extends StatelessWidget {
             : null,
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: appStyle.spaceSm),
+        padding: EdgeInsets.symmetric(
+          vertical: compact ? appStyle.spaceXs : appStyle.spaceSm,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: appStyle.ledgerTimeColumnWidth + appStyle.spaceXs,
+              width:
+                  appStyle.ledgerTimeColumnWidth +
+                  (compact ? 0 : appStyle.spaceXs),
               child: Text(
                 _timestamp(segment.startMs),
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.fade,
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.mutedForeground,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+                style:
+                    (compact
+                            ? theme.typography.body.xs
+                            : theme.typography.body.sm)
+                        .copyWith(
+                          color: theme.colors.mutedForeground,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
               ),
             ),
-            SizedBox(width: appStyle.spaceSm),
+            SizedBox(width: compact ? appStyle.spaceXs : appStyle.spaceSm),
             Expanded(
               child: Text(
                 segment.text,
                 key: ValueKey('transcript-${segment.segmentId}'),
-                style: theme.typography.body.md,
+                style: compact
+                    ? theme.typography.body.sm
+                    : theme.typography.body.md,
               ),
             ),
           ],
@@ -250,13 +290,13 @@ AppStatusTone _previewTone(RecordingSessionViewModel viewModel) {
 
 String _previewLabel(RecordingSessionViewModel viewModel) {
   if (viewModel.recordingState == RecordingState.paused) {
-    return '实时转录已随录音暂停';
+    return '已随录音暂停';
   }
   return switch (viewModel.previewMetrics.state) {
-    AsrPreviewState.ready => '实时转录正常',
-    AsrPreviewState.backlogged => '实时转录积压，录音仍在继续',
-    AsrPreviewState.recordingOnly => '实时转录已停止，录音仍在继续',
-    AsrPreviewState.disposed => '实时转录已结束',
+    AsrPreviewState.ready => '正常',
+    AsrPreviewState.backlogged => '积压，录音仍在继续',
+    AsrPreviewState.recordingOnly => '已停止，录音仍在继续',
+    AsrPreviewState.disposed => '已结束',
   };
 }
 

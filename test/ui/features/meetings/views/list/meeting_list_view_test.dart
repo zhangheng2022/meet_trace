@@ -10,6 +10,7 @@ import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/ui/core/app_ledger.dart';
+import 'package:meettrace/ui/core/branding/meettrace_brand_mark.dart';
 import 'package:meettrace/ui/features/meetings/view_models/list/meeting_list_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/list/meeting_list_view.dart';
 
@@ -17,6 +18,7 @@ import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
   testWidgets('空会议列表使用 Forui 并触发开始会议操作', (WidgetTester tester) async {
+    final semantics = tester.ensureSemantics();
     var startMeetingRequested = false;
 
     await tester.pumpWidget(
@@ -32,6 +34,18 @@ void main() {
       find.byWidgetPredicate((widget) => widget is FHeader),
       findsOneWidget,
     );
+    expect(find.byType(MeetTraceBrandMark), findsOneWidget);
+    expect(find.text('会迹'), findsNothing);
+    expect(
+      tester.getTopLeft(find.byType(MeetTraceBrandMark)).dx,
+      closeTo(16, 0.01),
+    );
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('meeting-list-brand-title')))
+          .label,
+      '会迹，MeetTrace',
+    );
     expect(find.text('还没有会议'), findsOneWidget);
     expect(find.text('开始会议'), findsOneWidget);
 
@@ -39,6 +53,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(startMeetingRequested, isTrue);
+    semantics.dispose();
   });
 
   testWidgets('首页展示经过真实预检的录音条件状态', (WidgetTester tester) async {

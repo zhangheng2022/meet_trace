@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/models/runtime_initialization.dart';
 import 'package:meettrace/domain/ports/runtime_asset_preparation.dart';
@@ -50,6 +52,111 @@ void main() {
     expect(port.pauses, 1);
     viewModel.dispose();
   });
+
+  test('重试仍失败时更新提示以提供明确反馈', () async {
+    final port = _OfflinePreparation();
+    final viewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(port),
+    );
+
+    await viewModel.start();
+    expect(viewModel.state.message, '首次初始化需要联网下载离线运行资源');
+
+    final firstRetry = viewModel.resume();
+    final duplicateRetry = viewModel.resume();
+    expect(identical(firstRetry, duplicateRetry), isTrue);
+    await firstRetry;
+
+    expect(port.attempts, 2);
+    expect(viewModel.state.message, '重试未成功：首次初始化需要联网下载离线运行资源');
+    viewModel.dispose();
+  });
+
+  test('重试下载期间手动暂停只显示暂停状态', () async {
+    final port = _PauseOnResumePreparation();
+    final viewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(port),
+    );
+
+    await viewModel.start();
+    final retry = viewModel.resume();
+    await port.downloadStarted.future;
+    expect(viewModel.state.phase, RuntimeInitializationPhase.downloading);
+
+    viewModel.pause();
+    await retry;
+
+    expect(viewModel.state.phase, RuntimeInitializationPhase.paused);
+    expect(viewModel.state.message, '下载已暂停，已完成的分片会保留');
+    expect(viewModel.state.message, isNot(startsWith('重试未成功：')));
+    viewModel.dispose();
+  });
+}
+
+final class _PauseOnResumePreparation implements RuntimeAssetPreparationPort {
+  final Completer<void> downloadStarted = Completer<void>();
+  final Completer<void> _pauseSignal = Completer<void>();
+  int attempts = 0;
+
+  @override
+  Future<void> prepare({
+    required void Function(RuntimeInitializationProgress progress) onProgress,
+    bool forceRepair = false,
+  }) async {
+    attempts++;
+    if (attempts == 1) {
+      throw const RuntimeInitializationException(
+        code: 'runtime.network.offline',
+        message: '首次初始化需要联网下载离线运行资源',
+      );
+    }
+    onProgress(
+      const RuntimeInitializationProgress(
+        phase: RuntimeInitializationPhase.downloading,
+        completedBytes: 27000000,
+        totalBytes: 286314800,
+        resourceName: 'SenseVoice',
+      ),
+    );
+    downloadStarted.complete();
+    await _pauseSignal.future;
+    throw const RuntimeInitializationException(
+      code: 'runtime.download.paused',
+      message: '下载已暂停，已完成的分片会保留',
+    );
+  }
+
+  @override
+  Future<void> grantMobileConsent() async {}
+
+  @override
+  void pause() {
+    if (!_pauseSignal.isCompleted) {
+      _pauseSignal.complete();
+    }
+  }
+}
+
+final class _OfflinePreparation implements RuntimeAssetPreparationPort {
+  int attempts = 0;
+
+  @override
+  Future<void> prepare({
+    required void Function(RuntimeInitializationProgress progress) onProgress,
+    bool forceRepair = false,
+  }) async {
+    attempts++;
+    throw const RuntimeInitializationException(
+      code: 'runtime.network.offline',
+      message: '首次初始化需要联网下载离线运行资源',
+    );
+  }
+
+  @override
+  Future<void> grantMobileConsent() async {}
+
+  @override
+  void pause() {}
 }
 
 final class _Preparation implements RuntimeAssetPreparationPort {

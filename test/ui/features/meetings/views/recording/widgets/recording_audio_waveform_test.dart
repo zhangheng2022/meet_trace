@@ -18,6 +18,12 @@ void main() {
       find.byKey(const ValueKey('recording-audio-waveform')),
       findsOneWidget,
     );
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('recording-audio-waveform')))
+          .height,
+      52,
+    );
     expect(find.byType(CustomPaint), findsOneWidget);
     expect(find.text('麦克风输入 · 实时反馈'), findsOneWidget);
     expect(find.bySemanticsLabel('麦克风输入波形，实时反馈'), findsOneWidget);

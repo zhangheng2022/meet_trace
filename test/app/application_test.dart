@@ -12,7 +12,7 @@ void main() {
     expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).title, '会迹');
     expect(find.byType(FTheme), findsOneWidget);
     expect(find.byType(MeetingListView), findsOneWidget);
-    expect(find.text('会迹'), findsOneWidget);
+    expect(find.text('会迹'), findsNothing);
     expect(find.byType(FButton), findsNothing);
     expect(tester.takeException(), isNull);
   });

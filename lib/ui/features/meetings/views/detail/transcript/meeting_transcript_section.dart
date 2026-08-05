@@ -1,7 +1,7 @@
 part of '../meeting_detail_view.dart';
 
-final class _TranscriptCard extends StatefulWidget {
-  const _TranscriptCard({
+final class _TranscriptSection extends StatefulWidget {
+  const _TranscriptSection({
     required this.snapshot,
     required this.viewModel,
     required this.editing,
@@ -15,131 +15,291 @@ final class _TranscriptCard extends StatefulWidget {
   final ValueChanged<bool> onEditingChanged;
 
   @override
-  State<_TranscriptCard> createState() => _TranscriptCardState();
+  State<_TranscriptSection> createState() => _TranscriptSectionState();
 }
 
-final class _TranscriptCardState extends State<_TranscriptCard> {
-  late final Map<String, TextEditingController> _texts = {
-    for (final segment in widget.snapshot.segments)
-      segment.id: TextEditingController(text: segment.text),
-  };
-  late final Map<String, TextEditingController> _speakers = {
-    for (final segment in widget.snapshot.segments)
-      segment.id: TextEditingController(
-        text: displaySpeakerLabel(segment.speakerId),
-      ),
-  };
+final class _TranscriptSectionState extends State<_TranscriptSection> {
+  late Map<String, TextEditingController> _texts;
+  late Map<String, TextEditingController> _speakers;
+
+  @override
+  void initState() {
+    super.initState();
+    _createControllers();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TranscriptSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.snapshot.id != widget.snapshot.id) {
+      _disposeControllers();
+      _createControllers();
+    }
+  }
+
   @override
   void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  void _createControllers() {
+    _texts = {
+      for (final segment in widget.snapshot.segments)
+        segment.id: TextEditingController(text: segment.text),
+    };
+    _speakers = {
+      for (final segment in widget.snapshot.segments)
+        segment.id: TextEditingController(
+          text: displaySpeakerLabel(segment.speakerId),
+        ),
+    };
+  }
+
+  void _disposeControllers() {
     for (final controller in [..._texts.values, ..._speakers.values]) {
       controller.dispose();
     }
-    super.dispose();
+  }
+
+  Future<void> saveRevision() async {
+    if (widget.viewModel.isProcessing) {
+      return;
+    }
+    await widget.viewModel.reviseTranscript([
+      for (final segment in widget.snapshot.segments)
+        TranscriptSegmentRevision(
+          segmentId: segment.id,
+          text: _texts[segment.id]!.text,
+          speakerLabel: _speakers[segment.id]!.text,
+        ),
+    ]);
+    if (mounted) {
+      widget.onEditingChanged(false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    return FCard(
-      child: Padding(
-        padding: EdgeInsets.all(appStyle.spaceMd),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      key: const ValueKey('meeting-detail-continuous-ledger'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text('最终转录', style: theme.typography.display.md),
+            Expanded(child: Text('最终转录', style: theme.typography.display.lg)),
+            if (widget.snapshot.segments.isNotEmpty)
+              FButton(
+                key: ValueKey(
+                  widget.editing ? 'cancel-transcript-edit' : 'edit-transcript',
                 ),
-                if (widget.snapshot.segments.isNotEmpty)
-                  FButton(
-                    key: ValueKey(
-                      widget.editing
-                          ? 'cancel-transcript-edit'
-                          : 'edit-transcript',
-                    ),
-                    variant: FButtonVariant.ghost,
-                    mainAxisSize: MainAxisSize.min,
-                    onPress: widget.viewModel.isProcessing
-                        ? null
-                        : () => widget.onEditingChanged(!widget.editing),
-                    child: Text(widget.editing ? '取消编辑' : '编辑转录'),
-                  ),
-              ],
+                variant: FButtonVariant.ghost,
+                mainAxisSize: MainAxisSize.min,
+                onPress: widget.viewModel.isProcessing
+                    ? null
+                    : () => widget.onEditingChanged(!widget.editing),
+                child: Text(widget.editing ? '取消' : '编辑'),
+              ),
+          ],
+        ),
+        if (widget.editing) ...[
+          SizedBox(height: appStyle.spaceSm),
+          Text(
+            '保存后会生成新的最终转录版本，事实音频和时间轴保持不变。',
+            style: theme.typography.body.sm.copyWith(
+              color: theme.colors.mutedForeground,
             ),
-            SizedBox(height: appStyle.spaceSm),
+          ),
+        ],
+        SizedBox(height: appStyle.spaceSm),
+        if (widget.snapshot.segments.isEmpty)
+          const Text('未识别到可显示的语音内容。')
+        else if (widget.editing)
+          for (final segment in widget.snapshot.segments) ...[
             Text(
-              widget.editing
-                  ? '保存后会生成新的最终转录版本，事实音频保持不变。'
-                  : '以下内容来自完整事实录音；点击“编辑转录”后才会进入修改状态。',
+              '${displaySpeakerLabel(segment.speakerId)} · '
+              '${_timestamp(segment.startMs)}',
               style: theme.typography.body.sm.copyWith(
                 color: theme.colors.mutedForeground,
               ),
             ),
-            SizedBox(height: appStyle.spaceMd),
-            if (widget.snapshot.segments.isEmpty)
-              const Text('未识别到可显示的语音内容。')
-            else
-              for (final segment in widget.snapshot.segments) ...[
-                Text(
-                  '${displaySpeakerLabel(segment.speakerId)} · '
-                  '${_timestamp(segment.startMs)}',
-                  style: theme.typography.body.sm.copyWith(
-                    color: theme.colors.mutedForeground,
-                  ),
-                ),
-                SizedBox(height: appStyle.spaceSm),
-                if (widget.editing) ...[
-                  FTextField(
-                    key: ValueKey('segment-speaker-${segment.id}'),
-                    control: FTextFieldControl.managed(
-                      controller: _speakers[segment.id]!,
-                    ),
-                    label: const Text('说话人'),
-                  ),
-                  SizedBox(height: appStyle.spaceSm),
-                  FTextField(
-                    key: ValueKey('segment-text-${segment.id}'),
-                    control: FTextFieldControl.managed(
-                      controller: _texts[segment.id]!,
-                    ),
-                    label: const Text('转录内容'),
-                    maxLines: 4,
-                  ),
-                ] else
-                  Text(segment.text, style: theme.typography.body.lg),
-                SizedBox(height: appStyle.spaceMd),
-              ],
-            if (widget.snapshot.segments.isNotEmpty && widget.editing)
-              FButton(
-                key: const ValueKey('save-transcript-revision'),
-                onPress: widget.viewModel.isProcessing
-                    ? null
-                    : () async {
-                        await widget.viewModel.reviseTranscript([
-                          for (final segment in widget.snapshot.segments)
-                            TranscriptSegmentRevision(
-                              segmentId: segment.id,
-                              text: _texts[segment.id]!.text,
-                              speakerLabel: _speakers[segment.id]!.text,
-                            ),
-                        ]);
-                        if (mounted) {
-                          widget.onEditingChanged(false);
-                        }
-                      },
-                child: const Text('保存转录修订'),
+            SizedBox(height: appStyle.spaceXs),
+            FTextField(
+              key: ValueKey('segment-speaker-${segment.id}'),
+              control: FTextFieldControl.managed(
+                controller: _speakers[segment.id]!,
               ),
-          ],
-        ),
-      ),
+              label: const Text('说话人'),
+            ),
+            SizedBox(height: appStyle.spaceSm),
+            FTextField(
+              key: ValueKey('segment-text-${segment.id}'),
+              control: FTextFieldControl.managed(
+                controller: _texts[segment.id]!,
+              ),
+              label: const Text('转录内容'),
+              maxLines: 4,
+            ),
+            SizedBox(height: appStyle.spaceMd),
+          ]
+        else
+          for (var index = 0; index < widget.snapshot.segments.length; index++)
+            _TranscriptLedgerRow(
+              segment: widget.snapshot.segments[index],
+              first: index == 0,
+              last: index == widget.snapshot.segments.length - 1,
+            ),
+      ],
     );
   }
 }
 
-final class _DiarizationCard extends StatelessWidget {
-  const _DiarizationCard({required this.viewModel, required this.editing});
+final class _TranscriptLedgerRow extends StatelessWidget {
+  const _TranscriptLedgerRow({
+    required this.segment,
+    required this.first,
+    required this.last,
+  });
+
+  final TranscriptSegment segment;
+  final bool first;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
+    final timeWidth = largeText
+        ? appStyle.ledgerTimeColumnWidth + appStyle.space2Xl
+        : appStyle.ledgerTimeColumnWidth;
+    return Stack(
+      children: [
+        Positioned(
+          left: timeWidth,
+          top: 0,
+          bottom: 0,
+          width: appStyle.spaceLg,
+          child: CustomPaint(
+            painter: _TranscriptTimelinePainter(
+              first: first,
+              last: last,
+              lineColor: theme.colors.border,
+              dotColor: theme.colors.mutedForeground,
+              lineWidth: appStyle.dividerWidth,
+              dotRadius: appStyle.spaceXs / 2,
+              dotCenterY: appStyle.spaceMd,
+            ),
+          ),
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: timeWidth,
+              child: Padding(
+                padding: EdgeInsets.only(top: appStyle.spaceXs),
+                child: Text(
+                  _timestamp(segment.startMs),
+                  key: ValueKey('transcript-time-${segment.id}'),
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: theme.typography.body.sm.copyWith(
+                    color: theme.colors.mutedForeground,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: appStyle.spaceLg),
+            SizedBox(width: appStyle.spaceXs),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: appStyle.spaceXs),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displaySpeakerLabel(segment.speakerId),
+                      style: theme.typography.body.sm.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: appStyle.space2Xs),
+                    Text(
+                      segment.text,
+                      style: theme.typography.body.md.copyWith(height: 1.45),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+final class _TranscriptTimelinePainter extends CustomPainter {
+  const _TranscriptTimelinePainter({
+    required this.first,
+    required this.last,
+    required this.lineColor,
+    required this.dotColor,
+    required this.lineWidth,
+    required this.dotRadius,
+    required this.dotCenterY,
+  });
+
+  final bool first;
+  final bool last;
+  final Color lineColor;
+  final Color dotColor;
+  final double lineWidth;
+  final double dotRadius;
+  final double dotCenterY;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centerX = size.width / 2;
+    final centerY = dotCenterY.clamp(dotRadius, size.height - dotRadius);
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = lineWidth;
+    if (!first) {
+      canvas.drawLine(Offset(centerX, 0), Offset(centerX, centerY), linePaint);
+    }
+    if (!last) {
+      canvas.drawLine(
+        Offset(centerX, centerY),
+        Offset(centerX, size.height),
+        linePaint,
+      );
+    }
+    canvas.drawCircle(
+      Offset(centerX, centerY),
+      dotRadius,
+      Paint()..color = dotColor,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _TranscriptTimelinePainter oldDelegate) =>
+      first != oldDelegate.first ||
+      last != oldDelegate.last ||
+      lineColor != oldDelegate.lineColor ||
+      dotColor != oldDelegate.dotColor ||
+      lineWidth != oldDelegate.lineWidth ||
+      dotRadius != oldDelegate.dotRadius ||
+      dotCenterY != oldDelegate.dotCenterY;
+}
+
+final class _DiarizationSection extends StatelessWidget {
+  const _DiarizationSection({required this.viewModel, required this.editing});
 
   final MeetingDetailViewModel viewModel;
   final bool editing;
@@ -148,13 +308,16 @@ final class _DiarizationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    return FCard(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: theme.colors.border)),
+      ),
       child: Padding(
-        padding: EdgeInsets.all(appStyle.spaceMd),
+        padding: EdgeInsets.only(top: appStyle.spaceLg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('说话人', style: theme.typography.display.md),
+            Text('说话人设置', style: theme.typography.display.lg),
             SizedBox(height: appStyle.spaceMd),
             FSwitch(
               key: const ValueKey('speaker-diarization-switch'),
@@ -164,12 +327,20 @@ final class _DiarizationCard extends StatelessWidget {
               onChange: (enabled) =>
                   unawaited(viewModel.setDiarizationEnabled(enabled)),
               label: const Text('自动说话人分离'),
-              description: Text(
-                viewModel.diarizationAvailable
-                    ? '可随时关闭；失败时自动按单一说话人显示。'
-                    : '当前构建未配置已验证的本地说话人模型，可继续手工标注。',
-              ),
+              description: viewModel.diarizationAvailable
+                  ? const Text('可随时关闭；失败时自动按单一说话人显示。')
+                  : null,
             ),
+            if (!viewModel.diarizationAvailable) ...[
+              SizedBox(height: appStyle.spaceSm),
+              Text(
+                '当前构建未配置已验证的本地说话人模型，可继续手工标注。',
+                key: const ValueKey('diarization-unavailable-reason'),
+                style: theme.typography.body.sm.copyWith(
+                  color: theme.colors.mutedForeground,
+                ),
+              ),
+            ],
             if (viewModel.isDiarizing) ...[
               SizedBox(height: appStyle.spaceMd),
               const FProgress(semanticsLabel: '说话人分离处理中'),

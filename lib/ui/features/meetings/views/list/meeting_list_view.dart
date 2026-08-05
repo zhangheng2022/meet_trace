@@ -20,6 +20,7 @@ import '../../../../core/app_dialog.dart';
 import '../../../../core/app_responsive.dart';
 import '../../../../core/app_state_panel.dart';
 import '../../../../core/app_swipe_action_row.dart';
+import '../../../../core/branding/meettrace_brand_mark.dart';
 import '../../../../core/semantic_date_time.dart';
 import '../../../../core/view_state.dart';
 import '../../view_models/list/meeting_list_view_model.dart';
@@ -76,7 +77,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
     return FScaffold(
       childPad: false,
       header: FHeader(
-        title: const Text('会迹'),
+        title: const _MeetingListBrandTitle(),
         suffixes: [
           if (widget.onOpenSettings != null)
             FHeaderAction(
@@ -142,6 +143,26 @@ final class _MeetingListViewState extends State<MeetingListView> {
       description: deleted
           ? Text(meeting.title)
           : Text(viewModel.deleteErrorMessage ?? '会议正在录音或处理中，暂时不能删除'),
+    );
+  }
+}
+
+final class _MeetingListBrandTitle extends StatelessWidget {
+  const _MeetingListBrandTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: const ValueKey('meeting-list-brand-title'),
+      container: true,
+      header: true,
+      label: '会迹，MeetTrace',
+      child: const ExcludeSemantics(
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: MeetTraceBrandMark(size: 28),
+        ),
+      ),
     );
   }
 }

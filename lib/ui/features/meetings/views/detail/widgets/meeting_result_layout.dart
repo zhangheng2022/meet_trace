@@ -3,38 +3,24 @@ part of '../meeting_detail_view.dart';
 final class _ResultView extends StatelessWidget {
   const _ResultView({
     required this.viewModel,
-    required this.section,
+    required this.transcriptKey,
     required this.editingTranscript,
-    required this.onSectionChanged,
     required this.onEditingChanged,
-    required this.onDeleted,
   });
 
   final MeetingDetailViewModel viewModel;
-  final MeetingResultSection section;
+  final GlobalKey<_TranscriptSectionState> transcriptKey;
   final bool editingTranscript;
-  final ValueChanged<MeetingResultSection> onSectionChanged;
   final ValueChanged<bool> onEditingChanged;
-  final VoidCallback? onDeleted;
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
     final snapshot = viewModel.snapshot!;
-    final resultContent = Column(
+    final workbench = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(viewModel.meeting.title, style: theme.typography.display.lg),
-        SizedBox(height: appStyle.spaceSm),
-        Text(
-          '来源模型：${viewModel.sourceModel.displayName} · '
-          '${_duration(viewModel.meeting.audioDurationMs)}',
-          style: theme.typography.body.sm.copyWith(
-            color: theme.colors.mutedForeground,
-          ),
-        ),
-        SizedBox(height: appStyle.spaceLg),
         if (viewModel.errorMessage case final message?) ...[
           AppStatusNotice(
             tone: AppStatusTone.error,
@@ -43,54 +29,23 @@ final class _ResultView extends StatelessWidget {
           ),
           SizedBox(height: appStyle.spaceMd),
         ],
-        FTabs(
-          key: const ValueKey('meeting-result-tabs'),
-          control: FTabControl.lifted(
-            index: section.index,
-            onChange: (index) =>
-                onSectionChanged(MeetingResultSection.values[index]),
-          ),
-          children: [
-            FTabEntry(
-              label: const Text('转录'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _TranscriptCard(
-                    key: ValueKey('transcript-${snapshot.id}'),
-                    snapshot: snapshot,
-                    viewModel: viewModel,
-                    editing: editingTranscript,
-                    onEditingChanged: onEditingChanged,
-                  ),
-                  SizedBox(height: appStyle.spaceMd),
-                  _DiarizationCard(
-                    viewModel: viewModel,
-                    editing: editingTranscript,
-                  ),
-                ],
-              ),
-            ),
-            FTabEntry(
-              label: const Text('录音'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _AudioCard(viewModel: viewModel),
-                  SizedBox(height: appStyle.spaceMd),
-                  _ResultActionsCard(
-                    viewModel: viewModel,
-                    onDeleted: onDeleted,
-                  ),
-                  if (viewModel.canRetranscribe) ...[
-                    SizedBox(height: appStyle.spaceMd),
-                    _RetranscriptionCard(viewModel: viewModel),
-                  ],
-                ],
-              ),
-            ),
-          ],
+        _TranscriptSection(
+          key: transcriptKey,
+          snapshot: snapshot,
+          viewModel: viewModel,
+          editing: editingTranscript,
+          onEditingChanged: onEditingChanged,
         ),
+        if (viewModel.resultMessage case final message?) ...[
+          SizedBox(height: appStyle.spaceLg),
+          AppStatusNotice(
+            tone: AppStatusTone.info,
+            title: '操作状态',
+            message: message,
+          ),
+        ],
+        SizedBox(height: appStyle.spaceXl),
+        _DiarizationSection(viewModel: viewModel, editing: editingTranscript),
       ],
     );
     return SingleChildScrollView(
@@ -103,7 +58,16 @@ final class _ResultView extends StatelessWidget {
                 constraints: BoxConstraints(
                   maxWidth: appStyle.readingContentMaxWidth,
                 ),
-                child: resultContent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _MeetingIdentity(viewModel: viewModel),
+                    SizedBox(height: appStyle.spaceLg),
+                    _AudioEvidenceStrip(viewModel: viewModel),
+                    SizedBox(height: appStyle.spaceXl),
+                    workbench,
+                  ],
+                ),
               );
             }
             return Row(
@@ -115,12 +79,46 @@ final class _ResultView extends StatelessWidget {
                   child: _MeetingFactRail(viewModel: viewModel),
                 ),
                 SizedBox(width: appStyle.spaceXl),
-                Expanded(child: resultContent),
+                Expanded(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: appStyle.readingContentMaxWidth,
+                    ),
+                    child: workbench,
+                  ),
+                ),
               ],
             );
           },
         ),
       ),
+    );
+  }
+}
+
+final class _MeetingIdentity extends StatelessWidget {
+  const _MeetingIdentity({required this.viewModel});
+
+  final MeetingDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(viewModel.meeting.title, style: theme.typography.display.lg),
+        SizedBox(height: appStyle.spaceSm),
+        Text(
+          '${_dateLabel(viewModel.meeting.createdAt)} · '
+          '${_duration(viewModel.meeting.audioDurationMs)} · '
+          '${viewModel.sourceModel.displayName}',
+          style: theme.typography.body.sm.copyWith(
+            color: theme.colors.mutedForeground,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -134,41 +132,45 @@ final class _MeetingFactRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.card,
-        border: Border.all(
-          color: theme.colors.border,
-          width: appStyle.dividerWidth,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('事实记录', style: theme.typography.body.xs),
+        SizedBox(height: appStyle.spaceLg),
+        _MeetingIdentity(viewModel: viewModel),
+        SizedBox(height: appStyle.spaceLg),
+        _AudioEvidenceStrip(viewModel: viewModel, compact: true),
+        SizedBox(height: appStyle.spaceLg),
+        const AppStatusNotice(
+          tone: AppStatusTone.success,
+          title: '事实音频已保存',
+          message: '最终转录带有时间戳，可回到本机原音频核对。',
         ),
-        borderRadius: BorderRadius.circular(appStyle.panelRadius),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(appStyle.spaceMd),
+      ],
+    );
+  }
+}
+
+final class _FailureView extends StatelessWidget {
+  const _FailureView({required this.message, required this.viewModel});
+
+  final String message;
+  final MeetingDetailViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final appStyle = context.theme.style.app;
+    return SingleChildScrollView(
+      child: AppPageBody(
+        width: AppPageWidth.reading,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('事实记录', style: theme.typography.body.xs),
+            _MeetingIdentity(viewModel: viewModel),
             SizedBox(height: appStyle.spaceLg),
-            Text(viewModel.meeting.title, style: theme.typography.display.lg),
-            SizedBox(height: appStyle.spaceLg),
-            _FactLine(
-              icon: FLucideIcons.clock3,
-              label: '会议时长',
-              value: _duration(viewModel.meeting.audioDurationMs),
-            ),
-            SizedBox(height: appStyle.spaceMd),
-            _FactLine(
-              icon: FLucideIcons.lockKeyhole,
-              label: '来源模型',
-              value: viewModel.sourceModel.displayName,
-            ),
-            SizedBox(height: appStyle.spaceLg),
-            const AppStatusNotice(
-              tone: AppStatusTone.success,
-              title: '事实音频已保存',
-              message: '最终转录带有时间戳，可回到本机原音频核对。',
-            ),
+            _AudioEvidenceStrip(viewModel: viewModel),
+            SizedBox(height: appStyle.spaceXl),
+            _FailureCard(message: message, viewModel: viewModel),
           ],
         ),
       ),
@@ -176,44 +178,11 @@ final class _MeetingFactRail extends StatelessWidget {
   }
 }
 
-final class _FactLine extends StatelessWidget {
-  const _FactLine({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: theme.colors.mutedForeground),
-        SizedBox(width: appStyle.spaceSm),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: theme.typography.body.xs.copyWith(
-                  color: theme.colors.mutedForeground,
-                ),
-              ),
-              SizedBox(height: appStyle.space2Xs),
-              Text(value, style: theme.typography.body.sm),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+String _dateLabel(DateTime value) {
+  final local = value.toLocal();
+  final month = local.month.toString().padLeft(2, '0');
+  final day = local.day.toString().padLeft(2, '0');
+  return '${local.year}-$month-$day';
 }
 
 final class _FailureCard extends StatelessWidget {

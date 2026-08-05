@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
@@ -11,6 +13,9 @@ import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/audio_playback.dart';
 import 'package:meettrace/domain/ports/audio_share.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
+import 'package:meettrace/domain/ports/text_share.dart';
+import 'package:meettrace/domain/use_cases/build_meeting_share.dart';
+import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/domain/use_cases/share_meeting_audio.dart';
@@ -65,23 +70,18 @@ void main() {
       find.byKey(const ValueKey('segment-text-old-segment')),
       findsNothing,
     );
-    await tester.tap(find.text('录音'));
+    expect(find.text('重新生成结果'), findsNothing);
+    expect(find.text('删除本场会议'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('meeting-more-actions')));
     await tester.pumpAndSettle();
     expect(find.textContaining('本场锁定的 SenseVoice'), findsOneWidget);
-    final retranscribe = find.text('使用本场锁定模型重新转录');
-    await tester.ensureVisible(retranscribe);
-    await tester.tap(retranscribe);
+    await tester.tap(find.byKey(const ValueKey('retranscribe-meeting')));
     await tester.pumpAndSettle();
 
     expect(fixture.runner.calls.single.modelId, senseVoiceDefaultModelId);
     expect(fixture.runner.calls.single.retrySnapshotId, isNull);
-    final transcriptTab = find.text('转录');
-    await tester.ensureVisible(transcriptTab);
-    await tester.pumpAndSettle();
-    await tester.tap(transcriptTab);
-    await tester.pumpAndSettle();
     expect(find.textContaining('SenseVoice 新最终文本'), findsOneWidget);
-    expect(find.textContaining('来源模型：SenseVoice'), findsOneWidget);
+    expect(find.textContaining('SenseVoice'), findsWidgets);
     await fixture.dispose();
   });
 
@@ -164,7 +164,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('当前构建未配置已验证'), findsOneWidget);
-    expect(find.textContaining('说话人 1 · 00:00'), findsOneWidget);
+    final unavailableReason = find.byKey(
+      const ValueKey('diarization-unavailable-reason'),
+    );
+    expect(unavailableReason, findsOneWidget);
+    expect(
+      find.ancestor(of: unavailableReason, matching: find.byType(FSwitch)),
+      findsNothing,
+    );
+    expect(find.text('说话人 1'), findsWidgets);
+    expect(find.text('00:00'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('edit-transcript')));
     await tester.pumpAndSettle();
@@ -177,6 +186,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(diarization.renameCalls.single, ('speaker-1', '张三'));
+    expect(find.text('张三'), findsWidgets);
     expect(find.textContaining('张三 · 00:00'), findsOneWidget);
     expect(find.text('说话人标签已保存'), findsOneWidget);
     await fixture.dispose();
@@ -214,7 +224,7 @@ void main() {
     await fixture.dispose();
   });
 
-  testWidgets('录音页播放完整事实音频区间', (tester) async {
+  testWidgets('详情页直接播放完整事实音频区间', (tester) async {
     final active = _snapshot(id: 'active');
     final playback = _Playback();
     final fixture = _fixture(
@@ -232,14 +242,125 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('录音'));
-    await tester.pumpAndSettle();
     final playButton = find.byKey(const ValueKey('toggle-audio-playback'));
     await tester.ensureVisible(playButton);
     await tester.tap(playButton);
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(playback.calls, [('/audio/fact.pcm', 0, 2000)]);
+    await fixture.dispose();
+  });
+
+  testWidgets('分享文本先选择格式且不附带事实音频', (tester) async {
+    final active = _snapshot(id: 'active');
+    final textShare = _TextShare();
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      textShare: textShare,
+    );
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('request-share-text')), findsNothing);
+    expect(find.byKey(const ValueKey('request-share-audio')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('request-share-meeting')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('纯文本'), findsOneWidget);
+    expect(find.text('Markdown'), findsOneWidget);
+    expect(find.textContaining('事实音频需要单独确认'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('share-markdown')));
+    await tester.pumpAndSettle();
+
+    expect(textShare.documents, hasLength(1));
+    expect(textShare.documents.single.fileName, endsWith('.md'));
+    expect(textShare.documents.single.text, contains('最终事实文本'));
+    expect(textShare.documents.single.text, isNot(contains('/audio/fact.pcm')));
+    await fixture.dispose();
+  });
+
+  testWidgets('低频操作收进更多面板且删除仍需危险确认', (tester) async {
+    final active = _snapshot(id: 'active');
+    var deleted = 0;
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+    );
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(
+          viewModel: fixture.viewModel,
+          onBack: () {},
+          onDeleted: () => deleted++,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('重新生成转录'), findsNothing);
+    expect(find.text('删除会议'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('meeting-more-actions')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('重新生成转录'), findsOneWidget);
+    expect(find.text('删除会议'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('request-delete-meeting')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('永久删除这场会议？'), findsOneWidget);
+    expect(find.textContaining('事实录音、转录、说话人标签和处理记录'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('confirm-delete-meeting')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('confirm-delete-meeting')));
+    await tester.pumpAndSettle();
+
+    expect(fixture.meetings.value, isNull);
+    expect(deleted, 1);
+    await fixture.dispose();
+  });
+
+  testWidgets('宽屏更多操作使用锚定浮层而不是底部面板', (tester) async {
+    tester.view.physicalSize = const Size(1024, 760);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final active = _snapshot(id: 'active');
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+    );
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FPopoverMenu), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('meeting-more-actions')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('重新生成转录'), findsOneWidget);
+    expect(find.text('删除会议'), findsOneWidget);
+    expect(find.text('更多操作'), findsNothing);
+    expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
 
@@ -261,11 +382,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('录音'));
-    await tester.pumpAndSettle();
-    final request = find.byKey(const ValueKey('request-share-audio'));
+    final request = find.byKey(const ValueKey('request-share-meeting'));
     await tester.ensureVisible(request);
     await tester.tap(request);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('share-audio')));
     await tester.pumpAndSettle();
 
     expect(audioShare.shareCalls, 0);
@@ -303,11 +424,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('录音'));
-    await tester.pumpAndSettle();
-    final request = find.byKey(const ValueKey('request-share-audio'));
+    final request = find.byKey(const ValueKey('request-share-meeting'));
     await tester.ensureVisible(request);
     await tester.tap(request);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('share-audio')));
     await tester.pumpAndSettle();
 
     expect(find.text('可用空间不足'), findsOneWidget);
@@ -337,11 +458,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('录音'));
-    await tester.pumpAndSettle();
-    final request = find.byKey(const ValueKey('request-share-audio'));
+    final request = find.byKey(const ValueKey('request-share-meeting'));
     await tester.ensureVisible(request);
     await tester.tap(request);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('share-audio')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('confirm-share-audio')));
     await tester.pumpAndSettle();
@@ -351,9 +472,10 @@ void main() {
     await fixture.dispose();
   });
 
-  testWidgets('处理中只显示真实阶段，不伪造百分比进度', (tester) async {
+  testWidgets('处理中只显示单一真实状态且允许返回', (tester) async {
     final fixture = _fixture(_meeting());
     final completion = Completer<FinalTranscriptionResult>();
+    var backCalls = 0;
     fixture.runner.onCall =
         ({
           required meetingId,
@@ -365,20 +487,28 @@ void main() {
 
     await tester.pumpWidget(
       Application(
-        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+        home: MeetingDetailView(
+          viewModel: fixture.viewModel,
+          onBack: () => backCalls++,
+        ),
       ),
     );
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('正在生成联合最终结果'), findsOneWidget);
-    expect(find.text('最终转录'), findsOneWidget);
-    expect(find.text('说话人整理'), findsOneWidget);
-    expect(find.textContaining('全部结束后才会发布结果'), findsOneWidget);
-    expect(find.textContaining('单一说话人发布最终文本'), findsOneWidget);
+    expect(find.text('正在生成最终结果'), findsOneWidget);
+    expect(find.textContaining('事实音频已经安全保存在本机'), findsOneWidget);
+    expect(find.textContaining('单一说话人发布结果'), findsOneWidget);
+    expect(find.text('最终转录'), findsNothing);
+    expect(find.text('说话人整理'), findsNothing);
+    expect(find.byType(FProgress), findsNothing);
     expect(find.text('AI 总结'), findsNothing);
     expect(find.textContaining('%'), findsNothing);
     expect(find.textContaining('事实音频'), findsWidgets);
+
+    await tester.tap(find.bySemanticsLabel('返回会议列表'));
+    await tester.pump();
+    expect(backCalls, 1);
 
     final snapshot = _snapshot(id: 'completed');
     final meeting = fixture.meetings.value!.activateFinalTranscript(snapshot);
@@ -425,10 +555,44 @@ void main() {
       find.byKey(const ValueKey('speaker-label-speaker-1')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey('save-transcript-revision')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('cancel-transcript-revision')),
+      findsOneWidget,
+    );
     await fixture.dispose();
   });
 
-  testWidgets('320 宽度和 2.0 字体缩放下结果三视图不溢出', (tester) async {
+  testWidgets('长会议时长和时间戳使用小时格式', (tester) async {
+    final active = _snapshot(id: 'active', startMs: 3723000);
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+        audioDurationMs: 3723000,
+      ),
+      active: active,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('1:02:03'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey('transcript-time-active-segment')),
+      findsOneWidget,
+    );
+    await fixture.dispose();
+  });
+
+  testWidgets('320 宽度和 2.0 字体缩放下连续结果视图不溢出', (tester) async {
     tester.view.physicalSize = const Size(320, 760);
     tester.view.devicePixelRatio = 1;
     tester.platformDispatcher.textScaleFactorTestValue = 2;
@@ -442,6 +606,7 @@ void main() {
         activeTranscriptSnapshotId: active.id,
       ),
       active: active,
+      textShare: _TextShare(),
     );
 
     await tester.pumpWidget(
@@ -451,9 +616,25 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('转录'), findsWidgets);
-    expect(find.text('录音'), findsOneWidget);
+    expect(find.text('最终转录'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meeting-audio-evidence-strip')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('meeting-detail-continuous-ledger')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('meeting-result-tabs')), findsNothing);
+    final timestamp = tester.renderObject<RenderParagraph>(
+      find.byKey(const ValueKey('transcript-time-active-segment')),
+    );
+    expect(timestamp.didExceedMaxLines, isFalse);
     expect(find.text('总结'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('request-share-meeting')));
+    await tester.pumpAndSettle();
+    expect(find.text('分享会议'), findsWidgets);
+    expect(find.byKey(const ValueKey('share-plain-text')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await fixture.dispose();
   });
@@ -481,7 +662,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('最终事实文本'), findsOneWidget);
-      expect(find.byKey(const ValueKey('meeting-result-tabs')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('meeting-detail-continuous-ledger')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('meeting-result-tabs')), findsNothing);
       expect(
         find.byKey(const ValueKey('meeting-detail-audio-workbench')),
         width >= 840 ? findsOneWidget : findsNothing,
@@ -499,6 +684,7 @@ _Fixture _fixture(
   bool diarizationEnabled = false,
   AudioPlaybackService? playback,
   AudioShareService? audioShare,
+  TextShareService? textShare,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
@@ -528,11 +714,43 @@ _Fixture _fixture(
       diarizationPreferences: _DiarizationPreference(diarizationEnabled),
       processingTasks: tasks,
       playback: playback,
+      sharing: textShare,
       audioSharing: audioShare == null
           ? null
           : ShareMeetingAudioUseCase(audioShare),
+      deletion: DeleteMeetingUseCase(
+        meetings: meetings,
+        files: const _MeetingFileDeletionService(),
+      ),
     ),
   );
+}
+
+final class _MeetingFileDeletionService implements MeetingFileDeletionService {
+  const _MeetingFileDeletionService();
+
+  @override
+  Future<StagedMeetingDeletion> stage(String meetingId) async =>
+      const _StagedMeetingDeletion();
+}
+
+final class _StagedMeetingDeletion implements StagedMeetingDeletion {
+  const _StagedMeetingDeletion();
+
+  @override
+  Future<void> commit() async {}
+
+  @override
+  Future<void> rollback() async {}
+}
+
+final class _TextShare implements TextShareService {
+  final List<MeetingShareDocument> documents = [];
+
+  @override
+  Future<void> share(MeetingShareDocument document) async {
+    documents.add(document);
+  }
 }
 
 final class _Playback implements AudioPlaybackService {
@@ -611,6 +829,7 @@ final class _Fixture {
 Meeting _meeting({
   MeetingState status = MeetingState.processing,
   String? activeTranscriptSnapshotId,
+  int audioDurationMs = 2000,
 }) {
   return Meeting(
     id: 'meeting-1',
@@ -620,7 +839,7 @@ Meeting _meeting({
     endedAt: DateTime.utc(2026, 7, 25, 1, 0, 2),
     status: status,
     audioPath: '/audio/fact.pcm',
-    audioDurationMs: 2000,
+    audioDurationMs: audioDurationMs,
     recordingModelId: senseVoiceDefaultModelId,
     recordingModelVersion: '2024-07-17',
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
@@ -634,6 +853,7 @@ TranscriptSnapshot _snapshot({
   String modelVersion = '2024-07-17',
   String text = '最终事实文本',
   String? speakerId,
+  int startMs = 0,
 }) {
   return TranscriptSnapshot(
     id: id,
@@ -648,8 +868,8 @@ TranscriptSnapshot _snapshot({
             TranscriptSegment(
               id: '$id-segment',
               snapshotId: id,
-              startMs: 0,
-              endMs: 1000,
+              startMs: startMs,
+              endMs: startMs + 1000,
               text: text,
               speakerId: speakerId,
               modelId: modelId,

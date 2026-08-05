@@ -15,11 +15,13 @@ final class RecordingAudioWaveform extends StatefulWidget {
   const RecordingAudioWaveform({
     required this.levels,
     required this.state,
+    this.height = 52,
     super.key,
   });
 
   final List<double> levels;
   final RecordingAudioWaveformState state;
+  final double height;
 
   @override
   State<RecordingAudioWaveform> createState() => _RecordingAudioWaveformState();
@@ -84,7 +86,7 @@ final class _RecordingAudioWaveformState extends State<RecordingAudioWaveform>
           SizedBox(
             key: const ValueKey('recording-audio-waveform'),
             width: double.infinity,
-            height: 84,
+            height: widget.height,
             child: RepaintBoundary(
               child: AnimatedBuilder(
                 animation: _controller,
@@ -156,10 +158,10 @@ final class _RecordingWaveformPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final centerY = size.height / 2;
+    final baselineY = size.height - 0.5;
     canvas.drawLine(
-      Offset(0, centerY),
-      Offset(size.width, centerY),
+      Offset(0, baselineY),
+      Offset(size.width, baselineY),
       Paint()
         ..color = baseline
         ..strokeWidth = 1,
@@ -171,7 +173,7 @@ final class _RecordingWaveformPainter extends CustomPainter {
     final leadingEmpty = slotCount - visibleCount;
     final slotWidth = size.width / slotCount;
     final strokeWidth = math.min(4.0, slotWidth * 0.56);
-    final availableHeight = math.max(2.0, size.height - 10);
+    final availableHeight = math.max(2.0, size.height - 6);
     final recentStart = math.max(0, levels.length - 16);
     final recentPeak = levels
         .skip(recentStart)
@@ -193,8 +195,8 @@ final class _RecordingWaveformPainter extends CustomPainter {
           : Color.lerp(baseline, muted, 0.55)!;
       final x = slotWidth * (index + 0.5);
       canvas.drawLine(
-        Offset(x, centerY - height / 2),
-        Offset(x, centerY + height / 2),
+        Offset(x, baselineY),
+        Offset(x, baselineY - height),
         paint,
       );
     }

@@ -12,13 +12,13 @@ import 'package:meettrace/ui/features/startup/view_models/runtime_initialization
 import 'package:meettrace/ui/features/startup/views/meettrace_startup_view.dart';
 
 void main() {
-  testWidgets('启动页说明真实本地准备内容且不显示免登录页脚', (tester) async {
+  testWidgets('启动页显示本地准备状态且不显示冗余说明', (tester) async {
     await tester.pumpWidget(const Application(home: MeetTraceStartupView()));
 
     expect(find.text('会迹'), findsOneWidget);
     expect(find.text('MeetTrace'), findsOneWidget);
     expect(find.text('正在准备会迹'), findsOneWidget);
-    expect(find.text('恢复本地会议并检查离线转录资源，完成后自动进入首页。'), findsOneWidget);
+    expect(find.text('恢复本地会议并检查离线转录资源，完成后自动进入首页。'), findsNothing);
     expect(find.text('打开本地工作区'), findsOneWidget);
     expect(find.text('步骤 1 / 4'), findsOneWidget);
     expect(find.text('会议记录与事实音频仍保存在本机'), findsOneWidget);
@@ -110,6 +110,27 @@ void main() {
       closeTo(100000000 / 286314800, 0.000001),
     );
     expect(find.byType(FCircularProgress), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('资源重试失败后刷新提示而不是停留在相同画面', (tester) async {
+    final preparation = _RetryFailurePreparation();
+    final viewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(preparation),
+    );
+    addTearDown(viewModel.dispose);
+    await viewModel.start();
+
+    await tester.pumpWidget(
+      Application(home: MeetTraceStartupView(viewModel: viewModel)),
+    );
+    expect(find.text('首次初始化需要联网下载离线运行资源'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('resume-runtime-download')));
+    await tester.pumpAndSettle();
+
+    expect(preparation.attempts, 2);
+    expect(find.text('重试未成功：首次初始化需要联网下载离线运行资源'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -266,6 +287,28 @@ void main() {
     expect(find.textContaining('事实音频不会因重试而改变'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+}
+
+final class _RetryFailurePreparation implements RuntimeAssetPreparationPort {
+  int attempts = 0;
+
+  @override
+  Future<void> prepare({
+    required void Function(RuntimeInitializationProgress progress) onProgress,
+    bool forceRepair = false,
+  }) async {
+    attempts++;
+    throw const RuntimeInitializationException(
+      code: 'runtime.network.offline',
+      message: '首次初始化需要联网下载离线运行资源',
+    );
+  }
+
+  @override
+  Future<void> grantMobileConsent() async {}
+
+  @override
+  void pause() {}
 }
 
 final class _DownloadingPreparation implements RuntimeAssetPreparationPort {

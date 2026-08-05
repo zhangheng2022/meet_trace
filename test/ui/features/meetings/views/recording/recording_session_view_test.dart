@@ -39,10 +39,25 @@ void main() {
     await tester.pump();
 
     expect(find.text('00:00:12'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('recording-session-title')),
+      findsOneWidget,
+    );
+    expect(find.text('产品评审'), findsOneWidget);
     expect(find.textContaining('SenseVoice'), findsOneWidget);
     expect(find.textContaining('本场锁定'), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
-    expect(find.text('实时转录正常'), findsOneWidget);
+    expect(find.text('正常'), findsOneWidget);
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('live-transcript-heading')))
+          .label,
+      '实时转录，正常',
+    );
+    expect(
+      tester.getCenter(find.text('实时转录')).dy,
+      closeTo(tester.getCenter(find.text('正常')).dy, 0.01),
+    );
     expect(find.text('检测到语音后在这里显示文字。'), findsOneWidget);
     expect(find.text('录音'), findsNothing);
     expect(find.text('事实录音'), findsNothing);
@@ -54,6 +69,12 @@ void main() {
     expect(
       find.byKey(const ValueKey('recording-control-console')),
       findsOneWidget,
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('recording-control-console')))
+          .height,
+      lessThan(300),
     );
     expect(find.byKey(const ValueKey('recording-fact-ledger')), findsOneWidget);
     expect(
@@ -76,14 +97,14 @@ void main() {
     await tester.tap(find.text('暂停'));
     await tester.pumpAndSettle();
     expect(find.text('事实录音已暂停'), findsOneWidget);
-    expect(find.text('实时转录已随录音暂停'), findsOneWidget);
+    expect(find.text('已随录音暂停'), findsOneWidget);
     expect(find.text('麦克风输入 · 已暂停'), findsOneWidget);
 
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     fixture.preview.emit(AsrPreviewState.recordingOnly);
     await tester.pump();
-    expect(find.text('实时转录已停止，录音仍在继续'), findsOneWidget);
+    expect(find.text('已停止，录音仍在继续'), findsOneWidget);
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('结束后仍会基于完整音频生成最终转录。'), findsOneWidget);
     expect(fixture.viewModel.recordingState, RecordingState.recording);
@@ -254,9 +275,19 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    fixture.preview.emit(AsrPreviewState.backlogged);
+    await tester.pumpAndSettle();
 
     expect(find.text('事实音频正在安全写入'), findsOneWidget);
     expect(find.text('00:11'), findsOneWidget);
+    expect(find.text('积压，录音仍在继续'), findsOneWidget);
+    expect(find.text('1 段'), findsOneWidget);
+    expect(
+      tester
+          .getSemantics(find.byKey(const ValueKey('live-transcript-heading')))
+          .label,
+      '实时转录，积压，录音仍在继续，1 段',
+    );
     final compactTimestamp = tester.widget<Text>(find.text('00:11'));
     expect(compactTimestamp.maxLines, 1);
     expect(compactTimestamp.softWrap, isFalse);
@@ -345,7 +376,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
   });
 
-  testWidgets('实时转录按时间账本显示时标与文本', (WidgetTester tester) async {
+  testWidgets('实时转录最新片段置顶并保留时标', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1024, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -364,10 +395,21 @@ void main() {
     expect(find.byKey(const ValueKey('live-transcript-count')), findsNothing);
     fixture.preview.emitSegment(
       const TranscriptSegmentEvent(
-        segmentId: 'segment-1',
+        segmentId: 'segment-early',
+        startMs: 4980000,
+        endMs: 4985000,
+        text: '这是较早的实时转录片段。',
+        modelId: senseVoiceDefaultModelId,
+        modelVersion: 'test',
+        isFinalForWindow: false,
+      ),
+    );
+    fixture.preview.emitSegment(
+      const TranscriptSegmentEvent(
+        segmentId: 'segment-latest',
         startMs: 4990000,
         endMs: 4995000,
-        text: '关于本次需求的背景，我们先简单回顾一下。',
+        text: '这是最新的实时转录片段。',
         modelId: senseVoiceDefaultModelId,
         modelVersion: 'test',
         isFinalForWindow: false,
@@ -376,8 +418,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1:23:10'), findsOneWidget);
-    expect(find.byKey(const ValueKey('transcript-segment-1')), findsOneWidget);
-    expect(find.text('1 段'), findsOneWidget);
+    expect(find.text('1:23:00'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('这是最新的实时转录片段。')).dy,
+      lessThan(tester.getTopLeft(find.text('这是较早的实时转录片段。')).dy),
+    );
+    expect(
+      find.byKey(const ValueKey('transcript-segment-latest')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('transcript-segment-early')),
+      findsOneWidget,
+    );
+    expect(find.text('2 段'), findsOneWidget);
     expect(find.text('最新'), findsNothing);
     expect(tester.takeException(), isNull);
     await fixture.dispose();

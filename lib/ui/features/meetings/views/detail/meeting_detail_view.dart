@@ -1,6 +1,8 @@
-// Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5
-// Impeccable · page: meeting result · world: Evidence Ledger
-// Composition C: compact evidence reading, expanded fact rail + workbench.
+// THESIS: 会议详情是一张可核对的事实工作台，不是转录与录音分离的卡片仪表盘。
+// OWN-WORLD: 暖灰账本纸、连续时间轨、细边界、低曲率与零静止阴影。
+// STORY: 用户先确认本地事实音频，再沿时间轨阅读、修订并分享最终结果。
+// FIRST VIEWPORT: 标题与录音证据在上，紧凑最终转录直接展开，分享固定在安全区。
+// FORM: 已确认的 Evidence Ledger 单列阅读稿；宽屏转为 280px 事实栏与转录工作区。
 
 import 'dart:async';
 
@@ -26,8 +28,6 @@ part 'widgets/meeting_result_layout.dart';
 part 'transcript/meeting_transcript_section.dart';
 part 'audio/meeting_audio_actions.dart';
 
-enum MeetingResultSection { transcript, recording }
-
 final class MeetingDetailView extends StatefulWidget {
   const MeetingDetailView({
     required this.viewModel,
@@ -45,7 +45,7 @@ final class MeetingDetailView extends StatefulWidget {
 }
 
 final class _MeetingDetailViewState extends State<MeetingDetailView> {
-  MeetingResultSection _section = MeetingResultSection.transcript;
+  final GlobalKey<_TranscriptSectionState> _transcriptKey = GlobalKey();
   bool _editingTranscript = false;
 
   @override
@@ -60,20 +60,41 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
       listenable: widget.viewModel,
       builder: (context, _) {
         final viewModel = widget.viewModel;
-        return PopScope(
-          canPop: !viewModel.isProcessing,
-          child: FScaffold(
-            header: FHeader.nested(
-              title: const Text('会议详情'),
-              prefixes: [
-                FHeaderAction(
-                  icon: const AppBackIcon(semanticsLabel: '返回会议列表'),
-                  onPress: viewModel.isProcessing ? null : widget.onBack,
+        return FScaffold(
+          childPad: false,
+          header: FHeader.nested(
+            title: const Text('会议详情'),
+            prefixes: [
+              FHeaderAction(
+                icon: const AppBackIcon(semanticsLabel: '返回会议列表'),
+                onPress: widget.onBack,
+              ),
+            ],
+            suffixes: [
+              if (viewModel.snapshot != null &&
+                  !viewModel.isTranscribing &&
+                  !_editingTranscript)
+                _MeetingMoreActionsButton(
+                  viewModel: viewModel,
+                  onDeleted: widget.onDeleted,
                 ),
-              ],
-            ),
-            child: _body(context, viewModel),
+            ],
           ),
+          footer: viewModel.snapshot != null && !viewModel.isTranscribing
+              ? _editingTranscript
+                    ? _TranscriptEditBottomBar(
+                        saving: viewModel.isProcessing,
+                        onCancel: () {
+                          setState(() => _editingTranscript = false);
+                        },
+                        onSave: () => unawaited(
+                          _transcriptKey.currentState?.saveRevision() ??
+                              Future<void>.value(),
+                        ),
+                      )
+                    : _MeetingShareBottomBar(viewModel: viewModel)
+              : null,
+          child: _body(context, viewModel),
         );
       },
     );
@@ -91,10 +112,7 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
     if (viewModel.snapshot == null) {
       final message = viewModel.errorMessage;
       if (message != null) {
-        return AppPageBody(
-          width: AppPageWidth.reading,
-          child: _FailureCard(message: message, viewModel: viewModel),
-        );
+        return _FailureView(message: message, viewModel: viewModel);
       }
       return const AppStatePanel.empty(
         icon: FLucideIcons.fileAudio,
@@ -105,20 +123,11 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
 
     return _ResultView(
       viewModel: viewModel,
-      section: _section,
+      transcriptKey: _transcriptKey,
       editingTranscript: _editingTranscript,
-      onSectionChanged: (section) {
-        setState(() {
-          _section = section;
-          if (section != MeetingResultSection.transcript) {
-            _editingTranscript = false;
-          }
-        });
-      },
       onEditingChanged: (editing) {
         setState(() => _editingTranscript = editing);
       },
-      onDeleted: widget.onDeleted,
     );
   }
 }

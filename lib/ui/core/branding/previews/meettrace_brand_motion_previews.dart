@@ -269,13 +269,6 @@ final class _StartupPreviewFacts extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('正在准备会迹', style: theme.typography.display.md),
-          SizedBox(height: appStyle.spaceXs),
-          Text(
-            '恢复本地会议并检查离线转录资源，完成后自动进入首页。',
-            style: theme.typography.body.sm.copyWith(
-              color: theme.colors.app.inkSecondary,
-            ),
-          ),
           SizedBox(height: appStyle.spaceLg),
           DecoratedBox(
             decoration: BoxDecoration(

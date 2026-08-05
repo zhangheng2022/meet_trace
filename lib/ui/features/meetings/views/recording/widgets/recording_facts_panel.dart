@@ -42,41 +42,34 @@ final class RecordingFactsPanel extends StatelessWidget {
             borderRadius: BorderRadius.circular(appStyle.panelRadius),
           ),
           child: Padding(
-            padding: EdgeInsets.all(wide ? appStyle.spaceLg : appStyle.spaceMd),
+            padding: EdgeInsets.all(wide ? appStyle.spaceLg : appStyle.spaceSm),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: appStyle.spaceSm,
-                  runSpacing: appStyle.spaceXs,
-                  children: [
-                    _RecordingStateLabel(state: recordingState),
-                    Text(
-                      viewModel.meeting.title,
-                      style: theme.typography.body.xs.copyWith(
-                        color: theme.colors.mutedForeground,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: appStyle.spaceLg),
+                _RecordingStateLabel(state: recordingState),
+                SizedBox(height: wide ? appStyle.spaceLg : appStyle.spaceSm),
                 Center(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       _durationLabel(viewModel.duration),
                       key: const ValueKey('recording-duration'),
-                      style: theme.typography.display.xl4.copyWith(
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                      style:
+                          (wide
+                                  ? theme.typography.display.xl4
+                                  : theme.typography.body.xl4)
+                              .copyWith(
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
                     ),
                   ),
                 ),
-                SizedBox(height: appStyle.spaceMd),
+                SizedBox(height: wide ? appStyle.spaceMd : appStyle.spaceSm),
                 RecordingAudioWaveform(
                   levels: viewModel.audioLevels,
+                  height: wide ? 64 : 52,
                   state: switch (recordingState) {
                     RecordingState.idle || RecordingState.starting =>
                       RecordingAudioWaveformState.waiting,
@@ -89,10 +82,11 @@ final class RecordingFactsPanel extends StatelessWidget {
                       RecordingAudioWaveformState.stopped,
                   },
                 ),
-                SizedBox(height: appStyle.spaceLg),
+                SizedBox(height: wide ? appStyle.spaceLg : appStyle.spaceMd),
                 _RecordingFactLedger(
                   state: recordingState,
                   modelName: model?.displayName ?? '本场模型',
+                  spacing: wide ? appStyle.spaceSm : appStyle.spaceXs,
                 ),
                 if (viewModel.errorMessage case final message?) ...[
                   SizedBox(height: appStyle.spaceMd),
@@ -140,15 +134,18 @@ final class _RecordingStateLabel extends StatelessWidget {
 }
 
 final class _RecordingFactLedger extends StatelessWidget {
-  const _RecordingFactLedger({required this.state, required this.modelName});
+  const _RecordingFactLedger({
+    required this.state,
+    required this.modelName,
+    required this.spacing,
+  });
 
   final RecordingState state;
   final String modelName;
+  final double spacing;
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
     return KeyedSubtree(
       key: const ValueKey('recording-fact-ledger'),
       child: Column(
@@ -158,7 +155,7 @@ final class _RecordingFactLedger extends StatelessWidget {
             label: _recordingLabel(state),
             emphasized: true,
           ),
-          SizedBox(height: appStyle.spaceSm),
+          SizedBox(height: spacing),
           _RecordingFactRow(
             icon: FLucideIcons.lockKeyhole,
             label: '$modelName · 本场锁定',

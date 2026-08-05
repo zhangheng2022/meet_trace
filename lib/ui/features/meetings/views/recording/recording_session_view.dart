@@ -60,7 +60,12 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
           child: FScaffold(
             childPad: false,
             header: FHeader.nested(
-              title: const Text('会迹'),
+              title: Text(
+                widget.viewModel.meeting.title,
+                key: const ValueKey('recording-session-title'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               prefixes: [
                 FHeaderAction(
                   icon: const AppBackIcon(semanticsLabel: '结束会议并返回'),
@@ -107,12 +112,21 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   facts,
-                  SizedBox(height: appStyle.spaceXl),
+                  SizedBox(height: appStyle.spaceMd),
                   transcript,
                 ],
               );
         return SingleChildScrollView(
-          child: AppPageBody(width: AppPageWidth.wide, child: content),
+          child: AppPageBody(
+            width: AppPageWidth.wide,
+            padding: EdgeInsets.fromLTRB(
+              appStyle.spaceMd,
+              appStyle.spaceSm,
+              appStyle.spaceMd,
+              appStyle.spaceMd,
+            ),
+            child: content,
+          ),
         );
       },
     );

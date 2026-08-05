@@ -21,6 +21,7 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
   bool _forceRepair;
   RuntimeInitializationProgress _state;
   Future<void>? _operation;
+  Future<void>? _resumeOperation;
   bool _disposed = false;
 
   RuntimeInitializationProgress get state => _state;
@@ -64,9 +65,25 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
     );
   }
 
-  Future<void> resume() async {
+  Future<void> resume() {
+    final current = _resumeOperation;
+    if (current != null) {
+      return current;
+    }
+    late final Future<void> operation;
+    operation = _resume().whenComplete(() {
+      if (identical(_resumeOperation, operation)) {
+        _resumeOperation = null;
+      }
+    });
+    _resumeOperation = operation;
+    return operation;
+  }
+
+  Future<void> _resume() async {
     await _operation;
     await start();
+    _surfaceRetryFailure();
   }
 
   void pause() => _initialize.pause();
@@ -119,6 +136,28 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
     }
     _state = value;
     notifyListeners();
+  }
+
+  void _surfaceRetryFailure() {
+    final state = _state;
+    if (state.phase != RuntimeInitializationPhase.failed &&
+        state.phase != RuntimeInitializationPhase.insufficientSpace) {
+      return;
+    }
+    final message = state.message;
+    if (message == null || message.startsWith('重试未成功：')) {
+      return;
+    }
+    _set(
+      RuntimeInitializationProgress(
+        phase: state.phase,
+        completedBytes: state.completedBytes,
+        totalBytes: state.totalBytes,
+        resourceName: state.resourceName,
+        message: '重试未成功：$message',
+        shortageBytes: state.shortageBytes,
+      ),
+    );
   }
 
   @override
