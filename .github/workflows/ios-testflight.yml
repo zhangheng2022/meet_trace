@@ -1,0 +1,483 @@
+name: iOS TestFlight Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: Optional TestFlight release notes
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-testflight-release
+  cancel-in-progress: false
+
+env:
+  IOS_BUNDLE_ID: com.meettrace.app
+  FASTLANE_OPT_OUT_USAGE: "1"
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+
+jobs:
+  release-ios-testflight:
+    name: Build, sign, and upload iOS app
+    runs-on: macos-latest
+    timeout-minutes: 120
+    environment: testflight
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up latest stable Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Fastlane
+        run: sudo gem install fastlane --version 2.235.0 --no-document
+
+      - name: Capture toolchain snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios/testflight
+          {
+            echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "runner_arch=$(uname -m)"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "--- macOS ---"
+            sw_vers
+            echo "--- Xcode ---"
+            xcode-select -p
+            xcodebuild -version
+            echo "--- Flutter ---"
+            flutter --version
+            echo "--- Dart ---"
+            dart --version 2>&1
+            echo "--- CocoaPods ---"
+            pod --version
+            echo "--- Ruby ---"
+            ruby --version
+            echo "--- Fastlane ---"
+            fastlane --version
+            echo "--- Disk ---"
+            df -h
+          } | tee build/ios/testflight/toolchain.txt
+
+      - name: Validate and decode signing materials
+        shell: bash
+        env:
+          IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+          IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import binascii
+          import os
+          import re
+          from pathlib import Path
+
+          required = (
+              "IOS_DISTRIBUTION_P12_PASSWORD",
+              "APPLE_TEAM_ID",
+              "APP_STORE_CONNECT_KEY_ID",
+              "APP_STORE_CONNECT_ISSUER_ID",
+          )
+          missing = [name for name in required if not os.environ.get(name, "").strip()]
+          if missing:
+              raise SystemExit("Missing required GitHub Secrets: " + ", ".join(missing))
+
+          team_id = os.environ["APPLE_TEAM_ID"].strip()
+          key_id = os.environ["APP_STORE_CONNECT_KEY_ID"].strip()
+          issuer_id = os.environ["APP_STORE_CONNECT_ISSUER_ID"].strip()
+          if not re.fullmatch(r"[A-Z0-9]{10}", team_id):
+              raise SystemExit("APPLE_TEAM_ID must be a 10-character uppercase identifier")
+          if not re.fullmatch(r"[A-Za-z0-9_-]{4,64}", key_id):
+              raise SystemExit("APP_STORE_CONNECT_KEY_ID has an invalid format")
+          if not re.fullmatch(
+              r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+              issuer_id,
+          ):
+              raise SystemExit("APP_STORE_CONNECT_ISSUER_ID must be a UUID")
+
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          destinations = {
+              "IOS_DISTRIBUTION_P12_BASE64": runner_temp / "meettrace-distribution.p12",
+              "IOS_PROVISIONING_PROFILE_BASE64": runner_temp / "meettrace-app-store.mobileprovision",
+              "APP_STORE_CONNECT_API_KEY_P8_BASE64": runner_temp / "meettrace-api-key.p8",
+          }
+          for secret_name, destination in destinations.items():
+              encoded = "".join(os.environ.get(secret_name, "").split())
+              if not encoded:
+                  raise SystemExit(f"Missing required GitHub Secret: {secret_name}")
+              try:
+                  decoded = base64.b64decode(encoded, validate=True)
+              except (binascii.Error, ValueError) as error:
+                  raise SystemExit(f"{secret_name} is not valid Base64: {error}") from error
+              if not decoded:
+                  raise SystemExit(f"{secret_name} decoded to an empty file")
+              destination.write_bytes(decoded)
+              destination.chmod(0o600)
+
+          p8_path = destinations["APP_STORE_CONNECT_API_KEY_P8_BASE64"]
+          if b"BEGIN PRIVATE KEY" not in p8_path.read_bytes():
+              raise SystemExit("App Store Connect API key is not a valid .p8 private key")
+
+          env_values = {
+              "CERTIFICATE_PATH": destinations["IOS_DISTRIBUTION_P12_BASE64"],
+              "PROVISIONING_PROFILE_PATH": destinations["IOS_PROVISIONING_PROFILE_BASE64"],
+              "APP_STORE_CONNECT_API_KEY_PATH": p8_path,
+              "APPLE_TEAM_ID": team_id,
+              "APP_STORE_CONNECT_KEY_ID": key_id,
+              "APP_STORE_CONNECT_ISSUER_ID": issuer_id,
+          }
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              for name, value in env_values.items():
+                  stream.write(f"{name}={value}\n")
+          print("Signing and App Store Connect materials decoded into RUNNER_TEMP")
+          PY
+
+      - name: Import distribution certificate
+        shell: bash
+        env:
+          IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/meettrace-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          original_default_keychain="$(security default-keychain -d user | tr -d '"')"
+
+          {
+            echo "KEYCHAIN_PATH=$keychain_path"
+            echo "ORIGINAL_DEFAULT_KEYCHAIN=$original_default_keychain"
+          } >> "$GITHUB_ENV"
+
+          echo "::add-mask::$keychain_password"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$CERTIFICATE_PATH" \
+            -P "$IOS_DISTRIBUTION_P12_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: -s \
+            -k "$keychain_password" "$keychain_path"
+          security default-keychain -d user -s "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" "$original_default_keychain"
+
+          identity_output="$(security find-identity -v -p codesigning "$keychain_path")"
+          printf '%s\n' "$identity_output"
+          identity_sha="$(
+            printf '%s\n' "$identity_output" |
+              awk -v team="$APPLE_TEAM_ID" \
+                '$0 ~ team && ($0 ~ /Apple Distribution/ || $0 ~ /iPhone Distribution/) {print $2; exit}'
+          )"
+          if [[ -z "$identity_sha" ]]; then
+            echo "No valid Apple Distribution identity for APPLE_TEAM_ID was found in the p12" >&2
+            exit 1
+          fi
+
+          echo "IOS_DISTRIBUTION_IDENTITY=$identity_sha" >> "$GITHUB_ENV"
+
+      - name: Validate and install provisioning profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          profile_plist="$RUNNER_TEMP/meettrace-profile.plist"
+          security cms -D -i "$PROVISIONING_PROFILE_PATH" > "$profile_plist"
+
+          PROFILE_PLIST="$profile_plist" python3 - <<'PY'
+          import os
+          import plistlib
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          with Path(os.environ["PROFILE_PLIST"]).open("rb") as stream:
+              profile = plistlib.load(stream)
+          entitlements = profile.get("Entitlements", {})
+          expected_bundle_id = os.environ["IOS_BUNDLE_ID"]
+          expected_team_id = os.environ["APPLE_TEAM_ID"]
+          application_identifier = str(entitlements.get("application-identifier", ""))
+          profile_bundle_id = application_identifier.split(".", 1)[1] if "." in application_identifier else ""
+          profile_team_id = str(
+              entitlements.get("com.apple.developer.team-identifier")
+              or (profile.get("TeamIdentifier") or [""])[0]
+          )
+
+          errors = []
+          if profile_bundle_id != expected_bundle_id:
+              errors.append(f"profile bundle ID is {profile_bundle_id!r}, expected {expected_bundle_id!r}")
+          if profile_team_id != expected_team_id:
+              errors.append(f"profile team ID is {profile_team_id!r}, expected {expected_team_id!r}")
+          if entitlements.get("get-task-allow") is not False:
+              errors.append("profile permits debugging and is not an App Store distribution profile")
+          if profile.get("ProvisionedDevices"):
+              errors.append("profile contains registered devices and is not an App Store profile")
+          if profile.get("ProvisionsAllDevices"):
+              errors.append("enterprise provisioning profiles cannot be uploaded to TestFlight")
+
+          expiration = profile.get("ExpirationDate")
+          if not isinstance(expiration, datetime):
+              errors.append("profile has no valid expiration date")
+          else:
+              if expiration.tzinfo is None:
+                  expiration = expiration.replace(tzinfo=timezone.utc)
+              if expiration <= datetime.now(timezone.utc):
+                  errors.append("profile has expired")
+          uuid = str(profile.get("UUID", "")).strip()
+          if not uuid:
+              errors.append("profile has no UUID")
+          if errors:
+              raise SystemExit("Invalid provisioning profile: " + "; ".join(errors))
+
+          install_dir = Path.home() / "Library/MobileDevice/Provisioning Profiles"
+          install_dir.mkdir(parents=True, exist_ok=True)
+          install_path = install_dir / f"{uuid}.mobileprovision"
+          install_path.write_bytes(Path(os.environ["PROVISIONING_PROFILE_PATH"]).read_bytes())
+          install_path.chmod(0o600)
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              stream.write(f"IOS_PROVISIONING_PROFILE_UUID={uuid}\n")
+              stream.write(f"IOS_PROVISIONING_PROFILE_INSTALL_PATH={install_path}\n")
+          print(f"Provisioning profile validated: {profile.get('Name', uuid)}")
+          PY
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Prepare release build number
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (( GITHUB_RUN_ATTEMPT > 99 )); then
+            echo "GitHub run attempt exceeds the supported build-number range" >&2
+            exit 1
+          fi
+          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
+          echo "IOS_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          echo "TestFlight build number: $build_number"
+
+      - name: Build and inspect unsigned Release app
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build ios \
+            --release --no-codesign \
+            --build-number="$IOS_BUILD_NUMBER"
+          bash tool/benchmarks/inspect_ios_app.sh \
+            build/ios/iphoneos/Runner.app \
+            build/ios/testflight/ios-app-inspection.json
+
+      - name: Archive and export signed IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive_path="$RUNNER_TEMP/MeetTrace.xcarchive"
+          export_path="$RUNNER_TEMP/meettrace-export"
+          export_options="$RUNNER_TEMP/ExportOptions.plist"
+
+          xcodebuild_help="$(xcodebuild -help 2>&1)"
+          if grep -q "app-store-connect" <<< "$xcodebuild_help"; then
+            export_method="app-store-connect"
+          else
+            export_method="app-store"
+          fi
+          cat > "$export_options" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>destination</key><string>export</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>method</key><string>${export_method}</string>
+            <key>provisioningProfiles</key>
+            <dict><key>${IOS_BUNDLE_ID}</key><string>${IOS_PROVISIONING_PROFILE_UUID}</string></dict>
+            <key>signingStyle</key><string>manual</string>
+            <key>stripSwiftSymbols</key><true/>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          plutil -lint "$export_options"
+
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$archive_path" \
+            archive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="$IOS_DISTRIBUTION_IDENTITY" \
+            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_UUID" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
+            FLUTTER_BUILD_NUMBER="$IOS_BUILD_NUMBER" \
+            CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$archive_path" \
+            -exportPath "$export_path" \
+            -exportOptionsPlist "$export_options"
+
+          ipa_count="$(find "$export_path" -maxdepth 1 -type f -name '*.ipa' | wc -l | tr -d ' ')"
+          if [[ "$ipa_count" != "1" ]]; then
+            echo "Expected exactly one exported IPA, found $ipa_count" >&2
+            find "$export_path" -maxdepth 2 -type f -print >&2 || true
+            exit 1
+          fi
+          exported_ipa="$(find "$export_path" -maxdepth 1 -type f -name '*.ipa' -print -quit)"
+          output_ipa="$GITHUB_WORKSPACE/build/ios/testflight/meettrace-testflight-${IOS_BUILD_NUMBER}.ipa"
+          cp "$exported_ipa" "$output_ipa"
+          echo "IPA_PATH=$output_ipa" >> "$GITHUB_ENV"
+
+      - name: Verify signed IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          verify_dir="$RUNNER_TEMP/meettrace-ipa-verify"
+          mkdir -p "$verify_dir"
+          ditto -x -k "$IPA_PATH" "$verify_dir"
+          app_count="$(find "$verify_dir/Payload" -maxdepth 1 -type d -name '*.app' | wc -l | tr -d ' ')"
+          if [[ "$app_count" != "1" ]]; then
+            echo "Expected exactly one app bundle in IPA, found $app_count" >&2
+            exit 1
+          fi
+          app_path="$(find "$verify_dir/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)"
+
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          codesign -dvv "$app_path" 2>&1 | tee build/ios/testflight/codesign.txt
+          test -f "$app_path/embedded.mobileprovision"
+          actual_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")"
+          actual_build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")"
+          [[ "$actual_bundle_id" == "$IOS_BUNDLE_ID" ]]
+          [[ "$actual_build_number" == "$IOS_BUILD_NUMBER" ]]
+          grep -Fq "TeamIdentifier=$APPLE_TEAM_ID" build/ios/testflight/codesign.txt
+
+          /usr/bin/unzip -tq "$IPA_PATH"
+          /usr/bin/unzip -Z1 "$IPA_PATH" > build/ios/testflight/ipa-entries.txt
+          if grep -Eqi '\.(p12|p8|pem|key)$' build/ios/testflight/ipa-entries.txt; then
+            echo "IPA contains forbidden signing material" >&2
+            exit 1
+          fi
+          profile_count="$(grep -Ec '/embedded\.mobileprovision$' build/ios/testflight/ipa-entries.txt || true)"
+          [[ "$profile_count" == "1" ]]
+          shasum -a 256 "$IPA_PATH" | tee "$IPA_PATH.sha256"
+
+          IPA_PATH="$IPA_PATH" python3 - <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          def output(*command: str) -> str:
+              return subprocess.check_output(command, text=True, stderr=subprocess.STDOUT).strip()
+
+          ipa_path = Path(os.environ["IPA_PATH"])
+          digest = hashlib.sha256()
+          with ipa_path.open("rb") as stream:
+              for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                  digest.update(chunk)
+          metadata = {
+              "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "commitSha": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "buildNumber": os.environ["IOS_BUILD_NUMBER"],
+              "bundleId": os.environ["IOS_BUNDLE_ID"],
+              "runner": {
+                  "os": os.environ["RUNNER_OS"],
+                  "architecture": output("uname", "-m"),
+                  "macos": output("sw_vers", "-productVersion"),
+              },
+              "xcode": output("xcodebuild", "-version"),
+              "flutter": json.loads(output("flutter", "--version", "--machine")),
+              "fastlane": output("fastlane", "--version").splitlines()[-1],
+              "artifact": {
+                  "name": ipa_path.name,
+                  "bytes": ipa_path.stat().st_size,
+                  "sha256": digest.hexdigest(),
+                  "distributionSigned": True,
+                  "testFlightUploadCandidate": True,
+              },
+          }
+          report_path = ipa_path.parent / "build-metadata.json"
+          report_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Build metadata: {report_path}")
+          PY
+
+      - name: Upload IPA to TestFlight
+        shell: bash
+        env:
+          TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}
+        run: fastlane ios upload_testflight
+
+      - name: Write release summary
+        shell: bash
+        run: |
+          {
+            echo "## TestFlight upload submitted"
+            echo
+            echo "- Bundle ID: \`$IOS_BUNDLE_ID\`"
+            echo "- Build number: \`$IOS_BUILD_NUMBER\`"
+            echo "- IPA: \`$(basename "$IPA_PATH")\`"
+            echo "- Processing and tester availability remain subject to App Store Connect validation."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload signed build evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: meettrace-ios-testflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ios/testflight/*.ipa
+            build/ios/testflight/*.sha256
+            build/ios/testflight/*.json
+            build/ios/testflight/*.txt
+          if-no-files-found: warn
+          retention-days: 3
+          compression-level: 0
+
+      - name: Remove temporary signing materials
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if [[ -n "${ORIGINAL_DEFAULT_KEYCHAIN:-}" && -e "$ORIGINAL_DEFAULT_KEYCHAIN" ]]; then
+            security default-keychain -d user -s "$ORIGINAL_DEFAULT_KEYCHAIN"
+          fi
+          cleanup_keychain="${KEYCHAIN_PATH:-$RUNNER_TEMP/meettrace-signing.keychain-db}"
+          if [[ -e "$cleanup_keychain" ]]; then
+            security delete-keychain "$cleanup_keychain"
+          fi
+          rm -f \
+            "${CERTIFICATE_PATH:-$RUNNER_TEMP/meettrace-distribution.p12}" \
+            "${PROVISIONING_PROFILE_PATH:-$RUNNER_TEMP/meettrace-app-store.mobileprovision}" \
+            "${APP_STORE_CONNECT_API_KEY_PATH:-$RUNNER_TEMP/meettrace-api-key.p8}" \
+            "${IOS_PROVISIONING_PROFILE_INSTALL_PATH:-$RUNNER_TEMP/profile-not-installed}" \
+            "$RUNNER_TEMP/meettrace-profile.plist" \
+            "$RUNNER_TEMP/ExportOptions.plist"

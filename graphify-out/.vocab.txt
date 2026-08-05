@@ -20,6 +20,7 @@ advance
 after
 agents
 alert
+alerting
 align
 aligned
 alignment
@@ -152,6 +153,7 @@ chinese
 choice
 chunk
 chunks
+cicd
 circular
 class
 cleaned
@@ -187,6 +189,7 @@ completed
 completeness
 completer
 completion
+compliance
 composition
 conclusions
 concurrent
@@ -207,6 +210,7 @@ console
 const
 constant
 constrained
+constraints
 container
 content
 context
@@ -234,6 +238,7 @@ cpp
 crash
 create
 created
+criteria
 critical
 cross
 crypto
@@ -274,6 +279,7 @@ deletion
 delta
 dependencies
 dependency
+dependent
 description
 descriptor
 design
@@ -287,6 +293,7 @@ deterministic
 device
 diagnostic
 diagnostics
+diagram
 dialog
 diarization
 diarize
@@ -359,6 +366,7 @@ entries
 entry
 entrypoint
 enum
+environmental
 epoch
 equal
 error
@@ -370,7 +378,9 @@ events
 evidence
 example
 exception
+exceptions
 execute
+execution
 existing
 exit
 exits
@@ -382,6 +392,7 @@ explicit
 export
 extension
 extensions
+external
 extract
 extractor
 fact
@@ -439,6 +450,7 @@ free
 from
 front
 full
+functional
 future
 gap
 gate
@@ -457,6 +469,7 @@ github
 global
 god
 google
+governance
 gradle
 grant
 granted
@@ -471,6 +484,7 @@ guard
 guide
 handle
 handler
+handling
 has
 hash
 header
@@ -478,11 +492,13 @@ height
 hello
 high
 hint
+history
 home
 hook
 hours
 http
 https
+hub
 hwnd
 icon
 icons
@@ -531,9 +547,11 @@ invalid
 invariant
 inverse
 ios
+ips
 isolate
 issue
 issues
+jobs
 json
 keep
 key
@@ -590,6 +608,7 @@ macos
 main
 maintenance
 manage
+management
 manifest
 map
 mappers
@@ -639,6 +658,7 @@ mode
 model
 models
 monitor
+monitoring
 mono
 month
 moonshine
@@ -675,6 +695,7 @@ number
 numbers
 numeric
 object
+observability
 observer
 observing
 ocr
@@ -738,6 +759,7 @@ percent
 percentage
 percentile
 perform
+performance
 permission
 persist
 persisted
@@ -758,6 +780,7 @@ plugin
 plugins
 plus
 point
+points
 policy
 poll
 pop
@@ -948,13 +971,16 @@ schedule
 scheduled
 schema
 screen
+script
 scripted
 scroll
 second
 secondary
 seconds
+secrets
 section
 secure
+security
 seed
 segment
 segmentation
@@ -1009,6 +1035,8 @@ space
 spacing
 speaker
 speakers
+spec
+specifications
 speech
 spike
 sqflite
@@ -1034,6 +1062,7 @@ stitch
 stop
 storage
 store
+strategy
 stream
 streaming
 strict
@@ -1059,6 +1088,7 @@ swipe
 switcher
 sync
 system
+systems
 tablet
 tail
 tappable
@@ -1136,6 +1166,7 @@ unmodifiable
 unregister
 unresolved
 unsafe
+unsigned
 unsupported
 until
 update
@@ -1156,6 +1187,7 @@ validate
 validation
 value
 values
+variables
 vector
 velocity
 verification
@@ -1201,6 +1233,7 @@ workbench
 worker
 workers
 workflow
+workflows
 workspace
 worktree
 wparam
@@ -1286,6 +1319,8 @@ yue
 回归门槛
 固定资产
 固定资源
+增加无签名
+增加无签名构建流水线
 增量架构优化
 增量证据
 外部门禁
@@ -1329,10 +1364,12 @@ yue
 新应用身份与旧沙箱数据不迁移
 无引用组件与过时配置
 无登录版
+无签名构建流水线并使用最新稳定环境
 旧代码快照验证
 旧导入兼容层仍是主路径
 明暗主题
 是什么意思
+是否具备测试条件
 是否存在循环依赖
 是否需要更换模型或组合模型
 最终快照
@@ -1346,6 +1383,7 @@ yue
 本地启动边界
 本地最终转录证据链
 构建异常
+构建流水线并使用最新环境
 架构守卫覆盖面不足
 查询记忆记录
 标准流程
@@ -1365,6 +1403,7 @@ yue
 组合根成为高扇出
 结果与分享
 结果标题
+给我个方案
 给我实施方案
 给我目前模型最合适的替换方案
 编译修复

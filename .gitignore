@@ -33,6 +33,7 @@ migrate_working_dir/
 /build/
 /coverage/
 /.worktrees/
+/fastlane/report.xml
 
 # graphify 可再生成的本地缓存与按日期备份；保留根目录活动图谱和学习记录
 /graphify-out/cost.json

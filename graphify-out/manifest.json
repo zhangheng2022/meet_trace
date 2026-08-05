@@ -2483,5 +2483,35 @@
     "mtime": 1785912183.3660111,
     "ast_hash": "a84c16cf85a156e60d6ea943e1cba59b",
     "semantic_hash": ""
+  },
+  ".github/workflows/ios-testflight.yml": {
+    "mtime": 1785926358.7385511,
+    "ast_hash": "05cb7d6928bf1b293b133b7bf256ca09",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260805_073943_ios_\u901a\u8fc7_github_\u53d1\u5e03\u5230_testflight_\u9700\u8981\u4ec0\u4e48.md": {
+    "mtime": 1785915583.9113865,
+    "ast_hash": "587d4f58c7228c1a0126ea6fbae15834",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260805_075017_testflight_\u4e0a\u4f20\u9664_altool_\u5916\u8fd8\u6709\u54ea\u4e9b\u65b9\u6848.md": {
+    "mtime": 1785916217.1877754,
+    "ast_hash": "5dda916dfda9a7ca86fa756a36e3f38c",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260805_080429_\u4e3a_meettrace_\u63d0\u4f9b_github_\u5230_testflight_\u7684\u5b8c\u6574_fastlane_\u5b9e\u65bd.md": {
+    "mtime": 1785917069.2190707,
+    "ast_hash": "e9dab75daa5c2c09b4de0f14c62af355",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260805_082950_\u65e0_mac_\u65f6\u5982\u4f55\u5728_windows_\u521b\u5efa_ios_testflight_\u7b7e\u540d\u6750\u6599.md": {
+    "mtime": 1785918590.7901535,
+    "ast_hash": "b5145acba96e712edbc6b20e4d1ae9ea",
+    "semantic_hash": ""
+  },
+  "spec/spec-process-cicd-ios-testflight.md": {
+    "mtime": 1785926274.123488,
+    "ast_hash": "1c8e20ee7f09f4d8206e439391913573",
+    "semantic_hash": ""
   }
 }
