@@ -1,0 +1,176 @@
+name: iOS Unsigned Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios-unsigned:
+    name: Build and inspect unsigned iOS app
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up latest stable Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Capture toolchain snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios/unsigned
+          {
+            echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "runner_arch=$(uname -m)"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "--- macOS ---"
+            sw_vers
+            echo "--- Xcode ---"
+            xcode-select -p
+            xcodebuild -version
+            echo "--- Flutter ---"
+            flutter --version
+            echo "--- Dart ---"
+            dart --version 2>&1
+            echo "--- CocoaPods ---"
+            pod --version
+            echo "--- Memory ---"
+            sysctl -n hw.memsize
+            echo "--- Disk ---"
+            df -h
+          } | tee build/ios/unsigned/toolchain.txt
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build Debug app without code signing
+        run: flutter build ios --debug --no-codesign
+
+      - name: Build Release app without code signing
+        run: flutter build ios --release --no-codesign
+
+      - name: Inspect Release app bundle
+        shell: bash
+        run: |
+          bash tool/benchmarks/inspect_ios_app.sh \
+            build/ios/iphoneos/Runner.app \
+            build/ios/unsigned/ios-app-inspection.json
+
+      - name: Package unsigned IPA and metadata
+        shell: bash
+        env:
+          BUILD_APP_PATH: build/ios/iphoneos/Runner.app
+        run: |
+          set -euo pipefail
+          output_dir="$GITHUB_WORKSPACE/build/ios/unsigned"
+          package_dir="$(mktemp -d "$RUNNER_TEMP/meettrace-ios.XXXXXX")"
+          short_sha="${GITHUB_SHA:0:7}"
+          ipa_name="meettrace-ios-unsigned-${short_sha}.ipa"
+          ipa_path="$output_dir/$ipa_name"
+
+          mkdir -p "$package_dir/Payload" "$output_dir"
+          ditto "$BUILD_APP_PATH" "$package_dir/Payload/Runner.app"
+          (
+            cd "$package_dir"
+            /usr/bin/zip -qry --symlinks "$ipa_path" Payload
+          )
+
+          /usr/bin/unzip -tq "$ipa_path"
+          /usr/bin/unzip -l "$ipa_path" | grep -Fq 'Payload/Runner.app/Info.plist'
+          shasum -a 256 "$ipa_path" > "$ipa_path.sha256"
+
+          IPA_PATH="$ipa_path" python3 - <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import platform
+          import subprocess
+          from pathlib import Path
+
+          def output(*command: str) -> str:
+              return subprocess.check_output(command, text=True, stderr=subprocess.STDOUT).strip()
+
+          ipa_path = Path(os.environ["IPA_PATH"])
+          flutter = json.loads(output("flutter", "--version", "--machine"))
+          metadata = {
+              "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "commitSha": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "runner": {
+                  "os": os.environ["RUNNER_OS"],
+                  "architecture": platform.machine(),
+                  "macos": output("sw_vers", "-productVersion"),
+              },
+              "xcode": output("xcodebuild", "-version"),
+              "flutter": flutter,
+              "cocoapods": output("pod", "--version"),
+              "artifact": {
+                  "name": ipa_path.name,
+                  "bytes": ipa_path.stat().st_size,
+                  "sha256": hashlib.sha256(ipa_path.read_bytes()).hexdigest(),
+                  "signed": False,
+                  "installable": False,
+              },
+          }
+          report_path = ipa_path.parent / "build-metadata.json"
+          report_path.write_text(
+              json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(f"Build metadata: {report_path}")
+          PY
+
+      - name: Capture final disk usage
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "--- Final disk usage ---"
+            df -h
+            echo "--- Unsigned outputs ---"
+            find build/ios/unsigned -maxdepth 1 -type f -print 2>/dev/null || true
+          } | tee -a build/ios/unsigned/toolchain.txt
+
+      - name: Upload unsigned build evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: meettrace-ios-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ios/unsigned/*.ipa
+            build/ios/unsigned/*.sha256
+            build/ios/unsigned/*.json
+            build/ios/unsigned/*.txt
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 0
+

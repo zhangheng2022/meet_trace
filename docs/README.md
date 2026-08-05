@@ -88,6 +88,7 @@ flowchart TD
 | QA-01 | [运行时模型初始化与发布门槛](./quality/运行时模型初始化与发布门槛.md) | `docs/quality/运行时模型初始化与发布门槛.md` | ASR/VAD/说话人固定资产、仓库门禁、Android/iOS 外部门禁及阻塞项 | 当前 Go/No-Go 检查表 | 活动；仓库实现与真机证据阻塞，2026-08-04 / A2 |
 | QA-02 | [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md) | `docs/quality/Android_Alpha_设备矩阵.md` | Android 平台基线、设备角色和必验指标 | Android 真机验收计划与证据状态 | 活动；目标设备阻塞，2026-08-03 / A2 |
 | QA-03 | [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md) | `docs/quality/iOS_Alpha_设备矩阵.md` | iOS 工具链、设备矩阵、签名和发布门槛 | iOS 构建与真机验收计划 | 活动；macOS/Xcode/真机阻塞，2026-08-03 / A2 |
+| QA-04 | [iOS 无签名构建规格](../spec/spec-process-cicd-ios-unsigned.md) | `spec/spec-process-cicd-ios-unsigned.md` | GitHub Actions 触发、构建、审计、产物合同、失败路径和版本追溯 | 无本地 macOS 时的 iOS 构建自动化规范 | 活动；等待首次云端运行，2026-08-05 / A2 |
 
 #### 历史实现证据
 
