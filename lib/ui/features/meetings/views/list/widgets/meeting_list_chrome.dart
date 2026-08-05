@@ -77,12 +77,13 @@ final class _RecordingSetupStrip extends StatelessWidget {
         : canOpenConditions
         ? onOpenRecordingConditions
         : null;
-    final trailingLabel = switch (readiness.status) {
-      MeetingReadinessStatus.ready => null,
+    final trailingIcon = switch (readiness.status) {
+      MeetingReadinessStatus.ready ||
       MeetingReadinessStatus.microphonePermissionRequired ||
       MeetingReadinessStatus.storageInsufficient ||
-      MeetingReadinessStatus.defaultModelUnavailable => '处理',
-      MeetingReadinessStatus.failed => '重试',
+      MeetingReadinessStatus.defaultModelUnavailable =>
+        FLucideIcons.chevronRight,
+      MeetingReadinessStatus.failed => FLucideIcons.refreshCw,
       MeetingReadinessStatus.unchecked ||
       MeetingReadinessStatus.checking => null,
     };
@@ -127,14 +128,13 @@ final class _RecordingSetupStrip extends StatelessWidget {
                 ],
               ),
             ),
-            if (onPress != null && trailingLabel != null) ...[
+            if (onPress != null && trailingIcon != null) ...[
               SizedBox(width: appStyle.spaceXs),
-              Text(
-                trailingLabel,
-                style: theme.typography.body.xs.copyWith(
-                  color: theme.colors.mutedForeground,
-                  fontWeight: FontWeight.w600,
-                ),
+              Icon(
+                trailingIcon,
+                key: const ValueKey('recording-setup-trailing-icon'),
+                size: 18,
+                color: theme.colors.mutedForeground,
               ),
             ],
           ],

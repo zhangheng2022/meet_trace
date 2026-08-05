@@ -82,6 +82,16 @@ void main() {
     expect(find.text('录音条件已就绪'), findsOneWidget);
     expect(find.text('音频仅保存在本机 · SenseVoice可用'), findsOneWidget);
     expect(find.text('查看'), findsNothing);
+    expect(find.text('处理'), findsNothing);
+    expect(find.text('重试'), findsNothing);
+    expect(
+      tester
+          .widget<Icon>(
+            find.byKey(const ValueKey('recording-setup-trailing-icon')),
+          )
+          .icon,
+      FLucideIcons.chevronRight,
+    );
     expect(
       tester.getBottomLeft(title).dy,
       lessThan(tester.getTopLeft(detail).dy),
@@ -187,6 +197,15 @@ void main() {
     await tester.pump();
 
     expect(find.text('无法检查录音条件'), findsOneWidget);
+    expect(find.text('重试'), findsNothing);
+    expect(
+      tester
+          .widget<Icon>(
+            find.byKey(const ValueKey('recording-setup-trailing-icon')),
+          )
+          .icon,
+      FLucideIcons.refreshCw,
+    );
     readiness.error = null;
     await tester.tap(find.text('无法检查录音条件'));
     await tester.pumpAndSettle();
@@ -227,6 +246,21 @@ void main() {
     repository.emit(const []);
     await tester.pump();
 
+    expect(find.text('处理'), findsNothing);
+    expect(
+      tester
+          .widget<Icon>(
+            find.byKey(const ValueKey('recording-setup-trailing-icon')),
+          )
+          .icon,
+      FLucideIcons.chevronRight,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is FTappable && widget.semanticsLabel == '查看录音条件',
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.text('需要麦克风权限'));
     await tester.pumpAndSettle();
     expect(find.text('待授权'), findsOneWidget);
@@ -269,6 +303,7 @@ void main() {
     repository.emit(const []);
     await tester.pump();
 
+    expect(find.text('处理'), findsNothing);
     await tester.tap(find.text('存储空间不足'));
     await tester.pumpAndSettle();
     expect(find.text('空间不足'), findsOneWidget);
@@ -321,6 +356,7 @@ void main() {
     repository.emit(const []);
     await tester.pump();
 
+    expect(find.text('处理'), findsNothing);
     await tester.tap(find.text('默认模型不可用'));
     await tester.pumpAndSettle();
     expect(find.text('需修复'), findsOneWidget);
