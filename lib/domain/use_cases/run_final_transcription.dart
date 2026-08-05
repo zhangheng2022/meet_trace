@@ -36,6 +36,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required this.tasks,
     required this.engineFactory,
     required this.diarization,
+    required this.diarizationPreferences,
     required this.now,
     FinalTranscriptionSnapshotIdFactory? snapshotIdFactory,
     this.diarizationTimeout = const Duration(minutes: 2),
@@ -49,6 +50,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
   final ProcessingTaskRepository tasks;
   final AsrEngineFactory engineFactory;
   final SpeakerDiarizationService diarization;
+  final DiarizationPreferenceRepository diarizationPreferences;
   final DateTime Function() now;
   final FinalTranscriptionSnapshotIdFactory snapshotIdFactory;
   final Duration diarizationTimeout;
@@ -252,6 +254,18 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required AudioSource source,
     required int audioDurationMs,
   }) async {
+    var enabled = true;
+    try {
+      enabled = await diarizationPreferences.getEnabled();
+    } on Object {
+      // 偏好读取失败不得阻断最终文本；无可靠关闭记录时沿用默认开启。
+    }
+    if (!enabled) {
+      return const _DiarizationAttempt(
+        status: SpeakerDiarizationStatus.disabled,
+      );
+    }
+
     final startedAt = now().toUtc();
     final taskId = 'speaker-diarization-$snapshotId';
     await _saveDiarizationTask(

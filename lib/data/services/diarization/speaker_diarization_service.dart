@@ -7,10 +7,10 @@ import 'speaker_diarization_worker.dart';
 export '../../../domain/ports/speaker_diarization.dart';
 export 'speaker_diarization_worker.dart';
 
-/// 官方 Dart 绑定修复整段音频原生缓冲区泄漏前，生产环境显式关闭自动分离。
+/// 供诊断或显式降级注入使用的不可用实现。
 ///
-/// 真实适配器保留用于可注入测试和后续版本验证，但不能绕过官方包私有 API 或
-/// 自建 FFI 释放该缓冲区。
+/// 生产组合根使用公开 API 的 [SherpaOnnxSpeakerDiarizationService]；该实现仅
+/// 保留稳定的历史错误码，方便识别旧任务和测试降级路径。
 final class OfficialBindingBlockedSpeakerDiarizationService
     implements SpeakerDiarizationService {
   const OfficialBindingBlockedSpeakerDiarizationService();

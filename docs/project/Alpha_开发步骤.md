@@ -2,11 +2,11 @@
 
 > 状态：活动；V0.9 单人收尾执行清单
 > 最终目标：Android + iOS 受控内部 Alpha；Android 先闭环
-> 更新日期：2026-08-04
+> 更新日期：2026-08-05
 
 ## 1. 当前结论
 
-- 阶段 1、阶段 2、阶段 4、阶段 5 的仓库实现与应用标识统一已完成，固定镜像也已在 `mt.zhangheng.eu.org` 通过状态码、大小、ETag 与 Range 验收。阶段 3 的官方 Dart `OfflineSpeakerDiarization` worker、取消/释放和生产装配已落地。剩余门槛包括官方绑定修复、目标真机阈值校准与性能证据，以及双平台真机分享接收与播放证据。
+- 阶段 1、阶段 2、阶段 4、阶段 5 的仓库实现与应用标识统一已完成，固定镜像也已在 `mt.zhangheng.eu.org` 通过状态码、大小、ETag 与 Range 验收。阶段 3 的官方 Dart `OfflineSpeakerDiarization` worker、取消/释放和 Debug/Release 生产装配已落地；2026-08-05 产品决策接受当前官方绑定的已知内存风险，所有会议默认开启且保留全局关闭开关。剩余门槛包括目标真机阈值校准与性能证据、上游缺陷跟踪，以及双平台真机分享接收与播放证据。
 - 旧的格式化、测试、APK 与 OCR 结果只作为历史证据；V0.9 代码完成后必须重建当前基线。
 - 普通重构、视觉微调和非阻断技术债不进入 Alpha 主线，统一记入 Alpha 后 backlog。
 - Web、Windows、Linux 与 macOS 工程壳暂时保留，但不属于产品支持面，也不进入发布结论。
@@ -45,7 +45,7 @@
 
 ### 阶段 3：真实离线说话人分离
 
-- [ ] 已通过官方 `sherpa_onnx` Dart `OfflineSpeakerDiarization` 完成 `SpeakerDiarizationService` 适配，但 `1.13.4` 与上游 `master` 的完整波形原生缓冲区未释放；官方修复并通过长音频复验前，生产组合根显式装配阻断服务。
+- [x] 已通过官方 `sherpa_onnx` Dart `OfflineSpeakerDiarization` 完成 `SpeakerDiarizationService` 适配，并在 Debug/Release 生产组合根启用；所有会议默认开启、不设会议时长上限、不显示前置风险提示，设置中保留全局关闭开关。`1.13.4` 的完整波形原生缓冲区未释放风险已由 2026-08-05 产品决策接受并继续跟踪。
 - [ ] 固定 16 kHz 单声道输入、Pyannote INT8、3D-Speaker、`numClusters=-1`；当前 Manifest 暂定 threshold `0.5`，仍需用普通话 2/3/4 人语料校准后锁定发布值。
 - [x] 在独立 worker/isolate 中运行，自动化覆盖初始化失败、初始化期间取消、超时终止、空结果、释放和重复创建；该隔离不能释放官方 Dart 绑定遗漏的原生波形缓冲区。
 - [x] 保留手工说话人显示标签修订，不改变文本、时间轴或事实音频。

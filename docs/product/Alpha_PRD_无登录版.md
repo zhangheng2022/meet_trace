@@ -44,10 +44,11 @@
 | 人数策略 | `numClusters=-1`，聚类阈值由固定普通话语料校准后锁定 |
 | 质量承诺 | 普通话 2～4 人会议；其他语言可运行但不承诺分离准确率 |
 | 分发 | 与 SenseVoice、Silero VAD 一同在首次初始化按固定 Manifest 下载 |
+| 默认行为 | Debug 与 Release 全部会议默认开启，不设会议时长上限；设置中保留全局关闭开关 |
 
 说话人分离是首次初始化阻断能力，但不是事实音频来源。录音期间不运行分离；会议结束后，最终 ASR 与离线说话人分离并行处理。两条任务结束后只发布一次最终快照；分离失败时写入明确的单一说话人降级结果，不得阻止最终文本落地或损坏事实音频。
 
-当前官方 `sherpa_onnx 1.13.4` 及其上游 `master` 的 Dart `OfflineSpeakerDiarization.process*` 会为完整波形分配原生 `Float` 缓冲区但未释放；30 分钟 16 kHz 音频单次至少遗留 `115,200,000` B。Alpha 不得通过私有包 API、自建 FFI 或原生桥接规避：官方包发布修复并完成目标真机长音频内存复验前，生产组合根必须显式关闭自动分离并走单一说话人降级。模型仍按固定 Manifest 初始化，已完成的公开 API 适配器只用于自动化和修复版本验证；这不降低本节的最终验收要求。
+当前官方 `sherpa_onnx 1.13.4` 及其上游 `master` 的 Dart `OfflineSpeakerDiarization.process*` 会为完整波形分配原生 `Float` 缓冲区但未释放；30 分钟 16 kHz 音频单次至少遗留 `115,200,000` B。2026-08-05 的产品决策接受该已知风险：Debug 与 Release 组合根均启用官方公开 API 的真实分离服务，所有会议默认开启，不设置会议时长上限，也不在开始会议前展示风险提示；设置中保留全局关闭开关，关闭后后续最终转录不启动分离。仍禁止通过私有包 API、自建 FFI 或原生桥接规避；运行失败、超时或资源不足时继续按单一说话人降级，事实录音和最终文本不得受损。
 
 ## 3. P0 范围
 
@@ -178,7 +179,7 @@
 - `flutter analyze`、`flutter test`、Android Debug 构建和 APK 权重审计通过；Android 内部 Alpha 以 `com.meettrace.app` 的签名 APK 直发。
 - Android 与 iOS 目标真机完成 AT-01～AT-18 的适用项；缺少任一平台证据时发布状态保持 `blocked`。iOS 内部 Alpha 通过 TestFlight 分发。
 - 未解决的 OCR Critical/High 缺陷为零。
-- 官方 `sherpa_onnx` Dart 说话人分离完整波形缓冲区已确认释放，且 30 分钟重复任务的内存证据通过；否则自动分离和 Alpha 发布均保持 `blocked`。
+- 官方 `sherpa_onnx` Dart 完整波形缓冲区缺陷作为已接受的内部 Alpha 风险持续跟踪，不再单独阻断自动分离或内部构建；仍需记录 30 分钟重复任务内存、DER、人数误差与 RTF 证据，未满足 AT-13 时不得扩大分发范围或宣称质量达标。
 - Web、Windows、Linux 与 macOS 工程壳不属于 Alpha 支持面，不进入发布结论。
 
 ## 10. 变更规则

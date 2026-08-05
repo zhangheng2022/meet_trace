@@ -20,7 +20,7 @@ final class SqfliteDiarizationPreferenceRepository
       limit: 1,
     );
     if (rows.isEmpty) {
-      return false;
+      return true;
     }
     return rows.single['value'] == 'true';
   }

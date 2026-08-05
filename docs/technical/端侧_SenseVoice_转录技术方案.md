@@ -100,7 +100,7 @@ UI 只依赖 domain Port/Use Case/Model。下载、文件、网络、SQLite 和�
 
 `SherpaOnnxSpeakerDiarizationService` 只通过官方 `OfflineSpeakerDiarization` Dart API 接入，不自建 JNI、FFI/C API 或原生桥接。固定输入为 16 kHz 单声道事实 PCM；分段使用 Pyannote INT8，嵌入使用 3D-Speaker，`numClusters=-1`。模型在独立 isolate 中按任务创建和释放；worker 在模型初始化尚未完成时也可被 Domain 超时直接终止，不能让已降级任务继续占用 CPU/内存。聚类 threshold 必须在不少于 60 分钟的普通话 2/3/4 人标注语料上校准并固定到 Manifest/配置，UI 不暴露该参数。
 
-供应链审查确认官方 [`sherpa_onnx 1.13.4` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.4/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart#L258-L325)及上游 `master` 的 `process`/`processWithCallback` 都会 `calloc<Float>(samples.length)`，销毁结果后却没有释放输入指针。该内存属于进程原生堆，终止 Dart isolate 不能替代 `calloc.free`；30 分钟 16 kHz 波形对应 `115,200,000` B。项目规则又禁止导入包私有绑定或自建 FFI，因此生产组合根当前装配 `OfficialBindingBlockedSpeakerDiarizationService`，以 `speaker_diarization.official_binding_memory_leak` 明确降级。只有官方新版本修复、依赖升级、自动化通过并取得 Android/iOS 30 分钟重复任务内存证据后，才能切回真实服务。
+供应链审查确认官方 [`sherpa_onnx 1.13.4` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.4/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart#L258-L325)及上游 `master` 的 `process`/`processWithCallback` 都会 `calloc<Float>(samples.length)`，销毁结果后却没有释放输入指针。该内存属于进程原生堆，终止 Dart isolate 不能替代 `calloc.free`；30 分钟 16 kHz 波形对应 `115,200,000` B。2026-08-05 产品决策接受内部 Alpha 的该项风险，生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；worker 取消只能停止推理，不能宣称已修复上游泄漏。
 
 录音封存后，`FinalResultCoordinator` 从同一事实音频并行启动最终 ASR 与离线分离，两者运行在独立 worker/isolate，不能占用录音写入队列。ASR 成功且分离成功时，按时间重叠把 `SpeakerTurn` 映射到最终转录片段；分离超时、空结果、内存或推理失败时生成明确的单一说话人降级结果。只有两条任务都结束后才以一次事务写入并激活最终快照；ASR 失败时保留事实音频和旧活动快照，不发布半成品。
 

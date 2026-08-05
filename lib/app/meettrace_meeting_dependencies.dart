@@ -4,6 +4,7 @@ import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
 import '../data/services/audio/recording_device_readiness_probe.dart';
 import '../data/services/diarization/speaker_diarization_service.dart';
+import '../data/models/runtime/speaker_diarization_manifest.dart';
 import '../domain/use_cases/check_meeting_readiness.dart';
 import '../domain/use_cases/run_final_transcription.dart';
 import '../domain/use_cases/run_speaker_diarization.dart';
@@ -35,8 +36,11 @@ final class MeetingDependencies {
       riskMonitor: createPlatformAsrDeviceRiskMonitor(),
       ownerId: 'meettrace-app',
     );
-    const diarizationService =
-        OfficialBindingBlockedSpeakerDiarizationService();
+    final diarizationService = createMeetTraceSpeakerDiarizationService(
+      segmentationModelPath: runtime.speakerSegmentationModelPath,
+      embeddingModelPath: runtime.speakerEmbeddingModelPath,
+      inference: runtime.speakerManifest.inference,
+    );
     return MeetingDependencies._(
       engineFactory: engineFactory,
       finalTranscription: FinalResultCoordinator(
@@ -45,6 +49,7 @@ final class MeetingDependencies {
         tasks: storage.processingTasks,
         engineFactory: engineFactory,
         diarization: diarizationService,
+        diarizationPreferences: storage.diarizationPreferences,
         now: DateTime.now,
       ),
       diarization: SpeakerDiarizationCoordinator(
@@ -73,4 +78,24 @@ final class MeetingDependencies {
       await lifecycle.dispose();
     }
   }
+}
+
+SherpaOnnxSpeakerDiarizationService createMeetTraceSpeakerDiarizationService({
+  required String segmentationModelPath,
+  required String embeddingModelPath,
+  required SpeakerDiarizationInferenceConfig inference,
+}) {
+  return SherpaOnnxSpeakerDiarizationService(
+    config: SherpaOnnxSpeakerDiarizationConfig(
+      segmentationModelPath: segmentationModelPath,
+      embeddingModelPath: embeddingModelPath,
+      sampleRate: inference.sampleRate,
+      numThreads: inference.numThreads,
+      provider: inference.provider,
+      numClusters: inference.numClusters,
+      clusteringThreshold: inference.clusteringThreshold,
+      minDurationOn: inference.minDurationOn,
+      minDurationOff: inference.minDurationOff,
+    ),
+  );
 }

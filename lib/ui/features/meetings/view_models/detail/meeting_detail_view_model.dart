@@ -82,7 +82,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   double _progress = 0;
   String? _errorMessage;
   bool _isLoading = true;
-  bool _diarizationEnabled = false;
+  bool _diarizationEnabled = true;
   SpeakerDiarizationStatus _diarizationStatus =
       SpeakerDiarizationStatus.disabled;
   String? _diarizationMessage;
@@ -188,7 +188,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         _playbackState = state;
         _notify();
       });
-      _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? false;
+      _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? true;
       await _refreshSnapshots();
       await _refreshDiarizationTask();
       if (_meeting.status == MeetingState.processing &&

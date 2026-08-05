@@ -30,7 +30,11 @@ void main() {
 
   tearDown(() => database.close());
 
-  test('说话人能力开关默认关闭并可持久化', () async {
+  test('说话人能力开关默认开启并可持久化关闭', () async {
+    expect(await preference.getEnabled(), isTrue);
+
+    await preference.setEnabled(false);
+
     expect(await preference.getEnabled(), isFalse);
 
     await preference.setEnabled(true);

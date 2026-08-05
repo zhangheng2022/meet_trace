@@ -62,8 +62,8 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并重新审查。涉及 `lib/`、平台目录、数据库 schema/迁移、构建配置或 `integration_test/` 的变更，交付或创建 PR 前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
 - OCR 不能替代格式化、静态检查、测试和目标平台构建；修复后重新运行受影响验证并审查新 diff。
 
-## 提交、PR 与安全
-
+## 提交、PR 、commit与安全
+commit信息优先使用中文
 提交标题应简短并使用祈使语气，例如 `增加 ASR 积压恢复`。PR 必须引用对应 PRD 章节，说明用户影响，列出验证命令和 OCR 范围；保留 Medium 时说明原因与后续动作。UI 变更需附截图。禁止提交密钥、录音、下载的模型、`build/` 或 `coverage/`。
 
 ## graphify

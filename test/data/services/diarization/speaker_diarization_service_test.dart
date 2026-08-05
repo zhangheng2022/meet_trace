@@ -6,7 +6,7 @@ import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/speaker_diarization.dart';
 
 void main() {
-  test('生产阻断服务显式报告官方绑定内存泄漏', () async {
+  test('诊断降级服务保留官方绑定内存泄漏错误码', () async {
     const service = OfficialBindingBlockedSpeakerDiarizationService();
 
     expect(service.capability.isAvailable, isFalse);

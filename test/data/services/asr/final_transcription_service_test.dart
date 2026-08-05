@@ -21,6 +21,7 @@ void main() {
   late _ProcessingTaskRepository tasks;
   late _EngineFactory engines;
   late _SpeakerDiarizationService diarization;
+  late _DiarizationPreferenceRepository diarizationPreferences;
   late FinalResultCoordinator service;
   final now = DateTime.utc(2026, 7, 25, 8);
 
@@ -30,12 +31,14 @@ void main() {
     tasks = _ProcessingTaskRepository();
     engines = _EngineFactory();
     diarization = _SpeakerDiarizationService();
+    diarizationPreferences = _DiarizationPreferenceRepository();
     service = FinalResultCoordinator(
       meetings: meetings,
       transcripts: transcripts,
       tasks: tasks,
       engineFactory: engines,
       diarization: diarization,
+      diarizationPreferences: diarizationPreferences,
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-attempt-1',
     );
@@ -199,6 +202,7 @@ void main() {
       tasks: tasks,
       engineFactory: engines,
       diarization: diarization,
+      diarizationPreferences: diarizationPreferences,
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-${++snapshotSequence}',
     );
@@ -352,6 +356,57 @@ void main() {
     expect(tasks.records.values.single.state, ProcessingState.failed);
   });
 
+  test('关闭全局开关后最终转录不启动说话人分离任务', () async {
+    meetings.value = _meeting();
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+    diarization
+      ..available = true
+      ..turns = const [
+        SpeakerTurn(startMs: 0, endMs: 2000, speakerId: 'speaker-a'),
+      ];
+    diarizationPreferences.enabled = false;
+
+    final result = await service.transcribe(meetingId: 'meeting-1');
+
+    expect(diarization.diarizeCalls, 0);
+    expect(tasks.records, isEmpty);
+    expect(result.diarizationStatus, SpeakerDiarizationStatus.disabled);
+    expect(result.snapshot.segments.single.speakerId, 'speaker-1');
+  });
+
+  test('偏好读取失败时按默认开启运行分离且不阻断最终文本', () async {
+    meetings.value = _meeting();
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) {
+          return _snapshot(
+            id: snapshotId,
+            meetingId: meetingId,
+            descriptor: descriptor,
+            createdAt: now,
+          );
+        };
+    diarization
+      ..available = true
+      ..turns = const [
+        SpeakerTurn(startMs: 0, endMs: 2000, speakerId: 'speaker-a'),
+      ];
+    diarizationPreferences.error = StateError('数据库暂不可用');
+
+    final result = await service.transcribe(meetingId: 'meeting-1');
+
+    expect(diarization.diarizeCalls, 1);
+    expect(result.diarizationStatus, SpeakerDiarizationStatus.completed);
+    expect(result.snapshot.segments.single.speakerId, 'speaker-a');
+  });
+
   test('可用但不可取消的分离实现不会启动并按单一说话人降级', () async {
     meetings.value = _meeting();
     engines.resultBuilder =
@@ -370,6 +425,7 @@ void main() {
       tasks: tasks,
       engineFactory: engines,
       diarization: nonCancelable,
+      diarizationPreferences: diarizationPreferences,
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-attempt-1',
     );
@@ -568,6 +624,7 @@ final class _SpeakerDiarizationService
   Future<void> Function()? beforeDiarize;
   void Function()? onCancel;
   int cancelCalls = 0;
+  int diarizeCalls = 0;
 
   @override
   SpeakerDiarizationCapability get capability => available
@@ -578,6 +635,7 @@ final class _SpeakerDiarizationService
 
   @override
   Future<List<SpeakerTurn>> diarize(AudioSource source) async {
+    diarizeCalls++;
     await beforeDiarize?.call();
     final failure = error;
     if (failure != null) {
@@ -594,6 +652,25 @@ final class _SpeakerDiarizationService
 
   @override
   Future<void> dispose() async {}
+}
+
+final class _DiarizationPreferenceRepository
+    implements DiarizationPreferenceRepository {
+  bool enabled = true;
+  Object? error;
+
+  @override
+  Future<bool> getEnabled() async {
+    if (error case final failure?) {
+      throw failure;
+    }
+    return enabled;
+  }
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    this.enabled = enabled;
+  }
 }
 
 final class _NonCancelableDiarizationService
