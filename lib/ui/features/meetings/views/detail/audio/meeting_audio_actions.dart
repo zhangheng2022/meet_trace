@@ -478,31 +478,12 @@ final class _MeetingActionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        appStyle.spaceMd,
-        appStyle.spaceLg,
-        appStyle.spaceMd,
-        appStyle.spaceLg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: theme.typography.display.lg),
-          SizedBox(height: appStyle.spaceSm),
-          Text(
-            description,
-            style: theme.typography.body.sm.copyWith(
-              color: theme.colors.mutedForeground,
-            ),
-          ),
-          SizedBox(height: appStyle.spaceLg),
-          FTileGroup(semanticsLabel: semanticsLabel, children: actions),
-        ],
-      ),
+    return AppSheetSurface(
+      surfaceKey: const ValueKey('meeting-action-sheet-surface'),
+      title: title,
+      description: description,
+      semanticsLabel: semanticsLabel,
+      child: FTileGroup(semanticsLabel: semanticsLabel, children: actions),
     );
   }
 }

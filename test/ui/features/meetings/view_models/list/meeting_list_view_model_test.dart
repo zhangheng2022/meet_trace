@@ -6,6 +6,7 @@ import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
+import 'package:meettrace/domain/use_cases/check_meeting_readiness.dart';
 import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/ui/core/view_state.dart';
 import 'package:meettrace/ui/features/meetings/view_models/list/meeting_list_view_model.dart';
@@ -64,7 +65,36 @@ void main() {
       MeetingReadinessStatus.microphonePermissionRequired,
     );
     expect(viewModel.readiness.issueCount, 1);
+    expect(viewModel.readiness.microphonePermissionGranted, isFalse);
+    expect(viewModel.readiness.freeBytes, minimumRecordingFreeBytes);
+    expect(viewModel.readiness.defaultModelAvailable, isTrue);
 
+    await viewModel.requestMicrophonePermission();
+
+    expect(readiness.permissionRequests, [false, true]);
+
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  test('显式麦克风授权不会被正在执行的自动预检吞掉', () async {
+    final repository = _StreamingMeetingRepository();
+    final readiness = _BlockingMeetingReadinessChecker();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: readiness,
+      deletion: _deletion(repository),
+    );
+
+    final automaticCheck = viewModel.refreshReadiness();
+    final permissionRequest = viewModel.requestMicrophonePermission();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(readiness.permissionRequests, [false]);
+    readiness.releaseAutomaticCheck();
+    await Future.wait([automaticCheck, permissionRequest]);
+
+    expect(readiness.permissionRequests, [false, true]);
     viewModel.dispose();
     await repository.dispose();
   });
@@ -187,6 +217,32 @@ final class _StreamingMeetingRepository implements MeetingRepository {
 
   @override
   Stream<List<Meeting>> watchAll() => _controller.stream;
+}
+
+final class _BlockingMeetingReadinessChecker
+    implements MeetingReadinessChecker {
+  final Completer<MeetingReadiness> _automaticCheck = Completer();
+  final List<bool> permissionRequests = [];
+
+  void releaseAutomaticCheck() => _automaticCheck.complete(_result);
+
+  @override
+  Future<MeetingReadiness> check({bool requestMicrophonePermission = false}) {
+    permissionRequests.add(requestMicrophonePermission);
+    if (!requestMicrophonePermission) {
+      return _automaticCheck.future;
+    }
+    return Future.value(_result);
+  }
+
+  MeetingReadiness get _result => MeetingReadiness(
+    microphonePermissionGranted: true,
+    freeBytes: minimumRecordingFreeBytes,
+    defaultModelId: senseVoiceDefaultModelId,
+    defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
+    defaultModelName: 'SenseVoice',
+    defaultModelAvailable: true,
+  );
 }
 
 DeleteMeetingUseCase _deletion(_StreamingMeetingRepository repository) =>

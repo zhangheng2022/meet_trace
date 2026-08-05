@@ -7,7 +7,7 @@ final class MeetingListContent extends StatefulWidget {
     this.startingMeeting = false,
     required this.onStartMeeting,
     required this.onOpenMeeting,
-    this.onOpenSettings,
+    this.onOpenRecordingConditions,
     this.onRetryReadiness,
     this.deletingMeetingIds = const <String>{},
     this.canDeleteMeeting,
@@ -21,7 +21,7 @@ final class MeetingListContent extends StatefulWidget {
   final bool startingMeeting;
   final VoidCallback? onStartMeeting;
   final ValueChanged<Meeting>? onOpenMeeting;
-  final VoidCallback? onOpenSettings;
+  final VoidCallback? onOpenRecordingConditions;
   final Future<void> Function()? onRetryReadiness;
   final Set<String> deletingMeetingIds;
   final bool Function(Meeting)? canDeleteMeeting;
@@ -75,7 +75,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
               : null,
           readiness: widget.readiness,
           startingMeeting: widget.startingMeeting,
-          onOpenSettings: widget.onOpenSettings,
+          onOpenRecordingConditions: widget.onOpenRecordingConditions,
           onRetryReadiness: widget.onRetryReadiness,
           onStartMeeting: widget.onStartMeeting,
           body: listBody,

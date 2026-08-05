@@ -19,6 +19,7 @@ import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/domain/use_cases/share_meeting_audio.dart';
+import 'package:meettrace/theme/theme.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart';
 
@@ -274,6 +275,34 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('request-share-meeting')));
     await tester.pumpAndSettle();
 
+    final surface = find.byKey(const ValueKey('meeting-action-sheet-surface'));
+    expect(surface, findsOneWidget);
+    final decoration = tester.widget<DecoratedBox>(surface).decoration;
+    expect(
+      decoration,
+      isA<BoxDecoration>()
+          .having(
+            (value) => value.color,
+            'background color',
+            tester.element(surface).theme.colors.card,
+          )
+          .having(
+            (value) => value.borderRadius,
+            'top corners',
+            BorderRadius.only(
+              topLeft: Radius.circular(
+                tester.element(surface).theme.style.app.panelRadius,
+              ),
+              topRight: Radius.circular(
+                tester.element(surface).theme.style.app.panelRadius,
+              ),
+            ),
+          ),
+    );
+    expect(
+      tester.getSize(surface).width,
+      MediaQuery.sizeOf(tester.element(surface)).width,
+    );
     expect(find.text('纯文本'), findsOneWidget);
     expect(find.text('Markdown'), findsOneWidget);
     expect(find.textContaining('事实音频需要单独确认'), findsOneWidget);

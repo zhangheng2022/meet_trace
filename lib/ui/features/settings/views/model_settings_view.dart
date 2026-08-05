@@ -237,43 +237,14 @@ final class _ModelResourceLedger extends StatelessWidget {
       key: const ValueKey('model-resource-ledger'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    descriptor.displayName,
-                    style: theme.typography.display.md,
-                  ),
-                  SizedBox(height: appStyle.spaceXs),
-                  Text(
-                    '${_languageLabel(descriptor.supportedLanguages)} · '
-                    '${_decimalMegabytes(descriptor.requiredBytes)}',
-                    style: theme.typography.body.sm.copyWith(
-                      color: theme.colors.mutedForeground,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: appStyle.spaceSm),
-            FBadge(
-              variant:
-                  option.status == AsrModelUiStatus.failed ||
-                      option.status == AsrModelUiStatus.insufficientStorage
-                  ? FBadgeVariant.destructive
-                  : FBadgeVariant.secondary,
-              child: Text(option.statusLabel),
-            ),
-            if (option.status == AsrModelUiStatus.installed &&
-                onRepair != null) ...[
-              SizedBox(width: appStyle.spaceXs),
-              _ModelMaintenanceMenu(busy: busy, onRepair: onRepair!),
-            ],
-          ],
+        _ModelResourceHeader(option: option),
+        SizedBox(height: appStyle.spaceXs),
+        Text(
+          '${_languageLabel(descriptor.supportedLanguages)} · '
+          '${_decimalMegabytes(descriptor.requiredBytes)}',
+          style: theme.typography.body.sm.copyWith(
+            color: theme.colors.mutedForeground,
+          ),
         ),
         SizedBox(height: appStyle.spaceSm),
         Text(
@@ -283,6 +254,11 @@ final class _ModelResourceLedger extends StatelessWidget {
             color: theme.colors.mutedForeground,
           ),
         ),
+        if (option.status == AsrModelUiStatus.installed &&
+            onRepair != null) ...[
+          SizedBox(height: appStyle.spaceMd),
+          _ModelMaintenanceMenu(busy: busy, onRepair: onRepair!),
+        ],
         if (processing || action != null) ...[
           SizedBox(height: appStyle.spaceMd),
           if (processing)
@@ -337,6 +313,95 @@ final class _ModelResourceLedger extends StatelessWidget {
   };
 }
 
+final class _ModelResourceHeader extends StatelessWidget {
+  const _ModelResourceHeader({required this.option});
+
+  final AsrModelOption option;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
+    final name = Text(
+      option.descriptor.displayName,
+      key: const ValueKey('model-resource-name'),
+      style: theme.typography.display.md,
+    );
+    final status = _ModelResourceStatus(option: option);
+    if (largeText) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          name,
+          SizedBox(height: appStyle.spaceXs),
+          status,
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(child: name),
+        SizedBox(width: appStyle.spaceSm),
+        status,
+      ],
+    );
+  }
+}
+
+final class _ModelResourceStatus extends StatelessWidget {
+  const _ModelResourceStatus({required this.option});
+
+  final AsrModelOption option;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final failed =
+        option.status == AsrModelUiStatus.failed ||
+        option.status == AsrModelUiStatus.insufficientStorage;
+    final color = failed
+        ? theme.colors.foreground
+        : theme.colors.mutedForeground;
+    return Semantics(
+      key: const ValueKey('model-resource-status'),
+      container: true,
+      label: '${option.statusLabel}，离线转录资源状态',
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _statusIcon(option.status),
+              size: theme.typography.body.sm.fontSize,
+              color: color,
+            ),
+            SizedBox(width: theme.style.app.space2Xs),
+            Text(
+              option.statusLabel,
+              style: theme.typography.body.sm.copyWith(color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+IconData _statusIcon(AsrModelUiStatus status) => switch (status) {
+  AsrModelUiStatus.installed => FLucideIcons.circleCheck,
+  AsrModelUiStatus.notInstalled => FLucideIcons.packageOpen,
+  AsrModelUiStatus.downloading => FLucideIcons.download,
+  AsrModelUiStatus.paused => FLucideIcons.circlePause,
+  AsrModelUiStatus.updateAvailable => FLucideIcons.circleArrowUp,
+  AsrModelUiStatus.failed ||
+  AsrModelUiStatus.insufficientStorage => FLucideIcons.triangleAlert,
+  AsrModelUiStatus.checking ||
+  AsrModelUiStatus.verifying ||
+  AsrModelUiStatus.deleting => FLucideIcons.loaderCircle,
+};
+
 final class _ModelMaintenanceMenu extends StatelessWidget {
   const _ModelMaintenanceMenu({required this.busy, required this.onRepair});
 
@@ -345,33 +410,59 @@ final class _ModelMaintenanceMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FPopoverMenu.tiles(
-      menuAnchor: Alignment.topRight,
-      childAnchor: Alignment.bottomRight,
-      semanticsLabel: '模型维护操作',
-      menuBuilder: (context, controller, _) => [
-        FTileGroup(
-          children: [
-            FTile(
-              key: const ValueKey('verify-and-repair-model'),
-              prefix: const Icon(FLucideIcons.refreshCcw),
-              title: const Text('校验并修复'),
-              subtitle: const Text('核对本地文件完整性，必要时重新下载'),
-              onPress: () async {
-                await controller.hide();
-                onRepair();
-              },
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: theme.colors.border)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: appStyle.spaceXs),
+        child: FPopoverMenu.tiles(
+          menuAnchor: Alignment.topRight,
+          childAnchor: Alignment.bottomRight,
+          semanticsLabel: '模型维护操作',
+          menuBuilder: (context, controller, _) => [
+            FTileGroup(
+              children: [
+                FTile(
+                  key: const ValueKey('verify-and-repair-model'),
+                  prefix: const Icon(FLucideIcons.refreshCcw),
+                  title: const Text('校验并修复'),
+                  subtitle: const Text('核对本地文件完整性，必要时重新下载'),
+                  onPress: () async {
+                    await controller.hide();
+                    onRepair();
+                  },
+                ),
+              ],
             ),
           ],
+          builder: (context, controller, child) => FButton.raw(
+            key: const ValueKey('model-maintenance-menu'),
+            variant: FButtonVariant.ghost,
+            size: FButtonSizeVariant.lg,
+            semanticsLabel: '维护离线转录资源',
+            onPress: busy ? null : () => unawaited(controller.toggle()),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: appStyle.minimumTouchTarget,
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: appStyle.spaceSm),
+                child: Row(
+                  children: [
+                    const Icon(FLucideIcons.refreshCcw),
+                    SizedBox(width: appStyle.spaceSm),
+                    const Expanded(child: Text('维护资源')),
+                    SizedBox(width: appStyle.spaceSm),
+                    const Icon(FLucideIcons.chevronRight),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-      ],
-      builder: (context, controller, child) => FButton(
-        key: const ValueKey('model-maintenance-menu'),
-        variant: FButtonVariant.ghost,
-        mainAxisSize: MainAxisSize.min,
-        prefix: const Icon(FLucideIcons.ellipsis),
-        onPress: busy ? null : () => unawaited(controller.toggle()),
-        child: const Text('维护'),
       ),
     );
   }

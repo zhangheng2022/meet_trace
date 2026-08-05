@@ -7,6 +7,7 @@ import 'package:meettrace/app/application.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
+import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/ui/core/app_ledger.dart';
@@ -80,6 +81,7 @@ void main() {
     final detail = find.byKey(const ValueKey('recording-setup-detail'));
     expect(find.text('录音条件已就绪'), findsOneWidget);
     expect(find.text('音频仅保存在本机 · SenseVoice可用'), findsOneWidget);
+    expect(find.text('查看'), findsNothing);
     expect(
       tester.getBottomLeft(title).dy,
       lessThan(tester.getTopLeft(detail).dy),
@@ -88,6 +90,31 @@ void main() {
     expect(find.textContaining('准备就绪'), findsNothing);
 
     await tester.tap(find.text('录音条件已就绪'));
+    await tester.pumpAndSettle();
+
+    expect(settingsRequested, isFalse);
+    expect(
+      find.byKey(const ValueKey('recording-conditions-sheet-surface')),
+      findsOneWidget,
+    );
+    expect(find.text('录音条件'), findsOneWidget);
+    expect(find.text('麦克风权限'), findsOneWidget);
+    expect(find.text('本地存储'), findsOneWidget);
+    expect(find.text('离线转录'), findsOneWidget);
+    expect(find.text('已授权'), findsOneWidget);
+    expect(find.text('空间充足'), findsOneWidget);
+    expect(find.text('可用'), findsOneWidget);
+    expect(find.text('授权麦克风'), findsNothing);
+    expect(find.text('重新检查'), findsNothing);
+    expect(find.text('修复离线资源'), findsNothing);
+
+    Navigator.of(
+      tester.element(
+        find.byKey(const ValueKey('recording-conditions-sheet-surface')),
+      ),
+    ).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('打开设置'));
     await tester.pumpAndSettle();
 
     expect(settingsRequested, isTrue);
@@ -166,6 +193,143 @@ void main() {
 
     expect(find.text('录音条件已就绪'), findsOneWidget);
     expect(readiness.permissionRequests, [false, false]);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('缺少麦克风权限时从录音条件面板授权而不进入设置', (WidgetTester tester) async {
+    var settingsRequested = false;
+    final repository = _MeetingRepository();
+    final readiness = TestMeetingReadinessChecker(
+      result: MeetingReadiness(
+        microphonePermissionGranted: false,
+        freeBytes: minimumRecordingFreeBytes,
+        defaultModelId: senseVoiceDefaultModelId,
+        defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
+        defaultModelName: 'SenseVoice',
+        defaultModelAvailable: true,
+      ),
+    );
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: readiness,
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(
+          viewModel: viewModel,
+          onOpenSettings: () => settingsRequested = true,
+        ),
+      ),
+    );
+    repository.emit(const []);
+    await tester.pump();
+
+    await tester.tap(find.text('需要麦克风权限'));
+    await tester.pumpAndSettle();
+    expect(find.text('待授权'), findsOneWidget);
+    expect(find.text('授权麦克风'), findsOneWidget);
+
+    await tester.tap(find.text('授权麦克风'));
+    await tester.pumpAndSettle();
+
+    expect(settingsRequested, isFalse);
+    expect(readiness.permissionRequests, [false, true]);
+    expect(
+      find.byKey(const ValueKey('recording-conditions-sheet-surface')),
+      findsNothing,
+    );
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('存储不足时从录音条件面板重新检查并恢复', (WidgetTester tester) async {
+    final repository = _MeetingRepository();
+    final readiness = TestMeetingReadinessChecker(
+      result: MeetingReadiness(
+        microphonePermissionGranted: true,
+        freeBytes: minimumRecordingFreeBytes - 1,
+        defaultModelId: senseVoiceDefaultModelId,
+        defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
+        defaultModelName: 'SenseVoice',
+        defaultModelAvailable: true,
+      ),
+    );
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: readiness,
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(home: MeetingListView(viewModel: viewModel)),
+    );
+    repository.emit(const []);
+    await tester.pump();
+
+    await tester.tap(find.text('存储空间不足'));
+    await tester.pumpAndSettle();
+    expect(find.text('空间不足'), findsOneWidget);
+    expect(find.text('重新检查'), findsOneWidget);
+
+    readiness.result = MeetingReadiness(
+      microphonePermissionGranted: true,
+      freeBytes: minimumRecordingFreeBytes * 2,
+      defaultModelId: senseVoiceDefaultModelId,
+      defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
+      defaultModelName: 'SenseVoice',
+      defaultModelAvailable: true,
+    );
+    await tester.tap(find.text('重新检查'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('录音条件已就绪'), findsOneWidget);
+    expect(readiness.permissionRequests, [false, false]);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('默认模型不可用时从录音条件面板进入资源修复流程', (WidgetTester tester) async {
+    var repairRequested = false;
+    final repository = _MeetingRepository();
+    final readiness = TestMeetingReadinessChecker(
+      result: MeetingReadiness(
+        microphonePermissionGranted: true,
+        freeBytes: minimumRecordingFreeBytes,
+        defaultModelId: senseVoiceDefaultModelId,
+        defaultModelVersion: AsrModelRegistry.alpha.defaultModel.version,
+        defaultModelName: 'SenseVoice',
+        defaultModelAvailable: false,
+      ),
+    );
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: readiness,
+      deletion: _deletion(repository),
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingListView(
+          viewModel: viewModel,
+          onRepairRuntime: () => repairRequested = true,
+        ),
+      ),
+    );
+    repository.emit(const []);
+    await tester.pump();
+
+    await tester.tap(find.text('默认模型不可用'));
+    await tester.pumpAndSettle();
+    expect(find.text('需修复'), findsOneWidget);
+    expect(find.text('修复离线资源'), findsOneWidget);
+
+    await tester.tap(find.text('修复离线资源'));
+    await tester.pumpAndSettle();
+
+    expect(repairRequested, isTrue);
     viewModel.dispose();
     await repository.dispose();
   });
@@ -438,6 +602,15 @@ void main() {
     expect(find.text('录音中'), findsOneWidget);
     expect(find.text('录音条件已就绪'), findsOneWidget);
     expect(find.text('音频仅保存在本机 · SenseVoice可用'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('录音条件已就绪'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('recording-conditions-sheet-surface')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
     viewModel.dispose();
     await repository.dispose();

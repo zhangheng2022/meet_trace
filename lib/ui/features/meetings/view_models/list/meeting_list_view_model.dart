@@ -25,6 +25,9 @@ final class MeetingReadinessViewState {
     required this.status,
     this.defaultModelName,
     this.issueCount = 0,
+    this.microphonePermissionGranted,
+    this.freeBytes,
+    this.defaultModelAvailable,
   });
 
   const MeetingReadinessViewState.unchecked()
@@ -36,6 +39,9 @@ final class MeetingReadinessViewState {
   final MeetingReadinessStatus status;
   final String? defaultModelName;
   final int issueCount;
+  final bool? microphonePermissionGranted;
+  final int? freeBytes;
+  final bool? defaultModelAvailable;
 }
 
 final class MeetingListViewModel extends ChangeNotifier {
@@ -106,7 +112,20 @@ final class MeetingListViewModel extends ChangeNotifier {
     unawaited(previous.cancel().whenComplete(load));
   }
 
-  Future<void> refreshReadiness() {
+  Future<void> refreshReadiness() => _refreshReadiness();
+
+  Future<void> requestMicrophonePermission() async {
+    final current = _readinessOperation;
+    if (current != null) {
+      await current;
+    }
+    if (_disposed) {
+      return;
+    }
+    await _refreshReadiness(requestMicrophonePermission: true);
+  }
+
+  Future<void> _refreshReadiness({bool requestMicrophonePermission = false}) {
     final current = _readinessOperation;
     if (current != null) {
       return current;
@@ -114,11 +133,14 @@ final class MeetingListViewModel extends ChangeNotifier {
     _readiness = const MeetingReadinessViewState.checking();
     _notify();
     late final Future<void> operation;
-    operation = _checkReadiness().whenComplete(() {
-      if (identical(_readinessOperation, operation)) {
-        _readinessOperation = null;
-      }
-    });
+    operation =
+        _checkReadiness(
+          requestMicrophonePermission: requestMicrophonePermission,
+        ).whenComplete(() {
+          if (identical(_readinessOperation, operation)) {
+            _readinessOperation = null;
+          }
+        });
     _readinessOperation = operation;
     return operation;
   }
@@ -142,9 +164,13 @@ final class MeetingListViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _checkReadiness() async {
+  Future<void> _checkReadiness({
+    required bool requestMicrophonePermission,
+  }) async {
     try {
-      final result = await readinessChecker.check();
+      final result = await readinessChecker.check(
+        requestMicrophonePermission: requestMicrophonePermission,
+      );
       _readiness = _readinessState(result);
     } on Object {
       _readiness = const MeetingReadinessViewState(
@@ -169,6 +195,9 @@ final class MeetingListViewModel extends ChangeNotifier {
       status: status,
       defaultModelName: result.defaultModelName,
       issueCount: issues.length,
+      microphonePermissionGranted: result.microphonePermissionGranted,
+      freeBytes: result.freeBytes,
+      defaultModelAvailable: result.defaultModelAvailable,
     );
   }
 

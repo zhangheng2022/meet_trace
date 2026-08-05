@@ -6,7 +6,7 @@ final class _MeetingHomePane extends StatelessWidget {
     required this.total,
     required this.readiness,
     required this.startingMeeting,
-    required this.onOpenSettings,
+    required this.onOpenRecordingConditions,
     required this.onRetryReadiness,
     required this.onStartMeeting,
   });
@@ -15,7 +15,7 @@ final class _MeetingHomePane extends StatelessWidget {
   final int? total;
   final MeetingReadinessViewState readiness;
   final bool startingMeeting;
-  final VoidCallback? onOpenSettings;
+  final VoidCallback? onOpenRecordingConditions;
   final Future<void> Function()? onRetryReadiness;
   final VoidCallback? onStartMeeting;
 
@@ -28,7 +28,7 @@ final class _MeetingHomePane extends StatelessWidget {
         children: [
           _RecordingSetupStrip(
             readiness: readiness,
-            onOpenSettings: onOpenSettings,
+            onOpenRecordingConditions: onOpenRecordingConditions,
             onRetry: onRetryReadiness,
           ),
           _MeetingSectionHeader(total: total),
@@ -47,12 +47,12 @@ final class _MeetingHomePane extends StatelessWidget {
 final class _RecordingSetupStrip extends StatelessWidget {
   const _RecordingSetupStrip({
     required this.readiness,
-    required this.onOpenSettings,
+    required this.onOpenRecordingConditions,
     required this.onRetry,
   });
 
   final MeetingReadinessViewState readiness;
-  final VoidCallback? onOpenSettings;
+  final VoidCallback? onOpenRecordingConditions;
   final Future<void> Function()? onRetry;
 
   @override
@@ -63,9 +63,29 @@ final class _RecordingSetupStrip extends StatelessWidget {
     final retry = readiness.status == MeetingReadinessStatus.failed
         ? onRetry
         : null;
-    final VoidCallback? onPress = retry == null
-        ? onOpenSettings
-        : () => unawaited(retry());
+    final canOpenConditions = switch (readiness.status) {
+      MeetingReadinessStatus.ready ||
+      MeetingReadinessStatus.microphonePermissionRequired ||
+      MeetingReadinessStatus.storageInsufficient ||
+      MeetingReadinessStatus.defaultModelUnavailable => true,
+      MeetingReadinessStatus.unchecked ||
+      MeetingReadinessStatus.checking ||
+      MeetingReadinessStatus.failed => false,
+    };
+    final VoidCallback? onPress = retry != null
+        ? () => unawaited(retry())
+        : canOpenConditions
+        ? onOpenRecordingConditions
+        : null;
+    final trailingLabel = switch (readiness.status) {
+      MeetingReadinessStatus.ready => null,
+      MeetingReadinessStatus.microphonePermissionRequired ||
+      MeetingReadinessStatus.storageInsufficient ||
+      MeetingReadinessStatus.defaultModelUnavailable => '处理',
+      MeetingReadinessStatus.failed => '重试',
+      MeetingReadinessStatus.unchecked ||
+      MeetingReadinessStatus.checking => null,
+    };
     final content = DecoratedBox(
       decoration: BoxDecoration(
         border: Border(
@@ -107,12 +127,14 @@ final class _RecordingSetupStrip extends StatelessWidget {
                 ],
               ),
             ),
-            if (onPress != null) ...[
+            if (onPress != null && trailingLabel != null) ...[
               SizedBox(width: appStyle.spaceXs),
-              Icon(
-                FLucideIcons.chevronRight,
-                size: 18,
-                color: theme.colors.mutedForeground,
+              Text(
+                trailingLabel,
+                style: theme.typography.body.xs.copyWith(
+                  color: theme.colors.mutedForeground,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ],
@@ -123,7 +145,7 @@ final class _RecordingSetupStrip extends StatelessWidget {
       return content;
     }
     return FTappable(
-      semanticsLabel: retry == null ? '查看录音条件和默认模型设置' : '重新检查录音条件',
+      semanticsLabel: retry == null ? '查看录音条件' : '重新检查录音条件',
       onPress: onPress,
       child: content,
     );

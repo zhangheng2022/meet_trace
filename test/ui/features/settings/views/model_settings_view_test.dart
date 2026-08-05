@@ -52,7 +52,7 @@ void main() {
     await installations.dispose();
   });
 
-  testWidgets('已安装模型将校验修复收进维护菜单', (tester) async {
+  testWidgets('已安装模型分离状态与维护入口并保留修复菜单', (tester) async {
     var repairCalls = 0;
     final installations = TestActiveInstallations();
     final descriptor = AsrModelRegistry.alpha.defaultModel;
@@ -67,7 +67,17 @@ void main() {
       Application(home: ModelSettingsView(viewModel: viewModel)),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('model-maintenance-menu')));
+
+    final ledger = find.byKey(const ValueKey('model-resource-ledger'));
+    final status = find.byKey(const ValueKey('model-resource-status'));
+    final maintenance = find.byKey(const ValueKey('model-maintenance-menu'));
+    expect(status, findsOneWidget);
+    expect(find.byType(FBadge), findsNothing);
+    expect(find.text('维护资源'), findsOneWidget);
+    expect(tester.getSize(maintenance).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(maintenance).width, tester.getSize(ledger).width);
+
+    await tester.tap(maintenance);
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('verify-and-repair-model')),
@@ -80,6 +90,65 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     viewModel.dispose();
     await installations.dispose();
+  });
+
+  testWidgets('手机宽度下资源大小不被维护操作挤成两行', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(370, 829));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final installations = TestActiveInstallations();
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(installations.installed(descriptor), active: true);
+    final viewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
+      installations: installations,
+      actions: ModelMaintenanceActions(repair: () async {}),
+    );
+
+    await tester.pumpWidget(
+      Application(home: ModelSettingsView(viewModel: viewModel)),
+    );
+    await tester.pumpAndSettle();
+
+    final metadata = find.textContaining('239.5 MB');
+    expect(metadata, findsOneWidget);
+    expect(tester.getSize(metadata).height, lessThan(30));
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    viewModel.dispose();
+    await installations.dispose();
+  });
+
+  testWidgets('2.0 字体缩放下设置内容不溢出', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(370, 829));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = await _Fixture.create();
+
+    await tester.pumpWidget(
+      Application(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: ModelSettingsView(
+            viewModel: fixture.modelViewModel,
+            dataControls: fixture.dataViewModel,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('settings-single-column')),
+      findsOneWidget,
+    );
+    final name = find.byKey(const ValueKey('model-resource-name'));
+    final status = find.byKey(const ValueKey('model-resource-status'));
+    expect(
+      tester.getTopLeft(status).dy,
+      greaterThan(tester.getBottomLeft(name).dy),
+    );
+    expect(tester.takeException(), isNull);
+    await fixture.dispose();
   });
 
   testWidgets('下载中可以暂停并保留分片', (tester) async {

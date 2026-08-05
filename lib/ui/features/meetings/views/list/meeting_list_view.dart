@@ -13,11 +13,13 @@ import 'package:forui/forui.dart';
 
 import '../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../domain/models/meeting.dart';
+import '../../../../../domain/models/meeting_readiness.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../theme/theme.dart';
 import '../../../../core/app_ledger.dart';
 import '../../../../core/app_dialog.dart';
 import '../../../../core/app_responsive.dart';
+import '../../../../core/app_sheet.dart';
 import '../../../../core/app_state_panel.dart';
 import '../../../../core/app_swipe_action_row.dart';
 import '../../../../core/branding/meettrace_brand_mark.dart';
@@ -26,6 +28,7 @@ import '../../../../core/view_state.dart';
 import '../../view_models/list/meeting_list_view_model.dart';
 
 part 'meeting_list_content.dart';
+part 'widgets/recording_conditions_sheet.dart';
 part 'widgets/meeting_list_chrome.dart';
 part 'widgets/meeting_ledger_row.dart';
 part 'widgets/meeting_preview_pane.dart';
@@ -37,6 +40,7 @@ final class MeetingListView extends StatefulWidget {
     this.onStartMeeting,
     this.onOpenMeeting,
     this.onOpenSettings,
+    this.onRepairRuntime,
     this.now,
     super.key,
   });
@@ -46,6 +50,7 @@ final class MeetingListView extends StatefulWidget {
   final VoidCallback? onStartMeeting;
   final ValueChanged<Meeting>? onOpenMeeting;
   final VoidCallback? onOpenSettings;
+  final VoidCallback? onRepairRuntime;
   final DateTime Function()? now;
 
   @override
@@ -74,6 +79,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
   }
 
   Widget _page(ViewState<List<Meeting>> state) {
+    final viewModel = widget.viewModel;
     return FScaffold(
       childPad: false,
       header: FHeader(
@@ -94,7 +100,9 @@ final class _MeetingListViewState extends State<MeetingListView> {
         startingMeeting: widget.startingMeeting,
         onStartMeeting: widget.onStartMeeting,
         onOpenMeeting: widget.onOpenMeeting,
-        onOpenSettings: widget.onOpenSettings,
+        onOpenRecordingConditions: viewModel == null
+            ? null
+            : () => unawaited(_showRecordingConditions(viewModel)),
         onRetryReadiness: widget.viewModel?.refreshReadiness,
         deletingMeetingIds:
             widget.viewModel?.deletingMeetingIds ?? const <String>{},
@@ -105,6 +113,34 @@ final class _MeetingListViewState extends State<MeetingListView> {
             : _requestDeleteMeeting,
       ),
     );
+  }
+
+  Future<void> _showRecordingConditions(MeetingListViewModel viewModel) async {
+    final action = await showFSheet<_RecordingConditionsAction>(
+      context: context,
+      side: FLayout.btt,
+      useSafeArea: true,
+      mainAxisMaxRatio: 0.72,
+      barrierLabel: '关闭录音条件面板',
+      builder: (context) => _RecordingConditionsSheet(
+        readiness: viewModel.readiness,
+        canRepairRuntime: widget.onRepairRuntime != null,
+      ),
+    );
+    if (!mounted || action == null) {
+      return;
+    }
+    switch (action) {
+      case _RecordingConditionsAction.requestMicrophonePermission:
+        await viewModel.requestMicrophonePermission();
+        return;
+      case _RecordingConditionsAction.recheck:
+        await viewModel.refreshReadiness();
+        return;
+      case _RecordingConditionsAction.repairRuntime:
+        widget.onRepairRuntime?.call();
+        return;
+    }
   }
 
   Future<void> _requestDeleteMeeting(Meeting meeting) async {

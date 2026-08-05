@@ -165,6 +165,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
       onStartMeeting: () => unawaited(_startMeeting()),
       onOpenMeeting: _openMeeting,
       onOpenSettings: _openSettings,
+      onRepairRuntime: widget.onRuntimeRepairRequired,
     );
   }
 
