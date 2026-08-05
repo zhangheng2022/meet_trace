@@ -64,7 +64,7 @@ graph TD
 | SEC-003 | 禁止模型权重进入 IPA | 拒绝 ONNX、TFLite、模型 token、模型归档及已知模型权重路径 |
 | SEC-004 | 禁止用户数据进入 IPA | 拒绝录音、转录数据库和常见音频/数据库文件 |
 | SEC-005 | 禁止签名材料进入 IPA | 拒绝证书、私钥和 provisioning profile |
-| SEC-006 | 保留必要法律声明 | 固定 Manifest、模型许可证和 Flutter NOTICE 必须存在 |
+| SEC-006 | 保留必要法律声明 | 固定 Manifest、模型许可证、Flutter NOTICE 和平台隐私清单必须存在 |
 
 ### Performance Requirements
 
@@ -136,7 +136,7 @@ toolchain_snapshot: text
 | Release Compile | Release iPhoneOS 无签名构建成功 | 无 |
 | Bundle Integrity | Bundle ID、iOS 最低版本、麦克风权限、后台音频和 arm64 均正确 | 无 |
 | Package Safety | 无模型权重、用户数据、密钥或 provisioning profile | 无 |
-| Legal Assets | 固定 Manifest、模型许可和 Flutter NOTICE 齐全 | 无 |
+| Legal Assets | 固定 Manifest、模型许可、Flutter NOTICE 和平台隐私清单齐全 | 无 |
 
 ## Monitoring & Observability
 
@@ -234,4 +234,3 @@ toolchain_snapshot: text
 - [iOS Alpha 设备矩阵](../docs/quality/iOS_Alpha_设备矩阵.md)
 - [运行时模型初始化与发布门槛](../docs/quality/运行时模型初始化与发布门槛.md)
 - [Android + iOS Alpha PRD V0.9](../docs/product/Alpha_PRD_无登录版.md)
-

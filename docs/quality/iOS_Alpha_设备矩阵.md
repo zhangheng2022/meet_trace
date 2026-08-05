@@ -22,7 +22,7 @@
 - [工作流规格](../../spec/spec-process-cicd-ios-unsigned.md)定义触发条件、质量门禁、产物合同和失败策略。
 - `.github/workflows/ios-unsigned.yml` 使用 GitHub 托管的 `macos-latest`、Runner 默认稳定 Xcode 和 Flutter 最新 stable，不静默回退旧工具链。
 - 流水线依次执行依赖解析、`flutter analyze`、`flutter test`、Debug/Release `--no-codesign` 构建和 Release App bundle 审计。
-- `tool/benchmarks/inspect_ios_app.sh` 检查 Bundle ID、iOS 13.0、麦克风用途、后台音频、arm64、Flutter NOTICE、固定 Manifest/许可，并阻断模型权重、用户数据、签名材料或 provisioning profile。
+- `tool/benchmarks/inspect_ios_app.sh` 检查 Bundle ID、iOS 13.0、麦克风用途、后台音频、arm64、Flutter NOTICE、固定 Manifest/许可和平台隐私清单，并阻断模型权重、用户数据、签名材料或 provisioning profile。
 - 成功运行上传 unsigned IPA、SHA-256、审计 JSON、工具链快照和构建元数据，保留 7 天。实际运行链接与结果尚未留证，因此本项当前仅代表仓库自动化已就绪。
 - unsigned IPA 没有 Apple 签名和 provisioning profile，不能直接安装、不能进入 TestFlight，也不能替代 iPhone/iPad 真机验收。
 

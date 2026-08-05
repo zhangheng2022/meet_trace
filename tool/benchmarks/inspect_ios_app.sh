@@ -111,10 +111,15 @@ def normalized_version(value: str) -> tuple[int, ...] | None:
     if not re.fullmatch(r"\d+(?:\.\d+)*", value):
         return None
     parts = tuple(int(part) for part in value.split("."))
-    return parts + (0,) * (2 - len(parts))
+    return parts + (0,) * max(0, 2 - len(parts))
 
 
-minimum_version_matches = normalized_version(minimum_os_version) == (13, 0)
+normalized_minimum_version = normalized_version(minimum_os_version)
+minimum_version_matches = (
+    normalized_minimum_version is not None
+    and normalized_minimum_version[:2] == (13, 0)
+    and all(part == 0 for part in normalized_minimum_version[2:])
+)
 frameworks = [
     path
     for path in files
@@ -142,6 +147,7 @@ checks = {
         path.startswith("Frameworks/Flutter.framework/") for path in files
     ),
     "flutterNotices": has_flutter_notices,
+    "privacyManifests": bool(privacy_manifests),
     "requiredAssets": not missing_assets,
     "noModelWeights": not forbidden_weights,
     "noUserData": not forbidden_user_data,
@@ -190,4 +196,3 @@ if failures:
 
 print("Inspection passed")
 PY
-

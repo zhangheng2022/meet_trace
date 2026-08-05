@@ -101,7 +101,8 @@ jobs:
           )
 
           /usr/bin/unzip -tq "$ipa_path"
-          /usr/bin/unzip -l "$ipa_path" | grep -Fq 'Payload/Runner.app/Info.plist'
+          /usr/bin/unzip -Z1 "$ipa_path" > "$package_dir/ipa-entries.txt"
+          grep -Fxq 'Payload/Runner.app/Info.plist' "$package_dir/ipa-entries.txt"
           shasum -a 256 "$ipa_path" > "$ipa_path.sha256"
 
           IPA_PATH="$ipa_path" python3 - <<'PY'
@@ -118,6 +119,10 @@ jobs:
 
           ipa_path = Path(os.environ["IPA_PATH"])
           flutter = json.loads(output("flutter", "--version", "--machine"))
+          digest = hashlib.sha256()
+          with ipa_path.open("rb") as stream:
+              for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                  digest.update(chunk)
           metadata = {
               "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
               "repository": os.environ["GITHUB_REPOSITORY"],
@@ -136,9 +141,9 @@ jobs:
               "artifact": {
                   "name": ipa_path.name,
                   "bytes": ipa_path.stat().st_size,
-                  "sha256": hashlib.sha256(ipa_path.read_bytes()).hexdigest(),
-                  "signed": False,
-                  "installable": False,
+                  "sha256": digest.hexdigest(),
+                  "distributionSigned": False,
+                  "directlyInstallable": False,
               },
           }
           report_path = ipa_path.parent / "build-metadata.json"
@@ -153,6 +158,7 @@ jobs:
         if: always()
         shell: bash
         run: |
+          mkdir -p build/ios/unsigned
           {
             echo "--- Final disk usage ---"
             df -h
@@ -173,4 +179,3 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           compression-level: 0
-
