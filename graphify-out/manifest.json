@@ -2485,8 +2485,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ios-testflight.yml": {
-    "mtime": 1785926358.7385511,
-    "ast_hash": "05cb7d6928bf1b293b133b7bf256ca09",
+    "mtime": 1785930053.9156325,
+    "ast_hash": "b8aff314061388b1d910298880c2ac30",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260805_073943_ios_\u901a\u8fc7_github_\u53d1\u5e03\u5230_testflight_\u9700\u8981\u4ec0\u4e48.md": {
@@ -2510,8 +2510,23 @@
     "semantic_hash": ""
   },
   "spec/spec-process-cicd-ios-testflight.md": {
-    "mtime": 1785926274.123488,
-    "ast_hash": "1c8e20ee7f09f4d8206e439391913573",
+    "mtime": 1785930236.9427035,
+    "ast_hash": "933d48a46418c1dafc985c611f302a6e",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260805_104517_\u4e3a\u5f53\u524d\u9879\u76ee\u589e\u52a0_github_ios_testflight_\u7b7e\u540d\u53d1\u5e03\u6d41\u6c34\u7ebf\u9700\u8981\u590d\u7528\u54ea\u4e9b\u73b0\u6709\u95e8\u69db.md": {
+    "mtime": 1785926717.5136194,
+    "ast_hash": "812c29cba89358209850c3e199aacb06",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260805_105834_\u662f\u5426\u5f71\u54cd\u73b0\u6709app.md": {
+    "mtime": 1785927514.6483753,
+    "ast_hash": "732a342df747f1a1cbb4587a69ad5f1e",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260805_110047_\u4f1a\u5f71\u54cd_appstore_\u7ebf\u4e0aapp\u5417.md": {
+    "mtime": 1785927647.5179667,
+    "ast_hash": "de7a31ee0c0090c8635ffb4a391ef2c7",
     "semantic_hash": ""
   }
 }

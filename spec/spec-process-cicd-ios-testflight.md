@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - iOS TestFlight Release
-version: 1.0
+version: 1.1
 date_created: 2026-08-05
 last_updated: 2026-08-05
 owner: MeetTrace maintainers
@@ -57,11 +57,12 @@ graph TD
 | REQ-003 | 发布前执行静态检查和自动化测试 | High | 任一检查失败即阻断签名和上传 |
 | REQ-004 | 签名前复用 unsigned bundle 审计 | High | 架构、权限、许可、资产和数据安全检查全部通过 |
 | REQ-005 | 每次运行及重跑使用唯一构建号 | High | App Store Connect 不出现重复构建号 |
-| REQ-006 | 使用指定团队的 distribution 身份和 App Store profile | High | 证书、profile、Bundle ID 和 Team ID 一致且有效 |
+| REQ-006 | 使用指定团队的 distribution 身份和 App Store profile | High | profile 明确包含当前 p12 导入的证书，且证书、profile、Bundle ID 和 Team ID 一致并有效 |
 | REQ-007 | 严格验证签名 IPA | High | codesign、嵌入 profile、标识、构建号、ZIP 和摘要检查全部通过 |
 | REQ-008 | 使用团队 API Key 上传 | High | App Store Connect 接收上传，流程不依赖 Apple ID 会话 |
 | REQ-009 | 支持可选构建说明 | Medium | 非空说明随构建提交，空说明不阻断上传 |
 | REQ-010 | 输出可追溯证据 | High | 产物关联 commit、run、attempt、构建号、工具链和 SHA-256 |
+| REQ-011 | 签名设置仅作用于 App 主目标 | High | provisioning profile 不得注入 Pods、插件或测试目标 |
 
 ### Security Requirements
 
@@ -71,7 +72,7 @@ graph TD
 | SEC-002 | Secrets 不进入仓库、日志或长期文件 | 凭据仅从 GitHub Secrets 注入，不输出原文 |
 | SEC-003 | 签名材料仅存在于临时 Runner | 使用临时钥匙串和临时文件，流程结束始终清理 |
 | SEC-004 | 上传认证使用短时 JWT | 团队 API Key 仅用于生成短时 App Store Connect 令牌 |
-| SEC-005 | 拒绝错误签名材料 | 解码、格式、身份、profile 类型、有效期、团队和 Bundle ID 均需验证 |
+| SEC-005 | 拒绝错误签名材料 | 解码、格式、身份、profile 内证书、profile 类型、有效期、团队和 Bundle ID 均需验证 |
 | SEC-006 | 禁止原始私钥进入 IPA | IPA 不得包含 `.p12`、`.p8`、`.pem` 或 `.key` |
 | SEC-007 | 限制发布并发 | 同时只允许一个 TestFlight 发布，运行中不得自动取消 |
 | SEC-008 | 隔离发布权限 | Job 绑定 `testflight` Environment，支持审批和 Environment Secrets |
@@ -134,7 +135,8 @@ testflight_upload: submitted build
 
 - **Runner Requirements**: 最新稳定 macOS，具备 Xcode、codesign、临时钥匙串和 iOS arm64 归档能力。
 - **Network Access**: 用于源码、Flutter/依赖、发布客户端和 App Store Connect。
-- **Apple Configuration**: `com.meettrace.app` 已创建 App Store Connect 应用记录；证书和 profile 属于同一 Team。
+- **Apple Configuration**: `com.meettrace.app` 已创建 App Store Connect 应用记录；profile 属于同一 Team，并包含 p12 对应的 distribution 证书。
+- **Signing Scope**: 手动签名设置只允许绑定 `Runner` 的 Release 配置；Pods、Flutter 插件和测试目标沿用各自构建设置。
 - **Permissions**: GitHub Token 只读；API Key 角色允许上传构建。
 
 ## Error Handling Strategy
@@ -143,7 +145,7 @@ testflight_upload: submitted build
 |---|---|---|
 | Secret 缺失、空文件或 Base64 无效 | 导入前失败 | 修复对应 Secret 后重跑 |
 | p12 密码或 distribution 身份错误 | 导入或身份校验失败 | 重新导出包含匹配私钥的 p12 |
-| profile 类型、标识、团队或有效期错误 | 阻断归档 | 重新生成 App Store Connect profile |
+| profile 不包含 p12 对应证书，或类型、标识、团队、有效期错误 | 在归档前阻断 | 使用当前 distribution 证书重新生成 App Store Connect profile |
 | 分析、测试或 unsigned 审计失败 | 阻断签名和上传 | 修复代码或资产后重跑 |
 | 归档、签名或导出失败 | 保留非敏感诊断，阻断上传 | 根据 Xcode 日志修复 |
 | IPA 校验失败 | 阻断上传 | 修复导出配置并重新构建 |
@@ -226,7 +228,9 @@ testflight_upload: submitted build
 | 最新 Xcode 更新导出方法名称 | 选择当前 Xcode 支持的方法 | 工具帮助与导出日志 |
 | p12 为 0 B 或解码为空 | 在钥匙串创建前失败 | 解码长度检查 |
 | p12 不含匹配 Team ID 的 distribution 私钥 | 在归档前失败 | codesigning identity 查询 |
+| profile 未选择当前 p12 对应的 distribution 证书 | 在依赖解析和构建前失败 | profile 内证书 SHA-1 与已导入身份比对 |
 | 使用 Development、Ad Hoc 或 Enterprise profile | 在安装前失败 | entitlement 和设备范围检查 |
+| Pods 或 Flutter 插件不支持 provisioning profile | profile 不会注入这些目标，归档继续 | 检查归档参数和目标级签名配置 |
 | 签名 App 正常包含 embedded profile | 允许唯一内嵌 profile，拒绝其他原始密钥 | IPA entries 检查 |
 | 上传成功但 Apple 处理失败 | 不将上传成功解释为已可测试 | App Store Connect 状态 |
 | 未提供构建说明 | 正常上传，不提交空说明 | 发布参数检查 |
@@ -244,6 +248,8 @@ testflight_upload: submitted build
 - **VLD-007**: 上传使用团队 API Key，不要求 Apple ID、专用密码或会话。
 - **VLD-008**: App Store Connect 出现对应构建号；可用性以 Apple 后台处理结果为准。
 - **VLD-009**: 清理步骤在成功和失败路径均执行。
+- **VLD-010**: profile 的开发者证书集合包含 p12 导入的 distribution identity。
+- **VLD-011**: 归档命令不全局传入 Team ID、Bundle ID、签名身份或 provisioning profile，签名设置仅写入 `Runner` Release 配置。
 
 ### Performance Benchmarks
 
@@ -266,6 +272,7 @@ testflight_upload: submitted build
 | Version | Date | Changes | Author |
 |---|---|---|---|
 | 1.0 | 2026-08-05 | 初始 TestFlight 签名发布规格 | Codex |
+| 1.1 | 2026-08-05 | 增加证书/profile 精确匹配校验，并将手动签名限制到 Runner 目标 | Codex |
 
 ## Related Specifications
 

@@ -200,6 +200,7 @@ jobs:
           PROFILE_PLIST="$profile_plist" python3 - <<'PY'
           import os
           import plistlib
+          import hashlib
           from datetime import datetime, timezone
           from pathlib import Path
 
@@ -214,12 +215,22 @@ jobs:
               entitlements.get("com.apple.developer.team-identifier")
               or (profile.get("TeamIdentifier") or [""])[0]
           )
+          profile_certificate_hashes = {
+              hashlib.sha1(certificate).hexdigest().upper()
+              for certificate in profile.get("DeveloperCertificates", [])
+              if isinstance(certificate, bytes)
+          }
+          expected_identity = os.environ["IOS_DISTRIBUTION_IDENTITY"].strip().upper()
 
           errors = []
           if profile_bundle_id != expected_bundle_id:
               errors.append(f"profile bundle ID is {profile_bundle_id!r}, expected {expected_bundle_id!r}")
           if profile_team_id != expected_team_id:
               errors.append(f"profile team ID is {profile_team_id!r}, expected {expected_team_id!r}")
+          if expected_identity not in profile_certificate_hashes:
+              errors.append(
+                  "profile does not include the distribution certificate imported from the p12"
+              )
           if entitlements.get("get-task-allow") is not False:
               errors.append("profile permits debugging and is not an App Store distribution profile")
           if profile.get("ProvisionedDevices"):
@@ -251,6 +262,48 @@ jobs:
               stream.write(f"IOS_PROVISIONING_PROFILE_INSTALL_PATH={install_path}\n")
           print(f"Provisioning profile validated: {profile.get('Name', uuid)}")
           PY
+
+      - name: Configure Runner target signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -rxcodeproj <<'RUBY'
+          project_path = "ios/Runner.xcodeproj"
+          project = Xcodeproj::Project.open(project_path)
+          runner = project.targets.find { |target| target.name == "Runner" }
+          abort("Runner target was not found in #{project_path}") unless runner
+
+          release = runner.build_configurations.find { |configuration| configuration.name == "Release" }
+          abort("Runner Release configuration was not found") unless release
+
+          release.build_settings["DEVELOPMENT_TEAM"] = ENV.fetch("APPLE_TEAM_ID")
+          release.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = ENV.fetch("IOS_BUNDLE_ID")
+          release.build_settings["CODE_SIGN_STYLE"] = "Manual"
+          release.build_settings["CODE_SIGN_IDENTITY"] = ENV.fetch("IOS_DISTRIBUTION_IDENTITY")
+          release.build_settings["PROVISIONING_PROFILE_SPECIFIER"] = ENV.fetch(
+            "IOS_PROVISIONING_PROFILE_UUID",
+          )
+          project.save
+
+          forbidden_keys = %w[
+            DEVELOPMENT_TEAM
+            CODE_SIGN_IDENTITY
+            PROVISIONING_PROFILE
+            PROVISIONING_PROFILE_SPECIFIER
+          ]
+          other_targets = project.targets.reject { |target| target.name == "Runner" }
+          violations = other_targets.flat_map do |target|
+            target.build_configurations.flat_map do |configuration|
+              forbidden_keys.filter_map do |key|
+                value = configuration.build_settings[key]
+                "#{target.name}/#{configuration.name}: #{key}=#{value}" if value && !value.to_s.empty?
+              end
+            end
+          end
+          abort("Signing settings leaked to non-Runner targets: #{violations.join(', ')}") unless violations.empty?
+
+          puts "Manual App Store signing configured for Runner/Release only"
+          RUBY
 
       - name: Resolve dependencies
         run: flutter pub get
@@ -324,12 +377,6 @@ jobs:
             -destination "generic/platform=iOS" \
             -archivePath "$archive_path" \
             archive \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="$IOS_DISTRIBUTION_IDENTITY" \
-            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_UUID" \
-            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             FLUTTER_BUILD_NUMBER="$IOS_BUILD_NUMBER" \
             CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
             COMPILER_INDEX_STORE_ENABLE=NO
