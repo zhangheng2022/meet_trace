@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -14,6 +15,7 @@ import 'recording_ports.dart';
 export 'pcm_audio_level_meter.dart';
 
 const defaultRecordingCaptureStopTimeout = Duration(seconds: 5);
+const defaultRecordingFactCommitInterval = Duration(milliseconds: 250);
 const defaultRecordingCheckpointSaveInterval = Duration(seconds: 5);
 const defaultRecordingCheckpointSaveBytesThreshold = 512 * 1024;
 
@@ -29,6 +31,7 @@ final class ReliableRecordingService implements RecordingSessionService {
     this.minimumFreeBytes = minimumRecordingFreeBytes,
     this.maxPendingPreviewChunks = 4,
     this.captureStopTimeout = defaultRecordingCaptureStopTimeout,
+    this.factCommitInterval = defaultRecordingFactCommitInterval,
     this.checkpointSaveInterval = defaultRecordingCheckpointSaveInterval,
     this.checkpointSaveBytesThreshold =
         defaultRecordingCheckpointSaveBytesThreshold,
@@ -48,6 +51,14 @@ final class ReliableRecordingService implements RecordingSessionService {
         captureStopTimeout,
         'captureStopTimeout',
         '必须大于 0',
+      );
+    }
+    if (factCommitInterval < Duration.zero ||
+        factCommitInterval > const Duration(seconds: 1)) {
+      throw ArgumentError.value(
+        factCommitInterval,
+        'factCommitInterval',
+        '必须在 0～1 秒之间',
       );
     }
     if (checkpointSaveInterval <= Duration.zero) {
@@ -75,6 +86,7 @@ final class ReliableRecordingService implements RecordingSessionService {
   final int minimumFreeBytes;
   final int maxPendingPreviewChunks;
   final Duration captureStopTimeout;
+  final Duration factCommitInterval;
   final Duration checkpointSaveInterval;
   final int checkpointSaveBytesThreshold;
   final DateTime Function() now;
@@ -86,10 +98,11 @@ final class ReliableRecordingService implements RecordingSessionService {
   RandomAccessFile? _output;
   StreamSubscription<Uint8List>? _audioSubscription;
   Completer<void>? _captureDone;
+  final Queue<Uint8List> _pendingFactChunks = Queue<Uint8List>();
   Future<void> _writeTail = Future<void>.value();
+  bool _writeDrainActive = false;
   Object? _writeError;
   StackTrace? _writeStackTrace;
-  bool _userPaused = false;
   bool _captureStopTimedOut = false;
   int _persistedBytes = 0;
   DateTime _lastCheckpointSavedAt = DateTime.fromMillisecondsSinceEpoch(0);
@@ -149,7 +162,7 @@ final class ReliableRecordingService implements RecordingSessionService {
       _captureDone = Completer<void>();
       late final StreamSubscription<Uint8List> subscription;
       subscription = stream.listen(
-        (bytes) => _queueChunk(subscription, bytes),
+        _queueChunk,
         onError: (Object error, StackTrace stackTrace) {
           _state = RecordingState.failed;
           if (!subscription.isPaused) {
@@ -184,7 +197,6 @@ final class ReliableRecordingService implements RecordingSessionService {
     if (_state != RecordingState.recording) {
       throw StateError('当前状态不能暂停录音：${_state.name}');
     }
-    _userPaused = true;
     await capture.pause();
     final subscription = _audioSubscription;
     if (subscription != null && !subscription.isPaused) {
@@ -204,7 +216,6 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
     await _saveCheckpoint(RecordingCheckpointState.recording);
     await foreground.setPaused(false);
-    _userPaused = false;
     final subscription = _audioSubscription;
     if (subscription != null && subscription.isPaused) {
       subscription.resume();
@@ -230,7 +241,6 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
     final meetingId = _meetingId!;
     _state = RecordingState.finalizing;
-    _userPaused = false;
     final subscription = _audioSubscription;
     if (subscription != null && subscription.isPaused) {
       subscription.resume();
@@ -282,35 +292,52 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
   }
 
-  void _queueChunk(
-    StreamSubscription<Uint8List> subscription,
-    Uint8List bytes,
-  ) {
-    if (!subscription.isPaused) {
-      subscription.pause();
-    }
-    final copy = Uint8List.fromList(bytes);
-    _writeTail = _writeTail.then((_) => _persistChunk(copy)).then((_) {
-      if (!_userPaused &&
-          _writeError == null &&
-          _state == RecordingState.recording) {
-        subscription.resume();
-      }
-    });
-  }
-
-  Future<void> _persistChunk(Uint8List bytes) async {
-    if (bytes.isEmpty) {
+  void _queueChunk(Uint8List bytes) {
+    if (_writeError != null) {
       return;
     }
-    if (bytes.length.isOdd) {
-      final error = ReliableRecordingException(
-        code: 'recording.pcm_alignment_invalid',
-        message: '收到未对齐 PCM16 样本边界的音频块',
-      );
-      _writeError = error;
-      _writeStackTrace = StackTrace.current;
-      throw error;
+    _pendingFactChunks.addLast(Uint8List.fromList(bytes));
+    if (_writeDrainActive) {
+      return;
+    }
+    _writeDrainActive = true;
+    _writeTail = _drainFactChunks();
+  }
+
+  Future<void> _drainFactChunks() async {
+    try {
+      while (_pendingFactChunks.isNotEmpty) {
+        if (factCommitInterval > Duration.zero) {
+          await Future<void>.delayed(factCommitInterval);
+        }
+        final batch = <Uint8List>[];
+        while (_pendingFactChunks.isNotEmpty) {
+          batch.add(_pendingFactChunks.removeFirst());
+        }
+        await _persistBatch(batch);
+      }
+    } finally {
+      _writeDrainActive = false;
+      if (_writeError != null) {
+        _pendingFactChunks.clear();
+      } else if (_pendingFactChunks.isNotEmpty) {
+        _writeDrainActive = true;
+        _writeTail = _drainFactChunks();
+      }
+    }
+  }
+
+  Future<void> _persistBatch(List<Uint8List> batch) async {
+    for (final bytes in batch) {
+      if (bytes.length.isOdd) {
+        final error = ReliableRecordingException(
+          code: 'recording.pcm_alignment_invalid',
+          message: '收到未对齐 PCM16 样本边界的音频块',
+        );
+        _writeError = error;
+        _writeStackTrace = StackTrace.current;
+        throw error;
+      }
     }
     final output = _output;
     if (output == null) {
@@ -318,10 +345,30 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
 
     try {
-      final startByteOffset = _persistedBytes;
-      await output.writeFrom(bytes);
+      final nonEmptyBytes = batch.where((bytes) => bytes.isNotEmpty).toList();
+      final batchByteCount = nonEmptyBytes.fold<int>(
+        0,
+        (total, bytes) => total + bytes.length,
+      );
+      if (batchByteCount == 0) {
+        return;
+      }
+      final combined = Uint8List(batchByteCount);
+      var combinedOffset = 0;
+      for (final bytes in nonEmptyBytes) {
+        combined.setRange(combinedOffset, combinedOffset + bytes.length, bytes);
+        combinedOffset += bytes.length;
+      }
+      await output.writeFrom(combined);
       await output.flush();
-      _persistedBytes += bytes.length;
+      final persistedChunks = <RecordingPcmChunk>[];
+      for (final bytes in nonEmptyBytes) {
+        final startByteOffset = _persistedBytes;
+        _persistedBytes += bytes.length;
+        persistedChunks.add(
+          RecordingPcmChunk(bytes: bytes, startByteOffset: startByteOffset),
+        );
+      }
       // 进度 checkpoint 按时间/字节节流；暂停、恢复与封存等状态点仍强制落盘。
       if (_progressCheckpointDue()) {
         await _saveCheckpoint(
@@ -330,9 +377,9 @@ final class ReliableRecordingService implements RecordingSessionService {
               : RecordingCheckpointState.recording,
         );
       }
-      _preview.offer(
-        RecordingPcmChunk(bytes: bytes, startByteOffset: startByteOffset),
-      );
+      for (final chunk in persistedChunks) {
+        _preview.offer(chunk);
+      }
     } on Object catch (error, stackTrace) {
       _writeError ??= error;
       _writeStackTrace ??= stackTrace;

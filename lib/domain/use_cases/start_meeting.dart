@@ -65,7 +65,6 @@ final class StartMeetingUseCase {
         language: descriptor.language,
         useInverseTextNormalization: descriptor.useInverseTextNormalization,
       );
-      await engine.initialize();
       final timestamp = now();
       final created = Meeting(
         id: meetingIdFactory(),

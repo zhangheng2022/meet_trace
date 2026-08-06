@@ -10,6 +10,7 @@ import '../ports/asr_engine.dart';
 import '../ports/final_transcription.dart';
 import '../ports/repositories.dart';
 import '../ports/speaker_diarization.dart';
+import 'final_inference_scheduler.dart';
 
 export '../ports/final_transcription.dart';
 
@@ -37,6 +38,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required this.engineFactory,
     required this.diarization,
     required this.diarizationPreferences,
+    required this.scheduler,
     required this.now,
     FinalTranscriptionSnapshotIdFactory? snapshotIdFactory,
     this.diarizationTimeout = const Duration(minutes: 2),
@@ -51,6 +53,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
   final AsrEngineFactory engineFactory;
   final SpeakerDiarizationService diarization;
   final DiarizationPreferenceRepository diarizationPreferences;
+  final FinalInferenceScheduler scheduler;
   final DateTime Function() now;
   final FinalTranscriptionSnapshotIdFactory snapshotIdFactory;
   final Duration diarizationTimeout;
@@ -151,6 +154,28 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
       path: processingMeeting.audioPath!,
       durationMs: processingMeeting.audioDurationMs,
     );
+    return scheduler.schedule(
+      () => _runInference(
+        meeting: meeting,
+        processingMeeting: processingMeeting,
+        selected: selected,
+        source: source,
+        snapshotId: snapshotId,
+        createdAt: createdAt,
+        onProgress: onProgress,
+      ),
+    );
+  }
+
+  Future<FinalTranscriptionResult> _runInference({
+    required Meeting meeting,
+    required Meeting processingMeeting,
+    required (String, String) selected,
+    required AudioSource source,
+    required String snapshotId,
+    required DateTime createdAt,
+    required FinalTranscriptionProgressCallback? onProgress,
+  }) async {
     final diarizationOperation = _runDiarization(
       meetingId: meeting.id,
       snapshotId: snapshotId,
@@ -228,7 +253,6 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
       if (onProgress != null) {
         progressSubscription = engine.finalizationProgress.listen(onProgress);
       }
-      await engine.initialize();
       return await engine.finalizeMeeting(
         source,
         meetingId: meeting.id,

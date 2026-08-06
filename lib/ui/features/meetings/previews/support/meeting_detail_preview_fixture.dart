@@ -42,6 +42,20 @@ final class _PreviewTranscriptRepository implements TranscriptRepository {
   }
 
   @override
+  Future<TranscriptSnapshot?> getLatestByMeeting({
+    required String meetingId,
+    required TranscriptSnapshotKind kind,
+    required TranscriptSnapshotStatus status,
+  }) async {
+    final snapshot = _snapshot;
+    return snapshot?.meetingId == meetingId &&
+            snapshot?.kind == kind &&
+            snapshot?.status == status
+        ? snapshot
+        : null;
+  }
+
+  @override
   Future<void> save(TranscriptSnapshot snapshot) async {}
 
   @override

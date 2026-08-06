@@ -33,7 +33,7 @@ void main() {
     expect(session.meeting.status, MeetingState.recording);
     expect(session.meeting.isRecordingModelLocked, isTrue);
     expect(factory.calls, [(senseVoice.modelId, senseVoice.version)]);
-    expect(factory.engines.single.initializeCalls, 1);
+    expect(factory.engines.single.initializeCalls, 0);
     viewModel.dispose();
   });
 

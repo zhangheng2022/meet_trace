@@ -20,10 +20,16 @@ final class LiveTranscriptPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: viewModel.transcriptListenable,
+      builder: (context, _) => _buildPanel(context),
+    );
+  }
+
+  Widget _buildPanel(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
     final segments = viewModel.segments;
-    final displaySegments = segments.reversed.toList(growable: false);
     final sectionPadding = outlined ? appStyle.spaceMd : appStyle.spaceSm;
     return DecoratedBox(
       key: const ValueKey('live-transcript-ledger'),
@@ -87,26 +93,27 @@ final class LiveTranscriptPanel extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.all(sectionPadding),
+          SizedBox(
+            height: outlined
+                ? appStyle.liveTranscriptWideHeight
+                : appStyle.liveTranscriptCompactHeight,
             child: segments.isEmpty
-                ? _LiveTranscriptEmptyState(
-                    viewModel: viewModel,
-                    compact: !outlined,
+                ? Padding(
+                    padding: EdgeInsets.all(sectionPadding),
+                    child: _LiveTranscriptEmptyState(
+                      viewModel: viewModel,
+                      compact: !outlined,
+                    ),
                   )
-                : Column(
-                    children: [
-                      for (
-                        var index = 0;
-                        index < displaySegments.length;
-                        index++
-                      )
-                        _TranscriptRow(
-                          segment: displaySegments[index],
-                          showDivider: index != displaySegments.length - 1,
-                          compact: !outlined,
-                        ),
-                    ],
+                : ListView.builder(
+                    key: const ValueKey('live-transcript-list'),
+                    padding: EdgeInsets.symmetric(horizontal: sectionPadding),
+                    itemCount: segments.length,
+                    itemBuilder: (context, index) => _TranscriptRow(
+                      segment: segments[segments.length - index - 1],
+                      showDivider: index != segments.length - 1,
+                      compact: !outlined,
+                    ),
                   ),
           ),
           DecoratedBox(

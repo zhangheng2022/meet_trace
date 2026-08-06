@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
+import 'package:meettrace/domain/use_cases/final_inference_scheduler.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/audio_source.dart';
@@ -39,6 +40,7 @@ void main() {
       engineFactory: engines,
       diarization: diarization,
       diarizationPreferences: diarizationPreferences,
+      scheduler: FinalInferenceScheduler(),
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-attempt-1',
     );
@@ -203,6 +205,7 @@ void main() {
       engineFactory: engines,
       diarization: diarization,
       diarizationPreferences: diarizationPreferences,
+      scheduler: FinalInferenceScheduler(),
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-${++snapshotSequence}',
     );
@@ -426,6 +429,7 @@ void main() {
       engineFactory: engines,
       diarization: nonCancelable,
       diarizationPreferences: diarizationPreferences,
+      scheduler: FinalInferenceScheduler(),
       now: () => now,
       snapshotIdFactory: (_, _) => 'snapshot-attempt-1',
     );
@@ -559,6 +563,22 @@ final class _TranscriptRepository implements TranscriptRepository {
     return records.values
         .where((snapshot) => snapshot.meetingId == meetingId)
         .toList();
+  }
+
+  @override
+  Future<TranscriptSnapshot?> getLatestByMeeting({
+    required String meetingId,
+    required TranscriptSnapshotKind kind,
+    required TranscriptSnapshotStatus status,
+  }) async {
+    final matches =
+        (await listByMeeting(meetingId))
+            .where(
+              (snapshot) => snapshot.kind == kind && snapshot.status == status,
+            )
+            .toList()
+          ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    return matches.firstOrNull;
   }
 
   @override

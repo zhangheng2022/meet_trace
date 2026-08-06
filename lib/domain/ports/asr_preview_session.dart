@@ -11,7 +11,13 @@ abstract interface class AsrPreviewSession {
 
   AsrPreviewMetrics get metrics;
 
+  /// 在事实录音启动后异步准备会中预览模型。
+  Future<void> initialize();
+
   Future<void> flush();
+
+  /// 丢弃可丢弃的预览积压并在有界时间内停止预览。
+  Future<void> stop();
 
   Future<void> dispose();
 }

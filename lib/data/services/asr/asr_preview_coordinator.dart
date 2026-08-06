@@ -14,6 +14,7 @@ import '../vad/silero_vad_segmenter.dart';
 const defaultMaximumQueuedPreviewAudioMs = 30000;
 const defaultPreviewHighWaterMs = 15000;
 const defaultPreviewLowWaterMs = 5000;
+const defaultPreviewStopTimeout = Duration(milliseconds: 500);
 const _timelineRetentionMs = 20000;
 
 final class AsrPreviewCoordinator
@@ -25,6 +26,7 @@ final class AsrPreviewCoordinator
     this.maximumQueuedAudioMs = defaultMaximumQueuedPreviewAudioMs,
     this.highWaterMs = defaultPreviewHighWaterMs,
     this.lowWaterMs = defaultPreviewLowWaterMs,
+    this.stopTimeout = defaultPreviewStopTimeout,
   }) {
     if (vad.sampleRate != recordingSampleRate ||
         planner.sampleRate != recordingSampleRate) {
@@ -34,7 +36,8 @@ final class AsrPreviewCoordinator
         highWaterMs <= 0 ||
         highWaterMs > maximumQueuedAudioMs ||
         lowWaterMs < 0 ||
-        lowWaterMs >= highWaterMs) {
+        lowWaterMs >= highWaterMs ||
+        stopTimeout <= Duration.zero) {
       throw ArgumentError('预览队列水位参数无效');
     }
     _engineEvents = engine.events.listen(_handleEngineEvent);
@@ -46,6 +49,7 @@ final class AsrPreviewCoordinator
   final int maximumQueuedAudioMs;
   final int highWaterMs;
   final int lowWaterMs;
+  final Duration stopTimeout;
 
   final Queue<AsrPreviewWindow> _pending = Queue<AsrPreviewWindow>();
   final _TimelineSampleBuffer _timeline = _TimelineSampleBuffer();
@@ -58,6 +62,10 @@ final class AsrPreviewCoordinator
 
   late final StreamSubscription<TranscriptEvent> _engineEvents;
   Future<void>? _draining;
+  Future<void>? _initializeOperation;
+  Future<void>? _stopOperation;
+  Future<void>? _disposeOperation;
+  Future<void>? _engineDisposal;
   AsrPreviewWindow? _active;
   AsrPreviewState _state = AsrPreviewState.ready;
   int? _expectedNextSample;
@@ -69,6 +77,7 @@ final class AsrPreviewCoordinator
   int _latestWindowEndMs = 0;
   int _coveredThroughMs = 0;
   String? _lastErrorCode;
+  bool _initialized = false;
 
   @override
   Stream<TranscriptEvent> get events => _events.stream;
@@ -88,6 +97,29 @@ final class AsrPreviewCoordinator
     ),
     lastErrorCode: _lastErrorCode,
   );
+
+  @override
+  Future<void> initialize() => _initializeOperation ??= _initialize();
+
+  Future<void> _initialize() async {
+    if (_state == AsrPreviewState.recordingOnly ||
+        _state == AsrPreviewState.disposed) {
+      return;
+    }
+    try {
+      await engine.initialize();
+      if (_state != AsrPreviewState.disposed) {
+        _initialized = true;
+        _startDraining();
+      }
+    } on Object catch (error) {
+      _enterRecordingOnly(
+        error is AsrEngineException
+            ? error.failure.code
+            : 'asr.preview.initialize_failed',
+      );
+    }
+  }
 
   @override
   Future<void> add(RecordingPcmChunk chunk) {
@@ -140,20 +172,69 @@ final class AsrPreviewCoordinator
   }
 
   @override
-  Future<void> dispose() async {
-    if (_state == AsrPreviewState.disposed) {
-      return;
+  Future<void> stop() => _stopOperation ??= _stop();
+
+  Future<void> _stop() async {
+    if (_state != AsrPreviewState.disposed) {
+      _state = AsrPreviewState.disposed;
+      _dropAllPending();
+      engine.cancel();
+      _emitMetrics();
     }
-    _state = AsrPreviewState.disposed;
-    _dropAllPending();
-    engine.cancel();
-    await _draining;
-    vad.dispose();
-    await _engineEvents.cancel();
-    await engine.dispose();
-    _emitMetrics();
-    await _events.close();
-    await _metricsChanges.close();
+
+    try {
+      await _engineEvents.cancel();
+    } on Object {
+      // 继续释放其余预览资源。
+    }
+    final draining = _draining;
+    if (draining != null) {
+      try {
+        await draining.timeout(stopTimeout);
+      } on TimeoutException {
+        // 预览推理可能仍在原生调用内；结束会议不能等待可丢弃积压。
+      } on Object {
+        // 停止路径只负责尽快释放派生预览，不影响事实音频。
+      }
+    }
+    try {
+      vad.dispose();
+    } on Object {
+      // VAD 释放失败不能阻止 Engine 取消和流关闭。
+    }
+    try {
+      if (!_events.isClosed) {
+        await _events.close();
+      }
+    } on Object {
+      // 继续释放其余预览资源。
+    }
+    try {
+      if (!_metricsChanges.isClosed) {
+        await _metricsChanges.close();
+      }
+    } on Object {
+      // 继续释放 Engine。
+    }
+    try {
+      final disposal = engine.dispose();
+      _engineDisposal ??= disposal;
+      unawaited(disposal.catchError((Object _) {}));
+    } on Object {
+      // 同步释放异常也不得延长结束会议主链。
+    }
+  }
+
+  @override
+  Future<void> dispose() => _disposeOperation ??= _dispose();
+
+  Future<void> _dispose() async {
+    await stop();
+    try {
+      await _engineDisposal;
+    } on Object {
+      // dispose 保持幂等，释放异常不得传播到事实录音主链。
+    }
   }
 
   void _acceptSegments(List<VadSpeechSegment> segments) {
@@ -214,6 +295,7 @@ final class AsrPreviewCoordinator
 
   void _startDraining() {
     if (_draining != null ||
+        !_initialized ||
         _pending.isEmpty ||
         _state == AsrPreviewState.recordingOnly ||
         _state == AsrPreviewState.disposed) {

@@ -18,6 +18,7 @@ final class SenseVoiceAsrEngine implements AsrEngine {
     required ModelInstallation installation,
     SherpaOnnxWorkerFactory workerFactory =
         const OfficialSherpaOnnxWorkerFactory(),
+    FinalVadFactory? finalVadFactory,
     DateTime Function()? now,
   }) {
     final descriptor = AsrModelRegistry.alpha.defaultModel;
@@ -36,6 +37,7 @@ final class SenseVoiceAsrEngine implements AsrEngine {
         ),
         errorPrefix: 'asr.senseVoice',
         workerFactory: workerFactory,
+        finalVadFactory: finalVadFactory,
         now: now,
       ),
     );

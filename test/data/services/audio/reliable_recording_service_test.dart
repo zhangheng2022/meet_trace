@@ -38,6 +38,7 @@ void main() {
     int freeBytes = 512 * 1024 * 1024,
     RecordingCheckpointStore? checkpointStore,
     Duration captureStopTimeout = const Duration(milliseconds: 20),
+    Duration factCommitInterval = Duration.zero,
     Duration checkpointSaveInterval = defaultRecordingCheckpointSaveInterval,
     int checkpointSaveBytesThreshold =
         defaultRecordingCheckpointSaveBytesThreshold,
@@ -52,6 +53,7 @@ void main() {
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
       captureStopTimeout: captureStopTimeout,
+      factCommitInterval: factCommitInterval,
       checkpointSaveInterval: checkpointSaveInterval,
       checkpointSaveBytesThreshold: checkpointSaveBytesThreshold,
       now: now ?? () => DateTime.utc(2026, 7, 24, 8),
@@ -98,6 +100,31 @@ void main() {
 
     await service.stop();
     await subscription.cancel();
+  });
+
+  test('同一提交窗口内的 PCM 块在首个预览前作为一个批次落盘', () async {
+    const chunkCount = 20;
+    const chunkBytes = 3200;
+    final persistedAtFirstPreview = Completer<int>();
+    late final ReliableRecordingService service;
+    service = createService(
+      factCommitInterval: const Duration(milliseconds: 20),
+      preview: CallbackRecordingPreviewSink((_) async {
+        if (!persistedAtFirstPreview.isCompleted) {
+          persistedAtFirstPreview.complete(service.persistedBytes);
+        }
+      }),
+    );
+
+    await service.start(meetingId: 'meeting-batched-fact-commit');
+    for (var index = 0; index < chunkCount; index++) {
+      capture.add(_pcmBytes(chunkBytes));
+    }
+    await _waitFor(() => service.persistedBytes == chunkCount * chunkBytes);
+    final result = await service.stop();
+
+    expect(await persistedAtFirstPreview.future, chunkCount * chunkBytes);
+    expect(result.bytes, chunkCount * chunkBytes);
   });
 
   test('preview sink 阻塞或抛错都不阻塞后续事实音频写入', () async {
@@ -167,7 +194,11 @@ void main() {
 
   test('进度 checkpoint 未到节流间隔时不落盘，暂停等状态点强制落盘', () async {
     final clock = _FakeClock(DateTime.utc(2026, 7, 24, 8));
-    final service = createService(now: clock.read);
+    final trackingCheckpoints = _TrackingRecordingCheckpointStore(checkpoints);
+    final service = createService(
+      now: clock.read,
+      checkpointStore: trackingCheckpoints,
+    );
 
     await service.start(meetingId: 'meeting-throttle');
     capture.add(_pcmBytes(16000));
@@ -181,6 +212,7 @@ void main() {
     clock.advance(const Duration(seconds: 5));
     capture.add(_pcmBytes(16000));
     await _waitFor(() => service.persistedBytes == 32000);
+    await _waitFor(() => trackingCheckpoints.completedSaves == 2);
     checkpoint = await checkpoints.load('meeting-throttle');
     expect(checkpoint?.persistedBytes, 32000);
 
@@ -199,8 +231,10 @@ void main() {
 
   test('累计字节达到阈值时提前落盘进度 checkpoint', () async {
     final clock = _FakeClock(DateTime.utc(2026, 7, 24, 8));
+    final trackingCheckpoints = _TrackingRecordingCheckpointStore(checkpoints);
     final service = createService(
       now: clock.read,
+      checkpointStore: trackingCheckpoints,
       checkpointSaveBytesThreshold: 32000,
     );
 
@@ -211,12 +245,22 @@ void main() {
 
     capture.add(_pcmBytes(16000));
     await _waitFor(() => service.persistedBytes == 32000);
+    await _waitFor(() => trackingCheckpoints.completedSaves == 2);
     expect((await checkpoints.load('meeting-bytes'))?.persistedBytes, 32000);
 
     await service.stop();
   });
 
-  test('节流参数非法时拒绝创建录音服务', () {
+  test('落盘和 checkpoint 节流参数非法时拒绝创建录音服务', () {
+    expect(
+      () => createService(factCommitInterval: const Duration(milliseconds: -1)),
+      throwsArgumentError,
+    );
+    expect(
+      () =>
+          createService(factCommitInterval: const Duration(milliseconds: 1001)),
+      throwsArgumentError,
+    );
     expect(
       () => createService(checkpointSaveInterval: Duration.zero),
       throwsArgumentError,
@@ -515,5 +559,26 @@ final class _FailingRecordingCheckpointStore
   @override
   Future<void> save(RecordingCheckpoint checkpoint) async {
     throw FileSystemException('checkpoint write failed');
+  }
+}
+
+final class _TrackingRecordingCheckpointStore
+    implements RecordingCheckpointStore {
+  _TrackingRecordingCheckpointStore(this.delegate);
+
+  final RecordingCheckpointStore delegate;
+  int completedSaves = 0;
+
+  @override
+  Future<void> delete(String meetingId) => delegate.delete(meetingId);
+
+  @override
+  Future<RecordingCheckpoint?> load(String meetingId) =>
+      delegate.load(meetingId);
+
+  @override
+  Future<void> save(RecordingCheckpoint checkpoint) async {
+    await delegate.save(checkpoint);
+    completedSaves++;
   }
 }

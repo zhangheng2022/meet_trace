@@ -1,8 +1,8 @@
 # 会迹（MeetTrace）端侧 SenseVoice 与说话人分离技术方案
 
-> 日期：2026-08-04
+> 日期：2026-08-05
 > 对应 PRD：V0.9
-> 状态：活动；说话人模型初始化、公开 API 适配器与联合最终快照已完成，官方 Dart 绑定内存缺陷导致生产自动分离保持阻断
+> 状态：活动；说话人模型初始化、公开 API 适配器与联合最终快照已完成；内部 Alpha 已接受官方 Dart 绑定内存缺陷风险并启用生产自动分离
 
 ## 1. 目标
 
@@ -92,7 +92,9 @@ UI 只依赖 domain Port/Use Case/Model。下载、文件、网络、SQLite 和�
 
 `AsrModelRegistry.alpha` 只有一个 descriptor。Factory 拒绝未知 ID、非 `auto` 语言或关闭 ITN 的请求。`SenseVoiceAsrEngine` 只接受与 Registry 完全匹配、已安装、已验证且字节数正确的安装记录，并生成官方 `OfflineSenseVoiceModelConfig`。
 
-识别器在独立 isolate 中持有。会中和最终转录复用统一 `SherpaOnnxAsrEngine`：16 kHz 单声道 PCM16、15 秒窗口、全局时间轴事件、确定性排队、诊断、RTF、取消与释放。
+识别器在独立 isolate 中持有。会中和最终转录复用统一 `SherpaOnnxAsrEngine` 端口与实现，但每次预览和最终任务使用独立 Engine 实例，不跨阶段复用原生识别器。录音先启动，预览 Engine 随后异步初始化；结束会议丢弃可丢弃的预览积压，不等待其全部推理完成。
+
+最终 ASR 先以有界 PCM 块流式扫描完整事实音频，并使用同一份已校验 Silero VAD 生成全局语音区间；每个区间加入前后各 200 ms 上下文，最长 15 秒，超长区间按 500 ms 重叠切分并确定性合并文本。SenseVoice 延迟到首个语音窗口才初始化；全静音输入生成无片段的 `complete` 快照。VAD 创建、扫描、flush、区间校验或释放失败时，在任何 ASR 窗口执行前把文件指针复位，并回退原有完整 PCM 固定 15 秒窗口，因此 VAD 只影响性能，不改变事实源和故障可恢复性。
 
 麦克风采集固定通过官方 `record` 插件请求平台自动增益、回声消除和噪声抑制。增强后的 16 kHz 单声道 PCM16 先写入事实音频，再分发给 VAD/ASR，保证最终录音、会中预览和最终转录使用同一音频事实。平台效果属于设备能力：Android 仅启用系统报告可用的 AGC/AEC/NS；iOS 流式录音通过系统 Voice Processing 启用回声消除和自动增益，不引入自建 DSP 或私有原生桥接。如增强录音启动失败，会以同样的 PCM16 规格关闭增强后重试一次，优先保证录音连续可用。
 
@@ -102,7 +104,7 @@ UI 只依赖 domain Port/Use Case/Model。下载、文件、网络、SQLite 和�
 
 供应链审查确认官方 [`sherpa_onnx 1.13.4` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.4/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart#L258-L325)及上游 `master` 的 `process`/`processWithCallback` 都会 `calloc<Float>(samples.length)`，销毁结果后却没有释放输入指针。该内存属于进程原生堆，终止 Dart isolate 不能替代 `calloc.free`；30 分钟 16 kHz 波形对应 `115,200,000` B。2026-08-05 产品决策接受内部 Alpha 的该项风险，生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；worker 取消只能停止推理，不能宣称已修复上游泄漏。
 
-录音封存后，`FinalResultCoordinator` 从同一事实音频并行启动最终 ASR 与离线分离，两者运行在独立 worker/isolate，不能占用录音写入队列。ASR 成功且分离成功时，按时间重叠把 `SpeakerTurn` 映射到最终转录片段；分离超时、空结果、内存或推理失败时生成明确的单一说话人降级结果。只有两条任务都结束后才以一次事务写入并激活最终快照；ASR 失败时保留事实音频和旧活动快照，不发布半成品。
+录音封存后，`FinalResultCoordinator` 从同一事实音频并行启动最终 ASR 与离线分离，两者运行在独立 worker/isolate，不能占用录音写入队列。跨会议的联合最终推理由应用级 FIFO 调度器限制为单并发，同一会议内部 ASR 与分离仍并行。ASR 成功且分离成功时，按时间重叠把 `SpeakerTurn` 映射到最终转录片段；分离超时、空结果、内存或推理失败时生成明确的单一说话人降级结果。只有两条任务都结束后才以一次事务写入并激活最终快照；ASR 失败时保留事实音频和旧活动快照，不发布半成品。
 
 用户修改说话人显示标签时，以当前活动快照为基线创建修订并通过 CAS 原子替换；不得改变片段时间、文本、模型配置或事实音频。普通话是 Alpha 分离质量承诺范围，其他语言只允许尽力运行并明确不承诺准确率。
 
@@ -148,7 +150,7 @@ App 不接入远程埋点、远程崩溃上报或总结网关。诊断导出只�
 
 ## 12. 验证
 
-自动化至少覆盖：Registry 单模型、全部固定 Manifest/hash/revision、300 MB 上限、1 GiB 空间差额、移动网络同意绑定、暂停续传、受限归档解包、所有资源原子准备、快速离线启动、SenseVoice/分离配置、会议锁定、联合任务竞态、单次快照发布、分离降级、手工标签 CAS、确定性标题、WAV 封装与临时清理、旧库阻断和录音连续性。ASR 与分离均通过 fake worker 验证错误、取消、释放和时序；自动化不加载真实模型权重，真机性能和准确率仍由外部门禁负责。
+自动化至少覆盖：Registry 单模型、全部固定 Manifest/hash/revision、300 MB 上限、1 GiB 空间差额、移动网络同意绑定、暂停续传、受限归档解包、所有资源原子准备、快速离线启动、SenseVoice/分离配置、会议锁定、联合任务竞态、全局推理 FIFO、最终静音跳过、VAD 故障完整 PCM 回退、单次快照发布、分离降级、手工标签 CAS、确定性标题、WAV 封装与临时清理、旧库阻断和录音连续性。ASR 与分离均通过 fake worker 验证错误、取消、释放和时序；自动化不加载真实模型权重，真机性能和准确率仍由外部门禁负责。
 
 交付运行：
 

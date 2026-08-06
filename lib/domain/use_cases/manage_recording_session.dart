@@ -42,17 +42,17 @@ final class ManageRecordingSessionUseCase {
   Future<Meeting> finish(Meeting meeting) async {
     try {
       final artifact = await recording.stop();
-      try {
-        await preview.flush();
-      } on Object {
-        // 会中预览是派生数据，失败不得改变事实音频封存结果。
-      }
       final completed = meeting.finishRecording(
         endedAt: now(),
         audioPath: artifact.audioPath,
         audioDurationMs: artifact.duration.inMilliseconds,
       );
       await meetings.save(completed);
+      try {
+        await preview.stop();
+      } on Object {
+        // 会中预览是派生数据，失败不得改变事实音频封存结果。
+      }
       return completed;
     } on Object catch (error) {
       if (error is ManageRecordingSessionException) {

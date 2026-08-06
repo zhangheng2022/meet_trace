@@ -150,6 +150,38 @@ void main() {
     expect(restoredSnapshot!.segments.single.text, '测试');
     expect(restoredInstallation!.installedPath, '/models/qwen/1');
   });
+
+  test('批量读取会议快照并按状态返回确定性的最新记录', () async {
+    await meetings.save(_meeting('meeting-1'));
+    final older = _snapshot(
+      id: 'failed-older',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.failed,
+      withSegment: true,
+      createdAt: DateTime.utc(2026, 7, 24, 8),
+    );
+    final latest = _snapshot(
+      id: 'failed-latest',
+      meetingId: 'meeting-1',
+      status: TranscriptSnapshotStatus.failed,
+      withSegment: true,
+      createdAt: DateTime.utc(2026, 7, 24, 9),
+    );
+    await transcripts.save(older);
+    await transcripts.save(latest);
+
+    final snapshots = await transcripts.listByMeeting('meeting-1');
+    final restoredLatest = await transcripts.getLatestByMeeting(
+      meetingId: 'meeting-1',
+      kind: TranscriptSnapshotKind.finalTranscript,
+      status: TranscriptSnapshotStatus.failed,
+    );
+
+    expect(snapshots.map((snapshot) => snapshot.id), [older.id, latest.id]);
+    expect(snapshots.every((snapshot) => snapshot.segments.length == 1), true);
+    expect(restoredLatest?.id, latest.id);
+    expect(restoredLatest?.segments.single.text, '测试');
+  });
 }
 
 Meeting _meeting(String id, {MeetingState status = MeetingState.created}) {
@@ -169,6 +201,7 @@ TranscriptSnapshot _snapshot({
   required String meetingId,
   required TranscriptSnapshotStatus status,
   bool withSegment = false,
+  DateTime? createdAt,
 }) {
   return TranscriptSnapshot(
     id: id,
@@ -176,12 +209,12 @@ TranscriptSnapshot _snapshot({
     kind: TranscriptSnapshotKind.finalTranscript,
     actualModelId: 'paraformer',
     actualModelVersion: '1',
-    createdAt: DateTime.utc(2026, 7, 24),
+    createdAt: createdAt ?? DateTime.utc(2026, 7, 24),
     status: status,
     segments: withSegment
         ? [
             TranscriptSegment(
-              id: 'segment-1',
+              id: '$id-segment-1',
               snapshotId: id,
               startMs: 0,
               endMs: 1000,

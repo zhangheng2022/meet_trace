@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
@@ -26,7 +27,9 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     RecordingTickerFactory? tickerFactory,
   }) : _meeting = session.meeting,
        _tickerFactory = tickerFactory ?? Timer.periodic,
-       _previewMetrics = preview.metrics;
+       _previewMetrics = preview.metrics {
+    _segmentsView = UnmodifiableListView(_orderedSegments);
+  }
 
   final RecordingSessionService recording;
   final AsrPreviewSession preview;
@@ -35,13 +38,21 @@ final class RecordingSessionViewModel extends ChangeNotifier {
 
   Meeting _meeting;
   AsrPreviewMetrics _previewMetrics;
-  final Map<String, TranscriptSegmentEvent> _segments = {};
+  final Map<String, TranscriptSegmentEvent> _segmentsById = {};
+  final List<TranscriptSegmentEvent> _orderedSegments = [];
+  late final UnmodifiableListView<TranscriptSegmentEvent> _segmentsView;
   final List<double> _audioLevels = [];
+  final ValueNotifier<Duration> durationListenable = ValueNotifier(
+    Duration.zero,
+  );
+  final ValueNotifier<List<double>> audioLevelsListenable = ValueNotifier(
+    const [],
+  );
+  final ChangeNotifier transcriptListenable = ChangeNotifier();
   StreamSubscription<TranscriptEvent>? _eventSubscription;
   StreamSubscription<AsrPreviewMetrics>? _metricsSubscription;
   StreamSubscription<RecordingAudioLevel>? _audioLevelSubscription;
   Timer? _ticker;
-  Duration _duration = Duration.zero;
   String? _errorMessage;
   bool _isBusy = false;
   bool _isFinalizing = false;
@@ -50,8 +61,8 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   Meeting get meeting => _meeting;
   RecordingState get recordingState => recording.state;
   AsrPreviewMetrics get previewMetrics => _previewMetrics;
-  Duration get duration => _duration;
-  List<double> get audioLevels => List.unmodifiable(_audioLevels);
+  Duration get duration => durationListenable.value;
+  List<double> get audioLevels => audioLevelsListenable.value;
   String? get errorMessage => _errorMessage;
   bool get isBusy => _isBusy;
   bool get isFinalizing => _isFinalizing;
@@ -59,14 +70,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   bool get canResume => !_isBusy && recordingState == RecordingState.paused;
   bool get canStop => !_isBusy && recording.canFinalize;
 
-  List<TranscriptSegmentEvent> get segments {
-    final values = _segments.values.toList();
-    values.sort((left, right) {
-      final byStart = left.startMs.compareTo(right.startMs);
-      return byStart != 0 ? byStart : left.segmentId.compareTo(right.segmentId);
-    });
-    return List.unmodifiable(values);
-  }
+  List<TranscriptSegmentEvent> get segments => _segmentsView;
 
   Future<bool> start() async {
     if (_isBusy || recordingState != RecordingState.idle) {
@@ -81,6 +85,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
         const Duration(milliseconds: 250),
         (_) => refreshDuration(),
       );
+      unawaited(_initializePreview());
       return true;
     } on ManageRecordingSessionException catch (error) {
       _meeting = error.meeting;
@@ -125,8 +130,11 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     _ticker?.cancel();
     try {
       _meeting = await sessionLifecycle.finish(_meeting);
-      _duration = Duration(milliseconds: _meeting.audioDurationMs);
-      await _disposePreviewBestEffort();
+      durationListenable.value = Duration(
+        milliseconds: _meeting.audioDurationMs,
+      );
+      await _detachPreviewSubscriptions();
+      unawaited(_disposePreviewBestEffort());
       return _meeting;
     } on ManageRecordingSessionException catch (error) {
       _meeting = error.meeting;
@@ -144,8 +152,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   }
 
   void refreshDuration() {
-    _duration = recording.duration;
-    _notify();
+    if (_disposed) {
+      return;
+    }
+    durationListenable.value = recording.duration;
   }
 
   Future<void> _runRecordingAction(
@@ -165,28 +175,69 @@ final class RecordingSessionViewModel extends ChangeNotifier {
 
   void _subscribePreview() {
     _audioLevelSubscription ??= recording.audioLevelChanges.listen((sample) {
+      if (_disposed) {
+        return;
+      }
       _audioLevels.add(sample.level);
       final overflow = _audioLevels.length - recordingWaveformSampleCapacity;
       if (overflow > 0) {
         _audioLevels.removeRange(0, overflow);
       }
-      _notify();
+      audioLevelsListenable.value = List.unmodifiable(_audioLevels);
     });
     _eventSubscription ??= preview.events.listen((event) {
       if (event case final TranscriptSegmentEvent segment) {
-        _segments[segment.segmentId] = segment;
-        _notify();
+        _upsertSegment(segment);
       }
     });
     _metricsSubscription ??= preview.metricsChanges.listen((metrics) {
+      if (_disposed) {
+        return;
+      }
+      final previous = _previewMetrics;
       _previewMetrics = metrics;
-      _notify();
+      if (previous.state != metrics.state ||
+          previous.lastErrorCode != metrics.lastErrorCode) {
+        transcriptListenable.notifyListeners();
+      }
     });
+  }
+
+  void _upsertSegment(TranscriptSegmentEvent segment) {
+    if (_disposed) {
+      return;
+    }
+    if (_segmentsById.containsKey(segment.segmentId)) {
+      _orderedSegments.removeWhere(
+        (candidate) => candidate.segmentId == segment.segmentId,
+      );
+    }
+    _segmentsById[segment.segmentId] = segment;
+    var low = 0;
+    var high = _orderedSegments.length;
+    while (low < high) {
+      final middle = low + ((high - low) >> 1);
+      if (_compareSegments(_orderedSegments[middle], segment) <= 0) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    _orderedSegments.insert(low, segment);
+    transcriptListenable.notifyListeners();
   }
 
   void _setBusy(bool value) {
     _isBusy = value;
     _notify();
+  }
+
+  Future<void> _initializePreview() async {
+    try {
+      await preview.initialize();
+    } on Object {
+      // 预览初始化失败只降级实时转录，事实录音继续运行。
+    }
   }
 
   void _notify() {
@@ -195,13 +246,17 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _disposePreview() async {
+  Future<void> _detachPreviewSubscriptions() async {
     await _audioLevelSubscription?.cancel();
     await _eventSubscription?.cancel();
     await _metricsSubscription?.cancel();
     _audioLevelSubscription = null;
     _eventSubscription = null;
     _metricsSubscription = null;
+  }
+
+  Future<void> _disposePreview() async {
+    await _detachPreviewSubscriptions();
     await preview.dispose();
   }
 
@@ -225,6 +280,17 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       unawaited(_eventSubscription?.cancel());
       unawaited(_metricsSubscription?.cancel());
     }
+    durationListenable.dispose();
+    audioLevelsListenable.dispose();
+    transcriptListenable.dispose();
     super.dispose();
   }
+}
+
+int _compareSegments(
+  TranscriptSegmentEvent left,
+  TranscriptSegmentEvent right,
+) {
+  final byStart = left.startMs.compareTo(right.startMs);
+  return byStart != 0 ? byStart : left.segmentId.compareTo(right.segmentId);
 }

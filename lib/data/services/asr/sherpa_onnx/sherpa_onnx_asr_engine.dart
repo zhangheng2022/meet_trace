@@ -4,17 +4,24 @@ import 'dart:typed_data';
 
 import '../../../../domain/models/app_failure.dart';
 import '../../../../domain/models/asr_model.dart';
+import '../../../../domain/models/asr_preview.dart';
 import '../../../../domain/models/audio_source.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/ports/asr_engine.dart';
+import '../../../../domain/use_cases/plan_asr_preview_windows.dart';
+import '../../vad/silero_vad_segmenter.dart';
 import 'sherpa_onnx_adapter.dart';
 
 const sherpaOnnxAsrSampleRate = 16000;
 const sherpaOnnxMaximumWindowSeconds = 15;
 const sherpaOnnxMaximumWindowSamples =
     sherpaOnnxAsrSampleRate * sherpaOnnxMaximumWindowSeconds;
+const _finalVadScanSamples = sherpaOnnxAsrSampleRate;
+const _finalVadMergeGapSamples =
+    sherpaOnnxAsrSampleRate * 500 ~/ Duration.millisecondsPerSecond;
 
 typedef AsrEngineLifecycleHook = Future<void> Function();
+typedef FinalVadFactory = VoiceActivitySegmenter Function();
 
 final class SherpaOnnxAsrEngine implements AsrEngine {
   SherpaOnnxAsrEngine({
@@ -26,6 +33,8 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
     this._riskMonitor,
     this._beforeOperation,
     this._onDispose,
+    this._finalVadFactory,
+    this._finalWindowPlanner = const AsrPreviewWindowPlanner(),
     DateTime Function()? now,
   }) : _config = config,
        _errorPrefix = errorPrefix,
@@ -48,6 +57,8 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
   final AsrDeviceRiskMonitor? _riskMonitor;
   final AsrEngineLifecycleHook? _beforeOperation;
   final AsrEngineLifecycleHook? _onDispose;
+  final FinalVadFactory? _finalVadFactory;
+  final AsrPreviewWindowPlanner _finalWindowPlanner;
   final DateTime Function() _now;
   final StreamController<TranscriptEvent> _events =
       StreamController<TranscriptEvent>.broadcast(sync: true);
@@ -180,8 +191,9 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
     if (snapshotId != null) {
       _requireText(snapshotId, 'snapshotId');
     }
-    await _prepareOperation(stage: FailureStage.finalTranscription);
     _validateAudioSource(source);
+    _throwIfDisposed();
+    _throwIfCancelled();
     if (_finalizing) {
       throw _exception(
         code: '$_errorPrefix.finalization_in_progress',
@@ -214,55 +226,19 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
       input = await file.open();
       final resolvedSnapshotId =
           snapshotId ?? 'final-$meetingId-${_now().microsecondsSinceEpoch}';
-      final segments = <TranscriptSegment>[];
-      var segmentSequence = 0;
-
-      while (_finalizationCompletedSamples < _finalizationTotalSamples) {
-        await _prepareOperation(stage: FailureStage.finalTranscription);
-        final remaining =
-            _finalizationTotalSamples - _finalizationCompletedSamples;
-        final requestedSamples = remaining > sherpaOnnxMaximumWindowSamples
-            ? sherpaOnnxMaximumWindowSamples
-            : remaining;
-        final bytes = await input.read(requestedSamples * 2);
-        if (bytes.length != requestedSamples * 2) {
-          throw _exception(
-            code: '$_errorPrefix.audio_read_incomplete',
-            stage: FailureStage.finalTranscription,
-            context: {
-              'expectedBytes': requestedSamples * 2,
-              'actualBytes': bytes.length,
-            },
-          );
-        }
-        final samples = _decodePcm16(bytes);
-        final startMs =
-            (_finalizationCompletedSamples * 1000) ~/ sherpaOnnxAsrSampleRate;
-        final segmentId = '$resolvedSnapshotId-segment-${segmentSequence + 1}';
-        final result = await _recognizeWindow(
-          samples,
-          sampleRate: sherpaOnnxAsrSampleRate,
-          startMs: startMs,
-          segmentId: segmentId,
-        );
-        _finalizationCompletedSamples += requestedSamples;
-        if (result != null) {
-          segments.add(
-            TranscriptSegment(
-              id: segmentId,
+      final speechSegments = await _detectFinalSpeech(
+        input,
+        totalSamples: _finalizationTotalSamples,
+      );
+      final segments = speechSegments == null
+          ? await _transcribeFullAudio(input, snapshotId: resolvedSnapshotId)
+          : await _transcribeSpeechSegments(
+              input,
+              speechSegments: speechSegments,
               snapshotId: resolvedSnapshotId,
-              startMs: result.startMs,
-              endMs: result.endMs,
-              text: result.text,
-              modelId: descriptor.modelId,
-              modelVersion: descriptor.version,
-            ),
-          );
-          segmentSequence++;
-        }
-        _emitProgress(AsrFinalizationPhase.processing);
-      }
+            );
 
+      _finalizationCompletedSamples = _finalizationTotalSamples;
       _emitProgress(AsrFinalizationPhase.completed);
       return TranscriptSnapshot(
         id: resolvedSnapshotId,
@@ -291,6 +267,217 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
       await input?.close();
       _finalizing = false;
     }
+  }
+
+  Future<List<VadSpeechSegment>?> _detectFinalSpeech(
+    RandomAccessFile input, {
+    required int totalSamples,
+  }) async {
+    final factory = _finalVadFactory;
+    if (factory == null) {
+      return null;
+    }
+    VoiceActivitySegmenter? vad;
+    List<VadSpeechSegment>? result;
+    try {
+      vad = factory();
+      if (vad.sampleRate != sherpaOnnxAsrSampleRate) {
+        throw StateError('最终 VAD 采样率必须为 16 kHz');
+      }
+      await input.setPosition(0);
+      var scannedSamples = 0;
+      final segments = <VadSpeechSegment>[];
+      while (scannedSamples < totalSamples) {
+        _throwIfCancelled();
+        final remaining = totalSamples - scannedSamples;
+        final requested = remaining > _finalVadScanSamples
+            ? _finalVadScanSamples
+            : remaining;
+        final bytes = await input.read(requested * 2);
+        if (bytes.length != requested * 2) {
+          throw StateError('最终 VAD 读取事实 PCM 不完整');
+        }
+        segments.addAll(vad.accept(_decodePcm16(bytes)));
+        scannedSamples += requested;
+      }
+      segments.addAll(vad.flush());
+      _validateVadSegments(segments, totalSamples: totalSamples);
+      result = _mergeAdjacentSpeechSegments(segments);
+    } on Object {
+      result = null;
+    }
+    try {
+      vad?.dispose();
+    } on Object {
+      result = null;
+    }
+    return result;
+  }
+
+  Future<List<TranscriptSegment>> _transcribeSpeechSegments(
+    RandomAccessFile input, {
+    required List<VadSpeechSegment> speechSegments,
+    required String snapshotId,
+  }) async {
+    final segments = <TranscriptSegment>[];
+    for (final speech in speechSegments) {
+      final windows = _finalWindowPlanner(
+        segment: speech,
+        availableStartSample: 0,
+        availableEndSample: _finalizationTotalSamples,
+      );
+      final segmentId = '$snapshotId-segment-${segments.length + 1}';
+      var merged = '';
+      for (final window in windows) {
+        await _prepareFinalRecognition();
+        final samples = await _readSamples(
+          input,
+          startSample: window.startSample,
+          sampleCount: window.endSample - window.startSample,
+        );
+        final result = await _recognizeWindow(
+          samples,
+          sampleRate: sherpaOnnxAsrSampleRate,
+          startMs: window.startSample * 1000 ~/ sherpaOnnxAsrSampleRate,
+          segmentId: segmentId,
+        );
+        if (result != null) {
+          merged = mergeOverlappingTranscriptText(merged, result.text);
+        }
+        if (window.endSample > _finalizationCompletedSamples) {
+          _finalizationCompletedSamples = window.endSample;
+        }
+        _emitProgress(AsrFinalizationPhase.processing);
+      }
+      if (merged.isNotEmpty) {
+        segments.add(
+          TranscriptSegment(
+            id: segmentId,
+            snapshotId: snapshotId,
+            startMs:
+                windows.first.startSample * 1000 ~/ sherpaOnnxAsrSampleRate,
+            endMs:
+                (windows.last.endSample * 1000 + sherpaOnnxAsrSampleRate - 1) ~/
+                sherpaOnnxAsrSampleRate,
+            text: merged,
+            modelId: descriptor.modelId,
+            modelVersion: descriptor.version,
+          ),
+        );
+      }
+    }
+    return segments;
+  }
+
+  Future<List<TranscriptSegment>> _transcribeFullAudio(
+    RandomAccessFile input, {
+    required String snapshotId,
+  }) async {
+    await input.setPosition(0);
+    final segments = <TranscriptSegment>[];
+    _finalizationCompletedSamples = 0;
+    while (_finalizationCompletedSamples < _finalizationTotalSamples) {
+      await _prepareFinalRecognition();
+      final remaining =
+          _finalizationTotalSamples - _finalizationCompletedSamples;
+      final requestedSamples = remaining > sherpaOnnxMaximumWindowSamples
+          ? sherpaOnnxMaximumWindowSamples
+          : remaining;
+      final samples = await _readSamples(
+        input,
+        startSample: _finalizationCompletedSamples,
+        sampleCount: requestedSamples,
+      );
+      final startMs =
+          (_finalizationCompletedSamples * 1000) ~/ sherpaOnnxAsrSampleRate;
+      final segmentId = '$snapshotId-segment-${segments.length + 1}';
+      final result = await _recognizeWindow(
+        samples,
+        sampleRate: sherpaOnnxAsrSampleRate,
+        startMs: startMs,
+        segmentId: segmentId,
+      );
+      _finalizationCompletedSamples += requestedSamples;
+      if (result != null) {
+        segments.add(
+          TranscriptSegment(
+            id: segmentId,
+            snapshotId: snapshotId,
+            startMs: result.startMs,
+            endMs: result.endMs,
+            text: result.text,
+            modelId: descriptor.modelId,
+            modelVersion: descriptor.version,
+          ),
+        );
+      }
+      _emitProgress(AsrFinalizationPhase.processing);
+    }
+    return segments;
+  }
+
+  Future<void> _prepareFinalRecognition() async {
+    if (!_initialized) {
+      await initialize();
+    }
+    await _prepareOperation(stage: FailureStage.finalTranscription);
+  }
+
+  Future<Float32List> _readSamples(
+    RandomAccessFile input, {
+    required int startSample,
+    required int sampleCount,
+  }) async {
+    await input.setPosition(startSample * 2);
+    final bytes = await input.read(sampleCount * 2);
+    if (bytes.length != sampleCount * 2) {
+      throw _exception(
+        code: '$_errorPrefix.audio_read_incomplete',
+        stage: FailureStage.finalTranscription,
+        context: {
+          'expectedBytes': sampleCount * 2,
+          'actualBytes': bytes.length,
+        },
+      );
+    }
+    return _decodePcm16(bytes);
+  }
+
+  void _validateVadSegments(
+    List<VadSpeechSegment> segments, {
+    required int totalSamples,
+  }) {
+    VadSpeechSegment? previous;
+    for (final segment in segments) {
+      if (segment.endSample > totalSamples ||
+          (previous != null && segment.startSample < previous.endSample)) {
+        throw StateError('最终 VAD 返回了越界或重叠区间');
+      }
+      previous = segment;
+    }
+  }
+
+  List<VadSpeechSegment> _mergeAdjacentSpeechSegments(
+    List<VadSpeechSegment> segments,
+  ) {
+    if (segments.length < 2) {
+      return List.unmodifiable(segments);
+    }
+    final merged = <VadSpeechSegment>[];
+    var current = segments.first;
+    for (final next in segments.skip(1)) {
+      if (next.startSample - current.endSample < _finalVadMergeGapSamples) {
+        current = VadSpeechSegment(
+          startSample: current.startSample,
+          endSample: next.endSample,
+        );
+      } else {
+        merged.add(current);
+        current = next;
+      }
+    }
+    merged.add(current);
+    return List.unmodifiable(merged);
   }
 
   @override

@@ -105,10 +105,16 @@ final class _PreviewSession implements AsrPreviewSession {
   Stream<AsrPreviewMetrics> get metricsChanges => _changes.stream;
 
   @override
+  Future<void> initialize() async {}
+
+  @override
   Future<void> dispose() async {}
 
   @override
   Future<void> flush() async {}
+
+  @override
+  Future<void> stop() async {}
 }
 
 final class _PreviewAsrEngine implements AsrEngine {

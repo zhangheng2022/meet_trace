@@ -29,17 +29,53 @@ final class SqfliteTranscriptRepository implements TranscriptRepository {
   @override
   Future<List<TranscriptSnapshot>> listByMeeting(String meetingId) async {
     final db = await _appDatabase.open();
-    final rows = await db.query(
+    final snapshotRows = await db.query(
       'transcript_snapshots',
       where: 'meeting_id = ?',
       whereArgs: [meetingId],
       orderBy: 'created_at, id',
     );
-    final snapshots = <TranscriptSnapshot>[];
-    for (final row in rows) {
-      snapshots.add(await _snapshotFromRow(db, row));
+    if (snapshotRows.isEmpty) {
+      return const [];
     }
-    return List.unmodifiable(snapshots);
+    final segmentRows = await db.rawQuery(
+      '''
+      SELECT segment.*
+      FROM transcript_segments AS segment
+      INNER JOIN transcript_snapshots AS snapshot
+        ON snapshot.id = segment.snapshot_id
+      WHERE snapshot.meeting_id = ?
+      ORDER BY segment.snapshot_id, segment.start_ms, segment.end_ms, segment.id
+      ''',
+      [meetingId],
+    );
+    final segmentsBySnapshot = <String, List<Map<String, Object?>>>{};
+    for (final segment in segmentRows) {
+      (segmentsBySnapshot[segment['snapshot_id']! as String] ??= []).add(
+        segment,
+      );
+    }
+    return List.unmodifiable([
+      for (final row in snapshotRows)
+        _snapshotFromRows(row, segmentsBySnapshot[row['id']] ?? const []),
+    ]);
+  }
+
+  @override
+  Future<TranscriptSnapshot?> getLatestByMeeting({
+    required String meetingId,
+    required TranscriptSnapshotKind kind,
+    required TranscriptSnapshotStatus status,
+  }) async {
+    final db = await _appDatabase.open();
+    final rows = await db.query(
+      'transcript_snapshots',
+      where: 'meeting_id = ? AND kind = ? AND status = ?',
+      whereArgs: [meetingId, kind.name, status.name],
+      orderBy: 'created_at DESC, id DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : _snapshotFromRow(db, rows.single);
   }
 
   @override
@@ -160,8 +196,9 @@ Future<void> _saveSnapshot(
     where: 'snapshot_id = ?',
     whereArgs: [snapshot.id],
   );
+  final batch = executor.batch();
   for (final segment in snapshot.segments) {
-    await executor.insert('transcript_segments', {
+    batch.insert('transcript_segments', {
       'id': segment.id,
       'snapshot_id': segment.snapshotId,
       'start_ms': segment.startMs,
@@ -172,6 +209,9 @@ Future<void> _saveSnapshot(
       'model_id': segment.modelId,
       'model_version': segment.modelVersion,
     });
+  }
+  if (snapshot.segments.isNotEmpty) {
+    await batch.commit(noResult: true);
   }
 }
 
@@ -185,6 +225,13 @@ Future<TranscriptSnapshot> _snapshotFromRow(
     whereArgs: [row['id']],
     orderBy: 'start_ms, end_ms, id',
   );
+  return _snapshotFromRows(row, segmentRows);
+}
+
+TranscriptSnapshot _snapshotFromRows(
+  Map<String, Object?> row,
+  List<Map<String, Object?>> segmentRows,
+) {
   return TranscriptSnapshot(
     id: row['id']! as String,
     meetingId: row['meeting_id']! as String,

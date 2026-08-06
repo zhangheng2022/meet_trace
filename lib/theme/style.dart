@@ -85,6 +85,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
     this.panelRadius = 12,
     this.ledgerTimeColumnWidth = 64,
     this.factRailWidth = 280,
+    this.liveTranscriptCompactHeight = 280,
+    this.liveTranscriptWideHeight = 420,
     this.statusRailWidth = 3,
     this.dividerWidth = 1,
     this.strongBorderWidth = 2,
@@ -111,6 +113,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
   final double panelRadius;
   final double ledgerTimeColumnWidth;
   final double factRailWidth;
+  final double liveTranscriptCompactHeight;
+  final double liveTranscriptWideHeight;
   final double statusRailWidth;
   final double dividerWidth;
   final double strongBorderWidth;
@@ -138,6 +142,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
     double? panelRadius,
     double? ledgerTimeColumnWidth,
     double? factRailWidth,
+    double? liveTranscriptCompactHeight,
+    double? liveTranscriptWideHeight,
     double? statusRailWidth,
     double? dividerWidth,
     double? strongBorderWidth,
@@ -165,6 +171,10 @@ class AppStyle extends ThemeExtension<AppStyle> {
     panelRadius: panelRadius ?? this.panelRadius,
     ledgerTimeColumnWidth: ledgerTimeColumnWidth ?? this.ledgerTimeColumnWidth,
     factRailWidth: factRailWidth ?? this.factRailWidth,
+    liveTranscriptCompactHeight:
+        liveTranscriptCompactHeight ?? this.liveTranscriptCompactHeight,
+    liveTranscriptWideHeight:
+        liveTranscriptWideHeight ?? this.liveTranscriptWideHeight,
     statusRailWidth: statusRailWidth ?? this.statusRailWidth,
     dividerWidth: dividerWidth ?? this.dividerWidth,
     strongBorderWidth: strongBorderWidth ?? this.strongBorderWidth,
@@ -214,6 +224,12 @@ class AppStyle extends ThemeExtension<AppStyle> {
           ledgerTimeColumnWidth +
           (other.ledgerTimeColumnWidth - ledgerTimeColumnWidth) * t,
       factRailWidth: factRailWidth + (other.factRailWidth - factRailWidth) * t,
+      liveTranscriptCompactHeight:
+          liveTranscriptCompactHeight +
+          (other.liveTranscriptCompactHeight - liveTranscriptCompactHeight) * t,
+      liveTranscriptWideHeight:
+          liveTranscriptWideHeight +
+          (other.liveTranscriptWideHeight - liveTranscriptWideHeight) * t,
       statusRailWidth:
           statusRailWidth + (other.statusRailWidth - statusRailWidth) * t,
       dividerWidth: dividerWidth + (other.dividerWidth - dividerWidth) * t,
@@ -248,6 +264,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
           panelRadius == other.panelRadius &&
           ledgerTimeColumnWidth == other.ledgerTimeColumnWidth &&
           factRailWidth == other.factRailWidth &&
+          liveTranscriptCompactHeight == other.liveTranscriptCompactHeight &&
+          liveTranscriptWideHeight == other.liveTranscriptWideHeight &&
           statusRailWidth == other.statusRailWidth &&
           dividerWidth == other.dividerWidth &&
           strongBorderWidth == other.strongBorderWidth;
@@ -276,6 +294,8 @@ class AppStyle extends ThemeExtension<AppStyle> {
     panelRadius,
     ledgerTimeColumnWidth,
     factRailWidth,
+    liveTranscriptCompactHeight,
+    liveTranscriptWideHeight,
     statusRailWidth,
     dividerWidth,
     strongBorderWidth,

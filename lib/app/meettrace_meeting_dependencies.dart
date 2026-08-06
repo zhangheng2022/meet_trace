@@ -6,6 +6,7 @@ import '../data/services/audio/recording_device_readiness_probe.dart';
 import '../data/services/diarization/speaker_diarization_service.dart';
 import '../data/models/runtime/speaker_diarization_manifest.dart';
 import '../domain/use_cases/check_meeting_readiness.dart';
+import '../domain/use_cases/final_inference_scheduler.dart';
 import '../domain/use_cases/run_final_transcription.dart';
 import '../domain/use_cases/run_speaker_diarization.dart';
 import 'meettrace_runtime_dependencies.dart';
@@ -35,12 +36,14 @@ final class MeetingDependencies {
       leases: storage.leases,
       riskMonitor: createPlatformAsrDeviceRiskMonitor(),
       ownerId: 'meettrace-app',
+      vadModelPath: runtime.vadModelPath,
     );
     final diarizationService = createMeetTraceSpeakerDiarizationService(
       segmentationModelPath: runtime.speakerSegmentationModelPath,
       embeddingModelPath: runtime.speakerEmbeddingModelPath,
       inference: runtime.speakerManifest.inference,
     );
+    final finalInferenceScheduler = FinalInferenceScheduler();
     return MeetingDependencies._(
       engineFactory: engineFactory,
       finalTranscription: FinalResultCoordinator(
@@ -50,6 +53,7 @@ final class MeetingDependencies {
         engineFactory: engineFactory,
         diarization: diarizationService,
         diarizationPreferences: storage.diarizationPreferences,
+        scheduler: finalInferenceScheduler,
         now: DateTime.now,
       ),
       diarization: SpeakerDiarizationCoordinator(

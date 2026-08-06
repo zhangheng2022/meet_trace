@@ -5,8 +5,10 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
 import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_asr_engine.dart';
+import 'package:meettrace/data/services/vad/silero_vad_segmenter.dart';
 import 'package:meettrace/domain/models/app_failure.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
+import 'package:meettrace/domain/models/asr_preview.dart';
 import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/ports/asr_engine.dart';
@@ -179,6 +181,111 @@ void main() {
     expect(progress.last.fraction, 1);
   });
 
+  test('全静音最终音频生成空快照且不初始化 SenseVoice', () async {
+    final source = await _writePcm16(root, sherpaOnnxAsrSampleRate);
+    await engine.dispose();
+    engine = _createEngine(
+      workerFactory: workerFactory,
+      finalVadFactory: () => _FakeVad(),
+    );
+
+    final snapshot = await engine.finalizeMeeting(
+      source,
+      meetingId: 'silent-meeting',
+      snapshotId: 'silent-snapshot',
+    );
+
+    expect(snapshot.status, TranscriptSnapshotStatus.complete);
+    expect(snapshot.segments, isEmpty);
+    expect(workerFactory.createCalls, 0);
+    expect(worker.sampleWindows, isEmpty);
+  });
+
+  test('最终 VAD 语音区间加入上下文且延迟到首段语音初始化', () async {
+    worker.texts.add('语音内容');
+    final source = await _writePcm16(root, sherpaOnnxAsrSampleRate);
+    await engine.dispose();
+    engine = _createEngine(
+      workerFactory: workerFactory,
+      finalVadFactory: () => _FakeVad(
+        segments: const [VadSpeechSegment(startSample: 3200, endSample: 8000)],
+      ),
+    );
+
+    final snapshot = await engine.finalizeMeeting(
+      source,
+      meetingId: 'speech-meeting',
+      snapshotId: 'speech-snapshot',
+    );
+
+    expect(workerFactory.createCalls, 1);
+    expect(worker.sampleWindows.single.length, 11200);
+    expect(
+      snapshot.segments.map((segment) => (segment.startMs, segment.endMs)),
+      [(0, 700)],
+    );
+  });
+
+  test('超长语音使用 500ms 重叠窗口并合并为单一最终片段', () async {
+    worker.texts.addAll(['今天讨论项目计划', '项目计划已经确认']);
+    final sampleCount = 16 * sherpaOnnxAsrSampleRate;
+    final source = await _writePcm16(root, sampleCount);
+    await engine.dispose();
+    engine = _createEngine(
+      workerFactory: workerFactory,
+      finalVadFactory: () => _FakeVad(
+        segments: [
+          const VadSpeechSegment(
+            startSample: 0,
+            endSample: 8 * sherpaOnnxAsrSampleRate,
+          ),
+          VadSpeechSegment(
+            startSample: 8 * sherpaOnnxAsrSampleRate,
+            endSample: sampleCount,
+          ),
+        ],
+      ),
+    );
+
+    final snapshot = await engine.finalizeMeeting(
+      source,
+      meetingId: 'long-speech',
+      snapshotId: 'long-snapshot',
+    );
+
+    expect(worker.sampleWindows.map((samples) => samples.length), [
+      sherpaOnnxMaximumWindowSamples,
+      24000,
+    ]);
+    expect(snapshot.segments, hasLength(1));
+    expect(snapshot.segments.single.text, '今天讨论项目计划已经确认');
+    expect(
+      (snapshot.segments.single.startMs, snapshot.segments.single.endMs),
+      (0, 16000),
+    );
+  });
+
+  test('最终 VAD 失败时从头回退完整 PCM 固定窗口', () async {
+    worker.texts.add('回退结果');
+    final source = await _writePcm16(root, sherpaOnnxAsrSampleRate);
+    await engine.dispose();
+    engine = _createEngine(
+      workerFactory: workerFactory,
+      finalVadFactory: () => _FakeVad(acceptError: StateError('vad failed')),
+    );
+
+    final snapshot = await engine.finalizeMeeting(
+      source,
+      meetingId: 'vad-fallback',
+      snapshotId: 'fallback-snapshot',
+    );
+
+    expect(workerFactory.createCalls, 1);
+    expect(worker.sampleWindows.single.length, sherpaOnnxAsrSampleRate);
+    expect(snapshot.segments.single.text, '回退结果');
+    expect(snapshot.segments.single.startMs, 0);
+  });
+
   test('不支持的设备风险在创建 worker 前阻断初始化', () async {
     await engine.dispose();
     engine = _createEngine(
@@ -284,6 +391,7 @@ SherpaOnnxAsrEngine _createEngine({
   AsrEngineLifecycleHook? beforeOperation,
   AsrEngineLifecycleHook? onDispose,
   DateTime Function()? now,
+  FinalVadFactory? finalVadFactory,
 }) {
   return SherpaOnnxAsrEngine(
     descriptor: _descriptor,
@@ -293,8 +401,37 @@ SherpaOnnxAsrEngine _createEngine({
     riskMonitor: riskMonitor,
     beforeOperation: beforeOperation,
     onDispose: onDispose,
+    finalVadFactory: finalVadFactory,
     now: now,
   );
+}
+
+final class _FakeVad implements VoiceActivitySegmenter {
+  _FakeVad({this.segments = const [], this.acceptError});
+
+  final List<VadSpeechSegment> segments;
+  final Object? acceptError;
+
+  @override
+  int get sampleRate => sherpaOnnxAsrSampleRate;
+
+  @override
+  List<VadSpeechSegment> accept(Float32List samples) {
+    final error = acceptError;
+    if (error != null) {
+      throw error;
+    }
+    return const [];
+  }
+
+  @override
+  List<VadSpeechSegment> flush() => segments;
+
+  @override
+  void reset({required int nextStartSample}) {}
+
+  @override
+  void dispose() {}
 }
 
 Matcher _failure(String code, {FailureStage? stage}) {

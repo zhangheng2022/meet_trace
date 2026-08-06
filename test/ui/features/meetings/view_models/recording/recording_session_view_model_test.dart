@@ -39,7 +39,8 @@ void main() {
     expect(completed?.status, MeetingState.processing);
     expect(completed?.audioPath, '/meetings/meeting-1/fact.pcm');
     expect(completed?.audioDurationMs, 12000);
-    expect(preview.flushCalls, 1);
+    expect(preview.stopCalls, 1);
+    await Future<void>.delayed(Duration.zero);
     expect(preview.disposeCalls, 1);
     expect(meetings.saved.last.status, MeetingState.processing);
     viewModel.dispose();
@@ -124,6 +125,53 @@ void main() {
     await preview.close();
   });
 
+  test('时长、音量和转录高频事件不触发控制层整页通知', () async {
+    final recording = _RecordingService();
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+    );
+    await viewModel.start();
+    var controlNotifications = 0;
+    viewModel.addListener(() => controlNotifications++);
+
+    recording.durationValue = const Duration(seconds: 1);
+    viewModel.refreshDuration();
+    recording.emitAudioLevel(0.5);
+    preview.emitSegment(id: 'segment-1', startMs: 0, text: '局部刷新');
+    preview.emitMetrics(AsrPreviewState.recordingOnly);
+
+    expect(controlNotifications, 0);
+    expect(viewModel.duration, const Duration(seconds: 1));
+    expect(viewModel.audioLevels, [0.5]);
+    expect(viewModel.segments.single.text, '局部刷新');
+    expect(viewModel.previewMetrics.state, AsrPreviewState.recordingOnly);
+    viewModel.dispose();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('预览初始化阻塞时事实录音启动仍立即完成', () async {
+    final recording = _RecordingService();
+    final preview = _PreviewSession()..initializeBarrier = Completer<void>();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+    );
+
+    expect(await viewModel.start(), isTrue);
+    expect(recording.state, RecordingState.recording);
+    expect(preview.initializeCalls, 1);
+
+    preview.initializeBarrier!.complete();
+    viewModel.dispose();
+    await recording.close();
+    await preview.close();
+  });
+
   test('事实录音启动失败会持久化失败会议', () async {
     final meetings = TestMeetingRepository();
     final recording = _RecordingService()
@@ -147,12 +195,12 @@ void main() {
     await preview.close();
   });
 
-  test('预览刷新和释放失败不回滚已封存的事实音频', () async {
+  test('预览停止和释放失败不回滚已封存的事实音频', () async {
     final meetings = TestMeetingRepository();
     final recording = _RecordingService()
       ..durationValue = const Duration(seconds: 8);
     final preview = _PreviewSession()
-      ..flushError = StateError('flush failed')
+      ..stopError = StateError('stop failed')
       ..disposeError = StateError('dispose failed');
     final viewModel = _viewModel(
       meetings: meetings,
@@ -169,7 +217,8 @@ void main() {
     expect(completed?.audioDurationMs, 8000);
     expect(meetings.saved.last.status, MeetingState.processing);
     expect(viewModel.errorMessage, isNull);
-    expect(preview.flushCalls, 1);
+    expect(preview.stopCalls, 1);
+    await Future<void>.delayed(Duration.zero);
     expect(preview.disposeCalls, 1);
     viewModel.dispose();
     await preview.close();
@@ -284,10 +333,13 @@ final class _PreviewSession implements AsrPreviewSession {
   final StreamController<AsrPreviewMetrics> _metrics =
       StreamController<AsrPreviewMetrics>.broadcast(sync: true);
   AsrPreviewMetrics _value = _previewMetrics(AsrPreviewState.ready);
+  int initializeCalls = 0;
   int flushCalls = 0;
+  int stopCalls = 0;
   int disposeCalls = 0;
-  Object? flushError;
+  Object? stopError;
   Object? disposeError;
+  Completer<void>? initializeBarrier;
 
   @override
   Stream<TranscriptEvent> get events => _events.stream;
@@ -297,6 +349,12 @@ final class _PreviewSession implements AsrPreviewSession {
 
   @override
   Stream<AsrPreviewMetrics> get metricsChanges => _metrics.stream;
+
+  @override
+  Future<void> initialize() async {
+    initializeCalls++;
+    await initializeBarrier?.future;
+  }
 
   void emitMetrics(AsrPreviewState state) {
     _value = _previewMetrics(state);
@@ -324,8 +382,13 @@ final class _PreviewSession implements AsrPreviewSession {
   @override
   Future<void> flush() async {
     flushCalls++;
-    final error = flushError;
-    flushError = null;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalls++;
+    final error = stopError;
+    stopError = null;
     if (error != null) {
       throw error;
     }

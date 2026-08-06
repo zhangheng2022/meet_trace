@@ -46,6 +46,18 @@ final class DetailTranscriptRepository implements TranscriptRepository {
   }
 
   @override
+  Future<TranscriptSnapshot?> getLatestByMeeting({
+    required String meetingId,
+    required TranscriptSnapshotKind kind,
+    required TranscriptSnapshotStatus status,
+  }) async => _latestSnapshot(
+    records.values,
+    meetingId: meetingId,
+    kind: kind,
+    status: status,
+  );
+
+  @override
   Future<void> save(TranscriptSnapshot snapshot) async {
     records[snapshot.id] = snapshot;
   }
@@ -92,6 +104,28 @@ final class DetailTranscriptRepository implements TranscriptRepository {
     records[snapshotId] = updated;
     return updated;
   }
+}
+
+TranscriptSnapshot? _latestSnapshot(
+  Iterable<TranscriptSnapshot> snapshots, {
+  required String meetingId,
+  required TranscriptSnapshotKind kind,
+  required TranscriptSnapshotStatus status,
+}) {
+  final matches =
+      snapshots
+          .where(
+            (snapshot) =>
+                snapshot.meetingId == meetingId &&
+                snapshot.kind == kind &&
+                snapshot.status == status,
+          )
+          .toList()
+        ..sort((left, right) {
+          final byDate = right.createdAt.compareTo(left.createdAt);
+          return byDate != 0 ? byDate : right.id.compareTo(left.id);
+        });
+  return matches.firstOrNull;
 }
 
 final class DetailProcessingTaskRepository implements ProcessingTaskRepository {

@@ -33,6 +33,10 @@ void main() {
         const [VadSpeechSegment(startSample: 1600, endSample: 14400)],
       ]),
     );
+    await Future.wait([
+      standardCoordinator.initialize(),
+      advancedCoordinator.initialize(),
+    ]);
     final chunk = _chunk(startSample: 0, sampleCount: 16000);
 
     await standardCoordinator.add(chunk);
@@ -61,6 +65,7 @@ void main() {
         ],
       ]),
     );
+    await coordinator.initialize();
     final events = <TranscriptSegmentEvent>[];
     final subscription = coordinator.events
         .where((event) => event is TranscriptSegmentEvent)
@@ -94,6 +99,7 @@ void main() {
         ],
       ]),
     );
+    await coordinator.initialize();
     final events = <TranscriptSegmentEvent>[];
     final subscription = coordinator.events
         .where((event) => event is TranscriptSegmentEvent)
@@ -129,6 +135,7 @@ void main() {
       highWaterMs: 1000,
       lowWaterMs: 500,
     );
+    await coordinator.initialize();
 
     await coordinator.add(_chunk(startSample: 0, sampleCount: 16000));
     await coordinator.add(_chunk(startSample: 16000, sampleCount: 16000));
@@ -168,6 +175,7 @@ void main() {
       const [VadSpeechSegment(startSample: 16000, endSample: 32000)],
     ]);
     final coordinator = _coordinator(engine: engine, vad: vad);
+    await coordinator.initialize();
 
     await coordinator.add(_chunk(startSample: 0, sampleCount: 16000));
     await _waitFor(
@@ -180,6 +188,79 @@ void main() {
     expect(vad.acceptCalls, 1);
     await coordinator.dispose();
   });
+
+  test('停止会丢弃积压并在活动推理阻塞时有界返回', () async {
+    final firstGate = Completer<void>();
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      firstGate: firstGate,
+    );
+    final coordinator = _coordinator(
+      engine: engine,
+      vad: _ScriptedVad([
+        const [VadSpeechSegment(startSample: 0, endSample: 16000)],
+        const [VadSpeechSegment(startSample: 16000, endSample: 32000)],
+      ]),
+      stopTimeout: const Duration(milliseconds: 20),
+    );
+    await coordinator.initialize();
+
+    await coordinator.add(_chunk(startSample: 0, sampleCount: 16000));
+    await coordinator.add(_chunk(startSample: 16000, sampleCount: 16000));
+    final watch = Stopwatch()..start();
+
+    await coordinator.stop();
+
+    expect(watch.elapsed, lessThan(const Duration(milliseconds: 200)));
+    expect(engine.canceled, isTrue);
+    expect(coordinator.metrics.state, AsrPreviewState.disposed);
+    expect(coordinator.metrics.droppedPreviewWindows, 1);
+    await coordinator.stop();
+    firstGate.complete();
+    await coordinator.dispose();
+  });
+
+  test('VAD 释放失败仍继续释放 Engine 且停止保持幂等', () async {
+    final engine = _FakeAsrEngine(AsrModelRegistry.alpha.defaultModel);
+    final coordinator = _coordinator(
+      engine: engine,
+      vad: _ScriptedVad(const [], disposeError: StateError('free failed')),
+    );
+
+    await coordinator.stop();
+    await coordinator.stop();
+
+    expect(engine.canceled, isTrue);
+    expect(engine.disposeCalls, 1);
+  });
+
+  test('模型初始化完成前保留有界预览队列且不调用未就绪 Engine', () async {
+    final initializeGate = Completer<void>();
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      initializeGate: initializeGate,
+    );
+    final coordinator = _coordinator(
+      engine: engine,
+      vad: _ScriptedVad([
+        const [VadSpeechSegment(startSample: 0, endSample: 16000)],
+      ]),
+    );
+
+    final initializing = coordinator.initialize();
+    await coordinator.add(_chunk(startSample: 0, sampleCount: 16000));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(engine.windows, isEmpty);
+    expect(coordinator.metrics.queuedAudioMs, 1000);
+
+    initializeGate.complete();
+    await initializing;
+    await coordinator.flush();
+
+    expect(engine.windows, [(0, 1000)]);
+    await coordinator.dispose();
+  });
 }
 
 AsrPreviewCoordinator _coordinator({
@@ -188,6 +269,7 @@ AsrPreviewCoordinator _coordinator({
   int maximumQueuedAudioMs = 30000,
   int highWaterMs = 15000,
   int lowWaterMs = 5000,
+  Duration stopTimeout = defaultPreviewStopTimeout,
 }) {
   return AsrPreviewCoordinator(
     vad: vad,
@@ -199,6 +281,7 @@ AsrPreviewCoordinator _coordinator({
     maximumQueuedAudioMs: maximumQueuedAudioMs,
     highWaterMs: highWaterMs,
     lowWaterMs: lowWaterMs,
+    stopTimeout: stopTimeout,
   );
 }
 
@@ -220,13 +303,14 @@ Future<void> _waitFor(bool Function() condition) async {
 }
 
 final class _ScriptedVad implements VoiceActivitySegmenter {
-  _ScriptedVad(Iterable<List<VadSpeechSegment>> outputs)
+  _ScriptedVad(Iterable<List<VadSpeechSegment>> outputs, {this.disposeError})
     : _outputs = Queue.of(outputs);
 
   final Queue<List<VadSpeechSegment>> _outputs;
   int acceptCalls = 0;
   int resetCalls = 0;
   bool disposed = false;
+  final Object? disposeError;
 
   @override
   int get sampleRate => recordingSampleRate;
@@ -248,6 +332,10 @@ final class _ScriptedVad implements VoiceActivitySegmenter {
   @override
   void dispose() {
     disposed = true;
+    final error = disposeError;
+    if (error != null) {
+      throw error;
+    }
   }
 }
 
@@ -257,6 +345,7 @@ final class _FakeAsrEngine implements AsrEngine {
     this.results = const ['测试文本'],
     this.failures = const {},
     this.firstGate,
+    this.initializeGate,
   });
 
   @override
@@ -264,10 +353,12 @@ final class _FakeAsrEngine implements AsrEngine {
   final List<String> results;
   final Map<int, Object> failures;
   final Completer<void>? firstGate;
+  final Completer<void>? initializeGate;
   final StreamController<TranscriptEvent> _events =
       StreamController<TranscriptEvent>.broadcast(sync: true);
   final List<(int, int)> windows = [];
   bool canceled = false;
+  int disposeCalls = 0;
 
   @override
   Stream<TranscriptEvent> get events => _events.stream;
@@ -298,7 +389,9 @@ final class _FakeAsrEngine implements AsrEngine {
   );
 
   @override
-  Future<void> initialize() async {}
+  Future<void> initialize() async {
+    await initializeGate?.future;
+  }
 
   @override
   Future<void> acceptAudio(
@@ -352,6 +445,7 @@ final class _FakeAsrEngine implements AsrEngine {
 
   @override
   Future<void> dispose() async {
+    disposeCalls++;
     await _events.close();
   }
 }

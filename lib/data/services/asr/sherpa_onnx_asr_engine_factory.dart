@@ -5,6 +5,7 @@ import '../../../domain/ports/asr_engine.dart';
 import '../../../domain/ports/repositories.dart';
 import 'sense_voice_asr_engine.dart';
 import 'sherpa_onnx/sherpa_onnx_adapter.dart';
+import '../vad/silero_vad_segmenter.dart';
 
 /// 只根据会议已经确认并锁定的模型 ID/版本组装具体 Engine。
 ///
@@ -21,6 +22,7 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
     this.leaseDuration = const Duration(hours: 1),
     this.leaseRenewalLead = const Duration(minutes: 5),
     this.leaseIdFactory,
+    this.vadModelPath,
   }) : registry = registry ?? AsrModelRegistry.alpha,
        now = now ?? DateTime.now {
     if (ownerId.trim().isEmpty) {
@@ -38,6 +40,7 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
   final Duration leaseDuration;
   final Duration leaseRenewalLead;
   final String Function()? leaseIdFactory;
+  final String? vadModelPath;
 
   @override
   Future<AsrEngine> create({
@@ -93,6 +96,9 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
     return SenseVoiceAsrEngine(
       installation: installation,
       workerFactory: workerFactory,
+      finalVadFactory: vadModelPath == null
+          ? null
+          : () => SileroVadSegmenter.official(modelPath: vadModelPath!),
       now: now,
     );
   }

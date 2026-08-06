@@ -112,6 +112,22 @@ final class _TranscriptRepository implements TranscriptRepository {
           .toList();
 
   @override
+  Future<TranscriptSnapshot?> getLatestByMeeting({
+    required String meetingId,
+    required TranscriptSnapshotKind kind,
+    required TranscriptSnapshotStatus status,
+  }) async {
+    final matches =
+        (await listByMeeting(meetingId))
+            .where(
+              (snapshot) => snapshot.kind == kind && snapshot.status == status,
+            )
+            .toList()
+          ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    return matches.firstOrNull;
+  }
+
+  @override
   Future<void> save(TranscriptSnapshot snapshot) async {
     records[snapshot.id] = snapshot;
   }

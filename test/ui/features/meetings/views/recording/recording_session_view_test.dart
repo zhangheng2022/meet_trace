@@ -573,6 +573,9 @@ final class _PreviewSession implements AsrPreviewSession {
   @override
   Stream<AsrPreviewMetrics> get metricsChanges => _changes.stream;
 
+  @override
+  Future<void> initialize() async {}
+
   void emit(AsrPreviewState state) {
     _metrics = _value(state);
     _changes.add(_metrics);
@@ -587,6 +590,9 @@ final class _PreviewSession implements AsrPreviewSession {
 
   @override
   Future<void> flush() async {}
+
+  @override
+  Future<void> stop() async {}
 
   Future<void> close() async {
     await _events.close();

@@ -19,6 +19,12 @@ abstract interface class TranscriptRepository {
 
   Future<List<TranscriptSnapshot>> listByMeeting(String meetingId);
 
+  Future<TranscriptSnapshot?> getLatestByMeeting({
+    required String meetingId,
+    required TranscriptSnapshotKind kind,
+    required TranscriptSnapshotStatus status,
+  });
+
   Future<void> save(TranscriptSnapshot snapshot);
 
   Future<void> saveFinalAndActivate({

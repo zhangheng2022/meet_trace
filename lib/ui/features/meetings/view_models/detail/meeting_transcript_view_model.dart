@@ -219,36 +219,25 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
   }
 
   Future<void> _refreshSnapshots() async {
-    final snapshots = await transcripts.listByMeeting(_meeting.id);
-    _snapshot = _meeting.activeTranscriptSnapshotId == null
-        ? null
-        : await transcripts.getById(_meeting.activeTranscriptSnapshotId!);
-    final failed =
-        snapshots
-            .where(
-              (snapshot) =>
-                  snapshot.kind == TranscriptSnapshotKind.finalTranscript &&
-                  snapshot.status == TranscriptSnapshotStatus.failed,
-            )
-            .toList()
-          ..sort((left, right) {
-            final byDate = right.createdAt.compareTo(left.createdAt);
-            return byDate != 0 ? byDate : right.id.compareTo(left.id);
-          });
-    _failedAttempt = failed.isEmpty ? null : failed.first;
-    final processing =
-        snapshots
-            .where(
-              (snapshot) =>
-                  snapshot.kind == TranscriptSnapshotKind.finalTranscript &&
-                  snapshot.status == TranscriptSnapshotStatus.processing,
-            )
-            .toList()
-          ..sort((left, right) {
-            final byDate = right.createdAt.compareTo(left.createdAt);
-            return byDate != 0 ? byDate : right.id.compareTo(left.id);
-          });
-    _processingAttempt = processing.isEmpty ? null : processing.first;
+    final activeId = _meeting.activeTranscriptSnapshotId;
+    final snapshots = await Future.wait<TranscriptSnapshot?>([
+      activeId == null
+          ? Future<TranscriptSnapshot?>.value()
+          : transcripts.getById(activeId),
+      transcripts.getLatestByMeeting(
+        meetingId: _meeting.id,
+        kind: TranscriptSnapshotKind.finalTranscript,
+        status: TranscriptSnapshotStatus.failed,
+      ),
+      transcripts.getLatestByMeeting(
+        meetingId: _meeting.id,
+        kind: TranscriptSnapshotKind.finalTranscript,
+        status: TranscriptSnapshotStatus.processing,
+      ),
+    ]);
+    _snapshot = snapshots[0];
+    _failedAttempt = snapshots[1];
+    _processingAttempt = snapshots[2];
   }
 
   Future<void> _refreshDiarizationTask() async {
