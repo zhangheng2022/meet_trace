@@ -1,7 +1,7 @@
 # 会迹（MeetTrace）Android + iOS Alpha 产品需求文档（无登录版）
 
-> 版本：V0.9
-> 日期：2026-08-03
+> 版本：V1.0
+> 日期：2026-08-06
 > 状态：活动；产品范围与验收标准的唯一事实源
 > 技术方案：[端侧 SenseVoice 转录技术方案](../technical/端侧_SenseVoice_转录技术方案.md)
 
@@ -15,7 +15,9 @@
 - 不提供登录、跨设备同步、云端实时 ASR 或 AI 总结；App 不配置任何总结网关。
 - 音频、转录和说话人结果默认只保存在设备上；只有用户主动执行独立的“分享音频”操作并二次确认后，临时 WAV 副本才进入系统分享面板。
 - 当前 ASR 只支持 SenseVoice；其他模型待定，不承诺等级、发布时间或自动切换。
-- Android 与 iOS 分别达到门槛后才允许发布，Android 证据不能替代 iOS 证据。
+- Android 与 iOS 必须基于同一候选提交分别达到门槛后，才允许对外发布该 Alpha；Android 证据不能替代 iOS 证据。
+- Android 候选 APK 只构建 `arm64-v8a`，在双平台验收完成前仅暂存在当前公开源码仓库的 GitHub Draft Release 中，不得公开安装；最终验收通过后发布同一 Draft 为 GitHub Pre-release，不重建、不覆盖 APK，也不移动已有标签。
+- iOS 候选只通过 TestFlight 分发，不在 GitHub Release 上传 IPA。最终 GitHub Pre-release 可填写 TestFlight 外部测试链接；尚未获批或未创建时必须明确标记“外部测试链接待提供”，不得伪造链接或绕过 Beta App Review。
 
 ## 2. 当前模型决策
 
@@ -63,6 +65,14 @@
 - Android/iOS 后台录音、系统中断、可访问性和安装包审计。
 
 不在 Alpha 范围：登录、同步、云端实时 ASR、AI 总结、总结证据链、手动改会议标题、会中实时说话人分离、非普通话说话人准确率承诺、会议中切换模型、混合模型输出、自动替用户切换模型、下载远端“最新版本”、远程埋点、远程崩溃上报和应用内更新。
+
+### 3.1 Alpha 对外分发
+
+- Android 公开安装入口为当前公开源码仓库的 GitHub Pre-release 附件，文件名固定为 `meettrace-<release-id>-android-arm64.apk`；不使用私有分发仓库。
+- Android 候选阶段创建 Draft Release 并上传签名 APK、校验和、签名证书指纹和门禁证据。Draft 不得作为公开安装入口；最终发布只能公开这份已经验收的原始 APK。
+- 最终发布必须核对 Android 与 iOS 工作流均成功、候选提交 SHA 和版本标识一致、门禁证据完整，并验证 Draft Release 中 APK 的名称、大小和 SHA-256 与 Android 候选清单一致。
+- GitHub Pre-release 的安装说明必须提示：仅支持 Android 7.0+ 的 `arm64-v8a` 设备、需要允许来自当前安装来源的未知应用安装、无登录和云同步且数据只保存在本机、卸载会删除数据、Alpha 升级可能清除旧数据并重新下载模型，以及首次启动约下载 286.3 MB 运行资源。
+- 严重问题版本不删除 Release、标签或 APK，也不覆盖原资产；将发布说明醒目标记为“已撤回，不建议安装”，修复使用新的版本标识、构建号和候选提交向前发布。
 
 ## 4. 首次初始化流程
 
@@ -179,12 +189,13 @@
 ## 9. Alpha 完成定义
 
 - 自动化覆盖全部 Manifest、归档解包、下载上限、1 GiB 空间预检、移动网络同意、续传、校验、快速启动、锁定配置、联合快照、分离降级、WAV 分享清理和数据代门全清。
-- `flutter analyze`、`flutter test`、Android Debug 构建和 APK 权重审计通过；Android 内部 Alpha 以 `com.meettrace.app` 的签名 APK 直发。
-- Android 与 iOS 目标真机完成 AT-01～AT-18 的适用项；缺少任一平台证据时发布状态保持 `blocked`。iOS 内部 Alpha 通过 TestFlight 分发。
+- `flutter analyze`、`flutter test`、Android Debug 构建和 APK 权重审计通过；Android Alpha 使用 `com.meettrace.app` 的正式签名 `arm64-v8a` APK。
+- Android 与 iOS 目标真机完成 AT-01～AT-18 的适用项；缺少任一平台证据时发布状态保持 `blocked`，Draft Release 不得公开。iOS Alpha 通过 TestFlight 分发。
+- 最终发布核对同一候选提交的双平台成功结果后，将原 Android Draft Release 发布为 GitHub Pre-release；公开附件的 APK 与已验收候选逐字节一致，Release 不包含 IPA。TestFlight 外部测试链接可后补，缺失时公开说明必须标记待提供。
 - 未解决的 OCR Critical/High 缺陷为零。
-- 官方 `sherpa_onnx` Dart 完整波形缓冲区缺陷作为已接受的内部 Alpha 风险持续跟踪，不再单独阻断自动分离或内部构建；仍需记录 30 分钟重复任务内存、DER、人数误差与 RTF 证据，未满足 AT-13 时不得扩大分发范围或宣称质量达标。
+- 官方 `sherpa_onnx` Dart 完整波形缓冲区缺陷作为已接受的 Alpha 风险持续跟踪，不再单独阻断自动分离或 Alpha 构建；仍需记录 30 分钟重复任务内存、DER、人数误差与 RTF 证据，未满足 AT-13 时不得公开发布或宣称质量达标。
 - Web、Windows、Linux 与 macOS 工程壳不属于 Alpha 支持面，不进入发布结论。
 
 ## 10. 变更规则
 
-新增或替换 ASR/说话人模型、恢复 AI 总结、改变首次阻断、下载上限、空间门槛、网络同意、联合最终快照、音频分享、会议锁定或发布门槛，均属于产品范围变化：必须先更新本 PRD 并运行 `$grill-me`，再修改代码和技术方案。
+新增或替换 ASR/说话人模型、恢复 AI 总结、改变首次阻断、下载上限、空间门槛、网络同意、联合最终快照、音频分享、会议锁定、安装包公开范围或发布门槛，均属于产品范围变化：必须先更新本 PRD 并运行 `$grill-me`，再修改代码和技术方案。

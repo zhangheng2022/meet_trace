@@ -1,7 +1,7 @@
 # 会迹（MeetTrace）Android Alpha 设备矩阵
 
-> 状态：活动；V0.9 仓库实现、说话人分离与目标真机发布证据阻塞
-> 更新日期：2026-08-04
+> 状态：活动；V1.0 仓库实现、说话人分离与目标真机发布证据阻塞
+> 更新日期：2026-08-06
 
 ## 平台基线
 
@@ -14,7 +14,7 @@
 | Android 编译 SDK | Flutter 工具链默认值，当前环境为 SDK 36 |
 | Java/Kotlin 字节码目标 | Java 17 / JVM 17 |
 | Alpha 应用标识 | `com.meettrace.app`；Debug APK 已由 `aapt` 复验 |
-| 内部分发 | `com.meettrace.app` 签名 APK 直发，不公开上架 |
+| Alpha 分发 | `com.meettrace.app` 签名 `arm64-v8a` APK；双平台验收后由当前仓库 GitHub Pre-release 公开安装 |
 
 `android/app/build.gradle.kts` 显式固定 `minSdk = 24`。`arm64-v8a` 是 Alpha 必须验证的 ABI，不限制开发阶段的通用 Debug APK；升级 Flutter 或官方 `sherpa_onnx` 包时，不得静默提高最低系统版本，增加发布 ABI 前必须重新检查 APK 体积和真机兼容性。
 
@@ -30,7 +30,7 @@
 ## 使用规则
 
 - 模拟器不能替代 ASR、说话人分离、录音连续性、耗电和温控验收。
-- 通用 Debug APK 可以包含多个 ABI；发布产物的 ABI 拆分策略须在发布门槛关闭前确认。
+- 通用 Debug APK 可以包含多个 ABI；公开 Alpha APK 必须只包含 `arm64-v8a`，工作流解包审计后才允许进入 Draft Release。
 - Mi 10 只能证明主开发链可运行，不能代表最低设备门槛。
 - 必须补齐低端性能设备、当前 SenseVoice 指标和普通话说话人分离指标，才能做 Go/No-Go。
 - 发布前必须补齐最低系统设备，并保存设备型号、系统、ABI、内存和测试结果。

@@ -13,6 +13,7 @@
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
 - 新会议按本地开始时间生成确定性标题。Alpha 不提供 AI 总结或总结网关；文本分享只包含最终转录，音频分享必须使用独立入口、二次确认和临时 WAV，且不得改写事实 PCM。
 - 扩展 P0 前必须先更新 PRD。
+- Android Alpha 只构建 `arm64-v8a` 签名 APK，候选先进入当前仓库 Draft Release；Android/iOS 同一 SHA 均验收通过后才公开原 Draft 为 GitHub Pre-release。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；禁止覆盖 APK、移动 tag 或删除撤回版本。
 
 ## 架构与项目结构
 

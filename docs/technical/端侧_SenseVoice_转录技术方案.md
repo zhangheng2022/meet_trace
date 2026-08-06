@@ -1,8 +1,8 @@
 # 会迹（MeetTrace）端侧 SenseVoice 与说话人分离技术方案
 
 > 日期：2026-08-05
-> 对应 PRD：V0.9
-> 状态：活动；说话人模型初始化、公开 API 适配器与联合最终快照已完成；内部 Alpha 已接受官方 Dart 绑定内存缺陷风险并启用生产自动分离
+> 对应 PRD：V1.0
+> 状态：活动；说话人模型初始化、公开 API 适配器与联合最终快照已完成；Alpha 已接受官方 Dart 绑定内存缺陷风险并启用生产自动分离
 
 ## 1. 目标
 
@@ -102,7 +102,7 @@ UI 只依赖 domain Port/Use Case/Model。下载、文件、网络、SQLite 和�
 
 `SherpaOnnxSpeakerDiarizationService` 只通过官方 `OfflineSpeakerDiarization` Dart API 接入，不自建 JNI、FFI/C API 或原生桥接。固定输入为 16 kHz 单声道事实 PCM；分段使用 Pyannote INT8，嵌入使用 3D-Speaker，`numClusters=-1`。模型在独立 isolate 中按任务创建和释放；worker 在模型初始化尚未完成时也可被 Domain 超时直接终止，不能让已降级任务继续占用 CPU/内存。聚类 threshold 必须在不少于 60 分钟的普通话 2/3/4 人标注语料上校准并固定到 Manifest/配置，UI 不暴露该参数。
 
-供应链审查确认官方 [`sherpa_onnx 1.13.4` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.4/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart#L258-L325)及上游 `master` 的 `process`/`processWithCallback` 都会 `calloc<Float>(samples.length)`，销毁结果后却没有释放输入指针。该内存属于进程原生堆，终止 Dart isolate 不能替代 `calloc.free`；30 分钟 16 kHz 波形对应 `115,200,000` B。2026-08-05 产品决策接受内部 Alpha 的该项风险，生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；worker 取消只能停止推理，不能宣称已修复上游泄漏。
+供应链审查确认官方 [`sherpa_onnx 1.13.4` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.4/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart#L258-L325)及上游 `master` 的 `process`/`processWithCallback` 都会 `calloc<Float>(samples.length)`，销毁结果后却没有释放输入指针。该内存属于进程原生堆，终止 Dart isolate 不能替代 `calloc.free`；30 分钟 16 kHz 波形对应 `115,200,000` B。2026-08-05 产品决策接受 Alpha 的该项风险，生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；worker 取消只能停止推理，不能宣称已修复上游泄漏。
 
 录音封存后，`FinalResultCoordinator` 从同一事实音频并行启动最终 ASR 与离线分离，两者运行在独立 worker/isolate，不能占用录音写入队列。跨会议的联合最终推理由应用级 FIFO 调度器限制为单并发，同一会议内部 ASR 与分离仍并行。ASR 成功且分离成功时，按时间重叠把 `SpeakerTurn` 映射到最终转录片段；分离超时、空结果、内存或推理失败时生成明确的单一说话人降级结果。只有两条任务都结束后才以一次事务写入并激活最终快照；ASR 失败时保留事实音频和旧活动快照，不发布半成品。
 
@@ -132,7 +132,7 @@ App 不接入远程埋点、远程崩溃上报或总结网关。诊断导出只�
 | SHA/文件集失败 | 不激活，进入修复 |
 | 第二次启动文件缺失/大小异常 | 进入修复并完整校验 |
 | Engine 初始化或推理失败 | 不自动切换；录音继续，显示修复/重试 |
-| 官方 Dart 分离绑定未释放完整波形缓冲区 | 生产自动分离保持关闭并写入明确降级；等待官方版本修复，不使用私有 API 绕过 |
+| 官方 Dart 分离绑定未释放完整波形缓冲区 | 按已接受 Alpha 风险继续启用并记录 30 分钟内存证据；运行失败或资源不足时单一说话人降级，等待官方修复且不使用私有 API 绕过 |
 | 预览积压 | 丢最旧预览任务，绝不丢录音 |
 | 最终转录失败 | 保留事实音频和旧活动快照 |
 | 说话人分离失败/超时/空结果 | 生成单一说话人降级结果，与成功的最终文本一起原子发布 |

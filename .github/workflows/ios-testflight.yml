@@ -7,14 +7,6 @@ on:
         description: Version identifier such as v1.0.0-alpha.1
         required: true
         type: string
-      expected_sha:
-        description: Full commit SHA from master to build
-        required: true
-        type: string
-      gate_input_path:
-        description: Repository-relative Alpha release evidence JSON
-        required: true
-        type: string
       release_notes:
         description: Optional TestFlight release notes
         required: false
@@ -31,6 +23,7 @@ concurrency:
 
 env:
   IOS_BUNDLE_ID: com.meettrace.app
+  ALPHA_GATE_INPUT_PATH: docs/quality/alpha_release_input.json
   FASTLANE_OPT_OUT_USAGE: "1"
   FASTLANE_SKIP_UPDATE_CHECK: "1"
 
@@ -42,30 +35,41 @@ jobs:
     environment: testflight
 
     steps:
+      - name: Validate release identifier
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]]
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+
       - name: Checkout candidate commit
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.expected_sha }}
+          ref: ${{ inputs.release_id }}
           fetch-depth: 0
 
       - name: Validate candidate identity
         shell: bash
         env:
           RELEASE_ID: ${{ inputs.release_id }}
-          EXPECTED_SHA: ${{ inputs.expected_sha }}
-          GATE_INPUT_PATH: ${{ inputs.gate_input_path }}
+          GATE_INPUT_PATH: ${{ env.ALPHA_GATE_INPUT_PATH }}
         run: |
           set -euo pipefail
-          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$GITHUB_SHA" == "$EXPECTED_SHA" ]]
-          git fetch --no-tags origin master
-          git merge-base --is-ancestor "$EXPECTED_SHA" origin/master
-
           marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
           [[ -n "$marketing_version" ]]
           expected_prefix="v${marketing_version}-alpha."
-          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$RELEASE_ID" == "$expected_prefix"* ]]
+
+          git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+          tag_type="$(git cat-file -t "refs/tags/$RELEASE_ID")"
+          candidate_sha="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
+          [[ "$tag_type" == "tag" ]]
+          [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$candidate_sha" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$candidate_sha" origin/master
 
           python3 - "$GATE_INPUT_PATH" <<'PY'
           import pathlib
@@ -91,6 +95,8 @@ jobs:
 
           echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
+          echo "CANDIDATE_REF=refs/tags/$RELEASE_ID" >> "$GITHUB_ENV"
 
       - name: Set up latest stable Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -146,7 +152,7 @@ jobs:
 
       - name: Evaluate Alpha product gates
         env:
-          GATE_INPUT_PATH: ${{ inputs.gate_input_path }}
+          GATE_INPUT_PATH: ${{ env.ALPHA_GATE_INPUT_PATH }}
         run: >-
           dart run tool/benchmarks/evaluate_alpha_release.dart
           "$GATE_INPUT_PATH"
@@ -533,8 +539,8 @@ jobs:
               "marketingVersion": os.environ["MARKETING_VERSION"],
               "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
               "repository": os.environ["GITHUB_REPOSITORY"],
-              "commitSha": os.environ["GITHUB_SHA"],
-              "ref": os.environ["GITHUB_REF"],
+              "commitSha": os.environ["CANDIDATE_SHA"],
+              "ref": os.environ["CANDIDATE_REF"],
               "runId": os.environ["GITHUB_RUN_ID"],
               "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "buildNumber": os.environ["IOS_BUILD_NUMBER"],

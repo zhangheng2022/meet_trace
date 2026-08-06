@@ -2,7 +2,7 @@
 
 > 状态：阻塞；无签名构建与 TestFlight 上传已成功，等待当前候选重跑和 iPhone/iPad 真机证据
 > 更新日期：2026-08-06
-> 上游需求：[Android + iOS Alpha PRD V0.9](../product/Alpha_PRD_无登录版.md)
+> 上游需求：[Android + iOS Alpha PRD V1.0](../product/Alpha_PRD_无登录版.md)
 
 ## 平台基线
 
@@ -14,7 +14,7 @@
 | Bundle ID / 签名 | Runner Debug/Release/Profile 已固定为 `com.meettrace.app`；`testflight` Environment 已配置并完成一次签名上传 |
 | 录音实现 | `record` 7.1.1 / AVFoundation |
 | 端侧推理 | `sherpa_onnx` 1.13.4 官方 Flutter 包；SenseVoice + Pyannote INT8 + 3D-Speaker |
-| 内部分发 | TestFlight；不公开上架 |
+| Alpha 分发 | TestFlight；GitHub 不上传 IPA，外部测试链接可在最终 Pre-release 中记录 |
 | 后台能力 | `UIBackgroundModes: audio`；不承诺用户强制结束后继续录音 |
 
 ## 云端无签名构建

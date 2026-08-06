@@ -233,4 +233,4 @@ toolchain_snapshot: text
 
 - [iOS Alpha 设备矩阵](../docs/quality/iOS_Alpha_设备矩阵.md)
 - [运行时模型初始化与发布门槛](../docs/quality/运行时模型初始化与发布门槛.md)
-- [Android + iOS Alpha PRD V0.9](../docs/product/Alpha_PRD_无登录版.md)
+- [Android + iOS Alpha PRD V1.0](../docs/product/Alpha_PRD_无登录版.md)

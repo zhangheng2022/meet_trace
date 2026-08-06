@@ -62,7 +62,7 @@ flowchart TD
 
 | ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
 |---|---|---|---|---|---|
-| PRD-01 | [Android + iOS Alpha 产品需求文档（无登录版）](./product/Alpha_PRD_无登录版.md) | `docs/product/Alpha_PRD_无登录版.md` | V0.9 产品目标、固定 ASR/说话人模型、P0、FR、AT 和完成定义 | 产品范围与验收标准的唯一事实源 | 活动，2026-08-03 / A0 |
+| PRD-01 | [Android + iOS Alpha 产品需求文档（无登录版）](./product/Alpha_PRD_无登录版.md) | `docs/product/Alpha_PRD_无登录版.md` | V1.0 产品目标、固定 ASR/说话人模型、P0、FR、AT 和双平台公开分发定义 | 产品范围与验收标准的唯一事实源 | 活动，2026-08-06 / A0 |
 | PROD-01 | [产品上下文](../PRODUCT.md) | `PRODUCT.md` | 用户、定位、能力边界、品牌承诺、产品原则和可访问性 | 为设计与实现工具提供 PRD 摘要，不独立扩展范围 | 活动，随 PRD 同步 / A2 |
 
 ### 3.3 设计规范
@@ -75,7 +75,7 @@ flowchart TD
 
 | ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
 |---|---|---|---|---|---|
-| TECH-01 | [端侧 SenseVoice 与说话人分离技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | `docs/technical/端侧_SenseVoice_转录技术方案.md` | 全部固定资源、初始化、官方 Engine、联合最终快照、分享、数据库和降级 | V0.9 目标实现契约 | 活动，2026-08-04 / A1 |
+| TECH-01 | [端侧 SenseVoice 与说话人分离技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | `docs/technical/端侧_SenseVoice_转录技术方案.md` | 全部固定资源、初始化、官方 Engine、联合最终快照、分享、数据库和降级 | V1.0 目标实现契约 | 活动，2026-08-06 / A1 |
 | ARCH-01 | [代码架构与冗余审计](./architecture/代码架构与冗余审计.md) | `docs/architecture/代码架构与冗余审计.md` | 当前分层、已收敛冗余、保留设计、剩余风险和验证结果 | 架构维护与后续重构的当前快照 | 活动维护快照，2026-08-04 / A2 |
 
 ### 3.5 质量保证与发布证据
@@ -107,7 +107,7 @@ flowchart TD
 
 | ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
 |---|---|---|---|---|---|
-| PM-01 | [Alpha 开发步骤](./project/Alpha_开发步骤.md) | `docs/project/Alpha_开发步骤.md` | V0.9 串行阶段、阻塞清单、完成证据和双平台门槛 | 单人开发与交付操作清单 | 活动，2026-08-04 / A2 |
+| PM-01 | [Alpha 开发步骤](./project/Alpha_开发步骤.md) | `docs/project/Alpha_开发步骤.md` | V1.0 串行阶段、阻塞清单、完成证据和双平台公开门槛 | 单人开发与交付操作清单 | 活动，2026-08-06 / A2 |
 | PM-02 | [Git 分支与 Worktree 约定](./project/Git_分支与_Worktree_约定.md) | `docs/project/Git_分支与_Worktree_约定.md` | 分支职责、worktree 布局、标准流程和安全规则 | 团队 Git 协作规范 | 活动，2026-08-03 / A2 |
 | PM-03 | [GitHub Alpha 版本发布流程](./project/GitHub_版本发布流程.md) | `docs/project/GitHub_版本发布流程.md` | PR 门禁、双平台候选、签名分发、同 SHA 最终发布与撤回 | 维护者发布 Runbook | 活动；Environment 已配置，等待 Secrets、Ruleset 与首次候选，2026-08-06 / A2 |
 | GOV-01 | [仓库协作指南](../AGENTS.md) | `AGENTS.md` | 产品边界、架构规则、技能流程、质量门槛和安全约束 | AI 代理与仓库协作者的执行规则 | 活动，随上游同步 / A1 |
@@ -125,7 +125,7 @@ flowchart TD
 
 - 15 份活动或活动维护文档：导航 2、产品 2、设计 1、技术/架构 2、质量 4、项目管理/治理 4；其中导航不承担权威结论。
 - 7 份 Step 文档为历史实现证据，不应滚动修改测试数量、APK 大小或设备结果。
-- V0.9 仓库实现、Android 完整设备矩阵与 iOS 证据均未闭环，当前发布状态为 `blocked`。
+- V1.0 仓库实现、Android 完整设备矩阵与 iOS 同候选证据均未闭环，当前发布状态为 `blocked`。
 - `graphify-out/`、`.agents/`、`spec/` 内技能或流程规格和构建产物不属于本次 22 份正式项目文档盘点。
 
 ## 5. 命名与目录规范

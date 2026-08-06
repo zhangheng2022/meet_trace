@@ -1,13 +1,13 @@
 # 会迹（MeetTrace）Alpha 开发步骤
 
-> 状态：活动；V0.9 单人收尾执行清单
-> 最终目标：Android + iOS 受控内部 Alpha；Android 先闭环
-> 更新日期：2026-08-05
+> 状态：活动；V1.0 单人收尾执行清单
+> 最终目标：Android + iOS 同候选验收后对外发布 Alpha
+> 更新日期：2026-08-06
 
 ## 1. 当前结论
 
 - 阶段 1、阶段 2、阶段 4、阶段 5 的仓库实现与应用标识统一已完成，固定镜像也已在 `mt.zhangheng.eu.org` 通过状态码、大小、ETag 与 Range 验收。阶段 3 的官方 Dart `OfflineSpeakerDiarization` worker、取消/释放和 Debug/Release 生产装配已落地；2026-08-05 产品决策接受当前官方绑定的已知内存风险，所有会议默认开启且保留全局关闭开关。剩余门槛包括目标真机阈值校准与性能证据、上游缺陷跟踪，以及双平台真机分享接收与播放证据。
-- 旧的格式化、测试、APK 与 OCR 结果只作为历史证据；V0.9 代码完成后必须重建当前基线。
+- 旧的格式化、测试、APK 与 OCR 结果只作为历史证据；V1.0 发布自动化完成后必须重建当前基线。
 - 普通重构、视觉微调和非阻断技术债不进入 Alpha 主线，统一记入 Alpha 后 backlog。
 - Web、Windows、Linux 与 macOS 工程壳暂时保留，但不属于产品支持面，也不进入发布结论。
 
@@ -16,6 +16,7 @@
 ### 阶段 0：产品与文档基线
 
 - [x] 通过 `$grill-me` 确认 V0.9 产品范围与取舍。
+- [x] 通过 `$grill-me` 确认 V1.0 双平台验收后公开 Android APK、iOS TestFlight 外部链接占位和不可覆盖/不可删除策略。
 - [x] PRD 移除 AI 总结，固定确定性标题、真实说话人分离、音频分享和内部发布边界。
 - [x] 固定 Pyannote INT8、3D-Speaker、300 MB 下载上限、1 GiB 空间门槛和普通话分离质量指标。
 - [x] 完成全仓活动文档冲突检查、链接检查和 Graphify 更新。
@@ -70,11 +71,11 @@
 
 当前证据：共享 PCM16/WAV 写入器、独立 Domain Use Case、`share_plus` 文件分享、二次空间校验、并发应用临时目录和启动恢复已落地；WAV 头、RIFF 上限、源 PCM 不变、空间精确差额及组件确认测试通过。2026-08-04 Pixel 10 模拟器复验确认：系统面板打开期间插件副本可读，取消并回到应用后 `cache/share_plus` 与应用自有临时目录均无残留，冷启动也会清理旧插件缓存，事实 PCM 不变。Android/iOS 真机各一次接收端播放与清理仍属外部门禁，AT-18 整项尚不能判定通过。
 
-### 阶段 6：应用标识与内部发布
+### 阶段 6：应用标识与 Alpha 发布
 
 - [x] Android `applicationId`/namespace 与 iOS Bundle ID 统一为 `com.meettrace.app`，更新 Android 原生入口并增加双端配置守卫。
-- Android 生成签名 APK，直接分发给受控内部测试者；不做公开商店发布或应用内更新。
-- iOS 配置 Apple Team，通过 TestFlight 内部测试；不公开上架。
+- Android 生成仅含 `arm64-v8a` 的签名 APK，先暂存到当前仓库 Draft Release；双平台验收后公开同一 APK，不做应用商店发布或应用内更新。
+- iOS 配置 Apple Team，通过 TestFlight 测试；GitHub 不上传 IPA，外部测试链接由最终发布流程可选记录。
 - 不接入远程埋点或崩溃上报；诊断仅由用户主动导出且不含音频或完整转录。
 
 完成证据：两端包标识、覆盖安装/数据代行为、签名、权限用途、隐私清单和构建产物审计通过。
@@ -100,7 +101,7 @@ flutter build apk --debug
 1. Mi 10 完成主链冒烟与 30 分钟预检。
 2. API 24 arm64 真机完成最低系统安装、权限、恢复和模型生命周期。
 3. 约 4 GB RAM arm64 真机完成 SenseVoice 与说话人分离性能、准确率、内存、电量和温控。
-4. `com.meettrace.app` 签名 APK 交付受控测试者。
+4. `com.meettrace.app` 签名 arm64 APK 暂存到 Draft Release，完成 Android 阶段验收且等待 iOS 同候选结果。
 
 只有三类设备证据和 AT-01～AT-18 的 Android 适用项均完成，Android 阶段才可判定 `go`；Mi 10 单机不能替代完整矩阵。
 
@@ -110,6 +111,7 @@ flutter build apk --debug
 2. 配置 Apple Team、`com.meettrace.app` 和 TestFlight。
 3. iPhone/iPad 完成后台录音、系统中断、联合最终结果、分享、Dynamic Type、VoiceOver、性能和温控。
 4. iOS 适用 AT-01～AT-18 全部留证后再做双平台 Go/No-Go。
+5. 双平台基于同一 SHA 判定 `go` 后，将原 Android Draft Release 公开为 Pre-release，并记录可用的 TestFlight 外部测试链接或“待提供”。
 
 缺少 macOS/Xcode、Apple Team、iPhone 或 iPad 时，只记录外部前置条件，不用模拟器或 Android 证据替代。
 
@@ -120,10 +122,10 @@ flutter build apk --debug
 | P0 | 官方 `sherpa_onnx` Dart 分离接口泄漏完整波形原生缓冲区 | 升级到已释放缓冲区的官方版本，并完成 30 分钟重复任务内存复验；不得用私有 API/自建 FFI 绕过 |
 | P0 | 说话人阈值与性能尚无目标真机证据 | 完成普通话标注语料校准及 Android/iOS DER、人数误差、RTF、内存证据 |
 | 外部 | 音频分享缺少双平台真机证据 | Android/iOS 各完成一次系统分享并确认接收端可播放、临时目录无残留 |
-| 外部 | Android 正式签名与 iOS Apple Team 未配置 | 配置受控签名密钥与 Apple Team；不得把 Debug 签名产物当作内部发布包 |
+| 外部 | Android 正式签名 Secrets 未配置 | 配置受控签名密钥与证书摘要；不得把 Debug 签名产物当作 Alpha 发布包 |
 | 外部 | Android 最低/低端设备缺失 | 获取目标真机并完成矩阵 |
 | 外部 | iOS 工具链、签名与设备缺失 | macOS/Xcode、Apple Team、iPhone/iPad 就绪 |
 
 ## 4. 发布状态
 
-当前 V0.9 的仓库门禁、Android 完整设备矩阵和 iOS 证据都未闭环，整体发布状态为 `blocked`。Android 可以先形成独立阶段里程碑，但不得被描述为双平台 Alpha 已完成。
+当前 V1.0 的仓库门禁、Android 完整设备矩阵和 iOS 同候选证据都未闭环，整体发布状态为 `blocked`。Android 可以先形成独立阶段里程碑并暂存 Draft，但不得公开或描述为双平台 Alpha 已完成。

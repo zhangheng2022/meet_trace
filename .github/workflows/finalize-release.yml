@@ -19,6 +19,10 @@ on:
         description: Successful iOS TestFlight Release run ID
         required: true
         type: string
+      ios_testflight_external_url:
+        description: Optional approved TestFlight external testing URL
+        required: false
+        type: string
       release_notes:
         description: Optional public Alpha release notes
         required: false
@@ -64,34 +68,33 @@ jobs:
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$RELEASE_ID" == "$expected_prefix"* ]]
 
-          tag_already_exists=false
-          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_ID" >/dev/null 2>&1; then
-            git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
-            tag_type="$(git cat-file -t "refs/tags/$RELEASE_ID")"
-            tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
-            [[ "$tag_type" == "tag" ]]
-            [[ "$tag_commit" == "$CANDIDATE_SHA" ]]
-            tag_already_exists=true
-          fi
+          git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_ID" >/dev/null
+          git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+          tag_type="$(git cat-file -t "refs/tags/$RELEASE_ID")"
+          tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
+          [[ "$tag_type" == "tag" ]]
+          [[ "$tag_commit" == "$CANDIDATE_SHA" ]]
 
-          release_already_exists=false
-          if gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            [[ "$tag_already_exists" == "true" ]]
-            release_metadata="$(
-              gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
-                --json isPrerelease,tagName
-            )"
-            jq -e --arg tag "$RELEASE_ID" \
-              '.isPrerelease == true and .tagName == $tag' \
-              <<< "$release_metadata" >/dev/null
-            release_already_exists=true
-          fi
+          visibility="$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)"
+          [[ "$visibility" == "PUBLIC" ]]
 
+          if ! gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Android candidate Draft Release $RELEASE_ID does not exist" >&2
+            exit 1
+          fi
+          release_metadata="$(
+            gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+              --json isDraft,isPrerelease,tagName
+          )"
+          jq -e --arg tag "$RELEASE_ID" '
+            .isPrerelease == true and
+            .tagName == $tag
+          ' <<< "$release_metadata" >/dev/null
+          release_is_draft="$(jq -r .isDraft <<< "$release_metadata")"
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
           echo "CANDIDATE_SHA=$CANDIDATE_SHA" >> "$GITHUB_ENV"
           echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
-          echo "TAG_ALREADY_EXISTS=$tag_already_exists" >> "$GITHUB_ENV"
-          echo "RELEASE_ALREADY_EXISTS=$release_already_exists" >> "$GITHUB_ENV"
+          echo "RELEASE_IS_DRAFT=$release_is_draft" >> "$GITHUB_ENV"
 
       - name: Validate candidate workflow runs
         shell: bash
@@ -108,20 +111,21 @@ jobs:
           validate_run() {
             local run_id="$1"
             local expected_path="$2"
-            local output="$3"
+            local expected_head_sha="$3"
+            local output="$4"
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" > "$output"
-            jq -e --arg sha "$CANDIDATE_SHA" --arg path "$expected_path" '
+            jq -e --arg sha "$expected_head_sha" --arg path "$expected_path" '
               .status == "completed" and
               .conclusion == "success" and
               .event == "workflow_dispatch" and
-              .head_sha == $sha and
+              ($sha == "" or .head_sha == $sha) and
               .path == $path
             ' "$output" >/dev/null
           }
 
-          validate_run "$ANDROID_RUN_ID" ".github/workflows/android-alpha.yml" \
+          validate_run "$ANDROID_RUN_ID" ".github/workflows/android-alpha.yml" "$CANDIDATE_SHA" \
             build/release/run-metadata/android-run.json
-          validate_run "$IOS_RUN_ID" ".github/workflows/ios-testflight.yml" \
+          validate_run "$IOS_RUN_ID" ".github/workflows/ios-testflight.yml" "" \
             build/release/run-metadata/ios-run.json
 
       - name: Download non-sensitive candidate evidence
@@ -149,6 +153,26 @@ jobs:
           download_candidate "$IOS_RUN_ID" "meettrace-ios-testflight-$IOS_RUN_ID-" \
             build/release/ios
 
+      - name: Download the staged Android APK
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          expected_apk_name="meettrace-${RELEASE_ID}-android-arm64.apk"
+          release_assets="$(
+            gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets
+          )"
+          jq -e --arg name "$expected_apk_name" '
+            [.assets[] | select(.name | endswith(".apk"))] as $apks |
+            ($apks | length) == 1 and $apks[0].name == $name
+          ' <<< "$release_assets" >/dev/null
+          mkdir -p build/release/android-apk
+          gh release download "$RELEASE_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "$expected_apk_name" \
+            --dir build/release/android-apk
+
       - name: Cross-check candidate manifests and product gates
         shell: bash
         env:
@@ -157,6 +181,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import hashlib
           import json
           import os
           import shutil
@@ -180,6 +205,7 @@ jobs:
           )
           final = Path("build/release/final")
           final.mkdir(parents=True, exist_ok=True)
+          manifests = {}
           for platform, root, run_id in inputs:
               manifest_path = unique(root, "candidate-manifest.json")
               gate_path = unique(root, "release-gate-report.json")
@@ -194,8 +220,28 @@ jobs:
                   raise SystemExit(f"{platform} manifest workflow identity mismatch")
               if gate.get("decision") != "go":
                   raise SystemExit(f"{platform} product gate is not go")
+              manifests[platform] = manifest
               shutil.copy2(manifest_path, final / f"{platform}-candidate-manifest.json")
               shutil.copy2(gate_path, final / f"{platform}-release-gate-report.json")
+
+          apk_name = f"meettrace-{os.environ['RELEASE_ID']}-android-arm64.apk"
+          apk_path = unique("build/release/android-apk", apk_name)
+          apk = manifests["android"].get("artifact", {})
+          if apk.get("name") != apk_name:
+              raise SystemExit("Android APK name does not match the candidate manifest")
+          if apk.get("bytes") != apk_path.stat().st_size:
+              raise SystemExit("Android APK size does not match the candidate manifest")
+          digest = hashlib.sha256(apk_path.read_bytes()).hexdigest()
+          if apk.get("sha256") != digest:
+              raise SystemExit("Android APK digest does not match the candidate manifest")
+          distribution = manifests["android"].get("distribution", {})
+          if distribution != {
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "visibility": "public-after-finalize",
+              "releaseState": "draft",
+              "publiclyInstallable": False,
+          }:
+              raise SystemExit("Android candidate distribution contract mismatch")
           PY
 
       - name: Write public release notes
@@ -204,39 +250,53 @@ jobs:
           ANDROID_RUN_ID: ${{ inputs.android_run_id }}
           IOS_RUN_ID: ${{ inputs.ios_run_id }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
+          IOS_TESTFLIGHT_EXTERNAL_URL: ${{ inputs.ios_testflight_external_url }}
         run: |
           set -euo pipefail
+          if [[ -n "$IOS_TESTFLIGHT_EXTERNAL_URL" && ! "$IOS_TESTFLIGHT_EXTERNAL_URL" =~ ^https://testflight\.apple\.com/join/[A-Za-z0-9]+$ ]]; then
+            echo "ios_testflight_external_url must be an official TestFlight external testing URL" >&2
+            exit 1
+          fi
           notes_path="build/release/final/release-notes.md"
           {
-            echo "MeetTrace Alpha candidate verified from the same commit on Android and iOS."
+            echo "# MeetTrace $RELEASE_ID"
+            echo
+            echo "Android 与 iOS 已基于同一提交完成 Alpha 候选验收。"
+            echo
+            echo "## 安装入口"
+            echo
+            echo "- Android：下载本 Release 附件 \`meettrace-${RELEASE_ID}-android-arm64.apk\`。"
+            if [[ -n "$IOS_TESTFLIGHT_EXTERNAL_URL" ]]; then
+              echo "- iOS TestFlight 外部测试：$IOS_TESTFLIGHT_EXTERNAL_URL"
+            else
+              echo "- iOS TestFlight 外部测试链接：待提供。"
+            fi
+            echo
+            echo "## 安装与数据提示"
+            echo
+            echo "- Android 仅支持 Android 7.0+ 的 \`arm64-v8a\` 设备。"
+            echo "- 安装 APK 前，需要允许浏览器或文件管理器“安装未知应用”。"
+            echo "- 本 Alpha 无登录和云同步，会议数据只保存在本机。"
+            echo "- 卸载应用会删除全部本地会议和模型数据。"
+            echo "- Alpha 升级可能清除旧数据，并要求重新下载模型。"
+            echo "- 首次启动需要下载约 286.3 MB 运行资源，完整校验后才能进入首页。"
+            echo "- 严重问题版本会标记“已撤回，不建议安装”但保留下载与审计记录；修复使用新版本向前发布。"
+            echo
+            echo "## 验收追踪"
             echo
             echo "- Source commit: \`$CANDIDATE_SHA\`"
             echo "- Android candidate run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$ANDROID_RUN_ID"
             echo "- iOS TestFlight run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$IOS_RUN_ID"
             echo "- Product gate: \`go\`"
-            echo
-            echo "Signed Android and iOS binaries are not attached to this public release."
             if [[ -n "$RELEASE_NOTES" ]]; then
+              echo
+              echo "## 其他说明"
               echo
               printf '%s\n' "$RELEASE_NOTES"
             fi
           } > "$notes_path"
 
-      - name: Create annotated tag
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "$TAG_ALREADY_EXISTS" == "true" ]]; then
-            echo "Reuse annotated tag $RELEASE_ID at $CANDIDATE_SHA"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git tag -a "$RELEASE_ID" "$CANDIDATE_SHA" \
-              -m "MeetTrace $RELEASE_ID"
-            git push origin "refs/tags/$RELEASE_ID"
-          fi
-
-      - name: Create GitHub prerelease
+      - name: Publish the verified draft as a GitHub prerelease
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -248,23 +308,77 @@ jobs:
             build/release/final/ios-candidate-manifest.json
             build/release/final/ios-release-gate-report.json
           )
-          if [[ "$RELEASE_ALREADY_EXISTS" == "true" ]]; then
-            gh release edit "$RELEASE_ID" \
-              --repo "$GITHUB_REPOSITORY" \
-              --prerelease \
-              --title "MeetTrace $RELEASE_ID" \
-              --notes-file build/release/final/release-notes.md
+          if [[ "$RELEASE_IS_DRAFT" == "true" ]]; then
             gh release upload "$RELEASE_ID" "${assets[@]}" \
               --repo "$GITHUB_REPOSITORY" \
               --clobber
           else
-            gh release create "$RELEASE_ID" \
+            mkdir -p build/release/existing-public-evidence
+            download_args=()
+            for asset in "${assets[@]}"; do
+              download_args+=(--pattern "$(basename "$asset")")
+            done
+            gh release download "$RELEASE_ID" \
               --repo "$GITHUB_REPOSITORY" \
-              --verify-tag \
+              "${download_args[@]}" \
+              --dir build/release/existing-public-evidence
+            for asset in "${assets[@]}"; do
+              published="build/release/existing-public-evidence/$(basename "$asset")"
+              if ! cmp --silent "$asset" "$published"; then
+                echo "Existing public release evidence changed: $(basename "$asset")" >&2
+                exit 1
+              fi
+            done
+          fi
+
+          expected_apk_name="meettrace-${RELEASE_ID}-android-arm64.apk"
+          current_assets="$(
+            gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets
+          )"
+          jq -e --arg name "$expected_apk_name" '
+            [.assets[] | select(.name | endswith(".apk"))] as $apks |
+            ($apks | length) == 1 and $apks[0].name == $name
+          ' <<< "$current_assets" >/dev/null
+          mkdir -p build/release/prepublish-apk
+          gh release download "$RELEASE_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "$expected_apk_name" \
+            --dir build/release/prepublish-apk
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path("build/release/final/android-candidate-manifest.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          apk = Path("build/release/prepublish-apk") / manifest["artifact"]["name"]
+          if not apk.is_file():
+              raise SystemExit("Staged Android APK disappeared before publication")
+          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+          if apk.stat().st_size != manifest["artifact"]["bytes"]:
+              raise SystemExit("Staged Android APK size changed before publication")
+          if digest != manifest["artifact"]["sha256"]:
+              raise SystemExit("Staged Android APK digest changed before publication")
+          PY
+
+          if [[ "$RELEASE_IS_DRAFT" == "true" ]]; then
+            gh release edit "$RELEASE_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft=false \
               --prerelease \
+              --verify-tag \
               --title "MeetTrace $RELEASE_ID" \
-              --notes-file build/release/final/release-notes.md \
-              "${assets[@]}"
+              --notes-file build/release/final/release-notes.md
+          else
+            gh release edit "$RELEASE_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --prerelease \
+              --verify-tag \
+              --title "MeetTrace $RELEASE_ID" \
+              --notes-file build/release/final/release-notes.md
           fi
 
       - name: Write release summary
@@ -279,5 +393,6 @@ jobs:
             echo
             echo "- Release: [$RELEASE_ID]($release_url)"
             echo "- Commit: \`$CANDIDATE_SHA\`"
-            echo "- Signed APK/IPA: not attached to the public release"
+            echo "- Android APK: \`meettrace-${RELEASE_ID}-android-arm64.apk\`"
+            echo "- iOS IPA: TestFlight only, not attached"
           } >> "$GITHUB_STEP_SUMMARY"

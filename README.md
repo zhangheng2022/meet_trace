@@ -157,7 +157,7 @@ flutter build apk --debug
 flutter build ios --debug --no-codesign
 ```
 
-> Android `release` 不再回退到调试签名。没有显式注入正式 keystore 时只可用于无签名构建诊断；受控 Alpha 必须由 `Android Alpha Candidate` 工作流完成签名、证书校验和私有分发。双平台真机证据完成前，项目发布状态保持 blocked。
+> Android `release` 不再回退到调试签名。没有显式注入正式 keystore 时只可用于无签名构建诊断；Alpha 必须由 `Android Alpha Candidate` 工作流完成正式签名、证书校验并暂存到当前仓库 Draft Release。双平台真机证据完成前，Draft 不得公开，项目发布状态保持 blocked。
 
 ## 测试与质量检查
 
@@ -169,7 +169,7 @@ flutter analyze
 flutter test
 ```
 
-版本候选与 GitHub Pre-release 的维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。公开源码仓库不提供签名 APK/IPA 下载；Android 使用私有 GitHub 分发仓库，iOS 使用 TestFlight。
+版本候选与 GitHub Pre-release 的维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。双平台同 SHA 验收后，当前公开源码仓库的 Pre-release 提供已验收的 Android arm64 APK；iOS 仅通过 TestFlight 分发，GitHub 不提供 IPA。
 
 需要设备的流程：
 

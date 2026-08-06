@@ -1,17 +1,17 @@
 # 会迹（MeetTrace）质量证据索引
 
 > 状态：当前质量文档入口  
-> 更新日期：2026-08-03
+> 更新日期：2026-08-06
 
 ## 当前发布门槛
 
-1. [运行时模型初始化与发布门槛](./运行时模型初始化与发布门槛.md)：V0.9 全部模型资产、仓库实现与 Android/iOS 外部证据清单。
+1. [运行时模型初始化与发布门槛](./运行时模型初始化与发布门槛.md)：V1.0 全部模型资产、仓库实现与 Android/iOS 外部证据清单。
 2. [Android Alpha 设备矩阵](./Android_Alpha_设备矩阵.md)：最低系统、主开发机和低端性能设备要求。
 3. [iOS Alpha 设备矩阵](./iOS_Alpha_设备矩阵.md)：macOS/Xcode、iPhone/iPad 与签名阻塞项。
 4. [iOS 无签名构建规格](../../spec/spec-process-cicd-ios-unsigned.md)：GitHub Actions 构建、App bundle 审计、证据产物和失败策略。
-5. [GitHub Alpha 版本发布流程](../project/GitHub_版本发布流程.md)：PR 门禁、Android 私有候选、TestFlight、同 SHA tag 与 Pre-release。
+5. [GitHub Alpha 版本发布流程](../project/GitHub_版本发布流程.md)：PR 门禁、Android Draft 候选、TestFlight、同 SHA tag 与公开 Pre-release。
 
-以上文档跟随 PRD V0.9 与当前技术方案维护。V0.9 仓库实现或任一平台适用真机证据缺失时，双平台 Alpha 发布状态保持 `blocked`。
+以上文档跟随 PRD V1.0 与当前技术方案维护。V1.0 仓库实现或任一平台适用真机证据缺失时，Android Draft Release 不得公开，双平台 Alpha 发布状态保持 `blocked`。
 
 ## 实现证据快照
 
@@ -29,7 +29,7 @@
 
 ## 阅读与维护规则
 
-- 产品范围与验收标准以[PRD V0.9](../product/Alpha_PRD_无登录版.md)为准。
+- 产品范围与验收标准以[PRD V1.0](../product/Alpha_PRD_无登录版.md)为准。
 - 资源分发、模型锁定、录音与推理边界以[端侧 SenseVoice 与说话人分离技术方案](../technical/端侧_SenseVoice_转录技术方案.md)为准。
 - 当前质量结论必须同时给出命令、日期、环境和产物；没有目标设备证据时标记为 `blocked`，不能推断为通过。
 - 旧方案不在 `docs/` 并列保留，历史从 Git 追溯。

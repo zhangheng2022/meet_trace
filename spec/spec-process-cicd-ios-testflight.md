@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - iOS TestFlight Release
-version: 1.2
+version: 1.4
 date_created: 2026-08-05
 last_updated: 2026-08-06
 owner: MeetTrace maintainers
@@ -10,7 +10,7 @@ tags: [process, cicd, github-actions, ios, flutter, signing, testflight]
 ## Workflow Overview
 
 **Purpose**: 在无本地 macOS 的条件下，对 MeetTrace iOS Alpha 执行质量检查、App Store 分发签名、IPA 验证，并将构建上传至 TestFlight。
-**Trigger Events**: 仅允许维护者人工触发，必须指定 release ID、`master` commit SHA 和门禁输入，可附带 TestFlight 构建说明。
+**Trigger Events**: 仅允许维护者从 `master` 人工触发，只指定 release ID，可附带 TestFlight 构建说明。
 **Target Environments**: GitHub 托管的最新稳定 macOS/Xcode、Flutter 最新 stable、App Store Connect TestFlight。
 
 ## Execution Flow Diagram
@@ -64,6 +64,7 @@ graph TD
 | REQ-010 | 输出可追溯证据 | High | 产物关联 commit、run、attempt、构建号、工具链和 SHA-256 |
 | REQ-011 | 签名设置仅作用于 App 主目标 | High | provisioning profile 不得注入 Pods、插件或测试目标 |
 | REQ-012 | 候选身份可追溯 | High | release ID、commit SHA、marketing version 与门禁报告一致 |
+| REQ-013 | 自动候选与固定门禁 | High | 从 release ID 解析 Android 候选创建的 annotated tag，并只读取该提交中的 `docs/quality/alpha_release_input.json` |
 
 ### Security Requirements
 
@@ -94,9 +95,9 @@ graph TD
 
 ```yaml
 repository_event: manual
-source_revision: git commit SHA
+source_revision: annotated release tag commit (derived)
 release_id: v<marketing-version>-alpha.<sequence>
-gate_input_path: repository-relative JSON path
+gate_input_path: docs/quality/alpha_release_input.json (fixed)
 release_notes: optional string
 toolchain_policy: latest-stable
 bundle_id: com.meettrace.app
@@ -134,7 +135,7 @@ testflight_upload: submitted build
 - **Timeout**: 120 分钟。
 - **Concurrency**: TestFlight 发布串行，进行中的发布不因新触发而取消。
 - **Build Number**: 由工作流运行序号和重试序号确定，禁止复用已上传构建号。
-- **Distribution Scope**: 仅上传构建；不启用外部测试、不通知外部测试员、不提交 App Store 审核。
+- **Distribution Scope**: 本流程仅上传构建；不自动启用外部测试、不通知外部测试员、不提交 Beta App Review 或 App Store 审核。最终发布流程可记录已经由维护者在 App Store Connect 创建并获准使用的 TestFlight 外部测试链接，未提供时显示“待提供”。
 
 ### Environmental Constraints
 
@@ -155,6 +156,7 @@ testflight_upload: submitted build
 | 归档、签名或导出失败 | 保留非敏感诊断，阻断上传 | 根据 Xcode 日志修复 |
 | IPA 校验失败 | 阻断上传 | 修复导出配置并重新构建 |
 | App Store Connect 拒绝上传 | Job 失败并保留非敏感诊断，不上传 IPA Artifact | 根据上传错误处理后使用新构建号重跑 |
+| release ID 对应 tag 缺失、非 annotated 或不属于 master | 解码签名材料前失败 | 先成功运行 Android 候选，或使用新的 release ID |
 | Apple 后台处理失败 | GitHub 上传可能已成功 | 在 App Store Connect 查看处理错误 |
 | 任意步骤失败或取消 | 始终执行清理 | 删除临时钥匙串、证书、profile 和 API 私钥 |
 
@@ -216,7 +218,7 @@ testflight_upload: submitted build
 - **Build Artifacts**: 只保留候选清单、摘要和非敏感报告 7 天；签名 IPA 不进入公开 Artifact。
 - **Approval Gates**: 推荐为 `testflight` Environment 配置 required reviewers。
 - **Change Control**: 行为变化先更新本规格，再修改工作流和发布配置。
-- **External Distribution**: 外部测试组、测试员通知和 Beta Review 不属于本流程。
+- **External Distribution**: 外部测试组、测试员通知和 Beta Review 不属于本流程；对外链接只是最终 GitHub Pre-release 的可选元数据，不改变本工作流权限。
 
 ### Security Controls
 
@@ -281,10 +283,12 @@ testflight_upload: submitted build
 | 1.0 | 2026-08-05 | 初始 TestFlight 签名发布规格 | Codex |
 | 1.1 | 2026-08-05 | 增加证书/profile 精确匹配校验，并将手动签名限制到 Runner 目标 | Codex |
 | 1.2 | 2026-08-06 | 增加候选身份与产品门禁，签名 IPA 改为仅上传 TestFlight 并生成来源证明；签名材料延迟到仓库代码检查完成后解码 | Codex |
+| 1.3 | 2026-08-06 | 明确外部测试仍需人工配置和审核，最终发布仅记录可选外部 TestFlight 链接 | Codex |
+| 1.4 | 2026-08-06 | 删除人工 SHA 与门禁路径输入，通过 Android 候选 annotated tag 锁定同一 SHA 并读取固定证据文件 | Codex |
 
 ## Related Specifications
 
 - [iOS Unsigned Build](spec-process-cicd-ios-unsigned.md)
 - [iOS Alpha 设备矩阵](../docs/quality/iOS_Alpha_设备矩阵.md)
 - [运行时模型初始化与发布门槛](../docs/quality/运行时模型初始化与发布门槛.md)
-- [Android + iOS Alpha PRD V0.9](../docs/product/Alpha_PRD_无登录版.md)
+- [Android + iOS Alpha PRD V1.0](../docs/product/Alpha_PRD_无登录版.md)
