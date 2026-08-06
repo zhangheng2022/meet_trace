@@ -1,16 +1,16 @@
 # Graph Report - meet_trace  (2026-08-06)
 
 ## Corpus Check
-- 422 files · ~159,861 words
+- 422 files · ~160,235 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5568 nodes · 7423 edges · 431 communities (303 shown, 128 thin omitted)
+- 5568 nodes · 7423 edges · 433 communities (305 shown, 128 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 46 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `51341a5e`
+- Built from commit: `f8c688a0`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -109,7 +109,7 @@
 - speaker_diarization_service_test.dart
 - models/speaker_diarization.dart
 - run_final_transcription.dart
-- Map
+- package:path/path.dart
 - class
 - spec-process-cicd-android-alpha.md
 - _
@@ -148,7 +148,7 @@
 - dart:async
 - audio_playback.dart
 - model_installation.dart
-- package:path/path.dart
+- model_file_verifier.dart
 - share_meeting_audio.dart
 - delete_meeting_test.dart
 - recording_device_readiness_probe_test.dart
@@ -434,7 +434,9 @@
 - local_data_control.dart
 - RecordingSessionService
 - ProcessingTaskRepository
-- SherpaOnnxWorkerFactory
+- durable_file_committer_test.dart
+- model_manifest_parser_test.dart
+- SherpaOnnxWorker
 - live_preview_replay_test.dart
 - 会迹（MeetTrace）运行时模型初始化与发布门槛
 - Q: 当前 Alpha 交付对象、完成定义和主要阻塞链是什么
@@ -476,7 +478,7 @@
 - **PCM 波形反馈流水线** — graphify_out_memory_query_20260728_071436_reliable_recording_service, graphify_out_memory_query_20260728_071436_pcm_audio_level_meter, graphify_out_memory_query_20260728_071436_recording_session_view_model, graphify_out_memory_query_20260728_071436_recording_audio_waveform [EXTRACTED 1.00]
 - **跨平台 CMake 标准编译设置** — linux_cmakelists_apply_standard_settings, windows_cmakelists_apply_standard_settings, linux_cmakelists_target_compile_features, windows_cmakelists_target_compile_features [INFERRED 0.85]
 
-## Communities (431 total, 128 thin omitted)
+## Communities (433 total, 128 thin omitted)
 
 ### Community 0 - "meeting_detail_view_model.dart"
 Cohesion: 0.02
@@ -779,8 +781,8 @@ Cohesion: 0.08
 Nodes (24): SherpaOnnxAsrEngineFactory, AsrEngineFactory, _EngineFactory, acceptAudio, cancel, create, delete, descriptor (+16 more)
 
 ### Community 74 - "restricted_tar_bz2_extractor_test.dart"
-Cohesion: 0.12
-Nodes (16): RuntimeArtifactInstallException, package:meettrace/data/services/models/restricted_tar_bz2_extractor.dart, package:meettrace/data/services/models/runtime_artifact_install_transaction.dart, allowedEntries, archive, archivePath, bytes, _extract (+8 more)
+Cohesion: 0.09
+Nodes (20): RuntimeArtifactInstallException, package:meettrace/app/meettrace_meeting_dependencies.dart, package:meettrace/data/models/runtime/speaker_diarization_manifest.dart, package:meettrace/data/services/diarization/speaker_diarization_service.dart, package:meettrace/data/services/models/restricted_tar_bz2_extractor.dart, package:meettrace/data/services/models/runtime_artifact_install_transaction.dart, main, allowedEntries (+12 more)
 
 ### Community 75 - "app_ledger.dart"
 Cohesion: 0.09
@@ -833,8 +835,8 @@ Cohesion: 0.10
 Nodes (19): ../../../../../core/app_status_notice.dart, ../../../../../../domain/models/asr_preview.dart, build, _buildPanel, compact, duration, _LiveTranscriptEmptyState, LiveTranscriptPanel (+11 more)
 
 ### Community 87 - "package:flutter_test/flutter_test.dart"
-Cohesion: 0.08
-Nodes (23): dart:convert, dart:io, ModelManifestParser, package:archive/archive.dart, package:flutter_test/flutter_test.dart, package:meettrace/domain/use_cases/evaluate_alpha_release.dart, main, main (+15 more)
+Cohesion: 0.12
+Nodes (15): dart:convert, dart:io, package:archive/archive.dart, package:flutter_test/flutter_test.dart, package:meettrace/domain/use_cases/evaluate_alpha_release.dart, main, main, main (+7 more)
 
 ### Community 88 - "meeting_list_view_model_test.dart"
 Cohesion: 0.08
@@ -846,7 +848,7 @@ Nodes (19): ../data/models/runtime/speaker_diarization_manifest.dart, ../data/se
 
 ### Community 90 - "sherpa_onnx_adapter_test.dart"
 Cohesion: 0.09
-Nodes (22): _FakeWorker, _IsolateSherpaOnnxWorker, SherpaOnnxWorker, _Worker, _activeRecognitions, config, create, createdWorkers (+14 more)
+Nodes (22): _FakeWorker, OfficialSherpaOnnxWorkerFactory, SherpaOnnxWorkerFactory, _WorkerFactory, _activeRecognitions, config, create, createdWorkers (+14 more)
 
 ### Community 91 - "speaker_diarization_service_test.dart"
 Cohesion: 0.08
@@ -860,9 +862,9 @@ Nodes (17): available, code, endMs, errorCode, isAvailable, reasonCode, snapshot
 Cohesion: 0.05
 Nodes (36): final_inference_scheduler.dart, _applyDiarization, _bestSpeaker, _cancelDiarization, code, _comesBefore, _degradedDiarization, diarization (+28 more)
 
-### Community 94 - "Map"
-Cohesion: 0.12
-Nodes (14): ModelManifestFile, Map, package:meettrace/app/meettrace_meeting_dependencies.dart, package:meettrace/data/models/runtime/speaker_diarization_manifest.dart, package:meettrace/data/services/diarization/speaker_diarization_service.dart, package:meettrace/data/services/models/model_file_verifier.dart, package:meettrace/domain/models/model_manifest.dart, main (+6 more)
+### Community 94 - "package:path/path.dart"
+Cohesion: 0.17
+Nodes (11): ModelManifestFile, Map, package:meettrace/data/services/models/model_file_verifier.dart, package:meettrace/domain/models/model_manifest.dart, package:path/path.dart, main, _parse, source (+3 more)
 
 ### Community 95 - "class"
 Cohesion: 0.07
@@ -1016,9 +1018,9 @@ Nodes (15): int?, PcmAudioPlaybackService, AudioPlaybackService, AudioPlaybackSt
 Cohesion: 0.14
 Nodes (13): asr_model.dart, domain_exception.dart, AsrInstallationType, bytes, installationType, installedPath, lastErrorCode, modelId (+5 more)
 
-### Community 133 - "package:path/path.dart"
-Cohesion: 0.08
-Nodes (22): File, issues, isValid, kind, message, ModelFileIssue, ModelFileIssueKind, ModelFileVerificationResult (+14 more)
+### Community 133 - "model_file_verifier.dart"
+Cohesion: 0.10
+Nodes (18): File, issues, isValid, kind, message, ModelFileIssue, ModelFileIssueKind, ModelFileVerificationResult (+10 more)
 
 ### Community 134 - "share_meeting_audio.dart"
 Cohesion: 0.12
@@ -1086,7 +1088,7 @@ Nodes (11): PCM16 RMS 实时波形, RecordingPcmChunk, ReliableRecordingService,
 
 ### Community 150 - "package:flutter/widgets.dart"
 Cohesion: 0.07
-Nodes (27): enableAppEdgeToEdge, main, package:flutter/widgets.dart, package:forui/forui.dart, package:meettrace/app/application.dart, package:meettrace/app/meettrace_flow.dart, package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart, package:meettrace/theme/theme.dart (+19 more)
+Nodes (26): enableAppEdgeToEdge, main, package:flutter/widgets.dart, package:forui/forui.dart, package:meettrace/app/application.dart, package:meettrace/app/meettrace_flow.dart, package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart, package:meettrace/theme/theme.dart (+18 more)
 
 ### Community 151 - "List"
 Cohesion: 0.17
@@ -1170,8 +1172,8 @@ Cohesion: 0.25
 Nodes (8): 未绑定技术预检的静态就绪文案, 首页固定准备就绪文案解释, MeetingReadinessChecker, 首页真实录音条件预检解释, 真实录音条件预检, 窄屏与大字体换行稳定性, 首页预检条重新排版, 预检条双层 Column 布局
 
 ### Community 171 - "meettrace_brand_mark_test.dart"
-Cohesion: 0.17
-Nodes (11): Align, MeetTraceRibbonRevealMark, package:meettrace/ui/core/branding/meettrace_brand_mark.dart, package:meettrace/ui/core/branding/previews/meettrace_brand_motion_previews.dart, Positioned, _chineseReveal, _englishReveal, main (+3 more)
+Cohesion: 0.14
+Nodes (12): Align, MeetTraceRibbonRevealMark, package:meettrace/ui/core/branding/meettrace_brand_mark.dart, package:meettrace/ui/core/branding/previews/meettrace_brand_motion_previews.dart, Positioned, _chineseReveal, _englishReveal, main (+4 more)
 
 ### Community 172 - "bool get"
 Cohesion: 0.17
@@ -1310,8 +1312,8 @@ Cohesion: 0.67
 Nodes (3): Minimum and Low-end Device Acceptance Gap, Android Alpha Device Matrix, Android Alpha Platform Baseline
 
 ### Community 207 - "AppFileLayout"
-Cohesion: 0.07
-Nodes (30): Directory, AppFileLayout, commit, DurableFileCommitException, DurableFileCommitter, message, toString, _validateNonEmpty (+22 more)
+Cohesion: 0.09
+Nodes (22): Directory, AppFileLayout, LocalDataGenerationMarkerReadException, package:meettrace/data/services/sharing/share_plus_cache_cleaner.dart, package:meettrace/data/services/storage/app_file_layout.dart, package:meettrace/data/services/storage/local_data_generation_gate.dart, package:meettrace/data/services/storage/meeting_directory_deletion_service.dart, layout (+14 more)
 
 ### Community 208 - "会迹（MeetTrace）GitHub Alpha 版本发布流程"
 Cohesion: 0.15
@@ -1652,9 +1654,17 @@ Nodes (6): AudioLevel, _PreviewRecordingService, ReliableRecordingService, Recor
 Cohesion: 0.33
 Nodes (6): SqfliteProcessingTaskRepository, ProcessingTaskRepository, _ProcessingTaskRepository, _TaskRepository, DetailProcessingTaskRepository, _TaskRepository
 
-### Community 424 - "SherpaOnnxWorkerFactory"
+### Community 424 - "durable_file_committer_test.dart"
+Cohesion: 0.17
+Nodes (11): commit, DurableFileCommitException, DurableFileCommitter, message, toString, _validateNonEmpty, package:meettrace/data/services/storage/durable_file_committer.dart, committer (+3 more)
+
+### Community 425 - "model_manifest_parser_test.dart"
+Cohesion: 0.22
+Nodes (8): ModelManifestParser, _file, hash, main, _model, models, parser, _validManifest
+
+### Community 426 - "SherpaOnnxWorker"
 Cohesion: 0.40
-Nodes (5): OfficialSherpaOnnxWorkerFactory, SherpaOnnxWorkerFactory, _WorkerFactory, _FakeWorkerFactory, _FakeWorkerFactory
+Nodes (5): _IsolateSherpaOnnxWorker, SherpaOnnxWorker, _Worker, _FakeWorker, _FakeWorker
 
 ### Community 432 - "live_preview_replay_test.dart"
 Cohesion: 0.07

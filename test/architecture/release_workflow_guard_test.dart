@@ -26,6 +26,14 @@ void main() {
       );
       expect(workflow, contains(r'[[ "$tag_type" == "tag" ]]'));
       expect(workflow, contains('"commitSha": os.environ["CANDIDATE_SHA"]'));
+      expect(workflow, contains('contents: write'));
+      expect(
+        workflow,
+        contains('name: Stage iOS candidate pointer in the draft release'),
+      );
+      expect(workflow, contains('ios-candidate-manifest.json'));
+      expect(workflow, contains('ios-release-gate-report.json'));
+      expect(workflow, contains(r'.isDraft == true'));
       expect(workflow, isNot(contains('expected_sha:')));
       expect(workflow, isNot(contains('gate_input_path:')));
       expect(workflow, isNot(contains('build/ios/testflight/*.ipa')));
@@ -79,6 +87,20 @@ void main() {
       expect(workflow, contains('ios-candidate-manifest.json'));
       expect(workflow, contains('--prerelease'));
       expect(workflow, contains(r'[[ "$tag_type" == "tag" ]]'));
+      expect(workflow, contains(r'ref: ${{ inputs.release_id }}'));
+      expect(
+        workflow.indexOf('name: Validate release identifier'),
+        lessThan(workflow.indexOf('name: Checkout candidate commit')),
+      );
+      expect(
+        workflow,
+        contains('name: Resolve candidate workflow runs from the release'),
+      );
+      expect(workflow, contains('candidate-pointers'));
+      expect(workflow, contains('resolved[env_name] = run_id'));
+      expect(workflow, isNot(contains('candidate_sha:')));
+      expect(workflow, isNot(contains('android_run_id:')));
+      expect(workflow, isNot(contains('ios_run_id:')));
       expect(workflow, contains('RELEASE_IS_DRAFT'));
       expect(workflow, contains('ios_testflight_external_url:'));
       expect(workflow, contains('https://testflight\\.apple\\.com/join/'));

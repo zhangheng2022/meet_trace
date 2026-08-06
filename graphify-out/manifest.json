@@ -2485,8 +2485,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ios-testflight.yml": {
-    "mtime": 1786002339.678387,
-    "ast_hash": "dcfdff557ed107fe667730c77d243d17",
+    "mtime": 1786006656.9013808,
+    "ast_hash": "0d6a8f78c0b4ded4cfb0656f964de523",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260805_073943_ios_\u901a\u8fc7_github_\u53d1\u5e03\u5230_testflight_\u9700\u8981\u4ec0\u4e48.md": {
@@ -2510,8 +2510,8 @@
     "semantic_hash": ""
   },
   "spec/spec-process-cicd-ios-testflight.md": {
-    "mtime": 1786001798.3517432,
-    "ast_hash": "e8f69ef4e3cf429f17d9f3956e7d2d67",
+    "mtime": 1786006588.3261557,
+    "ast_hash": "db9c6412aa965af6aa3d8b35255b21e6",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260805_104517_\u4e3a\u5f53\u524d\u9879\u76ee\u589e\u52a0_github_ios_testflight_\u7b7e\u540d\u53d1\u5e03\u6d41\u6c34\u7ebf\u9700\u8981\u590d\u7528\u54ea\u4e9b\u73b0\u6709\u95e8\u69db.md": {
@@ -2575,8 +2575,8 @@
     "semantic_hash": ""
   },
   "test/architecture/release_workflow_guard_test.dart": {
-    "mtime": 1786002339.6793904,
-    "ast_hash": "2a11d31df3cedc72fd7c0f40b0ca371f",
+    "mtime": 1786006685.3109796,
+    "ast_hash": "71208ee78af5c6db31d9f4039179f97a",
     "semantic_hash": ""
   },
   ".github/workflows/android-alpha.yml": {
@@ -2585,8 +2585,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/finalize-release.yml": {
-    "mtime": 1786001876.3466184,
-    "ast_hash": "9a069805afb2d4c276f0efeea2e5f159",
+    "mtime": 1786006656.9030502,
+    "ast_hash": "948781c34527cd5d4983bd9f7fe19051",
     "semantic_hash": ""
   },
   ".github/workflows/quality.yml": {
@@ -2595,8 +2595,8 @@
     "semantic_hash": ""
   },
   "docs/project/GitHub_\u7248\u672c\u53d1\u5e03\u6d41\u7a0b.md": {
-    "mtime": 1786001943.4993434,
-    "ast_hash": "16e1a94a23ad8d22576dc0dbb605fc88",
+    "mtime": 1786006685.3119824,
+    "ast_hash": "996d37d93592aa59f1cbfc494b69f63c",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260806_034743_\u4fee\u590d_ios_\u6700\u7ec8\u5904\u7406\u65f6\u8bf4\u8bdd\u4eba\u5206\u79bb_sigabrt.md": {
@@ -2620,8 +2620,8 @@
     "semantic_hash": ""
   },
   "spec/spec-process-cicd-release-finalize.md": {
-    "mtime": 1786001798.3530426,
-    "ast_hash": "f1a7ab514369cb5fbdbcb7ab26eda419",
+    "mtime": 1786006588.3271577,
+    "ast_hash": "dfefd77baa9051caa4320030077bd4e1",
     "semantic_hash": ""
   },
   "docs/quality/alpha_release_input.json": {

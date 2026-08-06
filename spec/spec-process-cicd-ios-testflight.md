@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - iOS TestFlight Release
-version: 1.4
+version: 1.5
 date_created: 2026-08-05
 last_updated: 2026-08-06
 owner: MeetTrace maintainers
@@ -24,15 +24,16 @@ graph TD
     E --> F[归档和导出签名 IPA]
     F --> G[验证签名、身份、IPA 结构和摘要]
     G --> H[使用团队 API Key 上传 TestFlight]
-    H --> I[保存短期构建证据]
-    I --> J[清理临时凭据]
+    H --> I[向同一 Draft 写入 iOS 候选指针]
+    I --> J[保存短期构建证据]
+    J --> L[清理临时凭据]
     C -->|失败| K[阻断发布]
     D -->|失败| K
     E -->|失败| K
     F -->|失败| K
     G -->|失败| K
     H -->|失败| K
-    K --> J
+    K --> L
 
     style A fill:#e1f5fe
     style I fill:#e8f5e8
@@ -65,12 +66,13 @@ graph TD
 | REQ-011 | 签名设置仅作用于 App 主目标 | High | provisioning profile 不得注入 Pods、插件或测试目标 |
 | REQ-012 | 候选身份可追溯 | High | release ID、commit SHA、marketing version 与门禁报告一致 |
 | REQ-013 | 自动候选与固定门禁 | High | 从 release ID 解析 Android 候选创建的 annotated tag，并只读取该提交中的 `docs/quality/alpha_release_input.json` |
+| REQ-014 | 为最终发布提供自动发现入口 | High | TestFlight 上传成功后，将不含 IPA 的 iOS 候选清单和门禁报告写入同一 Draft Release；最终流程无需人工输入 SHA 或 run ID |
 
 ### Security Requirements
 
 | ID | Requirement | Implementation Constraint |
 |---|---|---|
-| SEC-001 | 最小 GitHub Token 权限 | 仓库内容只读；仅为来源证明开放 `id-token: write` 与 `attestations: write` |
+| SEC-001 | 最小 GitHub Token 权限 | 仅为来源证明和向既有 Draft 写入非敏感 iOS 候选指针开放写权限；不得创建 tag、公开 Release 或上传 IPA |
 | SEC-002 | Secrets 不进入仓库、日志或长期文件 | 凭据仅从 GitHub Secrets 注入，不输出原文 |
 | SEC-003 | 签名材料仅存在于临时 Runner | 使用临时钥匙串和临时文件，流程结束始终清理 |
 | SEC-004 | 上传认证使用短时 JWT | 团队 API Key 仅用于生成短时 App Store Connect 令牌 |
@@ -111,6 +113,7 @@ ipa_sha256: text
 unsigned_app_inspection_report: json
 codesign_report: text
 candidate_manifest: json
+draft_release_candidate_pointer: ios candidate manifest and gate report
 toolchain_snapshot: text
 testflight_upload: submitted build
 ```
@@ -143,7 +146,7 @@ testflight_upload: submitted build
 - **Network Access**: 用于源码、Flutter/依赖、发布客户端和 App Store Connect。
 - **Apple Configuration**: `com.meettrace.app` 已创建 App Store Connect 应用记录；profile 属于同一 Team，并包含 p12 对应的 distribution 证书。
 - **Signing Scope**: 手动签名设置只允许绑定 `Runner` 的 Release 配置；Pods、Flutter 插件和测试目标沿用各自构建设置。
-- **Permissions**: `contents: read`、`id-token: write`、`attestations: write`；API Key 角色允许上传构建。
+- **Permissions**: `contents: write`、`id-token: write`、`attestations: write`；写权限只用于同 release ID 的既有 Draft，API Key 角色只允许上传构建。
 
 ## Error Handling Strategy
 
@@ -156,6 +159,7 @@ testflight_upload: submitted build
 | 归档、签名或导出失败 | 保留非敏感诊断，阻断上传 | 根据 Xcode 日志修复 |
 | IPA 校验失败 | 阻断上传 | 修复导出配置并重新构建 |
 | App Store Connect 拒绝上传 | Job 失败并保留非敏感诊断，不上传 IPA Artifact | 根据上传错误处理后使用新构建号重跑 |
+| Android Draft 缺失、已公开或 tag 不一致 | TestFlight 上传后的候选指针写入失败，最终发布保持阻断 | 修复发布顺序或使用新的 release ID |
 | release ID 对应 tag 缺失、非 annotated 或不属于 master | 解码签名材料前失败 | 先成功运行 Android 候选，或使用新的 release ID |
 | Apple 后台处理失败 | GitHub 上传可能已成功 | 在 App Store Connect 查看处理错误 |
 | 任意步骤失败或取消 | 始终执行清理 | 删除临时钥匙串、证书、profile 和 API 私钥 |
@@ -285,6 +289,7 @@ testflight_upload: submitted build
 | 1.2 | 2026-08-06 | 增加候选身份与产品门禁，签名 IPA 改为仅上传 TestFlight 并生成来源证明；签名材料延迟到仓库代码检查完成后解码 | Codex |
 | 1.3 | 2026-08-06 | 明确外部测试仍需人工配置和审核，最终发布仅记录可选外部 TestFlight 链接 | Codex |
 | 1.4 | 2026-08-06 | 删除人工 SHA 与门禁路径输入，通过 Android 候选 annotated tag 锁定同一 SHA 并读取固定证据文件 | Codex |
+| 1.5 | 2026-08-06 | TestFlight 成功后向既有 Draft 写入非敏感 iOS 候选指针，使最终发布可自动推导 SHA 与 run ID | Codex |
 
 ## Related Specifications
 

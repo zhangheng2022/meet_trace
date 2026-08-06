@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Alpha Release Finalize
-version: 1.4
+version: 1.5
 date_created: 2026-08-06
 last_updated: 2026-08-06
 owner: MeetTrace maintainers
@@ -17,9 +17,9 @@ tags: [process, cicd, github-actions, release, tag, alpha]
 
 ```mermaid
 graph TD
-    A[输入发布 ID、SHA 和两个 run ID] --> B[验证 master commit]
-    B --> C[验证 Android run]
-    B --> D[验证 iOS run]
+    A[只输入发布 ID和可选公开信息] --> B[从 annotated tag 推导 master commit]
+    B --> C[从 Draft 候选指针推导 Android run]
+    B --> D[从 Draft 候选指针推导 iOS run]
     C --> E[下载 Android 证据与 Draft APK]
     D --> F[下载 iOS 非敏感证据]
     E --> G[交叉校验清单]
@@ -46,13 +46,14 @@ graph TD
 
 | ID | Requirement | Priority | Acceptance Criteria |
 |---|---|---|---|
-| REQ-001 | 两个候选运行成功 | High | conclusion=`success` 且 workflow 身份正确；Android run head 为候选 SHA，iOS 候选 SHA 由清单与 annotated tag 证明 |
-| REQ-002 | 候选来自同一 SHA | High | run、输入、候选清单和请求 SHA 全部一致 |
+| REQ-001 | 两个候选运行成功 | High | 从 Draft 候选指针解析 run ID 后，验证 conclusion=`success` 且 workflow 身份正确；Android run head 为候选 SHA，iOS 候选 SHA 由清单与 annotated tag 证明 |
+| REQ-002 | 候选来自同一 SHA | High | annotated tag、Draft 指针、Actions Artifact 候选清单全部一致 |
 | REQ-003 | 两个平台门禁为 `go` | High | 两份报告 decision 均为 `go` |
 | REQ-004 | 发布 ID 不可改写 | High | 只接受 Android 候选阶段创建、指向同一 SHA 的既有 annotated tag 和 Draft/prerelease |
 | REQ-005 | 验证 annotated tag | High | tag 对象类型为 `tag` 且 peel 后指向已验证候选 SHA |
 | REQ-006 | 公开原 Draft | High | 验证后的同一 Draft 变为 Pre-release，保留且不覆盖已验收 APK |
 | REQ-007 | 提供公开安装信息 | High | Release 说明包含 Android 安装/数据风险提示，并显示有效 TestFlight 外部链接或“待提供” |
+| REQ-008 | 最少人工输入 | High | 操作者只需提供 release ID；SHA、Android run ID 与 iOS run ID 均自动推导，可选输入仅为外部链接和公开说明 |
 
 ### Security Requirements
 
@@ -76,9 +77,6 @@ graph TD
 
 ```yaml
 release_id: v<marketing-version>-alpha.<sequence>
-candidate_sha: full commit SHA
-android_run_id: integer
-ios_run_id: integer
 release_notes: optional text
 ios_testflight_external_url: optional https://testflight.apple.com/join/<code>
 ```
@@ -109,8 +107,8 @@ release_gate_reports: json files
 
 | Error Type | Response | Recovery Action |
 |---|---|---|
-| run ID 不存在、失败或 workflow 不匹配 | 公开 Draft 前阻断 | 提供正确候选运行 |
-| SHA、release ID、版本、tag、门禁或 Draft APK 摘要不一致 | 公开 Draft 前阻断 | 使用新的候选发布流程 |
+| Draft 候选指针缺失、run ID 无效、运行失败或 workflow 不匹配 | 公开 Draft 前阻断 | 按顺序重新完成 Android 与 iOS 候选流程 |
+| 自动推导的 SHA、release ID、版本、tag、门禁或 Draft APK 摘要不一致 | 公开 Draft 前阻断 | 使用新的候选发布流程 |
 | tag/Release 与候选身份冲突 | 拒绝覆盖 | 使用新的 Alpha 序号 |
 | tag 已创建但 Draft 公开失败 | 保留 tag 和 Draft 并明确失败 | 修复后重跑；只恢复同一身份 Draft 的公开 |
 | Release 已公开后补 TestFlight 链接 | 只允许原候选证据逐字节一致 | 更新说明；不得覆盖 APK 或候选证据 |
@@ -148,14 +146,14 @@ release_gate_reports: json files
 | Scenario | Expected Behavior | Validation Method |
 |---|---|---|
 | Android 与 iOS 来自不同 SHA | 阻断 | run API 与清单比对 |
-| 候选 Artifact 已过期 | 阻断 | 重新执行候选发布 |
+| 候选 Artifact 已过期 | 阻断；Draft 指针不能代替原始 Actions 证据 | 重新执行候选发布 |
 | 重复 release ID 且身份不同 | 阻断，不覆盖 | tag/Release API |
 | 同一 release ID/SHA 的失败恢复 | Draft 可补齐非 APK 证据；已公开后要求全部候选证据逐字节一致，只更新说明 | tag peel、Release 与资产 API |
 | 只有 Android 候选通过 | 保留不可见 Draft 和已预留 tag，状态保持 blocked | Release API |
 
 ## Validation Criteria
 
-- **VLD-001**: 错误 run ID 或 SHA 不会公开 Draft 或移动既有 tag。
+- **VLD-001**: 缺失或被篡改的候选指针不能让流程选择错误 run 或公开 Draft。
 - **VLD-002**: 相同 SHA 和 `go` 报告只能复用 Android 候选阶段的唯一 annotated tag。
 - **VLD-003**: GitHub Release 标记为 prerelease，包含与候选清单一致的唯一 Android APK 且不含 IPA。
 - **VLD-004**: Release 资产可反向定位两个候选 run。
@@ -177,6 +175,7 @@ release_gate_reports: json files
 | 1.2 | 2026-08-06 | 验证并公开 Android Draft APK，增加 TestFlight 外部链接占位和强制安装风险说明 | Codex |
 | 1.3 | 2026-08-06 | 改为验证 Android 候选阶段预留的 annotated tag，最终流程不再创建或移动 tag | Codex |
 | 1.4 | 2026-08-06 | 允许 iOS workflow 从 Android annotated tag 派生候选 SHA，不再把 iOS run head 误当作构建提交 | Codex |
+| 1.5 | 2026-08-06 | 最终发布只保留 release ID 与可选公开信息，SHA 和两个 run ID 由 annotated tag 与 Draft 候选指针自动推导 | Codex |
 
 ## Related Specifications
 

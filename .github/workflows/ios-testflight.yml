@@ -13,7 +13,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   attestations: write
 
@@ -578,6 +578,32 @@ jobs:
         env:
           TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}
         run: fastlane ios upload_testflight
+
+      - name: Stage iOS candidate pointer in the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_metadata="$(
+            gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+              --json isDraft,isPrerelease,tagName
+          )"
+          jq -e --arg tag "$RELEASE_ID" '
+            .isDraft == true and
+            .isPrerelease == true and
+            .tagName == $tag
+          ' <<< "$release_metadata" >/dev/null
+
+          cp build/ios/testflight/candidate-manifest.json \
+            build/ios/testflight/ios-candidate-manifest.json
+          cp build/ios/testflight/release-gate-report.json \
+            build/ios/testflight/ios-release-gate-report.json
+          gh release upload "$RELEASE_ID" \
+            build/ios/testflight/ios-candidate-manifest.json \
+            build/ios/testflight/ios-release-gate-report.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
 
       - name: Write release summary
         shell: bash

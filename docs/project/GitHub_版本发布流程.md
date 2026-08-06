@@ -79,6 +79,7 @@ Secrets：
 2. 将代码、活动文档和固定门禁证据合并到 `master`，确认 `Flutter Quality` 与 `iOS Unsigned Build` 对目标 SHA 成功。
 3. 从 `master` 人工运行 `Android Alpha Candidate`，只输入 release ID 和可选说明。工作流自动锁定 dispatch 时的 `master` SHA 并读取固定门禁文件；成功后得到不可移动的 annotated tag 与不可见 Draft Release。
 4. 从 `master` 人工运行 `iOS TestFlight Release`，只输入相同 release ID 和可选说明。工作流通过 Android annotated tag 自动检出完全相同的候选 SHA 和门禁文件。
+   TestFlight 上传成功后，工作流会把不含 IPA 的 iOS 候选清单和门禁报告写入同一 Draft，供最终流程自动发现。
 5. Android 验收人员从当前仓库 Draft Release 安装确切的 `meettrace-<release-id>-android-arm64.apk`；iOS 验收人员从 TestFlight 安装同一候选。
 6. 在目标真机完成安装、初始化、30 分钟录音、最终处理、分享与清理验收；测试对象必须是候选工作流生成的确切构建号。
 
@@ -89,13 +90,10 @@ Secrets：
 真机验收完成后人工运行 `Finalize Alpha Release`，输入：
 
 - release ID；
-- 候选完整 SHA（从 Android candidate manifest 或 annotated tag 复制）；
-- 成功的 Android run ID；
-- 成功的 iOS run ID；
 - 可选的、已获准使用的 `https://testflight.apple.com/join/<code>` 外部测试链接；
 - 可选公开说明。
 
-工作流会验证 run 类型、状态、SHA、release ID、marketing version、既有 annotated tag、候选清单、两份 `go` 报告，以及 Draft 中 APK 的唯一文件名、大小和 SHA-256。全部一致后才将原 Draft 发布为 GitHub Pre-release；没有外部 TestFlight 链接时发布说明显示“待提供”。
+候选 SHA 从既有 annotated tag 自动推导，Android 和 iOS run ID 从 Draft 中的候选指针自动解析；操作者不再复制这些技术字段。工作流仍会从 Actions 下载原始候选证据，并验证 run 类型、状态、SHA、release ID、marketing version、候选清单、两份 `go` 报告，以及 Draft 中 APK 的唯一文件名、大小和 SHA-256。全部一致后才将原 Draft 发布为 GitHub Pre-release；没有外部 TestFlight 链接时发布说明显示“待提供”。
 
 TestFlight 外部链接获批后可以用相同输入重跑最终流程补充说明；已公开 Release 的 tag、APK、候选清单和门禁报告必须逐字节保持不变。
 

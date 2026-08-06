@@ -7,18 +7,6 @@ on:
         description: Version identifier such as v1.0.0-alpha.1
         required: true
         type: string
-      candidate_sha:
-        description: Full commit SHA shared by Android and iOS candidates
-        required: true
-        type: string
-      android_run_id:
-        description: Successful Android Alpha Candidate run ID
-        required: true
-        type: string
-      ios_run_id:
-        description: Successful iOS TestFlight Release run ID
-        required: true
-        type: string
       ios_testflight_external_url:
         description: Optional approved TestFlight external testing URL
         required: false
@@ -44,10 +32,19 @@ jobs:
     environment: github-release
 
     steps:
+      - name: Validate release identifier
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]]
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+
       - name: Checkout candidate commit
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.candidate_sha }}
+          ref: ${{ inputs.release_id }}
           fetch-depth: 0
 
       - name: Validate release identity and uniqueness
@@ -55,25 +52,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ inputs.release_id }}
-          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
-          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$(git rev-parse HEAD)" == "$CANDIDATE_SHA" ]]
-          git fetch --no-tags origin master
-          git merge-base --is-ancestor "$CANDIDATE_SHA" origin/master
-
           marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
           expected_prefix="v${marketing_version}-alpha."
-          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$RELEASE_ID" == "$expected_prefix"* ]]
 
           git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_ID" >/dev/null
           git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
           tag_type="$(git cat-file -t "refs/tags/$RELEASE_ID")"
-          tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
+          candidate_sha="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
           [[ "$tag_type" == "tag" ]]
-          [[ "$tag_commit" == "$CANDIDATE_SHA" ]]
+          [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$candidate_sha" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$candidate_sha" origin/master
 
           visibility="$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)"
           [[ "$visibility" == "PUBLIC" ]]
@@ -92,16 +85,81 @@ jobs:
           ' <<< "$release_metadata" >/dev/null
           release_is_draft="$(jq -r .isDraft <<< "$release_metadata")"
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
-          echo "CANDIDATE_SHA=$CANDIDATE_SHA" >> "$GITHUB_ENV"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
           echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
           echo "RELEASE_IS_DRAFT=$release_is_draft" >> "$GITHUB_ENV"
+
+      - name: Resolve candidate workflow runs from the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pointer_dir="build/release/candidate-pointers"
+          mkdir -p "$pointer_dir"
+          gh release download "$RELEASE_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern candidate-manifest.json \
+            --dir "$pointer_dir"
+          gh release download "$RELEASE_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern ios-candidate-manifest.json \
+            --dir "$pointer_dir"
+
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          pointer_dir = Path("build/release/candidate-pointers")
+          candidates = (
+              (
+                  "android",
+                  pointer_dir / "candidate-manifest.json",
+                  ".github/workflows/android-alpha.yml",
+                  "ANDROID_RUN_ID",
+              ),
+              (
+                  "ios",
+                  pointer_dir / "ios-candidate-manifest.json",
+                  ".github/workflows/ios-testflight.yml",
+                  "IOS_RUN_ID",
+              ),
+          )
+          resolved = {}
+          for platform, path, workflow_file, env_name in candidates:
+              if not path.is_file():
+                  raise SystemExit(f"Missing {platform} candidate pointer: {path}")
+              manifest = json.loads(path.read_text(encoding="utf-8"))
+              expected = {
+                  "platform": platform,
+                  "releaseId": os.environ["RELEASE_ID"],
+                  "commitSha": os.environ["CANDIDATE_SHA"],
+                  "marketingVersion": os.environ["MARKETING_VERSION"],
+                  "workflowFile": workflow_file,
+                  "gateDecision": "go",
+              }
+              for key, value in expected.items():
+                  if manifest.get(key) != value:
+                      raise SystemExit(
+                          f"{platform} candidate pointer {key} mismatch: "
+                          f"{manifest.get(key)!r} != {value!r}"
+                      )
+              run_id = str(manifest.get("runId", ""))
+              if not re.fullmatch(r"[1-9][0-9]*", run_id):
+                  raise SystemExit(f"{platform} candidate pointer has an invalid run ID")
+              resolved[env_name] = run_id
+
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              for name, value in resolved.items():
+                  stream.write(f"{name}={value}\n")
+          PY
 
       - name: Validate candidate workflow runs
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
-          IOS_RUN_ID: ${{ inputs.ios_run_id }}
         run: |
           set -euo pipefail
           [[ "$ANDROID_RUN_ID" =~ ^[1-9][0-9]*$ ]]
@@ -132,8 +190,6 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
-          IOS_RUN_ID: ${{ inputs.ios_run_id }}
         run: |
           set -euo pipefail
           download_candidate() {
@@ -175,9 +231,6 @@ jobs:
 
       - name: Cross-check candidate manifests and product gates
         shell: bash
-        env:
-          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
-          IOS_RUN_ID: ${{ inputs.ios_run_id }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -247,8 +300,6 @@ jobs:
       - name: Write public release notes
         shell: bash
         env:
-          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
-          IOS_RUN_ID: ${{ inputs.ios_run_id }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
           IOS_TESTFLIGHT_EXTERNAL_URL: ${{ inputs.ios_testflight_external_url }}
         run: |
