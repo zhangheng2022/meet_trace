@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Unified Alpha Release
-version: 1.2
+version: 1.3
 date_created: 2026-08-06
 last_updated: 2026-08-06
 owner: MeetTrace maintainers
@@ -35,17 +35,18 @@ flowchart LR
 ## Execution Contract
 
 1. 首次发布标识从当前 `master` 锁定候选 SHA；已有 Draft 重跑则从 annotated tag 恢复原 SHA。
-2. 统一执行格式、静态分析和测试，避免双平台重复。
-3. 同一工作流内的 Android job 创建/更新仅含 `arm64-v8a` 原生库的 Draft 候选，iOS job 随后上传相同 SHA 的 TestFlight 构建。
-4. `github-release` Environment 是唯一人工批准点。批准表示维护者已完成双平台实际验收。
-5. 批准后验证清单与 APK 摘要，公开原 Draft；TestFlight 链接缺失不阻断。
-6. 同一 ID 已公开时自动进入 metadata 模式，不重建双平台产物，仅补链接或说明，并仍要求公开环境批准。
+2. `prepare` 从已有 Release 候选清单分配连续构建号；新候选取最大值加一，同一 Draft 重跑复用原号，Android `versionCode` 与 iOS `CFBundleVersion` 使用同一值。
+3. 统一执行格式、静态分析和测试，避免双平台重复。
+4. 同一工作流内的 Android job 创建/更新仅含 `arm64-v8a` 原生库的 Draft 候选，iOS job 随后上传相同 SHA 的 TestFlight 构建。
+5. `github-release` Environment 是唯一人工批准点。批准表示维护者已完成双平台实际验收。
+6. 批准后验证清单与 APK 摘要，公开原 Draft；TestFlight 链接缺失不阻断。
+7. 同一 ID 已公开时自动进入 metadata 模式，不重建双平台产物，仅补链接或说明，并仍要求公开环境批准。
 
 ## Jobs and Dependencies
 
 | Job | Dependencies | Responsibility |
 |---|---|---|
-| `prepare` | 无 | 解析发布模式、tag 与候选 SHA |
+| `prepare` | 无 | 解析发布模式、tag、候选 SHA，并分配双平台共享连续构建号 |
 | `quality` | `prepare` | 格式、静态分析和测试 |
 | `android` | `prepare`, `quality` | 签名、审计并暂存 Draft APK |
 | `ios` | `prepare`, `android` | 签名、审计并上传 TestFlight |
@@ -74,3 +75,4 @@ flowchart LR
 | 1.0 | 2026-08-06 | 建立唯一可见发布入口与一次批准的双平台串行流程 | Codex |
 | 1.1 | 2026-08-06 | 将 Android、iOS 和公开 job 合并到单个 workflow 文件 | Codex |
 | 1.2 | 2026-08-06 | 明确 Android Draft 的全部原生库仅允许 arm64-v8a | Codex |
+| 1.3 | 2026-08-06 | Android 与 iOS 改用 Release 候选清单驱动的共享连续构建号 | Codex |

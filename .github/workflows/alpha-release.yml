@@ -32,6 +32,7 @@ jobs:
     outputs:
       mode: ${{ steps.resolve.outputs.mode }}
       candidate_sha: ${{ steps.resolve.outputs.candidate_sha }}
+      build_number: ${{ steps.build_number.outputs.build_number }}
     steps:
       - name: Checkout requested master revision
         uses: actions/checkout@v7
@@ -94,6 +95,78 @@ jobs:
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Allocate shared release build number
+        id: build_number
+        if: steps.resolve.outputs.mode == 'candidate'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ steps.resolve.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+
+          release_assets="$(
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+              --jq '.[] | [
+                .tag_name,
+                (([.assets[] | select(.name == "android-candidate-manifest.json")][0].url //
+                  [.assets[] | select(.name == "candidate-manifest.json")][0].url //
+                  ""))
+              ] | @tsv'
+          )"
+          current_asset_url="$(
+            awk -F '\t' -v tag="$RELEASE_ID" \
+              '$1 == tag && $2 != "" { print $2; exit }' <<<"$release_assets"
+          )"
+
+          if [[ -n "$current_asset_url" ]]; then
+            current_manifest="$(
+              gh api -H "Accept: application/octet-stream" "$current_asset_url"
+            )"
+            jq -e \
+              --arg release_id "$RELEASE_ID" \
+              --arg candidate_sha "$CANDIDATE_SHA" \
+              '.platform == "android" and
+               .releaseId == $release_id and
+               .commitSha == $candidate_sha' \
+              <<<"$current_manifest" >/dev/null
+            build_number="$(jq -er '
+              .buildNumber | tostring | select(test("^[1-9][0-9]*$"))
+            ' <<<"$current_manifest")"
+            echo "Reusing build number $build_number from $RELEASE_ID"
+          else
+            max_build_number=0
+            while IFS=$'\t' read -r tag asset_url; do
+              [[ -n "$tag" && -n "$asset_url" && "$tag" != "$RELEASE_ID" ]] || continue
+              manifest="$(
+                gh api -H "Accept: application/octet-stream" "$asset_url"
+              )"
+              candidate="$(jq -er '
+                select(.platform == "android") |
+                .buildNumber | tostring | select(test("^[1-9][0-9]*$"))
+              ' <<<"$manifest")"
+              if (( candidate > max_build_number )); then
+                max_build_number="$candidate"
+              fi
+            done <<<"$release_assets"
+
+            if (( max_build_number > 0 )); then
+              build_number=$((max_build_number + 1))
+            else
+              build_number="$(
+                git show "$CANDIDATE_SHA:pubspec.yaml" |
+                  sed -nE 's/^version:[[:space:]]*[^+[:space:]]+\+([1-9][0-9]*).*/\1/p'
+              )"
+              [[ -n "$build_number" ]]
+            fi
+            echo "Allocated next build number: $build_number"
+          fi
+
+          (( build_number > 0 && build_number <= 2100000000 ))
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
 
   quality:
     name: Automatic technical checks
@@ -183,15 +256,13 @@ jobs:
 
       - name: Prepare release build number
         shell: bash
+        env:
+          RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
         run: |
           set -euo pipefail
-          if (( GITHUB_RUN_ATTEMPT > 99 )); then
-            echo "GitHub run attempt exceeds the supported build-number range" >&2
-            exit 1
-          fi
-          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
-          echo "ANDROID_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
-          echo "Android versionCode: $build_number"
+          [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          echo "ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "Android versionCode: $RELEASE_BUILD_NUMBER"
 
       - name: Decode Android signing keystore
         shell: bash
@@ -485,15 +556,13 @@ jobs:
 
       - name: Prepare release build number
         shell: bash
+        env:
+          RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
         run: |
           set -euo pipefail
-          if (( GITHUB_RUN_ATTEMPT > 99 )); then
-            echo "GitHub run attempt exceeds the supported build-number range" >&2
-            exit 1
-          fi
-          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
-          echo "IOS_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
-          echo "TestFlight build number: $build_number"
+          [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          echo "IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "TestFlight build number: $RELEASE_BUILD_NUMBER"
 
       - name: Build and inspect unsigned Release app
         shell: bash
@@ -1084,6 +1153,8 @@ jobs:
                   or manifest.get("job") != job
               ):
                   raise SystemExit(f"{name} candidate origin is invalid")
+          if str(android.get("buildNumber")) != str(ios.get("buildNumber")):
+              raise SystemExit("Android and iOS build numbers differ")
 
           apk = root / "staged" / android["artifact"]["name"]
           if not apk.is_file() or apk.stat().st_size != android["artifact"]["bytes"]:
@@ -1140,6 +1211,8 @@ jobs:
                   or manifest.get("job") != job
               ):
                   raise SystemExit("Existing public release evidence changed")
+          if str(android.get("buildNumber")) != str(ios.get("buildNumber")):
+              raise SystemExit("Existing Android and iOS build numbers differ")
           if str(android.get("runId")) != str(ios.get("runId")):
               raise SystemExit("Existing public candidate run identities differ")
           apk = root / android["artifact"]["name"]

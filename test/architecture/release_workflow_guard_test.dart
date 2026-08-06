@@ -85,6 +85,37 @@ void main() {
       expect(workflow, isNot(contains('release-gate-report')));
     });
 
+    test('Android 与 iOS 共享连续递增的发布构建号', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final android = _job(workflow, 'android', 'ios');
+      final ios = _job(workflow, 'ios', 'publish');
+
+      expect(
+        workflow,
+        contains(
+          r'build_number: ${{ steps.build_number.outputs.build_number }}',
+        ),
+      );
+      expect(workflow, contains('Allocate shared release build number'));
+      expect(workflow, contains('gh api --paginate'));
+      expect(workflow, contains('max_build_number + 1'));
+      expect(workflow, contains('Reusing build number'));
+      expect(
+        RegExp(
+          r'RELEASE_BUILD_NUMBER: \$\{\{ needs\.prepare\.outputs\.build_number \}\}',
+        ).allMatches(workflow),
+        hasLength(2),
+      );
+      expect(android, contains(r'ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
+      expect(ios, contains(r'IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
+      expect(workflow, contains('Android and iOS build numbers differ'));
+      expect(
+        workflow,
+        contains('Existing Android and iOS build numbers differ'),
+      );
+      expect(workflow, isNot(contains('GITHUB_RUN_NUMBER * 100')));
+    });
+
     test('Android job 仅构建 arm64 Draft 且支持恢复重试', () async {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');

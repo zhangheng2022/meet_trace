@@ -34,12 +34,13 @@ flowchart LR
 | 项目 | 规则 |
 |---|---|
 | Release ID/tag | `v<pubspec marketing version>-alpha.<正整数>` |
+| 双平台构建号 | 从已有 Release 候选清单的最大构建号连续 `+1`；同一 Draft 重跑复用原号，Android 与 iOS 始终一致 |
 | Android | 正式签名、仅 `arm64-v8a`，公开附件名为 `meettrace-<release-id>-android-arm64.apk` |
 | iOS | 仅 TestFlight，不上传 IPA 到 Actions Artifact 或 GitHub Release |
 | 候选身份 | Android 与 iOS 必须来自同一 annotated tag 和提交 SHA |
 | 首次启动资源 | Release 说明明确约下载 286.3 MB |
 
-Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag 和候选 SHA，并替换 Draft 候选资产。Draft 一旦公开，标签、APK 和候选清单不可覆盖；代码或二进制修复必须使用新的 Alpha 序号向前发布。
+Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、候选 SHA 和已分配构建号，并替换 Draft 候选资产。新候选从所有已有 Draft/公开候选清单的最大构建号连续加一；当前双平台构建号为 `401`，下一候选为 `402`。Draft 一旦公开，标签、APK 和候选清单不可覆盖；代码或二进制修复必须使用新的 Alpha 序号向前发布。
 
 ## 3. GitHub 配置
 

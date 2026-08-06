@@ -1,16 +1,16 @@
 # Graph Report - meet_trace  (2026-08-06)
 
 ## Corpus Check
-- 425 files · ~157,967 words
+- 425 files · ~158,360 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5563 nodes · 7428 edges · 415 communities (287 shown, 128 thin omitted)
+- 5563 nodes · 7428 edges · 413 communities (285 shown, 128 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 46 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c71bf6f6`
+- Built from commit: `94104793`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -138,7 +138,6 @@
 - runtime_initialization_view_model_test.dart
 - 会迹品牌资源
 - runtime_initialization.dart
-- durable_file_committer_test.dart
 - MeetTrace Design System
 - sqflite_model_installation_repository.dart
 - platform_download_preflight_providers.dart
@@ -148,7 +147,6 @@
 - dart:async
 - audio_playback.dart
 - model_installation.dart
-- model_file_verifier.dart
 - share_meeting_audio.dart
 - delete_meeting_test.dart
 - recording_device_readiness_probe_test.dart
@@ -222,7 +220,7 @@
 - MeetingDetailViewModel
 - Q: 当前项目默认模型设置为SenseVoice，其他模型待定，模型不要默认包含到安装包，初始化时再进行下载，给我实施方案
 - Android Alpha Device Matrix
-- package:path/path.dart
+- dart:io
 - 会迹（MeetTrace）GitHub Alpha 版本发布流程
 - AGENTS.md Contributor Guide Query
 - 代码实现驱动的视觉系统规范
@@ -336,7 +334,7 @@
 - retry
 - retryDiarization
 - reviseTranscript
-- dart:io
+- package:path/path.dart
 - Exception
 - setDiarizationEnabled
 - snapshot
@@ -460,7 +458,7 @@
 - **PCM 波形反馈流水线** — graphify_out_memory_query_20260728_071436_reliable_recording_service, graphify_out_memory_query_20260728_071436_pcm_audio_level_meter, graphify_out_memory_query_20260728_071436_recording_session_view_model, graphify_out_memory_query_20260728_071436_recording_audio_waveform [EXTRACTED 1.00]
 - **跨平台 CMake 标准编译设置** — linux_cmakelists_apply_standard_settings, windows_cmakelists_apply_standard_settings, linux_cmakelists_target_compile_features, windows_cmakelists_target_compile_features [INFERRED 0.85]
 
-## Communities (415 total, 128 thin omitted)
+## Communities (413 total, 128 thin omitted)
 
 ### Community 0 - "meeting_detail_view_model.dart"
 Cohesion: 0.02
@@ -962,10 +960,6 @@ Nodes (3): 会迹品牌资源, 使用边界, 母版
 Cohesion: 0.14
 Nodes (13): double get, cause, code, completedBytes, fraction, message, phase, resourceName (+5 more)
 
-### Community 123 - "durable_file_committer_test.dart"
-Cohesion: 0.17
-Nodes (11): commit, DurableFileCommitException, DurableFileCommitter, message, toString, _validateNonEmpty, package:meettrace/data/services/storage/durable_file_committer.dart, committer (+3 more)
-
 ### Community 124 - "MeetTrace Design System"
 Cohesion: 0.09
 Nodes (24): Forui-First UI Policy, View-ViewModel-Use Case-Port-Repository-Service Architecture, Repository Product Boundaries, MeetTrace Repository Guide, Adaptive Native Mobile and Tablet Layout, Continuous Time Ledger, Grayscale Semantic Encoding, MeetTrace Design System (+16 more)
@@ -1002,10 +996,6 @@ Nodes (15): int?, PcmAudioPlaybackService, AudioPlaybackService, AudioPlaybackSt
 Cohesion: 0.14
 Nodes (13): asr_model.dart, domain_exception.dart, AsrInstallationType, bytes, installationType, installedPath, lastErrorCode, modelId (+5 more)
 
-### Community 133 - "model_file_verifier.dart"
-Cohesion: 0.15
-Nodes (12): issues, isValid, kind, message, ModelFileIssue, ModelFileIssueKind, ModelFileVerificationResult, ModelFileVerifier (+4 more)
-
 ### Community 134 - "share_meeting_audio.dart"
 Cohesion: 0.13
 Nodes (14): AudioShareStorageSnapshot, audioPath, AudioSharePreparation, canShare, durationMs, execute, meetingId, meetingTitle (+6 more)
@@ -1028,8 +1018,8 @@ Cohesion: 0.13
 Nodes (14): int get, PcmWavAudioShareService, AudioShareException, AudioShareOutcome, AudioShareService, code, freeBytes, hasEnoughSpace (+6 more)
 
 ### Community 139 - "startup_recovery_service.dart"
-Cohesion: 0.10
-Nodes (20): app_database.dart, ../audio/recording_checkpoint_store.dart, durable_file_committer.dart, _activateCompletedSnapshots, activatedSnapshots, _alignRecoverablePcm, database, failedRecordings (+12 more)
+Cohesion: 0.06
+Nodes (32): app_database.dart, app_file_layout.dart, ../audio/recording_checkpoint_store.dart, durable_file_committer.dart, FileSystemException, cause, currentGeneration, ensureCurrent (+24 more)
 
 ### Community 140 - "Step 15 Speaker Diarization Degradation Evidence"
 Cohesion: 0.67
@@ -1296,9 +1286,9 @@ Nodes (4): Answer, Outcome, Q: 当前项目默认模型设置为SenseVoice，其
 Cohesion: 0.67
 Nodes (3): Minimum and Low-end Device Acceptance Gap, Android Alpha Device Matrix, Android Alpha Platform Baseline
 
-### Community 207 - "package:path/path.dart"
-Cohesion: 0.06
-Nodes (32): Directory, main, _recordingSeconds, download, requireHttps, AppFileLayout, LocalDataGenerationMarkerReadException, package:flutter/foundation.dart (+24 more)
+### Community 207 - "dart:io"
+Cohesion: 0.05
+Nodes (46): dart:convert, dart:io, Directory, main, _recordingSeconds, AppFileLayout, commit, DurableFileCommitException (+38 more)
 
 ### Community 208 - "会迹（MeetTrace）GitHub Alpha 版本发布流程"
 Cohesion: 0.20
@@ -1472,9 +1462,9 @@ Nodes (6): SqfliteProcessingTaskRepository, ProcessingTaskRepository, _Processin
 Cohesion: 0.12
 Nodes (15): 1. 当前结论, 2. 串行交付顺序, 3. 当前阻塞清单, 4. 发布状态, 会迹（MeetTrace）Alpha 开发步骤, 阶段 0：产品与文档基线, 阶段 1：删除旧总结链与提升数据代, 阶段 2：说话人运行时资产 (+7 more)
 
-### Community 325 - "dart:io"
-Cohesion: 0.06
-Nodes (30): app_file_layout.dart, dart:convert, dart:io, File, FileSystemException, cause, currentGeneration, ensureCurrent (+22 more)
+### Community 325 - "package:path/path.dart"
+Cohesion: 0.07
+Nodes (27): File, download, requireHttps, issues, isValid, kind, message, ModelFileIssue (+19 more)
 
 ### Community 326 - "Exception"
 Cohesion: 0.20

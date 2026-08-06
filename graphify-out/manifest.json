@@ -2565,8 +2565,8 @@
     "semantic_hash": ""
   },
   "test/architecture/release_workflow_guard_test.dart": {
-    "mtime": 1786025929.196602,
-    "ast_hash": "058b9a315178df56d78bc890715a20c4",
+    "mtime": 1786031555.74185,
+    "ast_hash": "bbf3ce576679f0430c08ade083f940aa",
     "semantic_hash": ""
   },
   ".github/workflows/quality.yml": {
@@ -2575,8 +2575,8 @@
     "semantic_hash": ""
   },
   "docs/project/GitHub_\u7248\u672c\u53d1\u5e03\u6d41\u7a0b.md": {
-    "mtime": 1786011347.5872002,
-    "ast_hash": "deaaa56776e38b4d5bfbb34a10583bba",
+    "mtime": 1786031202.5934844,
+    "ast_hash": "dcb7d87d9e462cb07154632541f9b3c4",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260806_034743_\u4fee\u590d_ios_\u6700\u7ec8\u5904\u7406\u65f6\u8bf4\u8bdd\u4eba\u5206\u79bb_sigabrt.md": {
@@ -2605,13 +2605,13 @@
     "semantic_hash": ""
   },
   ".github/workflows/alpha-release.yml": {
-    "mtime": 1786026010.22684,
-    "ast_hash": "87d683f09b66df3e41e973fba6ac0ef6",
+    "mtime": 1786031555.740803,
+    "ast_hash": "30963dbe498d54d079cae611c9cad02b",
     "semantic_hash": ""
   },
   "spec/spec-process-cicd-alpha-release.md": {
-    "mtime": 1786017330.3379056,
-    "ast_hash": "778deedb4c4ffe067e27fe62e040efa1",
+    "mtime": 1786031202.5973785,
+    "ast_hash": "e4fb6321acf03922868170744f27216e",
     "semantic_hash": ""
   },
   "lib/data/services/monitoring/sentry_bootstrap.dart": {
