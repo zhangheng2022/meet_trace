@@ -102,6 +102,8 @@ void main() {
       expect(android, contains('--draft --prerelease'));
       expect(android, contains('--clobber'));
       expect(android, contains('ANDROID_SIGNING_CERT_SHA256'));
+      expect(android, contains(r'^.*certificate SHA-256 digest:'));
+      expect(android, isNot(contains(r'^Signer #1 certificate SHA-256')));
       expect(android, contains('uses: actions/attest@v4'));
       expect(android, contains('"job": "android"'));
       expect(android, contains(r'if ($abis.Count -ne 1'));

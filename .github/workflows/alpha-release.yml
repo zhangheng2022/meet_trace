@@ -251,7 +251,7 @@ jobs:
           [[ -x "$apksigner" ]]
           "$apksigner" verify --verbose --print-certs "$APK_PATH" \
             | tee build/android/alpha/apksigner.txt
-          actual="$(sed -nE 's/^Signer #1 certificate SHA-256 digest: (.*)$/\1/p' build/android/alpha/apksigner.txt | head -1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          actual="$(sed -nE 's/^.*certificate SHA-256 digest:[[:space:]]*([[:xdigit:]:]+)[[:space:]]*$/\1/p' build/android/alpha/apksigner.txt | head -1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           expected="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           [[ -n "$actual" && -n "$expected" && "$actual" == "$expected" ]]
           printf '%s\n' "$actual" > build/android/alpha/signing-certificate.sha256
