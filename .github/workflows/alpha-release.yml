@@ -217,9 +217,10 @@ jobs:
           flutter build apk \
             --release \
             --target-platform android-arm64 \
+            --split-per-abi \
             --build-name="$MARKETING_VERSION" \
             --build-number="$ANDROID_BUILD_NUMBER"
-          source_apk="build/app/outputs/flutter-apk/app-release.apk"
+          source_apk="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
           apk_path="build/android/alpha/meettrace-${RELEASE_ID}-android-arm64.apk"
           [[ -s "$source_apk" ]]
           mkdir -p "$(dirname "$apk_path")"

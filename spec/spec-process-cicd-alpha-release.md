@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Unified Alpha Release
-version: 1.1
+version: 1.2
 date_created: 2026-08-06
 last_updated: 2026-08-06
 owner: MeetTrace maintainers
@@ -36,7 +36,7 @@ flowchart LR
 
 1. 首次发布标识从当前 `master` 锁定候选 SHA；已有 Draft 重跑则从 annotated tag 恢复原 SHA。
 2. 统一执行格式、静态分析和测试，避免双平台重复。
-3. 同一工作流内的 Android job 创建/更新 Draft 候选，iOS job 随后上传相同 SHA 的 TestFlight 构建。
+3. 同一工作流内的 Android job 创建/更新仅含 `arm64-v8a` 原生库的 Draft 候选，iOS job 随后上传相同 SHA 的 TestFlight 构建。
 4. `github-release` Environment 是唯一人工批准点。批准表示维护者已完成双平台实际验收。
 5. 批准后验证清单与 APK 摘要，公开原 Draft；TestFlight 链接缺失不阻断。
 6. 同一 ID 已公开时自动进入 metadata 模式，不重建双平台产物，仅补链接或说明，并仍要求公开环境批准。
@@ -62,7 +62,7 @@ flowchart LR
 
 ## Quality and Safety
 
-- 自动阻断：格式、分析、测试、签名、包审计、来源证明、同 SHA、版本、APK 摘要、TestFlight 上传。
+- 自动阻断：格式、分析、测试、签名、包审计、所有第三方原生库仅含 `arm64-v8a`、来源证明、同 SHA、版本、APK 摘要、TestFlight 上传。
 - 人工判断：AT-01～AT-18 真机结果、性能和已知风险是否可接受。
 - `docs/quality/alpha_release_input.json` 与 benchmark 工具继续用于记录和评估，但不被发布工作流读取。
 - Draft 阶段允许恢复性覆盖；公开后标签、APK 和候选证据不可变。
@@ -73,3 +73,4 @@ flowchart LR
 |---|---|---|---|
 | 1.0 | 2026-08-06 | 建立唯一可见发布入口与一次批准的双平台串行流程 | Codex |
 | 1.1 | 2026-08-06 | 将 Android、iOS 和公开 job 合并到单个 workflow 文件 | Codex |
+| 1.2 | 2026-08-06 | 明确 Android Draft 的全部原生库仅允许 arm64-v8a | Codex |

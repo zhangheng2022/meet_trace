@@ -91,6 +91,11 @@ void main() {
 
       expect(android, contains('environment: android-alpha'));
       expect(android, contains('--target-platform android-arm64'));
+      expect(android, contains('--split-per-abi'));
+      expect(
+        android,
+        contains('build/app/outputs/flutter-apk/app-arm64-v8a-release.apk'),
+      );
       expect(android, contains(r'meettrace-${RELEASE_ID}-android-arm64.apk'));
       expect(android, contains(r'git tag -a "$RELEASE_ID"'));
       expect(android, contains(r'.isDraft <<<"$release_json")" == true'));
