@@ -18,6 +18,34 @@ String _job(String workflow, String job, [String? nextJob]) {
 
 void main() {
   group('GitHub Alpha 发布守卫', () {
+    test('工作流使用当前稳定的官方 Action 主版本', () async {
+      final workflowFiles = await Directory('.github/workflows')
+          .list()
+          .where(
+            (entry) =>
+                entry is File &&
+                (entry.path.endsWith('.yml') || entry.path.endsWith('.yaml')),
+          )
+          .cast<File>()
+          .toList();
+      final workflows = (await Future.wait(
+        workflowFiles.map((file) => file.readAsString()),
+      )).join('\n');
+
+      expect(
+        RegExp(
+          r'actions/checkout@[^\s]+',
+        ).allMatches(workflows).map((match) => match.group(0)).toSet(),
+        {'actions/checkout@v7'},
+      );
+      expect(
+        RegExp(
+          r'actions/setup-java@[^\s]+',
+        ).allMatches(workflows).map((match) => match.group(0)).toSet(),
+        {'actions/setup-java@v5'},
+      );
+    });
+
     test('正式发布只保留一个 YML 和一个手动入口', () async {
       final workflow = await _workflow('alpha-release.yml');
       final obsoleteWorkflows = [

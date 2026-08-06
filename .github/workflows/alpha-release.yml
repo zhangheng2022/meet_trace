@@ -34,7 +34,7 @@ jobs:
       candidate_sha: ${{ steps.resolve.outputs.candidate_sha }}
     steps:
       - name: Checkout requested master revision
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -104,10 +104,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.prepare.outputs.candidate_sha }}
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -138,7 +138,7 @@ jobs:
 
     steps:
       - name: Checkout candidate commit
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.prepare.outputs.candidate_sha }}
           fetch-depth: 0
@@ -167,7 +167,7 @@ jobs:
           echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -409,7 +409,7 @@ jobs:
           [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
 
       - name: Checkout candidate commit
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.prepare.outputs.candidate_sha }}
           fetch-depth: 0
@@ -961,7 +961,7 @@ jobs:
     environment: github-release
     steps:
       - name: Checkout immutable candidate
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ needs.prepare.outputs.candidate_sha }}
           fetch-depth: 0
