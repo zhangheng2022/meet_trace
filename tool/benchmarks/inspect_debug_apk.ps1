@@ -13,9 +13,17 @@ if (-not (Test-Path -LiteralPath $ApkPath -PathType Leaf)) {
     throw "APK not found: $ApkPath"
 }
 
-$entries = & tar -tf $ApkPath
-if ($LASTEXITCODE -ne 0) {
-    throw 'Unable to read APK ZIP entries.'
+try {
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($ApkPath)
+    try {
+        $entries = @($archive.Entries | ForEach-Object {
+            $_.FullName.Replace('\', '/')
+        })
+    } finally {
+        $archive.Dispose()
+    }
+} catch {
+    throw "Unable to read APK ZIP entries: $($_.Exception.Message)"
 }
 
 $requiredAssets = @(

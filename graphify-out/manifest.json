@@ -100,7 +100,7 @@
     "semantic_hash": "93c22dae2d93f3dc1402e121901f582b"
   },
   "skills-lock.json": {
-    "mtime": 1786002569.0396082,
+    "mtime": 1786003472.5517216,
     "ast_hash": "b0d6c7a447c37170db1cb379e256fdd2",
     "semantic_hash": ""
   },
@@ -1060,8 +1060,8 @@
     "semantic_hash": "408251dd7473285243552c3107b156ac"
   },
   "tool/benchmarks/inspect_debug_apk.ps1": {
-    "mtime": 1785989673.942796,
-    "ast_hash": "b07b376863ff2484c7011a02f3a92c2f",
+    "mtime": 1786004301.276083,
+    "ast_hash": "2060c19a8e42209368f10bec5c0e8b96",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -2627,6 +2627,11 @@
   "docs/quality/alpha_release_input.json": {
     "mtime": 1786001636.902408,
     "ast_hash": "907287c9b13bde0471c5c90807a0a0ac",
+    "semantic_hash": ""
+  },
+  "test/tool/benchmarks/inspect_debug_apk_test.dart": {
+    "mtime": 1786004301.2773006,
+    "ast_hash": "bff100689ebd32b11e29f90b9ade9733",
     "semantic_hash": ""
   }
 }
