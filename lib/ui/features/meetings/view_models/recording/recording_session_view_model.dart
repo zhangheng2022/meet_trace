@@ -17,6 +17,8 @@ typedef RecordingTickerFactory =
     Timer Function(Duration duration, void Function(Timer timer) callback);
 
 const recordingWaveformSampleCapacity = 48;
+const recordingWaveformSampleInterval = Duration(milliseconds: 100);
+const recordingWaveformPendingSampleCapacity = 5;
 
 final class RecordingSessionViewModel extends ChangeNotifier {
   RecordingSessionViewModel({
@@ -25,8 +27,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     required this.preview,
     required this.sessionLifecycle,
     RecordingTickerFactory? tickerFactory,
+    RecordingTickerFactory? audioLevelTickerFactory,
   }) : _meeting = session.meeting,
        _tickerFactory = tickerFactory ?? Timer.periodic,
+       _audioLevelTickerFactory = audioLevelTickerFactory ?? Timer.periodic,
        _previewMetrics = preview.metrics {
     _segmentsView = UnmodifiableListView(_orderedSegments);
   }
@@ -35,6 +39,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   final AsrPreviewSession preview;
   final ManageRecordingSessionUseCase sessionLifecycle;
   final RecordingTickerFactory _tickerFactory;
+  final RecordingTickerFactory _audioLevelTickerFactory;
 
   Meeting _meeting;
   AsrPreviewMetrics _previewMetrics;
@@ -42,6 +47,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   final List<TranscriptSegmentEvent> _orderedSegments = [];
   late final UnmodifiableListView<TranscriptSegmentEvent> _segmentsView;
   final List<double> _audioLevels = [];
+  final Queue<RecordingAudioLevel> _pendingAudioLevels = Queue();
   final ValueNotifier<Duration> durationListenable = ValueNotifier(
     Duration.zero,
   );
@@ -53,6 +59,8 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   StreamSubscription<AsrPreviewMetrics>? _metricsSubscription;
   StreamSubscription<RecordingAudioLevel>? _audioLevelSubscription;
   Timer? _ticker;
+  Timer? _audioLevelTicker;
+  Duration? _latestAudioLevelCapturedThrough;
   String? _errorMessage;
   bool _isBusy = false;
   bool _isFinalizing = false;
@@ -109,6 +117,9 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       recording.pause,
       failureMessage: '暂停录音失败，录音状态未改变',
     );
+    if (recordingState == RecordingState.paused) {
+      _pendingAudioLevels.clear();
+    }
   }
 
   Future<void> resume() async {
@@ -128,6 +139,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     _isFinalizing = true;
     _setBusy(true);
     _ticker?.cancel();
+    _pendingAudioLevels.clear();
     try {
       _meeting = await sessionLifecycle.finish(_meeting);
       durationListenable.value = Duration(
@@ -178,13 +190,21 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       if (_disposed) {
         return;
       }
-      _audioLevels.add(sample.level);
-      final overflow = _audioLevels.length - recordingWaveformSampleCapacity;
-      if (overflow > 0) {
-        _audioLevels.removeRange(0, overflow);
+      final latest = _latestAudioLevelCapturedThrough;
+      if (latest != null && sample.capturedThrough <= latest) {
+        return;
       }
-      audioLevelsListenable.value = List.unmodifiable(_audioLevels);
+      _latestAudioLevelCapturedThrough = sample.capturedThrough;
+      _pendingAudioLevels.addLast(sample);
+      while (_pendingAudioLevels.length >
+          recordingWaveformPendingSampleCapacity) {
+        _pendingAudioLevels.removeFirst();
+      }
     });
+    _audioLevelTicker ??= _audioLevelTickerFactory(
+      recordingWaveformSampleInterval,
+      (_) => _publishNextAudioLevel(),
+    );
     _eventSubscription ??= preview.events.listen((event) {
       if (event case final TranscriptSegmentEvent segment) {
         _upsertSegment(segment);
@@ -201,6 +221,21 @@ final class RecordingSessionViewModel extends ChangeNotifier {
         transcriptListenable.notifyListeners();
       }
     });
+  }
+
+  void _publishNextAudioLevel() {
+    if (_disposed ||
+        recordingState != RecordingState.recording ||
+        _pendingAudioLevels.isEmpty) {
+      return;
+    }
+    final sample = _pendingAudioLevels.removeFirst();
+    _audioLevels.add(sample.level);
+    final overflow = _audioLevels.length - recordingWaveformSampleCapacity;
+    if (overflow > 0) {
+      _audioLevels.removeRange(0, overflow);
+    }
+    audioLevelsListenable.value = List.unmodifiable(_audioLevels);
   }
 
   void _upsertSegment(TranscriptSegmentEvent segment) {
@@ -247,6 +282,9 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   }
 
   Future<void> _detachPreviewSubscriptions() async {
+    _audioLevelTicker?.cancel();
+    _audioLevelTicker = null;
+    _pendingAudioLevels.clear();
     await _audioLevelSubscription?.cancel();
     await _eventSubscription?.cancel();
     await _metricsSubscription?.cancel();
@@ -272,6 +310,8 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _ticker?.cancel();
+    _audioLevelTicker?.cancel();
+    _pendingAudioLevels.clear();
     if (recordingState != RecordingState.recording &&
         recordingState != RecordingState.paused) {
       unawaited(_disposePreviewBestEffort());

@@ -4,6 +4,13 @@ import 'package:meettrace/app/application.dart';
 import 'package:meettrace/ui/features/meetings/views/recording/widgets/recording_audio_waveform.dart';
 
 void main() {
+  test('波形过渡与 100 毫秒展示节拍一致', () {
+    expect(
+      recordingWaveformTransitionDuration,
+      const Duration(milliseconds: 100),
+    );
+  });
+
   testWidgets('真实音量样本绘制波形并提供稳定辅助语义', (tester) async {
     await tester.pumpWidget(
       const Application(
@@ -73,6 +80,34 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(tester.binding.hasScheduledFrame, isFalse);
+  });
+
+  testWidgets('新样本在一个展示周期内完成连续过渡', (tester) async {
+    final levels = ValueNotifier<List<double>>(<double>[0.1]);
+    addTearDown(levels.dispose);
+
+    await tester.pumpWidget(
+      Application(
+        home: ValueListenableBuilder<List<double>>(
+          valueListenable: levels,
+          builder: (context, value, child) => RecordingAudioWaveform(
+            levels: value,
+            state: RecordingAudioWaveformState.live,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    levels.value = <double>[0.1, 0.9];
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 99));
+    expect(tester.binding.hasScheduledFrame, isTrue);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pumpAndSettle();
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('减弱动态时新样本立即生效且不启动持续动画', (tester) async {

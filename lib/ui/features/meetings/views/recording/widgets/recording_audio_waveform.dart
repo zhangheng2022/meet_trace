@@ -6,7 +6,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../theme/theme.dart';
 
-const recordingWaveformTransitionDuration = Duration(milliseconds: 140);
+const recordingWaveformTransitionDuration = Duration(milliseconds: 100);
 
 enum RecordingAudioWaveformState { waiting, live, paused, stopped }
 
@@ -44,7 +44,7 @@ final class _RecordingAudioWaveformState extends State<RecordingAudioWaveform>
       return;
     }
 
-    final progress = Curves.easeOutCubic.transform(_controller.value);
+    final progress = _controller.value;
     _fromLevels = _interpolateRightAligned(
       _fromLevels,
       _targetLevels,
@@ -91,9 +91,7 @@ final class _RecordingAudioWaveformState extends State<RecordingAudioWaveform>
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  final progress = Curves.easeOutCubic.transform(
-                    _controller.value,
-                  );
+                  final progress = _controller.value;
                   return CustomPaint(
                     painter: _RecordingWaveformPainter(
                       levels: _interpolateRightAligned(

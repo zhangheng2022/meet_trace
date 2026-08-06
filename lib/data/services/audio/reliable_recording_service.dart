@@ -39,8 +39,12 @@ final class ReliableRecordingService implements RecordingSessionService {
     DateTime Function()? now,
   }) : now = now ?? DateTime.now,
        _audioLevelMeter = audioLevelMeter,
-       _preview = RecordingPreviewDispatcher(
-         FanOutRecordingPreviewSink([audioLevelMeter, previewSink]),
+       _audioLevelPreview = RecordingPreviewDispatcher(
+         audioLevelMeter,
+         maxPendingChunks: maxPendingPreviewChunks,
+       ),
+       _asrPreview = RecordingPreviewDispatcher(
+         previewSink,
          maxPendingChunks: maxPendingPreviewChunks,
        ) {
     if (minimumFreeBytes <= 0) {
@@ -91,7 +95,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   final int checkpointSaveBytesThreshold;
   final DateTime Function() now;
   final PcmAudioLevelMeter _audioLevelMeter;
-  final RecordingPreviewDispatcher _preview;
+  final RecordingPreviewDispatcher _audioLevelPreview;
+  final RecordingPreviewDispatcher _asrPreview;
 
   RecordingState _state = RecordingState.idle;
   String? _meetingId;
@@ -120,7 +125,7 @@ final class ReliableRecordingService implements RecordingSessionService {
       _state == RecordingState.recording ||
       _state == RecordingState.paused ||
       (_state == RecordingState.failed && _output != null);
-  int get droppedPreviewChunks => _preview.droppedChunks;
+  int get droppedPreviewChunks => _asrPreview.droppedChunks;
 
   @override
   Future<void> start({required String meetingId}) async {
@@ -361,14 +366,12 @@ final class ReliableRecordingService implements RecordingSessionService {
       }
       await output.writeFrom(combined);
       await output.flush();
-      final persistedChunks = <RecordingPcmChunk>[];
-      for (final bytes in nonEmptyBytes) {
-        final startByteOffset = _persistedBytes;
-        _persistedBytes += bytes.length;
-        persistedChunks.add(
-          RecordingPcmChunk(bytes: bytes, startByteOffset: startByteOffset),
-        );
-      }
+      final startByteOffset = _persistedBytes;
+      _persistedBytes += combined.length;
+      final persistedChunk = RecordingPcmChunk(
+        bytes: combined,
+        startByteOffset: startByteOffset,
+      );
       // 进度 checkpoint 按时间/字节节流；暂停、恢复与封存等状态点仍强制落盘。
       if (_progressCheckpointDue()) {
         await _saveCheckpoint(
@@ -377,9 +380,8 @@ final class ReliableRecordingService implements RecordingSessionService {
               : RecordingCheckpointState.recording,
         );
       }
-      for (final chunk in persistedChunks) {
-        _preview.offer(chunk);
-      }
+      _audioLevelPreview.offer(persistedChunk);
+      _asrPreview.offer(persistedChunk);
     } on Object catch (error, stackTrace) {
       _writeError ??= error;
       _writeStackTrace ??= stackTrace;
@@ -482,7 +484,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   }
 
   Future<void> _cleanupCaptureBestEffort() async {
-    _preview.close();
+    _audioLevelPreview.close();
+    _asrPreview.close();
     await _audioLevelMeter.dispose();
     await _detachAudioSubscriptionBestEffort();
     if (_captureStopTimedOut) {

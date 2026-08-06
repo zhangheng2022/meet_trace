@@ -102,14 +102,16 @@ void main() {
     await subscription.cancel();
   });
 
-  test('同一提交窗口内的 PCM 块在首个预览前作为一个批次落盘', () async {
+  test('生产提交窗口将同批 PCM 合并为一个连续预览块', () async {
     const chunkCount = 20;
     const chunkBytes = 3200;
     final persistedAtFirstPreview = Completer<int>();
+    final previewChunks = <RecordingPcmChunk>[];
     late final ReliableRecordingService service;
     service = createService(
-      factCommitInterval: const Duration(milliseconds: 20),
-      preview: CallbackRecordingPreviewSink((_) async {
+      factCommitInterval: defaultRecordingFactCommitInterval,
+      preview: CallbackRecordingPreviewSink((chunk) async {
+        previewChunks.add(chunk);
         if (!persistedAtFirstPreview.isCompleted) {
           persistedAtFirstPreview.complete(service.persistedBytes);
         }
@@ -121,10 +123,43 @@ void main() {
       capture.add(_pcmBytes(chunkBytes));
     }
     await _waitFor(() => service.persistedBytes == chunkCount * chunkBytes);
+    await _waitFor(() => previewChunks.isNotEmpty);
     final result = await service.stop();
 
     expect(await persistedAtFirstPreview.future, chunkCount * chunkBytes);
+    expect(previewChunks, hasLength(1));
+    expect(previewChunks.single.startByteOffset, 0);
+    expect(previewChunks.single.bytes, hasLength(chunkCount * chunkBytes));
     expect(result.bytes, chunkCount * chunkBytes);
+  });
+
+  test('ASR 预览阻塞时音量派生仍处理后续已持久化批次', () async {
+    final firstPreview = Completer<void>();
+    var previewCalls = 0;
+    final service = createService(
+      preview: CallbackRecordingPreviewSink((_) {
+        previewCalls++;
+        return firstPreview.future;
+      }),
+    );
+    final levels = <RecordingAudioLevel>[];
+    final subscription = service.audioLevelChanges.listen(levels.add);
+
+    await service.start(meetingId: 'meeting-independent-levels');
+    capture.add(_pcmBytes(recordingBytesPerSecond ~/ 10));
+    await _waitFor(() => levels.length == 1 && previewCalls == 1);
+    capture.add(_pcmBytes(recordingBytesPerSecond ~/ 10));
+    await _waitFor(() => levels.length == 2);
+
+    expect(previewCalls, 1);
+    expect(levels.map((sample) => sample.capturedThrough), [
+      const Duration(milliseconds: 100),
+      const Duration(milliseconds: 200),
+    ]);
+
+    firstPreview.complete();
+    await service.stop();
+    await subscription.cancel();
   });
 
   test('preview sink 阻塞或抛错都不阻塞后续事实音频写入', () async {

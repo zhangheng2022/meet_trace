@@ -103,15 +103,18 @@ void main() {
   test('音量反馈保持固定窗口且不受实时转录降级影响', () async {
     final recording = _RecordingService();
     final preview = _PreviewSession();
+    final audioLevelTicker = _ManualPeriodicTicker();
     final viewModel = _viewModel(
       meetings: TestMeetingRepository(),
       recording: recording,
       preview: preview,
+      audioLevelTickerFactory: audioLevelTicker.create,
     );
     await viewModel.start();
 
     for (var index = 0; index < 60; index++) {
       recording.emitAudioLevel(index / 59);
+      audioLevelTicker.tick();
     }
     preview.emitMetrics(AsrPreviewState.recordingOnly);
 
@@ -128,10 +131,12 @@ void main() {
   test('时长、音量和转录高频事件不触发控制层整页通知', () async {
     final recording = _RecordingService();
     final preview = _PreviewSession();
+    final audioLevelTicker = _ManualPeriodicTicker();
     final viewModel = _viewModel(
       meetings: TestMeetingRepository(),
       recording: recording,
       preview: preview,
+      audioLevelTickerFactory: audioLevelTicker.create,
     );
     await viewModel.start();
     var controlNotifications = 0;
@@ -140,6 +145,7 @@ void main() {
     recording.durationValue = const Duration(seconds: 1);
     viewModel.refreshDuration();
     recording.emitAudioLevel(0.5);
+    audioLevelTicker.tick();
     preview.emitSegment(id: 'segment-1', startMs: 0, text: '局部刷新');
     preview.emitMetrics(AsrPreviewState.recordingOnly);
 
@@ -148,6 +154,63 @@ void main() {
     expect(viewModel.audioLevels, [0.5]);
     expect(viewModel.segments.single.text, '局部刷新');
     expect(viewModel.previewMetrics.state, AsrPreviewState.recordingOnly);
+    viewModel.dispose();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('突发音量按固定节拍逐个发布且积压时保留最新样本', () async {
+    final recording = _RecordingService();
+    final preview = _PreviewSession();
+    final audioLevelTicker = _ManualPeriodicTicker();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      audioLevelTickerFactory: audioLevelTicker.create,
+    );
+    await viewModel.start();
+
+    for (final level in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]) {
+      recording.emitAudioLevel(level);
+    }
+
+    expect(viewModel.audioLevels, isEmpty);
+    audioLevelTicker.tick();
+    expect(viewModel.audioLevels, [0.3]);
+    audioLevelTicker.tick();
+    expect(viewModel.audioLevels, [0.3, 0.4]);
+    audioLevelTicker.tick();
+    expect(viewModel.audioLevels, [0.3, 0.4, 0.5]);
+
+    viewModel.dispose();
+    expect(audioLevelTicker.isActive, isFalse);
+    await recording.close();
+    await preview.close();
+  });
+
+  test('暂停时清空待展示音量并在恢复后继续发布新样本', () async {
+    final recording = _RecordingService();
+    final preview = _PreviewSession();
+    final audioLevelTicker = _ManualPeriodicTicker();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      audioLevelTickerFactory: audioLevelTicker.create,
+    );
+    await viewModel.start();
+
+    recording.emitAudioLevel(0.4);
+    await viewModel.pause();
+    audioLevelTicker.tick();
+    expect(viewModel.audioLevels, isEmpty);
+
+    await viewModel.resume();
+    recording.emitAudioLevel(0.6);
+    audioLevelTicker.tick();
+    expect(viewModel.audioLevels, [0.6]);
+
     viewModel.dispose();
     await recording.close();
     await preview.close();
@@ -229,6 +292,7 @@ RecordingSessionViewModel _viewModel({
   required TestMeetingRepository meetings,
   required _RecordingService recording,
   required _PreviewSession preview,
+  RecordingTickerFactory? audioLevelTickerFactory,
 }) {
   final descriptor = AsrModelRegistry.alpha.requireById(
     senseVoiceDefaultModelId,
@@ -257,6 +321,7 @@ RecordingSessionViewModel _viewModel({
       now: () => DateTime.utc(2026, 7, 24, 1, 30),
     ),
     tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
+    audioLevelTickerFactory: audioLevelTickerFactory,
   );
 }
 
@@ -268,6 +333,7 @@ final class _RecordingService implements RecordingSessionService {
   Object? startError;
   Completer<void>? stopBarrier;
   bool _started = false;
+  Duration _audioCapturedThrough = Duration.zero;
 
   @override
   Stream<RecordingAudioLevel> get audioLevelChanges => _audioLevels.stream;
@@ -307,8 +373,9 @@ final class _RecordingService implements RecordingSessionService {
   }
 
   void emitAudioLevel(double level) {
+    _audioCapturedThrough += recordingWaveformSampleInterval;
     _audioLevels.add(
-      RecordingAudioLevel(level: level, capturedThrough: durationValue),
+      RecordingAudioLevel(level: level, capturedThrough: _audioCapturedThrough),
     );
   }
 
@@ -324,6 +391,30 @@ final class _RecordingService implements RecordingSessionService {
       audioPath: '/meetings/meeting-1/fact.pcm',
       bytes: durationValue.inSeconds * recordingBytesPerSecond,
     );
+  }
+}
+
+final class _ManualPeriodicTicker {
+  Timer? _timer;
+  void Function(Timer timer)? _callback;
+
+  bool get isActive => _timer?.isActive ?? false;
+
+  Timer create(Duration duration, void Function(Timer timer) callback) {
+    expect(duration, recordingWaveformSampleInterval);
+    final timer = Timer.periodic(const Duration(days: 1), (_) {});
+    _timer = timer;
+    _callback = callback;
+    return timer;
+  }
+
+  void tick() {
+    final timer = _timer;
+    final callback = _callback;
+    if (timer == null || callback == null) {
+      throw StateError('ticker 尚未创建');
+    }
+    callback(timer);
   }
 }
 

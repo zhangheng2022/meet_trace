@@ -15,6 +15,7 @@ actual
 adapter
 adaptive
 add
+adjacent
 adopt
 advance
 after
@@ -29,6 +30,7 @@ all
 allowed
 alpha
 already
+altool
 amplitude
 analysis
 and
@@ -44,6 +46,7 @@ append
 application
 applications
 apply
+appstore
 architecture
 archive
 area
@@ -76,6 +79,7 @@ bar
 barrier
 base
 baseline
+batch
 battery
 before
 begin
@@ -287,6 +291,7 @@ destroy
 destructive
 detach
 detail
+detect
 detector
 determinate
 deterministic
@@ -310,6 +315,7 @@ disk
 dismissible
 dispatcher
 display
+disposal
 dispose
 disposed
 distribution
@@ -410,6 +416,7 @@ fallback
 family
 fan
 fast
+fastlane
 favicon
 features
 ffi
@@ -427,6 +434,7 @@ finished
 first
 fixed
 fixture
+flight
 fling
 float
 floor
@@ -591,6 +599,7 @@ linear
 lints
 linux
 list
+listenable
 listener
 lister
 live
@@ -618,6 +627,7 @@ marker
 maskable
 master
 matcher
+matches
 material
 math
 matrix
@@ -714,6 +724,7 @@ operator
 opt
 option
 options
+ordered
 org
 orientation
 origin
@@ -964,11 +975,14 @@ samples
 sanitized
 save
 saved
+saves
 saving
 scale
+scan
 scene
 schedule
 scheduled
+scheduler
 schema
 screen
 script
@@ -1074,6 +1088,7 @@ style
 subject
 subscribe
 subscription
+subscriptions
 success
 such
 sum
@@ -1103,6 +1118,7 @@ terminal
 terminate
 test
 tested
+testflight
 testing
 tests
 text
@@ -1136,6 +1152,7 @@ total
 touch
 trace
 traceable
+tracking
 transaction
 transcribe
 transcribing
@@ -1244,6 +1261,7 @@ wstring
 year
 yue
 一次仅展开一条会议行
+上传除
 下一步是什么
 下载一致性
 下载共享类型造成反向依赖
@@ -1254,6 +1272,7 @@ yue
 中文化查询
 中说话人
 串行交付顺序
+为当前项目增加
 二次确认的永久会议删除
 交付对象
 产品与文档基线
@@ -1266,6 +1285,7 @@ yue
 代码冗余
 代码实现驱动的视觉系统规范
 代码架构与冗余审计
+会影响
 会议列表删除功能方案
 会议列表左滑删除方案
 会议删除事务数据范围
@@ -1302,6 +1322,7 @@ yue
 单一设计源
 单模型基线遗留字段已删除
 原子激活
+发布到
 发布状态
 受限归档安装和启动阻断通过哪些文件与依赖关系连接
 变更规则
@@ -1323,6 +1344,7 @@ yue
 增加无签名构建流水线
 增量架构优化
 增量证据
+外还有哪些方案
 外部门禁
 安全左滑删除交互
 安全总结网关
@@ -1331,6 +1353,7 @@ yue
 安装流程存在平行事务
 完成定义
 完成定义和主要阻塞链是什么
+实施说明
 实时波形
 实时转录调优
 实现证据快照
@@ -1367,6 +1390,7 @@ yue
 无签名构建流水线并使用最新稳定环境
 旧代码快照验证
 旧导入兼容层仍是主路径
+时如何在
 明暗主题
 是什么意思
 是否具备测试条件
@@ -1390,14 +1414,18 @@ yue
 核心推理路径是否有单元测试
 模型不要默认包含到安装包
 模型镜像已上传后
+步骤和三方依赖
 沉浸式标题栏修复
 渐进迁移顺序
 现在有两个初始化页吗
+的完整
 的说话人分离生产能力是否真实可用
 直接依赖原因
 真实录音条件预检
 真实离线说话人分离
 窄屏与大字体换行稳定性
+签名发布流水线需要复用哪些现有门槛
+签名材料
 精确锁定
 系统栏
 组合根成为高扇出
@@ -1435,6 +1463,7 @@ yue
 重设计查询
 阅读与维护规则
 阶段里程碑
+需要什么
 需要麦克风权限
 非目标平台脚手架
 项目冗余审计
