@@ -8,7 +8,7 @@
 
 ## 1. 最简发布模型
 
-Actions 页面只需要手动运行 `Alpha Release`：
+Actions 页面只需要手动运行 `Alpha Release`。Android、iOS 和最终公开均为该 YML 内的 job，不再保留独立发布 workflow 文件：
 
 1. 输入发布标识，例如 `v1.0.0-alpha.1`；发布说明和 TestFlight 外部链接可不填。
 2. 自动执行格式、静态分析和测试。

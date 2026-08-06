@@ -157,7 +157,7 @@ flutter build apk --debug
 flutter build ios --debug --no-codesign
 ```
 
-> Android `release` 不再回退到调试签名。没有显式注入正式 keystore 时只可用于无签名构建诊断；正式 Alpha 只从统一 `Alpha Release` 入口生成，内部 Android 工作流完成签名、证书校验并暂存到 Draft。维护者完成双平台验收后，在唯一的 `github-release` 批准步骤决定是否公开。
+> Android `release` 不再回退到调试签名。没有显式注入正式 keystore 时只可用于无签名构建诊断；正式 Alpha 只从统一 `Alpha Release` 入口生成，其中 Android job 完成签名、证书校验并暂存到 Draft。维护者完成双平台验收后，在唯一的 `github-release` 批准步骤决定是否公开。
 
 ## 测试与质量检查
 

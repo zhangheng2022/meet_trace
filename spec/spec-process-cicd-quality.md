@@ -159,5 +159,4 @@ toolchain_snapshot: text
 ## Related Specifications
 
 - [iOS 无签名构建](spec-process-cicd-ios-unsigned.md)
-- [Android Alpha 候选发布](spec-process-cicd-android-alpha.md)
-
+- [统一 Alpha 发布](spec-process-cicd-alpha-release.md)

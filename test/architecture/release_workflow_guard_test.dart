@@ -6,114 +6,108 @@ import 'package:flutter_test/flutter_test.dart';
 Future<String> _workflow(String name) =>
     File('.github/workflows/$name').readAsString();
 
+String _job(String workflow, String job, [String? nextJob]) {
+  final start = workflow.indexOf('\n  $job:');
+  final end = nextJob == null
+      ? workflow.length
+      : workflow.indexOf('\n  $nextJob:', start + 1);
+  expect(start, greaterThanOrEqualTo(0));
+  expect(end, greaterThan(start));
+  return workflow.substring(start, end);
+}
+
 void main() {
   group('GitHub Alpha 发布守卫', () {
-    test('仅 Alpha Release 暴露手动入口且只要求 release ID', () async {
-      final orchestrator = await _workflow('alpha-release.yml');
-      final internalWorkflows = await Future.wait([
-        _workflow('android-alpha.yml'),
-        _workflow('ios-testflight.yml'),
-        _workflow('finalize-release.yml'),
-      ]);
+    test('正式发布只保留一个 YML 和一个手动入口', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final obsoleteWorkflows = [
+        'android-alpha.yml',
+        'ios-testflight.yml',
+        'finalize-release.yml',
+      ];
 
-      expect(orchestrator, contains('name: Alpha Release'));
-      expect(orchestrator, contains('workflow_dispatch:'));
-      expect(orchestrator, contains('release_id:'));
-      expect(orchestrator, contains('release_notes:'));
-      expect(orchestrator, contains('ios_testflight_external_url:'));
-      final dispatchInputs = orchestrator.substring(
-        orchestrator.indexOf('  workflow_dispatch:'),
-        orchestrator.indexOf('\npermissions:'),
-      );
-      expect(RegExp(r'required: true').allMatches(dispatchInputs), hasLength(1));
-      expect(orchestrator, isNot(contains('expected_sha:')));
-      expect(orchestrator, isNot(contains('gate_input_path:')));
-      expect(orchestrator, contains('name: Automatic technical checks'));
-      expect(
-        orchestrator,
-        contains('uses: ./.github/workflows/android-alpha.yml'),
-      );
-      expect(
-        orchestrator,
-        contains('uses: ./.github/workflows/ios-testflight.yml'),
-      );
-      expect(
-        orchestrator,
-        contains('uses: ./.github/workflows/finalize-release.yml'),
-      );
-
-      for (final workflow in internalWorkflows) {
-        expect(workflow, contains('workflow_call:'));
-        expect(workflow, isNot(contains('workflow_dispatch:')));
+      for (final name in obsoleteWorkflows) {
+        expect(await File('.github/workflows/$name').exists(), isFalse);
       }
+      expect(workflow, contains('name: Alpha Release'));
+      expect(workflow, contains('workflow_dispatch:'));
+      expect(workflow, contains('\n  android:'));
+      expect(workflow, contains('\n  ios:'));
+      expect(workflow, contains('\n  publish:'));
+      expect(workflow, isNot(contains('uses: ./.github/workflows/')));
+
+      final dispatchInputs = workflow.substring(
+        workflow.indexOf('  workflow_dispatch:'),
+        workflow.indexOf('\npermissions:'),
+      );
+      expect(
+        RegExp(r'required: true').allMatches(dispatchInputs),
+        hasLength(1),
+      );
+      expect(workflow, isNot(contains('expected_sha:')));
+      expect(workflow, isNot(contains('gate_input_path:')));
     });
 
     test('产品质量记录不再作为自动发布门禁', () async {
-      final workflows = await Future.wait([
-        _workflow('alpha-release.yml'),
-        _workflow('android-alpha.yml'),
-        _workflow('ios-testflight.yml'),
-        _workflow('finalize-release.yml'),
-      ]);
+      final workflow = await _workflow('alpha-release.yml');
 
-      for (final workflow in workflows) {
-        expect(workflow, isNot(contains('alpha_release_input.json')));
-        expect(workflow, isNot(contains('evaluate_alpha_release.dart')));
-        expect(workflow, isNot(contains('gateDecision')));
-        expect(workflow, isNot(contains('release-gate-report')));
-      }
+      expect(workflow, isNot(contains('alpha_release_input.json')));
+      expect(workflow, isNot(contains('evaluate_alpha_release.dart')));
+      expect(workflow, isNot(contains('gateDecision')));
+      expect(workflow, isNot(contains('release-gate-report')));
     });
 
-    test('Android Draft 可恢复重试但公开后不可覆盖', () async {
-      final workflow = await _workflow('android-alpha.yml');
+    test('Android job 仅构建 arm64 Draft 且支持恢复重试', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final android = _job(workflow, 'android', 'ios');
 
-      expect(workflow, contains('environment: android-alpha'));
-      expect(workflow, contains('--target-platform android-arm64'));
-      expect(workflow, contains(r'meettrace-${RELEASE_ID}-android-arm64.apk'));
-      expect(workflow, contains(r'git tag -a "$RELEASE_ID"'));
-      expect(workflow, contains(r'.isDraft <<<"$release_json")" == true'));
-      expect(workflow, contains('--draft --prerelease'));
-      expect(workflow, contains('--clobber'));
-      expect(workflow, contains('ANDROID_SIGNING_CERT_SHA256'));
-      expect(workflow, contains('uses: actions/attest@v4'));
-      expect(workflow, contains(r'if ($abis.Count -ne 1'));
-      expect(workflow, isNot(contains('build/app/outputs/flutter-apk/*.apk')));
+      expect(android, contains('environment: android-alpha'));
+      expect(android, contains('--target-platform android-arm64'));
+      expect(android, contains(r'meettrace-${RELEASE_ID}-android-arm64.apk'));
+      expect(android, contains(r'git tag -a "$RELEASE_ID"'));
+      expect(android, contains(r'.isDraft <<<"$release_json")" == true'));
+      expect(android, contains('--draft --prerelease'));
+      expect(android, contains('--clobber'));
+      expect(android, contains('ANDROID_SIGNING_CERT_SHA256'));
+      expect(android, contains('uses: actions/attest@v4'));
+      expect(android, contains('"job": "android"'));
+      expect(android, contains(r'if ($abis.Count -ne 1'));
+      expect(android, isNot(contains('build/app/outputs/flutter-apk/*.apk')));
     });
 
-    test('iOS 只上传 TestFlight 且不向 GitHub 暴露签名 IPA', () async {
-      final workflow = await _workflow('ios-testflight.yml');
+    test('iOS job 只上传 TestFlight 且不向 GitHub 暴露 IPA', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final ios = _job(workflow, 'ios', 'publish');
 
-      expect(workflow, contains('environment: testflight'));
-      expect(workflow, contains('contents: read'));
-      expect(workflow, contains('uses: actions/attest@v4'));
-      expect(workflow, contains('run: fastlane ios upload_testflight'));
-      expect(workflow, contains(r'ref: ${{ inputs.candidate_sha }}'));
-      expect(workflow, isNot(contains('gh release upload')));
-      expect(workflow, isNot(contains('build/ios/testflight/*.ipa')));
+      expect(ios, contains('environment: testflight'));
+      expect(ios, contains('contents: read'));
+      expect(ios, contains('uses: actions/attest@v4'));
+      expect(ios, contains('run: fastlane ios upload_testflight'));
+      expect(ios, contains('"job": "ios"'));
+      expect(ios, isNot(contains('gh release upload')));
+      expect(ios, isNot(contains('build/ios/testflight/*.ipa')));
     });
 
-    test('最终发布只有一次批准并支持不重建地后补链接', () async {
-      final orchestrator = await _workflow('alpha-release.yml');
-      final workflow = await _workflow('finalize-release.yml');
+    test('publish job 是唯一公开批准且支持不重建地后补链接', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final publish = _job(workflow, 'publish');
 
-      expect(orchestrator, contains("mode == 'metadata'"));
-      expect(workflow, contains('environment: github-release'));
-      expect(workflow, contains("if: inputs.mode == 'candidate'"));
-      expect(workflow, contains("if: inputs.mode == 'metadata'"));
-      expect(workflow, contains('android-candidate-manifest.json'));
-      expect(workflow, contains('ios-candidate-manifest.json'));
-      expect(workflow, contains('https://testflight\\.apple\\.com/join/'));
-      expect(workflow, contains('iOS TestFlight 外部测试链接：待提供'));
-      expect(workflow, contains('Staged Android APK digest changed'));
-      expect(workflow, contains('Existing public Android APK changed'));
-      expect(workflow, contains('endswith(".ipa")'));
-      expect(workflow, contains('unexpected APK name'));
-      expect(workflow, contains('--draft=false --prerelease'));
-      expect(workflow, isNot(contains('gh release create')));
-      expect(workflow, isNot(contains('git tag -a')));
+      expect(publish, contains('environment: github-release'));
+      expect(publish, contains("needs.prepare.outputs.mode == 'candidate'"));
+      expect(publish, contains("needs.prepare.outputs.mode == 'metadata'"));
+      expect(publish, contains('android-candidate-manifest.json'));
+      expect(publish, contains('ios-candidate-manifest.json'));
+      expect(publish, contains('https://testflight\\.apple\\.com/join/'));
+      expect(publish, contains('iOS TestFlight 外部测试链接：待提供'));
+      expect(publish, contains('Staged Android APK digest changed'));
+      expect(publish, contains('Existing public Android APK changed'));
+      expect(publish, contains('endswith(".ipa")'));
+      expect(publish, contains('--draft=false --prerelease'));
+      expect(publish, isNot(contains('gh release create')));
+      expect(publish, isNot(contains('git tag -a')));
       expect(
-        workflow.indexOf('Staged Android APK digest changed'),
-        lessThan(workflow.indexOf('--draft=false --prerelease')),
+        publish.indexOf('Staged Android APK digest changed'),
+        lessThan(publish.indexOf('--draft=false --prerelease')),
       );
     });
 

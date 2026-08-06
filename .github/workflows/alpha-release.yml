@@ -125,37 +125,828 @@ jobs:
         run: flutter test
 
   android:
-    name: Android Draft candidate
     if: needs.prepare.outputs.mode == 'candidate'
     needs: [prepare, quality]
     permissions:
       contents: write
       id-token: write
       attestations: write
-    uses: ./.github/workflows/android-alpha.yml
-    with:
-      release_id: ${{ inputs.release_id }}
-      candidate_sha: ${{ needs.prepare.outputs.candidate_sha }}
-      release_notes: ${{ inputs.release_notes }}
-    secrets: inherit
+    name: Build, sign, and stage Android Alpha
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: android-alpha
+
+    steps:
+      - name: Checkout candidate commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
+          fetch-depth: 0
+
+      - name: Validate candidate identity
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          candidate_sha="$(git rev-parse HEAD)"
+          [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$candidate_sha" == "$CANDIDATE_SHA" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$candidate_sha" origin/master
+
+          marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
+          [[ -n "$marketing_version" ]]
+          expected_prefix="v${marketing_version}-alpha."
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$RELEASE_ID" == "$expected_prefix"* ]]
+
+          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up latest stable Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Prepare release build number
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (( GITHUB_RUN_ATTEMPT > 99 )); then
+            echo "GitHub run attempt exceeds the supported build-number range" >&2
+            exit 1
+          fi
+          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
+          echo "ANDROID_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          echo "Android versionCode: $build_number"
+
+      - name: Decode Android signing keystore
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          [[ -n "${ANDROID_KEYSTORE_BASE64//[[:space:]]/}" ]]
+          keystore_path="$RUNNER_TEMP/meettrace-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          [[ -s "$keystore_path" ]]
+          chmod 600 "$keystore_path"
+          echo "MEETTRACE_ANDROID_KEYSTORE_PATH=$keystore_path" >> "$GITHUB_ENV"
+
+      - name: Build signed Android Release APK
+        shell: bash
+        env:
+          MEETTRACE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          MEETTRACE_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          MEETTRACE_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          flutter build apk \
+            --release \
+            --target-platform android-arm64 \
+            --build-name="$MARKETING_VERSION" \
+            --build-number="$ANDROID_BUILD_NUMBER"
+          source_apk="build/app/outputs/flutter-apk/app-release.apk"
+          apk_path="build/android/alpha/meettrace-${RELEASE_ID}-android-arm64.apk"
+          [[ -s "$source_apk" ]]
+          mkdir -p "$(dirname "$apk_path")"
+          mv -- "$source_apk" "$apk_path"
+          echo "APK_PATH=$apk_path" >> "$GITHUB_ENV"
+
+      - name: Inspect APK contents
+        shell: pwsh
+        run: |
+          ./tool/benchmarks/inspect_debug_apk.ps1 `
+            -ApkPath $env:APK_PATH `
+            -ReportPath build/android/alpha/android-apk-inspection.json
+          $report = Get-Content -LiteralPath build/android/alpha/android-apk-inspection.json -Raw |
+            ConvertFrom-Json
+          $abis = @($report.abis)
+          if ($abis.Count -ne 1 -or $abis[0] -ne 'arm64-v8a') {
+            throw "Public Alpha APK must contain only arm64-v8a; found: $($abis -join ', ')"
+          }
+
+      - name: Verify APK signature and certificate
+        shell: bash
+        env:
+          EXPECTED_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/android/alpha
+          apksigner="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name apksigner | sort -V | tail -1)"
+          [[ -x "$apksigner" ]]
+          "$apksigner" verify --verbose --print-certs "$APK_PATH" \
+            | tee build/android/alpha/apksigner.txt
+          actual="$(sed -nE 's/^Signer #1 certificate SHA-256 digest: (.*)$/\1/p' build/android/alpha/apksigner.txt | head -1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          expected="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          [[ -n "$actual" && -n "$expected" && "$actual" == "$expected" ]]
+          printf '%s\n' "$actual" > build/android/alpha/signing-certificate.sha256
+          sha256sum "$APK_PATH" | tee build/android/alpha/android-release-apk.sha256
+
+      - name: Write Android candidate manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_ID="$RELEASE_ID" \
+          MARKETING_VERSION="$MARKETING_VERSION" \
+          ANDROID_BUILD_NUMBER="$ANDROID_BUILD_NUMBER" \
+          APK_PATH="$APK_PATH" \
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          apk = Path(os.environ["APK_PATH"])
+          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+          manifest = {
+              "schemaVersion": 1,
+              "platform": "android",
+              "releaseId": os.environ["RELEASE_ID"],
+              "marketingVersion": os.environ["MARKETING_VERSION"],
+              "buildNumber": os.environ["ANDROID_BUILD_NUMBER"],
+              "commitSha": os.environ["CANDIDATE_SHA"],
+              "workflowFile": ".github/workflows/alpha-release.yml",
+              "job": "android",
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "artifact": {"name": apk.name, "bytes": apk.stat().st_size, "sha256": digest},
+              "distribution": {
+                  "repository": os.environ["GITHUB_REPOSITORY"],
+                  "visibility": "public-after-finalize",
+                  "releaseState": "draft",
+                  "publiclyInstallable": False,
+              },
+          }
+          Path("build/android/alpha/candidate-manifest.json").write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Generate APK provenance attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ env.APK_PATH }}
+
+      - name: Stage APK in this repository's draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+          visibility="$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)"
+          [[ "$visibility" == "PUBLIC" ]]
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_ID" >/dev/null 2>&1; then
+            git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+            [[ "$(git cat-file -t "refs/tags/$RELEASE_ID")" == "tag" ]]
+            [[ "$(git rev-parse "refs/tags/$RELEASE_ID^{}")" == "$CANDIDATE_SHA" ]]
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_ID" "$CANDIDATE_SHA" -m "MeetTrace $RELEASE_ID candidate"
+            git push origin "refs/tags/$RELEASE_ID"
+          fi
+
+          notes_path="$RUNNER_TEMP/android-release-notes.md"
+          {
+            echo "MeetTrace Android candidate \`$RELEASE_ID\` (not publicly installable yet)."
+            echo
+            echo "Source: \`$GITHUB_REPOSITORY@$CANDIDATE_SHA\`"
+            echo "Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "This Draft Release must remain unpublished until the matching iOS TestFlight candidate passes final verification."
+            if [[ -n "$RELEASE_NOTES" ]]; then
+              echo
+              printf '%s\n' "$RELEASE_NOTES"
+            fi
+          } > "$notes_path"
+
+          if release_json="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease 2>/dev/null)"; then
+            [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]
+            [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+            gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+              --title "MeetTrace $RELEASE_ID Android candidate" --notes-file "$notes_path"
+          else
+            gh release create "$RELEASE_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --draft --prerelease \
+              --title "MeetTrace $RELEASE_ID Android candidate" \
+              --notes-file "$notes_path"
+          fi
+
+          gh release upload "$RELEASE_ID" \
+            "$APK_PATH" \
+            build/android/alpha/android-release-apk.sha256 \
+            build/android/alpha/signing-certificate.sha256 \
+            build/android/alpha/candidate-manifest.json \
+            build/android/alpha/android-apk-inspection.json \
+            build/android/alpha/apksigner.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+      - name: Upload non-sensitive Android candidate evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: meettrace-android-alpha-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/android/alpha/*.json
+            build/android/alpha/*.sha256
+            build/android/alpha/*.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Remove temporary signing materials
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${MEETTRACE_ANDROID_KEYSTORE_PATH:-}" ]]; then
+            rm -f -- "$MEETTRACE_ANDROID_KEYSTORE_PATH"
+          fi
 
   ios:
-    name: iOS TestFlight candidate
     if: needs.prepare.outputs.mode == 'candidate'
     needs: [prepare, android]
     permissions:
       contents: read
       id-token: write
       attestations: write
-    uses: ./.github/workflows/ios-testflight.yml
-    with:
-      release_id: ${{ inputs.release_id }}
-      candidate_sha: ${{ needs.prepare.outputs.candidate_sha }}
-      release_notes: ${{ inputs.release_notes }}
-    secrets: inherit
+    name: Build, sign, and upload iOS app
+    runs-on: macos-latest
+    timeout-minutes: 120
+    environment: testflight
+    env:
+      IOS_BUNDLE_ID: com.meettrace.app
+      FASTLANE_OPT_OUT_USAGE: "1"
+      FASTLANE_SKIP_UPDATE_CHECK: "1"
+
+    steps:
+      - name: Validate release identifier
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Checkout candidate commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
+          fetch-depth: 0
+
+      - name: Validate candidate identity
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          EXPECTED_CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
+          [[ -n "$marketing_version" ]]
+          expected_prefix="v${marketing_version}-alpha."
+          [[ "$RELEASE_ID" == "$expected_prefix"* ]]
+
+          git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+          tag_type="$(git cat-file -t "refs/tags/$RELEASE_ID")"
+          candidate_sha="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
+          [[ "$tag_type" == "tag" ]]
+          [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$candidate_sha" == "$EXPECTED_CANDIDATE_SHA" ]]
+          [[ "$(git rev-parse HEAD)" == "$candidate_sha" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$candidate_sha" origin/master
+
+          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
+          echo "CANDIDATE_REF=refs/tags/$RELEASE_ID" >> "$GITHUB_ENV"
+
+      - name: Set up latest stable Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Fastlane
+        run: sudo gem install fastlane --version 2.235.0 --no-document
+
+      - name: Capture toolchain snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios/testflight
+          {
+            echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "runner_arch=$(uname -m)"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "--- macOS ---"
+            sw_vers
+            echo "--- Xcode ---"
+            xcode-select -p
+            xcodebuild -version
+            echo "--- Flutter ---"
+            flutter --version
+            echo "--- Dart ---"
+            dart --version 2>&1
+            echo "--- CocoaPods ---"
+            pod --version
+            echo "--- Ruby ---"
+            ruby --version
+            echo "--- Fastlane ---"
+            fastlane --version
+            echo "--- Disk ---"
+            df -h
+          } | tee build/ios/testflight/toolchain.txt
+
+      - name: Resolve dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Prepare release build number
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (( GITHUB_RUN_ATTEMPT > 99 )); then
+            echo "GitHub run attempt exceeds the supported build-number range" >&2
+            exit 1
+          fi
+          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
+          echo "IOS_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          echo "TestFlight build number: $build_number"
+
+      - name: Build and inspect unsigned Release app
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build ios \
+            --release --no-codesign \
+            --build-number="$IOS_BUILD_NUMBER"
+          bash tool/benchmarks/inspect_ios_app.sh \
+            build/ios/iphoneos/Runner.app \
+            build/ios/testflight/ios-app-inspection.json
+
+      - name: Validate and decode signing materials
+        shell: bash
+        env:
+          IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+          IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import binascii
+          import os
+          import re
+          from pathlib import Path
+
+          required = (
+              "IOS_DISTRIBUTION_P12_PASSWORD",
+              "APPLE_TEAM_ID",
+              "APP_STORE_CONNECT_KEY_ID",
+              "APP_STORE_CONNECT_ISSUER_ID",
+          )
+          missing = [name for name in required if not os.environ.get(name, "").strip()]
+          if missing:
+              raise SystemExit("Missing required GitHub Secrets: " + ", ".join(missing))
+
+          team_id = os.environ["APPLE_TEAM_ID"].strip()
+          key_id = os.environ["APP_STORE_CONNECT_KEY_ID"].strip()
+          issuer_id = os.environ["APP_STORE_CONNECT_ISSUER_ID"].strip()
+          if not re.fullmatch(r"[A-Z0-9]{10}", team_id):
+              raise SystemExit("APPLE_TEAM_ID must be a 10-character uppercase identifier")
+          if not re.fullmatch(r"[A-Za-z0-9_-]{4,64}", key_id):
+              raise SystemExit("APP_STORE_CONNECT_KEY_ID has an invalid format")
+          if not re.fullmatch(
+              r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+              issuer_id,
+          ):
+              raise SystemExit("APP_STORE_CONNECT_ISSUER_ID must be a UUID")
+
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          destinations = {
+              "IOS_DISTRIBUTION_P12_BASE64": runner_temp / "meettrace-distribution.p12",
+              "IOS_PROVISIONING_PROFILE_BASE64": runner_temp / "meettrace-app-store.mobileprovision",
+              "APP_STORE_CONNECT_API_KEY_P8_BASE64": runner_temp / "meettrace-api-key.p8",
+          }
+          for secret_name, destination in destinations.items():
+              encoded = "".join(os.environ.get(secret_name, "").split())
+              if not encoded:
+                  raise SystemExit(f"Missing required GitHub Secret: {secret_name}")
+              try:
+                  decoded = base64.b64decode(encoded, validate=True)
+              except (binascii.Error, ValueError) as error:
+                  raise SystemExit(f"{secret_name} is not valid Base64: {error}") from error
+              if not decoded:
+                  raise SystemExit(f"{secret_name} decoded to an empty file")
+              destination.write_bytes(decoded)
+              destination.chmod(0o600)
+
+          p8_path = destinations["APP_STORE_CONNECT_API_KEY_P8_BASE64"]
+          if b"BEGIN PRIVATE KEY" not in p8_path.read_bytes():
+              raise SystemExit("App Store Connect API key is not a valid .p8 private key")
+
+          env_values = {
+              "CERTIFICATE_PATH": destinations["IOS_DISTRIBUTION_P12_BASE64"],
+              "PROVISIONING_PROFILE_PATH": destinations["IOS_PROVISIONING_PROFILE_BASE64"],
+              "APP_STORE_CONNECT_API_KEY_PATH": p8_path,
+              "APPLE_TEAM_ID": team_id,
+              "APP_STORE_CONNECT_KEY_ID": key_id,
+              "APP_STORE_CONNECT_ISSUER_ID": issuer_id,
+          }
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              for name, value in env_values.items():
+                  stream.write(f"{name}={value}\n")
+          print("Signing and App Store Connect materials decoded into RUNNER_TEMP")
+          PY
+
+      - name: Import distribution certificate
+        shell: bash
+        env:
+          IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/meettrace-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          original_default_keychain="$(security default-keychain -d user | tr -d '"')"
+
+          {
+            echo "KEYCHAIN_PATH=$keychain_path"
+            echo "ORIGINAL_DEFAULT_KEYCHAIN=$original_default_keychain"
+          } >> "$GITHUB_ENV"
+
+          echo "::add-mask::$keychain_password"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$CERTIFICATE_PATH" \
+            -P "$IOS_DISTRIBUTION_P12_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: -s \
+            -k "$keychain_password" "$keychain_path"
+          security default-keychain -d user -s "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" "$original_default_keychain"
+
+          identity_output="$(security find-identity -v -p codesigning "$keychain_path")"
+          printf '%s\n' "$identity_output"
+          identity_sha="$(
+            printf '%s\n' "$identity_output" |
+              awk -v team="$APPLE_TEAM_ID" \
+                '$0 ~ team && ($0 ~ /Apple Distribution/ || $0 ~ /iPhone Distribution/) {print $2; exit}'
+          )"
+          if [[ -z "$identity_sha" ]]; then
+            echo "No valid Apple Distribution identity for APPLE_TEAM_ID was found in the p12" >&2
+            exit 1
+          fi
+
+          echo "IOS_DISTRIBUTION_IDENTITY=$identity_sha" >> "$GITHUB_ENV"
+
+      - name: Validate and install provisioning profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          profile_plist="$RUNNER_TEMP/meettrace-profile.plist"
+          security cms -D -i "$PROVISIONING_PROFILE_PATH" > "$profile_plist"
+
+          PROFILE_PLIST="$profile_plist" python3 - <<'PY'
+          import os
+          import plistlib
+          import hashlib
+          import re
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          with Path(os.environ["PROFILE_PLIST"]).open("rb") as stream:
+              profile = plistlib.load(stream)
+          entitlements = profile.get("Entitlements", {})
+          expected_bundle_id = os.environ["IOS_BUNDLE_ID"]
+          expected_team_id = os.environ["APPLE_TEAM_ID"]
+          application_identifier = str(entitlements.get("application-identifier", ""))
+          profile_bundle_id = application_identifier.split(".", 1)[1] if "." in application_identifier else ""
+          profile_team_id = str(
+              entitlements.get("com.apple.developer.team-identifier")
+              or (profile.get("TeamIdentifier") or [""])[0]
+          )
+          profile_certificate_hashes = {
+              hashlib.sha1(certificate).hexdigest().upper()
+              for certificate in profile.get("DeveloperCertificates", [])
+              if isinstance(certificate, bytes)
+          }
+          expected_identity = os.environ["IOS_DISTRIBUTION_IDENTITY"].strip().upper()
+
+          errors = []
+          if profile_bundle_id != expected_bundle_id:
+              errors.append(f"profile bundle ID is {profile_bundle_id!r}, expected {expected_bundle_id!r}")
+          if profile_team_id != expected_team_id:
+              errors.append(f"profile team ID is {profile_team_id!r}, expected {expected_team_id!r}")
+          if expected_identity not in profile_certificate_hashes:
+              errors.append(
+                  "profile does not include the distribution certificate imported from the p12"
+              )
+          if entitlements.get("get-task-allow") is not False:
+              errors.append("profile permits debugging and is not an App Store distribution profile")
+          if profile.get("ProvisionedDevices"):
+              errors.append("profile contains registered devices and is not an App Store profile")
+          if profile.get("ProvisionsAllDevices"):
+              errors.append("enterprise provisioning profiles cannot be uploaded to TestFlight")
+
+          expiration = profile.get("ExpirationDate")
+          if not isinstance(expiration, datetime):
+              errors.append("profile has no valid expiration date")
+          else:
+              if expiration.tzinfo is None:
+                  expiration = expiration.replace(tzinfo=timezone.utc)
+              if expiration <= datetime.now(timezone.utc):
+                  errors.append("profile has expired")
+          uuid = str(profile.get("UUID", "")).strip()
+          if not re.fullmatch(
+              r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+              uuid,
+          ):
+              errors.append("profile has no valid UUID")
+          if errors:
+              raise SystemExit("Invalid provisioning profile: " + "; ".join(errors))
+
+          install_dir = Path.home() / "Library/MobileDevice/Provisioning Profiles"
+          install_dir.mkdir(parents=True, exist_ok=True)
+          install_path = install_dir / f"{uuid}.mobileprovision"
+          install_path.write_bytes(Path(os.environ["PROVISIONING_PROFILE_PATH"]).read_bytes())
+          install_path.chmod(0o600)
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as stream:
+              stream.write(f"IOS_PROVISIONING_PROFILE_UUID={uuid}\n")
+              stream.write(f"IOS_PROVISIONING_PROFILE_INSTALL_PATH={install_path}\n")
+          print(f"Provisioning profile validated: {profile.get('Name', uuid)}")
+          PY
+
+      - name: Configure Runner target signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -rxcodeproj <<'RUBY'
+          project_path = "ios/Runner.xcodeproj"
+          project = Xcodeproj::Project.open(project_path)
+          runner = project.targets.find { |target| target.name == "Runner" }
+          abort("Runner target was not found in #{project_path}") unless runner
+
+          release = runner.build_configurations.find { |configuration| configuration.name == "Release" }
+          abort("Runner Release configuration was not found") unless release
+
+          release.build_settings["DEVELOPMENT_TEAM"] = ENV.fetch("APPLE_TEAM_ID")
+          release.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = ENV.fetch("IOS_BUNDLE_ID")
+          release.build_settings["CODE_SIGN_STYLE"] = "Manual"
+          release.build_settings["CODE_SIGN_IDENTITY"] = ENV.fetch("IOS_DISTRIBUTION_IDENTITY")
+          release.build_settings["PROVISIONING_PROFILE_SPECIFIER"] = ENV.fetch(
+            "IOS_PROVISIONING_PROFILE_UUID",
+          )
+          project.save
+
+          forbidden_keys = %w[
+            DEVELOPMENT_TEAM
+            CODE_SIGN_IDENTITY
+            PROVISIONING_PROFILE
+            PROVISIONING_PROFILE_SPECIFIER
+          ]
+          other_targets = project.targets.reject { |target| target.name == "Runner" }
+          violations = other_targets.flat_map do |target|
+            target.build_configurations.flat_map do |configuration|
+              forbidden_keys.filter_map do |key|
+                value = configuration.build_settings[key]
+                "#{target.name}/#{configuration.name}: #{key}=#{value}" if value && !value.to_s.empty?
+              end
+            end
+          end
+          abort("Signing settings leaked to non-Runner targets: #{violations.join(', ')}") unless violations.empty?
+
+          puts "Manual App Store signing configured for Runner/Release only"
+          RUBY
+
+      - name: Archive and export signed IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive_path="$RUNNER_TEMP/MeetTrace.xcarchive"
+          export_path="$RUNNER_TEMP/meettrace-export"
+          export_options="$RUNNER_TEMP/ExportOptions.plist"
+
+          xcodebuild_help="$(xcodebuild -help 2>&1)"
+          if grep -q "app-store-connect" <<< "$xcodebuild_help"; then
+            export_method="app-store-connect"
+          else
+            export_method="app-store"
+          fi
+          cat > "$export_options" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>destination</key><string>export</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>method</key><string>${export_method}</string>
+            <key>provisioningProfiles</key>
+            <dict><key>${IOS_BUNDLE_ID}</key><string>${IOS_PROVISIONING_PROFILE_UUID}</string></dict>
+            <key>signingStyle</key><string>manual</string>
+            <key>stripSwiftSymbols</key><true/>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          plutil -lint "$export_options"
+
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$archive_path" \
+            archive \
+            FLUTTER_BUILD_NUMBER="$IOS_BUILD_NUMBER" \
+            CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$archive_path" \
+            -exportPath "$export_path" \
+            -exportOptionsPlist "$export_options"
+
+          ipa_count="$(find "$export_path" -maxdepth 1 -type f -name '*.ipa' | wc -l | tr -d ' ')"
+          if [[ "$ipa_count" != "1" ]]; then
+            echo "Expected exactly one exported IPA, found $ipa_count" >&2
+            find "$export_path" -maxdepth 2 -type f -print >&2 || true
+            exit 1
+          fi
+          exported_ipa="$(find "$export_path" -maxdepth 1 -type f -name '*.ipa' -print -quit)"
+          output_ipa="$GITHUB_WORKSPACE/build/ios/testflight/meettrace-testflight-${IOS_BUILD_NUMBER}.ipa"
+          cp "$exported_ipa" "$output_ipa"
+          echo "IPA_PATH=$output_ipa" >> "$GITHUB_ENV"
+
+      - name: Verify signed IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          verify_dir="$RUNNER_TEMP/meettrace-ipa-verify"
+          mkdir -p "$verify_dir"
+          ditto -x -k "$IPA_PATH" "$verify_dir"
+          app_count="$(find "$verify_dir/Payload" -maxdepth 1 -type d -name '*.app' | wc -l | tr -d ' ')"
+          if [[ "$app_count" != "1" ]]; then
+            echo "Expected exactly one app bundle in IPA, found $app_count" >&2
+            exit 1
+          fi
+          app_path="$(find "$verify_dir/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)"
+
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          codesign -dvv "$app_path" 2>&1 | tee build/ios/testflight/codesign.txt
+          test -f "$app_path/embedded.mobileprovision"
+          actual_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_path/Info.plist")"
+          actual_build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Info.plist")"
+          [[ "$actual_bundle_id" == "$IOS_BUNDLE_ID" ]]
+          [[ "$actual_build_number" == "$IOS_BUILD_NUMBER" ]]
+          grep -Fq "TeamIdentifier=$APPLE_TEAM_ID" build/ios/testflight/codesign.txt
+
+          /usr/bin/unzip -tq "$IPA_PATH"
+          /usr/bin/unzip -Z1 "$IPA_PATH" > build/ios/testflight/ipa-entries.txt
+          if grep -Eqi '\.(p12|p8|pem|key)$' build/ios/testflight/ipa-entries.txt; then
+            echo "IPA contains forbidden signing material" >&2
+            exit 1
+          fi
+          profile_count="$(grep -Ec '/embedded\.mobileprovision$' build/ios/testflight/ipa-entries.txt || true)"
+          [[ "$profile_count" == "1" ]]
+          shasum -a 256 "$IPA_PATH" | tee "$IPA_PATH.sha256"
+
+          IPA_PATH="$IPA_PATH" python3 - <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          def output(*command: str) -> str:
+              return subprocess.check_output(command, text=True, stderr=subprocess.STDOUT).strip()
+
+          ipa_path = Path(os.environ["IPA_PATH"])
+          digest = hashlib.sha256()
+          with ipa_path.open("rb") as stream:
+              for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                  digest.update(chunk)
+          metadata = {
+              "schemaVersion": 1,
+              "platform": "ios",
+              "releaseId": os.environ["RELEASE_ID"],
+              "marketingVersion": os.environ["MARKETING_VERSION"],
+              "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "commitSha": os.environ["CANDIDATE_SHA"],
+              "ref": os.environ["CANDIDATE_REF"],
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "buildNumber": os.environ["IOS_BUILD_NUMBER"],
+              "bundleId": os.environ["IOS_BUNDLE_ID"],
+              "workflowFile": ".github/workflows/alpha-release.yml",
+              "job": "ios",
+              "runner": {
+                  "os": os.environ["RUNNER_OS"],
+                  "architecture": output("uname", "-m"),
+                  "macos": output("sw_vers", "-productVersion"),
+              },
+              "xcode": output("xcodebuild", "-version"),
+              "flutter": json.loads(output("flutter", "--version", "--machine")),
+              "fastlane": output("fastlane", "--version").splitlines()[-1],
+              "artifact": {
+                  "name": ipa_path.name,
+                  "bytes": ipa_path.stat().st_size,
+                  "sha256": digest.hexdigest(),
+                  "distributionSigned": True,
+                  "testFlightUploadCandidate": True,
+              },
+          }
+          report_path = ipa_path.parent / "candidate-manifest.json"
+          report_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Candidate manifest: {report_path}")
+          PY
+
+      - name: Generate IPA provenance attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ env.IPA_PATH }}
+
+      - name: Upload IPA to TestFlight
+        shell: bash
+        env:
+          TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}
+        run: fastlane ios upload_testflight
+
+      - name: Write release summary
+        shell: bash
+        run: |
+          {
+            echo "## TestFlight upload submitted"
+            echo
+            echo "- Bundle ID: \`$IOS_BUNDLE_ID\`"
+            echo "- Build number: \`$IOS_BUILD_NUMBER\`"
+            echo "- IPA: \`$(basename "$IPA_PATH")\`"
+            echo "- Processing and tester availability remain subject to App Store Connect validation."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload signed build evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: meettrace-ios-testflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ios/testflight/*.sha256
+            build/ios/testflight/*.json
+            build/ios/testflight/*.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Remove temporary signing materials
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          if [[ -n "${ORIGINAL_DEFAULT_KEYCHAIN:-}" && -e "$ORIGINAL_DEFAULT_KEYCHAIN" ]]; then
+            security default-keychain -d user -s "$ORIGINAL_DEFAULT_KEYCHAIN"
+          fi
+          cleanup_keychain="${KEYCHAIN_PATH:-$RUNNER_TEMP/meettrace-signing.keychain-db}"
+          if [[ -e "$cleanup_keychain" ]]; then
+            security delete-keychain "$cleanup_keychain"
+          fi
+          rm -f \
+            "${CERTIFICATE_PATH:-$RUNNER_TEMP/meettrace-distribution.p12}" \
+            "${PROVISIONING_PROFILE_PATH:-$RUNNER_TEMP/meettrace-app-store.mobileprovision}" \
+            "${APP_STORE_CONNECT_API_KEY_PATH:-$RUNNER_TEMP/meettrace-api-key.p8}" \
+            "${IOS_PROVISIONING_PROFILE_INSTALL_PATH:-$RUNNER_TEMP/profile-not-installed}" \
+            "$RUNNER_TEMP/meettrace-profile.plist" \
+            "$RUNNER_TEMP/ExportOptions.plist"
 
   publish:
-    name: Approve and publish
     if: >-
       always() && needs.prepare.result == 'success' &&
       (needs.prepare.outputs.mode == 'metadata' ||
@@ -164,11 +955,287 @@ jobs:
     permissions:
       actions: read
       contents: write
-    uses: ./.github/workflows/finalize-release.yml
-    with:
-      release_id: ${{ inputs.release_id }}
-      candidate_sha: ${{ needs.prepare.outputs.candidate_sha }}
-      mode: ${{ needs.prepare.outputs.mode }}
-      release_notes: ${{ inputs.release_notes }}
-      ios_testflight_external_url: ${{ inputs.ios_testflight_external_url }}
-    secrets: inherit
+    name: Approve and deploy public Alpha
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: github-release
+    steps:
+      - name: Checkout immutable candidate
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
+          fetch-depth: 0
+
+      - name: Validate release identity and public metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+          RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
+          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_MODE" == candidate || "$RELEASE_MODE" == metadata ]]
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$CANDIDATE_SHA" ]]
+          git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+          [[ "$(git cat-file -t "refs/tags/$RELEASE_ID")" == tag ]]
+          [[ "$(git rev-parse "refs/tags/$RELEASE_ID^{}")" == "$CANDIDATE_SHA" ]]
+          marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
+          [[ "$RELEASE_ID" == "v${marketing_version}-alpha."* ]]
+          if [[ -n "$TESTFLIGHT_URL" ]]; then
+            [[ "$TESTFLIGHT_URL" =~ ^https://testflight\.apple\.com/join/[A-Za-z0-9]+/?$ ]]
+          fi
+
+          release_json="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName)"
+          [[ "$(jq -r .tagName <<<"$release_json")" == "$RELEASE_ID" ]]
+          [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+          if [[ "$RELEASE_MODE" == candidate ]]; then
+            [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]
+          else
+            [[ "$(jq -r .isDraft <<<"$release_json")" == false ]]
+          fi
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "CANDIDATE_SHA=$CANDIDATE_SHA" >> "$GITHUB_ENV"
+          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
+
+      - name: Download candidate evidence from this run
+        if: needs.prepare.outputs.mode == 'candidate'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/finalize/android build/finalize/ios
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100")"
+          select_artifact() {
+            local prefix="$1"
+            jq -r --arg prefix "$prefix" '
+              [.artifacts[] | select(.expired == false and (.name | startswith($prefix)))]
+              | sort_by(.created_at) | last | .id // empty
+            ' <<<"$artifacts"
+          }
+          android_id="$(select_artifact meettrace-android-alpha-)"
+          ios_id="$(select_artifact meettrace-ios-testflight-)"
+          [[ "$android_id" =~ ^[0-9]+$ && "$ios_id" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$android_id/zip" > build/finalize/android.zip
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ios_id/zip" > build/finalize/ios.zip
+          unzip -q build/finalize/android.zip -d build/finalize/android
+          unzip -q build/finalize/ios.zip -d build/finalize/ios
+          cp build/finalize/android/candidate-manifest.json build/finalize/android-candidate-manifest.json
+          cp build/finalize/ios/candidate-manifest.json build/finalize/ios-candidate-manifest.json
+
+      - name: Download staged Android APK
+        if: needs.prepare.outputs.mode == 'candidate'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/finalize/staged
+          gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --dir build/finalize/staged
+
+      - name: Cross-check candidate manifests and staged APK
+        if: needs.prepare.outputs.mode == 'candidate'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          expected_apk="meettrace-${RELEASE_ID}-android-arm64.apk"
+          release_assets="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets)"
+          jq -e --arg apk "$expected_apk" '
+            ([.assets[].name | select(ascii_downcase | endswith(".apk"))] == [$apk]) and
+            ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0)
+          ' <<<"$release_assets" >/dev/null
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("build/finalize")
+          android = json.loads((root / "android-candidate-manifest.json").read_text())
+          ios = json.loads((root / "ios-candidate-manifest.json").read_text())
+          expected_apk_name = f"meettrace-{os.environ['RELEASE_ID']}-android-arm64.apk"
+          if android.get("artifact", {}).get("name") != expected_apk_name:
+              raise SystemExit("Android candidate manifest has an unexpected APK name")
+          expected = {
+              "releaseId": os.environ["RELEASE_ID"],
+              "marketingVersion": os.environ["MARKETING_VERSION"],
+              "commitSha": os.environ["CANDIDATE_SHA"],
+              "runId": os.environ["GITHUB_RUN_ID"],
+          }
+          for name, manifest, platform, job in (
+              ("Android", android, "android", "android"),
+              ("iOS", ios, "ios", "ios"),
+          ):
+              for key, value in expected.items():
+                  if str(manifest.get(key)) != value:
+                      raise SystemExit(f"{name} {key} does not match the release")
+              if (
+                  manifest.get("platform") != platform
+                  or manifest.get("workflowFile") != ".github/workflows/alpha-release.yml"
+                  or manifest.get("job") != job
+              ):
+                  raise SystemExit(f"{name} candidate origin is invalid")
+
+          apk = root / "staged" / android["artifact"]["name"]
+          if not apk.is_file() or apk.stat().st_size != android["artifact"]["bytes"]:
+              raise SystemExit("Staged Android APK size changed")
+          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+          if digest != android["artifact"]["sha256"]:
+              raise SystemExit("Staged Android APK digest changed")
+          PY
+
+      - name: Validate immutable assets for a metadata-only update
+        if: needs.prepare.outputs.mode == 'metadata'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          expected_apk="meettrace-${RELEASE_ID}-android-arm64.apk"
+          release_assets="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets)"
+          jq -e --arg apk "$expected_apk" '
+            ([.assets[].name | select(ascii_downcase | endswith(".apk"))] == [$apk]) and
+            ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0)
+          ' <<<"$release_assets" >/dev/null
+          mkdir -p build/finalize/published
+          gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern "android-candidate-manifest.json" \
+            --pattern "ios-candidate-manifest.json" \
+            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --dir build/finalize/published
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("build/finalize/published")
+          android = json.loads((root / "android-candidate-manifest.json").read_text())
+          ios = json.loads((root / "ios-candidate-manifest.json").read_text())
+          expected_apk_name = f"meettrace-{os.environ['RELEASE_ID']}-android-arm64.apk"
+          if android.get("artifact", {}).get("name") != expected_apk_name:
+              raise SystemExit("Existing public Android APK identity changed")
+          for manifest, platform, job in (
+              (android, "android", "android"),
+              (ios, "ios", "ios"),
+          ):
+              if manifest.get("releaseId") != os.environ["RELEASE_ID"]:
+                  raise SystemExit("Existing public release evidence changed")
+              if manifest.get("commitSha") != os.environ["CANDIDATE_SHA"]:
+                  raise SystemExit("Existing public release evidence changed")
+              if manifest.get("marketingVersion") != os.environ["MARKETING_VERSION"]:
+                  raise SystemExit("Existing public release evidence changed")
+              if (
+                  manifest.get("platform") != platform
+                  or manifest.get("workflowFile") != ".github/workflows/alpha-release.yml"
+                  or manifest.get("job") != job
+              ):
+                  raise SystemExit("Existing public release evidence changed")
+          if str(android.get("runId")) != str(ios.get("runId")):
+              raise SystemExit("Existing public candidate run identities differ")
+          apk = root / android["artifact"]["name"]
+          if not apk.is_file() or apk.stat().st_size != android["artifact"]["bytes"]:
+              raise SystemExit("Existing public Android APK changed")
+          if hashlib.sha256(apk.read_bytes()).hexdigest() != android["artifact"]["sha256"]:
+              raise SystemExit("Existing public Android APK changed")
+          PY
+
+      - name: Write public release notes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+        run: |
+          set -euo pipefail
+          notes_path="$RUNNER_TEMP/public-release-notes.md"
+          if [[ "$RELEASE_MODE" == metadata ]]; then
+            gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json body --jq .body > "$notes_path"
+            NOTES_PATH="$notes_path" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path(os.environ["NOTES_PATH"])
+          body = path.read_text(encoding="utf-8")
+          url = os.environ.get("TESTFLIGHT_URL", "").strip()
+          if url:
+              replacement = f"- iOS TestFlight 外部测试链接：{url}"
+              body, count = re.subn(r"^- iOS TestFlight 外部测试链接：.*$", replacement, body, flags=re.M)
+              if count != 1:
+                  raise SystemExit("Cannot locate the TestFlight link line in existing notes")
+          extra = os.environ.get("RELEASE_NOTES", "").strip()
+          if extra:
+              body = re.sub(r"\n## 补充说明\n.*\Z", "", body, flags=re.S)
+              body += f"\n\n## 补充说明\n\n{extra}\n"
+          path.write_text(body, encoding="utf-8")
+          PY
+          else
+            if [[ -n "$TESTFLIGHT_URL" ]]; then
+              testflight_line="- iOS TestFlight 外部测试链接：$TESTFLIGHT_URL"
+            else
+              testflight_line="- iOS TestFlight 外部测试链接：待提供"
+            fi
+            {
+              echo "MeetTrace \`$RELEASE_ID\` Alpha 已完成 Android 与 iOS 候选验收。"
+              echo
+              echo "- Android APK：本 Release 附件（仅 Android 7.0+、arm64-v8a）"
+              echo "$testflight_line"
+              echo "- 候选提交：\`$CANDIDATE_SHA\`"
+              echo "- 候选流程：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+              echo
+              echo "## Android 安装提示"
+              echo
+              echo "需要在系统设置中允许当前来源“安装未知应用”。应用无登录和云同步，数据只保存在本机；卸载应用会删除本机数据。Alpha 升级可能清除旧数据并重新下载模型，首次启动约下载 286.3 MB 运行资源。"
+              echo
+              echo "如版本被撤回，发布说明会标记“已撤回，不建议安装”，已有资产和标签仍保留。"
+              if [[ -n "$RELEASE_NOTES" ]]; then
+                echo
+                echo "## 补充说明"
+                echo
+                printf '%s\n' "$RELEASE_NOTES"
+              fi
+            } > "$notes_path"
+          fi
+          echo "PUBLIC_NOTES_PATH=$notes_path" >> "$GITHUB_ENV"
+
+      - name: Publish verified draft or update public link
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_MODE" == candidate ]]; then
+            gh release upload "$RELEASE_ID" \
+              build/finalize/android-candidate-manifest.json \
+              build/finalize/ios-candidate-manifest.json \
+              --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+              --title "MeetTrace $RELEASE_ID" \
+              --notes-file "$PUBLIC_NOTES_PATH" \
+              --draft=false --prerelease
+          else
+            gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+              --notes-file "$PUBLIC_NOTES_PATH" --prerelease
+          fi
+
+      - name: Write release summary
+        shell: bash
+        run: |
+          {
+            echo "## Alpha release complete"
+            echo
+            echo "- Release: \`$RELEASE_ID\`"
+            echo "- Candidate: \`$CANDIDATE_SHA\`"
+            echo "- Mode: \`${{ needs.prepare.outputs.mode }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
