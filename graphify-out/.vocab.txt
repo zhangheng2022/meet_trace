@@ -619,6 +619,7 @@ maintenance
 manage
 management
 manifest
+manual
 map
 mappers
 mark
@@ -771,6 +772,7 @@ percentage
 percentile
 perform
 performance
+periodic
 permission
 persist
 persisted
@@ -838,6 +840,7 @@ provided
 provider
 providers
 ptr
+publish
 quality
 query
 queue
@@ -1132,6 +1135,7 @@ threshold
 through
 throw
 throws
+tick
 ticker
 tile
 tiles
@@ -1298,6 +1302,7 @@ yue
 保留内部技术身份与本地数据
 保留的正确设计
 修复状态
+先分析原因
 先给我方案
 全面调整查询
 全项目身份迁移
@@ -1371,6 +1376,7 @@ yue
 当前结构
 当前结论
 当前阻塞清单
+录音中
 录音连续性优先
 性能与质量门槛
 总结和自动标题在当前生产实现中是否可用
@@ -1416,6 +1422,7 @@ yue
 模型镜像已上传后
 步骤和三方依赖
 沉浸式标题栏修复
+波形显示卡顿
 渐进迁移顺序
 现在有两个初始化页吗
 的完整
@@ -1432,6 +1439,7 @@ yue
 结果与分享
 结果标题
 给我个方案
+给我修复方案
 给我实施方案
 给我目前模型最合适的替换方案
 编译修复

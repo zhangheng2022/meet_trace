@@ -302,10 +302,7 @@ void _speakerDiarizationWorkerMain(List<Object?> bootstrap) async {
               );
             }
             final samples = _readPcm16Mono(raw['path']! as String);
-            final segments = active.processWithCallback(
-              samples: samples,
-              callback: (_, _) => 0,
-            );
+            final segments = active.process(samples: samples);
             responses.send({
               'type': 'result',
               'id': id,
