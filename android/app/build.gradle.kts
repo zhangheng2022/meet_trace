@@ -4,6 +4,22 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val meetTraceReleaseStoreFile =
+    providers.environmentVariable("MEETTRACE_ANDROID_KEYSTORE_PATH").orNull
+val meetTraceReleaseStorePassword =
+    providers.environmentVariable("MEETTRACE_ANDROID_KEYSTORE_PASSWORD").orNull
+val meetTraceReleaseKeyAlias =
+    providers.environmentVariable("MEETTRACE_ANDROID_KEY_ALIAS").orNull
+val meetTraceReleaseKeyPassword =
+    providers.environmentVariable("MEETTRACE_ANDROID_KEY_PASSWORD").orNull
+val meetTraceReleaseSigningConfigured =
+    listOf(
+        meetTraceReleaseStoreFile,
+        meetTraceReleaseStorePassword,
+        meetTraceReleaseKeyAlias,
+        meetTraceReleaseKeyPassword,
+    ).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.meettrace.app"
     compileSdk = flutter.compileSdkVersion
@@ -38,11 +54,20 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (meetTraceReleaseSigningConfigured) {
+            create("release") {
+                storeFile = file(requireNotNull(meetTraceReleaseStoreFile))
+                storePassword = meetTraceReleaseStorePassword
+                keyAlias = meetTraceReleaseKeyAlias
+                keyPassword = meetTraceReleaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 }

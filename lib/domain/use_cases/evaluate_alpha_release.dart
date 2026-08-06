@@ -15,8 +15,13 @@ final class AlphaReleaseEvaluationInput {
     this.iosArm64DeviceTested,
     this.androidBackgroundRecordingPassed,
     this.iosBackgroundRecordingPassed,
+    this.androidInterruptionRecoveryPassed,
     this.iosInterruptionRecoveryPassed,
     this.adaptiveNavigationAccessibilityPassed,
+    this.alphaUpgradeResetPassed,
+    this.textSharePassed,
+    this.androidAudioSharePassed,
+    this.iosAudioSharePassed,
     this.runtimeDownloadBytes,
     this.rtfSamples,
     this.sentenceLatencyMs,
@@ -28,6 +33,14 @@ final class AlphaReleaseEvaluationInput {
     this.peakTemperatureC,
     this.peakRssBytes,
     this.keyFactRecallRatio,
+    this.diarizationCorpusMinutes,
+    this.diarizationTestedSpeakerCounts,
+    this.diarizationDer,
+    this.diarizationMaxSpeakerCountAbsoluteError,
+    this.diarizationRtf,
+    this.diarizationRepeatedRunPeakRssBytes,
+    this.androidSpeakerDiarizationTested,
+    this.iosSpeakerDiarizationTested,
     this.acceptanceEvidence,
     this.apkAuditPassed,
     this.iosBuildAuditPassed,
@@ -38,6 +51,7 @@ final class AlphaReleaseEvaluationInput {
     final corpus = _map(json['corpus']);
     final environment = _map(json['environment']);
     final model = _map(json['senseVoice']);
+    final diarization = _map(json['speakerDiarization']);
     final release = _map(json['release']);
     return AlphaReleaseEvaluationInput(
       corpusId: _string(corpus?['id']),
@@ -55,12 +69,23 @@ final class AlphaReleaseEvaluationInput {
       iosBackgroundRecordingPassed: _boolean(
         environment?['iosBackgroundRecordingPassed'],
       ),
+      androidInterruptionRecoveryPassed: _boolean(
+        environment?['androidInterruptionRecoveryPassed'],
+      ),
       iosInterruptionRecoveryPassed: _boolean(
         environment?['iosInterruptionRecoveryPassed'],
       ),
       adaptiveNavigationAccessibilityPassed: _boolean(
         environment?['adaptiveNavigationAccessibilityPassed'],
       ),
+      alphaUpgradeResetPassed: _boolean(
+        environment?['alphaUpgradeResetPassed'],
+      ),
+      textSharePassed: _boolean(environment?['textSharePassed']),
+      androidAudioSharePassed: _boolean(
+        environment?['androidAudioSharePassed'],
+      ),
+      iosAudioSharePassed: _boolean(environment?['iosAudioSharePassed']),
       runtimeDownloadBytes: _integer(model?['runtimeDownloadBytes']),
       rtfSamples: _numbers(model?['rtfSamples']),
       sentenceLatencyMs: _numbers(model?['sentenceLatencyMs']),
@@ -76,6 +101,22 @@ final class AlphaReleaseEvaluationInput {
       peakTemperatureC: _number(model?['peakTemperatureC']),
       peakRssBytes: _integer(model?['peakRssBytes']),
       keyFactRecallRatio: _number(model?['keyFactRecallRatio']),
+      diarizationCorpusMinutes: _number(diarization?['corpusMinutes']),
+      diarizationTestedSpeakerCounts: _integers(
+        diarization?['testedSpeakerCounts'],
+      ),
+      diarizationDer: _number(diarization?['der']),
+      diarizationMaxSpeakerCountAbsoluteError: _integer(
+        diarization?['maxSpeakerCountAbsoluteError'],
+      ),
+      diarizationRtf: _number(diarization?['rtf']),
+      diarizationRepeatedRunPeakRssBytes: _integer(
+        diarization?['repeatedRunPeakRssBytes'],
+      ),
+      androidSpeakerDiarizationTested: _boolean(
+        diarization?['androidArm64Tested'],
+      ),
+      iosSpeakerDiarizationTested: _boolean(diarization?['iosArm64Tested']),
       acceptanceEvidence: _strings(json['acceptanceEvidence']),
       apkAuditPassed: _boolean(release?['apkAuditPassed']),
       iosBuildAuditPassed: _boolean(release?['iosBuildAuditPassed']),
@@ -94,8 +135,13 @@ final class AlphaReleaseEvaluationInput {
   final bool? iosArm64DeviceTested;
   final bool? androidBackgroundRecordingPassed;
   final bool? iosBackgroundRecordingPassed;
+  final bool? androidInterruptionRecoveryPassed;
   final bool? iosInterruptionRecoveryPassed;
   final bool? adaptiveNavigationAccessibilityPassed;
+  final bool? alphaUpgradeResetPassed;
+  final bool? textSharePassed;
+  final bool? androidAudioSharePassed;
+  final bool? iosAudioSharePassed;
   final int? runtimeDownloadBytes;
   final List<double>? rtfSamples;
   final List<double>? sentenceLatencyMs;
@@ -107,6 +153,14 @@ final class AlphaReleaseEvaluationInput {
   final double? peakTemperatureC;
   final int? peakRssBytes;
   final double? keyFactRecallRatio;
+  final double? diarizationCorpusMinutes;
+  final List<int>? diarizationTestedSpeakerCounts;
+  final double? diarizationDer;
+  final int? diarizationMaxSpeakerCountAbsoluteError;
+  final double? diarizationRtf;
+  final int? diarizationRepeatedRunPeakRssBytes;
+  final bool? androidSpeakerDiarizationTested;
+  final bool? iosSpeakerDiarizationTested;
   final Map<String, String>? acceptanceEvidence;
   final bool? apkAuditPassed;
   final bool? iosBuildAuditPassed;
@@ -116,6 +170,12 @@ final class AlphaReleaseEvaluationInput {
     List<double>? rtfSamples,
     String? rawMetricsRef,
     bool? iosBackgroundRecordingPassed,
+    double? diarizationDer,
+    int? diarizationMaxSpeakerCountAbsoluteError,
+    double? diarizationRtf,
+    List<int>? diarizationTestedSpeakerCounts,
+    Map<String, String>? acceptanceEvidence,
+    bool? androidAudioSharePassed,
   }) => AlphaReleaseEvaluationInput(
     corpusId: corpusId,
     deviceId: deviceId,
@@ -127,9 +187,15 @@ final class AlphaReleaseEvaluationInput {
     androidBackgroundRecordingPassed: androidBackgroundRecordingPassed,
     iosBackgroundRecordingPassed:
         iosBackgroundRecordingPassed ?? this.iosBackgroundRecordingPassed,
+    androidInterruptionRecoveryPassed: androidInterruptionRecoveryPassed,
     iosInterruptionRecoveryPassed: iosInterruptionRecoveryPassed,
     adaptiveNavigationAccessibilityPassed:
         adaptiveNavigationAccessibilityPassed,
+    alphaUpgradeResetPassed: alphaUpgradeResetPassed,
+    textSharePassed: textSharePassed,
+    androidAudioSharePassed:
+        androidAudioSharePassed ?? this.androidAudioSharePassed,
+    iosAudioSharePassed: iosAudioSharePassed,
     runtimeDownloadBytes: runtimeDownloadBytes,
     rtfSamples: rtfSamples ?? this.rtfSamples,
     sentenceLatencyMs: sentenceLatencyMs,
@@ -141,14 +207,25 @@ final class AlphaReleaseEvaluationInput {
     peakTemperatureC: peakTemperatureC,
     peakRssBytes: peakRssBytes,
     keyFactRecallRatio: keyFactRecallRatio,
-    acceptanceEvidence: acceptanceEvidence,
+    diarizationCorpusMinutes: diarizationCorpusMinutes,
+    diarizationTestedSpeakerCounts:
+        diarizationTestedSpeakerCounts ?? this.diarizationTestedSpeakerCounts,
+    diarizationDer: diarizationDer ?? this.diarizationDer,
+    diarizationMaxSpeakerCountAbsoluteError:
+        diarizationMaxSpeakerCountAbsoluteError ??
+        this.diarizationMaxSpeakerCountAbsoluteError,
+    diarizationRtf: diarizationRtf ?? this.diarizationRtf,
+    diarizationRepeatedRunPeakRssBytes: diarizationRepeatedRunPeakRssBytes,
+    androidSpeakerDiarizationTested: androidSpeakerDiarizationTested,
+    iosSpeakerDiarizationTested: iosSpeakerDiarizationTested,
+    acceptanceEvidence: acceptanceEvidence ?? this.acceptanceEvidence,
     apkAuditPassed: apkAuditPassed,
     iosBuildAuditPassed: iosBuildAuditPassed,
     senseVoiceLicenseConfirmed: senseVoiceLicenseConfirmed,
   );
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 3,
+    'schemaVersion': 4,
     'rawMetricsRef': rawMetricsRef,
     'corpus': {
       'id': corpusId,
@@ -161,9 +238,14 @@ final class AlphaReleaseEvaluationInput {
       'iosArm64DeviceTested': iosArm64DeviceTested,
       'androidBackgroundRecordingPassed': androidBackgroundRecordingPassed,
       'iosBackgroundRecordingPassed': iosBackgroundRecordingPassed,
+      'androidInterruptionRecoveryPassed': androidInterruptionRecoveryPassed,
       'iosInterruptionRecoveryPassed': iosInterruptionRecoveryPassed,
       'adaptiveNavigationAccessibilityPassed':
           adaptiveNavigationAccessibilityPassed,
+      'alphaUpgradeResetPassed': alphaUpgradeResetPassed,
+      'textSharePassed': textSharePassed,
+      'androidAudioSharePassed': androidAudioSharePassed,
+      'iosAudioSharePassed': iosAudioSharePassed,
     },
     'senseVoice': {
       'runtimeDownloadBytes': runtimeDownloadBytes,
@@ -177,6 +259,16 @@ final class AlphaReleaseEvaluationInput {
       'peakTemperatureC': peakTemperatureC,
       'peakRssBytes': peakRssBytes,
       'keyFactRecallRatio': keyFactRecallRatio,
+    },
+    'speakerDiarization': {
+      'corpusMinutes': diarizationCorpusMinutes,
+      'testedSpeakerCounts': diarizationTestedSpeakerCounts,
+      'der': diarizationDer,
+      'maxSpeakerCountAbsoluteError': diarizationMaxSpeakerCountAbsoluteError,
+      'rtf': diarizationRtf,
+      'repeatedRunPeakRssBytes': diarizationRepeatedRunPeakRssBytes,
+      'androidArm64Tested': androidSpeakerDiarizationTested,
+      'iosArm64Tested': iosSpeakerDiarizationTested,
     },
     'acceptanceEvidence': acceptanceEvidence,
     'release': {
@@ -226,7 +318,7 @@ final class AlphaReleaseEvaluationReport {
   final List<ReleaseGateResult> gates;
 
   Map<String, Object?> toJson() => {
-    'schemaVersion': 2,
+    'schemaVersion': 3,
     'decision': decision.name,
     'corpusId': corpusId,
     'deviceId': deviceId,
@@ -274,6 +366,11 @@ final class EvaluateAlphaReleaseUseCase {
         input.iosBackgroundRecordingPassed,
       ),
       _boolGate(
+        'environment.androidInterruptionRecovery',
+        'Android 系统音频中断恢复通过',
+        input.androidInterruptionRecoveryPassed,
+      ),
+      _boolGate(
         'environment.iosInterruptionRecovery',
         'iOS 系统音频中断恢复通过',
         input.iosInterruptionRecoveryPassed,
@@ -282,6 +379,26 @@ final class EvaluateAlphaReleaseUseCase {
         'environment.accessibility',
         '双平台导航、字体和辅助技术通过',
         input.adaptiveNavigationAccessibilityPassed,
+      ),
+      _boolGate(
+        'environment.alphaUpgradeReset',
+        '旧 Alpha 升级全清并重新初始化通过',
+        input.alphaUpgradeResetPassed,
+      ),
+      _boolGate(
+        'environment.textShare',
+        '文本分享仅包含允许的最终转录内容',
+        input.textSharePassed,
+      ),
+      _boolGate(
+        'environment.androidAudioShare',
+        'Android 音频分享播放与全路径清理通过',
+        input.androidAudioSharePassed,
+      ),
+      _boolGate(
+        'environment.iosAudioShare',
+        'iOS 音频分享播放与全路径清理通过',
+        input.iosAudioSharePassed,
       ),
       _referenceGate('evidence.rawMetrics', '原始指标具有可追溯引用', input.rawMetricsRef),
       _thresholdGate(
@@ -347,10 +464,51 @@ final class EvaluateAlphaReleaseUseCase {
         (v) => v >= 0.85,
       ),
       _thresholdGate(
-        'acceptance.AT01-AT15',
-        'AT-01 至 AT-15 均有证据引用',
+        'speakerDiarization.corpusMinutes',
+        '普通话 2/3/4 人固定标注语料不少于 60 分钟',
+        input.diarizationCorpusMinutes,
+        (v) => v >= 60,
+      ),
+      _speakerCountsGate(input.diarizationTestedSpeakerCounts),
+      _thresholdGate(
+        'speakerDiarization.der',
+        '说话人分离 DER 不超过 25%',
+        input.diarizationDer,
+        (v) => v >= 0 && v <= 0.25,
+      ),
+      _thresholdGate(
+        'speakerDiarization.maxSpeakerCountAbsoluteError',
+        '说话人数绝对误差不超过 1',
+        input.diarizationMaxSpeakerCountAbsoluteError,
+        (v) => v >= 0 && v <= 1,
+      ),
+      _thresholdGate(
+        'speakerDiarization.rtf',
+        '说话人分离 30 分钟 RTF 不超过 0.5',
+        input.diarizationRtf,
+        (v) => v > 0 && v <= 0.5,
+      ),
+      _thresholdGate(
+        'speakerDiarization.repeatedRunPeakRssBytes',
+        '记录 30 分钟重复分离任务的正数内存峰值',
+        input.diarizationRepeatedRunPeakRssBytes,
+        (v) => v > 0,
+      ),
+      _boolGate(
+        'speakerDiarization.androidArm64',
+        'Android arm64 真机说话人分离已验证',
+        input.androidSpeakerDiarizationTested,
+      ),
+      _boolGate(
+        'speakerDiarization.iosArm64',
+        'iOS arm64 真机说话人分离已验证',
+        input.iosSpeakerDiarizationTested,
+      ),
+      _thresholdGate(
+        'acceptance.AT01-AT18',
+        'AT-01 至 AT-18 均有证据引用',
         evidenceCount,
-        (v) => v == 15,
+        (v) => v == 18,
       ),
       _boolGate(
         'release.apkAudit',
@@ -390,6 +548,12 @@ final class EvaluateAlphaReleaseUseCase {
         'startTemperatureC': input.startTemperatureC,
         'peakTemperatureC': input.peakTemperatureC,
         'peakRssBytes': input.peakRssBytes,
+        'diarizationDer': input.diarizationDer,
+        'diarizationMaxSpeakerCountAbsoluteError':
+            input.diarizationMaxSpeakerCountAbsoluteError,
+        'diarizationRtf': input.diarizationRtf,
+        'diarizationRepeatedRunPeakRssBytes':
+            input.diarizationRepeatedRunPeakRssBytes,
       },
       gates: List.unmodifiable(gates),
     );
@@ -501,8 +665,26 @@ int? _acceptanceEvidenceCount(Map<String, String>? evidence) {
     return null;
   }
   return [
-    for (var i = 1; i <= 15; i++) 'AT-${i.toString().padLeft(2, '0')}',
+    for (var i = 1; i <= 18; i++) 'AT-${i.toString().padLeft(2, '0')}',
   ].where((id) => evidence[id]?.trim().isNotEmpty == true).length;
+}
+
+ReleaseGateResult _speakerCountsGate(List<int>? value) {
+  if (value == null) {
+    return const ReleaseGateResult(
+      id: 'speakerDiarization.testedSpeakerCounts',
+      requirement: '普通话 2、3、4 人语料均已验证',
+      status: ReleaseGateStatus.missing,
+    );
+  }
+  final normalized = value.toSet();
+  final passed = normalized.length == 3 && normalized.containsAll({2, 3, 4});
+  return ReleaseGateResult(
+    id: 'speakerDiarization.testedSpeakerCounts',
+    requirement: '普通话 2、3、4 人语料均已验证',
+    status: passed ? ReleaseGateStatus.passed : ReleaseGateStatus.failed,
+    value: List<int>.unmodifiable(value),
+  );
 }
 
 Map<String, Object?>? _map(Object? value) =>
@@ -518,6 +700,13 @@ List<double>? _numbers(Object? value) {
   return List.unmodifiable(
     value.cast<num>().map((number) => number.toDouble()),
   );
+}
+
+List<int>? _integers(Object? value) {
+  if (value is! List<Object?> || value.any((item) => item is! int)) {
+    return null;
+  }
+  return List<int>.unmodifiable(value.cast<int>());
 }
 
 Map<String, String>? _strings(Object? value) {

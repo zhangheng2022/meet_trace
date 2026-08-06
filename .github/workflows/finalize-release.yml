@@ -1,0 +1,283 @@
+name: Finalize Alpha Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Version identifier such as v1.0.0-alpha.1
+        required: true
+        type: string
+      candidate_sha:
+        description: Full commit SHA shared by Android and iOS candidates
+        required: true
+        type: string
+      android_run_id:
+        description: Successful Android Alpha Candidate run ID
+        required: true
+        type: string
+      ios_run_id:
+        description: Successful iOS TestFlight Release run ID
+        required: true
+        type: string
+      release_notes:
+        description: Optional public Alpha release notes
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: alpha-release-finalize
+  cancel-in-progress: false
+
+jobs:
+  finalize-alpha-release:
+    name: Verify candidates and publish GitHub prerelease
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: github-release
+
+    steps:
+      - name: Checkout candidate commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 0
+
+      - name: Validate release identity and uniqueness
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$CANDIDATE_SHA" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$CANDIDATE_SHA" origin/master
+
+          marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
+          expected_prefix="v${marketing_version}-alpha."
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$RELEASE_ID" == "$expected_prefix"* ]]
+
+          tag_already_exists=false
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_ID" >/dev/null 2>&1; then
+            git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+            tag_type="$(git cat-file -t "refs/tags/$RELEASE_ID")"
+            tag_commit="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
+            [[ "$tag_type" == "tag" ]]
+            [[ "$tag_commit" == "$CANDIDATE_SHA" ]]
+            tag_already_exists=true
+          fi
+
+          release_already_exists=false
+          if gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            [[ "$tag_already_exists" == "true" ]]
+            release_metadata="$(
+              gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+                --json isPrerelease,tagName
+            )"
+            jq -e --arg tag "$RELEASE_ID" \
+              '.isPrerelease == true and .tagName == $tag' \
+              <<< "$release_metadata" >/dev/null
+            release_already_exists=true
+          fi
+
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "CANDIDATE_SHA=$CANDIDATE_SHA" >> "$GITHUB_ENV"
+          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
+          echo "TAG_ALREADY_EXISTS=$tag_already_exists" >> "$GITHUB_ENV"
+          echo "RELEASE_ALREADY_EXISTS=$release_already_exists" >> "$GITHUB_ENV"
+
+      - name: Validate candidate workflow runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
+          IOS_RUN_ID: ${{ inputs.ios_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$ANDROID_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$IOS_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          mkdir -p build/release/run-metadata
+
+          validate_run() {
+            local run_id="$1"
+            local expected_path="$2"
+            local output="$3"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id" > "$output"
+            jq -e --arg sha "$CANDIDATE_SHA" --arg path "$expected_path" '
+              .status == "completed" and
+              .conclusion == "success" and
+              .event == "workflow_dispatch" and
+              .head_sha == $sha and
+              .path == $path
+            ' "$output" >/dev/null
+          }
+
+          validate_run "$ANDROID_RUN_ID" ".github/workflows/android-alpha.yml" \
+            build/release/run-metadata/android-run.json
+          validate_run "$IOS_RUN_ID" ".github/workflows/ios-testflight.yml" \
+            build/release/run-metadata/ios-run.json
+
+      - name: Download non-sensitive candidate evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
+          IOS_RUN_ID: ${{ inputs.ios_run_id }}
+        run: |
+          set -euo pipefail
+          download_candidate() {
+            local run_id="$1"
+            local prefix="$2"
+            local destination="$3"
+            local artifact_name
+            artifact_name="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" \
+              --jq ".artifacts | map(select((.expired | not) and (.name | startswith(\"$prefix\")))) | sort_by(.created_at) | last | .name")"
+            [[ -n "$artifact_name" && "$artifact_name" != "null" ]]
+            mkdir -p "$destination"
+            gh run download "$run_id" --name "$artifact_name" --dir "$destination"
+          }
+
+          download_candidate "$ANDROID_RUN_ID" "meettrace-android-alpha-$ANDROID_RUN_ID-" \
+            build/release/android
+          download_candidate "$IOS_RUN_ID" "meettrace-ios-testflight-$IOS_RUN_ID-" \
+            build/release/ios
+
+      - name: Cross-check candidate manifests and product gates
+        shell: bash
+        env:
+          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
+          IOS_RUN_ID: ${{ inputs.ios_run_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          def unique(root: str, name: str) -> Path:
+              matches = list(Path(root).rglob(name))
+              if len(matches) != 1:
+                  raise SystemExit(f"Expected one {name} under {root}, found {len(matches)}")
+              return matches[0]
+
+          expected = {
+              "releaseId": os.environ["RELEASE_ID"],
+              "commitSha": os.environ["CANDIDATE_SHA"],
+              "marketingVersion": os.environ["MARKETING_VERSION"],
+              "gateDecision": "go",
+          }
+          inputs = (
+              ("android", "build/release/android", os.environ["ANDROID_RUN_ID"]),
+              ("ios", "build/release/ios", os.environ["IOS_RUN_ID"]),
+          )
+          final = Path("build/release/final")
+          final.mkdir(parents=True, exist_ok=True)
+          for platform, root, run_id in inputs:
+              manifest_path = unique(root, "candidate-manifest.json")
+              gate_path = unique(root, "release-gate-report.json")
+              manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+              gate = json.loads(gate_path.read_text(encoding="utf-8"))
+              for key, value in expected.items():
+                  if manifest.get(key) != value:
+                      raise SystemExit(
+                          f"{platform} manifest {key} mismatch: {manifest.get(key)!r} != {value!r}"
+                      )
+              if manifest.get("platform") != platform or str(manifest.get("runId")) != run_id:
+                  raise SystemExit(f"{platform} manifest workflow identity mismatch")
+              if gate.get("decision") != "go":
+                  raise SystemExit(f"{platform} product gate is not go")
+              shutil.copy2(manifest_path, final / f"{platform}-candidate-manifest.json")
+              shutil.copy2(gate_path, final / f"{platform}-release-gate-report.json")
+          PY
+
+      - name: Write public release notes
+        shell: bash
+        env:
+          ANDROID_RUN_ID: ${{ inputs.android_run_id }}
+          IOS_RUN_ID: ${{ inputs.ios_run_id }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+          notes_path="build/release/final/release-notes.md"
+          {
+            echo "MeetTrace Alpha candidate verified from the same commit on Android and iOS."
+            echo
+            echo "- Source commit: \`$CANDIDATE_SHA\`"
+            echo "- Android candidate run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$ANDROID_RUN_ID"
+            echo "- iOS TestFlight run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$IOS_RUN_ID"
+            echo "- Product gate: \`go\`"
+            echo
+            echo "Signed Android and iOS binaries are not attached to this public release."
+            if [[ -n "$RELEASE_NOTES" ]]; then
+              echo
+              printf '%s\n' "$RELEASE_NOTES"
+            fi
+          } > "$notes_path"
+
+      - name: Create annotated tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$TAG_ALREADY_EXISTS" == "true" ]]; then
+            echo "Reuse annotated tag $RELEASE_ID at $CANDIDATE_SHA"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_ID" "$CANDIDATE_SHA" \
+              -m "MeetTrace $RELEASE_ID"
+            git push origin "refs/tags/$RELEASE_ID"
+          fi
+
+      - name: Create GitHub prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          assets=(
+            build/release/final/android-candidate-manifest.json
+            build/release/final/android-release-gate-report.json
+            build/release/final/ios-candidate-manifest.json
+            build/release/final/ios-release-gate-report.json
+          )
+          if [[ "$RELEASE_ALREADY_EXISTS" == "true" ]]; then
+            gh release edit "$RELEASE_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --prerelease \
+              --title "MeetTrace $RELEASE_ID" \
+              --notes-file build/release/final/release-notes.md
+            gh release upload "$RELEASE_ID" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
+          else
+            gh release create "$RELEASE_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --prerelease \
+              --title "MeetTrace $RELEASE_ID" \
+              --notes-file build/release/final/release-notes.md \
+              "${assets[@]}"
+          fi
+
+      - name: Write release summary
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_url="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json url --jq .url)"
+          {
+            echo "## Alpha prerelease published"
+            echo
+            echo "- Release: [$RELEASE_ID]($release_url)"
+            echo "- Commit: \`$CANDIDATE_SHA\`"
+            echo "- Signed APK/IPA: not attached to the public release"
+          } >> "$GITHUB_STEP_SUMMARY"

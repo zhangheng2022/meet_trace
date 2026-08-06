@@ -1,7 +1,7 @@
 {
   "android/app/build.gradle.kts": {
-    "mtime": 1785894176.2727299,
-    "ast_hash": "acf8cc12728d8f77b3fec826142a99f8",
+    "mtime": 1785989673.9437976,
+    "ast_hash": "9425d08c19eb26e512b46e465380be9d",
     "semantic_hash": ""
   },
   "android/build.gradle.kts": {
@@ -160,8 +160,8 @@
     "semantic_hash": "7569387d58711ab975940f4df3b4bcda"
   },
   "README.md": {
-    "mtime": 1785894176.2727299,
-    "ast_hash": "717965f03184194d8c6b9c79fb0e0714",
+    "mtime": 1785990099.8671384,
+    "ast_hash": "7c003613efa220a796f3ab4a4bdf0093",
     "semantic_hash": ""
   },
   "analysis_options.yaml": {
@@ -690,8 +690,8 @@
     "semantic_hash": ""
   },
   "lib/domain/use_cases/evaluate_alpha_release.dart": {
-    "mtime": 1785894176.4607086,
-    "ast_hash": "b5805a18cc635a908b70b3f14e0ccfad",
+    "mtime": 1785991192.6053233,
+    "ast_hash": "42ddd68597237e246e7c957b77713e8a",
     "semantic_hash": ""
   },
   "lib/domain/use_cases/plan_asr_preview_windows.dart": {
@@ -985,8 +985,8 @@
     "semantic_hash": ""
   },
   "test/domain/use_cases/evaluate_alpha_release_test.dart": {
-    "mtime": 1785894176.5079532,
-    "ast_hash": "302444c0b365d447b3981a166e964971",
+    "mtime": 1785991192.6107407,
+    "ast_hash": "1ce956b93d54375d8e8f846b24c362b3",
     "semantic_hash": ""
   },
   "test/domain/use_cases/plan_asr_preview_windows_test.dart": {
@@ -1050,8 +1050,8 @@
     "semantic_hash": ""
   },
   "tool/benchmarks/alpha_release_input.example.json": {
-    "mtime": 1785894176.5187883,
-    "ast_hash": "ef3036f62709e9d33768cc9e38ad2677",
+    "mtime": 1785989732.004207,
+    "ast_hash": "386324d901d88f15311e5d4d1f9d43b7",
     "semantic_hash": ""
   },
   "tool/benchmarks/evaluate_alpha_release.dart": {
@@ -1060,8 +1060,8 @@
     "semantic_hash": "408251dd7473285243552c3107b156ac"
   },
   "tool/benchmarks/inspect_debug_apk.ps1": {
-    "mtime": 1785894176.5187883,
-    "ast_hash": "bf0471f3beb5afe4ec912041cc84fa20",
+    "mtime": 1785989673.942796,
+    "ast_hash": "b07b376863ff2484c7011a02f3a92c2f",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -1095,8 +1095,8 @@
     "semantic_hash": "ce3d92b1a9ab353547f40b4bf7a53ef7"
   },
   "docs/README.md": {
-    "mtime": 1785911683.1861715,
-    "ast_hash": "cdcd3ac8aeda1b399ef1c6d54c766066",
+    "mtime": 1785990715.3349183,
+    "ast_hash": "e11521d29344c871033d6f1be39df54a",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
@@ -1245,8 +1245,8 @@
     "semantic_hash": ""
   },
   "docs/quality/iOS_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
-    "mtime": 1785912078.7143567,
-    "ast_hash": "73814cce668ac4b8f8d478db33eebb3c",
+    "mtime": 1785990363.2995377,
+    "ast_hash": "90d3e48ea89817ec76f1641e06d9738d",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260727_034129_\u91cd\u6784\u6240\u6709ui\u8bbe\u8ba1\u90e8\u5206_\u5148\u7ed9\u6211\u65b9\u6848.md": {
@@ -1865,8 +1865,8 @@
     "semantic_hash": ""
   },
   "docs/quality/README.md": {
-    "mtime": 1785911683.184686,
-    "ast_hash": "9e09be74ce0cef9e00635e2487548aa6",
+    "mtime": 1785990099.8671384,
+    "ast_hash": "e8dc835350904f16230f7d2fbaf03521",
     "semantic_hash": ""
   },
   "lib/app/meettrace_meeting_dependencies.dart": {
@@ -1965,8 +1965,8 @@
     "semantic_hash": ""
   },
   "docs/quality/\u8fd0\u884c\u65f6\u6a21\u578b\u521d\u59cb\u5316\u4e0e\u53d1\u5e03\u95e8\u69db.md": {
-    "mtime": 1785911683.184686,
-    "ast_hash": "2ff69b10da6f6e267400ba455d9e3462",
+    "mtime": 1785990363.3005393,
+    "ast_hash": "39294f92cda5c126c71bf9c027c6ecc3",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260803_115717_\u5f53\u524d_alpha_\u4ea4\u4ed8\u5bf9\u8c61_\u5b8c\u6210\u5b9a\u4e49\u548c\u4e3b\u8981\u963b\u585e\u94fe\u662f\u4ec0\u4e48.md": {
@@ -2120,8 +2120,8 @@
     "semantic_hash": ""
   },
   "test/architecture/application_identity_test.dart": {
-    "mtime": 1785894176.4918673,
-    "ast_hash": "44832fee0364eb702a887b68c17eb043",
+    "mtime": 1785990841.207661,
+    "ast_hash": "8de2f1bd636fa0893950bbbd63e336d7",
     "semantic_hash": ""
   },
   "lib/data/services/sharing/share_plus_cache_cleaner.dart": {
@@ -2450,8 +2450,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ios-unsigned.yml": {
-    "mtime": 1785912365.8878016,
-    "ast_hash": "4bf6300be3e98a14b3c85b3d2378a3ae",
+    "mtime": 1785991182.6498566,
+    "ast_hash": "794a9f75ace11c2cc66520269af6826f",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260805_043312_\u68c0\u67e5\u5206\u6790\u5f53\u524d\u9879\u76eeios\u7aef_\u662f\u5426\u5177\u5907\u6d4b\u8bd5\u6761\u4ef6.md": {
@@ -2485,8 +2485,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/ios-testflight.yml": {
-    "mtime": 1785930053.9156325,
-    "ast_hash": "b8aff314061388b1d910298880c2ac30",
+    "mtime": 1785991342.962064,
+    "ast_hash": "ef4db4c36987d3326568e3b9844c2861",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260805_073943_ios_\u901a\u8fc7_github_\u53d1\u5e03\u5230_testflight_\u9700\u8981\u4ec0\u4e48.md": {
@@ -2510,8 +2510,8 @@
     "semantic_hash": ""
   },
   "spec/spec-process-cicd-ios-testflight.md": {
-    "mtime": 1785930236.9427035,
-    "ast_hash": "933d48a46418c1dafc985c611f302a6e",
+    "mtime": 1785991280.8252351,
+    "ast_hash": "3ff46a7941cef8c58e16ebb2eb5a7e07",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260805_104517_\u4e3a\u5f53\u524d\u9879\u76ee\u589e\u52a0_github_ios_testflight_\u7b7e\u540d\u53d1\u5e03\u6d41\u6c34\u7ebf\u9700\u8981\u590d\u7528\u54ea\u4e9b\u73b0\u6709\u95e8\u69db.md": {
@@ -2572,6 +2572,56 @@
   "graphify-out/memory/query_20260806_032223_\u5206\u6790_ios_\u7aef\u6700\u7ec8\u8f6c\u5f55\u8f6f\u4ef6\u5d29\u6e83.md": {
     "mtime": 1785986543.5143821,
     "ast_hash": "b2d12ed11ab03617190a339831b2325f",
+    "semantic_hash": ""
+  },
+  "test/architecture/release_workflow_guard_test.dart": {
+    "mtime": 1785991182.6521163,
+    "ast_hash": "4252c978907a2d9d953c2e2f4174486e",
+    "semantic_hash": ""
+  },
+  ".github/workflows/android-alpha.yml": {
+    "mtime": 1785991342.9610627,
+    "ast_hash": "45e1c3463bf165a4a4f8e887a83e3938",
+    "semantic_hash": ""
+  },
+  ".github/workflows/finalize-release.yml": {
+    "mtime": 1785991182.6498566,
+    "ast_hash": "79f35c5d71d02776a5b63c9352299c9b",
+    "semantic_hash": ""
+  },
+  ".github/workflows/quality.yml": {
+    "mtime": 1785991182.647236,
+    "ast_hash": "d58ef2531d12e61328df1d9accb72ab5",
+    "semantic_hash": ""
+  },
+  "docs/project/GitHub_\u7248\u672c\u53d1\u5e03\u6d41\u7a0b.md": {
+    "mtime": 1785990703.9649472,
+    "ast_hash": "7148ecd15fa724033112ac3175cfcba7",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260806_034743_\u4fee\u590d_ios_\u6700\u7ec8\u5904\u7406\u65f6\u8bf4\u8bdd\u4eba\u5206\u79bb_sigabrt.md": {
+    "mtime": 1785988063.9744587,
+    "ast_hash": "726d4f7c5aab2f51b6abc8b67098be6b",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260806_035845_\u6839\u636e\u5f53\u524d\u9879\u76ee_\u7ed9\u6211\u4e00\u4efd\u57fa\u4e8egithub\u7684\u7248\u672c\u53d1\u5e03\u6d41\u7a0b\u65b9\u6848.md": {
+    "mtime": 1785988725.8475256,
+    "ast_hash": "99247c2c211319469e0edb04f8de5319",
+    "semantic_hash": ""
+  },
+  "spec/spec-process-cicd-android-alpha.md": {
+    "mtime": 1785989504.56779,
+    "ast_hash": "a6530a299364703d9d76d27d0f2f92da",
+    "semantic_hash": ""
+  },
+  "spec/spec-process-cicd-quality.md": {
+    "mtime": 1785989504.5667915,
+    "ast_hash": "9bbdf2137623ffd4515a599052ddf705",
+    "semantic_hash": ""
+  },
+  "spec/spec-process-cicd-release-finalize.md": {
+    "mtime": 1785991280.8252351,
+    "ast_hash": "9d4ab3000b7c83e974467cd0f093155d",
     "semantic_hash": ""
   }
 }

@@ -3,6 +3,18 @@ name: iOS TestFlight Release
 on:
   workflow_dispatch:
     inputs:
+      release_id:
+        description: Version identifier such as v1.0.0-alpha.1
+        required: true
+        type: string
+      expected_sha:
+        description: Full commit SHA from master to build
+        required: true
+        type: string
+      gate_input_path:
+        description: Repository-relative Alpha release evidence JSON
+        required: true
+        type: string
       release_notes:
         description: Optional TestFlight release notes
         required: false
@@ -10,6 +22,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  attestations: write
 
 concurrency:
   group: ios-testflight-release
@@ -28,11 +42,58 @@ jobs:
     environment: testflight
 
     steps:
-      - name: Checkout repository
+      - name: Checkout candidate commit
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.expected_sha }}
+          fetch-depth: 0
+
+      - name: Validate candidate identity
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          GATE_INPUT_PATH: ${{ inputs.gate_input_path }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$GITHUB_SHA" == "$EXPECTED_SHA" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$EXPECTED_SHA" origin/master
+
+          marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
+          [[ -n "$marketing_version" ]]
+          expected_prefix="v${marketing_version}-alpha."
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$RELEASE_ID" == "$expected_prefix"* ]]
+
+          python3 - "$GATE_INPUT_PATH" <<'PY'
+          import pathlib
+          import subprocess
+          import sys
+
+          raw = pathlib.PurePosixPath(sys.argv[1].replace("\\", "/"))
+          if raw.is_absolute() or ".." in raw.parts:
+              raise SystemExit("gate_input_path must stay inside the repository")
+          path = pathlib.Path(raw)
+          if not path.is_file():
+              raise SystemExit(f"Gate input does not exist: {path}")
+          repository = pathlib.Path.cwd().resolve()
+          resolved = path.resolve(strict=True)
+          if resolved != repository and repository not in resolved.parents:
+              raise SystemExit("gate_input_path symlink escapes the repository")
+          subprocess.run(
+              ["git", "ls-files", "--error-unmatch", "--", path.as_posix()],
+              check=True,
+              stdout=subprocess.DEVNULL,
+          )
+          PY
+
+          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
 
       - name: Set up latest stable Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
           cache: true
@@ -68,6 +129,51 @@ jobs:
             echo "--- Disk ---"
             df -h
           } | tee build/ios/testflight/toolchain.txt
+
+      - name: Resolve dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Check formatting
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          lib test integration_test tool
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Evaluate Alpha product gates
+        env:
+          GATE_INPUT_PATH: ${{ inputs.gate_input_path }}
+        run: >-
+          dart run tool/benchmarks/evaluate_alpha_release.dart
+          "$GATE_INPUT_PATH"
+          build/ios/testflight/release-gate-report.json
+
+      - name: Prepare release build number
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (( GITHUB_RUN_ATTEMPT > 99 )); then
+            echo "GitHub run attempt exceeds the supported build-number range" >&2
+            exit 1
+          fi
+          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
+          echo "IOS_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          echo "TestFlight build number: $build_number"
+
+      - name: Build and inspect unsigned Release app
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build ios \
+            --release --no-codesign \
+            --build-number="$IOS_BUILD_NUMBER"
+          bash tool/benchmarks/inspect_ios_app.sh \
+            build/ios/iphoneos/Runner.app \
+            build/ios/testflight/ios-app-inspection.json
 
       - name: Validate and decode signing materials
         shell: bash
@@ -201,6 +307,7 @@ jobs:
           import os
           import plistlib
           import hashlib
+          import re
           from datetime import datetime, timezone
           from pathlib import Path
 
@@ -247,8 +354,11 @@ jobs:
               if expiration <= datetime.now(timezone.utc):
                   errors.append("profile has expired")
           uuid = str(profile.get("UUID", "")).strip()
-          if not uuid:
-              errors.append("profile has no UUID")
+          if not re.fullmatch(
+              r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+              uuid,
+          ):
+              errors.append("profile has no valid UUID")
           if errors:
               raise SystemExit("Invalid provisioning profile: " + "; ".join(errors))
 
@@ -304,38 +414,6 @@ jobs:
 
           puts "Manual App Store signing configured for Runner/Release only"
           RUBY
-
-      - name: Resolve dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test
-
-      - name: Prepare release build number
-        shell: bash
-        run: |
-          set -euo pipefail
-          if (( GITHUB_RUN_ATTEMPT > 99 )); then
-            echo "GitHub run attempt exceeds the supported build-number range" >&2
-            exit 1
-          fi
-          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
-          echo "IOS_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
-          echo "TestFlight build number: $build_number"
-
-      - name: Build and inspect unsigned Release app
-        shell: bash
-        run: |
-          set -euo pipefail
-          flutter build ios \
-            --release --no-codesign \
-            --build-number="$IOS_BUILD_NUMBER"
-          bash tool/benchmarks/inspect_ios_app.sh \
-            build/ios/iphoneos/Runner.app \
-            build/ios/testflight/ios-app-inspection.json
 
       - name: Archive and export signed IPA
         shell: bash
@@ -447,7 +525,12 @@ jobs:
           with ipa_path.open("rb") as stream:
               for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                   digest.update(chunk)
+          gate = json.loads(Path("build/ios/testflight/release-gate-report.json").read_text())
           metadata = {
+              "schemaVersion": 1,
+              "platform": "ios",
+              "releaseId": os.environ["RELEASE_ID"],
+              "marketingVersion": os.environ["MARKETING_VERSION"],
               "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
               "repository": os.environ["GITHUB_REPOSITORY"],
               "commitSha": os.environ["GITHUB_SHA"],
@@ -456,6 +539,8 @@ jobs:
               "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "buildNumber": os.environ["IOS_BUILD_NUMBER"],
               "bundleId": os.environ["IOS_BUNDLE_ID"],
+              "workflowFile": ".github/workflows/ios-testflight.yml",
+              "gateDecision": gate["decision"],
               "runner": {
                   "os": os.environ["RUNNER_OS"],
                   "architecture": output("uname", "-m"),
@@ -472,10 +557,15 @@ jobs:
                   "testFlightUploadCandidate": True,
               },
           }
-          report_path = ipa_path.parent / "build-metadata.json"
+          report_path = ipa_path.parent / "candidate-manifest.json"
           report_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-          print(f"Build metadata: {report_path}")
+          print(f"Candidate manifest: {report_path}")
           PY
+
+      - name: Generate IPA provenance attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ env.IPA_PATH }}
 
       - name: Upload IPA to TestFlight
         shell: bash
@@ -501,13 +591,11 @@ jobs:
         with:
           name: meettrace-ios-testflight-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            build/ios/testflight/*.ipa
             build/ios/testflight/*.sha256
             build/ios/testflight/*.json
             build/ios/testflight/*.txt
           if-no-files-found: warn
-          retention-days: 3
-          compression-level: 0
+          retention-days: 7
 
       - name: Remove temporary signing materials
         if: always()

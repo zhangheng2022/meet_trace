@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - iOS TestFlight Release
-version: 1.1
+version: 1.2
 date_created: 2026-08-05
-last_updated: 2026-08-05
+last_updated: 2026-08-06
 owner: MeetTrace maintainers
 tags: [process, cicd, github-actions, ios, flutter, signing, testflight]
 ---
@@ -10,7 +10,7 @@ tags: [process, cicd, github-actions, ios, flutter, signing, testflight]
 ## Workflow Overview
 
 **Purpose**: 在无本地 macOS 的条件下，对 MeetTrace iOS Alpha 执行质量检查、App Store 分发签名、IPA 验证，并将构建上传至 TestFlight。
-**Trigger Events**: 仅允许维护者人工触发，可附带可选的 TestFlight 构建说明。
+**Trigger Events**: 仅允许维护者人工触发，必须指定 release ID、`master` commit SHA 和门禁输入，可附带 TestFlight 构建说明。
 **Target Environments**: GitHub 托管的最新稳定 macOS/Xcode、Flutter 最新 stable、App Store Connect TestFlight。
 
 ## Execution Flow Diagram
@@ -63,12 +63,13 @@ graph TD
 | REQ-009 | 支持可选构建说明 | Medium | 非空说明随构建提交，空说明不阻断上传 |
 | REQ-010 | 输出可追溯证据 | High | 产物关联 commit、run、attempt、构建号、工具链和 SHA-256 |
 | REQ-011 | 签名设置仅作用于 App 主目标 | High | provisioning profile 不得注入 Pods、插件或测试目标 |
+| REQ-012 | 候选身份可追溯 | High | release ID、commit SHA、marketing version 与门禁报告一致 |
 
 ### Security Requirements
 
 | ID | Requirement | Implementation Constraint |
 |---|---|---|
-| SEC-001 | 最小 GitHub Token 权限 | 仅允许读取仓库内容 |
+| SEC-001 | 最小 GitHub Token 权限 | 仓库内容只读；仅为来源证明开放 `id-token: write` 与 `attestations: write` |
 | SEC-002 | Secrets 不进入仓库、日志或长期文件 | 凭据仅从 GitHub Secrets 注入，不输出原文 |
 | SEC-003 | 签名材料仅存在于临时 Runner | 使用临时钥匙串和临时文件，流程结束始终清理 |
 | SEC-004 | 上传认证使用短时 JWT | 团队 API Key 仅用于生成短时 App Store Connect 令牌 |
@@ -76,6 +77,8 @@ graph TD
 | SEC-006 | 禁止原始私钥进入 IPA | IPA 不得包含 `.p12`、`.p8`、`.pem` 或 `.key` |
 | SEC-007 | 限制发布并发 | 同时只允许一个 TestFlight 发布，运行中不得自动取消 |
 | SEC-008 | 隔离发布权限 | Job 绑定 `testflight` Environment，支持审批和 Environment Secrets |
+| SEC-009 | 公开 Artifact 不保存签名 IPA | 只上传清单、摘要、审计和工具链证据；IPA 直接进入 TestFlight |
+| SEC-010 | 构建来源可验证 | 为签名 IPA 生成 GitHub Artifact Attestation |
 
 ### Performance Requirements
 
@@ -83,7 +86,7 @@ graph TD
 |---|---|---|---|
 | PERF-001 | 单次运行时长 | 不超过 120 分钟 | GitHub Actions Job 时长 |
 | PERF-002 | 发布并发 | 全仓库最多一个有效发布 | 并发组运行历史 |
-| PERF-003 | 签名产物保留 | 3 天 | Artifact 保留配置 |
+| PERF-003 | 非敏感证据保留 | 7 天 | Artifact 保留配置 |
 
 ## Input/Output Contracts
 
@@ -92,6 +95,8 @@ graph TD
 ```yaml
 repository_event: manual
 source_revision: git commit SHA
+release_id: v<marketing-version>-alpha.<sequence>
+gate_input_path: repository-relative JSON path
 release_notes: optional string
 toolchain_policy: latest-stable
 bundle_id: com.meettrace.app
@@ -100,11 +105,11 @@ bundle_id: com.meettrace.app
 ### Outputs
 
 ```yaml
-signed_ipa: file
+signed_ipa: ephemeral file uploaded only to TestFlight
 ipa_sha256: text
 unsigned_app_inspection_report: json
 codesign_report: text
-build_metadata: json
+candidate_manifest: json
 toolchain_snapshot: text
 testflight_upload: submitted build
 ```
@@ -137,7 +142,7 @@ testflight_upload: submitted build
 - **Network Access**: 用于源码、Flutter/依赖、发布客户端和 App Store Connect。
 - **Apple Configuration**: `com.meettrace.app` 已创建 App Store Connect 应用记录；profile 属于同一 Team，并包含 p12 对应的 distribution 证书。
 - **Signing Scope**: 手动签名设置只允许绑定 `Runner` 的 Release 配置；Pods、Flutter 插件和测试目标沿用各自构建设置。
-- **Permissions**: GitHub Token 只读；API Key 角色允许上传构建。
+- **Permissions**: `contents: read`、`id-token: write`、`attestations: write`；API Key 角色允许上传构建。
 
 ## Error Handling Strategy
 
@@ -149,7 +154,7 @@ testflight_upload: submitted build
 | 分析、测试或 unsigned 审计失败 | 阻断签名和上传 | 修复代码或资产后重跑 |
 | 归档、签名或导出失败 | 保留非敏感诊断，阻断上传 | 根据 Xcode 日志修复 |
 | IPA 校验失败 | 阻断上传 | 修复导出配置并重新构建 |
-| App Store Connect 拒绝上传 | Job 失败并短期保留 IPA | 根据上传错误处理后使用新构建号重跑 |
+| App Store Connect 拒绝上传 | Job 失败并保留非敏感诊断，不上传 IPA Artifact | 根据上传错误处理后使用新构建号重跑 |
 | Apple 后台处理失败 | GitHub 上传可能已成功 | 在 App Store Connect 查看处理错误 |
 | 任意步骤失败或取消 | 始终执行清理 | 删除临时钥匙串、证书、profile 和 API 私钥 |
 
@@ -163,6 +168,7 @@ testflight_upload: submitted build
 | Unsigned Bundle Integrity | 现有 iOS bundle 审计全部通过 | 无 |
 | Signing Material Integrity | distribution identity 和 App Store profile 匹配 | 无 |
 | Signed IPA Integrity | codesign、profile、标识、构建号和 ZIP 全部通过 | 无 |
+| Alpha Product Evidence | 发布门禁 decision=`go` | 无 |
 | Upload Authentication | 团队 API Key 成功认证 | 无 |
 | TestFlight Acceptance | 上传请求被 App Store Connect 接收 | Apple 后台处理需继续观察 |
 
@@ -207,7 +213,7 @@ testflight_upload: submitted build
 ### Audit Requirements
 
 - **Execution Logs**: 由 GitHub Actions 按仓库策略保留。
-- **Build Artifacts**: 签名 IPA 和非敏感报告保留 3 天。
+- **Build Artifacts**: 只保留候选清单、摘要和非敏感报告 7 天；签名 IPA 不进入公开 Artifact。
 - **Approval Gates**: 推荐为 `testflight` Environment 配置 required reviewers。
 - **Change Control**: 行为变化先更新本规格，再修改工作流和发布配置。
 - **External Distribution**: 外部测试组、测试员通知和 Beta Review 不属于本流程。
@@ -216,9 +222,10 @@ testflight_upload: submitted build
 
 - **Access Control**: GitHub Token 只读，发布由 Environment 权限控制。
 - **Secret Management**: 凭据不回显，仅写入 Runner 临时目录并限制文件权限。
+- **Secret Ordering**: 格式、分析、测试、产品门禁和 unsigned bundle 审计全部通过后才解码签名材料。
 - **Keychain Isolation**: distribution 私钥只导入本次运行的临时钥匙串。
 - **Cleanup**: 成功、失败或取消后均恢复默认钥匙串并删除临时材料。
-- **Artifact Classification**: 签名 IPA 是受控发布产物；访问权限继承仓库设置。
+- **Artifact Classification**: 签名 IPA 仅临时存在于 Runner 并上传 TestFlight；公开 Artifact 不保存应用二进制。
 
 ## Edge Cases & Exceptions
 
@@ -254,7 +261,7 @@ testflight_upload: submitted build
 ### Performance Benchmarks
 
 - **PERF-001**: 单次成功运行不超过 120 分钟。
-- **PERF-002**: Artifact 只保存一个签名 IPA 和必要证据，保留 3 天。
+- **PERF-002**: Artifact 只保存候选清单、摘要和必要证据，保留 7 天。
 
 ## Change Management
 
@@ -273,6 +280,7 @@ testflight_upload: submitted build
 |---|---|---|---|
 | 1.0 | 2026-08-05 | 初始 TestFlight 签名发布规格 | Codex |
 | 1.1 | 2026-08-05 | 增加证书/profile 精确匹配校验，并将手动签名限制到 Runner 目标 | Codex |
+| 1.2 | 2026-08-06 | 增加候选身份与产品门禁，签名 IPA 改为仅上传 TestFlight 并生成来源证明；签名材料延迟到仓库代码检查完成后解码 | Codex |
 
 ## Related Specifications
 

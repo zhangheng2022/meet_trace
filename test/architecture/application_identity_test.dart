@@ -45,4 +45,16 @@ void main() {
     ].join('\n');
     expect(nativeConfiguration, isNot(contains('com.example.meettrace')));
   });
+
+  test('Android Release 只接受显式注入的正式签名配置', () async {
+    final gradle = await File('android/app/build.gradle.kts').readAsString();
+
+    expect(
+      gradle,
+      contains('environmentVariable("MEETTRACE_ANDROID_KEYSTORE_PATH")'),
+    );
+    expect(gradle, contains('create("release")'));
+    expect(gradle, contains('signingConfigs.findByName("release")'));
+    expect(gradle, isNot(contains('signingConfigs.getByName("debug")')));
+  });
 }

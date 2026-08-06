@@ -9,6 +9,7 @@
 2. [Android Alpha 设备矩阵](./Android_Alpha_设备矩阵.md)：最低系统、主开发机和低端性能设备要求。
 3. [iOS Alpha 设备矩阵](./iOS_Alpha_设备矩阵.md)：macOS/Xcode、iPhone/iPad 与签名阻塞项。
 4. [iOS 无签名构建规格](../../spec/spec-process-cicd-ios-unsigned.md)：GitHub Actions 构建、App bundle 审计、证据产物和失败策略。
+5. [GitHub Alpha 版本发布流程](../project/GitHub_版本发布流程.md)：PR 门禁、Android 私有候选、TestFlight、同 SHA tag 与 Pre-release。
 
 以上文档跟随 PRD V0.9 与当前技术方案维护。V0.9 仓库实现或任一平台适用真机证据缺失时，双平台 Alpha 发布状态保持 `blocked`。
 

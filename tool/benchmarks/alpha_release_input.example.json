@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "rawMetricsRef": null,
   "corpus": {"id": null, "sampleCount": null, "deidentified": null},
   "environment": {
@@ -8,8 +8,13 @@
     "iosArm64DeviceTested": null,
     "androidBackgroundRecordingPassed": null,
     "iosBackgroundRecordingPassed": null,
+    "androidInterruptionRecoveryPassed": null,
     "iosInterruptionRecoveryPassed": null,
-    "adaptiveNavigationAccessibilityPassed": null
+    "adaptiveNavigationAccessibilityPassed": null,
+    "alphaUpgradeResetPassed": null,
+    "textSharePassed": null,
+    "androidAudioSharePassed": null,
+    "iosAudioSharePassed": null
   },
   "senseVoice": {
     "runtimeDownloadBytes": 239762595,
@@ -23,6 +28,16 @@
     "peakTemperatureC": null,
     "peakRssBytes": null,
     "keyFactRecallRatio": null
+  },
+  "speakerDiarization": {
+    "corpusMinutes": null,
+    "testedSpeakerCounts": null,
+    "der": null,
+    "maxSpeakerCountAbsoluteError": null,
+    "rtf": null,
+    "repeatedRunPeakRssBytes": null,
+    "androidArm64Tested": null,
+    "iosArm64Tested": null
   },
   "acceptanceEvidence": null,
   "release": {

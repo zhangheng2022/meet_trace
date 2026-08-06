@@ -1,5 +1,6 @@
 param(
-    [string]$ApkPath
+    [string]$ApkPath,
+    [string]$ReportPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -54,7 +55,11 @@ $report = [ordered]@{
     forbiddenWeights = $forbiddenWeights
     forbiddenUserData = $forbiddenUserData
 }
-$output = Join-Path $repoRoot '.spike\results\apk-inspection.json'
+$output = if ([string]::IsNullOrWhiteSpace($ReportPath)) {
+    Join-Path $repoRoot '.spike\results\apk-inspection.json'
+} else {
+    [System.IO.Path]::GetFullPath($ReportPath)
+}
 New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($output)) | Out-Null
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $output -Encoding utf8
 Write-Host "APK inspection report: $output"

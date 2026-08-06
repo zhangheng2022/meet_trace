@@ -1,0 +1,298 @@
+name: Android Alpha Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Version identifier such as v1.0.0-alpha.1
+        required: true
+        type: string
+      expected_sha:
+        description: Full commit SHA from master to build
+        required: true
+        type: string
+      gate_input_path:
+        description: Repository-relative Alpha release evidence JSON
+        required: true
+        type: string
+      release_notes:
+        description: Optional private Android candidate notes
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: android-alpha-release
+  cancel-in-progress: false
+
+jobs:
+  release-android-alpha:
+    name: Build, sign, and distribute Android Alpha
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: android-alpha
+
+    steps:
+      - name: Checkout candidate commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.expected_sha }}
+          fetch-depth: 0
+
+      - name: Validate candidate identity
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          GATE_INPUT_PATH: ${{ inputs.gate_input_path }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$GITHUB_SHA" == "$EXPECTED_SHA" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$EXPECTED_SHA" origin/master
+
+          marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
+          [[ -n "$marketing_version" ]]
+          expected_prefix="v${marketing_version}-alpha."
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$RELEASE_ID" == "$expected_prefix"* ]]
+
+          python3 - "$GATE_INPUT_PATH" <<'PY'
+          import pathlib
+          import subprocess
+          import sys
+
+          raw = pathlib.PurePosixPath(sys.argv[1].replace("\\", "/"))
+          if raw.is_absolute() or ".." in raw.parts:
+              raise SystemExit("gate_input_path must stay inside the repository")
+          path = pathlib.Path(raw)
+          if not path.is_file():
+              raise SystemExit(f"Gate input does not exist: {path}")
+          repository = pathlib.Path.cwd().resolve()
+          resolved = path.resolve(strict=True)
+          if resolved != repository and repository not in resolved.parents:
+              raise SystemExit("gate_input_path symlink escapes the repository")
+          subprocess.run(
+              ["git", "ls-files", "--error-unmatch", "--", path.as_posix()],
+              check=True,
+              stdout=subprocess.DEVNULL,
+          )
+          PY
+
+          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
+          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up latest stable Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Check formatting
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          lib test integration_test tool
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Evaluate Alpha product gates
+        env:
+          GATE_INPUT_PATH: ${{ inputs.gate_input_path }}
+        run: >-
+          dart run tool/benchmarks/evaluate_alpha_release.dart
+          "$GATE_INPUT_PATH"
+          build/android/alpha/release-gate-report.json
+
+      - name: Prepare release build number
+        shell: bash
+        run: |
+          set -euo pipefail
+          if (( GITHUB_RUN_ATTEMPT > 99 )); then
+            echo "GitHub run attempt exceeds the supported build-number range" >&2
+            exit 1
+          fi
+          build_number=$((GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
+          echo "ANDROID_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          echo "Android versionCode: $build_number"
+
+      - name: Decode Android signing keystore
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          [[ -n "${ANDROID_KEYSTORE_BASE64//[[:space:]]/}" ]]
+          keystore_path="$RUNNER_TEMP/meettrace-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
+          [[ -s "$keystore_path" ]]
+          chmod 600 "$keystore_path"
+          echo "MEETTRACE_ANDROID_KEYSTORE_PATH=$keystore_path" >> "$GITHUB_ENV"
+
+      - name: Build signed Android Release APK
+        shell: bash
+        env:
+          MEETTRACE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          MEETTRACE_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          MEETTRACE_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          flutter build apk \
+            --release \
+            --build-name="$MARKETING_VERSION" \
+            --build-number="$ANDROID_BUILD_NUMBER"
+          apk_path="build/app/outputs/flutter-apk/app-release.apk"
+          [[ -s "$apk_path" ]]
+          echo "APK_PATH=$apk_path" >> "$GITHUB_ENV"
+
+      - name: Inspect APK contents
+        shell: pwsh
+        run: >-
+          ./tool/benchmarks/inspect_debug_apk.ps1
+          -ApkPath $env:APK_PATH
+          -ReportPath build/android/alpha/android-apk-inspection.json
+
+      - name: Verify APK signature and certificate
+        shell: bash
+        env:
+          EXPECTED_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/android/alpha
+          apksigner="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name apksigner | sort -V | tail -1)"
+          [[ -x "$apksigner" ]]
+          "$apksigner" verify --verbose --print-certs "$APK_PATH" \
+            | tee build/android/alpha/apksigner.txt
+          actual="$(sed -nE 's/^Signer #1 certificate SHA-256 digest: (.*)$/\1/p' build/android/alpha/apksigner.txt | head -1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          expected="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+          [[ -n "$actual" && -n "$expected" && "$actual" == "$expected" ]]
+          printf '%s\n' "$actual" > build/android/alpha/signing-certificate.sha256
+          sha256sum "$APK_PATH" | tee build/android/alpha/android-release-apk.sha256
+
+      - name: Write Android candidate manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_ID="$RELEASE_ID" \
+          MARKETING_VERSION="$MARKETING_VERSION" \
+          ANDROID_BUILD_NUMBER="$ANDROID_BUILD_NUMBER" \
+          APK_PATH="$APK_PATH" \
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          apk = Path(os.environ["APK_PATH"])
+          gate = json.loads(Path("build/android/alpha/release-gate-report.json").read_text())
+          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+          manifest = {
+              "schemaVersion": 1,
+              "platform": "android",
+              "releaseId": os.environ["RELEASE_ID"],
+              "marketingVersion": os.environ["MARKETING_VERSION"],
+              "buildNumber": os.environ["ANDROID_BUILD_NUMBER"],
+              "commitSha": os.environ["GITHUB_SHA"],
+              "workflowFile": ".github/workflows/android-alpha.yml",
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "gateDecision": gate["decision"],
+              "artifact": {"name": apk.name, "bytes": apk.stat().st_size, "sha256": digest},
+              "distribution": {"visibility": "private", "releaseState": "draft"},
+          }
+          Path("build/android/alpha/candidate-manifest.json").write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Generate APK provenance attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ env.APK_PATH }}
+
+      - name: Publish APK to private GitHub distribution repository
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ANDROID_DISTRIBUTION_TOKEN }}
+          DISTRIBUTION_REPOSITORY: ${{ vars.ANDROID_DISTRIBUTION_REPOSITORY }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+          [[ "$DISTRIBUTION_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]
+          visibility="$(gh repo view "$DISTRIBUTION_REPOSITORY" --json visibility --jq .visibility)"
+          [[ "$visibility" == "PRIVATE" ]]
+
+          notes_path="$RUNNER_TEMP/android-release-notes.md"
+          {
+            echo "MeetTrace Android candidate \`$RELEASE_ID\`."
+            echo
+            echo "Source: \`$GITHUB_REPOSITORY@$GITHUB_SHA\`"
+            echo "Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            if [[ -n "$RELEASE_NOTES" ]]; then
+              echo
+              printf '%s\n' "$RELEASE_NOTES"
+            fi
+          } > "$notes_path"
+
+          if gh release view "$RELEASE_ID" --repo "$DISTRIBUTION_REPOSITORY" >/dev/null 2>&1; then
+            is_draft="$(gh release view "$RELEASE_ID" --repo "$DISTRIBUTION_REPOSITORY" --json isDraft --jq .isDraft)"
+            [[ "$is_draft" == "true" ]]
+            gh release edit "$RELEASE_ID" \
+              --repo "$DISTRIBUTION_REPOSITORY" \
+              --title "MeetTrace $RELEASE_ID Android candidate" \
+              --notes-file "$notes_path"
+          else
+            gh release create "$RELEASE_ID" \
+              --repo "$DISTRIBUTION_REPOSITORY" \
+              --draft --prerelease \
+              --title "MeetTrace $RELEASE_ID Android candidate" \
+              --notes-file "$notes_path"
+          fi
+
+          gh release upload "$RELEASE_ID" \
+            "$APK_PATH" \
+            build/android/alpha/android-release-apk.sha256 \
+            build/android/alpha/signing-certificate.sha256 \
+            build/android/alpha/candidate-manifest.json \
+            build/android/alpha/release-gate-report.json \
+            --repo "$DISTRIBUTION_REPOSITORY" \
+            --clobber
+
+      - name: Upload non-sensitive Android candidate evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: meettrace-android-alpha-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/android/alpha/*.json
+            build/android/alpha/*.sha256
+            build/android/alpha/*.txt
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Remove temporary signing materials
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${MEETTRACE_ANDROID_KEYSTORE_PATH:-}" ]]; then
+            rm -f -- "$MEETTRACE_ANDROID_KEYSTORE_PATH"
+          fi
