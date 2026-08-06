@@ -6,6 +6,7 @@ import '../data/services/audio/record_pcm_audio_capture.dart';
 import '../data/services/audio/recording_checkpoint_store.dart';
 import '../data/services/audio/reliable_recording_service.dart';
 import '../data/services/models/model_download_types.dart';
+import '../data/services/monitoring/sentry_bootstrap.dart';
 import '../data/services/sharing/text_share_service.dart';
 import '../data/services/sharing/pcm_wav_audio_share_service.dart';
 import '../data/services/storage/local_data_control_service.dart';
@@ -161,6 +162,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         preview: preview,
         now: DateTime.now,
       ),
+      telemetry: sentryRecordingTelemetryGate,
     );
   }
 }

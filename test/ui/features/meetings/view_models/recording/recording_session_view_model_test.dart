@@ -9,6 +9,7 @@ import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/asr_preview_session.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
+import 'package:meettrace/domain/ports/recording_telemetry.dart';
 import 'package:meettrace/domain/use_cases/manage_recording_session.dart';
 import 'package:meettrace/domain/use_cases/start_meeting.dart';
 import 'package:meettrace/ui/features/meetings/view_models/recording/recording_session_view_model.dart';
@@ -20,13 +21,16 @@ void main() {
     final meetings = TestMeetingRepository();
     final recording = _RecordingService();
     final preview = _PreviewSession();
+    final telemetry = _RecordingTelemetryGate();
     final viewModel = _viewModel(
       meetings: meetings,
       recording: recording,
       preview: preview,
+      telemetry: telemetry,
     );
 
     expect(await viewModel.start(), isTrue);
+    expect(telemetry.recordingActive, isTrue);
     recording.durationValue = const Duration(seconds: 12);
     viewModel.refreshDuration();
     await viewModel.pause();
@@ -43,6 +47,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(preview.disposeCalls, 1);
     expect(meetings.saved.last.status, MeetingState.processing);
+    expect(telemetry.recordingActive, isFalse);
     viewModel.dispose();
     await preview.close();
   });
@@ -243,10 +248,12 @@ void main() {
         message: 'denied',
       );
     final preview = _PreviewSession();
+    final telemetry = _RecordingTelemetryGate();
     final viewModel = _viewModel(
       meetings: meetings,
       recording: recording,
       preview: preview,
+      telemetry: telemetry,
     );
 
     expect(await viewModel.start(), isFalse);
@@ -254,6 +261,7 @@ void main() {
     expect(viewModel.meeting.lastErrorCode, 'recording.permission_denied');
     expect(meetings.saved.last.status, MeetingState.failed);
     expect(viewModel.errorMessage, contains('麦克风权限'));
+    expect(telemetry.recordingActive, isFalse);
     viewModel.dispose();
     await preview.close();
   });
@@ -293,6 +301,7 @@ RecordingSessionViewModel _viewModel({
   required _RecordingService recording,
   required _PreviewSession preview,
   RecordingTickerFactory? audioLevelTickerFactory,
+  RecordingTelemetryGate telemetry = const NoopRecordingTelemetryGate(),
 }) {
   final descriptor = AsrModelRegistry.alpha.requireById(
     senseVoiceDefaultModelId,
@@ -322,7 +331,18 @@ RecordingSessionViewModel _viewModel({
     ),
     tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
     audioLevelTickerFactory: audioLevelTickerFactory,
+    telemetry: telemetry,
   );
+}
+
+final class _RecordingTelemetryGate implements RecordingTelemetryGate {
+  @override
+  bool recordingActive = false;
+
+  @override
+  void setRecordingActive(bool active) {
+    recordingActive = active;
+  }
 }
 
 final class _RecordingService implements RecordingSessionService {

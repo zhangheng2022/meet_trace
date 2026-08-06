@@ -10,6 +10,7 @@ import '../../../../../domain/models/transcript.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../domain/ports/asr_preview_session.dart';
 import '../../../../../domain/ports/recording_session.dart';
+import '../../../../../domain/ports/recording_telemetry.dart';
 import '../../../../../domain/use_cases/manage_recording_session.dart';
 import '../../../../../domain/use_cases/start_meeting.dart';
 
@@ -26,6 +27,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     required this.recording,
     required this.preview,
     required this.sessionLifecycle,
+    this.telemetry = const NoopRecordingTelemetryGate(),
     RecordingTickerFactory? tickerFactory,
     RecordingTickerFactory? audioLevelTickerFactory,
   }) : _meeting = session.meeting,
@@ -38,6 +40,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   final RecordingSessionService recording;
   final AsrPreviewSession preview;
   final ManageRecordingSessionUseCase sessionLifecycle;
+  final RecordingTelemetryGate telemetry;
   final RecordingTickerFactory _tickerFactory;
   final RecordingTickerFactory _audioLevelTickerFactory;
 
@@ -86,6 +89,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     }
     _subscribePreview();
     _setBusy(true);
+    telemetry.setRecordingActive(true);
     try {
       await sessionLifecycle.start(_meeting);
       refreshDuration();
@@ -105,6 +109,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       await _disposePreviewBestEffort();
       return false;
     } finally {
+      if (recordingState != RecordingState.recording &&
+          recordingState != RecordingState.paused) {
+        telemetry.setRecordingActive(false);
+      }
       _setBusy(false);
     }
   }
@@ -158,6 +166,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       await _disposePreviewBestEffort();
       return null;
     } finally {
+      if (recordingState != RecordingState.recording &&
+          recordingState != RecordingState.paused) {
+        telemetry.setRecordingActive(false);
+      }
       _isFinalizing = false;
       _setBusy(false);
     }

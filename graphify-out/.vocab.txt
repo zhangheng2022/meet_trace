@@ -1,3 +1,4 @@
+absolute
 abstract
 accept
 acceptance
@@ -220,6 +221,7 @@ content
 context
 continuity
 continuous
+contract
 contracts
 contrast
 contributor
@@ -284,6 +286,7 @@ delta
 dependencies
 dependency
 dependent
+der
 description
 descriptor
 design
@@ -373,6 +376,7 @@ entry
 entrypoint
 enum
 environmental
+environments
 epoch
 equal
 error
@@ -546,6 +550,7 @@ installers
 instance
 int
 integer
+integers
 integration
 interface
 interpolate
@@ -559,6 +564,7 @@ ips
 isolate
 issue
 issues
+job
 jobs
 json
 keep
@@ -912,6 +918,7 @@ renewal
 repaint
 repair
 repeat
+repeated
 replay
 report
 repositories
@@ -969,10 +976,12 @@ rtf
 rule
 ruler
 rules
+rulesets
 run
 runner
 runtime
 safe
+safety
 sample
 samples
 sanitized
@@ -1036,6 +1045,7 @@ shortened
 should
 show
 shutdown
+sigabrt
 signal
 silero
 since
@@ -1092,6 +1102,7 @@ subject
 subscribe
 subscription
 subscriptions
+substring
 success
 such
 sum
@@ -1271,6 +1282,7 @@ yue
 下载共享类型造成反向依赖
 与双平台里程碑
 与数据代通过哪些文件和依赖关系连接
+与权限
 与说话人分离技术方案
 且循环守卫漏检
 中文化查询
@@ -1329,6 +1341,7 @@ yue
 原子激活
 发布到
 发布状态
+发布自动化证据
 受限归档安装和启动阻断通过哪些文件与依赖关系连接
 变更规则
 可注入参考时间
@@ -1350,6 +1363,7 @@ yue
 增量架构优化
 增量证据
 外还有哪些方案
+外部链接
 外部门禁
 安全左滑删除交互
 安全总结网关
@@ -1363,15 +1377,16 @@ yue
 实时波形
 实时转录调优
 实现证据快照
+对外分发
 展示职责拆分
 已修复
 已执行顺序
 已收敛活动分支
 平台敏感服务集合
-应用标识与内部发布
+应用标识与
 开发步骤
 开始会议按下状态修复
-当前发布门槛
+当前发布质量记录
 当前实现差距
 当前模型决策
 当前结构
@@ -1383,6 +1398,7 @@ yue
 总结和自动标题在当前生产实现中是否可用
 技术与产品统一身份
 损坏的
+撤回与恢复
 故障和降级
 数据与隐私
 数据库
@@ -1403,6 +1419,8 @@ yue
 是否具备测试条件
 是否存在循环依赖
 是否需要更换模型或组合模型
+最简发布模型
+最终处理时说话人分离
 最终快照
 最终转录快照
 有界停止与后台清理
@@ -1419,12 +1437,15 @@ yue
 查询记忆记录
 标准流程
 核心推理路径是否有单元测试
+根据当前项目
 模型不要默认包含到安装包
 模型镜像已上传后
 步骤和三方依赖
 沉浸式标题栏修复
 波形显示卡顿
 渐进迁移顺序
+版本与分发合同
+版本发布流程
 现在有两个初始化页吗
 的完整
 的说话人分离生产能力是否真实可用
@@ -1466,6 +1487,7 @@ yue
 转录技术方案
 软件奔溃
 输出配置
+运行与验收
 运行时模型初始化与发布门槛
 这块右边都不相关文字
 透明状态栏主题策略
@@ -1482,6 +1504,7 @@ yue
 预检条双层
 颜色混合变体
 首次初始化流程
+首次启用检查
 首页准备状态与开始会议重复查询模型可用性
 首页固定准备就绪文案解释
 首页真实录音条件预检解释

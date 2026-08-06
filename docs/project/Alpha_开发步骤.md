@@ -76,7 +76,7 @@
 - [x] Android `applicationId`/namespace 与 iOS Bundle ID 统一为 `com.meettrace.app`，更新 Android 原生入口并增加双端配置守卫。
 - Android 生成仅含 `arm64-v8a` 的签名 APK，先暂存到当前仓库 Draft Release；双平台验收后公开同一 APK，不做应用商店发布或应用内更新。
 - iOS 配置 Apple Team，通过 TestFlight 测试；GitHub 不上传 IPA，外部测试链接由最终发布流程可选记录。
-- 不接入远程埋点或崩溃上报；诊断仅由用户主动导出且不含音频或完整转录。
+- 不接入业务分析埋点；Release 默认启用符合 PRD FR-004 的 Sentry 遥测，诊断导出仍仅由用户主动执行且不含音频或完整转录。
 
 完成证据：两端包标识、覆盖安装/数据代行为、签名、权限用途、隐私清单和构建产物审计通过。
 

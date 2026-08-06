@@ -41,6 +41,7 @@ dependencies:
   path: 1.9.1
   path_provider: 2.1.6
   record: 7.1.1
+  sentry_flutter: ^9.26.0
   sherpa_onnx: 1.13.4
   share_plus: 13.3.0
   sqflite: 2.4.3
@@ -52,6 +53,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_native_splash: 2.4.8
+  sentry_dart_plugin: ^3.4.0
   sqlite3: ^3.5.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -116,3 +118,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+sentry:
+  upload_debug_symbols: true
+  upload_source_maps: true
+  project: meettrace
+  org: zhangheng-bc

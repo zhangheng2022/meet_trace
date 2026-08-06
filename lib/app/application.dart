@@ -9,15 +9,21 @@ const appDisplayName = '会迹';
 ///
 /// 这里仅负责主题、本地化和根页面组装，不承载业务逻辑。
 class Application extends StatelessWidget {
-  const Application({super.key, this.home});
+  const Application({
+    super.key,
+    this.home,
+    this.navigatorObservers = const <NavigatorObserver>[],
+  });
 
   /// 测试或后续路由层可以替换根页面。
   final Widget? home;
+  final List<NavigatorObserver> navigatorObservers;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: appDisplayName,
     debugShowCheckedModeBanner: false,
+    navigatorObservers: navigatorObservers,
     supportedLocales: FLocalizations.supportedLocales,
     localizationsDelegates: const [...FLocalizations.localizationsDelegates],
     theme: lightTheme.toApproximateMaterialTheme(),

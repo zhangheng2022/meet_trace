@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   disk_space_2
   record_windows
+  sentry_flutter
   share_plus
   url_launcher_windows
 )
