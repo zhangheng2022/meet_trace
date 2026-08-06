@@ -1,0 +1,174 @@
+name: Alpha Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Version identifier such as v1.0.0-alpha.1
+        required: true
+        type: string
+      release_notes:
+        description: Optional public release notes
+        required: false
+        type: string
+      ios_testflight_external_url:
+        description: Optional TestFlight external testing URL
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: alpha-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Resolve release mode and candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.resolve.outputs.mode }}
+      candidate_sha: ${{ steps.resolve.outputs.candidate_sha }}
+    steps:
+      - name: Checkout requested master revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Resolve immutable release identity
+        id: resolve
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]]
+          [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          if [[ -n "$TESTFLIGHT_URL" ]]; then
+            [[ "$TESTFLIGHT_URL" =~ ^https://testflight\.apple\.com/join/[A-Za-z0-9]+/?$ ]]
+          fi
+          visibility="$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)"
+          [[ "$visibility" == "PUBLIC" ]]
+
+          git fetch --no-tags origin master
+          tag_exists=false
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_ID" >/dev/null 2>&1; then
+            git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+            tag_exists=true
+            [[ "$(git cat-file -t "refs/tags/$RELEASE_ID")" == "tag" ]]
+            candidate_sha="$(git rev-parse "refs/tags/$RELEASE_ID^{}")"
+          else
+            candidate_sha="$(git rev-parse HEAD)"
+          fi
+          [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
+          git merge-base --is-ancestor "$candidate_sha" origin/master
+
+          marketing_version="$(git show "$candidate_sha:pubspec.yaml" | sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p')"
+          [[ -n "$marketing_version" ]]
+          [[ "$RELEASE_ID" == "v${marketing_version}-alpha."* ]]
+
+          if release_json="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName 2>/dev/null)"; then
+            [[ "$tag_exists" == true ]]
+            [[ "$(jq -r .tagName <<<"$release_json")" == "$RELEASE_ID" ]]
+            if [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]; then
+              [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+              mode=candidate
+            else
+              [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+              mode=metadata
+              if [[ -z "$TESTFLIGHT_URL" && -z "$RELEASE_NOTES" ]]; then
+                echo "A public release rerun must provide a TestFlight URL or release notes" >&2
+                exit 1
+              fi
+            fi
+          else
+            mode=candidate
+          fi
+
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
+
+  quality:
+    name: Automatic technical checks
+    if: needs.prepare.outputs.mode == 'candidate'
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test integration_test tool
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+
+  android:
+    name: Android Draft candidate
+    if: needs.prepare.outputs.mode == 'candidate'
+    needs: [prepare, quality]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/android-alpha.yml
+    with:
+      release_id: ${{ inputs.release_id }}
+      candidate_sha: ${{ needs.prepare.outputs.candidate_sha }}
+      release_notes: ${{ inputs.release_notes }}
+    secrets: inherit
+
+  ios:
+    name: iOS TestFlight candidate
+    if: needs.prepare.outputs.mode == 'candidate'
+    needs: [prepare, android]
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/ios-testflight.yml
+    with:
+      release_id: ${{ inputs.release_id }}
+      candidate_sha: ${{ needs.prepare.outputs.candidate_sha }}
+      release_notes: ${{ inputs.release_notes }}
+    secrets: inherit
+
+  publish:
+    name: Approve and publish
+    if: >-
+      always() && needs.prepare.result == 'success' &&
+      (needs.prepare.outputs.mode == 'metadata' ||
+      (needs.android.result == 'success' && needs.ios.result == 'success'))
+    needs: [prepare, android, ios]
+    permissions:
+      actions: read
+      contents: write
+    uses: ./.github/workflows/finalize-release.yml
+    with:
+      release_id: ${{ inputs.release_id }}
+      candidate_sha: ${{ needs.prepare.outputs.candidate_sha }}
+      mode: ${{ needs.prepare.outputs.mode }}
+      release_notes: ${{ inputs.release_notes }}
+      ios_testflight_external_url: ${{ inputs.ios_testflight_external_url }}
+    secrets: inherit

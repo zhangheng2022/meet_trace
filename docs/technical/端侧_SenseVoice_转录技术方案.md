@@ -28,7 +28,7 @@ SenseVoice 与 Silero VAD 的运行时下载 URL 固定到 `https://mt.zhangheng
 
 Pyannote 与 3D-Speaker 的运行时下载 URL 固定到 `https://mt.zhangheng.eu.org/models/SpeakerDiarization/`。镜像内容必须分别与官方 sherpa-onnx `speaker-segmentation-models`、`speaker-recongition-models` 发布资产保持字节一致。Pyannote 归档内含 MIT 许可；3D-Speaker 按该精确模型的 ModelScope 元数据采用 Apache-2.0；两项许可与 NOTICE 均已入库。
 
-同一 Manifest 固定 Engine 输入与聚类配置：16 kHz 单声道、CPU provider、2 threads、`numClusters=-1`、`minDurationOn=0.2`、`minDurationOff=0.5`。工程接入暂用 threshold `0.5`；该值不是发布质量结论，必须经过普通话 2/3/4 人标注语料校准后才能关闭阶段 3 门禁。
+同一 Manifest 固定 Engine 输入与聚类配置：16 kHz 单声道、CPU provider、2 threads、`numClusters=-1`、`minDurationOn=0.2`、`minDurationOff=0.5`。工程接入暂用 threshold `0.5`；该值不是质量达标结论，应经过普通话 2/3/4 人标注语料校准并记录，结果由 Alpha 发布批准人评估。
 
 SenseVoice 合计 `239,549,735` 字节；Silero VAD 固定 `212,860` 字节；说话人资产下载 `46,552,205` 字节；全部运行时下载合计 `286,314,800` 字节。所有 URL 必须为 HTTPS，许可文本随安装包分发，权重不分发。
 
@@ -150,7 +150,7 @@ App 不接入远程埋点、远程崩溃上报或总结网关。诊断导出只�
 
 ## 12. 验证
 
-自动化至少覆盖：Registry 单模型、全部固定 Manifest/hash/revision、300 MB 上限、1 GiB 空间差额、移动网络同意绑定、暂停续传、受限归档解包、所有资源原子准备、快速离线启动、SenseVoice/分离配置、会议锁定、联合任务竞态、全局推理 FIFO、最终静音跳过、VAD 故障完整 PCM 回退、单次快照发布、分离降级、手工标签 CAS、确定性标题、WAV 封装与临时清理、旧库阻断和录音连续性。ASR 与分离均通过 fake worker 验证错误、取消、释放和时序；自动化不加载真实模型权重，真机性能和准确率仍由外部门禁负责。
+自动化至少覆盖：Registry 单模型、全部固定 Manifest/hash/revision、300 MB 上限、1 GiB 空间差额、移动网络同意绑定、暂停续传、受限归档解包、所有资源原子准备、快速离线启动、SenseVoice/分离配置、会议锁定、联合任务竞态、全局推理 FIFO、最终静音跳过、VAD 故障完整 PCM 回退、单次快照发布、分离降级、手工标签 CAS、确定性标题、WAV 封装与临时清理、旧库阻断和录音连续性。ASR 与分离均通过 fake worker 验证错误、取消、释放和时序；自动化不加载真实模型权重，真机性能和准确率由人工验收记录并在公开批准时评估。
 
 交付运行：
 

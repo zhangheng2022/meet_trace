@@ -3,135 +3,121 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+Future<String> _workflow(String name) =>
+    File('.github/workflows/$name').readAsString();
+
 void main() {
   group('GitHub Alpha 发布守卫', () {
-    test('公开仓库的 TestFlight Artifact 不上传签名 IPA', () async {
-      final workflow = await File(
-        '.github/workflows/ios-testflight.yml',
-      ).readAsString();
+    test('仅 Alpha Release 暴露手动入口且只要求 release ID', () async {
+      final orchestrator = await _workflow('alpha-release.yml');
+      final internalWorkflows = await Future.wait([
+        _workflow('android-alpha.yml'),
+        _workflow('ios-testflight.yml'),
+        _workflow('finalize-release.yml'),
+      ]);
 
-      expect(workflow, contains('environment: testflight'));
-      expect(workflow, contains('uses: actions/attest@v4'));
-      expect(
-        workflow,
-        contains(
-          'ALPHA_GATE_INPUT_PATH: docs/quality/alpha_release_input.json',
-        ),
+      expect(orchestrator, contains('name: Alpha Release'));
+      expect(orchestrator, contains('workflow_dispatch:'));
+      expect(orchestrator, contains('release_id:'));
+      expect(orchestrator, contains('release_notes:'));
+      expect(orchestrator, contains('ios_testflight_external_url:'));
+      final dispatchInputs = orchestrator.substring(
+        orchestrator.indexOf('  workflow_dispatch:'),
+        orchestrator.indexOf('\npermissions:'),
       );
-      expect(workflow, contains(r'ref: ${{ inputs.release_id }}'));
-      expect(workflow, contains(r'[[ "$GITHUB_REF" == "refs/heads/master" ]]'));
+      expect(RegExp(r'required: true').allMatches(dispatchInputs), hasLength(1));
+      expect(orchestrator, isNot(contains('expected_sha:')));
+      expect(orchestrator, isNot(contains('gate_input_path:')));
+      expect(orchestrator, contains('name: Automatic technical checks'));
       expect(
-        workflow.indexOf('name: Validate release identifier'),
-        lessThan(workflow.indexOf('name: Checkout candidate commit')),
+        orchestrator,
+        contains('uses: ./.github/workflows/android-alpha.yml'),
       );
-      expect(workflow, contains(r'[[ "$tag_type" == "tag" ]]'));
-      expect(workflow, contains('"commitSha": os.environ["CANDIDATE_SHA"]'));
-      expect(workflow, contains('contents: write'));
       expect(
-        workflow,
-        contains('name: Stage iOS candidate pointer in the draft release'),
+        orchestrator,
+        contains('uses: ./.github/workflows/ios-testflight.yml'),
       );
-      expect(workflow, contains('ios-candidate-manifest.json'));
-      expect(workflow, contains('ios-release-gate-report.json'));
-      expect(workflow, contains(r'.isDraft == true'));
-      expect(workflow, isNot(contains('expected_sha:')));
-      expect(workflow, isNot(contains('gate_input_path:')));
-      expect(workflow, isNot(contains('build/ios/testflight/*.ipa')));
+      expect(
+        orchestrator,
+        contains('uses: ./.github/workflows/finalize-release.yml'),
+      );
+
+      for (final workflow in internalWorkflows) {
+        expect(workflow, contains('workflow_call:'));
+        expect(workflow, isNot(contains('workflow_dispatch:')));
+      }
     });
 
-    test('Android 仅构建 arm64 APK 并暂存到当前公开仓库 Draft Release', () async {
-      final workflow = await File(
-        '.github/workflows/android-alpha.yml',
-      ).readAsString();
+    test('产品质量记录不再作为自动发布门禁', () async {
+      final workflows = await Future.wait([
+        _workflow('alpha-release.yml'),
+        _workflow('android-alpha.yml'),
+        _workflow('ios-testflight.yml'),
+        _workflow('finalize-release.yml'),
+      ]);
+
+      for (final workflow in workflows) {
+        expect(workflow, isNot(contains('alpha_release_input.json')));
+        expect(workflow, isNot(contains('evaluate_alpha_release.dart')));
+        expect(workflow, isNot(contains('gateDecision')));
+        expect(workflow, isNot(contains('release-gate-report')));
+      }
+    });
+
+    test('Android Draft 可恢复重试但公开后不可覆盖', () async {
+      final workflow = await _workflow('android-alpha.yml');
 
       expect(workflow, contains('environment: android-alpha'));
-      expect(workflow, contains('contents: write'));
-      expect(
-        workflow,
-        contains(
-          'ALPHA_GATE_INPUT_PATH: docs/quality/alpha_release_input.json',
-        ),
-      );
-      expect(workflow, contains(r'ref: ${{ github.sha }}'));
-      expect(workflow, contains(r'[[ "$GITHUB_REF" == "refs/heads/master" ]]'));
-      expect(workflow, isNot(contains('expected_sha:')));
-      expect(workflow, isNot(contains('gate_input_path:')));
       expect(workflow, contains('--target-platform android-arm64'));
       expect(workflow, contains(r'meettrace-${RELEASE_ID}-android-arm64.apk'));
-      expect(workflow, contains(r'[[ "$visibility" == "PUBLIC" ]]'));
-      expect(workflow, contains('--draft --prerelease'));
       expect(workflow, contains(r'git tag -a "$RELEASE_ID"'));
-      expect(workflow, contains(r'gh release create "$RELEASE_ID"'));
-      expect(workflow, contains('--verify-tag'));
-      expect(workflow, contains(r'--repo "$GITHUB_REPOSITORY"'));
+      expect(workflow, contains(r'.isDraft <<<"$release_json")" == true'));
+      expect(workflow, contains('--draft --prerelease'));
+      expect(workflow, contains('--clobber'));
       expect(workflow, contains('ANDROID_SIGNING_CERT_SHA256'));
       expect(workflow, contains('uses: actions/attest@v4'));
       expect(workflow, contains(r'if ($abis.Count -ne 1'));
-      expect(workflow, isNot(contains('ANDROID_DISTRIBUTION_TOKEN')));
-      expect(workflow, isNot(contains('ANDROID_DISTRIBUTION_REPOSITORY')));
-      expect(workflow, isNot(contains('--clobber')));
       expect(workflow, isNot(contains('build/app/outputs/flutter-apk/*.apk')));
-      expect(
-        workflow.indexOf(r'git tag -a "$RELEASE_ID"'),
-        lessThan(workflow.indexOf(r'gh release create "$RELEASE_ID"')),
-      );
     });
 
-    test('最终发布验证原 APK 后公开 Draft 并保留 TestFlight 外部链接', () async {
-      final workflow = await File(
-        '.github/workflows/finalize-release.yml',
-      ).readAsString();
+    test('iOS 只上传 TestFlight 且不向 GitHub 暴露签名 IPA', () async {
+      final workflow = await _workflow('ios-testflight.yml');
 
+      expect(workflow, contains('environment: testflight'));
+      expect(workflow, contains('contents: read'));
+      expect(workflow, contains('uses: actions/attest@v4'));
+      expect(workflow, contains('run: fastlane ios upload_testflight'));
+      expect(workflow, contains(r'ref: ${{ inputs.candidate_sha }}'));
+      expect(workflow, isNot(contains('gh release upload')));
+      expect(workflow, isNot(contains('build/ios/testflight/*.ipa')));
+    });
+
+    test('最终发布只有一次批准并支持不重建地后补链接', () async {
+      final orchestrator = await _workflow('alpha-release.yml');
+      final workflow = await _workflow('finalize-release.yml');
+
+      expect(orchestrator, contains("mode == 'metadata'"));
       expect(workflow, contains('environment: github-release'));
+      expect(workflow, contains("if: inputs.mode == 'candidate'"));
+      expect(workflow, contains("if: inputs.mode == 'metadata'"));
       expect(workflow, contains('android-candidate-manifest.json'));
       expect(workflow, contains('ios-candidate-manifest.json'));
-      expect(workflow, contains('--prerelease'));
-      expect(workflow, contains(r'[[ "$tag_type" == "tag" ]]'));
-      expect(workflow, contains(r'ref: ${{ inputs.release_id }}'));
-      expect(
-        workflow.indexOf('name: Validate release identifier'),
-        lessThan(workflow.indexOf('name: Checkout candidate commit')),
-      );
-      expect(
-        workflow,
-        contains('name: Resolve candidate workflow runs from the release'),
-      );
-      expect(workflow, contains('candidate-pointers'));
-      expect(workflow, contains('resolved[env_name] = run_id'));
-      expect(workflow, isNot(contains('candidate_sha:')));
-      expect(workflow, isNot(contains('android_run_id:')));
-      expect(workflow, isNot(contains('ios_run_id:')));
-      expect(workflow, contains('RELEASE_IS_DRAFT'));
-      expect(workflow, contains('ios_testflight_external_url:'));
       expect(workflow, contains('https://testflight\\.apple\\.com/join/'));
       expect(workflow, contains('iOS TestFlight 外部测试链接：待提供'));
-      expect(workflow, contains('Android 7.0+'));
-      expect(workflow, contains('安装未知应用'));
-      expect(workflow, contains('无登录和云同步'));
-      expect(workflow, contains('卸载应用会删除'));
-      expect(workflow, contains('Alpha 升级可能清除旧数据'));
-      expect(workflow, contains('约 286.3 MB'));
-      expect(workflow, contains('已撤回，不建议安装'));
-      expect(workflow, contains(r'gh release download "$RELEASE_ID"'));
-      expect(workflow, contains('Android APK digest does not match'));
       expect(workflow, contains('Staged Android APK digest changed'));
-      expect(workflow, contains('Existing public release evidence changed'));
-      expect(workflow, contains(r'($sha == "" or .head_sha == $sha)'));
-      expect(workflow, contains('--draft=false'));
+      expect(workflow, contains('Existing public Android APK changed'));
+      expect(workflow, contains('endswith(".ipa")'));
+      expect(workflow, contains('unexpected APK name'));
+      expect(workflow, contains('--draft=false --prerelease'));
       expect(workflow, isNot(contains('gh release create')));
       expect(workflow, isNot(contains('git tag -a')));
       expect(
         workflow.indexOf('Staged Android APK digest changed'),
-        lessThan(workflow.indexOf('--draft=false')),
+        lessThan(workflow.indexOf('--draft=false --prerelease')),
       );
-      final assetsStart = workflow.indexOf('assets=(');
-      final assetsEnd = workflow.indexOf('\n          )', assetsStart);
-      final uploadedAssets = workflow.substring(assetsStart, assetsEnd);
-      expect(uploadedAssets, isNot(contains('.apk')));
-      expect(uploadedAssets, isNot(contains('.ipa')));
     });
 
-    test('固定门禁输入使用 schema 4 和完整运行时下载总量', () async {
+    test('原质量记录工具继续保留为非阻断记录', () async {
       final decoded =
           jsonDecode(
                 await File(
@@ -144,6 +130,10 @@ void main() {
       expect(decoded['schemaVersion'], 4);
       expect(senseVoice['runtimeDownloadBytes'], 286314800);
       expect(decoded, contains('acceptanceEvidence'));
+      expect(
+        await File('tool/benchmarks/evaluate_alpha_release.dart').exists(),
+        isTrue,
+      );
     });
   });
 }

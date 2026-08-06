@@ -3,7 +3,7 @@
 > 状态：当前质量文档入口  
 > 更新日期：2026-08-06
 
-## 当前发布门槛
+## 当前发布质量记录
 
 1. [运行时模型初始化与发布门槛](./运行时模型初始化与发布门槛.md)：V1.0 全部模型资产、仓库实现与 Android/iOS 外部证据清单。
 2. [Android Alpha 设备矩阵](./Android_Alpha_设备矩阵.md)：最低系统、主开发机和低端性能设备要求。
@@ -11,7 +11,7 @@
 4. [iOS 无签名构建规格](../../spec/spec-process-cicd-ios-unsigned.md)：GitHub Actions 构建、App bundle 审计、证据产物和失败策略。
 5. [GitHub Alpha 版本发布流程](../project/GitHub_版本发布流程.md)：PR 门禁、Android Draft 候选、TestFlight、同 SHA tag 与公开 Pre-release。
 
-以上文档跟随 PRD V1.0 与当前技术方案维护。V1.0 仓库实现或任一平台适用真机证据缺失时，Android Draft Release 不得公开，双平台 Alpha 发布状态保持 `blocked`。
+以上文档跟随 PRD V1.0 与当前技术方案维护。V1.0 仓库实现或任一平台适用真机证据缺失时，质量记录保持 `blocked`；该状态不再作为 GitHub Actions 自动门禁，批准人必须在公开前阅读并决定是否接受风险。
 
 ## 实现证据快照
 

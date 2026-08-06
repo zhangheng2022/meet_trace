@@ -1,7 +1,7 @@
 name: Android Alpha Candidate
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       release_id:
         description: Version identifier such as v1.0.0-alpha.1
@@ -11,18 +11,15 @@ on:
         description: Optional notes kept on the draft until final publication
         required: false
         type: string
+      candidate_sha:
+        description: Immutable candidate commit resolved by Alpha Release
+        required: true
+        type: string
 
 permissions:
   contents: write
   id-token: write
   attestations: write
-
-concurrency:
-  group: android-alpha-release
-  cancel-in-progress: false
-
-env:
-  ALPHA_GATE_INPUT_PATH: docs/quality/alpha_release_input.json
 
 jobs:
   release-android-alpha:
@@ -35,20 +32,19 @@ jobs:
       - name: Checkout candidate commit
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.candidate_sha }}
           fetch-depth: 0
 
       - name: Validate candidate identity
         shell: bash
         env:
           RELEASE_ID: ${{ inputs.release_id }}
-          GATE_INPUT_PATH: ${{ env.ALPHA_GATE_INPUT_PATH }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
-          [[ "$GITHUB_REF" == "refs/heads/master" ]]
           candidate_sha="$(git rev-parse HEAD)"
           [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$candidate_sha" == "$GITHUB_SHA" ]]
+          [[ "$candidate_sha" == "$CANDIDATE_SHA" ]]
           git fetch --no-tags origin master
           git merge-base --is-ancestor "$candidate_sha" origin/master
 
@@ -58,30 +54,9 @@ jobs:
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$RELEASE_ID" == "$expected_prefix"* ]]
 
-          python3 - "$GATE_INPUT_PATH" <<'PY'
-          import pathlib
-          import subprocess
-          import sys
-
-          raw = pathlib.PurePosixPath(sys.argv[1].replace("\\", "/"))
-          if raw.is_absolute() or ".." in raw.parts:
-              raise SystemExit("gate_input_path must stay inside the repository")
-          path = pathlib.Path(raw)
-          if not path.is_file():
-              raise SystemExit(f"Gate input does not exist: {path}")
-          repository = pathlib.Path.cwd().resolve()
-          resolved = path.resolve(strict=True)
-          if resolved != repository and repository not in resolved.parents:
-              raise SystemExit("gate_input_path symlink escapes the repository")
-          subprocess.run(
-              ["git", "ls-files", "--error-unmatch", "--", path.as_posix()],
-              check=True,
-              stdout=subprocess.DEVNULL,
-          )
-          PY
-
           echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
+          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -97,25 +72,6 @@ jobs:
 
       - name: Resolve locked dependencies
         run: flutter pub get --enforce-lockfile
-
-      - name: Check formatting
-        run: >-
-          dart format --output=none --set-exit-if-changed
-          lib test integration_test tool
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test
-
-      - name: Evaluate Alpha product gates
-        env:
-          GATE_INPUT_PATH: ${{ env.ALPHA_GATE_INPUT_PATH }}
-        run: >-
-          dart run tool/benchmarks/evaluate_alpha_release.dart
-          "$GATE_INPUT_PATH"
-          build/android/alpha/release-gate-report.json
 
       - name: Prepare release build number
         shell: bash
@@ -207,7 +163,6 @@ jobs:
           from pathlib import Path
 
           apk = Path(os.environ["APK_PATH"])
-          gate = json.loads(Path("build/android/alpha/release-gate-report.json").read_text())
           digest = hashlib.sha256(apk.read_bytes()).hexdigest()
           manifest = {
               "schemaVersion": 1,
@@ -215,11 +170,10 @@ jobs:
               "releaseId": os.environ["RELEASE_ID"],
               "marketingVersion": os.environ["MARKETING_VERSION"],
               "buildNumber": os.environ["ANDROID_BUILD_NUMBER"],
-              "commitSha": os.environ["GITHUB_SHA"],
+              "commitSha": os.environ["CANDIDATE_SHA"],
               "workflowFile": ".github/workflows/android-alpha.yml",
               "runId": os.environ["GITHUB_RUN_ID"],
               "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
-              "gateDecision": gate["decision"],
               "artifact": {"name": apk.name, "bytes": apk.stat().st_size, "sha256": digest},
               "distribution": {
                   "repository": os.environ["GITHUB_REPOSITORY"],
@@ -249,24 +203,21 @@ jobs:
           visibility="$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)"
           [[ "$visibility" == "PUBLIC" ]]
           if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_ID" >/dev/null 2>&1; then
-            echo "Tag $RELEASE_ID already exists; release identities are immutable" >&2
-            exit 1
+            git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
+            [[ "$(git cat-file -t "refs/tags/$RELEASE_ID")" == "tag" ]]
+            [[ "$(git rev-parse "refs/tags/$RELEASE_ID^{}")" == "$CANDIDATE_SHA" ]]
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_ID" "$CANDIDATE_SHA" -m "MeetTrace $RELEASE_ID candidate"
+            git push origin "refs/tags/$RELEASE_ID"
           fi
-          if gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $RELEASE_ID already exists; APK assets are never overwritten" >&2
-            exit 1
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$RELEASE_ID" "$GITHUB_SHA" -m "MeetTrace $RELEASE_ID candidate"
-          git push origin "refs/tags/$RELEASE_ID"
 
           notes_path="$RUNNER_TEMP/android-release-notes.md"
           {
             echo "MeetTrace Android candidate \`$RELEASE_ID\` (not publicly installable yet)."
             echo
-            echo "Source: \`$GITHUB_REPOSITORY@$GITHUB_SHA\`"
+            echo "Source: \`$GITHUB_REPOSITORY@$CANDIDATE_SHA\`"
             echo "Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
             echo "This Draft Release must remain unpublished until the matching iOS TestFlight candidate passes final verification."
@@ -276,22 +227,29 @@ jobs:
             fi
           } > "$notes_path"
 
-          gh release create "$RELEASE_ID" \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --draft --prerelease \
-            --title "MeetTrace $RELEASE_ID Android candidate" \
-            --notes-file "$notes_path"
+          if release_json="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease 2>/dev/null)"; then
+            [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]
+            [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+            gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+              --title "MeetTrace $RELEASE_ID Android candidate" --notes-file "$notes_path"
+          else
+            gh release create "$RELEASE_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --draft --prerelease \
+              --title "MeetTrace $RELEASE_ID Android candidate" \
+              --notes-file "$notes_path"
+          fi
 
           gh release upload "$RELEASE_ID" \
             "$APK_PATH" \
             build/android/alpha/android-release-apk.sha256 \
             build/android/alpha/signing-certificate.sha256 \
             build/android/alpha/candidate-manifest.json \
-            build/android/alpha/release-gate-report.json \
             build/android/alpha/android-apk-inspection.json \
             build/android/alpha/apksigner.txt \
-            --repo "$GITHUB_REPOSITORY"
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
 
       - name: Upload non-sensitive Android candidate evidence
         if: always()

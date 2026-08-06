@@ -1,7 +1,7 @@
 name: iOS TestFlight Release
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       release_id:
         description: Version identifier such as v1.0.0-alpha.1
@@ -11,19 +11,18 @@ on:
         description: Optional TestFlight release notes
         required: false
         type: string
+      candidate_sha:
+        description: Immutable candidate commit resolved by Alpha Release
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
   id-token: write
   attestations: write
 
-concurrency:
-  group: ios-testflight-release
-  cancel-in-progress: false
-
 env:
   IOS_BUNDLE_ID: com.meettrace.app
-  ALPHA_GATE_INPUT_PATH: docs/quality/alpha_release_input.json
   FASTLANE_OPT_OUT_USAGE: "1"
   FASTLANE_SKIP_UPDATE_CHECK: "1"
 
@@ -39,22 +38,23 @@ jobs:
         shell: bash
         env:
           RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
-          [[ "$GITHUB_REF" == "refs/heads/master" ]]
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
 
       - name: Checkout candidate commit
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.release_id }}
+          ref: ${{ inputs.candidate_sha }}
           fetch-depth: 0
 
       - name: Validate candidate identity
         shell: bash
         env:
           RELEASE_ID: ${{ inputs.release_id }}
-          GATE_INPUT_PATH: ${{ env.ALPHA_GATE_INPUT_PATH }}
+          EXPECTED_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
           marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
@@ -67,31 +67,10 @@ jobs:
           candidate_sha="$(git rev-list -n 1 "refs/tags/$RELEASE_ID")"
           [[ "$tag_type" == "tag" ]]
           [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$candidate_sha" == "$EXPECTED_CANDIDATE_SHA" ]]
           [[ "$(git rev-parse HEAD)" == "$candidate_sha" ]]
           git fetch --no-tags origin master
           git merge-base --is-ancestor "$candidate_sha" origin/master
-
-          python3 - "$GATE_INPUT_PATH" <<'PY'
-          import pathlib
-          import subprocess
-          import sys
-
-          raw = pathlib.PurePosixPath(sys.argv[1].replace("\\", "/"))
-          if raw.is_absolute() or ".." in raw.parts:
-              raise SystemExit("gate_input_path must stay inside the repository")
-          path = pathlib.Path(raw)
-          if not path.is_file():
-              raise SystemExit(f"Gate input does not exist: {path}")
-          repository = pathlib.Path.cwd().resolve()
-          resolved = path.resolve(strict=True)
-          if resolved != repository and repository not in resolved.parents:
-              raise SystemExit("gate_input_path symlink escapes the repository")
-          subprocess.run(
-              ["git", "ls-files", "--error-unmatch", "--", path.as_posix()],
-              check=True,
-              stdout=subprocess.DEVNULL,
-          )
-          PY
 
           echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
@@ -138,25 +117,6 @@ jobs:
 
       - name: Resolve dependencies
         run: flutter pub get --enforce-lockfile
-
-      - name: Check formatting
-        run: >-
-          dart format --output=none --set-exit-if-changed
-          lib test integration_test tool
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test
-
-      - name: Evaluate Alpha product gates
-        env:
-          GATE_INPUT_PATH: ${{ env.ALPHA_GATE_INPUT_PATH }}
-        run: >-
-          dart run tool/benchmarks/evaluate_alpha_release.dart
-          "$GATE_INPUT_PATH"
-          build/ios/testflight/release-gate-report.json
 
       - name: Prepare release build number
         shell: bash
@@ -531,7 +491,6 @@ jobs:
           with ipa_path.open("rb") as stream:
               for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                   digest.update(chunk)
-          gate = json.loads(Path("build/ios/testflight/release-gate-report.json").read_text())
           metadata = {
               "schemaVersion": 1,
               "platform": "ios",
@@ -546,7 +505,6 @@ jobs:
               "buildNumber": os.environ["IOS_BUILD_NUMBER"],
               "bundleId": os.environ["IOS_BUNDLE_ID"],
               "workflowFile": ".github/workflows/ios-testflight.yml",
-              "gateDecision": gate["decision"],
               "runner": {
                   "os": os.environ["RUNNER_OS"],
                   "architecture": output("uname", "-m"),
@@ -578,32 +536,6 @@ jobs:
         env:
           TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}
         run: fastlane ios upload_testflight
-
-      - name: Stage iOS candidate pointer in the draft release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          release_metadata="$(
-            gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
-              --json isDraft,isPrerelease,tagName
-          )"
-          jq -e --arg tag "$RELEASE_ID" '
-            .isDraft == true and
-            .isPrerelease == true and
-            .tagName == $tag
-          ' <<< "$release_metadata" >/dev/null
-
-          cp build/ios/testflight/candidate-manifest.json \
-            build/ios/testflight/ios-candidate-manifest.json
-          cp build/ios/testflight/release-gate-report.json \
-            build/ios/testflight/ios-release-gate-report.json
-          gh release upload "$RELEASE_ID" \
-            build/ios/testflight/ios-candidate-manifest.json \
-            build/ios/testflight/ios-release-gate-report.json \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
 
       - name: Write release summary
         shell: bash

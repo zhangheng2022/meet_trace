@@ -1,69 +1,59 @@
 # 会迹（MeetTrace）GitHub Alpha 版本发布流程
 
-> 状态：活动；仓库自动化与三个 Environment 已配置，等待 Android Secrets、Ruleset 和首次候选运行
-
+> 状态：活动；统一发布入口已落地，需确认 Environments、Secrets、Ruleset 后首次运行
+>
 > 上游需求：[Android + iOS Alpha PRD V1.0](../product/Alpha_PRD_无登录版.md)
+>
+> 行为规格：[统一 Alpha 发布规格](../../spec/spec-process-cicd-alpha-release.md)
 
-## 1. 发布边界
+## 1. 最简发布模型
 
-GitHub 是源码治理、质量门禁、审批、构建来源和版本记录的控制面，不改变产品分发边界：
+Actions 页面只需要手动运行 `Alpha Release`：
 
-- Android Alpha 使用 `com.meettrace.app` 的正式签名、仅含 `arm64-v8a` 的 APK。候选先进入当前仓库不可见的 Draft Release，双平台最终验收后公开为 GitHub Pre-release 附件。
-- iOS Alpha 只通过 TestFlight 分发，不把 IPA 上传到 Actions Artifact 或 GitHub Release；外部测试链接可在最终发布时填写，未就绪时明确标记待提供。
-- Android 候选创建 Draft 前会预留指向候选 SHA 的 annotated tag；Android 与 iOS 任一平台未通过时 Draft 不得公开，该 tag 也不得移动或复用。
-- 最终发布不重建、不覆盖 APK，不移动或复用 tag。严重问题版本保留资产和审计记录，只标记“已撤回，不建议安装”并用新版本向前修复。
+1. 输入发布标识，例如 `v1.0.0-alpha.1`；发布说明和 TestFlight 外部链接可不填。
+2. 自动执行格式、静态分析和测试。
+3. 自动构建正式签名的 Android arm64 APK，并暂存到不可见 Draft Release。
+4. 自动构建签名 iOS IPA 并上传 TestFlight；IPA 不进入 GitHub。
+5. 工作流停在 `Approve and deploy public Alpha`。维护者下载两个候选并完成双平台验收。
+6. 在 `github-release` Environment 点击 `Approve and deploy`，原 Draft 随即公开为 GitHub Pre-release。
 
-## 2. 版本规则
+```mermaid
+flowchart LR
+  A[Alpha Release] --> B[技术检查]
+  B --> C[Android Draft]
+  C --> D[iOS TestFlight]
+  D --> E[双平台验收]
+  E --> F[一次批准]
+  F --> G[公开安装]
+```
 
-| 标识 | 规则 | 示例 |
+`expected_sha`、`gate_input_path` 和候选 run ID 均不需要填写。`docs/quality/alpha_release_input.json` 及 benchmark 工具仍可用于留存质量记录，但不会阻断发布工作流。
+
+## 2. 版本与分发合同
+
+| 项目 | 规则 |
+|---|---|
+| Release ID/tag | `v<pubspec marketing version>-alpha.<正整数>` |
+| Android | 正式签名、仅 `arm64-v8a`，公开附件名为 `meettrace-<release-id>-android-arm64.apk` |
+| iOS | 仅 TestFlight，不上传 IPA 到 Actions Artifact 或 GitHub Release |
+| 候选身份 | Android 与 iOS 必须来自同一 annotated tag 和提交 SHA |
+| 首次启动资源 | Release 说明明确约下载 286.3 MB |
+
+Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag 和候选 SHA，并替换 Draft 候选资产。Draft 一旦公开，标签、APK 和候选清单不可覆盖；代码或二进制修复必须使用新的 Alpha 序号向前发布。
+
+## 3. GitHub 配置
+
+### Environments
+
+| Environment | 人工审批 | 用途 |
 |---|---|---|
-| PRD 版本 | 产品范围与验收标准修订号 | `V1.0` |
-| App marketing version | `pubspec.yaml` 中不含 build number 的版本 | `1.0.0` |
-| Alpha release ID/tag | `v<marketing-version>-alpha.<正整数>` | `v1.0.0-alpha.1` |
-| Android versionCode | `workflow run number * 100 + attempt` | `401` |
-| iOS CFBundleVersion | `workflow run number * 100 + attempt` | `501` |
+| `android-alpha` | 无 | 保存 Android keystore 与证书摘要 |
+| `testflight` | 无 | 保存 Apple distribution、profile、Team 与 API Key |
+| `github-release` | 一名 required reviewer；允许 self review | 唯一公开批准 |
 
-tag、Android versionCode 和 iOS build number 均不得复用或回退。PRD 版本与 App marketing version 是不同维度，不自动相互改写。
+所有 Environment 仅允许 `master`。如果旧配置给 `android-alpha` 或 `testflight` 设置了 reviewer，需要移除，否则流程会出现额外审批。
 
-## 3. 自动化入口
-
-| Workflow | 触发 | 作用 | 公开二进制 |
-|---|---|---|---|
-| `Flutter Quality` | PR、`master` push、人工 | 格式、分析、测试、Debug APK 构建与内容审计 | 无 |
-| `iOS Unsigned Build` | PR、`master` push、人工 | Debug/Release 无签名编译、App bundle 审计 | 仅不可安装 unsigned IPA，保留 7 天 |
-| `Android Alpha Candidate` | 人工 | 产品门禁、正式签名、审计、来源证明、当前仓库 Draft Release 暂存 | Draft 阶段无 |
-| `iOS TestFlight Release` | 人工 | 产品门禁、签名、审计、来源证明、TestFlight 上传 | 无 |
-| `Finalize Alpha Release` | 人工 | 校验双平台同 SHA、annotated tag 和 Draft APK，并公开原 Draft | Android arm64 APK |
-
-行为规格位于 `spec/spec-process-cicd-*.md`；行为变化必须先更新对应规格。
-
-## 4. GitHub 远端配置
-
-### 4.1 `master` Ruleset
-
-- 要求 Pull Request、线性历史并阻止 force push/deletion。
-- Required checks：`Flutter quality and Android package audit`、`Build and inspect unsigned iOS app`。
-- 管理员不默认绕过；紧急绕过必须在 Issue 中记录原因和补偿验证。
-
-### 4.2 Tag Ruleset
-
-- 目标模式：`v*`。
-- 禁止更新和删除已有 tag。
-- 只允许 `Android Alpha Candidate` 使用的 GitHub Actions 身份创建；最终发布流程只验证，不修改。
-
-### 4.3 Environments
-
-| Environment | Branch | 审批 | Secrets / Variables |
-|---|---|---|---|
-| `android-alpha` | 仅 `master` | Required reviewer | Android keystore 与证书摘要 |
-| `testflight` | 仅 `master` | Required reviewer | Apple distribution、profile、Team 和 API Key |
-| `github-release` | 仅 `master` | Required reviewer | 只使用最小权限 `GITHUB_TOKEN` |
-
-有第二名维护者后启用 prevent self review。单维护者阶段保留人工 Environment 审批和完整运行审计，不把同一审批伪装成双人复核。
-
-### 4.4 Android Environment 配置
-
-Secrets：
+Android Secrets：
 
 - `ANDROID_KEYSTORE_BASE64`
 - `ANDROID_KEYSTORE_PASSWORD`
@@ -71,49 +61,63 @@ Secrets：
 - `ANDROID_KEY_PASSWORD`
 - `ANDROID_SIGNING_CERT_SHA256`
 
-无需额外分发 Token 或 Repository Variable。工作流只使用当前运行的 `GITHUB_TOKEN` 写入当前公开源码仓库；候选 Release 必须保持 draft/prerelease，只有有仓库管理权限的验收人员能在公开前下载 APK。
+iOS Secrets：
 
-## 5. 候选发布步骤
+- `IOS_DISTRIBUTION_P12_BASE64`
+- `IOS_DISTRIBUTION_P12_PASSWORD`
+- `IOS_PROVISIONING_PROFILE_BASE64`
+- `APPLE_TEAM_ID`
+- `APP_STORE_CONNECT_KEY_ID`
+- `APP_STORE_CONNECT_ISSUER_ID`
+- `APP_STORE_CONNECT_API_KEY_P8_BASE64`
 
-1. 在 `docs/quality/alpha_release_input.json` 填入去敏设备标识、AT-01～AT-18 引用、SenseVoice 和说话人指标；未完成字段保持 `null` 时门禁会返回 `blocked`。
-2. 将代码、活动文档和固定门禁证据合并到 `master`，确认 `Flutter Quality` 与 `iOS Unsigned Build` 对目标 SHA 成功。
-3. 从 `master` 人工运行 `Android Alpha Candidate`，只输入 release ID 和可选说明。工作流自动锁定 dispatch 时的 `master` SHA 并读取固定门禁文件；成功后得到不可移动的 annotated tag 与不可见 Draft Release。
-4. 从 `master` 人工运行 `iOS TestFlight Release`，只输入相同 release ID 和可选说明。工作流通过 Android annotated tag 自动检出完全相同的候选 SHA 和门禁文件。
-   TestFlight 上传成功后，工作流会把不含 IPA 的 iOS 候选清单和门禁报告写入同一 Draft，供最终流程自动发现。
-5. Android 验收人员从当前仓库 Draft Release 安装确切的 `meettrace-<release-id>-android-arm64.apk`；iOS 验收人员从 TestFlight 安装同一候选。
-6. 在目标真机完成安装、初始化、30 分钟录音、最终处理、分享与清理验收；测试对象必须是候选工作流生成的确切构建号。
+### Rulesets 与权限
 
-门禁 CLI 的退出码：`0=go`、`1=noGo`、`2=blocked`。`blocked` 和 `noGo` 都不能继续签名或最终发布。
+- `master` 要求 PR、线性历史，并阻止 force push/deletion。
+- `v*` 标签禁止更新和删除；允许发布 Actions 身份创建。
+- 仓库必须公开，Workflow permissions 允许 `GITHUB_TOKEN` 写入当前仓库 Release。
 
-## 6. 最终发布步骤
+## 4. 运行与验收
 
-真机验收完成后人工运行 `Finalize Alpha Release`，输入：
+在 `master` 的 Actions 页面打开 `Alpha Release`，只填写：
 
-- release ID；
-- 可选的、已获准使用的 `https://testflight.apple.com/join/<code>` 外部测试链接；
-- 可选公开说明。
+- `release_id`：必填，例如 `v1.0.0-alpha.1`；
+- `release_notes`：可选；
+- `ios_testflight_external_url`：可选，格式为 `https://testflight.apple.com/join/<code>`。
 
-候选 SHA 从既有 annotated tag 自动推导，Android 和 iOS run ID 从 Draft 中的候选指针自动解析；操作者不再复制这些技术字段。工作流仍会从 Actions 下载原始候选证据，并验证 run 类型、状态、SHA、release ID、marketing version、候选清单、两份 `go` 报告，以及 Draft 中 APK 的唯一文件名、大小和 SHA-256。全部一致后才将原 Draft 发布为 GitHub Pre-release；没有外部 TestFlight 链接时发布说明显示“待提供”。
+Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；iOS job 成功后从 TestFlight 安装同一候选。完成所需的 AT-01～AT-18 真机检查后，回到等待中的 `Approve and publish` job 批准公开。自动化会再次校验：
 
-TestFlight 外部链接获批后可以用相同输入重跑最终流程补充说明；已公开 Release 的 tag、APK、候选清单和门禁报告必须逐字节保持不变。
+- annotated tag、release ID、marketing version 与 candidate SHA；
+- 两份候选清单来自本次统一运行且 SHA 一致；
+- Draft APK 名称、字节数和 SHA-256 未变化；
+- Release 仍是 Draft prerelease。
 
-公开 Release 必须包含 Android 7.0+/arm64、未知来源安装、本地数据无同步、卸载删除、Alpha 升级可能全清、首次启动约下载 286.3 MB 和撤回策略提示。IPA 始终只留在 TestFlight。
+任一技术校验失败都不会公开 Draft。人工质量结论由批准人负责，不再由 JSON 门禁判定。
 
-## 7. 撤回与修复
+## 5. 后补 TestFlight 外部链接
 
-- 不移动、不覆盖、不复用已创建 tag。
-- TestFlight 停止测试问题构建；公开 Release、tag 和 Android APK 均保留。
-- 在公开 Release 标题或说明顶部标记“已撤回，不建议安装”，不得删除或覆盖原 APK。
-- 从问题版本创建 `codex/hotfix-<topic>`，经 PR 合并后使用新的 Alpha 序号和构建号重新发布。
-- Alpha 数据代采用全清策略，回滚不得假定历史数据或已下载模型可继续使用。
+链接未获批时可先公开，Release 说明显示“iOS TestFlight 外部测试链接：待提供”。获批后：
 
-## 8. 首次启用清单
+1. 再次运行 `Alpha Release`；
+2. 使用完全相同的 `release_id`；
+3. 填写外部测试链接，可选填新的补充说明；
+4. 通过同一个 `github-release` 批准。
 
-- [x] 创建 `android-alpha` Environment，并限制为 `master` 和维护者审批。
-- [ ] 配置 Android 正式签名 Secrets 与证书 SHA-256。
-- [x] `testflight` Environment 已存在且只允许 `master`。
-- [x] 创建 `github-release` Environment，并限制为 `master` 和维护者审批。
-- [ ] 启用 `master` 与 `v*` Ruleset。
-- [ ] 将新 workflow 推送后完成一次无发布副作用的 PR 检查。
-- [ ] 准备首份完整 schema 4 发布证据并得到 `go`。
-- [ ] 执行双平台候选和首个 `v1.0.0-alpha.1` Pre-release。
+工作流会自动进入 `metadata` 模式，验证现有公开 APK 和双平台清单后只更新说明，不运行构建，也不覆盖任何资产。
+
+## 6. 撤回与恢复
+
+- Draft 阶段失败：修复 Secrets、Apple 配置或工作流后，用同一发布标识重跑。
+- 已公开严重问题：保留 Release、tag 和 APK，在说明顶部标记“已撤回，不建议安装”。
+- 修复版本：合并新提交，提高 Alpha 序号并重新运行。
+- 不删除、不移动、不覆盖已公开版本的身份或资产。
+
+## 7. 首次启用检查
+
+- [ ] `android-alpha` 已配置全部 Secrets，且没有 required reviewer。
+- [ ] `testflight` 已配置全部 Secrets，且没有 required reviewer。
+- [ ] `github-release` 已配置一名 required reviewer，并允许 self review。
+- [ ] `master` 与 `v*` Ruleset 已启用。
+- [ ] Workflow permissions 允许 Actions 写 Release。
+- [ ] Actions 页面只有 `Alpha Release` 作为手动正式发版入口。
+- [ ] 首次 `v1.0.0-alpha.1` 候选完成双平台实际验收后再批准公开。

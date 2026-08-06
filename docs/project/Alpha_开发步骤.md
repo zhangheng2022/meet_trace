@@ -128,4 +128,4 @@ flutter build apk --debug
 
 ## 4. 发布状态
 
-当前 V1.0 的仓库门禁、Android 完整设备矩阵和 iOS 同候选证据都未闭环，整体发布状态为 `blocked`。Android 可以先形成独立阶段里程碑并暂存 Draft，但不得公开或描述为双平台 Alpha 已完成。
+当前 V1.0 的仓库检查、Android 完整设备矩阵和 iOS 同候选证据都未闭环，质量记录状态为 `blocked`。统一发布流程仍可形成双平台候选并暂存 Draft；是否接受缺失证据的风险并公开 Alpha，由维护者在唯一的 `github-release` 批准步骤中决定，不得把未完成项描述为已通过。

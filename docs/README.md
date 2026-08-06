@@ -89,7 +89,7 @@ flowchart TD
 | QA-02 | [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md) | `docs/quality/Android_Alpha_设备矩阵.md` | Android 平台基线、设备角色和必验指标 | Android 真机验收计划与证据状态 | 活动；目标设备阻塞，2026-08-03 / A2 |
 | QA-03 | [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md) | `docs/quality/iOS_Alpha_设备矩阵.md` | iOS 工具链、设备矩阵、签名和发布门槛 | iOS 构建与真机验收计划 | 活动；macOS/Xcode/真机阻塞，2026-08-03 / A2 |
 | QA-04 | [iOS 无签名构建规格](../spec/spec-process-cicd-ios-unsigned.md) | `spec/spec-process-cicd-ios-unsigned.md` | GitHub Actions 触发、构建、审计、产物合同、失败路径和版本追溯 | 无本地 macOS 时的 iOS 构建自动化规范 | 活动；首次云端运行已成功，2026-08-06 / A2 |
-| QA-05 | [GitHub Alpha 发布规格](../spec/spec-process-cicd-release-finalize.md) | `spec/spec-process-cicd-release-finalize.md` | 双平台同 SHA 候选、Environment 审批、tag 与 Pre-release 合同 | 版本最终发布自动化规范 | 活动；Environment 已配置，等待 Secrets、Ruleset 与首次候选，2026-08-06 / A2 |
+| QA-05 | [统一 GitHub Alpha 发布规格](../spec/spec-process-cicd-alpha-release.md) | `spec/spec-process-cicd-alpha-release.md` | 单一入口、双平台同 SHA 候选、一次 Environment 审批与 Pre-release 合同 | 版本发布自动化规范 | 活动；等待 Secrets、Environment 调整与首次候选，2026-08-06 / A2 |
 
 #### 历史实现证据
 
@@ -109,7 +109,7 @@ flowchart TD
 |---|---|---|---|---|---|
 | PM-01 | [Alpha 开发步骤](./project/Alpha_开发步骤.md) | `docs/project/Alpha_开发步骤.md` | V1.0 串行阶段、阻塞清单、完成证据和双平台公开门槛 | 单人开发与交付操作清单 | 活动，2026-08-06 / A2 |
 | PM-02 | [Git 分支与 Worktree 约定](./project/Git_分支与_Worktree_约定.md) | `docs/project/Git_分支与_Worktree_约定.md` | 分支职责、worktree 布局、标准流程和安全规则 | 团队 Git 协作规范 | 活动，2026-08-03 / A2 |
-| PM-03 | [GitHub Alpha 版本发布流程](./project/GitHub_版本发布流程.md) | `docs/project/GitHub_版本发布流程.md` | PR 门禁、双平台候选、签名分发、同 SHA 最终发布与撤回 | 维护者发布 Runbook | 活动；Environment 已配置，等待 Secrets、Ruleset 与首次候选，2026-08-06 / A2 |
+| PM-03 | [GitHub Alpha 版本发布流程](./project/GitHub_版本发布流程.md) | `docs/project/GitHub_版本发布流程.md` | 单一手动入口、自动双平台候选、一次批准、公开与撤回 | 维护者发布 Runbook | 活动；等待 Secrets、Environment 调整与首次候选，2026-08-06 / A2 |
 | GOV-01 | [仓库协作指南](../AGENTS.md) | `AGENTS.md` | 产品边界、架构规则、技能流程、质量门槛和安全约束 | AI 代理与仓库协作者的执行规则 | 活动，随上游同步 / A1 |
 
 ## 4. 时效性与维护状态
@@ -125,7 +125,7 @@ flowchart TD
 
 - 15 份活动或活动维护文档：导航 2、产品 2、设计 1、技术/架构 2、质量 4、项目管理/治理 4；其中导航不承担权威结论。
 - 7 份 Step 文档为历史实现证据，不应滚动修改测试数量、APK 大小或设备结果。
-- V1.0 仓库实现、Android 完整设备矩阵与 iOS 同候选证据均未闭环，当前发布状态为 `blocked`。
+- V1.0 仓库实现、Android 完整设备矩阵与 iOS 同候选证据均未闭环，当前质量记录状态为 `blocked`；GitHub Actions 不自动读取该结论，公开决定由批准人承担。
 - `graphify-out/`、`.agents/`、`spec/` 内技能或流程规格和构建产物不属于本次 22 份正式项目文档盘点。
 
 ## 5. 命名与目录规范
