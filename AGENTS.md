@@ -24,7 +24,7 @@
 - `lib/domain/{models,ports,use_cases}/`：业务概念、纯 Dart 能力端口和可复用编排。
 - `lib/data/{models,repositories,services}/`：端口实现，以及持久化、HTTP、音频、模型管理和 ASR 适配器。
 
-Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 ONNX、存储或 HTTP。ASR 实现统一 `AsrEngine` 端口，由 Factory 按会议锁定的模型创建；当前仅 SenseVoice 一个模型，后续新增模型必须复用同一端口，具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机流程放在 `integration_test/`，需求和技术决策放在 `docs/`。
+Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 ONNX、存储或 HTTP。ASR 实现统一 `AsrEngine` 端口，由 Factory 按会议锁定的模型创建；当前仅 SenseVoice 一个模型，后续新增模型必须复用同一端口，具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机验收记录放在 `docs/quality/`，需求和技术决策放在 `docs/`。
 
 ## Forui 优先
 
@@ -43,10 +43,9 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - 优先使用真机，真机不可用时使用模拟器
 - `flutter pub get`：解析依赖。
 - `flutter run -d <device-id>`：在 Android 或 iOS 设备上运行。
-- `dart format lib test integration_test`：格式化 Dart 源码。
+- `dart format lib test`：格式化 Dart 源码。
 - `flutter analyze`：执行 `flutter_lints` 静态检查。
 - `flutter test`：运行单元测试和组件测试。
-- `flutter test integration_test`：运行支持的设备流程。
 - `flutter build apk --debug`：构建 Alpha 调试 APK。
 - `flutter build ios --debug --no-codesign`：在 macOS/Xcode 环境构建 iOS Alpha 调试产物。
 
@@ -60,7 +59,7 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - 使用 `--background` 或 `--background-file` 注入 PRD、技术方案和用户影响。涉及录音、模型锁定、联合最终快照、说话人分离、音频分享或数据删除时，必须带上相应产品边界。
 - 生成文件只能通过明确的 `--exclude` 模式排除并说明原因，不得让 `graphify-out/`、构建产物或依赖噪声掩盖源码改动。
 - 按 Critical、High、Medium、Low 报告精确路径、行号、触发条件、用户影响和修复建议。始终报告 Critical/High；只报告有实际影响的 Medium 和明确有价值的 Low；疑似误报静默丢弃。
-- 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并重新审查。涉及 `lib/`、平台目录、数据库 schema/迁移、构建配置或 `integration_test/` 的变更，交付或创建 PR 前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
+- 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并重新审查。涉及 `lib/`、平台目录、数据库 schema/迁移或构建配置的变更，交付或创建 PR 前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
 - OCR 不能替代格式化、静态检查、测试和目标平台构建；修复后重新运行受影响验证并审查新 diff。
 
 ## 提交、PR 、commit与安全

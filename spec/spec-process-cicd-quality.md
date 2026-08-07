@@ -44,7 +44,7 @@ graph TD
 | ID | Requirement | Priority | Acceptance Criteria |
 |---|---|---|---|
 | REQ-001 | 使用锁定依赖 | High | `pubspec.lock` 可被解析且不被工作流改写 |
-| REQ-002 | 检查 Dart 格式 | High | `lib`、`test`、`integration_test`、`tool` 无格式差异 |
+| REQ-002 | 检查 Dart 格式 | High | `lib`、`test`、`tool` 无格式差异 |
 | REQ-003 | 执行静态分析与自动化测试 | High | 任一诊断或测试失败即阻断 |
 | REQ-004 | 构建 Android Debug APK | High | APK 可生成并通过固定资产、ABI、许可和禁入内容审计 |
 | REQ-005 | 输出短期证据 | Medium | 上传 SHA-256、审计 JSON 和工具链信息，不上传 APK |

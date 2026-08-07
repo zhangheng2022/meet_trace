@@ -84,7 +84,7 @@
 
 ```powershell
 flutter pub get
-dart format lib test integration_test
+dart format lib test
 flutter analyze
 flutter test
 flutter build apk --debug

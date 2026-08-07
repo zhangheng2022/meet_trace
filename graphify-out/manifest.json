@@ -1,7 +1,7 @@
 {
   "android/app/build.gradle.kts": {
-    "mtime": 1786017936.8121555,
-    "ast_hash": "d5f974b84e4879fa06feced3c4a3e477",
+    "mtime": 1786088045.9174967,
+    "ast_hash": "7293e732e450ead97e2530419f8ae717",
     "semantic_hash": ""
   },
   "android/build.gradle.kts": {
@@ -160,8 +160,8 @@
     "semantic_hash": "7569387d58711ab975940f4df3b4bcda"
   },
   "README.md": {
-    "mtime": 1786013595.8462439,
-    "ast_hash": "c197005e7bde2d4785fe3bf18ab7340a",
+    "mtime": 1786088045.9208896,
+    "ast_hash": "26a7da6b707f6050afe129a2dc933155",
     "semantic_hash": ""
   },
   "analysis_options.yaml": {
@@ -190,8 +190,8 @@
     "semantic_hash": "30cc1614b16214b66c014af09ba699eb"
   },
   "pubspec.yaml": {
-    "mtime": 1786012657.441105,
-    "ast_hash": "2581ec489e2f7cd91ebb6444cfca7e7a",
+    "mtime": 1786088045.9174967,
+    "ast_hash": "314603b90f1524222c42b594e0b8023a",
     "semantic_hash": ""
   },
   "web/index.html": {
@@ -403,11 +403,6 @@
     "mtime": 1785894176.2961864,
     "ast_hash": "8b17cd6eb48668f6bfabb322e6bb3c3a",
     "semantic_hash": ""
-  },
-  "integration_test/reliable_recording_test.dart": {
-    "mtime": 1785894176.423962,
-    "ast_hash": "7133df95976b3a0b4071169666fdf4f0",
-    "semantic_hash": "7133df95976b3a0b4071169666fdf4f0"
   },
   "lib/app/application.dart": {
     "mtime": 1786013619.3114579,
@@ -1065,8 +1060,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1785999995.0589247,
-    "ast_hash": "7d9f804f538cb9a6d7458051120f082e",
+    "mtime": 1786088045.9208896,
+    "ast_hash": "0c38834942ab893a20a571cfd1b1aead",
     "semantic_hash": ""
   },
   "assets/licenses/paraformer-small-NOTICE.txt": {
@@ -1240,8 +1235,8 @@
     "semantic_hash": ""
   },
   "PRODUCT.md": {
-    "mtime": 1786013595.845244,
-    "ast_hash": "8f2a0dd050cbf08c8e193f9f447e45e8",
+    "mtime": 1786088045.921897,
+    "ast_hash": "53c32787fb834664a703695c7e874f12",
     "semantic_hash": ""
   },
   "docs/quality/iOS_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
@@ -1849,19 +1844,14 @@
     "ast_hash": "16ee9f2644f46b81e010a0521f871f24",
     "semantic_hash": ""
   },
-  "integration_test/live_preview_replay_test.dart": {
-    "mtime": 1785894176.423962,
-    "ast_hash": "071b37dd76d931a317d767c7818528b7",
-    "semantic_hash": ""
-  },
   "graphify-out/memory/query_20260803_035409_\u5b9e\u65f6\u8f6c\u5f55\u8c03\u4f18.md": {
     "mtime": 1785894176.4212863,
     "ast_hash": "50024764e3ba8bff6e2d231f92d53915",
     "semantic_hash": ""
   },
   "docs/architecture/\u4ee3\u7801\u67b6\u6784\u4e0e\u5197\u4f59\u5ba1\u8ba1.md": {
-    "mtime": 1785901586.6856146,
-    "ast_hash": "5395afca7a5e27fca56a354100680b25",
+    "mtime": 1786088497.556188,
+    "ast_hash": "fa6fa81833aa7364bb2ad90b63402fed",
     "semantic_hash": ""
   },
   "docs/quality/README.md": {
@@ -1915,8 +1905,8 @@
     "semantic_hash": ""
   },
   "docs/project/Alpha_\u5f00\u53d1\u6b65\u9aa4.md": {
-    "mtime": 1786013595.8472433,
-    "ast_hash": "e442bc0a841d3dd7ad87a03dd1f962e9",
+    "mtime": 1786088045.9248967,
+    "ast_hash": "05feae222cf504dd193cd2d4c78f120d",
     "semantic_hash": ""
   },
   "docs/project/Git_\u5206\u652f\u4e0e_Worktree_\u7ea6\u5b9a.md": {
@@ -1925,8 +1915,8 @@
     "semantic_hash": ""
   },
   "docs/technical/\u7aef\u4fa7_SenseVoice_\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1786034079.3028915,
-    "ast_hash": "b734e6252308517d726e77fe60e35759",
+    "mtime": 1786088045.9238968,
+    "ast_hash": "4459f1fbadd70ebd460e8a7d0158ba58",
     "semantic_hash": ""
   },
   "lib/data/services/models/model_download_types.dart": {
@@ -1965,8 +1955,8 @@
     "semantic_hash": ""
   },
   "docs/quality/\u8fd0\u884c\u65f6\u6a21\u578b\u521d\u59cb\u5316\u4e0e\u53d1\u5e03\u95e8\u69db.md": {
-    "mtime": 1786013595.848243,
-    "ast_hash": "b46222dfb849da1af6e08588b8dbd7f3",
+    "mtime": 1786088079.9510162,
+    "ast_hash": "bc082b56ab1615b1f4b8c4988a399dce",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260803_115717_\u5f53\u524d_alpha_\u4ea4\u4ed8\u5bf9\u8c61_\u5b8c\u6210\u5b9a\u4e49\u548c\u4e3b\u8981\u963b\u585e\u94fe\u662f\u4ec0\u4e48.md": {
@@ -2570,8 +2560,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/quality.yml": {
-    "mtime": 1786015354.5195,
-    "ast_hash": "b3c73da49e31a2f717ff5b15dce98980",
+    "mtime": 1786088045.9189806,
+    "ast_hash": "891c832bd2a0652db162236bf2a3fdc9",
     "semantic_hash": ""
   },
   "docs/project/GitHub_\u7248\u672c\u53d1\u5e03\u6d41\u7a0b.md": {
@@ -2590,8 +2580,8 @@
     "semantic_hash": ""
   },
   "spec/spec-process-cicd-quality.md": {
-    "mtime": 1786011323.2428153,
-    "ast_hash": "f1e27fce4ec7506eafe7245e8a095a46",
+    "mtime": 1786088045.9228966,
+    "ast_hash": "81096b3fbea15b23be6f576b4c653edf",
     "semantic_hash": ""
   },
   "docs/quality/alpha_release_input.json": {
@@ -2605,8 +2595,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/alpha-release.yml": {
-    "mtime": 1786031555.740803,
-    "ast_hash": "30963dbe498d54d079cae611c9cad02b",
+    "mtime": 1786088045.9197097,
+    "ast_hash": "44944cff587ab77ffd2854495f805426",
     "semantic_hash": ""
   },
   "spec/spec-process-cicd-alpha-release.md": {
@@ -2677,6 +2667,26 @@
   "graphify-out/memory/query_20260807_043748_\u6b63\u5728\u751f\u6210_\u9700\u8981\u91cd\u65b0\u8bbe\u8ba1.md": {
     "mtime": 1786077468.667059,
     "ast_hash": "1966460edc395977434c7eb3e0d60a09",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260807_063502_patrol_\u8be6\u7ec6\u8bf4\u660e.md": {
+    "mtime": 1786084502.83079,
+    "ast_hash": "94792c1ae67e64fe5000e1186ae8a890",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260807_064227_integration_test_test_patrol_\u6709\u4ec0\u4e48\u533a\u522b.md": {
+    "mtime": 1786084947.488617,
+    "ast_hash": "2408348a7e1b9021608402ece73c0aef",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260807_065721_\u53ef\u4ee5\u6d4b\u8bd5\u771f\u5b9e\u5f55\u97f3\u573a\u666f\u5417.md": {
+    "mtime": 1786085841.9083397,
+    "ast_hash": "e688a49951bba5120d8bff16d7496fb4",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260807_065957_\u662f\u5426\u53ef\u4ee5\u5220\u9664integration_test.md": {
+    "mtime": 1786085997.0374014,
+    "ast_hash": "0214542566445be910360a3ce5001932",
     "semantic_hash": ""
   }
 }

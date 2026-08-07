@@ -50,8 +50,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  integration_test:
-    sdk: flutter
   flutter_native_splash: 2.4.8
   sentry_dart_plugin: ^3.4.0
   sqlite3: ^3.5.1

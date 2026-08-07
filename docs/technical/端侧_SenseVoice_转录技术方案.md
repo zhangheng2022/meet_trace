@@ -155,7 +155,7 @@ App 不接入业务分析埋点或总结网关。Release 组合根通过 data/se
 交付运行：
 
 ```powershell
-dart format lib test integration_test
+dart format lib test
 flutter analyze
 flutter test
 flutter build apk --debug

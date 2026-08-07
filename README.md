@@ -90,7 +90,6 @@ lib/
 └── theme/                       # 主题和设计令牌
 
 test/                            # 镜像源码结构的单元与组件测试
-integration_test/                # 模拟器与真机流程
 docs/                            # 产品、技术、质量与项目文档
 assets/models/                   # 固定 Manifest，不包含模型权重
 assets/licenses/                 # 第三方模型许可与 NOTICE
@@ -164,20 +163,14 @@ flutter build ios --debug --no-codesign
 提交变更前至少运行：
 
 ```bash
-dart format lib test integration_test
+dart format lib test
 flutter analyze
 flutter test
 ```
 
 版本候选与 GitHub Pre-release 的维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。双平台同 SHA 验收后，当前公开源码仓库的 Pre-release 提供已验收的 Android arm64 APK；iOS 仅通过 TestFlight 分发，GitHub 不提供 IPA。
 
-需要设备的流程：
-
-```bash
-flutter test integration_test -d <device-id>
-```
-
-重点测试范围包括可靠录音、模型校验与续传、会议模型锁定、预览积压恢复、最终快照原子切换、说话人降级、音频分享清理和数据代迁移。真实模型的 RTF、延迟、内存、能耗、温控和准确率必须在目标 arm64 真机上验证，自动化 Fake 不能替代发布证据。
+重点自动化范围包括可靠录音逻辑、模型校验与续传、会议模型锁定、预览积压恢复、最终快照原子切换、说话人降级、音频分享清理和数据代迁移。当前仓库不包含设备集成测试；真实录音、真实模型的 RTF、延迟、内存、能耗、温控和准确率必须在目标 arm64 真机上按质量文档人工验收，自动化 Fake 不能替代发布证据。
 
 ## 参与贡献
 
