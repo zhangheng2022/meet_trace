@@ -1,15 +1,22 @@
-part of '../meeting_list_view.dart';
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
 
-enum _RecordingConditionsAction {
+import '../../../../../../domain/models/meeting_readiness.dart';
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_sheet.dart';
+import '../../../view_models/list/meeting_list_view_model.dart';
+
+enum RecordingConditionsAction {
   requestMicrophonePermission,
   recheck,
   repairRuntime,
 }
 
-final class _RecordingConditionsSheet extends StatelessWidget {
-  const _RecordingConditionsSheet({
+final class RecordingConditionsSheet extends StatelessWidget {
+  const RecordingConditionsSheet({
     required this.readiness,
     required this.canRepairRuntime,
+    super.key,
   });
 
   final MeetingReadinessViewState readiness;
@@ -76,15 +83,15 @@ final class _RecordingConditionsSheet extends StatelessWidget {
     );
   }
 
-  _RecordingConditionsAction? get _action => switch (readiness.status) {
+  RecordingConditionsAction? get _action => switch (readiness.status) {
     MeetingReadinessStatus.microphonePermissionRequired =>
-      _RecordingConditionsAction.requestMicrophonePermission,
+      RecordingConditionsAction.requestMicrophonePermission,
     MeetingReadinessStatus.storageInsufficient =>
-      _RecordingConditionsAction.recheck,
+      RecordingConditionsAction.recheck,
     MeetingReadinessStatus.defaultModelUnavailable when canRepairRuntime =>
-      _RecordingConditionsAction.repairRuntime,
+      RecordingConditionsAction.repairRuntime,
     MeetingReadinessStatus.defaultModelUnavailable =>
-      _RecordingConditionsAction.recheck,
+      RecordingConditionsAction.recheck,
     MeetingReadinessStatus.unchecked ||
     MeetingReadinessStatus.checking ||
     MeetingReadinessStatus.ready ||
@@ -136,8 +143,8 @@ String _readinessByteLabel(int bytes) {
   return '${(bytes / mib).toStringAsFixed(1)} MiB';
 }
 
-String _actionLabel(_RecordingConditionsAction action) => switch (action) {
-  _RecordingConditionsAction.requestMicrophonePermission => '授权麦克风',
-  _RecordingConditionsAction.recheck => '重新检查',
-  _RecordingConditionsAction.repairRuntime => '修复离线资源',
+String _actionLabel(RecordingConditionsAction action) => switch (action) {
+  RecordingConditionsAction.requestMicrophonePermission => '授权麦克风',
+  RecordingConditionsAction.recheck => '重新检查',
+  RecordingConditionsAction.repairRuntime => '修复离线资源',
 };

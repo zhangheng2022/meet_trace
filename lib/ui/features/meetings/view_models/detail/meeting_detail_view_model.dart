@@ -5,13 +5,10 @@ import 'package:flutter/foundation.dart';
 import '../../../../../domain/models/asr_model.dart';
 import '../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../domain/models/meeting.dart';
-import '../../../../../domain/models/processing_task.dart';
 import '../../../../../domain/models/speaker_diarization.dart';
 import '../../../../../domain/models/transcript.dart';
 import '../../../../../domain/models/workflow_states.dart';
-import '../../../../../domain/ports/asr_engine.dart';
 import '../../../../../domain/ports/audio_playback.dart';
-import '../../../../../domain/ports/audio_share.dart';
 import '../../../../../domain/ports/final_transcription.dart';
 import '../../../../../domain/ports/repositories.dart';
 import '../../../../../domain/ports/speaker_diarization.dart';
@@ -20,11 +17,10 @@ import '../../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../../domain/use_cases/delete_meeting.dart';
 import '../../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../../domain/use_cases/share_meeting_audio.dart';
-
-part 'meeting_detail_state.dart';
-part 'meeting_transcript_view_model.dart';
-part 'meeting_audio_view_model.dart';
-part 'meeting_actions_view_model.dart';
+import 'meeting_actions_view_model.dart';
+import 'meeting_audio_view_model.dart';
+import 'meeting_detail_state.dart';
+import 'meeting_transcript_view_model.dart';
 
 final class MeetingDetailViewModel extends ChangeNotifier {
   // 保留公开构造参数名 `meeting`，避免把内部字段名泄漏给调用方。
@@ -45,11 +41,11 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     AsrModelRegistry? registry,
   })
     // ignore: prefer_initializing_formals
-    : _meeting = meeting,
+    : internalMeeting = meeting,
        registry = registry ?? AsrModelRegistry.alpha {
-    transcriptSection = MeetingTranscriptViewModel._(this);
-    audioSection = MeetingAudioViewModel._(this);
-    actions = MeetingActionsViewModel._(this);
+    transcriptSection = MeetingTranscriptViewModel.internal(this);
+    audioSection = MeetingAudioViewModel.internal(this);
+    actions = MeetingActionsViewModel.internal(this);
   }
 
   final MeetingRepository meetings;
@@ -70,74 +66,89 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   late final MeetingAudioViewModel audioSection;
   late final MeetingActionsViewModel actions;
 
-  Meeting _meeting;
-  TranscriptSnapshot? _snapshot;
-  TranscriptSnapshot? _failedAttempt;
-  TranscriptSnapshot? _processingAttempt;
+  @internal
+  Meeting internalMeeting;
+  @internal
+  TranscriptSnapshot? internalSnapshot;
+  @internal
+  TranscriptSnapshot? internalFailedAttempt;
+  @internal
+  TranscriptSnapshot? internalProcessingAttempt;
   StreamSubscription<AudioPlaybackState>? _playbackSubscription;
   Future<void>? _loading;
-  Future<void>? _operation;
-  Future<void>? _diarizationOperation;
-  Future<void>? _resultOperation;
-  double _progress = 0;
-  String? _errorMessage;
+  @internal
+  Future<void>? internalOperation;
+  @internal
+  Future<void>? internalDiarizationOperation;
+  @internal
+  Future<void>? internalResultOperation;
+  @internal
+  double internalProgress = 0;
+  @internal
+  String? internalErrorMessage;
   bool _isLoading = true;
-  bool _diarizationEnabled = true;
-  SpeakerDiarizationStatus _diarizationStatus =
+  @internal
+  bool internalDiarizationEnabled = true;
+  @internal
+  SpeakerDiarizationStatus internalDiarizationStatus =
       SpeakerDiarizationStatus.disabled;
-  String? _diarizationMessage;
-  String? _resultMessage;
+  @internal
+  String? internalDiarizationMessage;
+  @internal
+  String? internalResultMessage;
   AudioPlaybackState _playbackState = const AudioPlaybackState(
     status: AudioPlaybackStatus.idle,
   );
-  bool _deleted = false;
+  @internal
+  bool internalDeleted = false;
   bool _disposed = false;
 
   MeetingDetailState get state => MeetingDetailState(
-    meeting: _meeting,
-    snapshot: _snapshot,
+    meeting: internalMeeting,
+    snapshot: internalSnapshot,
     isLoading: _isLoading,
     isProcessing: isProcessing,
-    progress: _progress,
-    errorMessage: _errorMessage,
-    resultMessage: _resultMessage,
-    diarizationMessage: _diarizationMessage,
+    progress: internalProgress,
+    errorMessage: internalErrorMessage,
+    resultMessage: internalResultMessage,
+    diarizationMessage: internalDiarizationMessage,
     playbackState: _playbackState,
   );
 
-  Meeting get meeting => _meeting;
-  TranscriptSnapshot? get snapshot => _snapshot;
-  double get progress => _progress;
-  String? get errorMessage => _errorMessage;
+  Meeting get meeting => internalMeeting;
+  TranscriptSnapshot? get snapshot => internalSnapshot;
+  double get progress => internalProgress;
+  String? get errorMessage => internalErrorMessage;
   bool get isLoading => _isLoading;
   bool get isProcessing =>
-      _operation != null ||
-      _diarizationOperation != null ||
-      _resultOperation != null;
-  bool get isTranscribing => _operation != null;
-  bool get isDiarizing => _diarizationOperation != null;
-  bool get diarizationEnabled => _diarizationEnabled;
+      internalOperation != null ||
+      internalDiarizationOperation != null ||
+      internalResultOperation != null;
+  bool get isTranscribing => internalOperation != null;
+  bool get isDiarizing => internalDiarizationOperation != null;
+  bool get diarizationEnabled => internalDiarizationEnabled;
   bool get diarizationAvailable => diarization?.capability.isAvailable == true;
   bool get canRetryDiarization =>
-      _diarizationEnabled &&
+      internalDiarizationEnabled &&
       diarizationAvailable &&
       !isProcessing &&
-      _snapshot?.status == TranscriptSnapshotStatus.complete;
-  SpeakerDiarizationStatus get diarizationStatus => _diarizationStatus;
-  String? get diarizationMessage => _diarizationMessage;
-  String? get resultMessage => _resultMessage;
+      internalSnapshot?.status == TranscriptSnapshotStatus.complete;
+  SpeakerDiarizationStatus get diarizationStatus => internalDiarizationStatus;
+  String? get diarizationMessage => internalDiarizationMessage;
+  String? get resultMessage => internalResultMessage;
   AudioPlaybackState get playbackState => _playbackState;
-  bool get isDeleted => _deleted;
+  bool get isDeleted => internalDeleted;
   bool get canShare =>
       sharing != null &&
-      _snapshot?.isCurrentFinalTranscript(
-            activeSnapshotId: _meeting.activeTranscriptSnapshotId,
+      internalSnapshot?.isCurrentFinalTranscript(
+            activeSnapshotId: internalMeeting.activeTranscriptSnapshotId,
           ) ==
           true;
 
   List<SpeakerLabelGroup> get speakerGroups {
     final groups = <String?, int>{};
-    for (final segment in _snapshot?.segments ?? const <TranscriptSegment>[]) {
+    for (final segment
+        in internalSnapshot?.segments ?? const <TranscriptSegment>[]) {
       groups.update(segment.speakerId, (count) => count + 1, ifAbsent: () => 1);
     }
     return List.unmodifiable([
@@ -150,14 +161,14 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     ]);
   }
 
-  bool get canRetry => !isProcessing && _failedAttempt != null;
+  bool get canRetry => !isProcessing && internalFailedAttempt != null;
   bool get canRetranscribe =>
-      !isProcessing && _meeting.status == MeetingState.completed;
+      !isProcessing && internalMeeting.status == MeetingState.completed;
 
   AsrModelDescriptor get sourceModel => registry.requireById(
-    _snapshot?.actualModelId ??
-        _failedAttempt?.actualModelId ??
-        _meeting.recordingModelId,
+    internalSnapshot?.actualModelId ??
+        internalFailedAttempt?.actualModelId ??
+        internalMeeting.recordingModelId,
   );
 
   Future<void> load() => _loading ??= _load();
@@ -181,47 +192,69 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   Future<void> deleteMeeting() => actions.deleteMeeting();
 
   Future<void> _load() async {
-    _errorMessage = null;
-    _notify();
+    internalErrorMessage = null;
+    internalNotify();
     try {
       _playbackSubscription ??= playback?.states.listen((state) {
         _playbackState = state;
-        _notify();
+        internalNotify();
       });
-      _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? true;
-      await _refreshSnapshots();
-      await _refreshDiarizationTask();
-      if (_meeting.status == MeetingState.processing &&
-          _snapshot?.status != TranscriptSnapshotStatus.complete) {
-        final pending = _processingAttempt;
-        await _run(
+      internalDiarizationEnabled =
+          await diarizationPreferences?.getEnabled() ?? true;
+      await internalRefreshSnapshots();
+      await internalRefreshDiarizationTask();
+      if (internalMeeting.status == MeetingState.processing &&
+          internalSnapshot?.status != TranscriptSnapshotStatus.complete) {
+        final pending = internalProcessingAttempt;
+        await internalRunTranscription(
           retrySnapshotId: pending == null
               ? null
-              : _lockedRetrySnapshotId(pending),
+              : internalLockedRetrySnapshotId(pending),
         );
       } else {
-        await _runDiarizationIfNeeded();
+        await internalRunDiarizationIfNeeded();
       }
     } on Object {
-      _errorMessage ??= '最终转录状态加载失败，请重试';
-      _notify();
+      internalErrorMessage ??= '最终转录状态加载失败，请重试';
+      internalNotify();
     } finally {
       _isLoading = false;
-      _notify();
+      internalNotify();
     }
   }
 
-  Future<void> _refreshMeeting() async {
-    final refreshed = await meetings.getById(_meeting.id);
+  Future<void> internalRefreshMeeting() async {
+    final refreshed = await meetings.getById(internalMeeting.id);
     if (refreshed != null) {
-      _meeting = refreshed;
+      internalMeeting = refreshed;
     }
   }
 
-  void _notify() {
+  void internalNotify() {
     if (!_disposed) {
       notifyListeners();
     }
+  }
+
+  Future<void> internalRunResultOperation(
+    Future<void> Function() body, {
+    required String failureMessage,
+    String Function(Object error)? mapFailure,
+  }) {
+    final current = internalResultOperation;
+    if (current != null || isProcessing) {
+      return current ?? Future.value();
+    }
+    internalResultMessage = null;
+    final operation = body().catchError((Object error) {
+      internalResultMessage = mapFailure?.call(error) ?? failureMessage;
+    });
+    internalResultOperation = operation;
+    internalNotify();
+    return operation.whenComplete(() {
+      internalResultOperation = null;
+      internalNotify();
+    });
   }
 
   @override

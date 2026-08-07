@@ -1,7 +1,19 @@
-part of '../meeting_detail_view.dart';
+import 'dart:async';
 
-final class _TranscriptSection extends StatefulWidget {
-  const _TranscriptSection({
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
+
+import '../../../../../../domain/models/speaker_diarization.dart';
+import '../../../../../../domain/models/transcript.dart';
+import '../../../../../../domain/use_cases/revise_final_transcript.dart';
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_sheet.dart';
+import '../../../view_models/detail/meeting_detail_state.dart';
+import '../../../view_models/detail/meeting_detail_view_model.dart';
+import '../widgets/meeting_detail_formatters.dart';
+
+final class TranscriptSection extends StatefulWidget {
+  const TranscriptSection({
     required this.snapshot,
     required this.viewModel,
     required this.editing,
@@ -15,10 +27,10 @@ final class _TranscriptSection extends StatefulWidget {
   final ValueChanged<bool> onEditingChanged;
 
   @override
-  State<_TranscriptSection> createState() => _TranscriptSectionState();
+  State<TranscriptSection> createState() => TranscriptSectionState();
 }
 
-final class _TranscriptSectionState extends State<_TranscriptSection> {
+final class TranscriptSectionState extends State<TranscriptSection> {
   late Map<String, TextEditingController> _texts;
   late Map<String, TextEditingController> _speakers;
 
@@ -29,7 +41,7 @@ final class _TranscriptSectionState extends State<_TranscriptSection> {
   }
 
   @override
-  void didUpdateWidget(covariant _TranscriptSection oldWidget) {
+  void didUpdateWidget(covariant TranscriptSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.snapshot.id != widget.snapshot.id) {
       _disposeControllers();
@@ -120,7 +132,7 @@ final class _TranscriptSectionState extends State<_TranscriptSection> {
           for (final segment in widget.snapshot.segments) ...[
             Text(
               '${displaySpeakerLabel(segment.speakerId)} · '
-              '${_timestamp(segment.startMs)}',
+              '${meetingTimestampLabel(segment.startMs)}',
               style: theme.typography.body.sm.copyWith(
                 color: theme.colors.mutedForeground,
               ),
@@ -202,7 +214,7 @@ final class _TranscriptLedgerRow extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.only(top: appStyle.spaceXs),
                 child: Text(
-                  _timestamp(segment.startMs),
+                  meetingTimestampLabel(segment.startMs),
                   key: ValueKey('transcript-time-${segment.id}'),
                   maxLines: 1,
                   softWrap: false,
@@ -298,8 +310,12 @@ final class _TranscriptTimelinePainter extends CustomPainter {
       dotCenterY != oldDelegate.dotCenterY;
 }
 
-final class _DiarizationSection extends StatelessWidget {
-  const _DiarizationSection({required this.viewModel, required this.editing});
+final class DiarizationSection extends StatelessWidget {
+  const DiarizationSection({
+    required this.viewModel,
+    required this.editing,
+    super.key,
+  });
 
   final MeetingDetailViewModel viewModel;
   final bool editing;

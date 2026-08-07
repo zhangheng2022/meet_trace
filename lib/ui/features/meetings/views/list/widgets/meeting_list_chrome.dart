@@ -1,7 +1,13 @@
-part of '../meeting_list_view.dart';
+import 'dart:async';
 
-final class _MeetingHomePane extends StatelessWidget {
-  const _MeetingHomePane({
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
+
+import '../../../../../../theme/theme.dart';
+import '../../../view_models/list/meeting_list_view_model.dart';
+
+final class MeetingHomePane extends StatelessWidget {
+  const MeetingHomePane({
     required this.body,
     required this.total,
     required this.readiness,
@@ -9,6 +15,7 @@ final class _MeetingHomePane extends StatelessWidget {
     required this.onOpenRecordingConditions,
     required this.onRetryReadiness,
     required this.onStartMeeting,
+    super.key,
   });
 
   final Widget body;

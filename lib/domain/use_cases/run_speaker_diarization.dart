@@ -8,6 +8,7 @@ import '../models/transcript.dart';
 import '../models/workflow_states.dart';
 import '../ports/repositories.dart';
 import '../ports/speaker_diarization.dart';
+import 'map_speaker_turns.dart';
 
 export '../ports/speaker_diarization.dart' show SpeakerDiarizationRunner;
 
@@ -219,36 +220,12 @@ final class SpeakerDiarizationCoordinator implements SpeakerDiarizationRunner {
   ) {
     return {
       for (final segment in snapshot.segments)
-        segment.id: _bestSpeaker(segment, turns),
+        segment.id: mapTranscriptSegmentToSpeaker(
+          segment: segment,
+          turns: turns,
+          fallbackSpeakerId: fallbackSpeakerId,
+        ),
     };
-  }
-
-  String _bestSpeaker(TranscriptSegment segment, List<SpeakerTurn> turns) {
-    SpeakerTurn? best;
-    var bestOverlap = 0;
-    for (final turn in turns) {
-      final start = segment.startMs > turn.startMs
-          ? segment.startMs
-          : turn.startMs;
-      final end = segment.endMs < turn.endMs ? segment.endMs : turn.endMs;
-      final overlap = end > start ? end - start : 0;
-      if (overlap > bestOverlap ||
-          (overlap == bestOverlap &&
-              overlap > 0 &&
-              _comesBefore(turn, best!))) {
-        best = turn;
-        bestOverlap = overlap;
-      }
-    }
-    return bestOverlap == 0 ? fallbackSpeakerId : best!.speakerId.trim();
-  }
-
-  bool _comesBefore(SpeakerTurn candidate, SpeakerTurn current) {
-    final byStart = candidate.startMs.compareTo(current.startMs);
-    if (byStart != 0) {
-      return byStart < 0;
-    }
-    return candidate.speakerId.compareTo(current.speakerId) < 0;
   }
 
   Future<SpeakerDiarizationResult> _degrade({

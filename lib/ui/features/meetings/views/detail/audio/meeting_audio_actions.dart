@@ -1,7 +1,22 @@
-part of '../meeting_detail_view.dart';
+import 'dart:async';
 
-final class _AudioEvidenceStrip extends StatelessWidget {
-  const _AudioEvidenceStrip({required this.viewModel, this.compact = false});
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
+
+import '../../../../../../domain/ports/audio_playback.dart';
+import '../../../../../../domain/use_cases/build_meeting_share.dart';
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_dialog.dart';
+import '../../../../../core/app_sheet.dart';
+import '../../../view_models/detail/meeting_detail_view_model.dart';
+import '../widgets/meeting_detail_formatters.dart';
+
+final class AudioEvidenceStrip extends StatelessWidget {
+  const AudioEvidenceStrip({
+    required this.viewModel,
+    this.compact = false,
+    super.key,
+  });
 
   final MeetingDetailViewModel viewModel;
   final bool compact;
@@ -58,7 +73,7 @@ final class _AudioEvidenceStrip extends StatelessWidget {
                       SizedBox(height: appStyle.space2Xs),
                       Text(
                         '录音仅保存在本机 · '
-                        '${_duration(viewModel.meeting.audioDurationMs)}',
+                        '${meetingDurationLabel(viewModel.meeting.audioDurationMs)}',
                         style: theme.typography.body.sm.copyWith(
                           color: theme.colors.mutedForeground,
                         ),
@@ -92,11 +107,12 @@ final class _AudioEvidenceStrip extends StatelessWidget {
   }
 }
 
-final class _TranscriptEditBottomBar extends StatelessWidget {
-  const _TranscriptEditBottomBar({
+final class TranscriptEditBottomBar extends StatelessWidget {
+  const TranscriptEditBottomBar({
     required this.saving,
     required this.onCancel,
     required this.onSave,
+    super.key,
   });
 
   final bool saving;
@@ -171,18 +187,18 @@ final class _TranscriptEditBottomBar extends StatelessWidget {
   }
 }
 
-final class _MeetingShareActionButton extends StatefulWidget {
-  const _MeetingShareActionButton({required this.viewModel});
+final class MeetingShareActionButton extends StatefulWidget {
+  const MeetingShareActionButton({required this.viewModel, super.key});
 
   final MeetingDetailViewModel viewModel;
 
   @override
-  State<_MeetingShareActionButton> createState() =>
+  State<MeetingShareActionButton> createState() =>
       _MeetingShareActionButtonState();
 }
 
 final class _MeetingShareActionButtonState
-    extends State<_MeetingShareActionButton> {
+    extends State<MeetingShareActionButton> {
   @override
   Widget build(BuildContext context) {
     final viewModel = widget.viewModel;
@@ -265,7 +281,7 @@ final class _MeetingShareActionButtonState
         title: '可用空间不足',
         message:
             '生成临时 WAV 还缺少 '
-            '${_byteLabel(preparation.storage.shortageBytes)}，未创建任何文件。',
+            '${meetingByteLabel(preparation.storage.shortageBytes)}，未创建任何文件。',
       );
       return;
     }
@@ -275,8 +291,8 @@ final class _MeetingShareActionButtonState
       title: '确认单独分享音频？',
       message:
           '会议：${preparation.meetingTitle}\n'
-          '时长：${_duration(preparation.durationMs)}\n'
-          '文件：${_byteLabel(preparation.storage.wavBytes)} WAV\n\n'
+          '时长：${meetingDurationLabel(preparation.durationMs)}\n'
+          '文件：${meetingByteLabel(preparation.storage.wavBytes)} WAV\n\n'
           '录音可能包含敏感或私密信息。确认后才会生成临时副本并打开系统分享面板；不会附带转录文本。',
       cancelLabel: '取消',
       confirmLabel: '生成并分享',
@@ -292,22 +308,23 @@ enum _MeetingShareAction { plainText, markdown, audio }
 
 enum _MeetingMoreAction { retranscribe, delete }
 
-final class _MeetingMoreActionsButton extends StatefulWidget {
-  const _MeetingMoreActionsButton({
+final class MeetingMoreActionsButton extends StatefulWidget {
+  const MeetingMoreActionsButton({
     required this.viewModel,
     required this.onDeleted,
+    super.key,
   });
 
   final MeetingDetailViewModel viewModel;
   final VoidCallback? onDeleted;
 
   @override
-  State<_MeetingMoreActionsButton> createState() =>
+  State<MeetingMoreActionsButton> createState() =>
       _MeetingMoreActionsButtonState();
 }
 
 final class _MeetingMoreActionsButtonState
-    extends State<_MeetingMoreActionsButton> {
+    extends State<MeetingMoreActionsButton> {
   @override
   Widget build(BuildContext context) {
     final viewModel = widget.viewModel;
@@ -459,33 +476,4 @@ final class _MeetingActionSheet extends StatelessWidget {
       child: FTileGroup(semanticsLabel: semanticsLabel, children: actions),
     );
   }
-}
-
-String _timestamp(int milliseconds) {
-  return _timeLabel(Duration(milliseconds: milliseconds));
-}
-
-String _duration(int milliseconds) {
-  return _timeLabel(Duration(milliseconds: milliseconds));
-}
-
-String _timeLabel(Duration duration) {
-  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-  if (duration.inHours > 0) {
-    return '${duration.inHours}:$minutes:$seconds';
-  }
-  return '$minutes:$seconds';
-}
-
-String _byteLabel(int bytes) {
-  const kib = 1024;
-  const mib = kib * 1024;
-  if (bytes >= mib) {
-    return '${(bytes / mib).toStringAsFixed(1)} MiB';
-  }
-  if (bytes >= kib) {
-    return '${(bytes / kib).toStringAsFixed(1)} KiB';
-  }
-  return '$bytes B';
 }

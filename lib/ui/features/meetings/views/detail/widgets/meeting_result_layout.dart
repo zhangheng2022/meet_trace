@@ -1,15 +1,28 @@
-part of '../meeting_detail_view.dart';
+import 'dart:async';
 
-final class _ResultView extends StatelessWidget {
-  const _ResultView({
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
+
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_page_body.dart';
+import '../../../../../core/app_responsive.dart';
+import '../../../../../core/app_status_notice.dart';
+import '../../../view_models/detail/meeting_detail_view_model.dart';
+import '../audio/meeting_audio_actions.dart';
+import '../transcript/meeting_transcript_section.dart';
+import 'meeting_detail_formatters.dart';
+
+final class MeetingResultView extends StatelessWidget {
+  const MeetingResultView({
     required this.viewModel,
     required this.transcriptKey,
     required this.editingTranscript,
     required this.onEditingChanged,
+    super.key,
   });
 
   final MeetingDetailViewModel viewModel;
-  final GlobalKey<_TranscriptSectionState> transcriptKey;
+  final GlobalKey<TranscriptSectionState> transcriptKey;
   final bool editingTranscript;
   final ValueChanged<bool> onEditingChanged;
 
@@ -29,7 +42,7 @@ final class _ResultView extends StatelessWidget {
           ),
           SizedBox(height: appStyle.spaceMd),
         ],
-        _TranscriptSection(
+        TranscriptSection(
           key: transcriptKey,
           snapshot: snapshot,
           viewModel: viewModel,
@@ -45,7 +58,7 @@ final class _ResultView extends StatelessWidget {
           ),
         ],
         SizedBox(height: appStyle.spaceXl),
-        _DiarizationSection(viewModel: viewModel, editing: editingTranscript),
+        DiarizationSection(viewModel: viewModel, editing: editingTranscript),
       ],
     );
     return SingleChildScrollView(
@@ -61,9 +74,9 @@ final class _ResultView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _MeetingIdentity(viewModel: viewModel),
+                    MeetingIdentity(viewModel: viewModel),
                     SizedBox(height: appStyle.spaceLg),
-                    _AudioEvidenceStrip(viewModel: viewModel),
+                    AudioEvidenceStrip(viewModel: viewModel),
                     SizedBox(height: appStyle.spaceXl),
                     workbench,
                   ],
@@ -96,8 +109,8 @@ final class _ResultView extends StatelessWidget {
   }
 }
 
-final class _MeetingIdentity extends StatelessWidget {
-  const _MeetingIdentity({required this.viewModel});
+final class MeetingIdentity extends StatelessWidget {
+  const MeetingIdentity({required this.viewModel, super.key});
 
   final MeetingDetailViewModel viewModel;
 
@@ -112,7 +125,7 @@ final class _MeetingIdentity extends StatelessWidget {
         SizedBox(height: appStyle.spaceSm),
         Text(
           '${_dateLabel(viewModel.meeting.createdAt)} · '
-          '${_duration(viewModel.meeting.audioDurationMs)} · '
+          '${meetingDurationLabel(viewModel.meeting.audioDurationMs)} · '
           '${viewModel.sourceModel.displayName}',
           style: theme.typography.body.sm.copyWith(
             color: theme.colors.mutedForeground,
@@ -137,9 +150,9 @@ final class _MeetingFactRail extends StatelessWidget {
       children: [
         Text('事实记录', style: theme.typography.body.xs),
         SizedBox(height: appStyle.spaceLg),
-        _MeetingIdentity(viewModel: viewModel),
+        MeetingIdentity(viewModel: viewModel),
         SizedBox(height: appStyle.spaceLg),
-        _AudioEvidenceStrip(viewModel: viewModel, compact: true),
+        AudioEvidenceStrip(viewModel: viewModel, compact: true),
         SizedBox(height: appStyle.spaceLg),
         const AppStatusNotice(
           tone: AppStatusTone.success,
@@ -151,8 +164,12 @@ final class _MeetingFactRail extends StatelessWidget {
   }
 }
 
-final class _FailureView extends StatelessWidget {
-  const _FailureView({required this.message, required this.viewModel});
+final class MeetingFailureView extends StatelessWidget {
+  const MeetingFailureView({
+    required this.message,
+    required this.viewModel,
+    super.key,
+  });
 
   final String message;
   final MeetingDetailViewModel viewModel;
@@ -166,9 +183,9 @@ final class _FailureView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _MeetingIdentity(viewModel: viewModel),
+            MeetingIdentity(viewModel: viewModel),
             SizedBox(height: appStyle.spaceLg),
-            _AudioEvidenceStrip(viewModel: viewModel),
+            AudioEvidenceStrip(viewModel: viewModel),
             SizedBox(height: appStyle.spaceXl),
             _FailureCard(message: message, viewModel: viewModel),
           ],

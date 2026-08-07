@@ -1,4 +1,19 @@
-part of 'meeting_list_view.dart';
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
+
+import '../../../../../domain/models/meeting.dart';
+import '../../../../../theme/theme.dart';
+import '../../../../core/app_ledger.dart';
+import '../../../../core/app_responsive.dart';
+import '../../../../core/app_state_panel.dart';
+import '../../../../core/app_swipe_action_row.dart';
+import '../../../../core/view_state.dart';
+import '../../view_models/list/meeting_list_view_model.dart';
+import 'widgets/meeting_ledger_row.dart';
+import 'widgets/meeting_list_chrome.dart';
+import 'widgets/meeting_preview_pane.dart';
 
 final class MeetingListContent extends StatefulWidget {
   const MeetingListContent({
@@ -69,7 +84,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
         final selected = _selectedMeeting(meetings);
         final referenceTime = widget.now?.call() ?? DateTime.now();
         final listBody = _listBody(meetings, sizeClass, referenceTime);
-        final homePane = _MeetingHomePane(
+        final homePane = MeetingHomePane(
           total: widget.state is ViewData<List<Meeting>>
               ? meetings.length
               : null,
@@ -114,8 +129,8 @@ final class _MeetingListContentState extends State<MeetingListContent> {
                   ),
                   Expanded(
                     child: selected == null
-                        ? const _MeetingPreviewPlaceholder()
-                        : _MeetingPreviewPane(
+                        ? const MeetingPreviewPlaceholder()
+                        : MeetingPreviewPane(
                             key: ValueKey('meeting-preview-${selected.id}'),
                             meeting: selected,
                             referenceTime: referenceTime,
@@ -219,7 +234,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
         setState(() => _revealedMeetingId = null);
         unawaited(widget.onDeleteMeeting?.call(meeting));
       },
-      child: _MeetingLedgerRow(
+      child: MeetingLedgerRow(
         meeting: meeting,
         referenceTime: referenceTime,
         deleting: deleting,

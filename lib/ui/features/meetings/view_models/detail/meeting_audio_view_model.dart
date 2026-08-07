@@ -1,31 +1,34 @@
-part of 'meeting_detail_view_model.dart';
+import '../../../../../domain/ports/audio_playback.dart';
+import 'meeting_detail_view_model.dart';
 
 final class MeetingAudioViewModel {
-  const MeetingAudioViewModel._(this._owner);
+  const MeetingAudioViewModel.internal(this._owner);
   final MeetingDetailViewModel _owner;
   AudioPlaybackState get state => _owner.playbackState;
-  Future<void> playFullAudio() => _owner._playFullAudio();
-  Future<void> stop() => _owner._stopPlayback();
+  Future<void> playFullAudio() => _owner.internalPlayFullAudio();
+  Future<void> stop() => _owner.internalStopPlayback();
 }
 
 extension _MeetingAudioOperations on MeetingDetailViewModel {
-  Future<void> _playFullAudio() async {
+  Future<void> internalPlayFullAudio() async {
     final service = playback;
-    final audioPath = _meeting.audioPath;
-    if (service == null || audioPath == null || _meeting.audioDurationMs <= 0) {
+    final audioPath = internalMeeting.audioPath;
+    if (service == null ||
+        audioPath == null ||
+        internalMeeting.audioDurationMs <= 0) {
       return;
     }
     try {
       await service.play(
         audioPath: audioPath,
         startMs: 0,
-        endMs: _meeting.audioDurationMs,
+        endMs: internalMeeting.audioDurationMs,
       );
     } on Object {
-      _resultMessage = '事实音频播放失败';
-      _notify();
+      internalResultMessage = '事实音频播放失败';
+      internalNotify();
     }
   }
 
-  Future<void> _stopPlayback() => playback?.stop() ?? Future.value();
+  Future<void> internalStopPlayback() => playback?.stop() ?? Future.value();
 }

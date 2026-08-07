@@ -1,7 +1,14 @@
-part of 'meeting_detail_view_model.dart';
+import '../../../../../domain/models/processing_task.dart';
+import '../../../../../domain/models/speaker_diarization.dart';
+import '../../../../../domain/models/transcript.dart';
+import '../../../../../domain/models/workflow_states.dart';
+import '../../../../../domain/ports/asr_engine.dart';
+import '../../../../../domain/ports/speaker_diarization.dart';
+import '../../../../../domain/use_cases/revise_final_transcript.dart';
+import 'meeting_detail_view_model.dart';
 
 final class MeetingTranscriptViewModel {
-  const MeetingTranscriptViewModel._(this._owner);
+  const MeetingTranscriptViewModel.internal(this._owner);
   final MeetingDetailViewModel _owner;
 
   TranscriptSnapshot? get snapshot => _owner.snapshot;
@@ -10,56 +17,61 @@ final class MeetingTranscriptViewModel {
   bool get canRetry => _owner.canRetry;
   bool get canRetranscribe => _owner.canRetranscribe;
 
-  Future<void> retry() => _owner._retry();
-  Future<void> retranscribe() => _owner._retranscribe();
+  Future<void> retry() => _owner.internalRetry();
+  Future<void> retranscribe() => _owner.internalRetranscribe();
   Future<void> setDiarizationEnabled(bool enabled) =>
-      _owner._setDiarizationEnabled(enabled);
-  Future<void> retryDiarization() => _owner._retryDiarization();
+      _owner.internalSetDiarizationEnabled(enabled);
+  Future<void> retryDiarization() => _owner.internalRetryDiarization();
   Future<bool> renameSpeaker(String? currentSpeakerId, String newLabel) =>
-      _owner._renameSpeaker(currentSpeakerId, newLabel);
+      _owner.internalRenameSpeaker(currentSpeakerId, newLabel);
   Future<void> reviseTranscript(List<TranscriptSegmentRevision> revisions) =>
-      _owner._reviseTranscript(revisions);
+      _owner.internalReviseTranscript(revisions);
 }
 
-extension _MeetingTranscriptOperations on MeetingDetailViewModel {
-  Future<void> _retry() {
-    final failed = _failedAttempt;
+extension MeetingTranscriptOperations on MeetingDetailViewModel {
+  Future<void> internalRetry() {
+    final failed = internalFailedAttempt;
     if (failed == null) {
       return Future.value();
     }
-    return _run(retrySnapshotId: _lockedRetrySnapshotId(failed));
+    return internalRunTranscription(
+      retrySnapshotId: internalLockedRetrySnapshotId(failed),
+    );
   }
 
-  Future<void> _retranscribe() => _run();
+  Future<void> internalRetranscribe() => internalRunTranscription();
 
-  String? _lockedRetrySnapshotId(TranscriptSnapshot snapshot) {
-    return snapshot.actualModelId == _meeting.recordingModelId &&
-            snapshot.actualModelVersion == _meeting.recordingModelVersion
+  String? internalLockedRetrySnapshotId(TranscriptSnapshot snapshot) {
+    return snapshot.actualModelId == internalMeeting.recordingModelId &&
+            snapshot.actualModelVersion == internalMeeting.recordingModelVersion
         ? snapshot.id
         : null;
   }
 
-  Future<void> _setDiarizationEnabled(bool enabled) async {
+  Future<void> internalSetDiarizationEnabled(bool enabled) async {
     final preferences = diarizationPreferences;
     if (preferences == null ||
         (enabled && !diarizationAvailable) ||
         isProcessing) {
       return;
     }
-    _diarizationEnabled = enabled;
-    _diarizationStatus = SpeakerDiarizationStatus.disabled;
-    _diarizationMessage = null;
-    _notify();
+    internalDiarizationEnabled = enabled;
+    internalDiarizationStatus = SpeakerDiarizationStatus.disabled;
+    internalDiarizationMessage = null;
+    internalNotify();
     await preferences.setEnabled(enabled);
     if (enabled) {
       await _runDiarization();
     }
   }
 
-  Future<void> _retryDiarization() => _runDiarization();
+  Future<void> internalRetryDiarization() => _runDiarization();
 
-  Future<bool> _renameSpeaker(String? currentSpeakerId, String newLabel) async {
-    final snapshot = _snapshot;
+  Future<bool> internalRenameSpeaker(
+    String? currentSpeakerId,
+    String newLabel,
+  ) async {
+    final snapshot = internalSnapshot;
     if (snapshot == null || isProcessing) {
       return false;
     }
@@ -75,91 +87,92 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
                 : segment.speakerId,
           ),
       ]);
-      return _snapshot?.id != snapshot.id;
+      return internalSnapshot?.id != snapshot.id;
     }
     final runner = diarization;
     if (runner == null) {
       return false;
     }
     try {
-      _snapshot = await runner.renameSpeaker(
-        meetingId: _meeting.id,
+      internalSnapshot = await runner.renameSpeaker(
+        meetingId: internalMeeting.id,
         snapshotId: snapshot.id,
         currentSpeakerId: currentSpeakerId,
         newLabel: newLabel,
       );
-      _diarizationMessage = '说话人标签已保存';
+      internalDiarizationMessage = '说话人标签已保存';
       return true;
     } on Object {
-      _diarizationMessage = '说话人标签保存失败，请重试';
+      internalDiarizationMessage = '说话人标签保存失败，请重试';
       return false;
     } finally {
-      _notify();
+      internalNotify();
     }
   }
 
-  Future<void> _reviseTranscript(List<TranscriptSegmentRevision> revisions) =>
-      _runResultOperation(() async {
-        final useCase = transcriptRevision;
-        if (useCase == null) {
-          return;
-        }
-        final result = await useCase.execute(
-          meetingId: _meeting.id,
-          revisions: revisions,
-        );
-        _meeting = result.meeting;
-        _snapshot = result.snapshot;
-        _resultMessage = '转录修订已保存为新版本';
-      }, failureMessage: '转录修订保存失败，请检查内容后重试');
+  Future<void> internalReviseTranscript(
+    List<TranscriptSegmentRevision> revisions,
+  ) => internalRunResultOperation(() async {
+    final useCase = transcriptRevision;
+    if (useCase == null) {
+      return;
+    }
+    final result = await useCase.execute(
+      meetingId: internalMeeting.id,
+      revisions: revisions,
+    );
+    internalMeeting = result.meeting;
+    internalSnapshot = result.snapshot;
+    internalResultMessage = '转录修订已保存为新版本';
+  }, failureMessage: '转录修订保存失败，请检查内容后重试');
 
-  Future<void> _run({String? retrySnapshotId}) {
-    final current = _operation;
+  Future<void> internalRunTranscription({String? retrySnapshotId}) {
+    final current = internalOperation;
     if (current != null) {
       return current;
     }
     final operation = _transcribe(retrySnapshotId: retrySnapshotId);
-    _operation = operation;
-    _notify();
+    internalOperation = operation;
+    internalNotify();
     return operation.whenComplete(() {
-      _operation = null;
-      _notify();
+      internalOperation = null;
+      internalNotify();
     });
   }
 
   Future<void> _transcribe({required String? retrySnapshotId}) async {
-    _errorMessage = null;
-    _progress = 0;
-    _notify();
+    internalErrorMessage = null;
+    internalProgress = 0;
+    internalNotify();
     try {
       final result = await transcription.transcribe(
-        meetingId: _meeting.id,
+        meetingId: internalMeeting.id,
         retrySnapshotId: retrySnapshotId,
         onProgress: _applyProgress,
       );
-      _meeting = result.meeting;
-      _snapshot = result.snapshot;
-      _failedAttempt = null;
-      _processingAttempt = null;
-      _progress = 1;
-      _diarizationStatus = result.diarizationStatus;
-      _diarizationMessage = switch (result.diarizationStatus) {
+      internalMeeting = result.meeting;
+      internalSnapshot = result.snapshot;
+      internalFailedAttempt = null;
+      internalProcessingAttempt = null;
+      internalProgress = 1;
+      internalDiarizationStatus = result.diarizationStatus;
+      internalDiarizationMessage = switch (result.diarizationStatus) {
         SpeakerDiarizationStatus.disabled => null,
         SpeakerDiarizationStatus.completed => '说话人分离已完成',
         SpeakerDiarizationStatus.degraded => '说话人分离失败，已按单一说话人显示；最终转录不受影响',
       };
     } on Object {
-      _errorMessage = '最终转录失败，事实音频和旧结果均已保留';
-      await _refreshMeeting();
-      await _refreshSnapshots();
+      internalErrorMessage = '最终转录失败，事实音频和旧结果均已保留';
+      await internalRefreshMeeting();
+      await internalRefreshSnapshots();
     } finally {
-      _notify();
+      internalNotify();
     }
   }
 
-  Future<void> _runDiarizationIfNeeded() {
-    final snapshot = _snapshot;
-    if (!_diarizationEnabled ||
+  Future<void> internalRunDiarizationIfNeeded() {
+    final snapshot = internalSnapshot;
+    if (!internalDiarizationEnabled ||
         snapshot == null ||
         snapshot.status != TranscriptSnapshotStatus.complete ||
         snapshot.segments.any((segment) => segment.speakerId != null)) {
@@ -169,23 +182,23 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
   }
 
   Future<void> _runDiarization() {
-    final current = _diarizationOperation;
+    final current = internalDiarizationOperation;
     if (current != null) {
       return current;
     }
     final runner = diarization;
-    final snapshot = _snapshot;
+    final snapshot = internalSnapshot;
     if (runner == null ||
         snapshot == null ||
         snapshot.status != TranscriptSnapshotStatus.complete) {
       return Future.value();
     }
     final operation = _processDiarization(runner, snapshot);
-    _diarizationOperation = operation;
-    _notify();
+    internalDiarizationOperation = operation;
+    internalNotify();
     return operation.whenComplete(() {
-      _diarizationOperation = null;
-      _notify();
+      internalDiarizationOperation = null;
+      internalNotify();
     });
   }
 
@@ -193,63 +206,63 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
     SpeakerDiarizationRunner runner,
     TranscriptSnapshot snapshot,
   ) async {
-    _diarizationMessage = null;
-    _notify();
+    internalDiarizationMessage = null;
+    internalNotify();
     try {
       final result = await runner.process(
-        meetingId: _meeting.id,
+        meetingId: internalMeeting.id,
         snapshotId: snapshot.id,
-        enabled: _diarizationEnabled,
+        enabled: internalDiarizationEnabled,
       );
-      _snapshot = result.snapshot;
-      _diarizationStatus = result.status;
-      _diarizationMessage = switch (result.status) {
+      internalSnapshot = result.snapshot;
+      internalDiarizationStatus = result.status;
+      internalDiarizationMessage = switch (result.status) {
         SpeakerDiarizationStatus.disabled => null,
         SpeakerDiarizationStatus.completed => '说话人分离已完成',
         SpeakerDiarizationStatus.degraded => '说话人分离失败，已按单一说话人显示；最终转录不受影响',
       };
     } on Object {
-      _diarizationStatus = SpeakerDiarizationStatus.degraded;
-      _diarizationMessage = '说话人分离失败，最终转录仍可查看；可稍后重试';
+      internalDiarizationStatus = SpeakerDiarizationStatus.degraded;
+      internalDiarizationMessage = '说话人分离失败，最终转录仍可查看；可稍后重试';
     } finally {
-      _notify();
+      internalNotify();
     }
   }
 
   void _applyProgress(AsrFinalizationProgress progress) {
-    _progress = progress.fraction;
-    _notify();
+    internalProgress = progress.fraction;
+    internalNotify();
   }
 
-  Future<void> _refreshSnapshots() async {
-    final activeId = _meeting.activeTranscriptSnapshotId;
+  Future<void> internalRefreshSnapshots() async {
+    final activeId = internalMeeting.activeTranscriptSnapshotId;
     final snapshots = await Future.wait<TranscriptSnapshot?>([
       activeId == null
           ? Future<TranscriptSnapshot?>.value()
           : transcripts.getById(activeId),
       transcripts.getLatestByMeeting(
-        meetingId: _meeting.id,
+        meetingId: internalMeeting.id,
         kind: TranscriptSnapshotKind.finalTranscript,
         status: TranscriptSnapshotStatus.failed,
       ),
       transcripts.getLatestByMeeting(
-        meetingId: _meeting.id,
+        meetingId: internalMeeting.id,
         kind: TranscriptSnapshotKind.finalTranscript,
         status: TranscriptSnapshotStatus.processing,
       ),
     ]);
-    _snapshot = snapshots[0];
-    _failedAttempt = snapshots[1];
-    _processingAttempt = snapshots[2];
+    internalSnapshot = snapshots[0];
+    internalFailedAttempt = snapshots[1];
+    internalProcessingAttempt = snapshots[2];
   }
 
-  Future<void> _refreshDiarizationTask() async {
+  Future<void> internalRefreshDiarizationTask() async {
     final repository = processingTasks;
-    final snapshot = _snapshot;
+    final snapshot = internalSnapshot;
     if (repository == null || snapshot == null) {
       return;
     }
-    final records = await repository.listByMeeting(_meeting.id);
+    final records = await repository.listByMeeting(internalMeeting.id);
     ProcessingTask? task;
     for (final record in records) {
       if (record.kind == ProcessingTaskKind.speakerDiarization &&
@@ -263,11 +276,11 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
     }
     switch (task.state) {
       case ProcessingState.completed:
-        _diarizationStatus = SpeakerDiarizationStatus.completed;
-        _diarizationMessage = '说话人分离已完成';
+        internalDiarizationStatus = SpeakerDiarizationStatus.completed;
+        internalDiarizationMessage = '说话人分离已完成';
       case ProcessingState.failed:
-        _diarizationStatus = SpeakerDiarizationStatus.degraded;
-        _diarizationMessage = '说话人分离失败，已按单一说话人显示；最终转录不受影响';
+        internalDiarizationStatus = SpeakerDiarizationStatus.degraded;
+        internalDiarizationMessage = '说话人分离失败，已按单一说话人显示；最终转录不受影响';
       case ProcessingState.idle ||
           ProcessingState.queued ||
           ProcessingState.running ||

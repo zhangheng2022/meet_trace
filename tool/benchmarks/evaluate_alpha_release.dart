@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:meettrace/domain/use_cases/evaluate_alpha_release.dart';
+import 'src/alpha_release_evaluator.dart';
 
 Future<void> main(List<String> arguments) async {
   if (arguments.isEmpty || arguments.length > 2) {

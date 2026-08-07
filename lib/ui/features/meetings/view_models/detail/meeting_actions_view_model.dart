@@ -1,7 +1,10 @@
-part of 'meeting_detail_view_model.dart';
+import '../../../../../domain/ports/audio_share.dart';
+import '../../../../../domain/use_cases/build_meeting_share.dart';
+import '../../../../../domain/use_cases/share_meeting_audio.dart';
+import 'meeting_detail_view_model.dart';
 
 final class MeetingActionsViewModel {
-  const MeetingActionsViewModel._(this._owner);
+  const MeetingActionsViewModel.internal(this._owner);
   final MeetingDetailViewModel _owner;
   bool get canShare => _owner.canShare;
   bool get canShareAudio =>
@@ -10,60 +13,60 @@ final class MeetingActionsViewModel {
       _owner.meeting.audioDurationMs > 0;
   bool get isDeleted => _owner.isDeleted;
   String? get message => _owner.resultMessage;
-  Future<void> share(MeetingShareFormat format) => _owner._share(format);
+  Future<void> share(MeetingShareFormat format) => _owner.internalShare(format);
   Future<AudioSharePreparation?> prepareAudioShare() =>
-      _owner._prepareAudioShare();
+      _owner.internalPrepareAudioShare();
   Future<void> shareAudio(AudioSharePreparation preparation) =>
-      _owner._shareAudio(preparation);
-  Future<void> deleteMeeting() => _owner._deleteMeeting();
+      _owner.internalShareAudio(preparation);
+  Future<void> deleteMeeting() => _owner.internalDeleteMeeting();
 }
 
 extension _MeetingActionsOperations on MeetingDetailViewModel {
-  Future<void> _share(MeetingShareFormat format) =>
-      _runResultOperation(() async {
+  Future<void> internalShare(MeetingShareFormat format) =>
+      internalRunResultOperation(() async {
         final service = sharing;
-        final snapshot = _snapshot;
+        final snapshot = internalSnapshot;
         if (service == null || snapshot == null) {
           return;
         }
         final document = shareBuilder.execute(
-          meeting: _meeting,
+          meeting: internalMeeting,
           snapshot: snapshot,
           format: format,
         );
         await service.share(document);
-        _resultMessage = '已打开系统分享面板，内容不包含原始音频';
+        internalResultMessage = '已打开系统分享面板，内容不包含原始音频';
       }, failureMessage: '分享失败，请重试');
 
-  Future<AudioSharePreparation?> _prepareAudioShare() async {
+  Future<AudioSharePreparation?> internalPrepareAudioShare() async {
     final useCase = audioSharing;
-    if (useCase == null || _resultOperation != null || isProcessing) {
+    if (useCase == null || internalResultOperation != null || isProcessing) {
       return null;
     }
-    _resultMessage = null;
-    final preparation = useCase.prepare(_meeting);
-    _resultOperation = preparation.then<void>((_) {});
-    _notify();
+    internalResultMessage = null;
+    final preparation = useCase.prepare(internalMeeting);
+    internalResultOperation = preparation.then<void>((_) {});
+    internalNotify();
     try {
       return await preparation;
     } on Object {
-      _resultMessage = '无法读取事实音频或可用空间，请重试';
+      internalResultMessage = '无法读取事实音频或可用空间，请重试';
       return null;
     } finally {
-      _resultOperation = null;
-      _notify();
+      internalResultOperation = null;
+      internalNotify();
     }
   }
 
-  Future<void> _shareAudio(AudioSharePreparation preparation) =>
-      _runResultOperation(
+  Future<void> internalShareAudio(AudioSharePreparation preparation) =>
+      internalRunResultOperation(
         () async {
           final useCase = audioSharing;
           if (useCase == null) {
             return;
           }
           final outcome = await useCase.execute(preparation);
-          _resultMessage = switch (outcome) {
+          internalResultMessage = switch (outcome) {
             AudioShareOutcome.completed => '音频分享操作已完成，临时文件已清理',
             AudioShareOutcome.dismissed => '已取消音频分享，临时文件已清理',
             AudioShareOutcome.unavailable => '已打开系统分享面板，平台未返回操作结果；临时文件已清理',
@@ -83,37 +86,16 @@ extension _MeetingActionsOperations on MeetingDetailViewModel {
         },
       );
 
-  Future<void> _deleteMeeting() => _runResultOperation(() async {
+  Future<void> internalDeleteMeeting() => internalRunResultOperation(() async {
     final useCase = deletion;
     if (useCase == null) {
       return;
     }
     await playback?.stop();
-    await useCase.execute(meetingId: _meeting.id);
-    _deleted = true;
-    _resultMessage = '会议及其本地派生数据已删除';
+    await useCase.execute(meetingId: internalMeeting.id);
+    internalDeleted = true;
+    internalResultMessage = '会议及其本地派生数据已删除';
   }, failureMessage: '会议删除未完成，请重试');
-
-  Future<void> _runResultOperation(
-    Future<void> Function() body, {
-    required String failureMessage,
-    String Function(Object error)? mapFailure,
-  }) {
-    final current = _resultOperation;
-    if (current != null || isProcessing) {
-      return current ?? Future.value();
-    }
-    _resultMessage = null;
-    final operation = body().catchError((Object error) {
-      _resultMessage = mapFailure?.call(error) ?? failureMessage;
-    });
-    _resultOperation = operation;
-    _notify();
-    return operation.whenComplete(() {
-      _resultOperation = null;
-      _notify();
-    });
-  }
 }
 
 String _audioShareByteLabel(int bytes) {

@@ -9,25 +9,13 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
-import '../../../../../domain/models/speaker_diarization.dart';
-import '../../../../../domain/models/transcript.dart';
-import '../../../../../domain/ports/audio_playback.dart';
-import '../../../../../domain/use_cases/build_meeting_share.dart';
-import '../../../../../domain/use_cases/revise_final_transcript.dart';
-import '../../../../../theme/theme.dart';
 import '../../../../core/app_back_icon.dart';
-import '../../../../core/app_dialog.dart';
-import '../../../../core/app_page_body.dart';
-import '../../../../core/app_responsive.dart';
-import '../../../../core/app_sheet.dart';
 import '../../../../core/app_state_panel.dart';
-import '../../../../core/app_status_notice.dart';
 import '../../view_models/detail/meeting_detail_view_model.dart';
-
-part 'processing/meeting_processing_view.dart';
-part 'widgets/meeting_result_layout.dart';
-part 'transcript/meeting_transcript_section.dart';
-part 'audio/meeting_audio_actions.dart';
+import 'audio/meeting_audio_actions.dart';
+import 'processing/meeting_processing_view.dart';
+import 'transcript/meeting_transcript_section.dart';
+import 'widgets/meeting_result_layout.dart';
 
 final class MeetingDetailView extends StatefulWidget {
   const MeetingDetailView({
@@ -46,7 +34,7 @@ final class MeetingDetailView extends StatefulWidget {
 }
 
 final class _MeetingDetailViewState extends State<MeetingDetailView> {
-  final GlobalKey<_TranscriptSectionState> _transcriptKey = GlobalKey();
+  final GlobalKey<TranscriptSectionState> _transcriptKey = GlobalKey();
   bool _editingTranscript = false;
 
   @override
@@ -75,8 +63,8 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
               if (viewModel.snapshot != null &&
                   !viewModel.isTranscribing &&
                   !_editingTranscript) ...[
-                _MeetingShareActionButton(viewModel: viewModel),
-                _MeetingMoreActionsButton(
+                MeetingShareActionButton(viewModel: viewModel),
+                MeetingMoreActionsButton(
                   viewModel: viewModel,
                   onDeleted: widget.onDeleted,
                 ),
@@ -87,7 +75,7 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
               viewModel.snapshot != null &&
                   !viewModel.isTranscribing &&
                   _editingTranscript
-              ? _TranscriptEditBottomBar(
+              ? TranscriptEditBottomBar(
                   saving: viewModel.isProcessing,
                   onCancel: () {
                     setState(() => _editingTranscript = false);
@@ -110,13 +98,13 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
     }
 
     if (viewModel.isTranscribing) {
-      return _ProcessingView(viewModel: viewModel);
+      return MeetingProcessingView(viewModel: viewModel);
     }
 
     if (viewModel.snapshot == null) {
       final message = viewModel.errorMessage;
       if (message != null) {
-        return _FailureView(message: message, viewModel: viewModel);
+        return MeetingFailureView(message: message, viewModel: viewModel);
       }
       return const AppStatePanel.empty(
         icon: FLucideIcons.fileAudio,
@@ -125,7 +113,7 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
       );
     }
 
-    return _ResultView(
+    return MeetingResultView(
       viewModel: viewModel,
       transcriptKey: _transcriptKey,
       editingTranscript: _editingTranscript,

@@ -1,7 +1,14 @@
-part of '../meeting_detail_view.dart';
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
 
-final class _ProcessingView extends StatelessWidget {
-  const _ProcessingView({required this.viewModel});
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_page_body.dart';
+import '../../../view_models/detail/meeting_detail_view_model.dart';
+import '../audio/meeting_audio_actions.dart';
+import '../widgets/meeting_result_layout.dart';
+
+final class MeetingProcessingView extends StatelessWidget {
+  const MeetingProcessingView({required this.viewModel, super.key});
 
   final MeetingDetailViewModel viewModel;
 
@@ -15,9 +22,9 @@ final class _ProcessingView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _MeetingIdentity(viewModel: viewModel),
+            MeetingIdentity(viewModel: viewModel),
             SizedBox(height: appStyle.spaceLg),
-            _AudioEvidenceStrip(viewModel: viewModel),
+            AudioEvidenceStrip(viewModel: viewModel),
             SizedBox(height: appStyle.spaceXl),
             _ProcessingLedger(viewModel: viewModel),
           ],

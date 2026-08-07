@@ -1,7 +1,16 @@
-part of '../meeting_list_view.dart';
+import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart';
 
-final class _MeetingPreviewPlaceholder extends StatelessWidget {
-  const _MeetingPreviewPlaceholder();
+import '../../../../../../domain/models/asr_model_registry.dart';
+import '../../../../../../domain/models/meeting.dart';
+import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../theme/theme.dart';
+import '../../../../../core/app_state_panel.dart';
+import '../../../../../core/semantic_date_time.dart';
+import 'meeting_list_formatters.dart';
+
+final class MeetingPreviewPlaceholder extends StatelessWidget {
+  const MeetingPreviewPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +22,8 @@ final class _MeetingPreviewPlaceholder extends StatelessWidget {
   }
 }
 
-final class _MeetingPreviewPane extends StatelessWidget {
-  const _MeetingPreviewPane({
+final class MeetingPreviewPane extends StatelessWidget {
+  const MeetingPreviewPane({
     required this.meeting,
     required this.referenceTime,
     required this.onOpenMeeting,
@@ -60,7 +69,7 @@ final class _MeetingPreviewPane extends StatelessWidget {
                   _MeetingFactRow(
                     icon: FLucideIcons.clock4,
                     label: '录音时长',
-                    value: _durationLabel(
+                    value: meetingDurationLabel(
                       Duration(milliseconds: meeting.audioDurationMs),
                     ),
                   ),
@@ -136,10 +145,10 @@ final class _MeetingPreviewStatus extends StatelessWidget {
                 child: const SizedBox.square(dimension: 8),
               )
             else
-              Icon(_meetingStatusIcon(meeting.status), size: 16),
+              Icon(meetingStatusIcon(meeting.status), size: 16),
             SizedBox(width: appStyle.spaceXs),
             Text(
-              _meetingStatusLabel(meeting.status),
+              meetingStatusLabel(meeting.status),
               style: theme.typography.body.sm.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -152,7 +161,9 @@ final class _MeetingPreviewStatus extends StatelessWidget {
             ),
             SizedBox(width: appStyle.spaceSm),
             Text(
-              _durationLabel(Duration(milliseconds: meeting.audioDurationMs)),
+              meetingDurationLabel(
+                Duration(milliseconds: meeting.audioDurationMs),
+              ),
               style: theme.typography.body.xs.copyWith(
                 color: theme.colors.mutedForeground,
                 fontFeatures: const [FontFeature.tabularFigures()],
@@ -328,31 +339,6 @@ final class _PreviewBottomStatus extends StatelessWidget {
   }
 }
 
-IconData _meetingStatusIcon(MeetingState state) => switch (state) {
-  MeetingState.created => FLucideIcons.circleDashed,
-  MeetingState.recording => FLucideIcons.square,
-  MeetingState.processing => FLucideIcons.audioLines,
-  MeetingState.completed => FLucideIcons.circleCheck,
-  MeetingState.failed => FLucideIcons.circleAlert,
-};
-
-String _meetingStatusLabel(MeetingState state) => switch (state) {
-  MeetingState.created => '准备中',
-  MeetingState.recording => '录音中',
-  MeetingState.processing => '处理中',
-  MeetingState.completed => '已完成',
-  MeetingState.failed => '失败',
-};
-
-String _meetingLedgerStatus(Meeting meeting) => switch (meeting.status) {
-  MeetingState.created => '准备中',
-  MeetingState.recording => '录音中',
-  MeetingState.processing => '正在生成最终转录',
-  MeetingState.completed => '已完成',
-  MeetingState.failed when meeting.audioPath?.isNotEmpty == true => '处理失败',
-  MeetingState.failed => '失败 · 打开查看事实音频状态',
-};
-
 String _audioFactLabel(Meeting meeting) => switch (meeting.status) {
   MeetingState.created => '录音尚未开始',
   MeetingState.recording => '正在本机持续写入',
@@ -378,11 +364,4 @@ String _modelDisplayLabel(Meeting meeting) {
   final descriptor = AsrModelRegistry.alpha.findById(meeting.recordingModelId);
   final displayName = descriptor?.displayName ?? '本地模型';
   return '$displayName · ${meeting.recordingModelVersion}';
-}
-
-String _durationLabel(Duration value) {
-  final hours = value.inHours.toString().padLeft(2, '0');
-  final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$hours:$minutes:$seconds';
 }

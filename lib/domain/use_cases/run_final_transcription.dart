@@ -11,6 +11,7 @@ import '../ports/final_transcription.dart';
 import '../ports/repositories.dart';
 import '../ports/speaker_diarization.dart';
 import 'final_inference_scheduler.dart';
+import 'map_speaker_turns.dart';
 
 export '../ports/final_transcription.dart';
 
@@ -450,7 +451,11 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
             endMs: segment.endMs,
             text: segment.text,
             speakerId: result.status == SpeakerDiarizationStatus.completed
-                ? _bestSpeaker(segment, result.turns)
+                ? mapTranscriptSegmentToSpeaker(
+                    segment: segment,
+                    turns: result.turns,
+                    fallbackSpeakerId: fallbackSpeakerId,
+                  )
                 : fallbackSpeakerId,
             confidence: segment.confidence,
             modelId: segment.modelId,
@@ -458,34 +463,6 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
           ),
       ],
     );
-  }
-
-  String _bestSpeaker(TranscriptSegment segment, List<SpeakerTurn> turns) {
-    SpeakerTurn? best;
-    var bestOverlap = 0;
-    for (final turn in turns) {
-      final start = segment.startMs > turn.startMs
-          ? segment.startMs
-          : turn.startMs;
-      final end = segment.endMs < turn.endMs ? segment.endMs : turn.endMs;
-      final overlap = end > start ? end - start : 0;
-      if (overlap > bestOverlap ||
-          (overlap == bestOverlap &&
-              overlap > 0 &&
-              _comesBefore(turn, best!))) {
-        best = turn;
-        bestOverlap = overlap;
-      }
-    }
-    return bestOverlap == 0 ? fallbackSpeakerId : best!.speakerId.trim();
-  }
-
-  bool _comesBefore(SpeakerTurn candidate, SpeakerTurn current) {
-    final byStart = candidate.startMs.compareTo(current.startMs);
-    if (byStart != 0) {
-      return byStart < 0;
-    }
-    return candidate.speakerId.compareTo(current.speakerId) < 0;
   }
 
   Future<void> _saveFailureIfCurrent({

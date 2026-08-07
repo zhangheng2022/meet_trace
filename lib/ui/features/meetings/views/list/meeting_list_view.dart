@@ -11,27 +11,13 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
-import '../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../domain/models/meeting.dart';
-import '../../../../../domain/models/meeting_readiness.dart';
-import '../../../../../domain/models/workflow_states.dart';
-import '../../../../../theme/theme.dart';
-import '../../../../core/app_ledger.dart';
 import '../../../../core/app_dialog.dart';
-import '../../../../core/app_responsive.dart';
-import '../../../../core/app_sheet.dart';
-import '../../../../core/app_state_panel.dart';
-import '../../../../core/app_swipe_action_row.dart';
 import '../../../../core/branding/meettrace_brand_mark.dart';
-import '../../../../core/semantic_date_time.dart';
 import '../../../../core/view_state.dart';
 import '../../view_models/list/meeting_list_view_model.dart';
-
-part 'meeting_list_content.dart';
-part 'widgets/recording_conditions_sheet.dart';
-part 'widgets/meeting_list_chrome.dart';
-part 'widgets/meeting_ledger_row.dart';
-part 'widgets/meeting_preview_pane.dart';
+import 'meeting_list_content.dart';
+import 'widgets/recording_conditions_sheet.dart';
 
 final class MeetingListView extends StatefulWidget {
   const MeetingListView({
@@ -116,13 +102,13 @@ final class _MeetingListViewState extends State<MeetingListView> {
   }
 
   Future<void> _showRecordingConditions(MeetingListViewModel viewModel) async {
-    final action = await showFSheet<_RecordingConditionsAction>(
+    final action = await showFSheet<RecordingConditionsAction>(
       context: context,
       side: FLayout.btt,
       useSafeArea: true,
       mainAxisMaxRatio: 0.72,
       barrierLabel: '关闭录音条件面板',
-      builder: (context) => _RecordingConditionsSheet(
+      builder: (context) => RecordingConditionsSheet(
         readiness: viewModel.readiness,
         canRepairRuntime: widget.onRepairRuntime != null,
       ),
@@ -131,13 +117,13 @@ final class _MeetingListViewState extends State<MeetingListView> {
       return;
     }
     switch (action) {
-      case _RecordingConditionsAction.requestMicrophonePermission:
+      case RecordingConditionsAction.requestMicrophonePermission:
         await viewModel.requestMicrophonePermission();
         return;
-      case _RecordingConditionsAction.recheck:
+      case RecordingConditionsAction.recheck:
         await viewModel.refreshReadiness();
         return;
-      case _RecordingConditionsAction.repairRuntime:
+      case RecordingConditionsAction.repairRuntime:
         widget.onRepairRuntime?.call();
         return;
     }

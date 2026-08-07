@@ -1,4 +1,6 @@
-part of 'meeting_detail_view_model.dart';
+import '../../../../../domain/models/meeting.dart';
+import '../../../../../domain/models/transcript.dart';
+import '../../../../../domain/ports/audio_playback.dart';
 
 final class MeetingDetailState {
   const MeetingDetailState({
