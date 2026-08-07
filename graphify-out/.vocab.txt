@@ -351,8 +351,8 @@ duration
 durations
 edge
 edit
+editable
 editing
-editor
 effort
 elapsed
 embedding
@@ -1005,6 +1005,7 @@ save
 saved
 saves
 saving
+scaffold
 scale
 scan
 scene
@@ -1333,6 +1334,7 @@ yue
 会议删除事务数据范围
 会议标题
 会议模型锁定
+会议详情中的说话人管理与分享入口如何关联
 会议锁定与数据库
 会迹品牌资源
 使用边界
@@ -1453,6 +1455,7 @@ yue
 是否具备测试条件
 是否存在循环依赖
 是否需要更换模型或组合模型
+最少要等待初始化动画完成
 最简发布模型
 最终处理时说话人分离
 最终快照
@@ -1527,6 +1530,7 @@ yue
 这块右边都不相关文字
 透明状态栏主题策略
 部分修复
+重启时
 重建仓库质量基线
 重构方案查询
 重设计查询

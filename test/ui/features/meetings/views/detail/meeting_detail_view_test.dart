@@ -20,6 +20,7 @@ import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/domain/use_cases/share_meeting_audio.dart';
 import 'package:meettrace/theme/theme.dart';
+import 'package:meettrace/ui/core/app_status_notice.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/detail/meeting_detail_view.dart';
 
@@ -588,6 +589,12 @@ void main() {
   });
 
   testWidgets('处理中只显示单一真实状态且允许返回', (tester) async {
+    tester.view.physicalSize = const Size(320, 760);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     final fixture = _fixture(_meeting());
     final completion = Completer<FinalTranscriptionResult>();
     var backCalls = 0;
@@ -612,14 +619,23 @@ void main() {
     await tester.pump();
 
     expect(find.text('正在生成最终结果'), findsOneWidget);
-    expect(find.textContaining('事实音频已经安全保存在本机'), findsOneWidget);
-    expect(find.textContaining('单一说话人发布结果'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meeting-processing-ledger')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('SenseVoice 正在处理完整录音'), findsOneWidget);
+    expect(find.text('说话人区分当前不可用；完成后将按单一说话人显示。'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meeting-processing-audio-safety')),
+      findsOneWidget,
+    );
     expect(find.text('最终转录'), findsNothing);
     expect(find.text('说话人整理'), findsNothing);
-    expect(find.byType(FProgress), findsNothing);
+    expect(find.byType(FProgress), findsOneWidget);
+    expect(find.byType(AppStatusNotice), findsNothing);
     expect(find.text('AI 总结'), findsNothing);
     expect(find.textContaining('%'), findsNothing);
-    expect(find.textContaining('事实音频'), findsWidgets);
+    expect(tester.takeException(), isNull);
 
     await tester.tap(find.bySemanticsLabel('返回会议列表'));
     await tester.pump();
