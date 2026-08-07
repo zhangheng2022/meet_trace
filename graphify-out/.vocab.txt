@@ -16,7 +16,6 @@ actual
 adapter
 adaptive
 add
-adjacent
 adopt
 advance
 after
@@ -128,6 +127,7 @@ canceled
 cancellation
 cancelled
 candidate
+canvas
 capabilities
 capability
 capacity
@@ -174,6 +174,7 @@ clustering
 clusters
 cocoa
 code
+codec
 collection
 color
 colors
@@ -342,6 +343,7 @@ drain
 draining
 drop
 dropped
+dsn
 dual
 due
 durable
@@ -375,6 +377,7 @@ entries
 entry
 entrypoint
 enum
+environment
 environmental
 environments
 epoch
@@ -395,6 +398,7 @@ existing
 exit
 exits
 expanded
+expect
 expected
 expired
 expires
@@ -497,6 +501,7 @@ guide
 handle
 handler
 handling
+handoff
 has
 hash
 header
@@ -507,6 +512,7 @@ hint
 history
 home
 hook
+horizontal
 hours
 http
 https
@@ -628,6 +634,7 @@ manifest
 manual
 map
 mappers
+maps
 mark
 markdown
 marker
@@ -635,6 +642,7 @@ maskable
 master
 matcher
 matches
+matching
 material
 math
 matrix
@@ -686,6 +694,7 @@ muted
 name
 native
 navigation
+navigator
 needed
 network
 never
@@ -697,6 +706,7 @@ noise
 non
 noop
 normalization
+normalize
 normalized
 not
 notice
@@ -714,6 +724,7 @@ numeric
 object
 observability
 observer
+observers
 observing
 ocr
 off
@@ -798,6 +809,7 @@ player
 plugin
 plugins
 plus
+png
 point
 points
 policy
@@ -837,6 +849,7 @@ processed
 processing
 product
 production
+profiles
 progress
 progressive
 project
@@ -968,6 +981,7 @@ rollback
 root
 rotation
 rounded
+rounding
 route
 row
 rows
@@ -978,6 +992,7 @@ ruler
 rules
 rulesets
 run
+rune
 runner
 runtime
 safe
@@ -1021,6 +1036,8 @@ send
 sense
 sensevoice
 sentence
+sentry
+separator
 sequence
 service
 services
@@ -1053,6 +1070,7 @@ single
 sink
 sinks
 size
+sized
 small
 snapshot
 snapshots
@@ -1115,6 +1133,7 @@ sustained
 swift
 swipe
 switcher
+symbols
 sync
 system
 systems
@@ -1125,6 +1144,7 @@ tar
 target
 task
 tasks
+telemetry
 temp
 temperature
 temporary
@@ -1167,6 +1187,7 @@ total
 touch
 trace
 traceable
+traces
 tracking
 transaction
 transcribe
@@ -1178,6 +1199,7 @@ transition
 transparent
 trim
 trimmed
+true
 trustworthy
 turn
 turns
@@ -1228,10 +1250,12 @@ verifier
 verify
 version
 versions
+vertical
 view
 views
 violation
 violations
+visible
 visit
 visual
 voice
@@ -1292,6 +1316,7 @@ yue
 二次确认的永久会议删除
 交付对象
 产品与文档基线
+产品决策
 产品差距
 产品目标与边界
 产品需求文档
@@ -1315,6 +1340,7 @@ yue
 保留的正确设计
 修复状态
 先分析原因
+先排查原因
 先给我方案
 全面调整查询
 全项目身份迁移
@@ -1350,6 +1376,8 @@ yue
 可靠录音
 右边不要有处理文字
 合并本地音频事实说明
+启动图光学尺寸
+启动图大小不对
 启动异常修复
 启动异常映射为通用本地能力错误
 启动异常诊断
@@ -1383,6 +1411,8 @@ yue
 已执行顺序
 已收敛活动分支
 平台敏感服务集合
+并如何在录音期间降载
+应在哪里配置
 应用标识与
 开发步骤
 开始会议按下状态修复
@@ -1488,6 +1518,7 @@ yue
 软件奔溃
 输出配置
 运行与验收
+运行时参数
 运行时模型初始化与发布门槛
 这块右边都不相关文字
 透明状态栏主题策略

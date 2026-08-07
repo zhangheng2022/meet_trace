@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-06T10:33:10.776443+00:00",
+  "generated_at": "2026-08-07T03:06:58.439113+00:00",
   "nodes": {
     "agents_layered_architecture": {
       "code_fingerprint": "3f57f1d3dd327d94dad2e161fe7d17b33e7d6d41c3d89a92e5a9c377f1f8ab1d",
@@ -12,10 +12,31 @@
           "q": "分析当前项目的代码架构，设计冗余，代码冗余，整理所有关联文档"
         }
       ],
-      "score": 0.930227687,
+      "score": 0.915512371,
       "source_file": "AGENTS.md",
       "status": "tentative",
       "uses": 1
+    },
+    "assets_branding_readme": {
+      "code_fingerprint": "ef33766d5bff6aa48619eaca146041a7c1417fd7695929f17a7521c12a319208",
+      "label": "branding/README.md",
+      "last": "2026-08-07T02:39:55.153246+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-07T02:39:55.153246+00:00",
+          "outcome": "useful",
+          "q": "实施启动图尺寸修复"
+        },
+        {
+          "date": "2026-08-07T02:10:11.145813+00:00",
+          "outcome": "useful",
+          "q": "给我修复方案"
+        }
+      ],
+      "score": 1.998655242,
+      "source_file": "assets/branding/README.md",
+      "status": "preferred",
+      "uses": 2
     },
     "c_users_96227_desktop_works_meet_trace_lib_theme_theme_appcolors": {
       "code_fingerprint": "be030aa44add73fd1473c0edc2fca0a886ccc64da11d7d863abb830f3843c085",
@@ -28,7 +49,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.794178239,
+      "score": 0.781615096,
       "source_file": "lib/theme/colors.dart",
       "status": "tentative",
       "uses": 1
@@ -44,7 +65,7 @@
           "q": "/impeccable document DESIGN.md"
         }
       ],
-      "score": 0.794178239,
+      "score": 0.781615096,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -60,7 +81,7 @@
           "q": "开始会议按下状态样式异常"
         }
       ],
-      "score": 0.79449252,
+      "score": 0.781924406,
       "source_file": "lib/theme/style.dart",
       "status": "tentative",
       "uses": 1
@@ -76,7 +97,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.794756781,
+      "score": 0.782184486,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -92,13 +113,13 @@
           "q": "列表日期需要更加语义化"
         }
       ],
-      "score": 0.809111965,
+      "score": 0.796312585,
       "source_file": "",
       "status": "tentative",
       "uses": 1
     },
     "docs_product_alpha_prd_无登录版": {
-      "code_fingerprint": "69565ea7ff112f77226c5f9c1c3968ad8013ded6fcdd3bd7d304b0968963f252",
+      "code_fingerprint": "11ac18e5bbfebc167bdbe05368fc1b2ce0b9746da134c5d743b17d51b84ce647",
       "label": "Alpha_PRD_无登录版.md",
       "last": "2026-08-06T03:58:45.847758+00:00",
       "provenance": [
@@ -108,7 +129,7 @@
           "q": "根据当前项目，给我一份基于github的版本发布流程方案"
         }
       ],
-      "score": 0.993691557,
+      "score": 0.977972303,
       "source_file": "docs/product/Alpha_PRD_无登录版.md",
       "status": "tentative",
       "uses": 1
@@ -124,7 +145,7 @@
           "q": "当前 Alpha 交付对象、完成定义和主要阻塞链是什么"
         }
       ],
-      "score": 0.934293084,
+      "score": 0.919513458,
       "source_file": "docs/quality/iOS_Alpha_设备矩阵.md",
       "status": "tentative",
       "uses": 1
@@ -140,7 +161,7 @@
           "q": "根据当前项目，给我一份基于github的版本发布流程方案"
         }
       ],
-      "score": 0.993691557,
+      "score": 0.977972303,
       "source_file": "docs/quality/README.md",
       "status": "tentative",
       "uses": 1
@@ -156,7 +177,7 @@
           "q": "当前 Alpha 的说话人分离生产能力是否真实可用"
         }
       ],
-      "score": 0.93459233,
+      "score": 0.91980797,
       "source_file": "docs/quality/Step_15_说话人分离降级.md",
       "status": "tentative",
       "uses": 1
@@ -172,13 +193,13 @@
           "q": "AI 总结和自动标题在当前生产实现中是否可用"
         }
       ],
-      "score": 0.934554589,
+      "score": 0.919770826,
       "source_file": "docs/quality/Step_16_AI总结与证据链.md",
       "status": "tentative",
       "uses": 1
     },
     "docs_readme_current_implementation_status": {
-      "code_fingerprint": "5701fbe153b0b932980eb932e9e75c887d3d8a438ab027850e6ff57065248606",
+      "code_fingerprint": "68ff6736dc8a884f421044009a85161e61d1c7fc03f847dde48fc10469cc4b10",
       "label": "Current Android and iOS Implementation Status",
       "last": "2026-08-03T11:57:17.643820+00:00",
       "provenance": [
@@ -188,13 +209,13 @@
           "q": "当前 Alpha 交付对象、完成定义和主要阻塞链是什么"
         }
       ],
-      "score": 0.934293084,
+      "score": 0.919513458,
       "source_file": "docs/README.md",
       "status": "tentative",
       "uses": 1
     },
     "docs_readme_document_index": {
-      "code_fingerprint": "5701fbe153b0b932980eb932e9e75c887d3d8a438ab027850e6ff57065248606",
+      "code_fingerprint": "68ff6736dc8a884f421044009a85161e61d1c7fc03f847dde48fc10469cc4b10",
       "label": "MeetTrace Active Documentation Index",
       "last": "2026-08-03T07:25:30.572353+00:00",
       "provenance": [
@@ -204,7 +225,7 @@
           "q": "分析当前项目的代码架构，设计冗余，代码冗余，整理所有关联文档"
         }
       ],
-      "score": 0.930227687,
+      "score": 0.915512371,
       "source_file": "docs/README.md",
       "status": "tentative",
       "uses": 1
@@ -220,7 +241,7 @@
           "q": "启动页需要重新设计"
         }
       ],
-      "score": 0.806795594,
+      "score": 0.794032856,
       "source_file": "graphify-out/memory/query_20260728_033303_启动页需要重新设计.md",
       "status": "tentative",
       "uses": 1
@@ -241,7 +262,7 @@
           "q": "录音中为什么有三个时间"
         }
       ],
-      "score": 1.618578237,
+      "score": 1.592973871,
       "source_file": "graphify-out/memory/query_20260728_063918_录音中为什么有三个时间.md",
       "status": "preferred",
       "uses": 2
@@ -257,7 +278,7 @@
           "q": "录音中为什么有三个时间"
         }
       ],
-      "score": 0.809210069,
+      "score": 0.796409136,
       "source_file": "graphify-out/memory/query_20260728_063918_录音中为什么有三个时间.md",
       "status": "tentative",
       "uses": 1
@@ -278,7 +299,7 @@
           "q": "检查分析当前项目ios端 是否具备测试条件"
         }
       ],
-      "score": 1.943600085,
+      "score": 1.912854183,
       "source_file": "integration_test/live_preview_replay_test.dart",
       "status": "preferred",
       "uses": 2
@@ -299,7 +320,7 @@
           "q": "检查分析当前项目ios端 是否具备测试条件"
         }
       ],
-      "score": 1.943600085,
+      "score": 1.912854183,
       "source_file": "integration_test/reliable_recording_test.dart",
       "status": "preferred",
       "uses": 2
@@ -320,10 +341,36 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 1.765911056,
+      "score": 1.737976025,
       "source_file": "ios/Runner/AppDelegate.swift",
       "status": "preferred",
       "uses": 2
+    },
+    "ios_runner_assets_xcassets_launchimage_imageset_readme_launch_screen_assets": {
+      "code_fingerprint": "853ac958e2416fe2540f6f61165283a3618b71a7ba5f85f65ac41c2158dfcd21",
+      "label": "Launch Screen Assets",
+      "last": "2026-08-07T02:39:55.153246+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-07T02:39:55.153246+00:00",
+          "outcome": "useful",
+          "q": "实施启动图尺寸修复"
+        },
+        {
+          "date": "2026-08-07T02:10:11.145813+00:00",
+          "outcome": "useful",
+          "q": "给我修复方案"
+        },
+        {
+          "date": "2026-08-07T01:59:55.887467+00:00",
+          "outcome": "useful",
+          "q": "app 启动图大小不对，先排查原因"
+        }
+      ],
+      "score": 2.997580118,
+      "source_file": "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
+      "status": "preferred",
+      "uses": 3
     },
     "ios_runnertests_runnertests": {
       "code_fingerprint": "c0e04141287eb7f9c9f3d31cf5be8cb626a9ea71351206c9121578e8b8f480c3",
@@ -346,13 +393,13 @@
           "q": "检查分析当前项目ios端 是否具备测试条件"
         }
       ],
-      "score": 2.916517277,
+      "score": 2.870380752,
       "source_file": "ios/RunnerTests/RunnerTests.swift",
       "status": "preferred",
       "uses": 3
     },
     "lib_app_application": {
-      "code_fingerprint": "2e9a9156c59f40bb9808a8718b170b82ef2ec3c673caf904ebc0d0cb65a168b2",
+      "code_fingerprint": "e097596c24d5650581562425016f5c099482c121517a55f7ebd90519568be78b",
       "label": "application.dart",
       "last": "2026-07-27T04:20:13.745608+00:00",
       "provenance": [
@@ -362,16 +409,21 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.78896519,
+      "score": 0.776484512,
       "source_file": "lib/app/application.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_app_application_application": {
-      "code_fingerprint": "2e9a9156c59f40bb9808a8718b170b82ef2ec3c673caf904ebc0d0cb65a168b2",
+      "code_fingerprint": "e097596c24d5650581562425016f5c099482c121517a55f7ebd90519568be78b",
       "label": "Application",
-      "last": "2026-08-05T10:58:34.648208+00:00",
+      "last": "2026-08-06T11:00:43.587147+00:00",
       "provenance": [
+        {
+          "date": "2026-08-06T11:00:43.587147+00:00",
+          "outcome": "useful",
+          "q": "MeetTrace 应在哪里配置 Sentry，并如何在录音期间降载？"
+        },
         {
           "date": "2026-08-05T10:58:34.648208+00:00",
           "outcome": "useful",
@@ -391,17 +443,12 @@
           "date": "2026-07-27T11:10:40.812778+00:00",
           "outcome": "useful",
           "q": "/impeccable document DESIGN.md"
-        },
-        {
-          "date": "2026-07-27T09:37:39.902076+00:00",
-          "outcome": "useful",
-          "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 5.89680571,
+      "score": 6.788139909,
       "source_file": "lib/app/application.dart",
       "status": "preferred",
-      "uses": 7
+      "uses": 8
     },
     "lib_app_meettrace_runtime_dependencies_runtimeassetdependencies": {
       "code_fingerprint": "420ae4ba0c23ec27ff0bc11e32ac778cbebb74cf13a58a9cd13b1dc1c8fee643",
@@ -414,7 +461,7 @@
           "q": "阶段 2 中说话人 Manifest、受限归档安装和启动阻断通过哪些文件与依赖关系连接？"
         }
       ],
-      "score": 0.936206457,
+      "score": 0.921396562,
       "source_file": "lib/app/meettrace_runtime_dependencies.dart",
       "status": "tentative",
       "uses": 1
@@ -430,7 +477,7 @@
           "q": "模型镜像已上传后，MeetTrace 下一步是什么？"
         }
       ],
-      "score": 0.937536751,
+      "score": 0.922705812,
       "source_file": "lib/data/models/runtime/speaker_diarization_manifest.dart",
       "status": "tentative",
       "uses": 1
@@ -446,7 +493,7 @@
           "q": "阶段 2 中说话人 Manifest、受限归档安装和启动阻断通过哪些文件与依赖关系连接？"
         }
       ],
-      "score": 0.936206457,
+      "score": 0.921396562,
       "source_file": "lib/data/models/runtime/speaker_diarization_manifest.dart",
       "status": "tentative",
       "uses": 1
@@ -467,7 +514,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 1.785982428,
+      "score": 1.757729888,
       "source_file": "lib/data/services/asr/android_proc_asr_device_risk_monitor.dart",
       "status": "preferred",
       "uses": 2
@@ -503,7 +550,7 @@
           "q": "https://github.com/moonshine-ai/moonshine"
         }
       ],
-      "score": 4.672742152,
+      "score": 4.598823822,
       "source_file": "lib/data/services/asr/asr_preview_coordinator.dart",
       "status": "preferred",
       "uses": 5
@@ -524,7 +571,7 @@
           "q": "分析ios 端最终转录 软件奔溃"
         }
       ],
-      "score": 1.985871851,
+      "score": 1.95445725,
       "source_file": "lib/data/services/asr/platform_asr_device_risk_monitor.dart",
       "status": "preferred",
       "uses": 2
@@ -540,7 +587,7 @@
           "q": "SherpaOnnxAsrEngine 核心推理路径是否有单元测试"
         }
       ],
-      "score": 0.932941083,
+      "score": 0.918182844,
       "source_file": "lib/data/services/asr/sherpa_onnx_asr_engine_factory.dart",
       "status": "tentative",
       "uses": 1
@@ -556,13 +603,13 @@
           "q": "SherpaOnnxAsrEngine 核心推理路径是否有单元测试"
         }
       ],
-      "score": 0.932941083,
+      "score": 0.918182844,
       "source_file": "lib/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_data_services_asr_sherpa_onnx_sherpa_onnx_asr_engine_sherpaonnxasrengine": {
-      "code_fingerprint": "8c5eb6a1d7c9e849821240544797e0719d586e3856a42792f3a71e544edd7e59",
+      "code_fingerprint": "5796cc707ec068c0f0af125be23ddc7ba99f5a7ae9d950b75a8efc780d4aeb09",
       "label": "SherpaOnnxAsrEngine",
       "last": "2026-08-06T03:14:39.408018+00:00",
       "provenance": [
@@ -592,7 +639,7 @@
           "q": "分析当前项目的本地模型，是否需要更换模型或组合模型"
         }
       ],
-      "score": 4.573687856,
+      "score": 4.501336471,
       "source_file": "lib/data/services/asr/sherpa_onnx/sherpa_onnx_asr_engine.dart",
       "status": "preferred",
       "uses": 5
@@ -608,7 +655,7 @@
           "q": "全部调整为 Android + iOS"
         }
       ],
-      "score": 0.792993864,
+      "score": 0.780449456,
       "source_file": "lib/data/services/audio/flutter_foreground_recording_lifecycle.dart",
       "status": "tentative",
       "uses": 1
@@ -624,7 +671,7 @@
           "q": "实现"
         }
       ],
-      "score": 0.99235979,
+      "score": 0.976661603,
       "source_file": "lib/data/services/audio/reliable_recording_service.dart",
       "status": "tentative",
       "uses": 1
@@ -640,7 +687,7 @@
           "q": "阶段 2 中说话人 Manifest、受限归档安装和启动阻断通过哪些文件与依赖关系连接？"
         }
       ],
-      "score": 0.936206457,
+      "score": 0.921396562,
       "source_file": "lib/data/services/diarization/downloadable_speaker_diarization_model.dart",
       "status": "tentative",
       "uses": 1
@@ -661,7 +708,7 @@
           "q": "模型镜像已上传后，MeetTrace 下一步是什么？"
         }
       ],
-      "score": 1.908138243,
+      "score": 1.877953314,
       "source_file": "lib/data/services/diarization/speaker_diarization_service.dart",
       "status": "preferred",
       "uses": 2
@@ -692,7 +739,7 @@
           "q": "模型镜像已上传后，MeetTrace 下一步是什么？"
         }
       ],
-      "score": 3.894010095,
+      "score": 3.832410564,
       "source_file": "lib/data/services/diarization/speaker_diarization_service.dart",
       "status": "preferred",
       "uses": 4
@@ -708,7 +755,7 @@
           "q": "当前项目默认模型设置为SenseVoice，其他模型待定，模型不要默认包含到安装包，初始化时再进行下载，给我实施方案"
         }
       ],
-      "score": 0.876075365,
+      "score": 0.862216687,
       "source_file": "lib/data/services/models/downloadable_model_service.dart",
       "status": "tentative",
       "uses": 1
@@ -724,7 +771,7 @@
           "q": "阶段 2 中说话人 Manifest、受限归档安装和启动阻断通过哪些文件与依赖关系连接？"
         }
       ],
-      "score": 0.936206457,
+      "score": 0.921396562,
       "source_file": "lib/data/services/models/local_runtime_asset_preparation_service.dart",
       "status": "tentative",
       "uses": 1
@@ -740,7 +787,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.794756781,
+      "score": 0.782184486,
       "source_file": "lib/data/services/models/platform_download_preflight_providers.dart",
       "status": "tentative",
       "uses": 1
@@ -756,7 +803,7 @@
           "q": "阶段 2 中说话人 Manifest、受限归档安装和启动阻断通过哪些文件与依赖关系连接？"
         }
       ],
-      "score": 0.936206457,
+      "score": 0.921396562,
       "source_file": "lib/data/services/models/restricted_tar_bz2_extractor.dart",
       "status": "tentative",
       "uses": 1
@@ -772,7 +819,7 @@
           "q": "阶段 2 中说话人 Manifest、受限归档安装和启动阻断通过哪些文件与依赖关系连接？"
         }
       ],
-      "score": 0.936206457,
+      "score": 0.921396562,
       "source_file": "lib/data/services/models/runtime_artifact_install_transaction.dart",
       "status": "tentative",
       "uses": 1
@@ -803,7 +850,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 3.314834702,
+      "score": 3.262397175,
       "source_file": "lib/data/services/storage/app_database.dart",
       "status": "preferred",
       "uses": 4
@@ -819,7 +866,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 0.789178876,
+      "score": 0.776694818,
       "source_file": "lib/data/services/storage/app_file_layout.dart",
       "status": "tentative",
       "uses": 1
@@ -835,7 +882,7 @@
           "q": "阶段 1 中 AI 总结、会议标题、数据库 schema 与数据代通过哪些文件和依赖关系连接？"
         }
       ],
-      "score": 0.935602674,
+      "score": 0.920802331,
       "source_file": "lib/data/services/storage/local_data_generation_gate.dart",
       "status": "tentative",
       "uses": 1
@@ -851,7 +898,7 @@
           "q": "分析各个模型"
         }
       ],
-      "score": 0.825276017,
+      "score": 0.812220936,
       "source_file": "lib/data/services/vad/silero_vad_segmenter.dart",
       "status": "tentative",
       "uses": 1
@@ -887,7 +934,7 @@
           "q": "https://github.com/moonshine-ai/moonshine"
         }
       ],
-      "score": 5.893197527,
+      "score": 5.799972756,
       "source_file": "lib/domain/models/asr_model_registry.dart",
       "status": "preferred",
       "uses": 7
@@ -913,7 +960,7 @@
           "q": "https://github.com/moonshine-ai/moonshine"
         }
       ],
-      "score": 2.491788492,
+      "score": 2.452370772,
       "source_file": "lib/domain/models/asr_model.dart",
       "status": "preferred",
       "uses": 3
@@ -949,7 +996,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 4.125776659,
+      "score": 4.060510802,
       "source_file": "lib/domain/models/meeting.dart",
       "status": "preferred",
       "uses": 5
@@ -965,7 +1012,7 @@
           "q": "初始化页面 步骤2/4 是什么意思"
         }
       ],
-      "score": 0.926357901,
+      "score": 0.911703802,
       "source_file": "lib/domain/models/runtime_initialization.dart",
       "status": "tentative",
       "uses": 1
@@ -981,7 +1028,7 @@
           "q": "检查当前项目还有没有无用或过时的冗余"
         }
       ],
-      "score": 0.796566291,
+      "score": 0.783965371,
       "source_file": "lib/domain/models/speaker_diarization.dart",
       "status": "tentative",
       "uses": 1
@@ -997,7 +1044,7 @@
           "q": "分析当前项目的代码架构，设计冗余，代码冗余，整理所有关联文档"
         }
       ],
-      "score": 0.930227687,
+      "score": 0.915512371,
       "source_file": "lib/domain/ports/asr_engine.dart",
       "status": "tentative",
       "uses": 1
@@ -1013,7 +1060,7 @@
           "q": "当前 Alpha 交付对象、完成定义和主要阻塞链是什么"
         }
       ],
-      "score": 0.934293084,
+      "score": 0.919513458,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "tentative",
       "uses": 1
@@ -1034,7 +1081,7 @@
           "q": "当前 Alpha 交付对象、完成定义和主要阻塞链是什么"
         }
       ],
-      "score": 1.927984641,
+      "score": 1.897485761,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "preferred",
       "uses": 2
@@ -1050,7 +1097,7 @@
           "q": "检查分析当前项目ios端 是否具备测试条件"
         }
       ],
-      "score": 0.97153241,
+      "score": 0.956163692,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "tentative",
       "uses": 1
@@ -1066,7 +1113,7 @@
           "q": "增加无签名构建流水线，先给我方案"
         }
       ],
-      "score": 0.972917193,
+      "score": 0.957526569,
       "source_file": "lib/domain/use_cases/evaluate_alpha_release.dart",
       "status": "tentative",
       "uses": 1
@@ -1087,7 +1134,7 @@
           "q": "说话人 分离功能为什么没实现"
         }
       ],
-      "score": 1.963484779,
+      "score": 1.93242432,
       "source_file": "lib/domain/use_cases/run_final_transcription.dart",
       "status": "preferred",
       "uses": 2
@@ -1113,7 +1160,7 @@
           "q": "当前 Alpha 的说话人分离生产能力是否真实可用"
         }
       ],
-      "score": 2.842730574,
+      "score": 2.797761284,
       "source_file": "lib/domain/use_cases/run_speaker_diarization.dart",
       "status": "preferred",
       "uses": 3
@@ -1129,13 +1176,13 @@
           "q": "阶段 1 中 AI 总结、会议标题、数据库 schema 与数据代通过哪些文件和依赖关系连接？"
         }
       ],
-      "score": 0.935602674,
+      "score": 0.920802331,
       "source_file": "lib/domain/use_cases/start_meeting.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_main": {
-      "code_fingerprint": "0637e94452d46cfe25b905ad7fcedeec7dba2b44e365da729f3bce5484a23a2b",
+      "code_fingerprint": "ccf777da891060f24e8ce4e7de49a4b6dc04e33041c3788eb749baab39a64e3c",
       "label": "main.dart",
       "last": "2026-07-23T10:01:05.885475+00:00",
       "provenance": [
@@ -1150,7 +1197,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 1.446446959,
+      "score": 1.423565546,
       "source_file": "lib/main.dart",
       "status": "preferred",
       "uses": 2
@@ -1186,7 +1233,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 3.971772779,
+      "score": 3.908943117,
       "source_file": "lib/theme/theme.dart",
       "status": "preferred",
       "uses": 5
@@ -1202,7 +1249,7 @@
           "q": "能左滑删除吗"
         }
       ],
-      "score": 0.806456381,
+      "score": 0.79369901,
       "source_file": "lib/ui/core/app_ledger.dart",
       "status": "tentative",
       "uses": 1
@@ -1218,7 +1265,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 0.788475065,
+      "score": 0.776002141,
       "source_file": "lib/ui/core/app_page_body.dart",
       "status": "tentative",
       "uses": 1
@@ -1239,7 +1286,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 1.577330679,
+      "score": 1.55237881,
       "source_file": "lib/ui/core/view_state.dart",
       "status": "preferred",
       "uses": 2
@@ -1255,13 +1302,13 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.808038736,
+      "score": 0.795256333,
       "source_file": "lib/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart",
       "status": "tentative",
       "uses": 1
     },
     "lib_ui_features_meetings_view_models_recording_recording_session_view_model": {
-      "code_fingerprint": "f7365737fbd193a51420ff1fea7c8c24176d64f96aac5c29ce2dc1b421c2d118",
+      "code_fingerprint": "61363cac876be33250d2509ee0b1d0c2706ac8d80c0d6055425c59961ac9d07d",
       "label": "recording_session_view_model.dart",
       "last": "2026-08-06T02:35:10.772312+00:00",
       "provenance": [
@@ -1276,7 +1323,7 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 1.800398526,
+      "score": 1.771917936,
       "source_file": "lib/ui/features/meetings/view_models/recording/recording_session_view_model.dart",
       "status": "preferred",
       "uses": 2
@@ -1292,7 +1339,7 @@
           "q": "分析当前项目架构层是否需要优化"
         }
       ],
-      "score": 0.808038736,
+      "score": 0.795256333,
       "source_file": "lib/ui/features/meetings/view_models/start/start_meeting_view_model.dart",
       "status": "tentative",
       "uses": 1
@@ -1318,7 +1365,7 @@
           "q": "重构所有ui设计部分,先给我方案"
         }
       ],
-      "score": 2.38378706,
+      "score": 2.346077819,
       "source_file": "lib/ui/features/meetings/views/detail/meeting_detail_view.dart",
       "status": "preferred",
       "uses": 3
@@ -1354,7 +1401,7 @@
           "q": "底部的事实音频本地优先，这块还有其他方案吗"
         }
       ],
-      "score": 6.603674688,
+      "score": 6.499210844,
       "source_file": "lib/ui/features/meetings/views/list/meeting_list_view.dart",
       "status": "preferred",
       "uses": 8
@@ -1370,7 +1417,7 @@
           "q": "现在有两个初始化页吗"
         }
       ],
-      "score": 0.949171073,
+      "score": 0.934156091,
       "source_file": "lib/ui/features/meetings/views/recording/recording_bootstrap_view.dart",
       "status": "tentative",
       "uses": 1
@@ -1386,7 +1433,7 @@
           "q": "先给我一份DESIGN.md，和需要设计的页面内容，我让google stitch先做设计"
         }
       ],
-      "score": 0.788855613,
+      "score": 0.776376669,
       "source_file": "lib/ui/features/settings/views/model_settings_view.dart",
       "status": "tentative",
       "uses": 1
@@ -1407,7 +1454,7 @@
           "q": "初始化页面 步骤2/4 是什么意思"
         }
       ],
-      "score": 1.87451785,
+      "score": 1.844864763,
       "source_file": "lib/ui/features/startup/views/meettrace_startup_view.dart",
       "status": "preferred",
       "uses": 2
@@ -1423,7 +1470,7 @@
           "q": "现在有两个初始化页吗"
         }
       ],
-      "score": 0.949171073,
+      "score": 0.934156091,
       "source_file": "lib/ui/features/startup/views/meettrace_startup_view.dart",
       "status": "tentative",
       "uses": 1
@@ -1431,8 +1478,13 @@
     "linux_runner_main_main": {
       "code_fingerprint": "905b4dfa4eab584c1eb6244899b7d5ef56d0bceaf3bffb5ea335ed7e0ba3c549",
       "label": "main()",
-      "last": "2026-07-27T04:37:06.417622+00:00",
+      "last": "2026-08-06T11:00:43.587147+00:00",
       "provenance": [
+        {
+          "date": "2026-08-06T11:00:43.587147+00:00",
+          "outcome": "useful",
+          "q": "MeetTrace 应在哪里配置 Sentry，并如何在录音期间降载？"
+        },
         {
           "date": "2026-07-27T04:37:06.417622+00:00",
           "outcome": "useful",
@@ -1444,10 +1496,10 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 1.578144065,
+      "score": 2.537795377,
       "source_file": "linux/runner/main.cc",
       "status": "preferred",
-      "uses": 2
+      "uses": 3
     },
     "package_flutter_test_flutter_test_dart": {
       "code_fingerprint": "",
@@ -1460,7 +1512,7 @@
           "q": "Generate a file named AGENTS.md that serves as a contributor guide for this repository."
         }
       ],
-      "score": 0.723184736,
+      "score": 0.711744642,
       "source_file": "",
       "status": "tentative",
       "uses": 1
@@ -1476,13 +1528,13 @@
           "q": "ggml-org/whisper.cpp"
         }
       ],
-      "score": 0.830678206,
+      "score": 0.817537668,
       "source_file": "",
       "status": "tentative",
       "uses": 1
     },
     "pubspec_meettrace_package": {
-      "code_fingerprint": "836560afc784bb38c93e672c6b7e8f4b47e13493230745c4d8dc0641e2c8fa2a",
+      "code_fingerprint": "5c3c39f5117e0206b4a72cec5cb3097e75bfba0bbcd04728f12f045c5d5015ab",
       "label": "MeetTrace Flutter Package Manifest",
       "last": "2026-08-05T06:01:58.867577+00:00",
       "provenance": [
@@ -1497,7 +1549,7 @@
           "q": "没有mac , 需要使用github 打包ips ,给我个方案"
         }
       ],
-      "score": 1.944984868,
+      "score": 1.91421706,
       "source_file": "pubspec.yaml",
       "status": "preferred",
       "uses": 2
@@ -1513,7 +1565,7 @@
           "q": "为当前项目增加 GitHub iOS TestFlight 签名发布流水线需要复用哪些现有门槛"
         }
       ],
-      "score": 0.977349891,
+      "score": 0.961889146,
       "source_file": "spec/spec-process-cicd-ios-unsigned.md",
       "status": "tentative",
       "uses": 1
@@ -1529,7 +1581,7 @@
           "q": "为当前项目增加 GitHub iOS TestFlight 签名发布流水线需要复用哪些现有门槛"
         }
       ],
-      "score": 0.977349891,
+      "score": 0.961889146,
       "source_file": "spec/spec-process-cicd-ios-unsigned.md",
       "status": "tentative",
       "uses": 1
@@ -1550,7 +1602,7 @@
           "q": "是否影响现有app"
         }
       ],
-      "score": 1.95515124,
+      "score": 1.92422261,
       "source_file": "spec/spec-process-cicd-ios-unsigned.md",
       "status": "preferred",
       "uses": 2
@@ -1566,7 +1618,7 @@
           "q": "修改项目名称为：会迹 · MeetTrace"
         }
       ],
-      "score": 0.78896519,
+      "score": 0.776484512,
       "source_file": "test/data/services/diarization/downloadable_speaker_diarization_model_test.dart",
       "status": "tentative",
       "uses": 1
@@ -1582,7 +1634,7 @@
           "q": "列表日期需要更加语义化"
         }
       ],
-      "score": 0.809111965,
+      "score": 0.796312585,
       "source_file": "test/ui/features/meetings/views/list/meeting_list_view_test.dart",
       "status": "tentative",
       "uses": 1
@@ -1603,7 +1655,7 @@
           "q": "中文名称：会迹，英文：MeetTrace\n根据这个名称修改项目整体名称，所有涉及地方"
         }
       ],
-      "score": 1.585745167,
+      "score": 1.560660189,
       "source_file": "web/manifest.json",
       "status": "preferred",
       "uses": 2
@@ -1619,7 +1671,7 @@
           "q": "C:\\Users\\96227\\Desktop\\works\\meetily_ai\\windows\\flutter\\ephemeral\\.plugin_symlinks\\connectivity_plus\\windows\\connectivity_plus_plugin.cpp(1,1): error C2220: 以下警告被视为错误；warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。"
         }
       ],
-      "score": 0.794756781,
+      "score": 0.782184486,
       "source_file": "windows/flutter/generated_plugin_registrant.cc",
       "status": "tentative",
       "uses": 1

@@ -1,6 +1,7 @@
 flutter_native_splash:
   color: "#F7F7F5"
   color_dark: "#0D0D0D"
+  # 384px 画布按 @4x 生成，标志 Alpha 边界为 352x292px，落地约 88x74dp/pt。
   image: assets/branding/splash/meettrace-splash.png
   image_dark: assets/branding/splash/meettrace-splash-dark.png
   android: true
@@ -13,5 +14,6 @@ flutter_native_splash:
   android_12:
     color: "#F7F7F5"
     color_dark: "#0D0D0D"
+    # Android 12 使用 1152px 透明画布，标志保持 352x292px，位于系统安全区内。
     image: assets/branding/splash/meettrace-splash-android12.png
     image_dark: assets/branding/splash/meettrace-splash-android12-dark.png

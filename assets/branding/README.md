@@ -20,3 +20,15 @@ SVG 是唯一几何母版。`android/app/src/main/res/` 与
   `flutter_native_splash.yaml` 的生成输入；Android 与 iOS 平台启动文件统一通过
   `dart run flutter_native_splash:create` 重新生成。
 - 原始 Stitch 截图只用于来源核对，不进入 Flutter `assets` 清单。
+
+## 启动图光学尺寸
+
+- 原生启动标志与 Flutter 品牌动效统一以 `88dp/pt` 为交接尺寸；Flutter 动效最终
+  收至 `52dp`。
+- 普通亮色、暗色启动图使用 `384x384px` 画布，标志 Alpha 边界为
+  `352x292px`。
+- Android 12 亮色、暗色启动图使用 `1152x1152px` 透明画布，但标志 Alpha
+  边界为 `352x292px`，且必须保持在系统安全裁切区内。
+- 修改启动源图后必须重新运行
+  `dart run flutter_native_splash:create --path=flutter_native_splash.yaml`，并运行
+  `test/architecture/branding_assets_test.dart` 校验源图与平台生成结果。

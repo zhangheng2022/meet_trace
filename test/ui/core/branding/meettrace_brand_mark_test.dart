@@ -54,11 +54,12 @@ void main() {
     );
 
     expect(meetTraceBrandMotionDuration, const Duration(milliseconds: 960));
+    expect(meetTraceBrandHandoffSize, 88);
     expect(_ribbonProgress(tester), 0);
     expect(_chineseReveal(tester), 0);
     expect(_englishReveal(tester), 0);
     final centeredLeft = _markStage(tester).left!;
-    expect(_markStage(tester).width, 72);
+    expect(_markStage(tester).width, meetTraceBrandHandoffSize);
     expect(
       tester
           .getSemantics(
@@ -78,7 +79,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 240));
     expect(_ribbonProgress(tester), 1);
     expect(_markStage(tester).left!, lessThan(centeredLeft));
-    expect(_markStage(tester).width!, inExclusiveRange(52, 72));
+    expect(
+      _markStage(tester).width!,
+      inExclusiveRange(52, meetTraceBrandHandoffSize),
+    );
     expect(_chineseReveal(tester), 0);
 
     await tester.pump(const Duration(milliseconds: 120));

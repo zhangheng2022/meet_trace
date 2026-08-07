@@ -7,6 +7,7 @@ import 'package:forui/forui.dart';
 import '../../../theme/theme.dart';
 
 const meetTraceBrandMotionDuration = Duration(milliseconds: 960);
+const meetTraceBrandHandoffSize = 88.0;
 
 /// 会迹的共享品牌标志。
 ///
@@ -145,7 +146,7 @@ final class _MeetTraceAnimatedWordmarkState
             builder: (context, constraints) => AnimatedBuilder(
               animation: _controller,
               builder: (context, _) {
-                const startSize = 72.0;
+                const startSize = meetTraceBrandHandoffSize;
                 const endSize = 52.0;
                 final startRect = Rect.fromLTWH(
                   (constraints.maxWidth - startSize) / 2,

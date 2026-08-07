@@ -143,7 +143,7 @@ final class _BrandMotionScene extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final startSize = width < 380 ? 72.0 : 76.0;
+        const startSize = meetTraceBrandHandoffSize;
         const endSize = 52.0;
         final startRect = Rect.fromLTWH(
           (width - startSize) / 2,
