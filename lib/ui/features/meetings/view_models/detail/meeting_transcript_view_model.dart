@@ -15,7 +15,7 @@ final class MeetingTranscriptViewModel {
   Future<void> setDiarizationEnabled(bool enabled) =>
       _owner._setDiarizationEnabled(enabled);
   Future<void> retryDiarization() => _owner._retryDiarization();
-  Future<void> renameSpeaker(String? currentSpeakerId, String newLabel) =>
+  Future<bool> renameSpeaker(String? currentSpeakerId, String newLabel) =>
       _owner._renameSpeaker(currentSpeakerId, newLabel);
   Future<void> reviseTranscript(List<TranscriptSegmentRevision> revisions) =>
       _owner._reviseTranscript(revisions);
@@ -58,14 +58,14 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
 
   Future<void> _retryDiarization() => _runDiarization();
 
-  Future<void> _renameSpeaker(String? currentSpeakerId, String newLabel) async {
+  Future<bool> _renameSpeaker(String? currentSpeakerId, String newLabel) async {
     final snapshot = _snapshot;
     if (snapshot == null || isProcessing) {
-      return;
+      return false;
     }
     final revision = transcriptRevision;
     if (revision != null) {
-      return reviseTranscript([
+      await reviseTranscript([
         for (final segment in snapshot.segments)
           TranscriptSegmentRevision(
             segmentId: segment.id,
@@ -75,10 +75,11 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
                 : segment.speakerId,
           ),
       ]);
+      return _snapshot?.id != snapshot.id;
     }
     final runner = diarization;
     if (runner == null) {
-      return;
+      return false;
     }
     try {
       _snapshot = await runner.renameSpeaker(
@@ -88,8 +89,10 @@ extension _MeetingTranscriptOperations on MeetingDetailViewModel {
         newLabel: newLabel,
       );
       _diarizationMessage = '说话人标签已保存';
+      return true;
     } on Object {
       _diarizationMessage = '说话人标签保存失败，请重试';
+      return false;
     } finally {
       _notify();
     }

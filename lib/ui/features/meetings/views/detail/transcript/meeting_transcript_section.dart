@@ -308,7 +308,14 @@ final class _DiarizationSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
+    final groups = viewModel.speakerGroups;
+    final segmentCount = groups.fold<int>(
+      0,
+      (total, group) => total + group.segmentCount,
+    );
+    final status = _speakerOverviewStatus(viewModel, groups.length);
     return DecoratedBox(
+      key: const ValueKey('speaker-overview-section'),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: theme.colors.border)),
       ),
@@ -317,146 +324,325 @@ final class _DiarizationSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('说话人设置', style: theme.typography.display.lg),
-            SizedBox(height: appStyle.spaceMd),
-            FSwitch(
-              key: const ValueKey('speaker-diarization-switch'),
-              value: viewModel.diarizationEnabled,
-              enabled:
-                  viewModel.diarizationAvailable && !viewModel.isProcessing,
-              onChange: (enabled) =>
-                  unawaited(viewModel.setDiarizationEnabled(enabled)),
-              label: const Text('自动说话人分离'),
-              description: viewModel.diarizationAvailable
-                  ? const Text('可随时关闭；失败时自动按单一说话人显示。')
-                  : null,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '说话人',
+                        style: theme.typography.body.md.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: appStyle.space2Xs),
+                      Text(
+                        groups.isEmpty
+                            ? '暂无说话人片段'
+                            : '${groups.length} 位说话人 · $segmentCount 个片段',
+                        key: const ValueKey('speaker-overview-count'),
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
+                      ),
+                      if (status != null) ...[
+                        SizedBox(height: appStyle.space2Xs),
+                        Text(
+                          status,
+                          key: const ValueKey('speaker-overview-status'),
+                          style: theme.typography.body.sm.copyWith(
+                            color: theme.colors.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                SizedBox(width: appStyle.spaceSm),
+                FButton(
+                  key: const ValueKey('manage-speakers'),
+                  variant: FButtonVariant.ghost,
+                  mainAxisSize: MainAxisSize.min,
+                  suffix: const Icon(FLucideIcons.chevronRight, size: 16),
+                  onPress: editing || viewModel.isProcessing
+                      ? null
+                      : () => unawaited(_showSpeakerManagement(context)),
+                  child: const Text('管理'),
+                ),
+              ],
             ),
-            if (!viewModel.diarizationAvailable) ...[
-              SizedBox(height: appStyle.spaceSm),
-              Text(
-                '当前构建未配置已验证的本地说话人模型，可继续手工标注。',
-                key: const ValueKey('diarization-unavailable-reason'),
-                style: theme.typography.body.sm.copyWith(
-                  color: theme.colors.mutedForeground,
-                ),
-              ),
-            ],
-            if (viewModel.isDiarizing) ...[
-              SizedBox(height: appStyle.spaceMd),
-              const FProgress(semanticsLabel: '说话人分离处理中'),
-            ],
-            if (viewModel.diarizationMessage case final message?) ...[
-              SizedBox(height: appStyle.spaceMd),
-              FAlert(
-                variant:
-                    viewModel.diarizationStatus ==
-                        SpeakerDiarizationStatus.degraded
-                    ? FAlertVariant.destructive
-                    : FAlertVariant.primary,
-                title: Text(
-                  viewModel.diarizationStatus ==
-                          SpeakerDiarizationStatus.degraded
-                      ? '说话人分离已降级'
-                      : '说话人标签',
-                ),
-                subtitle: Text(message),
-              ),
-            ],
-            if (viewModel.diarizationStatus ==
-                    SpeakerDiarizationStatus.degraded &&
-                viewModel.canRetryDiarization) ...[
-              SizedBox(height: appStyle.spaceMd),
-              FButton(
-                onPress: () => unawaited(viewModel.retryDiarization()),
-                child: const Text('重试说话人分离'),
-              ),
-            ],
-            if (viewModel.speakerGroups.isNotEmpty && !editing) ...[
-              SizedBox(height: appStyle.spaceMd),
-              Text('当前标签', style: theme.typography.display.sm),
-              SizedBox(height: appStyle.spaceSm),
-              for (final group in viewModel.speakerGroups)
-                Padding(
-                  padding: EdgeInsets.only(bottom: appStyle.spaceSm),
-                  child: Text(
-                    '${group.displayLabel} · ${group.segmentCount} 个片段',
-                    style: theme.typography.body.md,
-                  ),
-                ),
-            ],
-            if (viewModel.speakerGroups.isNotEmpty && editing) ...[
-              SizedBox(height: appStyle.spaceMd),
-              Text('人工标签', style: theme.typography.display.sm),
-              SizedBox(height: appStyle.spaceSm),
-              for (final group in viewModel.speakerGroups)
-                Padding(
-                  padding: EdgeInsets.only(bottom: appStyle.spaceMd),
-                  child: _SpeakerLabelEditor(
-                    key: ValueKey('speaker-editor-${group.speakerId}'),
-                    group: group,
-                    viewModel: viewModel,
-                  ),
-                ),
-            ],
           ],
         ),
       ),
     );
   }
+
+  Future<void> _showSpeakerManagement(BuildContext context) => showFSheet<void>(
+    context: context,
+    side: FLayout.btt,
+    useSafeArea: true,
+    mainAxisMaxRatio: 0.84,
+    barrierLabel: '关闭说话人管理面板',
+    builder: (context) => _SpeakerManagementSheet(viewModel: viewModel),
+  );
 }
 
-final class _SpeakerLabelEditor extends StatefulWidget {
-  const _SpeakerLabelEditor({
-    required this.group,
-    required this.viewModel,
-    super.key,
-  });
+String? _speakerOverviewStatus(
+  MeetingDetailViewModel viewModel,
+  int speakerCount,
+) {
+  if (viewModel.isDiarizing) {
+    return '正在重新区分说话人，最终转录仍可查看。';
+  }
+  if (!viewModel.diarizationAvailable) {
+    return speakerCount == 0 ? '本机说话人模型不可用。' : '本机说话人模型不可用，可手工修改标签。';
+  }
+  if (!viewModel.diarizationEnabled) {
+    return '自动区分已关闭，现有标签保持不变。';
+  }
+  if (viewModel.diarizationStatus == SpeakerDiarizationStatus.degraded) {
+    return speakerCount == 1 ? '自动区分未完成，当前按单一说话人显示。' : '自动区分未完成，当前标签仍可查看和修改。';
+  }
+  return null;
+}
 
-  final SpeakerLabelGroup group;
+final class _SpeakerManagementSheet extends StatefulWidget {
+  const _SpeakerManagementSheet({required this.viewModel});
+
   final MeetingDetailViewModel viewModel;
 
   @override
-  State<_SpeakerLabelEditor> createState() => _SpeakerLabelEditorState();
+  State<_SpeakerManagementSheet> createState() =>
+      _SpeakerManagementSheetState();
 }
 
-final class _SpeakerLabelEditorState extends State<_SpeakerLabelEditor> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.group.displayLabel,
-  );
+final class _SpeakerManagementSheetState
+    extends State<_SpeakerManagementSheet> {
+  TextEditingController? _controller;
+  String? _editingSpeakerId;
+  bool _editing = false;
+  bool _saving = false;
+  bool _saveFailed = false;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final appStyle = context.theme.style.app;
-    final keyId = widget.group.speakerId ?? 'unlabeled';
+    return ListenableBuilder(
+      listenable: widget.viewModel,
+      builder: (context, _) {
+        final viewModel = widget.viewModel;
+        final appStyle = context.theme.style.app;
+        final keyId = _editingSpeakerId ?? 'unlabeled';
+        return AppSheetSurface(
+          surfaceKey: const ValueKey('speaker-management-sheet'),
+          title: _editing ? '修改说话人标签' : '说话人管理',
+          description: _editing
+              ? '只修改显示标签，不会改变事实音频、转录内容或时间轴。'
+              : '自动区分和标签修改不会改变事实音频或转录时间轴。',
+          semanticsLabel: '说话人管理',
+          footer: _editing
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: FButton(
+                        key: const ValueKey('cancel-speaker-label-edit'),
+                        variant: FButtonVariant.outline,
+                        onPress: viewModel.isProcessing || _saving
+                            ? null
+                            : _finishEditing,
+                        child: const Text('取消'),
+                      ),
+                    ),
+                    SizedBox(width: appStyle.spaceSm),
+                    Expanded(
+                      child: FButton(
+                        key: ValueKey('save-speaker-label-$keyId'),
+                        onPress: viewModel.isProcessing || _saving
+                            ? null
+                            : () => unawaited(_saveLabel()),
+                        child: const Text('保存'),
+                      ),
+                    ),
+                  ],
+                )
+              : null,
+          child: _editing
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FTextField(
+                      key: ValueKey('speaker-label-$keyId'),
+                      control: FTextFieldControl.managed(
+                        controller: _controller!,
+                      ),
+                      label: const Text('显示名称'),
+                      hint: '输入说话人名称',
+                    ),
+                    if (_saveFailed) ...[
+                      SizedBox(height: appStyle.spaceSm),
+                      Text(
+                        '标签保存未完成，请检查名称后重试。',
+                        key: const ValueKey('speaker-label-save-error'),
+                        style: context.theme.typography.body.sm.copyWith(
+                          color: context.theme.colors.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ],
+                )
+              : _managementContent(context, viewModel),
+        );
+      },
+    );
+  }
+
+  Widget _managementContent(
+    BuildContext context,
+    MeetingDetailViewModel viewModel,
+  ) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final groups = viewModel.speakerGroups;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FTextField(
-          key: ValueKey('speaker-label-$keyId'),
-          control: FTextFieldControl.managed(controller: _controller),
-          label: Text('${widget.group.segmentCount} 个片段'),
-          hint: '输入说话人名称',
-        ),
+        if (viewModel.diarizationAvailable)
+          FSwitch(
+            key: const ValueKey('speaker-diarization-switch'),
+            value: viewModel.diarizationEnabled,
+            enabled: !viewModel.isProcessing,
+            onChange: (enabled) =>
+                unawaited(viewModel.setDiarizationEnabled(enabled)),
+            label: const Text('自动区分说话人'),
+            description: const Text('关闭后不再自动处理；现有标签保持不变。'),
+          )
+        else
+          Text(
+            groups.isEmpty ? '本机说话人模型不可用，暂无可管理的标签。' : '本机说话人模型不可用，仍可手工修改现有标签。',
+            key: const ValueKey('diarization-unavailable-reason'),
+            style: theme.typography.body.sm.copyWith(
+              color: theme.colors.mutedForeground,
+            ),
+          ),
+        if (viewModel.isDiarizing) ...[
+          SizedBox(height: appStyle.spaceLg),
+          const FProgress(semanticsLabel: '说话人分离处理中'),
+          SizedBox(height: appStyle.spaceSm),
+          Text(
+            '正在重新区分说话人，最终转录仍可查看。',
+            style: theme.typography.body.sm.copyWith(
+              color: theme.colors.mutedForeground,
+            ),
+          ),
+        ] else if (viewModel.diarizationMessage case final message?) ...[
+          SizedBox(height: appStyle.spaceLg),
+          Text('状态', style: theme.typography.body.sm),
+          SizedBox(height: appStyle.space2Xs),
+          Text(
+            message,
+            key: const ValueKey('speaker-management-status'),
+            style: theme.typography.body.sm.copyWith(
+              color: theme.colors.mutedForeground,
+            ),
+          ),
+        ],
+        if (viewModel.diarizationStatus == SpeakerDiarizationStatus.degraded &&
+            viewModel.canRetryDiarization) ...[
+          SizedBox(height: appStyle.spaceMd),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FButton(
+              key: const ValueKey('retry-speaker-diarization'),
+              variant: FButtonVariant.outline,
+              mainAxisSize: MainAxisSize.min,
+              onPress: () => unawaited(viewModel.retryDiarization()),
+              child: const Text('重新处理'),
+            ),
+          ),
+        ],
+        SizedBox(height: appStyle.spaceLg),
+        Text('标签', style: theme.typography.body.sm),
         SizedBox(height: appStyle.spaceSm),
-        FButton(
-          key: ValueKey('save-speaker-label-$keyId'),
-          onPress: widget.viewModel.isProcessing
-              ? null
-              : () => unawaited(
-                  widget.viewModel.renameSpeaker(
-                    widget.group.speakerId,
-                    _controller.text,
+        if (groups.isEmpty)
+          Text(
+            '暂无可修改的说话人标签。',
+            style: theme.typography.body.sm.copyWith(
+              color: theme.colors.mutedForeground,
+            ),
+          )
+        else
+          FTileGroup(
+            semanticsLabel: '说话人标签',
+            children: [
+              for (final group in groups)
+                FTile(
+                  key: ValueKey(
+                    'speaker-label-row-${group.speakerId ?? 'unlabeled'}',
                   ),
+                  enabled: !viewModel.isProcessing,
+                  title: Text(group.displayLabel),
+                  subtitle: Text('${group.segmentCount} 个片段'),
+                  suffix: const Icon(FLucideIcons.pencil, size: 16),
+                  onPress: () => _beginEditing(group),
                 ),
-          child: const Text('保存标签'),
-        ),
+            ],
+          ),
       ],
     );
+  }
+
+  void _beginEditing(SpeakerLabelGroup group) {
+    _controller?.dispose();
+    setState(() {
+      _editing = true;
+      _editingSpeakerId = group.speakerId;
+      _controller = TextEditingController(text: group.displayLabel);
+      _saving = false;
+      _saveFailed = false;
+    });
+  }
+
+  void _finishEditing() {
+    _controller?.dispose();
+    setState(() {
+      _editing = false;
+      _editingSpeakerId = null;
+      _controller = null;
+      _saving = false;
+      _saveFailed = false;
+    });
+  }
+
+  Future<void> _saveLabel() async {
+    final controller = _controller;
+    if (controller == null || _saving) {
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _saveFailed = false;
+    });
+    final saved = await widget.viewModel.renameSpeaker(
+      _editingSpeakerId,
+      controller.text,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (saved) {
+      _finishEditing();
+    } else {
+      setState(() {
+        _saving = false;
+        _saveFailed = true;
+      });
+    }
   }
 }

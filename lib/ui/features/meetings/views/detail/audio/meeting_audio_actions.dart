@@ -171,58 +171,31 @@ final class _TranscriptEditBottomBar extends StatelessWidget {
   }
 }
 
-final class _MeetingShareBottomBar extends StatefulWidget {
-  const _MeetingShareBottomBar({required this.viewModel});
+final class _MeetingShareActionButton extends StatefulWidget {
+  const _MeetingShareActionButton({required this.viewModel});
 
   final MeetingDetailViewModel viewModel;
 
   @override
-  State<_MeetingShareBottomBar> createState() => _MeetingShareBottomBarState();
+  State<_MeetingShareActionButton> createState() =>
+      _MeetingShareActionButtonState();
 }
 
-final class _MeetingShareBottomBarState extends State<_MeetingShareBottomBar> {
+final class _MeetingShareActionButtonState
+    extends State<_MeetingShareActionButton> {
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
     final viewModel = widget.viewModel;
-    final shareButton = FButton(
+    return FHeaderAction(
       key: const ValueKey('request-share-meeting'),
-      size: FButtonSizeVariant.lg,
-      prefix: const Icon(FLucideIcons.share2),
+      icon: const Icon(FLucideIcons.share2),
+      semanticsLabel: '分享会议',
+      semanticsTooltip: '分享会议',
       onPress:
           (viewModel.canShare || viewModel.actions.canShareAudio) &&
               !viewModel.isProcessing
           ? () => unawaited(_requestShare(viewModel))
           : null,
-      child: const Text('分享会议'),
-    );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.card,
-        border: Border(top: BorderSide(color: theme.colors.border)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            appStyle.spaceMd,
-            appStyle.spaceSm,
-            appStyle.spaceMd,
-            appStyle.spaceMd,
-          ),
-          child: Align(
-            alignment: Alignment.topCenter,
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: appStyle.readingContentMaxWidth,
-              ),
-              child: shareButton,
-            ),
-          ),
-        ),
-      ),
     );
   }
 

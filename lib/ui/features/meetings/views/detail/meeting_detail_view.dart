@@ -1,7 +1,7 @@
 // THESIS: 会议详情是一张可核对的事实工作台，不是转录与录音分离的卡片仪表盘。
 // OWN-WORLD: 暖灰账本纸、连续时间轨、细边界、低曲率与零静止阴影。
 // STORY: 用户先确认本地事实音频，再沿时间轨阅读、修订并分享最终结果。
-// FIRST VIEWPORT: 标题与录音证据在上，紧凑最终转录直接展开，分享固定在安全区。
+// FIRST VIEWPORT: 标题与录音证据在上，紧凑最终转录直接展开，分享收进标题栏。
 // FORM: 已确认的 Evidence Ledger 单列阅读稿；宽屏转为 280px 事实栏与转录工作区。
 
 import 'dart:async';
@@ -74,26 +74,29 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
             suffixes: [
               if (viewModel.snapshot != null &&
                   !viewModel.isTranscribing &&
-                  !_editingTranscript)
+                  !_editingTranscript) ...[
+                _MeetingShareActionButton(viewModel: viewModel),
                 _MeetingMoreActionsButton(
                   viewModel: viewModel,
                   onDeleted: widget.onDeleted,
                 ),
+              ],
             ],
           ),
-          footer: viewModel.snapshot != null && !viewModel.isTranscribing
-              ? _editingTranscript
-                    ? _TranscriptEditBottomBar(
-                        saving: viewModel.isProcessing,
-                        onCancel: () {
-                          setState(() => _editingTranscript = false);
-                        },
-                        onSave: () => unawaited(
-                          _transcriptKey.currentState?.saveRevision() ??
-                              Future<void>.value(),
-                        ),
-                      )
-                    : _MeetingShareBottomBar(viewModel: viewModel)
+          footer:
+              viewModel.snapshot != null &&
+                  !viewModel.isTranscribing &&
+                  _editingTranscript
+              ? _TranscriptEditBottomBar(
+                  saving: viewModel.isProcessing,
+                  onCancel: () {
+                    setState(() => _editingTranscript = false);
+                  },
+                  onSave: () => unawaited(
+                    _transcriptKey.currentState?.saveRevision() ??
+                        Future<void>.value(),
+                  ),
+                )
               : null,
           child: _body(context, viewModel),
         );

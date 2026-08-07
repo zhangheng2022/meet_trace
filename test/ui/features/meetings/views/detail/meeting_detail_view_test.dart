@@ -164,9 +164,23 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('当前构建未配置已验证'), findsOneWidget);
+    expect(find.textContaining('本机说话人模型不可用'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('speaker-diarization-switch')),
+      findsNothing,
+    );
     final unavailableReason = find.byKey(
       const ValueKey('diarization-unavailable-reason'),
+    );
+    expect(unavailableReason, findsNothing);
+    final manage = find.byKey(const ValueKey('manage-speakers'));
+    await tester.ensureVisible(manage);
+    await tester.tap(manage);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('speaker-management-sheet')),
+      findsOneWidget,
     );
     expect(unavailableReason, findsOneWidget);
     expect(
@@ -176,20 +190,22 @@ void main() {
     expect(find.text('说话人 1'), findsWidgets);
     expect(find.text('00:00'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('edit-transcript')));
+    await tester.tap(find.byKey(const ValueKey('speaker-label-row-speaker-1')));
     await tester.pumpAndSettle();
     final field = find.byKey(const ValueKey('speaker-label-speaker-1'));
-    await tester.ensureVisible(field);
     await tester.enterText(field, '张三');
     final save = find.byKey(const ValueKey('save-speaker-label-speaker-1'));
-    await tester.ensureVisible(save);
     await tester.tap(save);
     await tester.pumpAndSettle();
 
     expect(diarization.renameCalls.single, ('speaker-1', '张三'));
     expect(find.text('张三'), findsWidgets);
-    expect(find.textContaining('张三 · 00:00'), findsOneWidget);
-    expect(find.text('说话人标签已保存'), findsOneWidget);
+    Navigator.of(
+      tester.element(find.byKey(const ValueKey('speaker-management-sheet'))),
+    ).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('张三'), findsOneWidget);
+    expect(find.text('00:00'), findsOneWidget);
     await fixture.dispose();
   });
 
@@ -220,8 +236,75 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('最终事实文本'), findsOneWidget);
-    expect(find.text('说话人分离已降级'), findsOneWidget);
+    expect(find.text('自动区分未完成，当前按单一说话人显示。'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('retry-speaker-diarization')),
+      findsNothing,
+    );
+
+    final manage = find.byKey(const ValueKey('manage-speakers'));
+    await tester.ensureVisible(manage);
+    await tester.tap(manage);
+    await tester.pumpAndSettle();
+
     expect(find.textContaining('最终转录不受影响'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('retry-speaker-diarization')),
+      findsOneWidget,
+    );
+    await fixture.dispose();
+  });
+
+  testWidgets('说话人标签保存失败时保留输入并允许重试', (tester) async {
+    final active = _snapshot(id: 'active', speakerId: 'speaker-1');
+    final diarization = _DiarizationRunner(
+      result: SpeakerDiarizationResult(
+        snapshot: active,
+        status: SpeakerDiarizationStatus.disabled,
+      ),
+      available: false,
+      renameError: StateError('rename failed'),
+    );
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      diarization: diarization,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final manage = find.byKey(const ValueKey('manage-speakers'));
+    await tester.ensureVisible(manage);
+    await tester.tap(manage);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('speaker-label-row-speaker-1')));
+    await tester.pumpAndSettle();
+
+    final field = find.byKey(const ValueKey('speaker-label-speaker-1'));
+    await tester.enterText(field, '张三');
+    await tester.tap(
+      find.byKey(const ValueKey('save-speaker-label-speaker-1')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(field, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('speaker-label-save-error')),
+      findsOneWidget,
+    );
+    final editable = tester.widget<EditableText>(
+      find.descendant(of: field, matching: find.byType(EditableText)),
+    );
+    expect(editable.controller.text, '张三');
+    expect(diarization.renameCalls.single, ('speaker-1', '张三'));
     await fixture.dispose();
   });
 
@@ -272,7 +355,10 @@ void main() {
 
     expect(find.byKey(const ValueKey('request-share-text')), findsNothing);
     expect(find.byKey(const ValueKey('request-share-audio')), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('request-share-meeting')));
+    final requestShare = find.byKey(const ValueKey('request-share-meeting'));
+    expect(tester.widget(requestShare), isA<FHeaderAction>());
+    expect(tester.widget<FScaffold>(find.byType(FScaffold)).footer, isNull);
+    await tester.tap(requestShare);
     await tester.pumpAndSettle();
 
     final surface = find.byKey(const ValueKey('meeting-action-sheet-surface'));
@@ -581,9 +667,10 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey('speaker-label-speaker-1')),
+      find.byKey(const ValueKey('segment-speaker-active-segment')),
       findsOneWidget,
     );
+    expect(find.byKey(const ValueKey('speaker-label-speaker-1')), findsNothing);
     expect(
       find.byKey(const ValueKey('save-transcript-revision')),
       findsOneWidget,
@@ -924,10 +1011,15 @@ final class _DiarizationPreference implements DiarizationPreferenceRepository {
 }
 
 final class _DiarizationRunner implements SpeakerDiarizationRunner {
-  _DiarizationRunner({required this.result, this.available = true});
+  _DiarizationRunner({
+    required this.result,
+    this.available = true,
+    this.renameError,
+  });
 
   SpeakerDiarizationResult result;
   final bool available;
+  final Object? renameError;
   final List<(String?, String)> renameCalls = [];
 
   @override
@@ -954,6 +1046,9 @@ final class _DiarizationRunner implements SpeakerDiarizationRunner {
     required String newLabel,
   }) async {
     renameCalls.add((currentSpeakerId, newLabel));
+    if (renameError case final error?) {
+      throw error;
+    }
     final source = result.snapshot;
     final updated = TranscriptSnapshot(
       id: source.id,

@@ -167,7 +167,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   Future<void> setDiarizationEnabled(bool enabled) =>
       transcriptSection.setDiarizationEnabled(enabled);
   Future<void> retryDiarization() => transcriptSection.retryDiarization();
-  Future<void> renameSpeaker(String? currentSpeakerId, String newLabel) =>
+  Future<bool> renameSpeaker(String? currentSpeakerId, String newLabel) =>
       transcriptSection.renameSpeaker(currentSpeakerId, newLabel);
   Future<void> reviseTranscript(List<TranscriptSegmentRevision> revisions) =>
       transcriptSection.reviseTranscript(revisions);
