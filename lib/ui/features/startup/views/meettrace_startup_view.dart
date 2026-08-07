@@ -15,26 +15,39 @@ import '../view_models/runtime_initialization_view_model.dart';
 
 /// 会迹的本地能力加载页。
 final class MeetTraceStartupView extends StatelessWidget {
-  const MeetTraceStartupView({this.viewModel, super.key});
+  const MeetTraceStartupView({
+    this.viewModel,
+    this.onBrandMotionCompleted,
+    super.key,
+  });
 
   final RuntimeInitializationViewModel? viewModel;
+  final VoidCallback? onBrandMotionCompleted;
 
   @override
   Widget build(BuildContext context) {
     final model = viewModel;
     if (model == null) {
-      return const _StartupFrame(body: _StartupProgressContent());
+      return _StartupFrame(
+        body: _StartupProgressContent(
+          onBrandMotionCompleted: onBrandMotionCompleted,
+        ),
+      );
     }
     return ListenableBuilder(
       listenable: model,
-      builder: (context, _) =>
-          _StartupFrame(body: _StartupProgressContent(viewModel: model)),
+      builder: (context, _) => _StartupFrame(
+        body: _StartupProgressContent(
+          viewModel: model,
+          onBrandMotionCompleted: onBrandMotionCompleted,
+        ),
+      ),
     );
   }
 }
 
 /// 在快速本地检查、资源准备和应用首页之间提供平滑过渡。
-final class MeetTraceRuntimeInitializationTransition extends StatelessWidget {
+final class MeetTraceRuntimeInitializationTransition extends StatefulWidget {
   const MeetTraceRuntimeInitializationTransition({
     required this.viewModel,
     required this.ready,
@@ -45,20 +58,43 @@ final class MeetTraceRuntimeInitializationTransition extends StatelessWidget {
   final Widget ready;
 
   @override
+  State<MeetTraceRuntimeInitializationTransition> createState() =>
+      _MeetTraceRuntimeInitializationTransitionState();
+}
+
+final class _MeetTraceRuntimeInitializationTransitionState
+    extends State<MeetTraceRuntimeInitializationTransition> {
+  bool _brandMotionCompleted = false;
+
+  @override
+  void didUpdateWidget(MeetTraceRuntimeInitializationTransition oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.viewModel, widget.viewModel)) {
+      _brandMotionCompleted = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return ListenableBuilder(
-      listenable: viewModel,
+      listenable: widget.viewModel,
       builder: (context, _) {
-        final phase = viewModel.state.phase;
-        final child = phase == RuntimeInitializationPhase.ready
+        final phase = widget.viewModel.state.phase;
+        final canEnterReady =
+            phase == RuntimeInitializationPhase.ready && _brandMotionCompleted;
+        final child = canEnterReady
             ? KeyedSubtree(
                 key: const ValueKey('runtime-initialization-ready'),
-                child: ready,
+                child: widget.ready,
               )
             : KeyedSubtree(
                 key: const ValueKey('runtime-initialization-progress'),
-                child: MeetTraceStartupView(viewModel: viewModel),
+                child: MeetTraceStartupView(
+                  key: ObjectKey(widget.viewModel),
+                  viewModel: widget.viewModel,
+                  onBrandMotionCompleted: _handleBrandMotionCompleted,
+                ),
               );
         return AnimatedSwitcher(
           duration: reduceMotion
@@ -75,6 +111,12 @@ final class MeetTraceRuntimeInitializationTransition extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _handleBrandMotionCompleted() {
+    if (!_brandMotionCompleted && mounted) {
+      setState(() => _brandMotionCompleted = true);
+    }
   }
 }
 
@@ -176,9 +218,10 @@ final class _StartupFrame extends StatelessWidget {
 }
 
 final class _StartupProgressContent extends StatelessWidget {
-  const _StartupProgressContent({this.viewModel});
+  const _StartupProgressContent({this.viewModel, this.onBrandMotionCompleted});
 
   final RuntimeInitializationViewModel? viewModel;
+  final VoidCallback? onBrandMotionCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +240,7 @@ final class _StartupProgressContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MeetTraceAnimatedWordmark(),
+          MeetTraceAnimatedWordmark(onCompleted: onBrandMotionCompleted),
           SizedBox(height: appStyle.spaceXl),
           Text('正在准备会迹', style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceLg),

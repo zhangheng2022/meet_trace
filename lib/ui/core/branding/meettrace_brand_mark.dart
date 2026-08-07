@@ -65,11 +65,13 @@ final class MeetTraceRibbonRevealMark extends StatelessWidget {
 /// 启动页使用的一次性品牌动效。
 ///
 /// 960ms 内依次完成官方墨带写入、标志归位和中英文字标揭示。
-/// 动画不参与初始化状态或页面跳转，并遵循系统“减少动态效果”。
+/// 动画完成信号只用于保证启动页完整展示，不参与初始化业务状态，并遵循系统
+/// “减少动态效果”。
 final class MeetTraceAnimatedWordmark extends StatefulWidget {
   const MeetTraceAnimatedWordmark({
     this.duration = meetTraceBrandMotionDuration,
     this.disableAnimations,
+    this.onCompleted,
     super.key,
   });
 
@@ -77,6 +79,7 @@ final class MeetTraceAnimatedWordmark extends StatefulWidget {
 
   /// 测试入口；生产环境为空时遵循系统“减少动态效果”。
   final bool? disableAnimations;
+  final VoidCallback? onCompleted;
 
   @override
   State<MeetTraceAnimatedWordmark> createState() =>
@@ -91,6 +94,25 @@ final class _MeetTraceAnimatedWordmarkState
     duration: widget.duration,
   );
   bool _configured = false;
+  bool _completionNotified = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addStatusListener(_handleStatus);
+  }
+
+  void _handleStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || _completionNotified) {
+      return;
+    }
+    _completionNotified = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onCompleted?.call();
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {

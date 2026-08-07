@@ -134,7 +134,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('快速检查沿用基础启动内容并平滑进入首页', (tester) async {
+  testWidgets('快速检查至少等待品牌动画完成后再进入首页', (tester) async {
     final preparation = _ControlledPreparation();
     final viewModel = RuntimeInitializationViewModel(
       InitializeRuntimeAssetsUseCase(preparation),
@@ -163,10 +163,93 @@ void main() {
 
     preparation.completeReady();
     await tester.pump();
+
+    await tester.pump(
+      meetTraceBrandMotionDuration - const Duration(milliseconds: 1),
+    );
+    expect(find.text('会议首页'), findsNothing);
+    expect(find.text('正在准备会迹'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pump();
+    expect(find.text('会议首页'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 280));
 
     expect(find.text('会议首页'), findsOneWidget);
     expect(find.text('正在准备会迹'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('减少动态效果时不等待不可见的品牌动画', (tester) async {
+    final preparation = _ControlledPreparation();
+    final viewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(preparation),
+    );
+    addTearDown(viewModel.dispose);
+
+    await tester.pumpWidget(
+      Application(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: MeetTraceRuntimeInitializationTransition(
+            viewModel: viewModel,
+            ready: const Text('会议首页'),
+          ),
+        ),
+      ),
+    );
+    unawaited(viewModel.start());
+    await tester.pump();
+
+    preparation.completeReady();
+    await tester.pump();
+
+    expect(find.text('会议首页'), findsOneWidget);
+    expect(find.text('正在准备会迹'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('更换初始化流程时重新等待品牌动画完成', (tester) async {
+    final firstPreparation = _ControlledPreparation();
+    final firstViewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(firstPreparation),
+    );
+    final secondPreparation = _ControlledPreparation();
+    final secondViewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(secondPreparation),
+    );
+    addTearDown(firstViewModel.dispose);
+    addTearDown(secondViewModel.dispose);
+
+    Widget build(RuntimeInitializationViewModel viewModel) => Application(
+      home: MeetTraceRuntimeInitializationTransition(
+        viewModel: viewModel,
+        ready: const Text('会议首页'),
+      ),
+    );
+
+    await tester.pumpWidget(build(firstViewModel));
+    unawaited(firstViewModel.start());
+    await tester.pump();
+    await tester.pump(meetTraceBrandMotionDuration);
+    await tester.pump();
+    expect(find.text('会议首页'), findsNothing);
+    expect(find.text('正在准备会迹'), findsOneWidget);
+
+    await tester.pumpWidget(build(secondViewModel));
+    unawaited(secondViewModel.start());
+    await tester.pump();
+    secondPreparation.completeReady();
+    await tester.pump();
+    await tester.pump(
+      meetTraceBrandMotionDuration - const Duration(milliseconds: 1),
+    );
+
+    expect(find.text('会议首页'), findsNothing);
+    expect(find.text('正在准备会迹'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('会议首页'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
