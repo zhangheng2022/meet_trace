@@ -470,8 +470,8 @@
     "semantic_hash": ""
   },
   "lib/data/services/asr/sherpa_onnx/sherpa_onnx_asr_engine.dart": {
-    "mtime": 1785946310.0037436,
-    "ast_hash": "69b29e6934cefb233fa2f26848e95860",
+    "mtime": 1786034438.9247265,
+    "ast_hash": "eecfd17d13cc5607d8ec3307f5d57463",
     "semantic_hash": ""
   },
   "lib/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart": {
@@ -695,9 +695,9 @@
     "semantic_hash": ""
   },
   "lib/domain/use_cases/plan_asr_preview_windows.dart": {
-    "mtime": 1785894176.4617085,
-    "ast_hash": "14650478630ced8b342236edcf61d3b1",
-    "semantic_hash": "14650478630ced8b342236edcf61d3b1"
+    "mtime": 1786034123.9893198,
+    "ast_hash": "ed8dfa2fbb37484fde6127c291362c2d",
+    "semantic_hash": ""
   },
   "lib/domain/use_cases/revise_final_transcript.dart": {
     "mtime": 1785894176.4617085,
@@ -990,9 +990,9 @@
     "semantic_hash": ""
   },
   "test/domain/use_cases/plan_asr_preview_windows_test.dart": {
-    "mtime": 1785894176.5079532,
-    "ast_hash": "508ca0224cb533dc1822a52cc11b6e20",
-    "semantic_hash": "508ca0224cb533dc1822a52cc11b6e20"
+    "mtime": 1786034091.9352555,
+    "ast_hash": "a5cc148c6973ede9e859086c81038642",
+    "semantic_hash": ""
   },
   "test/domain/use_cases/revise_final_transcript_test.dart": {
     "mtime": 1785945673.4969714,
@@ -1110,8 +1110,8 @@
     "semantic_hash": ""
   },
   "docs/quality/Step_12_Silero_VAD\u4e0e\u9884\u89c8\u961f\u5217.md": {
-    "mtime": 1785894176.298534,
-    "ast_hash": "83888c5e7ff2d4efc208c0f877125931",
+    "mtime": 1786034538.0064368,
+    "ast_hash": "bc1ddfbe112e0c4bb076c5cdf3f1fd27",
     "semantic_hash": ""
   },
   "docs/quality/Step_13_\u4f1a\u8bae\u4e3b\u94fe\u4e0e\u4f1a\u4e2d_UI.md": {
@@ -1120,8 +1120,8 @@
     "semantic_hash": ""
   },
   "docs/quality/Step_14_\u6700\u7ec8\u8f6c\u5f55\u5feb\u7167.md": {
-    "mtime": 1785945844.1653824,
-    "ast_hash": "a39b23874db098198a4798bf64668e72",
+    "mtime": 1786034079.3069248,
+    "ast_hash": "6af3b0df42e7042ecf235b0474aa5f69",
     "semantic_hash": ""
   },
   "docs/quality/Step_15_\u8bf4\u8bdd\u4eba\u5206\u79bb\u964d\u7ea7.md": {
@@ -1910,8 +1910,8 @@
     "semantic_hash": ""
   },
   "docs/product/Alpha_PRD_\u65e0\u767b\u5f55\u7248.md": {
-    "mtime": 1786013595.844244,
-    "ast_hash": "75c1b669bcaa6efbfc5ad9f3180f5172",
+    "mtime": 1786034079.3028915,
+    "ast_hash": "0ed11917cfcf0d3dc61f7968b90e7727",
     "semantic_hash": ""
   },
   "docs/project/Alpha_\u5f00\u53d1\u6b65\u9aa4.md": {
@@ -1925,8 +1925,8 @@
     "semantic_hash": ""
   },
   "docs/technical/\u7aef\u4fa7_SenseVoice_\u8f6c\u5f55\u6280\u672f\u65b9\u6848.md": {
-    "mtime": 1786013595.8462439,
-    "ast_hash": "124ed618c3f6804e0fa952851c03e435",
+    "mtime": 1786034079.3028915,
+    "ast_hash": "b734e6252308517d726e77fe60e35759",
     "semantic_hash": ""
   },
   "lib/data/services/models/model_download_types.dart": {
@@ -1935,8 +1935,8 @@
     "semantic_hash": ""
   },
   "test/data/services/asr/sherpa_onnx/sherpa_onnx_asr_engine_test.dart": {
-    "mtime": 1785946310.022224,
-    "ast_hash": "32052bab66e2b30e9824778aec779f53",
+    "mtime": 1786034395.9791248,
+    "ast_hash": "205562e607d86a864d98de8e32d76fbc",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260803_101901_runtime_asset_installers_dart_\u4e0e_downloadable_model.md": {

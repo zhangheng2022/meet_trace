@@ -42,13 +42,35 @@ void main() {
         ),
       ]);
     });
+
+    test('语音本身不超过上限时缩减上下文并只生成一个窗口', () {
+      const planner = AsrPreviewWindowPlanner();
+      const speechStart = 3200;
+      const speechEnd = speechStart + 15 * asrPreviewSampleRate;
+
+      final windows = planner(
+        segment: const VadSpeechSegment(
+          startSample: speechStart,
+          endSample: speechEnd,
+        ),
+        availableStartSample: 0,
+        availableEndSample: speechEnd + 3200,
+      );
+
+      expect(windows, [(startSample: speechStart, endSample: speechEnd)]);
+    });
   });
 
-  test('重叠窗口文本按最长后缀前缀确定性合并', () {
+  test('重叠窗口文本忽略边界标点并按可信后缀前缀合并', () {
     expect(
       mergeOverlappingTranscriptText('今天讨论项目计划', '项目计划已经确认'),
       '今天讨论项目计划已经确认',
     );
+    expect(
+      mergeOverlappingTranscriptText('今天讨论项目计划。', '项目计划，已经确认'),
+      '今天讨论项目计划。已经确认',
+    );
     expect(mergeOverlappingTranscriptText('第一段', '第二段'), '第一段 第二段');
+    expect(mergeOverlappingTranscriptText('可以开始', '开始录音'), '可以开始 开始录音');
   });
 }
