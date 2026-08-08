@@ -314,7 +314,7 @@ void main() {
     await fixture.dispose();
   });
 
-  test('详情 Facade 向分区 ViewModel 暴露一致状态', () async {
+  test('详情 ViewModel 公开单一一致状态', () async {
     final active = _snapshot(id: 'active');
     final fixture = _fixture(
       _meeting(
@@ -327,11 +327,12 @@ void main() {
     await fixture.viewModel.load();
 
     final viewModel = fixture.viewModel;
-    expect(viewModel.state.meeting, same(viewModel.meeting));
-    expect(viewModel.state.snapshot, same(viewModel.snapshot));
-    expect(viewModel.transcriptSection.snapshot, same(viewModel.snapshot));
-    expect(viewModel.audioSection.state, viewModel.playbackState);
-    expect(viewModel.actions.canShare, viewModel.canShare);
+    expect(viewModel.meeting.activeTranscriptSnapshotId, active.id);
+    expect(viewModel.snapshot, same(active));
+    expect(viewModel.sourceModel.modelId, senseVoiceDefaultModelId);
+    expect(viewModel.speakerGroups, hasLength(1));
+    expect(viewModel.canShare, isFalse);
+    expect(viewModel.canShareAudio, isFalse);
     await fixture.dispose();
   });
 }

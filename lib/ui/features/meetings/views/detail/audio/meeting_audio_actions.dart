@@ -8,6 +8,7 @@ import '../../../../../../domain/use_cases/build_meeting_share.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_dialog.dart';
 import '../../../../../core/app_sheet.dart';
+import '../../../../../core/app_value_formatters.dart';
 import '../../../view_models/detail/meeting_detail_view_model.dart';
 import '../widgets/meeting_detail_formatters.dart';
 
@@ -208,7 +209,7 @@ final class _MeetingShareActionButtonState
       semanticsLabel: '分享会议',
       semanticsTooltip: '分享会议',
       onPress:
-          (viewModel.canShare || viewModel.actions.canShareAudio) &&
+          (viewModel.canShare || viewModel.canShareAudio) &&
               !viewModel.isProcessing
           ? () => unawaited(_requestShare(viewModel))
           : null,
@@ -247,7 +248,7 @@ final class _MeetingShareActionButtonState
           ),
           FTile(
             key: const ValueKey('share-audio'),
-            enabled: viewModel.actions.canShareAudio,
+            enabled: viewModel.canShareAudio,
             prefix: const Icon(FLucideIcons.fileAudio),
             title: const Text('单独分享音频'),
             subtitle: const Text('生成临时 WAV，并再次确认隐私风险'),
@@ -281,7 +282,7 @@ final class _MeetingShareActionButtonState
         title: '可用空间不足',
         message:
             '生成临时 WAV 还缺少 '
-            '${meetingByteLabel(preparation.storage.shortageBytes)}，未创建任何文件。',
+            '${formatStorageBytes(preparation.storage.shortageBytes)}，未创建任何文件。',
       );
       return;
     }
@@ -292,7 +293,7 @@ final class _MeetingShareActionButtonState
       message:
           '会议：${preparation.meetingTitle}\n'
           '时长：${meetingDurationLabel(preparation.durationMs)}\n'
-          '文件：${meetingByteLabel(preparation.storage.wavBytes)} WAV\n\n'
+          '文件：${formatStorageBytes(preparation.storage.wavBytes)} WAV\n\n'
           '录音可能包含敏感或私密信息。确认后才会生成临时副本并打开系统分享面板；不会附带转录文本。',
       cancelLabel: '取消',
       confirmLabel: '生成并分享',

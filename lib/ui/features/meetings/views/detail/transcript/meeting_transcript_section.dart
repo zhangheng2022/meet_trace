@@ -8,8 +8,8 @@ import '../../../../../../domain/models/transcript.dart';
 import '../../../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_sheet.dart';
-import '../../../view_models/detail/meeting_detail_state.dart';
 import '../../../view_models/detail/meeting_detail_view_model.dart';
+import '../../../view_models/detail/meeting_speaker_labels.dart';
 import '../widgets/meeting_detail_formatters.dart';
 
 final class TranscriptSection extends StatefulWidget {

@@ -115,15 +115,37 @@ void main() {
     );
   });
 
-  test('data 本地 import 图不存在循环依赖', () {
-    final cycles = _findImportCycles('lib/data');
+  test('lib 本地 import 图不存在循环依赖', () {
+    final cycles = _findImportCycles('lib');
 
     expect(
       cycles,
       isEmpty,
       reason:
-          'data 模型、端口实现和服务之间不得形成 import 环：\n'
+          '业务代码不得形成 import 环：\n'
           '${cycles.map((cycle) => cycle.join(' -> ')).join('\n')}',
+    );
+  });
+
+  test('功能代码不得用 part 制造假拆分', () {
+    final pattern = RegExp(r'^\s*part(?:\s+of)?\s+', multiLine: true);
+    final violations = <String>[];
+    for (final file in _dartFilesUnder('lib/ui/features')) {
+      final normalized = p.normalize(file.path);
+      if (p.split(normalized).contains('previews')) {
+        continue;
+      }
+      if (pattern.hasMatch(file.readAsStringSync())) {
+        violations.add(normalized);
+      }
+    }
+
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          '功能实现应通过明确对象和 import 形成边界；part 仅允许用于预览夹具：\n'
+          '${violations.join('\n')}',
     );
   });
 

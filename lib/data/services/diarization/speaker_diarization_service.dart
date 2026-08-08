@@ -7,28 +7,6 @@ import 'speaker_diarization_worker.dart';
 export '../../../domain/ports/speaker_diarization.dart';
 export 'speaker_diarization_worker.dart';
 
-/// 供诊断或显式降级注入使用的不可用实现。
-///
-/// 生产组合根使用公开 API 的 [SherpaOnnxSpeakerDiarizationService]；该实现仅
-/// 保留稳定的历史错误码，方便识别旧任务和测试降级路径。
-final class OfficialBindingBlockedSpeakerDiarizationService
-    implements SpeakerDiarizationService {
-  const OfficialBindingBlockedSpeakerDiarizationService();
-
-  static const reasonCode = 'speaker_diarization.official_binding_memory_leak';
-
-  @override
-  SpeakerDiarizationCapability get capability =>
-      const SpeakerDiarizationCapability.unavailable(reasonCode: reasonCode);
-
-  @override
-  Future<List<SpeakerTurn>> diarize(AudioSource source) {
-    return Future<List<SpeakerTurn>>.error(
-      const SpeakerDiarizationException(reasonCode),
-    );
-  }
-}
-
 /// 通过官方 sherpa_onnx Dart API 运行 Pyannote + 3D-Speaker 离线分离。
 ///
 /// 每次任务创建独立 worker/isolate。取消或超时时直接终止 worker，确保同步的

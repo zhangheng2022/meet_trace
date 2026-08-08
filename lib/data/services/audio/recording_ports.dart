@@ -64,25 +64,6 @@ final class CallbackRecordingPreviewSink implements RecordingPreviewSink {
   Future<void> add(RecordingPcmChunk chunk) => callback(chunk);
 }
 
-/// 将同一持久化音频块分发给互相隔离的派生消费者。
-final class FanOutRecordingPreviewSink implements RecordingPreviewSink {
-  FanOutRecordingPreviewSink(Iterable<RecordingPreviewSink> sinks)
-    : _sinks = List.unmodifiable(sinks);
-
-  final List<RecordingPreviewSink> _sinks;
-
-  @override
-  Future<void> add(RecordingPcmChunk chunk) async {
-    for (final sink in _sinks) {
-      try {
-        await sink.add(chunk);
-      } on Object {
-        // 单个派生消费者失败不得阻断其他消费者或事实录音。
-      }
-    }
-  }
-}
-
 final class RecordingPreviewDispatcher {
   RecordingPreviewDispatcher(this._sink, {this.maxPendingChunks = 4}) {
     if (maxPendingChunks < 0) {

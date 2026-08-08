@@ -6,20 +6,6 @@ import 'package:meettrace/domain/models/audio_source.dart';
 import 'package:meettrace/domain/models/speaker_diarization.dart';
 
 void main() {
-  test('诊断降级服务保留官方绑定内存泄漏错误码', () async {
-    const service = OfficialBindingBlockedSpeakerDiarizationService();
-
-    expect(service.capability.isAvailable, isFalse);
-    expect(
-      service.capability.reasonCode,
-      'speaker_diarization.official_binding_memory_leak',
-    );
-    await expectLater(
-      service.diarize(_source()),
-      _throwsCode('speaker_diarization.official_binding_memory_leak'),
-    );
-  });
-
   group('SherpaOnnxSpeakerDiarizationService', () {
     test('把官方秒级片段稳定映射为排序后的说话人时间段', () async {
       final worker = _FakeWorker(

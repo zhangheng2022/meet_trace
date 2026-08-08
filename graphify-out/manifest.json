@@ -500,8 +500,8 @@
     "semantic_hash": "211606935f893aabe63abc2459ff2c7e"
   },
   "lib/data/services/audio/recording_ports.dart": {
-    "mtime": 1785894176.4451625,
-    "ast_hash": "6165c00f1c8e62fe3d27b7f2048599f7",
+    "mtime": 1786113751.968935,
+    "ast_hash": "fb99cc3bb9fea634854c527a613f1509",
     "semantic_hash": ""
   },
   "lib/data/services/audio/reliable_recording_service.dart": {
@@ -510,8 +510,8 @@
     "semantic_hash": ""
   },
   "lib/data/services/diarization/speaker_diarization_service.dart": {
-    "mtime": 1785901593.2104828,
-    "ast_hash": "e65d2435ce0cbd8c5eb0d1f4b3c095b4",
+    "mtime": 1786113751.9729757,
+    "ast_hash": "ac4d00b8e6f45f1692fd3dac2a73d1e9",
     "semantic_hash": ""
   },
   "lib/data/services/models/downloadable_model_service.dart": {
@@ -1074,36 +1074,6 @@
     "ast_hash": "50abf341c2c6a3e4e53f8db21698cdb3",
     "semantic_hash": ""
   },
-  "docs/quality/Step_07_\u53ef\u9760\u5f55\u97f3\u4e0e\u5d29\u6e83\u6062\u590d.md": {
-    "mtime": 1785894176.298534,
-    "ast_hash": "1677210affe4a04b1dd5e5c1b4cdabdf",
-    "semantic_hash": ""
-  },
-  "docs/quality/Step_12_Silero_VAD\u4e0e\u9884\u89c8\u961f\u5217.md": {
-    "mtime": 1786034538.0064368,
-    "ast_hash": "bc1ddfbe112e0c4bb076c5cdf3f1fd27",
-    "semantic_hash": ""
-  },
-  "docs/quality/Step_13_\u4f1a\u8bae\u4e3b\u94fe\u4e0e\u4f1a\u4e2d_UI.md": {
-    "mtime": 1785894176.2999563,
-    "ast_hash": "0dfa3c0901424ac7239bc984e1d8e1f1",
-    "semantic_hash": ""
-  },
-  "docs/quality/Step_14_\u6700\u7ec8\u8f6c\u5f55\u5feb\u7167.md": {
-    "mtime": 1786034079.3069248,
-    "ast_hash": "6af3b0df42e7042ecf235b0474aa5f69",
-    "semantic_hash": ""
-  },
-  "docs/quality/Step_15_\u8bf4\u8bdd\u4eba\u5206\u79bb\u964d\u7ea7.md": {
-    "mtime": 1785894176.2999563,
-    "ast_hash": "dd7926638eb724cafb4da53d15c65148",
-    "semantic_hash": ""
-  },
-  "docs/quality/Step_17_\u7ed3\u679c\u9875\u4e0e\u6570\u636e\u63a7\u5236.md": {
-    "mtime": 1785894176.2999563,
-    "ast_hash": "7b1b377f8815c5cacdf53bc39416c470",
-    "semantic_hash": ""
-  },
   "forui.yaml": {
     "mtime": 1785894176.3013995,
     "ast_hash": "c4bc78672bfde6dfbb7565d235401d65",
@@ -1113,16 +1083,6 @@
     "mtime": 1785894176.4129019,
     "ast_hash": "752bdee63bd8928f1f9cae590612fce4",
     "semantic_hash": "752bdee63bd8928f1f9cae590612fce4"
-  },
-  "graphify-out/memory/query_20260723_100105_\u6839\u636eprd\u6587\u6863\u4ee5\u53caskill_\u91cd\u65b0\u8bbe\u8ba1agents_md_\u4f18\u5148\u4f7f\u7528forui.md": {
-    "mtime": 1785894176.4129019,
-    "ast_hash": "f8fd5042ca544698f50b92a1d512cc6b",
-    "semantic_hash": "f8fd5042ca544698f50b92a1d512cc6b"
-  },
-  "graphify-out/memory/query_20260723_100315_\u6539\u4e3a\u4e2d\u6587.md": {
-    "mtime": 1785894176.413914,
-    "ast_hash": "7d399c651c9cd3bb36b9fd5d0eac0263",
-    "semantic_hash": "7d399c651c9cd3bb36b9fd5d0eac0263"
   },
   "graphify-out/memory/query_20260723_101346_c__users_96227_desktop_works_meetily_ai_docs_\u7814\u4f1a_ai.md": {
     "mtime": 1785894176.413914,
@@ -1273,11 +1233,6 @@
     "mtime": 1785894176.4162138,
     "ast_hash": "da3e5c73473ab5378a65a21d8b237352",
     "semantic_hash": "da3e5c73473ab5378a65a21d8b237352"
-  },
-  "graphify-out/memory/query_20260727_141748_\u68c0\u67e5\u5f53\u524d\u9879\u76ee\u8fd8\u6709\u6ca1\u6709\u65e0\u7528\u6216\u8fc7\u65f6\u7684\u5197\u4f59.md": {
-    "mtime": 1785894176.4162138,
-    "ast_hash": "5832c4a0b4221805839b01d7ac57a43b",
-    "semantic_hash": "5832c4a0b4221805839b01d7ac57a43b"
   },
   "lib/data/services/audio/recording_device_readiness_probe.dart": {
     "mtime": 1785894176.4451625,
@@ -1445,14 +1400,9 @@
     "semantic_hash": ""
   },
   "test/architecture/layer_boundaries_test.dart": {
-    "mtime": 1785894176.4918673,
-    "ast_hash": "f021c7aaa4eeca4aee52e5e57ec4694a",
+    "mtime": 1786113751.9789717,
+    "ast_hash": "02bc329db6105b6c45420bbef50a3cfe",
     "semantic_hash": ""
-  },
-  "graphify-out/memory/query_20260728_050901_\u5206\u6790\u5f53\u524d\u9879\u76ee\u67b6\u6784\u5c42\u662f\u5426\u9700\u8981\u4f18\u5316.md": {
-    "mtime": 1785894176.4182184,
-    "ast_hash": "5b69c19f27fdcd0ba782defade019e04",
-    "semantic_hash": "5b69c19f27fdcd0ba782defade019e04"
   },
   "lib/ui/core/semantic_date_time.dart": {
     "mtime": 1785894176.4667084,
@@ -1529,29 +1479,9 @@
     "ast_hash": "4cddc840a105365e4d7db8ffc1eaa90d",
     "semantic_hash": ""
   },
-  "lib/ui/features/meetings/view_models/detail/meeting_actions_view_model.dart": {
-    "mtime": 1786099950.4751327,
-    "ast_hash": "2cb6f75826e2830c8fd890efcc97997a",
-    "semantic_hash": ""
-  },
-  "lib/ui/features/meetings/view_models/detail/meeting_audio_view_model.dart": {
-    "mtime": 1786099950.4741993,
-    "ast_hash": "4c6f3700b48cec778974c7f1884d14dd",
-    "semantic_hash": ""
-  },
-  "lib/ui/features/meetings/view_models/detail/meeting_detail_state.dart": {
-    "mtime": 1786099741.8327713,
-    "ast_hash": "9aa06096526c02c70f3a44ebf87d9edd",
-    "semantic_hash": ""
-  },
   "lib/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart": {
-    "mtime": 1786099988.966805,
-    "ast_hash": "1e6278900a2d7869c1558cc8aaa7d78a",
-    "semantic_hash": ""
-  },
-  "lib/ui/features/meetings/view_models/detail/meeting_transcript_view_model.dart": {
-    "mtime": 1786099978.8101392,
-    "ast_hash": "363329afddf06040321afcc12c1eddce",
+    "mtime": 1786113871.4666896,
+    "ast_hash": "2337d44e502d0238db0007b5df3c6399",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/view_models/list/meeting_list_view_model.dart": {
@@ -1570,8 +1500,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/audio/meeting_audio_actions.dart": {
-    "mtime": 1786099619.883149,
-    "ast_hash": "a1223998abdb30d7c1534c89ac203e14",
+    "mtime": 1786113714.12516,
+    "ast_hash": "d81c6be41ae5bcb1f420127073143615",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/meeting_detail_view.dart": {
@@ -1585,8 +1515,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/transcript/meeting_transcript_section.dart": {
-    "mtime": 1786100145.31679,
-    "ast_hash": "651a3d85e57218dd5998384b34819944",
+    "mtime": 1786113864.9129791,
+    "ast_hash": "3891d720ed940a9beb78100da243d11c",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/widgets/meeting_result_layout.dart": {
@@ -1650,8 +1580,8 @@
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/detail/meeting_detail_view_model_test.dart": {
-    "mtime": 1785894176.5135772,
-    "ast_hash": "fa4a012ae607894513334e4821a86fd7",
+    "mtime": 1786113871.4853802,
+    "ast_hash": "c748377363fb1c1374907042618c6c3c",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/list/meeting_list_view_model_test.dart": {
@@ -1769,36 +1699,6 @@
     "ast_hash": "fa573fb82b84a8004a61c2a7befa0e6e",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260729_015723_\u5206\u6790\u5f53\u524d\u9879\u76ee\u7684\u672c\u5730\u6a21\u578b_\u662f\u5426\u9700\u8981\u66f4\u6362\u6a21\u578b\u6216\u7ec4\u5408\u6a21\u578b.md": {
-    "mtime": 1785894176.4189103,
-    "ast_hash": "8b0b9389f89cef94779402b113c30822",
-    "semantic_hash": ""
-  },
-  "graphify-out/memory/query_20260729_030433_\u5206\u6790\u5404\u4e2a\u6a21\u578b.md": {
-    "mtime": 1785894176.4202821,
-    "ast_hash": "ba63fb4d7fa5d00a76485b33d6c60904",
-    "semantic_hash": ""
-  },
-  "graphify-out/memory/query_20260729_093654_https___github_com_moonshine_ai_moonshine.md": {
-    "mtime": 1785894176.4202821,
-    "ast_hash": "e4e5c96a751c01c510340c48b4d83b22",
-    "semantic_hash": ""
-  },
-  "graphify-out/memory/query_20260729_094701_sherpa_onnx_sense_voice_zh_en_ja_ko_yue_int8_2025.md": {
-    "mtime": 1785894176.4202821,
-    "ast_hash": "93f51bc831d0975e2a0f136346a8111c",
-    "semantic_hash": ""
-  },
-  "graphify-out/memory/query_20260729_095112_ggml_org_whisper_cpp.md": {
-    "mtime": 1785894176.4202821,
-    "ast_hash": "4821d3c7ded01a24822d91285365090c",
-    "semantic_hash": ""
-  },
-  "graphify-out/memory/query_20260731_163839_\u7ed9\u6211\u76ee\u524d\u6a21\u578b\u6700\u5408\u9002\u7684\u66ff\u6362\u65b9\u6848.md": {
-    "mtime": 1785894176.4212863,
-    "ast_hash": "76f1d8f6bbf34cbbb06eed9c9dce3453",
-    "semantic_hash": ""
-  },
   "graphify-out/memory/query_20260731_170727_\u5f53\u524d\u9879\u76ee\u9ed8\u8ba4\u6a21\u578b\u8bbe\u7f6e\u4e3asensevoice_\u5176\u4ed6\u6a21\u578b\u5f85\u5b9a_\u6a21\u578b\u4e0d\u8981\u9ed8\u8ba4\u5305\u542b\u5230\u5b89\u88c5\u5305_\u521d\u59cb\u5316\u65f6\u518d\u8fdb\u884c\u4e0b.md": {
     "mtime": 1785894176.4212863,
     "ast_hash": "6a06a95553a53ee0d1ef92f71d423e39",
@@ -1820,8 +1720,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/\u4ee3\u7801\u67b6\u6784\u4e0e\u5197\u4f59\u5ba1\u8ba1.md": {
-    "mtime": 1786100346.9844646,
-    "ast_hash": "76b6adc1aa5c4c33eff2fabd64a0974b",
+    "mtime": 1786114564.0585623,
+    "ast_hash": "85fc61c66f958deacbd6d20d04955de2",
     "semantic_hash": ""
   },
   "docs/quality/README.md": {
@@ -1934,11 +1834,6 @@
     "ast_hash": "1d6e289117f01aa6236c947a60e0914f",
     "semantic_hash": ""
   },
-  "graphify-out/memory/query_20260803_121444_ai_\u603b\u7ed3\u548c\u81ea\u52a8\u6807\u9898\u5728\u5f53\u524d\u751f\u4ea7\u5b9e\u73b0\u4e2d\u662f\u5426\u53ef\u7528.md": {
-    "mtime": 1785894176.422478,
-    "ast_hash": "d662418f29e452391b7c572f1fbc820f",
-    "semantic_hash": ""
-  },
   "graphify-out/memory/query_20260803_121715_\u5f53\u524d_alpha_\u7684\u8bf4\u8bdd\u4eba\u5206\u79bb\u751f\u4ea7\u80fd\u529b\u662f\u5426\u771f\u5b9e\u53ef\u7528.md": {
     "mtime": 1785894176.422478,
     "ast_hash": "34a3190158de47ca5f945440a0bb681e",
@@ -1957,11 +1852,6 @@
   "test/data/services/audio/pcm_audio_playback_service_test.dart": {
     "mtime": 1785894176.4980683,
     "ast_hash": "29327ada04a3b80470d918626991dcf8",
-    "semantic_hash": ""
-  },
-  "graphify-out/memory/query_20260803_132435_\u9636\u6bb5_1_\u4e2d_ai_\u603b\u7ed3_\u4f1a\u8bae\u6807\u9898_\u6570\u636e\u5e93_schema_\u4e0e\u6570\u636e\u4ee3\u901a\u8fc7\u54ea\u4e9b\u6587\u4ef6\u548c\u4f9d\u8d56\u5173\u7cfb\u8fde\u63a5.md": {
-    "mtime": 1785894176.422478,
-    "ast_hash": "83732758ea45e11af89d51aa5a37a89d",
     "semantic_hash": ""
   },
   "assets/models/speaker-diarization-manifest.json": {
@@ -2035,8 +1925,8 @@
     "semantic_hash": ""
   },
   "test/data/services/diarization/speaker_diarization_service_test.dart": {
-    "mtime": 1785901647.5944333,
-    "ast_hash": "c524166d9872838825d35e53c00f266b",
+    "mtime": 1786113751.9852598,
+    "ast_hash": "14e02a56971560e36dc67e5509b19513",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260803_153317_\u6a21\u578b\u955c\u50cf\u5df2\u4e0a\u4f20\u540e_meettrace_\u4e0b\u4e00\u6b65\u662f\u4ec0\u4e48.md": {
@@ -2665,8 +2555,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/widgets/meeting_detail_formatters.dart": {
-    "mtime": 1786099491.3121314,
-    "ast_hash": "2d9fac9128fd5608e2a8b4da40c8a320",
+    "mtime": 1786113714.1237433,
+    "ast_hash": "e91276b48b0d9fefba500744c9add580",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/list/widgets/meeting_list_formatters.dart": {
@@ -2687,6 +2577,21 @@
   "tool/benchmarks/src/alpha_release_evaluator.dart": {
     "mtime": 1786100346.9858,
     "ast_hash": "9c518677cf66c8938cff1adc96e3c1d7",
+    "semantic_hash": ""
+  },
+  "lib/ui/core/app_value_formatters.dart": {
+    "mtime": 1786113714.1237433,
+    "ast_hash": "bda125423fec0fb2b23df4941280dc40",
+    "semantic_hash": ""
+  },
+  "lib/ui/features/meetings/view_models/detail/meeting_speaker_labels.dart": {
+    "mtime": 1786113864.9119704,
+    "ast_hash": "6e7be3ac6e1408200c85771adb124f4c",
+    "semantic_hash": ""
+  },
+  "test/ui/core/app_value_formatters_test.dart": {
+    "mtime": 1786113743.1220014,
+    "ast_hash": "68b026945ff602110ad4dc1008a1c8a3",
     "semantic_hash": ""
   }
 }
