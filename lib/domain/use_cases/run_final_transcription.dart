@@ -333,7 +333,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
               throw TimeoutException('说话人分离超时', diarizationTimeout);
             },
           );
-      _validateTurns(turns, audioDurationMs);
+      validateSpeakerTurns(turns, audioDurationMs);
       if (turns.isEmpty) {
         return _degradedDiarization(
           taskId: taskId,
@@ -413,19 +413,6 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
         await lifecycle.cancelActive();
       } on Object {
         // 取消失败不能覆盖 ASR 或 CAS 的原始失败。
-      }
-    }
-  }
-
-  void _validateTurns(List<SpeakerTurn> turns, int audioDurationMs) {
-    for (final turn in turns) {
-      if (turn.startMs < 0 ||
-          turn.endMs <= turn.startMs ||
-          turn.endMs > audioDurationMs ||
-          turn.speakerId.trim().isEmpty) {
-        throw const SpeakerDiarizationException(
-          'speaker_diarization.invalid_result',
-        );
       }
     }
   }

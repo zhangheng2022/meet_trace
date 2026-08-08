@@ -94,7 +94,7 @@ final class SpeakerDiarizationCoordinator implements SpeakerDiarizationRunner {
               throw TimeoutException('说话人分离超时', timeout);
             },
           );
-      _validateTurns(turns, eligible.$1.audioDurationMs);
+      validateSpeakerTurns(turns, eligible.$1.audioDurationMs);
       if (turns.isEmpty) {
         return _degrade(
           snapshot: eligible.$2,
@@ -199,19 +199,6 @@ final class SpeakerDiarizationCoordinator implements SpeakerDiarizationRunner {
       );
     }
     return (meeting, snapshot);
-  }
-
-  void _validateTurns(List<SpeakerTurn> turns, int audioDurationMs) {
-    for (final turn in turns) {
-      if (turn.startMs < 0 ||
-          turn.endMs <= turn.startMs ||
-          turn.endMs > audioDurationMs ||
-          turn.speakerId.trim().isEmpty) {
-        throw const SpeakerDiarizationException(
-          'speaker_diarization.invalid_result',
-        );
-      }
-    }
   }
 
   Map<String, String?> _mapTurns(

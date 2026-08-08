@@ -1065,8 +1065,8 @@
     "semantic_hash": "ce3d92b1a9ab353547f40b4bf7a53ef7"
   },
   "docs/README.md": {
-    "mtime": 1786100039.2260194,
-    "ast_hash": "0be8e4f8a3de12673c0f52453d34ce55",
+    "mtime": 1786159145.617064,
+    "ast_hash": "3a117cd91cbd84eaba657429384321a2",
     "semantic_hash": ""
   },
   "docs/quality/Android_Alpha_\u8bbe\u5907\u77e9\u9635.md": {
@@ -1385,13 +1385,13 @@
     "semantic_hash": ""
   },
   "lib/domain/use_cases/run_final_transcription.dart": {
-    "mtime": 1786098862.4577742,
-    "ast_hash": "bb2883d2b5935fa2fba944c320682472",
+    "mtime": 1786159155.9028628,
+    "ast_hash": "409a7af5be95243a6353d3b8ee256ec4",
     "semantic_hash": ""
   },
   "lib/domain/use_cases/run_speaker_diarization.dart": {
-    "mtime": 1786098862.4597745,
-    "ast_hash": "9e8379a3c13ccc528b260fa4b684ae79",
+    "mtime": 1786159155.9058683,
+    "ast_hash": "aec6bab0d480145cc61eaef9fb5926b2",
     "semantic_hash": ""
   },
   "lib/domain/use_cases/start_meeting.dart": {
@@ -1560,8 +1560,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/live_transcript_panel.dart": {
-    "mtime": 1785945523.698998,
-    "ast_hash": "4cd99ab1cd64d834e20155580b662299",
+    "mtime": 1786159755.4449294,
+    "ast_hash": "00ab03e1c68d9170708059230e99ab3c",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/recording_audio_waveform.dart": {
@@ -1575,8 +1575,8 @@
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/recording/widgets/recording_facts_panel.dart": {
-    "mtime": 1785945523.692999,
-    "ast_hash": "34a204d193ed1f2544bbc29458c162d1",
+    "mtime": 1786159155.9159987,
+    "ast_hash": "5b972da716c57cbd376badc26bf99f13",
     "semantic_hash": ""
   },
   "test/ui/features/meetings/view_models/detail/meeting_detail_view_model_test.dart": {
@@ -1720,8 +1720,8 @@
     "semantic_hash": ""
   },
   "docs/architecture/\u4ee3\u7801\u67b6\u6784\u4e0e\u5197\u4f59\u5ba1\u8ba1.md": {
-    "mtime": 1786114564.0585623,
-    "ast_hash": "85fc61c66f958deacbd6d20d04955de2",
+    "mtime": 1786159871.6708808,
+    "ast_hash": "fcded523ff0e3ff10dd5aa45849ff631",
     "semantic_hash": ""
   },
   "docs/quality/README.md": {
@@ -2550,23 +2550,23 @@
     "semantic_hash": ""
   },
   "lib/domain/use_cases/map_speaker_turns.dart": {
-    "mtime": 1786098862.4517734,
-    "ast_hash": "92449b7acd0e6cb63d9fca3c72a19ad1",
+    "mtime": 1786159155.8983047,
+    "ast_hash": "d2c5cf78739aefeafcc6a9f9510e7c08",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/detail/widgets/meeting_detail_formatters.dart": {
-    "mtime": 1786113714.1237433,
-    "ast_hash": "e91276b48b0d9fefba500744c9add580",
+    "mtime": 1786159145.6160655,
+    "ast_hash": "a6e9f13d809ba6309fc474976a955ff7",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/views/list/widgets/meeting_list_formatters.dart": {
-    "mtime": 1786099255.2473087,
-    "ast_hash": "e9c91818360e19e010934068f8632735",
+    "mtime": 1786159145.6160655,
+    "ast_hash": "0a4a4bf499d2ca1e4b7d9a7e13c0cdac",
     "semantic_hash": ""
   },
   "test/domain/use_cases/map_speaker_turns_test.dart": {
-    "mtime": 1786098890.0053976,
-    "ast_hash": "c9885a81148fc4e7f028e9b2309cf7b7",
+    "mtime": 1786159499.0444844,
+    "ast_hash": "78bb46be8b473d8b2c2cfbd29f937c8f",
     "semantic_hash": ""
   },
   "test/tool/benchmarks/alpha_release_evaluator_test.dart": {
@@ -2580,8 +2580,8 @@
     "semantic_hash": ""
   },
   "lib/ui/core/app_value_formatters.dart": {
-    "mtime": 1786113714.1237433,
-    "ast_hash": "bda125423fec0fb2b23df4941280dc40",
+    "mtime": 1786159155.908862,
+    "ast_hash": "0bc13b970de9585579f046b01b6376db",
     "semantic_hash": ""
   },
   "lib/ui/features/meetings/view_models/detail/meeting_speaker_labels.dart": {
@@ -2590,8 +2590,8 @@
     "semantic_hash": ""
   },
   "test/ui/core/app_value_formatters_test.dart": {
-    "mtime": 1786113743.1220014,
-    "ast_hash": "68b026945ff602110ad4dc1008a1c8a3",
+    "mtime": 1786159155.9270215,
+    "ast_hash": "05a028ad55151852a506f70723494d69",
     "semantic_hash": ""
   }
 }

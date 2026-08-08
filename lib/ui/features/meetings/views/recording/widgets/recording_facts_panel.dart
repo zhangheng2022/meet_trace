@@ -5,6 +5,7 @@ import '../../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../../domain/models/workflow_states.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_status_notice.dart';
+import '../../../../../core/app_value_formatters.dart';
 import '../../../view_models/recording/recording_session_view_model.dart';
 import 'recording_audio_waveform.dart';
 
@@ -54,7 +55,7 @@ final class RecordingFactsPanel extends StatelessWidget {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        _durationLabel(duration),
+                        formatClockDuration(duration, alwaysShowHours: true),
                         key: const ValueKey('recording-duration'),
                         style:
                             (wide
@@ -228,10 +229,3 @@ String _recordingLabel(RecordingState state) => switch (state) {
   RecordingState.completed => '事实音频已保存',
   RecordingState.failed => '事实录音发生错误',
 };
-
-String _durationLabel(Duration value) {
-  final hours = value.inHours.toString().padLeft(2, '0');
-  final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$hours:$minutes:$seconds';
-}

@@ -6,6 +6,7 @@ import '../../../../../../domain/models/transcript.dart';
 import '../../../../../../domain/models/workflow_states.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_status_notice.dart';
+import '../../../../../core/app_value_formatters.dart';
 import '../../../view_models/recording/recording_session_view_model.dart';
 
 final class LiveTranscriptPanel extends StatelessWidget {
@@ -307,12 +308,5 @@ String _previewLabel(RecordingSessionViewModel viewModel) {
   };
 }
 
-String _timestamp(int milliseconds) {
-  final duration = Duration(milliseconds: milliseconds);
-  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-  if (duration.inHours == 0) {
-    return '$minutes:$seconds';
-  }
-  return '${duration.inHours}:$minutes:$seconds';
-}
+String _timestamp(int milliseconds) =>
+    formatClockDuration(Duration(milliseconds: milliseconds));

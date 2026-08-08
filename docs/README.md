@@ -90,6 +90,7 @@ flowchart TD
 | QA-03 | [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md) | `docs/quality/iOS_Alpha_设备矩阵.md` | iOS 工具链、设备矩阵、签名和发布门槛 | iOS 构建与真机验收计划 | 活动；macOS/Xcode/真机阻塞，2026-08-03 / A2 |
 | QA-04 | [iOS 无签名构建规格](../spec/spec-process-cicd-ios-unsigned.md) | `spec/spec-process-cicd-ios-unsigned.md` | GitHub Actions 触发、构建、审计、产物合同、失败路径和版本追溯 | 无本地 macOS 时的 iOS 构建自动化规范 | 活动；首次云端运行已成功，2026-08-06 / A2 |
 | QA-05 | [统一 GitHub Alpha 发布规格](../spec/spec-process-cicd-alpha-release.md) | `spec/spec-process-cicd-alpha-release.md` | 单一入口、双平台同 SHA 候选、一次 Environment 审批与 Pre-release 合同 | 版本发布自动化规范 | 活动；等待 Secrets、Environment 调整与首次候选，2026-08-06 / A2 |
+| QA-06 | [Flutter 仓库质量门禁规格](../spec/spec-process-cicd-quality.md) | `spec/spec-process-cicd-quality.md` | PR、主分支与人工触发的格式、分析、测试、Debug APK 构建和审计合同 | 日常仓库质量工作流规范 | 活动，2026-08-06 / A2 |
 
 #### 历史实现证据
 

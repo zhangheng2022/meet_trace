@@ -64,4 +64,41 @@ void main() {
 
     expect(speakerId, 'speaker-1');
   });
+
+  group('validateSpeakerTurns', () {
+    test('接受事实音频范围内的非空说话人时间段', () {
+      expect(
+        () => validateSpeakerTurns(const [
+          SpeakerTurn(startMs: 0, endMs: 1000, speakerId: 'speaker-1'),
+        ], 1000),
+        returnsNormally,
+      );
+    });
+
+    test('拒绝超过事实音频范围的时间段', () {
+      expect(
+        () => validateSpeakerTurns(const [
+          SpeakerTurn(startMs: 0, endMs: 1001, speakerId: 'speaker-1'),
+        ], 1000),
+        _throwsInvalidResult,
+      );
+    });
+
+    test('拒绝只包含空白的说话人 ID', () {
+      expect(
+        () => validateSpeakerTurns(const [
+          SpeakerTurn(startMs: 0, endMs: 1000, speakerId: ' '),
+        ], 1000),
+        _throwsInvalidResult,
+      );
+    });
+  });
 }
+
+final Matcher _throwsInvalidResult = throwsA(
+  isA<SpeakerDiarizationException>().having(
+    (error) => error.code,
+    'code',
+    'speaker_diarization.invalid_result',
+  ),
+);

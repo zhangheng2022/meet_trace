@@ -3,6 +3,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/meeting.dart';
 import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../core/app_value_formatters.dart';
 
 IconData meetingStatusIcon(MeetingState state) => switch (state) {
   MeetingState.created => FLucideIcons.circleDashed,
@@ -29,9 +30,5 @@ String meetingLedgerStatus(Meeting meeting) => switch (meeting.status) {
   MeetingState.failed => '失败 · 打开查看事实音频状态',
 };
 
-String meetingDurationLabel(Duration value) {
-  final hours = value.inHours.toString().padLeft(2, '0');
-  final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$hours:$minutes:$seconds';
-}
+String meetingDurationLabel(Duration value) =>
+    formatClockDuration(value, alwaysShowHours: true);
