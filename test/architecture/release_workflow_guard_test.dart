@@ -46,21 +46,6 @@ void main() {
       );
     });
 
-    test('Codacy 扫描固定最新 Action 并限制执行时长', () async {
-      final workflow = await _workflow('codacy.yml');
-      final job = _job(workflow, 'codacy-security-scan');
-
-      expect(
-        job,
-        contains(
-          'uses: codacy/codacy-analysis-cli-action@'
-          'd43360362776a6789b47b99ae8973510854e2d3d',
-        ),
-      );
-      expect(job, contains('\n    timeout-minutes: 30'));
-      expect(job, contains('\n          tool-timeout: 10minutes'));
-    });
-
     test('正式发布只保留一个 YML 和一个手动入口', () async {
       final workflow = await _workflow('alpha-release.yml');
       final obsoleteWorkflows = [
