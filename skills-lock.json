@@ -11,7 +11,7 @@
       "source": "alibaba/open-code-review",
       "sourceType": "github",
       "skillPath": "skills/open-code-review-delegate/SKILL.md",
-      "computedHash": "aed7e9eb32b033d8ccad769ad1a29d4ed2f74e9fe46f36f15068d30bd1d4f72d"
+      "computedHash": "4a18ba772cbadbc160ea2d23a5faf83adfa94abf7889358affaff13354374624"
     },
     "using-git-worktrees": {
       "source": "obra/superpowers",
