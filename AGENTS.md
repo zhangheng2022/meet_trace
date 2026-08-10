@@ -57,7 +57,7 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 
 - 按目标使用 workspace、range 或 commit 模式；必须审查 preview 返回的全部 reviewable 文件，并按 `ocr delegate rule` 的规则检查真实 diff 或未跟踪文件。
 - 使用 `--background` 或 `--background-file` 注入 PRD、技术方案和用户影响。涉及录音、模型锁定、联合最终快照、说话人分离、音频分享或数据删除时，必须带上相应产品边界。
-- 生成文件只能通过明确的 `--exclude` 模式排除并说明原因，不得让 `graphify-out/`、构建产物或依赖噪声掩盖源码改动。
+- 生成文件只能通过明确的 `--exclude` 模式排除并说明原因，不得让构建产物或依赖噪声掩盖源码改动。
 - 按 Critical、High、Medium、Low 报告精确路径、行号、触发条件、用户影响和修复建议。始终报告 Critical/High；只报告有实际影响的 Medium 和明确有价值的 Low；疑似误报静默丢弃。
 - 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并重新审查。涉及 `lib/`、平台目录、数据库 schema/迁移或构建配置的变更，交付或创建 PR 前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
 - OCR 不能替代格式化、静态检查、测试和目标平台构建；修复后重新运行受影响验证并审查新 diff。
@@ -66,10 +66,11 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 commit信息优先使用中文
 提交标题应简短并使用祈使语气，例如 `增加 ASR 积压恢复`。PR 必须引用对应 PRD 章节，说明用户影响，列出验证命令和 OCR 范围；保留 Medium 时说明原因与后续动作。UI 变更需附截图。禁止提交密钥、录音、下载的模型、`build/` 或 `coverage/`。
 
-## graphify
+## Graphify MCP
 
-项目知识图谱位于 `graphify-out/`。用户输入 `/graphify` 时，必须先使用已安装的 Graphify 技能。
+项目代码图统一使用已配置 OAuth 的云端 Graphify MCP，不生成或维护本地 `graphify-out/`。
 
-- 代码库问题优先运行 `graphify query "<question>"`；关系和概念分别使用 `graphify path`、`graphify explain`。有 `graphify-out/wiki/index.md` 时优先用于宽泛导航，只有架构综述或查询信息不足时才读取 `GRAPH_REPORT.md`。
-- `graphify-out/` 的脏文件通常来自 hook 或增量更新，不是跳过查询的理由；仅在图谱本身错误、过期或用户明确禁止时跳过。
-- 修改代码后运行 `graphify update .`，保持图谱同步。
+- 代码库问题先调用 `list_repositories` 确认仓库，再按问题使用 `query_graph`、`gx_find`、`gx_callers`、`gx_callees`、`gx_trace`、`shortest_path`、`gx_file_neighbors` 或 `gx_impact`。
+- 使用图谱结论前，通过 `graph_stats` 核对 `commitSha` 与目标提交一致；索引落后时必须明确说明，不得把旧图谱当作当前代码事实。
+- 云端图谱只覆盖已提交并 promoted 的代码。未提交工作树、Git diff 和新文件必须使用 `rg`、Git 与源码直接检查。
+- MCP 不可用、无目标仓库或查询信息不足时，直接回退到仓库搜索和源码分析，不得因此阻塞开发。

@@ -92,7 +92,7 @@ flutter build apk --debug
 
 - 解包 Android 产物，确认不存在 `.onnx`、模型 token、ASR/VAD/说话人权重、会议音频、转录或分享临时文件。
 - 使用 `$open-code-review-delegate` 审查全部 reviewable 源码与配置；修复 Critical/High，保留 Medium 时写明风险和后续动作。
-- 复验受影响测试与构建，并运行 `graphify update .`。
+- 复验受影响测试与构建；使用 Graphify MCP 时核对索引提交，未提交修改以 Git diff 和源码审查为准。
 
 完成证据：命令、日期、环境、产物和 OCR 范围写入活动质量文档；未解决 Critical/High 为零。
 

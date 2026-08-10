@@ -3,3 +3,8 @@ url = "https://stitch.googleapis.com/mcp"
 
 [mcp_servers.stitch.http_headers]
 "X-Goog-Api-Key" = "AQ.Ab8RN6K9vVnggJqE_9A3FjX1lLjqYgWPjyq5ZPD74JK4-ju0vA"
+
+
+[mcp_servers.graphify]
+url = "https://api.graphify.com/mcp"
+auth = "oauth"
