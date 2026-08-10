@@ -46,6 +46,14 @@ void main() {
       );
     });
 
+    test('Codacy 扫描限制总时长和单工具时长', () async {
+      final workflow = await _workflow('codacy.yml');
+      final job = _job(workflow, 'codacy-security-scan');
+
+      expect(job, contains('\n    timeout-minutes: 30'));
+      expect(job, contains('\n          tool-timeout: 10minutes'));
+    });
+
     test('正式发布只保留一个 YML 和一个手动入口', () async {
       final workflow = await _workflow('alpha-release.yml');
       final obsoleteWorkflows = [
