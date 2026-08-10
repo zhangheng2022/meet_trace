@@ -46,10 +46,17 @@ void main() {
       );
     });
 
-    test('Codacy 扫描限制总时长和单工具时长', () async {
+    test('Codacy 扫描固定最新 Action 并限制执行时长', () async {
       final workflow = await _workflow('codacy.yml');
       final job = _job(workflow, 'codacy-security-scan');
 
+      expect(
+        job,
+        contains(
+          'uses: codacy/codacy-analysis-cli-action@'
+          'd43360362776a6789b47b99ae8973510854e2d3d',
+        ),
+      );
       expect(job, contains('\n    timeout-minutes: 30'));
       expect(job, contains('\n          tool-timeout: 10minutes'));
     });
