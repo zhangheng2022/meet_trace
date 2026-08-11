@@ -157,6 +157,24 @@
       "skillPath": "skills/open-code-review-delegate/SKILL.md",
       "computedHash": "4a18ba772cbadbc160ea2d23a5faf83adfa94abf7889358affaff13354374624"
     },
+    "patrol-setup": {
+      "source": "leancodepl/patrol",
+      "sourceType": "github",
+      "skillPath": "skills/patrol-setup/SKILL.md",
+      "computedHash": "61aa25ddb6d63a27aa5e106398f0aff50acfb2b7f4d6cd07e287fbc1cec209ee"
+    },
+    "patrol-test-architecture": {
+      "source": "leancodepl/patrol",
+      "sourceType": "github",
+      "skillPath": "skills/patrol-test-architecture/SKILL.md",
+      "computedHash": "1debd0ac05c0b773ad2d58a53c17073d402ec4780dee356661695b2c0252e9d4"
+    },
+    "patrol-write-test": {
+      "source": "leancodepl/patrol",
+      "sourceType": "github",
+      "skillPath": "skills/patrol-write-test/SKILL.md",
+      "computedHash": "3c42f3b5f9a073c2af91caa2ae4431185f4729c78de4bd673a7519b7e6811612"
+    },
     "using-git-worktrees": {
       "source": "obra/superpowers",
       "sourceType": "github",
