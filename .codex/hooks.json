@@ -24,6 +24,17 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "C:/Users/96227/.local/bin/graphify.EXE hook-check"
+          }
+        ]
+      }
     ]
   }
 }

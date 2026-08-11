@@ -2,9 +2,9 @@
 
 > 状态：活动；项目 Markdown 文档唯一导航入口
 >
-> 盘点日期：2026-08-07
+> 盘点日期：2026-08-11
 >
-> 盘点范围：仓库根目录 `*.md` 与 `docs/**/*.md`，共 22 份
+> 盘点范围：仓库根目录 `*.md` 与 `docs/**/*.md`，共 23 份
 >
 > 维护原则：活动文档只保留当前结论，历史版本由 Git 保存
 
@@ -111,6 +111,7 @@ flowchart TD
 | PM-02 | [Git 分支与 Worktree 约定](./project/Git_分支与_Worktree_约定.md) | `docs/project/Git_分支与_Worktree_约定.md` | 分支职责、worktree 布局、标准流程和安全规则 | 团队 Git 协作规范 | 活动，2026-08-03 / A2 |
 | PM-03 | [GitHub Alpha 版本发布流程](./project/GitHub_版本发布流程.md) | `docs/project/GitHub_版本发布流程.md` | 单一手动入口、自动双平台候选、一次批准、公开与撤回 | 维护者发布 Runbook | 活动；等待 Secrets、Environment 调整与首次候选，2026-08-06 / A2 |
 | PM-04 | [Sentry 配置](./project/Sentry_配置.md) | `docs/project/Sentry_配置.md` | 运行时采样、隐私边界、编译期参数和符号上传凭据 | 崩溃监控与符号化 Runbook | 活动，2026-08-06 / A2 |
+| PM-05 | [Graphify 本地代码图谱](./project/Graphify_本地代码图谱.md) | `docs/project/Graphify_本地代码图谱.md` | 本地 MCP 安装、数据边界、刷新矩阵、查询流程与排障 | 代码图谱维护 Runbook | 活动，2026-08-11 / A2 |
 | GOV-01 | [仓库协作指南](../AGENTS.md) | `AGENTS.md` | 产品边界、架构规则、技能流程、质量门槛和安全约束 | AI 代理与仓库协作者的执行规则 | 活动，随上游同步 / A1 |
 
 ## 4. 时效性与维护状态
@@ -124,8 +125,8 @@ flowchart TD
 
 当前结论：
 
-- 16 份活动或活动维护文档：导航 2、产品 2、设计 1、技术/架构 2、质量 4、项目管理/治理 5；其中导航不承担权威结论。
-- 6 份 Step 文档为历史实现证据，不应滚动修改测试数量、APK 大小或设备结果。已经退出产品范围且不再提供有效实现入口的旧方案只由 Git 历史追溯，不继续进入当前知识图。
+- 17 份活动或活动维护文档：导航 2、产品 2、设计 1、技术/架构 2、质量 4、项目管理/治理 6；其中导航不承担权威结论。
+- 6 份 Step 文档为历史实现证据，不应滚动修改测试数量、APK 大小或设备结果。历史证据可能进入 Graphify 供追溯，但仍保持 A3，不得据此覆盖活动文档和当前源码；已经退出产品范围且不再提供有效实现入口的旧方案只由 Git 历史追溯。
 - V1.0 仓库实现、Android 完整设备矩阵与 iOS 同候选证据均未闭环，当前质量记录状态为 `blocked`；GitHub Actions 不自动读取该结论，公开决定由批准人承担。
 - `.agents/`、`spec/` 内技能或流程规格和构建产物不属于本次 22 份正式项目文档盘点。
 
@@ -158,11 +159,11 @@ flowchart TD
 - [ ] 历史证据明确标注日期、环境和非当前发布状态。
 - [ ] 重命名或移动后已更新全仓引用并完成 Markdown 本地链接检查。
 - [ ] 产品或代码变更已按联动矩阵同步相关文档。
-- [ ] 使用本地 Graphify MCP 辅助代码分析时已确认图谱完成更新；未提交修改仍以 Git diff 和源码为准。
+- [ ] 使用本地 Graphify MCP 辅助分析时已按 [Graphify Runbook](./project/Graphify_本地代码图谱.md) 刷新图谱并调用 `graph_stats`；未提交修改仍以 Git diff 和源码为准。
 
 ## 8. 辅助资源
 
 - `.impeccable/design.json`：`DESIGN.md` 的机器可读设计 Sidecar；修改设计系统时同轮更新。
 - `forui.yaml` 与 `lib/theme/`：设计令牌的工程落点，不属于 Markdown 文档。
-- 本地 Graphify MCP：图谱生成物位于被 Git 忽略的 `graphify-out/`，代码使用本地 AST 建图，文档和图片经明确授权后使用 Gemini 语义索引；图谱只用于导航，不进入事实源链。
+- [本地 Graphify MCP](./project/Graphify_本地代码图谱.md)：图谱生成物位于被 Git 忽略的 `graphify-out/`；代码使用本地 AST，已授权文档和图片可使用 Gemini 语义索引，图谱只用于导航，不改变事实源与权威级别。
 - Git 历史：所有旧方案、旧文件名和历史版本的唯一追溯来源。

@@ -66,12 +66,15 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 commit信息优先使用中文
 提交标题应简短并使用祈使语气，例如 `增加 ASR 积压恢复`。PR 必须引用对应 PRD 章节，说明用户影响，列出验证命令和 OCR 范围；保留 Medium 时说明原因与后续动作。UI 变更需附截图。禁止提交密钥、录音、下载的模型、`build/` 或 `coverage/`。
 
-## Graphify MCP
+## graphify
 
-项目代码图统一使用项目级 `.codex/config.toml` 配置的本地 Graphify MCP；图谱文件位于被 Git 忽略的 `graphify-out/`，不得提交生成物。
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
-- 首次使用前运行 `uv tool install "graphifyy[gemini,mcp]"`，将 `GEMINI_API_KEY` 只保存在本机用户环境变量中，再在仓库根目录运行 `graphify extract . --backend gemini`。代码变化后运行 `graphify update .`；文档或图片变化后重新运行 Gemini 语义提取。不得把 API Key 写入仓库、命令示例或日志。
-- Gemini 语义提取会把未被 `.graphifyignore` 排除的文档和图片发送给外部服务；扩大索引范围前必须获得用户明确授权。无需语义索引或凭据不可用时，使用 `graphify extract . --code-only` 降级为纯本地代码图谱。
-- 代码库问题优先使用本地 MCP 的 `query_graph`、`get_node`、`get_neighbors`、`shortest_path`、`graph_stats`、`list_prs`、`get_pr_impact` 或 `triage_prs`。
-- 使用图谱结论前，通过 `graph_stats` 核对图谱规模与生成状态；本地图谱可能滞后，未提交工作树、Git diff 和新文件仍必须使用 `rg`、Git 与源码直接检查。
-- MCP 不可用、无目标仓库或查询信息不足时，直接回退到仓库搜索和源码分析，不得因此阻塞开发。
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
