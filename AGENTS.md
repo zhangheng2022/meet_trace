@@ -68,9 +68,10 @@ commit信息优先使用中文
 
 ## Graphify MCP
 
-项目代码图统一使用已配置 OAuth 的云端 Graphify MCP，不生成或维护本地 `graphify-out/`。
+项目代码图统一使用项目级 `.codex/config.toml` 配置的本地 Graphify MCP；图谱文件位于被 Git 忽略的 `graphify-out/`，不得提交生成物。
 
-- 代码库问题先调用 `list_repositories` 确认仓库，再按问题使用 `query_graph`、`gx_find`、`gx_callers`、`gx_callees`、`gx_trace`、`shortest_path`、`gx_file_neighbors` 或 `gx_impact`。
-- 使用图谱结论前，通过 `graph_stats` 核对 `commitSha` 与目标提交一致；索引落后时必须明确说明，不得把旧图谱当作当前代码事实。
-- 云端图谱只覆盖已提交并 promoted 的代码。未提交工作树、Git diff 和新文件必须使用 `rg`、Git 与源码直接检查。
+- 首次使用前运行 `uv tool install "graphifyy[gemini,mcp]"`，将 `GEMINI_API_KEY` 只保存在本机用户环境变量中，再在仓库根目录运行 `graphify extract . --backend gemini`。代码变化后运行 `graphify update .`；文档或图片变化后重新运行 Gemini 语义提取。不得把 API Key 写入仓库、命令示例或日志。
+- Gemini 语义提取会把未被 `.graphifyignore` 排除的文档和图片发送给外部服务；扩大索引范围前必须获得用户明确授权。无需语义索引或凭据不可用时，使用 `graphify extract . --code-only` 降级为纯本地代码图谱。
+- 代码库问题优先使用本地 MCP 的 `query_graph`、`get_node`、`get_neighbors`、`shortest_path`、`graph_stats`、`list_prs`、`get_pr_impact` 或 `triage_prs`。
+- 使用图谱结论前，通过 `graph_stats` 核对图谱规模与生成状态；本地图谱可能滞后，未提交工作树、Git diff 和新文件仍必须使用 `rg`、Git 与源码直接检查。
 - MCP 不可用、无目标仓库或查询信息不足时，直接回退到仓库搜索和源码分析，不得因此阻塞开发。

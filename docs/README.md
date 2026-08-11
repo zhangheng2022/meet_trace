@@ -158,11 +158,11 @@ flowchart TD
 - [ ] 历史证据明确标注日期、环境和非当前发布状态。
 - [ ] 重命名或移动后已更新全仓引用并完成 Markdown 本地链接检查。
 - [ ] 产品或代码变更已按联动矩阵同步相关文档。
-- [ ] 使用 Graphify MCP 辅助代码分析时已核对索引 `commitSha`；未提交修改仍以 Git diff 和源码为准。
+- [ ] 使用本地 Graphify MCP 辅助代码分析时已确认图谱完成更新；未提交修改仍以 Git diff 和源码为准。
 
 ## 8. 辅助资源
 
 - `.impeccable/design.json`：`DESIGN.md` 的机器可读设计 Sidecar；修改设计系统时同轮更新。
 - `forui.yaml` 与 `lib/theme/`：设计令牌的工程落点，不属于 Markdown 文档。
-- 云端 Graphify MCP：只用于已提交且索引版本匹配的代码导航，不进入事实源链。
+- 本地 Graphify MCP：图谱生成物位于被 Git 忽略的 `graphify-out/`，代码使用本地 AST 建图，文档和图片经明确授权后使用 Gemini 语义索引；图谱只用于导航，不进入事实源链。
 - Git 历史：所有旧方案、旧文件名和历史版本的唯一追溯来源。

@@ -1,0 +1,5 @@
+# Agent configuration and generated local graph data are not application code.
+/.agents/
+/.codex/
+/.impeccable/
+/graphify-out/

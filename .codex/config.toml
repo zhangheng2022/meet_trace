@@ -6,5 +6,6 @@ url = "https://stitch.googleapis.com/mcp"
 
 
 [mcp_servers.graphify]
-url = "https://api.graphify.com/mcp"
-auth = "oauth"
+command = "C:\\Users\\96227\\.local\\bin\\graphify-mcp.exe"
+args = ["C:\\Users\\96227\\Desktop\\works\\meet_trace\\graphify-out\\graph.json"]
+cwd = "C:\\Users\\96227\\Desktop\\works\\meet_trace"
