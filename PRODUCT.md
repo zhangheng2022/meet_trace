@@ -95,8 +95,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - `docs/product/Alpha_PRD_无登录版.md`：Android + iOS Alpha 的范围、用户流程、
   功能需求与验收标准。
 - `docs/technical/端侧_SenseVoice_转录技术方案.md`：录音、初始化下载、模型锁定、存储与降级边界。
-- `docs/quality/`：可靠录音、端侧 ASR、模型锁定、联合最终快照、说话人分离、数据控制和
-  发布质量判断的实施证据。
+- `docs/quality/README.md`：自动化门禁、设备矩阵、未闭环风险和候选证据要求。
 - `DESIGN.md`：当前多页面视觉系统、机器可读令牌、组件规范与双平台自适应规则。
 - `lib/` 与 `test/`：现有实现、组件测试和领域测试；设备验收记录以 `docs/quality/` 为准。
 - `ios/`：Flutter iOS 工程壳、麦克风用途和 audio 后台模式；目前不构成 iOS 录音、

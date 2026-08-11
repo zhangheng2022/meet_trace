@@ -1,169 +1,55 @@
-# 会迹（MeetTrace）项目文档中心
+# 会迹（MeetTrace）项目文档
 
-> 状态：活动；项目 Markdown 文档唯一导航入口
+> 状态：活动；项目文档唯一导航入口
 >
-> 盘点日期：2026-08-11
+> 更新日期：2026-08-11
 >
-> 盘点范围：仓库根目录 `*.md` 与 `docs/**/*.md`，共 23 份
->
-> 维护原则：活动文档只保留当前结论，历史版本由 Git 保存
+> 原则：仓库只保留当前仍需维护的文档，阶段记录和旧方案由 Git 历史追溯。
 
-## 1. 如何使用本文档中心
+## 阅读顺序
 
-- 新成员：先读根目录 [README](../README.md)，再读 [PRD](./product/Alpha_PRD_无登录版.md)、[产品上下文](../PRODUCT.md)和[设计系统](../DESIGN.md)。
-- 产品变更：先修改 PRD，再同步产品上下文、设计系统、技术方案、质量门槛和仓库指南。
-- 开发实现：按 PRD 确认范围，以技术方案和架构审计确定边界，再按开发步骤实施。
-- 测试发布：从[质量证据索引](./quality/README.md)进入，核对发布门槛、设备矩阵和历史实现证据。
-- 冲突处理：先按下方权威链判定上游，再修订所有受影响的下游文档；不得用历史测试结果覆盖当前要求。
+1. 从根目录 [README](../README.md) 了解产品和开发入口。
+2. 以 [Alpha PRD](./product/Alpha_PRD_无登录版.md) 判断产品范围与验收标准。
+3. UI 变更查 [DESIGN](../DESIGN.md)，录音、模型和数据链路查[技术方案](./technical/端侧_SenseVoice_转录技术方案.md)。
+4. 测试与发版先查[质量与验收](./quality/README.md)，再按 [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md)操作。
 
-## 2. 文档权威链与优先级
+## 活动文档
 
-```mermaid
-flowchart TD
-  Entry["README / 文档中心"] --> PRD["A0 · PRD：产品范围与验收"]
-  PRD --> Product["A2 · PRODUCT：产品上下文摘要"]
-  PRD --> Design["A1 · DESIGN：交互与视觉权威"]
-  PRD --> Tech["A1 · 技术方案：实现契约"]
-  Tech --> Architecture["A2 · 架构审计：当前结构与风险"]
-  Tech --> Delivery["A2 · 开发步骤：交付顺序"]
-  PRD --> Quality["A2 · 当前质量门槛与设备矩阵"]
-  Quality --> Evidence["A3 · Step 历史实现证据"]
-  Governance["A1 · AGENTS：执行约束"] -. 必须服从 .-> PRD
-  Governance -. 约束实施 .-> Tech
-  Governance -. 约束验证 .-> Quality
-```
-
-| 级别 | 含义 | 冲突处理 |
+| 文档 | 职责 | 权威级别 |
 |---|---|---|
-| A0 | 产品唯一事实源 | PRD 决定做什么、边界和验收；其他文档不得扩展 P0 |
-| A1 | 专业领域权威 | DESIGN 约束 UI，技术方案约束实现，AGENTS 约束协作；均须服从 PRD |
-| A2 | 当前执行与派生资料 | 用于交付、质量和上下文说明；上游变化后必须同步 |
-| A3 | 带日期的历史证据 | 仅证明特定代码、环境和日期下的结果，不代表当前发布状态 |
-| A4 | 导航资料 | 帮助定位信息，不定义产品、技术或质量结论 |
+| [Alpha PRD](./product/Alpha_PRD_无登录版.md) | 产品范围、P0、功能要求和验收标准 | 产品唯一事实源 |
+| [DESIGN](../DESIGN.md) | 交互、视觉、组件和双平台自适应规则 | 设计权威，服从 PRD |
+| [产品上下文](../PRODUCT.md) | 用户、定位和产品原则的精简上下文 | PRD 派生摘要 |
+| [端侧转录技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | 固定资源、初始化、录音、ASR、分离、快照和分享契约 | 技术权威，服从 PRD |
+| [质量与验收](./quality/README.md) | 自动化门禁、设备矩阵、未闭环风险和证据要求 | 当前质量入口 |
+| [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md) | 签名、候选、TestFlight、GitHub Pre-release 和撤回 Runbook | 发布操作入口 |
+| [Sentry 配置](./project/Sentry_配置.md) | 运行时采样、隐私边界和符号上传 | 监控 Runbook |
+| [AGENTS](../AGENTS.md) | 架构、实现、测试、审查和安全约束 | 仓库协作规则 |
 
-发生冲突时使用以下顺序：
+根目录 README 只介绍项目；PRODUCT 只提供产品上下文；两者不得扩展 PRD。工作流的真实行为以 `.github/workflows/` 和相应守卫测试为准，Runbook 只解释维护者操作。
 
-1. 产品范围与验收：PRD（A0）。
-2. 交互视觉问题：PRD → DESIGN。
-3. 技术实现问题：PRD → 技术方案 → 当前代码与自动化。
-4. 发布判断：PRD → 当前质量门槛/设备矩阵 → 最新带环境和日期的证据。
-5. 执行流程：PRD/技术/质量要求 → AGENTS 与项目管理约定。
+## 冲突处理
 
-## 3. 完整文档目录
+1. 产品范围：PRD 优先。
+2. UI：PRD → DESIGN → 当前实现。
+3. 技术：PRD → 技术方案 → 当前代码与测试。
+4. 发布：PRD → 质量与验收 → 当前工作流 → 发布 Runbook。
+5. 协作流程：上述事实源 → AGENTS。
 
-### 3.1 导航与项目概览
+## 维护规则
 
-| ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
-|---|---|---|---|---|---|
-| NAV-01 | [项目 README](../README.md) | `README.md` | 产品一句话定位、核心边界和文档入口 | 仓库首页和新成员第一入口 | 活动 / A4 |
-| NAV-02 | [项目文档中心](./README.md) | `docs/README.md` | 全部文档清单、权威链、阅读路径和维护规范 | 文档体系唯一导航入口 | 活动 / A4 |
+- 文档只写当前结论；旧版本、阶段完成记录、旧测试数量和旧构建体积不在活动文档中累积。
+- 一次性审计、开发阶段清单、历史 Step 验收报告和通用工具教程不进入 `docs/`。
+- 新文档必须承担现有文档无法覆盖的长期职责；否则更新现有事实源。
+- 产品范围变化先改 PRD，再同步 DESIGN、PRODUCT、技术方案、质量文档和 AGENTS。
+- 工作流或平台门槛变化时，同步质量文档和发布 Runbook；不要复制整份 YAML 行为规格。
+- 质量证据必须带提交 SHA、日期、环境、设备和命令；旧证据不能证明新候选。
+- 重命名或删除文档后检查全仓 Markdown 本地链接，并运行 `graphify update .`。
 
-### 3.2 产品需求与产品上下文
+## 非文档事实源
 
-| ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
-|---|---|---|---|---|---|
-| PRD-01 | [Android + iOS Alpha 产品需求文档（无登录版）](./product/Alpha_PRD_无登录版.md) | `docs/product/Alpha_PRD_无登录版.md` | V1.0 产品目标、固定 ASR/说话人模型、P0、FR、AT 和双平台公开分发定义 | 产品范围与验收标准的唯一事实源 | 活动，2026-08-06 / A0 |
-| PROD-01 | [产品上下文](../PRODUCT.md) | `PRODUCT.md` | 用户、定位、能力边界、品牌承诺、产品原则和可访问性 | 为设计与实现工具提供 PRD 摘要，不独立扩展范围 | 活动，随 PRD 同步 / A2 |
-
-### 3.3 设计规范
-
-| ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
-|---|---|---|---|---|---|
-| DES-01 | [交互与视觉设计系统](../DESIGN.md) | `DESIGN.md` | 设计令牌、视觉语言、布局、组件、动效、响应式与双平台规范 | UI 与交互设计的唯一权威 | 活动 / A1 |
-
-### 3.4 技术实现与架构
-
-| ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
-|---|---|---|---|---|---|
-| TECH-01 | [端侧 SenseVoice 与说话人分离技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | `docs/technical/端侧_SenseVoice_转录技术方案.md` | 全部固定资源、初始化、官方 Engine、联合最终快照、分享、数据库和降级 | V1.0 目标实现契约 | 活动，2026-08-06 / A1 |
-| ARCH-01 | [代码架构与冗余审计](./architecture/代码架构与冗余审计.md) | `docs/architecture/代码架构与冗余审计.md` | 当前分层、已收敛冗余、保留设计、剩余风险和验证结果 | 架构维护与后续重构的当前快照 | 活动维护快照，2026-08-07 / A2 |
-
-### 3.5 质量保证与发布证据
-
-#### 当前质量文档
-
-| ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
-|---|---|---|---|---|---|
-| QA-00 | [质量证据索引](./quality/README.md) | `docs/quality/README.md` | 当前门槛、设备矩阵和 Step 证据入口 | 质量文档的二级导航 | 活动，2026-08-03 / A2 |
-| QA-01 | [运行时模型初始化与发布门槛](./quality/运行时模型初始化与发布门槛.md) | `docs/quality/运行时模型初始化与发布门槛.md` | ASR/VAD/说话人固定资产、仓库门禁、Android/iOS 外部门禁及阻塞项 | 当前 Go/No-Go 检查表 | 活动；仓库实现与真机证据阻塞，2026-08-04 / A2 |
-| QA-02 | [Android Alpha 设备矩阵](./quality/Android_Alpha_设备矩阵.md) | `docs/quality/Android_Alpha_设备矩阵.md` | Android 平台基线、设备角色和必验指标 | Android 真机验收计划与证据状态 | 活动；目标设备阻塞，2026-08-03 / A2 |
-| QA-03 | [iOS Alpha 设备矩阵](./quality/iOS_Alpha_设备矩阵.md) | `docs/quality/iOS_Alpha_设备矩阵.md` | iOS 工具链、设备矩阵、签名和发布门槛 | iOS 构建与真机验收计划 | 活动；macOS/Xcode/真机阻塞，2026-08-03 / A2 |
-| QA-04 | [iOS 无签名构建规格](../spec/spec-process-cicd-ios-unsigned.md) | `spec/spec-process-cicd-ios-unsigned.md` | GitHub Actions 触发、构建、审计、产物合同、失败路径和版本追溯 | 无本地 macOS 时的 iOS 构建自动化规范 | 活动；首次云端运行已成功，2026-08-06 / A2 |
-| QA-05 | [统一 GitHub Alpha 发布规格](../spec/spec-process-cicd-alpha-release.md) | `spec/spec-process-cicd-alpha-release.md` | 单一入口、双平台同 SHA 候选、一次 Environment 审批与 Pre-release 合同 | 版本发布自动化规范 | 活动；等待 Secrets、Environment 调整与首次候选，2026-08-06 / A2 |
-| QA-06 | [Flutter 仓库质量门禁规格](../spec/spec-process-cicd-quality.md) | `spec/spec-process-cicd-quality.md` | PR、主分支与人工触发的格式、分析、测试、Debug APK 构建和审计合同 | 日常仓库质量工作流规范 | 活动，2026-08-06 / A2 |
-
-#### 历史实现证据
-
-| ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
-|---|---|---|---|---|---|
-| QA-H07 | [Step 07：可靠录音与崩溃恢复](./quality/Step_07_可靠录音与崩溃恢复.md) | `docs/quality/Step_07_可靠录音与崩溃恢复.md` | 事实录音、checkpoint、恢复、后台录音和当时的 Mi 10 证据 | 追溯可靠录音主链的建立过程 | 历史证据，2026-07-24 / A3 |
-| QA-H12 | [Step 12：Silero VAD 与预览队列](./quality/Step_12_Silero_VAD与预览队列.md) | `docs/quality/Step_12_Silero_VAD与预览队列.md` | VAD、窗口规划、预览队列、积压和仅录音降级 | 追溯预览链与录音隔离实现 | 历史证据；分发口径更新至 2026-08-03 / A3 |
-| QA-H13 | [Step 13：会议主链与会中 UI](./quality/Step_13_会议主链与会中_UI.md) | `docs/quality/Step_13_会议主链与会中_UI.md` | 会议创建、会中状态、录音封存和模拟器证据 | 追溯会议主链；模型覆盖描述已过时 | 历史证据，2026-07-24 / A3 |
-| QA-H14 | [Step 14：最终转录快照](./quality/Step_14_最终转录快照.md) | `docs/quality/Step_14_最终转录快照.md` | 完整音频重处理、快照 CAS、失败保留和重转录 | 追溯最终转录一致性设计 | 历史证据，2026-07-25 / A3 |
-| QA-H15 | [Step 15：说话人分离降级](./quality/Step_15_说话人分离降级.md) | `docs/quality/Step_15_说话人分离降级.md` | 旧版分离端口、单说话人降级、人工标签和能力关闭 | 历史证据；真实模型要求已由 V0.9 替代 | 历史证据，2026-07-25 / A3 |
-| QA-H17 | [Step 17：结果页与数据控制](./quality/Step_17_结果页与数据控制.md) | `docs/quality/Step_17_结果页与数据控制.md` | 旧版修订、播放、文本分享、删除、诊断与隐私 | 追溯可复用结果页基础；音频分享由 V0.9 新增 | 历史证据，2026-07-25 / A3 |
-
-### 3.6 项目管理与执行治理
-
-| ID | 文档名称 | 路径 | 核心内容摘要 | 作用 | 状态 / 级别 |
-|---|---|---|---|---|---|
-| PM-01 | [Alpha 开发步骤](./project/Alpha_开发步骤.md) | `docs/project/Alpha_开发步骤.md` | V1.0 串行阶段、阻塞清单、完成证据和双平台公开门槛 | 单人开发与交付操作清单 | 活动，2026-08-06 / A2 |
-| PM-02 | [Git 分支与 Worktree 约定](./project/Git_分支与_Worktree_约定.md) | `docs/project/Git_分支与_Worktree_约定.md` | 分支职责、worktree 布局、标准流程和安全规则 | 团队 Git 协作规范 | 活动，2026-08-03 / A2 |
-| PM-03 | [GitHub Alpha 版本发布流程](./project/GitHub_版本发布流程.md) | `docs/project/GitHub_版本发布流程.md` | 单一手动入口、自动双平台候选、一次批准、公开与撤回 | 维护者发布 Runbook | 活动；等待 Secrets、Environment 调整与首次候选，2026-08-06 / A2 |
-| PM-04 | [Sentry 配置](./project/Sentry_配置.md) | `docs/project/Sentry_配置.md` | 运行时采样、隐私边界、编译期参数和符号上传凭据 | 崩溃监控与符号化 Runbook | 活动，2026-08-06 / A2 |
-| PM-05 | [Graphify 本地代码图谱](./project/Graphify_本地代码图谱.md) | `docs/project/Graphify_本地代码图谱.md` | 本地 MCP 安装、数据边界、刷新矩阵、查询流程与排障 | 代码图谱维护 Runbook | 活动，2026-08-11 / A2 |
-| GOV-01 | [仓库协作指南](../AGENTS.md) | `AGENTS.md` | 产品边界、架构规则、技能流程、质量门槛和安全约束 | AI 代理与仓库协作者的执行规则 | 活动，随上游同步 / A1 |
-
-## 4. 时效性与维护状态
-
-| 状态 | 判定标准 | 维护方式 |
-|---|---|---|
-| 活动 | 当前决策、规范、计划或门槛仍然生效 | 相关变更必须同一提交更新；注明版本或更新日期 |
-| 活动维护快照 | 描述当前代码结构，可能随重构变化 | 架构或依赖边界显著变化后重跑审计并更新数据 |
-| 历史实现证据 | 记录特定日期、代码和环境的实现结果 | 默认冻结；只允许修正事实错误或补充“已被替代”说明 |
-| 阻塞 | 文档仍活动，但要求的外部环境或证据未完成 | 明确阻塞条件，不得写成已通过或已发布 |
-
-当前结论：
-
-- 17 份活动或活动维护文档：导航 2、产品 2、设计 1、技术/架构 2、质量 4、项目管理/治理 6；其中导航不承担权威结论。
-- 6 份 Step 文档为历史实现证据，不应滚动修改测试数量、APK 大小或设备结果。历史证据可能进入 Graphify 供追溯，但仍保持 A3，不得据此覆盖活动文档和当前源码；已经退出产品范围且不再提供有效实现入口的旧方案只由 Git 历史追溯。
-- V1.0 仓库实现、Android 完整设备矩阵与 iOS 同候选证据均未闭环，当前质量记录状态为 `blocked`；GitHub Actions 不自动读取该结论，公开决定由批准人承担。
-- `.agents/`、`spec/` 内技能或流程规格和构建产物不属于本次 22 份正式项目文档盘点。
-
-## 5. 命名与目录规范
-
-1. 根目录只保留工具和平台约定的稳定名称：`README.md`、`PRODUCT.md`、`DESIGN.md`、`AGENTS.md`。
-2. `docs/` 按职责使用小写英文目录：`product/`、`technical/`、`architecture/`、`quality/`、`project/`。
-3. 文件名保持版本无关，版本、日期和状态写在正文元数据中，避免每次升级造成全仓链接变更。
-4. 中文语义名称优先；英文产品或技术名保留标准大小写，如 `SenseVoice`、`Silero_VAD`、`Worktree`。
-5. 空格不进入文件名；结构化前缀使用下划线，例如 `Step_14_最终转录快照.md`。
-6. 禁止使用“最终版”“最新版”“新版”“备份”“副本”等模糊后缀；活动文档不并列保存旧方案。
-7. Markdown 一级标题统一包含“会迹（MeetTrace）”和具体职责，不能只写 `Product`、`Design` 或“说明”。
-
-## 6. 文档变更联动矩阵
-
-| 变更内容 | 必须同步检查 |
-|---|---|
-| P0、FR、AT、平台或模型范围 | PRD、PRODUCT、DESIGN、技术方案、质量门槛、AGENTS |
-| Manifest、下载、空间、网络同意或模型锁定 | PRD、技术方案、运行时模型发布门槛、相关设备矩阵 |
-| UI 结构、令牌、组件或响应式规则 | DESIGN、PRODUCT、相关组件测试；必要时 PRD |
-| 分层、Port、Repository、组合根或持久化结构 | 技术方案、架构审计、AGENTS、自动化架构守卫 |
-| 发布工具链、设备、签名或性能指标 | 对应设备矩阵、发布门槛、开发步骤 |
-| 分支、提交、OCR 或交付流程 | AGENTS、Git/Worktree 约定、开发步骤 |
-
-## 7. 维护检查清单
-
-- [ ] 新文档已归入既有类别；确有新职责时才新增目录。
-- [ ] 一级标题、文件名、状态、版本/日期和上游链接完整。
-- [ ] 文档没有重新定义上游范围，也没有复制一份可独立漂移的产品事实。
-- [ ] 历史证据明确标注日期、环境和非当前发布状态。
-- [ ] 重命名或移动后已更新全仓引用并完成 Markdown 本地链接检查。
-- [ ] 产品或代码变更已按联动矩阵同步相关文档。
-- [ ] 使用本地 Graphify MCP 辅助分析时已按 [Graphify Runbook](./project/Graphify_本地代码图谱.md) 刷新图谱并调用 `graph_stats`；未提交修改仍以 Git diff 和源码为准。
-
-## 8. 辅助资源
-
-- `.impeccable/design.json`：`DESIGN.md` 的机器可读设计 Sidecar；修改设计系统时同轮更新。
-- `forui.yaml` 与 `lib/theme/`：设计令牌的工程落点，不属于 Markdown 文档。
-- [本地 Graphify MCP](./project/Graphify_本地代码图谱.md)：图谱生成物位于被 Git 忽略的 `graphify-out/`；代码使用本地 AST，已授权文档和图片可使用 Gemini 语义索引，图谱只用于导航，不改变事实源与权威级别。
-- Git 历史：所有旧方案、旧文件名和历史版本的唯一追溯来源。
+- `.github/workflows/`：CI 和发版行为。
+- `lib/`、`test/`、平台目录：实际实现与自动化验证。
+- `docs/quality/alpha_release_input.json`：可选的非阻断验收记录模板。
+- `.impeccable/design.json`、`forui.yaml`、`lib/theme/`：设计令牌的工程落点。
+- Git 历史：所有已删除方案、审计快照和阶段证据的唯一追溯入口。

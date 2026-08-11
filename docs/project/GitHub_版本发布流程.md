@@ -1,10 +1,8 @@
 # 会迹（MeetTrace）GitHub Alpha 版本发布流程
 
-> 状态：活动；统一发布入口已落地，需确认 Environments、Secrets、Ruleset 后首次运行
+> 状态：活动；统一 Alpha 发布维护者 Runbook
 >
 > 上游需求：[Android + iOS Alpha PRD V1.0](../product/Alpha_PRD_无登录版.md)
->
-> 行为规格：[统一 Alpha 发布规格](../../spec/spec-process-cicd-alpha-release.md)
 
 ## 1. 最简发布模型
 
@@ -40,7 +38,7 @@ flowchart LR
 | 候选身份 | Android 与 iOS 必须来自同一 annotated tag 和提交 SHA |
 | 首次启动资源 | Release 说明明确约下载 286.3 MB |
 
-Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、候选 SHA 和已分配构建号，并替换 Draft 候选资产。新候选从所有已有 Draft/公开候选清单的最大构建号连续加一；当前双平台构建号为 `401`，下一候选为 `402`。Draft 一旦公开，标签、APK 和候选清单不可覆盖；代码或二进制修复必须使用新的 Alpha 序号向前发布。
+Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、候选 SHA 和已分配构建号，并替换 Draft 候选资产。新候选从所有已有 Draft/公开候选清单的最大构建号连续加一。Draft 一旦公开，标签、APK 和候选清单不可覆盖；代码或二进制修复必须使用新的 Alpha 序号向前发布。
 
 ## 3. GitHub 配置
 
@@ -113,7 +111,7 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 - 修复版本：合并新提交，提高 Alpha 序号并重新运行。
 - 不删除、不移动、不覆盖已公开版本的身份或资产。
 
-## 7. 首次启用检查
+## 7. 发版前检查
 
 - [ ] `android-alpha` 已配置全部 Secrets，且没有 required reviewer。
 - [ ] `testflight` 已配置全部 Secrets，且没有 required reviewer。
@@ -121,4 +119,4 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 - [ ] `master` 与 `v*` Ruleset 已启用。
 - [ ] Workflow permissions 允许 Actions 写 Release。
 - [ ] Actions 页面只有 `Alpha Release` 作为手动正式发版入口。
-- [ ] 首次 `v1.0.0-alpha.1` 候选完成双平台实际验收后再批准公开。
+- [ ] 当前候选已按[质量与验收](../quality/README.md)完成双平台适用项，再批准公开。
