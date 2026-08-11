@@ -139,6 +139,12 @@
       "skillPath": "skills/flutter-use-http-package/SKILL.md",
       "computedHash": "bd169b5cee731751f3b32f43c94cfe9495fc8e6c3eb621b785c69e38b77d0e19"
     },
+    "graphify": {
+      "source": "graphify-labs/graphify",
+      "sourceType": "github",
+      "skillPath": "graphify/SKILL.md",
+      "computedHash": "68fb301932b84cb17cb185acd55b7a31f202aa2df4f3e4eb79b5b61b1963d04a"
+    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
