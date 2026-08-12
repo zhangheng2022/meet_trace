@@ -13,6 +13,10 @@ final class Meetings extends Module {
     await $(keys.meetings.recordingEndConfirm).tap();
   }
 
+  Future<void> dismissRecordingConditions() async {
+    await $.platform.android.pressBack();
+  }
+
   Future<void> expectDetailVisible() async {
     await $(keys.meetings.detailTitle).waitUntilVisible();
   }
@@ -62,6 +66,13 @@ final class Meetings extends Module {
 
   Future<void> openRecordingConditions() async {
     await $(keys.meetings.listRecordingConditions).tap();
+  }
+
+  Future<bool> isMicrophonePermissionGranted() async {
+    final label = (await $(
+      keys.meetings.recordingConditionMicrophoneStatus,
+    ).waitUntilVisible()).text;
+    return label == '已授权';
   }
 
   Future<void> pauseRecording() async {

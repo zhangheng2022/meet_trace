@@ -12,8 +12,12 @@ void main() {
     '真实录音在暂停恢复和后台切换后继续封存事实音频',
     ($, modules, system, apiClients) async {
       await modules.meetings.openRecordingConditions();
-      await modules.meetings.requestMicrophonePermission();
-      await system.grantPermissionWhenInUse();
+      if (await modules.meetings.isMicrophonePermissionGranted()) {
+        await modules.meetings.dismissRecordingConditions();
+      } else {
+        await modules.meetings.requestMicrophonePermission();
+      }
+      await system.grantPermissionWhenInUseIfRequested();
       await modules.meetings.startMeeting();
       await system.grantPermissionWhenInUseIfRequested();
 
