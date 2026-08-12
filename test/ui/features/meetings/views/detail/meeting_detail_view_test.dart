@@ -19,6 +19,7 @@ import 'package:meettrace/domain/use_cases/delete_meeting.dart';
 import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/domain/use_cases/share_meeting_audio.dart';
+import 'package:meettrace/keys.dart';
 import 'package:meettrace/theme/theme.dart';
 import 'package:meettrace/ui/core/app_status_notice.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
@@ -67,6 +68,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byKey(keys.meetings.detailTitle), findsOneWidget);
+    expect(find.byKey(keys.meetings.detailAudioDuration), findsOneWidget);
     expect(find.textContaining('最终事实文本'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('segment-text-old-segment')),

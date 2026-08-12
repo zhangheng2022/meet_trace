@@ -10,6 +10,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../domain/models/meeting.dart';
 import '../../../../../domain/models/workflow_states.dart';
+import '../../../../../keys.dart';
 import '../../../../../theme/theme.dart';
 import '../../../../core/app_back_icon.dart';
 import '../../../../core/app_dialog.dart';
@@ -62,7 +63,7 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
             header: FHeader.nested(
               title: Text(
                 widget.viewModel.meeting.title,
-                key: const ValueKey('recording-session-title'),
+                key: keys.meetings.recordingTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -148,6 +149,7 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
       confirmLabel: '结束并保存',
       barrierDismissible: false,
       confirmAutofocus: true,
+      confirmKey: keys.meetings.recordingEndConfirm,
     );
     _endDialogOpen = false;
     if (confirmed == true && mounted) {

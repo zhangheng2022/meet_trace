@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
+import '../../../../../../keys.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_page_body.dart';
 import '../../../../../core/app_responsive.dart';
@@ -124,6 +125,7 @@ final class MeetingIdentity extends StatelessWidget {
         Text(viewModel.meeting.title, style: theme.typography.display.lg),
         SizedBox(height: appStyle.spaceSm),
         Text(
+          key: keys.meetings.detailAudioDuration,
           '${_dateLabel(viewModel.meeting.createdAt)} · '
           '${meetingDurationLabel(viewModel.meeting.audioDurationMs)} · '
           '${viewModel.sourceModel.displayName}',

@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
+import '../../../../../keys.dart';
 import '../../../../core/app_back_icon.dart';
 import '../../../../core/app_state_panel.dart';
 import '../../view_models/detail/meeting_detail_view_model.dart';
@@ -52,7 +53,7 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
         return FScaffold(
           childPad: false,
           header: FHeader.nested(
-            title: const Text('会议详情'),
+            title: Text('会议详情', key: keys.meetings.detailTitle),
             prefixes: [
               FHeaderAction(
                 icon: const AppBackIcon(semanticsLabel: '返回会议列表'),

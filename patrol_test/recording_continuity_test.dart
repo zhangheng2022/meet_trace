@@ -1,0 +1,49 @@
+import 'package:meettrace/app/application.dart';
+import 'package:meettrace/app/meettrace_flow.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
+import 'package:patrol/patrol.dart';
+
+import 'common/test_app.dart';
+
+void main() {
+  sherpaOnnxRuntimeInitializer.initialize();
+
+  testApp(
+    '真实录音在暂停恢复和后台切换后继续封存事实音频',
+    ($, modules, system, apiClients) async {
+      await modules.meetings.openRecordingConditions();
+      await modules.meetings.requestMicrophonePermission();
+      await system.grantPermissionWhenInUse();
+      await modules.meetings.startMeeting();
+      await system.grantPermissionWhenInUseIfRequested();
+
+      await modules.meetings.pauseRecording();
+      await modules.meetings.resumeRecording();
+      final durationBeforeBackground = await modules.meetings
+          .recordingDuration();
+      await system.leaveAndReturnToApp(
+        backgroundDuration: const Duration(seconds: 3),
+      );
+      await modules.meetings.expectRecordingDurationAdvancedBy(
+        before: durationBeforeBackground,
+        minimum: const Duration(seconds: 2),
+      );
+      await modules.meetings.pauseRecording();
+      await modules.meetings.resumeRecording();
+
+      await modules.meetings.endAndSaveMeeting();
+      await modules.meetings.expectDetailVisible();
+      await modules.meetings.expectDetailAudioDurationAtLeast(
+        const Duration(seconds: 3),
+      );
+    },
+    app: const Application(home: MeetTraceBootstrap()),
+    config: const PatrolTesterConfig(
+      existsTimeout: Duration(minutes: 15),
+      printLogs: true,
+      visibleTimeout: Duration(minutes: 15),
+    ),
+    settle: false,
+    tags: const ['android', 'continuity'],
+  );
+}

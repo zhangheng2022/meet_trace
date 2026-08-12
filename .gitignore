@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+**/test_bundle.dart
+.patrol.env
 /graphify-out/
 /.worktrees/
 /fastlane/report.xml

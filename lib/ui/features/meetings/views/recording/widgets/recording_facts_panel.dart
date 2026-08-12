@@ -3,6 +3,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../keys.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_status_notice.dart';
 import '../../../../../core/app_value_formatters.dart';
@@ -56,7 +57,7 @@ final class RecordingFactsPanel extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       child: Text(
                         formatClockDuration(duration, alwaysShowHours: true),
-                        key: const ValueKey('recording-duration'),
+                        key: keys.meetings.recordingElapsedDuration,
                         style:
                             (wide
                                     ? theme.typography.display.xl4

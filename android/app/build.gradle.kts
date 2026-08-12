@@ -36,8 +36,15 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
+        testInstrumentationRunner = "pl.leancode.patrol.PatrolJUnitRunner"
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    testOptions {
+        // OnePlus Android 16 cannot bind androidx.test.services; direct
+        // instrumentation keeps Patrol reliable on the current target device.
+        execution = "HOST"
     }
 
     signingConfigs {

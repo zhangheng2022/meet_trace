@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
+import '../../../../../../keys.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../view_models/list/meeting_list_view_model.dart';
 
@@ -152,6 +153,7 @@ final class _RecordingSetupStrip extends StatelessWidget {
       return content;
     }
     return FTappable(
+      key: keys.meetings.listRecordingConditions,
       semanticsLabel: retry == null ? '查看录音条件' : '重新检查录音条件',
       onPress: onPress,
       child: content,
@@ -294,7 +296,7 @@ final class _StartMeetingControlState extends State<_StartMeetingControl>
     final theme = context.theme;
     final appStyle = theme.style.app;
     return FTappable(
-      key: const ValueKey('start-meeting-control'),
+      key: keys.meetings.listStartMeeting,
       style: const FTappableStyleDelta.delta(
         pressedEnterDuration: Duration.zero,
         pressedExitDuration: Duration.zero,

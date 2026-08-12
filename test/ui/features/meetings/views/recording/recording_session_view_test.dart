@@ -14,6 +14,7 @@ import 'package:meettrace/domain/ports/asr_preview_session.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
 import 'package:meettrace/domain/use_cases/manage_recording_session.dart';
 import 'package:meettrace/domain/use_cases/start_meeting.dart';
+import 'package:meettrace/keys.dart';
 import 'package:meettrace/ui/features/meetings/view_models/recording/recording_session_view_model.dart';
 import 'package:meettrace/ui/features/meetings/views/recording/recording_session_view.dart';
 import 'package:meettrace/ui/features/meetings/views/recording/widgets/recording_audio_waveform.dart';
@@ -39,10 +40,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('00:00:12'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('recording-session-title')),
-      findsOneWidget,
-    );
+    expect(find.byKey(keys.meetings.recordingElapsedDuration), findsOneWidget);
+    expect(find.byKey(keys.meetings.recordingTitle), findsOneWidget);
+    expect(find.byKey(keys.meetings.recordingPauseReady), findsOneWidget);
     expect(find.text('产品评审'), findsOneWidget);
     expect(find.textContaining('SenseVoice'), findsOneWidget);
     expect(find.textContaining('本场锁定'), findsOneWidget);
@@ -96,12 +96,16 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('暂停'));
     await tester.pumpAndSettle();
+    expect(find.byKey(keys.meetings.recordingPauseReady), findsNothing);
+    expect(find.byKey(keys.meetings.recordingResumeReady), findsOneWidget);
     expect(find.text('事实录音已暂停'), findsOneWidget);
     expect(find.text('已随录音暂停'), findsOneWidget);
     expect(find.text('麦克风输入 · 已暂停'), findsOneWidget);
 
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
+    expect(find.byKey(keys.meetings.recordingPauseReady), findsOneWidget);
+    expect(find.byKey(keys.meetings.recordingResumeReady), findsNothing);
     fixture.preview.emit(AsrPreviewState.recordingOnly);
     await tester.pump();
     expect(find.text('已停止，录音仍在继续'), findsOneWidget);
@@ -145,7 +149,7 @@ void main() {
     await tester.tap(find.text('结束会议'));
     await tester.pumpAndSettle();
     expect(find.text('结束并保存会议？'), findsOneWidget);
-    await tester.tap(find.text('结束并保存').last);
+    await tester.tap(find.byKey(keys.meetings.recordingEndConfirm));
     await tester.runAsync(() async {
       for (var attempt = 0; attempt < 20 && finished == null; attempt++) {
         await Future<void>.delayed(const Duration(milliseconds: 1));
@@ -176,11 +180,12 @@ void main() {
     fixture.viewModel.refreshDuration();
     await tester.pump();
 
-    final button = find.byKey(const ValueKey('recording-end-button'));
+    final button = find.byKey(keys.meetings.recordingEndButton);
     final initialRect = tester.getRect(button);
+    expect(find.byKey(keys.meetings.recordingEndReady), findsOneWidget);
     await tester.tap(find.text('结束会议'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('结束并保存').last);
+    await tester.tap(find.byKey(keys.meetings.recordingEndConfirm));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 160));
 
@@ -191,6 +196,7 @@ void main() {
     expect(find.text('正在封存音频'), findsOneWidget);
     expect(find.byType(FCircularProgress), findsOneWidget);
     expect(find.text('正在封存事实音频'), findsOneWidget);
+    expect(find.byKey(keys.meetings.recordingEndReady), findsNothing);
     expect(tester.getRect(button), initialRect);
     expect(finished, isNull);
 
@@ -232,7 +238,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('结束并保存会议？'), findsOneWidget);
 
-    await tester.tap(find.text('结束并保存').last);
+    await tester.tap(find.byKey(keys.meetings.recordingEndConfirm));
     await tester.runAsync(() async {
       for (var attempt = 0; attempt < 20 && finished == null; attempt++) {
         await Future<void>.delayed(const Duration(milliseconds: 1));

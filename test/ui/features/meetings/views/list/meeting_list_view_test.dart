@@ -10,6 +10,7 @@ import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/use_cases/delete_meeting.dart';
+import 'package:meettrace/keys.dart';
 import 'package:meettrace/ui/core/app_ledger.dart';
 import 'package:meettrace/ui/core/branding/meettrace_brand_mark.dart';
 import 'package:meettrace/ui/features/meetings/view_models/list/meeting_list_view_model.dart';
@@ -42,9 +43,7 @@ void main() {
       closeTo(16, 0.01),
     );
     expect(
-      tester
-          .getSemantics(find.byKey(const ValueKey('meeting-list-brand-title')))
-          .label,
+      tester.getSemantics(find.byKey(keys.meetings.listBrandTitle)).label,
       '会迹，MeetTrace',
     );
     expect(find.text('还没有会议'), findsOneWidget);
@@ -381,7 +380,7 @@ void main() {
       ),
     );
 
-    final control = find.byKey(const ValueKey('start-meeting-control'));
+    final control = find.byKey(keys.meetings.listStartMeeting);
     final surface = find.byKey(const ValueKey('start-meeting-control-surface'));
     final restingDecoration =
         tester.widget<AnimatedContainer>(surface).decoration as BoxDecoration;
@@ -423,9 +422,7 @@ void main() {
     expect(find.text('开始会议'), findsNothing);
     expect(
       tester
-          .widget<FTappable>(
-            find.byKey(const ValueKey('start-meeting-control')),
-          )
+          .widget<FTappable>(find.byKey(keys.meetings.listStartMeeting))
           .onPress,
       isNull,
     );
@@ -445,7 +442,7 @@ void main() {
         .value;
     expect(advancedTurn, greaterThan(initialTurn));
 
-    await tester.tap(find.byKey(const ValueKey('start-meeting-control')));
+    await tester.tap(find.byKey(keys.meetings.listStartMeeting));
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(startMeetingRequests, 0);

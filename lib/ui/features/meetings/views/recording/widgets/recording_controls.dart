@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../keys.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../view_models/recording/recording_session_view_model.dart';
 
@@ -90,7 +91,12 @@ final class _RecordingActions extends StatelessWidget {
       onPress: paused
           ? (viewModel.canResume ? () => unawaited(viewModel.resume()) : null)
           : (viewModel.canPause ? () => unawaited(viewModel.pause()) : null),
-      child: Text(paused ? '继续' : '暂停', maxLines: 1),
+      child: KeyedSubtree(
+        key: paused
+            ? (viewModel.canResume ? keys.meetings.recordingResumeReady : null)
+            : (viewModel.canPause ? keys.meetings.recordingPauseReady : null),
+        child: Text(paused ? '继续' : '暂停', maxLines: 1),
+      ),
     );
     final endButton = _RecordingEndButton(
       finalizing: viewModel.isFinalizing,
@@ -136,10 +142,13 @@ final class _RecordingEndButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FButton(
-      key: const ValueKey('recording-end-button'),
+      key: keys.meetings.recordingEndButton,
       size: FButtonSizeVariant.lg,
       onPress: enabled && !finalizing ? onEnd : null,
-      child: _RecordingEndButtonContent(finalizing: finalizing),
+      child: KeyedSubtree(
+        key: enabled && !finalizing ? keys.meetings.recordingEndReady : null,
+        child: _RecordingEndButtonContent(finalizing: finalizing),
+      ),
     );
   }
 }

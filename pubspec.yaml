@@ -51,6 +51,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_native_splash: 2.4.8
+  meta: 1.18.0
+  patrol: 4.8.0
   sentry_dart_plugin: ^3.4.0
   sqlite3: ^3.5.1
 
@@ -61,6 +63,12 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   forui_cli: ^0.25.0
+
+patrol:
+  app_name: 会迹
+  test_directory: patrol_test
+  android:
+    package_name: com.meettrace.app
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

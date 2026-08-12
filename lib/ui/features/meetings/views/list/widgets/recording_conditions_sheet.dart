@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/meeting_readiness.dart';
+import '../../../../../../keys.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_sheet.dart';
 import '../../../view_models/list/meeting_list_view_model.dart';
@@ -35,7 +36,7 @@ final class RecordingConditionsSheet extends StatelessWidget {
           : SizedBox(
               width: double.infinity,
               child: FButton(
-                key: const ValueKey('recording-conditions-action'),
+                key: keys.meetings.recordingConditionsAction,
                 size: FButtonSizeVariant.lg,
                 onPress: () => Navigator.of(context).pop(action),
                 child: Text(_actionLabel(action)),
@@ -55,6 +56,7 @@ final class RecordingConditionsSheet extends StatelessWidget {
             available: readiness.microphonePermissionGranted == true,
             availableLabel: '已授权',
             unavailableLabel: '待授权',
+            statusKey: keys.meetings.recordingConditionMicrophoneStatus,
           ),
           _conditionTile(
             context: context,
@@ -108,6 +110,7 @@ FTile _conditionTile({
   required bool available,
   required String availableLabel,
   required String unavailableLabel,
+  Key? statusKey,
 }) => FTile(
   key: key,
   prefix: Icon(icon),
@@ -121,7 +124,7 @@ FTile _conditionTile({
         size: 16,
       ),
       SizedBox(width: context.theme.style.app.space2Xs),
-      Text(available ? availableLabel : unavailableLabel),
+      Text(available ? availableLabel : unavailableLabel, key: statusKey),
     ],
   ),
 );

@@ -12,6 +12,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../domain/models/meeting.dart';
+import '../../../../../keys.dart';
 import '../../../../core/app_dialog.dart';
 import '../../../../core/branding/meettrace_brand_mark.dart';
 import '../../../../core/view_state.dart';
@@ -175,14 +176,14 @@ final class _MeetingListBrandTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      key: const ValueKey('meeting-list-brand-title'),
+      key: keys.meetings.listBrandTitle,
       container: true,
       header: true,
       label: '会迹，MeetTrace',
-      child: const ExcludeSemantics(
+      child: ExcludeSemantics(
         child: Align(
           alignment: AlignmentDirectional.centerStart,
-          child: MeetTraceBrandMark(size: 28),
+          child: MeetTraceBrandMark(key: keys.meetings.listBrandMark, size: 28),
         ),
       ),
     );
