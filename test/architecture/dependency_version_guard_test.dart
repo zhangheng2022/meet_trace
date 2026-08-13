@@ -130,7 +130,7 @@ void main() {
       );
       expect(
         RegExp(r'version-update:semver-patch').allMatches(dependabot),
-        hasLength(2),
+        hasLength(3),
       );
       expect(dependabot, isNot(contains('version-update:semver-minor')));
       expect(dependabot, isNot(contains('version-update:semver-major')));

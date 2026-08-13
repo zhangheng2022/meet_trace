@@ -255,6 +255,11 @@ void main() {
 
       expect(workflow, contains('\n  classify:'));
       expect(workflow, contains('tool/ci/classify_changes.py'));
+      expect(
+        workflow,
+        contains('.github/workflows/quality.yml|tool/ci/classify_changes.py'),
+      );
+      expect(workflow, contains('echo "\$TARGET=true"'));
       expect(workflow, contains('\n  flutter-quality:'));
       expect(workflow, contains('\n  ios-unsigned:'));
       expect(workflow, contains('\n  ci-gate:'));

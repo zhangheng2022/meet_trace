@@ -47,9 +47,25 @@ jobs:
           else
             git diff --name-only -z "$BASE_SHA" "$GITHUB_SHA" \
               > "$RUNNER_TEMP/meettrace-changed-paths"
-            python3 tool/ci/classify_changes.py \
-              --path-file "$RUNNER_TEMP/meettrace-changed-paths" \
-              --github-output "$GITHUB_OUTPUT"
+            FORCE_ALL=false
+            while IFS= read -r -d '' CHANGED_PATH; do
+              case "$CHANGED_PATH" in
+                .github/workflows/quality.yml|tool/ci/classify_changes.py)
+                  FORCE_ALL=true
+                  break
+                  ;;
+              esac
+            done < "$RUNNER_TEMP/meettrace-changed-paths"
+
+            if [[ "$FORCE_ALL" == "true" ]]; then
+              for TARGET in core android ios; do
+                echo "$TARGET=true" >> "$GITHUB_OUTPUT"
+              done
+            else
+              python3 tool/ci/classify_changes.py \
+                --path-file "$RUNNER_TEMP/meettrace-changed-paths" \
+                --github-output "$GITHUB_OUTPUT"
+            fi
           fi
 
   flutter-quality:
