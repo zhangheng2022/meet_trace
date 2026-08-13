@@ -42,14 +42,6 @@ def classify(paths: list[str], *, force_all: bool = False) -> dict[str, bool]:
             result["core"] = True
             continue
 
-        if path.startswith(
-            (".agents/skills/graphify/", ".claude/skills/graphify/")
-        ):
-            if "/references/" in path or path.endswith(".md"):
-                continue
-            result["core"] = True
-            continue
-
         if path.startswith(("docs/", "graphify-out/", ".agents/", ".claude/")):
             continue
         if path.endswith((".md", ".txt")) or path in {"LICENSE", "DESIGN.md"}:

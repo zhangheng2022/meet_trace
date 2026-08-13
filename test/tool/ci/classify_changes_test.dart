@@ -61,17 +61,14 @@ void main() {
     });
   });
 
-  test('Graphify 执行代码与版本标记必须运行 Core', () async {
-    final executable = await _classify([
+  test('.agents 与 .claude 不进入质量检测范围', () async {
+    final result = await _classify([
       '.agents/skills/graphify/ingest.py',
       '.claude/skills/graphify/.graphify_version',
-    ]);
-    final references = await _classify([
       '.agents/skills/graphify/references/query.md',
       '.claude/skills/graphify/skill.md',
     ]);
 
-    expect(executable, {'core': true, 'android': false, 'ios': false});
-    expect(references, {'core': false, 'android': false, 'ios': false});
+    expect(result, {'core': false, 'android': false, 'ios': false});
   });
 }

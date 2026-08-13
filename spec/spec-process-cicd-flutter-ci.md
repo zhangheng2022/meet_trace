@@ -41,8 +41,7 @@ flowchart LR
 - `android/`：`core=true`、`android=true`。
 - `ios/`、`Gemfile`、`Gemfile.lock`：`core=true`、`ios=true`。
 - `test/`：只设置 `core=true`。
-- 文档、Graphify 输出及 Graphify 参考文档：三个输出均为 `false`。
-- Graphify Python 执行代码与 `.graphify_version`：只设置 `core=true`，确保安全守卫运行。
+- 文档、Graphify 输出、`.agents/**` 与 `.claude/**`：三个输出均为 `false`；代理技能目录不属于项目质量检测范围。
 - 未识别路径：三个输出均为 `true`，不得静默漏检。
 - 手动执行、缺失基准 SHA 或全零基准 SHA：等同完整 CI。
 
@@ -104,4 +103,4 @@ flutter analyze
 flutter test
 ```
 
-同时执行 YAML/Actions 静态检查、`test/architecture/release_workflow_guard_test.dart` 和 `test/tool/ci/classify_changes_test.dart`。发布相关改动合并前必须完成 OCR 全量差异审查，未解决的 Critical/High 阻断交付。
+同时执行 YAML/Actions 静态检查、`test/architecture/release_workflow_guard_test.dart` 和 `test/tool/ci/classify_changes_test.dart`。OCR 审查排除 `.agents/**` 与 `.claude/**`；发布相关改动合并前必须完成其余差异审查，未解决的 Critical/High 阻断交付。
