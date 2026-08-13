@@ -117,7 +117,7 @@ def normalized_version(value: str) -> tuple[int, ...] | None:
 normalized_minimum_version = normalized_version(minimum_os_version)
 minimum_version_matches = (
     normalized_minimum_version is not None
-    and normalized_minimum_version[:2] == (13, 0)
+    and normalized_minimum_version[:2] == (15, 0)
     and all(part == 0 for part in normalized_minimum_version[2:])
 )
 frameworks = [
