@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('依赖与工具链版本守卫', () {
-    test('Flutter、Dart 与 Android 使用已验证的统一版本', () async {
+    test('Flutter、Dart、Android 与 iOS 使用已验证的统一版本', () async {
       final fvmConfig = jsonDecode(
         await File('.fvmrc').readAsString(),
       ) as Map<String, Object?>;
@@ -15,6 +15,10 @@ void main() {
       final gradleWrapper = await File(
         'android/gradle/wrapper/gradle-wrapper.properties',
       ).readAsString();
+      final iosProject = await File('ios/Runner.xcodeproj/project.pbxproj')
+          .readAsString();
+      final iosInspector = await File('tool/benchmarks/inspect_ios_app.sh')
+          .readAsString();
 
       expect(fvmConfig['flutter'], '3.47.0');
       expect(pubspec, contains('sdk: ^3.13.0'));
@@ -27,6 +31,15 @@ void main() {
         contains('id("org.jetbrains.kotlin.android") version "2.4.0"'),
       );
       expect(gradleWrapper, contains('gradle-9.3.1-all.zip'));
+      expect(
+        RegExp(r'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;').allMatches(iosProject),
+        hasLength(3),
+      );
+      expect(iosProject, isNot(contains('IPHONEOS_DEPLOYMENT_TARGET = 13.0;')));
+      expect(
+        iosInspector,
+        contains('normalized_minimum_version[:2] == (15, 0)'),
+      );
     });
 
     test('Patrol 包、CLI 与工具子项目保持兼容版本', () async {

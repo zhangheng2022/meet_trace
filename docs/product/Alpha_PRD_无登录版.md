@@ -1,7 +1,7 @@
 # 会迹（MeetTrace）Android + iOS Alpha 产品需求文档（无登录版）
 
 > 版本：V1.0
-> 日期：2026-08-06
+> 日期：2026-08-13
 > 状态：活动；产品范围与验收标准的唯一事实源
 > 技术方案：[端侧 SenseVoice 转录技术方案](../technical/端侧_SenseVoice_转录技术方案.md)
 
@@ -17,7 +17,8 @@
 - 当前 ASR 只支持 SenseVoice；其他模型待定，不承诺等级、发布时间或自动切换。
 - Android 与 iOS 必须基于同一候选提交完成构建并由维护者实际验收后，才允许对外发布该 Alpha；自动化只执行技术检查，不替代双平台人工验收。
 - Android 候选 APK 只构建 `arm64-v8a`，在双平台验收完成前仅暂存在当前公开源码仓库的 GitHub Draft Release 中，不得公开安装；最终验收通过后发布同一 Draft 为 GitHub Pre-release，不重建、不覆盖 APK，也不移动已有标签。
-- iOS 候选只通过 TestFlight 分发，不在 GitHub Release 上传 IPA。最终 GitHub Pre-release 可填写 TestFlight 外部测试链接；尚未获批或未创建时必须明确标记“外部测试链接待提供”，不得伪造链接或绕过 Beta App Review。
+- iOS Alpha 的编译与分发最低版本为 iOS 15；从当前候选起不再支持 iOS 13/14，也不为已安装旧 TestFlight 构建提供专门迁移版。iOS 候选只通过 TestFlight 分发，不在 GitHub Release 上传 IPA。最终 GitHub Pre-release 可填写 TestFlight 外部测试链接；尚未获批或未创建时必须明确标记“外部测试链接待提供”，不得伪造链接或绕过 Beta App Review。
+- iOS 15 最低版本通过工程配置、构建产物审计和 TestFlight 分发门禁验证；Alpha 不要求额外保有 iOS 15 真机。功能、录音连续性、推理、能耗和无障碍验收使用当前可用的受支持 iPhone/iPad 真机，质量记录必须明确最低版本未做真机覆盖。
 
 ## 2. 当前模型决策
 

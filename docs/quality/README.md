@@ -47,11 +47,11 @@
 | Android 最低系统 | API 24、arm64-v8a 真机 | 安装、权限、前后台录音、检查点恢复、初始化与推理 |
 | Android 低端性能 | 约 4 GB RAM、arm64-v8a 真机 | 30 分钟录音、RTF、延迟、DER、人数误差、内存、电量和温控 |
 | Android 当前设备 | 当前支持的 arm64-v8a 真机 | 全主链、系统中断、文本/WAV 分享、删除和可访问性 |
-| iPhone 最低系统 | iOS 13、arm64 真机 | 安装、签名、前后台录音、系统中断、初始化与推理 |
+| iPhone 分发基线 | iOS 15、arm64 | 工程配置、无签名构建产物审计、签名和 TestFlight 分发 |
 | iPhone 当前设备 | 当前受支持 iPhone | 全主链、TestFlight、分享、内存/温控和 VoiceOver |
 | iPad | 当前受支持 iPad | 横竖屏、Split View、Dynamic Type、导航和完整主链 |
 
-模拟器只能做功能冒烟，不能替代 arm64 推理、录音连续性、能耗、温控或说话人质量证据。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Android 公开候选只能是签名的 `arm64-v8a` APK。
+模拟器只能做功能冒烟，不能替代 arm64 推理、录音连续性、能耗、温控或说话人质量证据。iOS 15 是编译与分发最低版本，但 Alpha 不要求 iOS 15 真机覆盖；当前设备真机证据必须记录实际系统版本，并明确最低版本只完成构建门禁。iOS 13/14 不再支持，已安装的旧 TestFlight 构建不提供专门迁移版。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Android 公开候选只能是签名的 `arm64-v8a` APK。
 
 ## 每个候选的验收记录
 
