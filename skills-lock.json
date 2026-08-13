@@ -143,7 +143,7 @@
       "source": "graphify-labs/graphify",
       "sourceType": "github",
       "skillPath": "graphify/SKILL.md",
-      "computedHash": "68fb301932b84cb17cb185acd55b7a31f202aa2df4f3e4eb79b5b61b1963d04a"
+      "computedHash": "d9b7802c9c06138aa2603ad209d297a8d795a30c00256025a3a9356050ec5226"
     },
     "grill-me": {
       "source": "mattpocock/skills",
@@ -155,7 +155,7 @@
       "source": "alibaba/open-code-review",
       "sourceType": "github",
       "skillPath": "skills/open-code-review-delegate/SKILL.md",
-      "computedHash": "4a18ba772cbadbc160ea2d23a5faf83adfa94abf7889358affaff13354374624"
+      "computedHash": "2a623e899d3ef3fe23020c7b1f30eca03bb3cad69c7d734c42e356f163bd0199"
     },
     "patrol-setup": {
       "source": "leancodepl/patrol",
