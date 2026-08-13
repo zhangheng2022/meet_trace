@@ -22,9 +22,24 @@ concurrency:
 
 jobs:
   firebase-test-lab:
-    name: Patrol on Firebase Test Lab
+    name: Patrol ${{ matrix.patrol.name }} on Firebase Test Lab
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        patrol:
+          - name: harness-smoke
+            target: patrol_test/harness_smoke_test.dart
+          - name: meeting-list-smoke
+            target: patrol_test/meeting_list_smoke_test.dart
+          - name: microphone-permission-recovery
+            target: patrol_test/microphone_permission_recovery_test.dart
+          - name: meeting-golden-path
+            target: patrol_test/meeting_golden_path_test.dart
+          - name: recording-continuity
+            target: patrol_test/recording_continuity_test.dart
     permissions:
       contents: read
       id-token: write
@@ -32,6 +47,8 @@ jobs:
       FIREBASE_PROJECT_ID: meet-trace
       DEVICE_MODEL: ${{ inputs.device_model }}
       ANDROID_VERSION: ${{ inputs.android_version }}
+      PATROL_NAME: ${{ matrix.patrol.name }}
+      PATROL_TARGET: ${{ matrix.patrol.target }}
 
     steps:
       - name: Checkout requested commit
@@ -111,7 +128,7 @@ jobs:
         shell: bash
         run: |
           patrol build android \
-            --target patrol_test/recording_continuity_test.dart \
+            --target "$PATROL_TARGET" \
             --debug
           app_apk=build/app/outputs/apk/debug/app-debug.apk
           test_apk=build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk
@@ -132,7 +149,7 @@ jobs:
             --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device "model=$DEVICE_MODEL,version=$ANDROID_VERSION,locale=en,orientation=portrait" \
             --timeout 45m \
-            --client-details "matrixLabel=meettrace-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --client-details "matrixLabel=meettrace-${PATROL_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --results-history-name meettrace-patrol-master \
             2>&1 | tee build/firebase-test-lab/gcloud-output.txt
           test_exit_code=${PIPESTATUS[0]}
@@ -145,12 +162,12 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Firebase Test Lab"
+            echo "## Firebase Test Lab: $PATROL_NAME"
             echo
             echo "- Branch: \`$GITHUB_REF_NAME\`"
             echo "- Commit: \`$GITHUB_SHA\`"
             echo "- Device: \`$DEVICE_MODEL\` / Android \`$ANDROID_VERSION\`"
-            echo "- Test: \`patrol_test/recording_continuity_test.dart\`"
+            echo "- Test: \`$PATROL_TARGET\`"
             echo "- Test exit code: \`${{ steps.firebase-test.outputs.exit_code || 'not-run' }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -158,7 +175,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: firebase-test-lab-${{ github.run_id }}-${{ github.run_attempt }}
+          name: firebase-test-lab-${{ matrix.patrol.name }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             build/firebase-test-lab/apk-sha256.txt
             build/firebase-test-lab/device-model.json

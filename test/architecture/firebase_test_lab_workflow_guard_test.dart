@@ -19,7 +19,7 @@ void main() {
     expect(workflow, contains(r'[[ "$GITHUB_REF" != "refs/heads/master" ]]'));
   });
 
-  test('Firebase Test Lab 工作流使用 OIDC 和专用 Patrol 测试目标', () {
+  test('Firebase Test Lab 工作流使用 OIDC 和完整 Patrol 测试矩阵', () {
     final workflow = File(
       '.github/workflows/firebase-test-lab.yml',
     ).readAsStringSync();
@@ -43,9 +43,40 @@ void main() {
     expect(workflow, contains(r'vars.GCP_WORKLOAD_IDENTITY_PROVIDER'));
     expect(workflow, contains(r'vars.GCP_SERVICE_ACCOUNT'));
     expect(workflow, isNot(contains('credentials_json')));
+    const patrolTargets = <String>[
+      'patrol_test/harness_smoke_test.dart',
+      'patrol_test/meeting_list_smoke_test.dart',
+      'patrol_test/microphone_permission_recovery_test.dart',
+      'patrol_test/meeting_golden_path_test.dart',
+      'patrol_test/recording_continuity_test.dart',
+    ];
+    for (final target in patrolTargets) {
+      expect(workflow, contains('target: $target'));
+    }
+    expect(
+      RegExp(
+        r'^\s+target: patrol_test/.+_test\.dart$',
+        multiLine: true,
+      ).allMatches(workflow),
+      hasLength(patrolTargets.length),
+    );
+    expect(workflow, contains('fail-fast: false'));
+    expect(workflow, contains('max-parallel: 2'));
+    expect(workflow, contains(r'PATROL_NAME: ${{ matrix.patrol.name }}'));
+    expect(workflow, contains(r'PATROL_TARGET: ${{ matrix.patrol.target }}'));
+    expect(workflow, contains(r'patrol build android \'));
+    expect(workflow, contains(r'--target "$PATROL_TARGET" \'));
     expect(
       workflow,
-      contains('--target patrol_test/recording_continuity_test.dart'),
+      contains(
+        r'matrixLabel=meettrace-${PATROL_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}',
+      ),
+    );
+    expect(
+      workflow,
+      contains(
+        r'name: firebase-test-lab-${{ matrix.patrol.name }}-${{ github.run_id }}-${{ github.run_attempt }}',
+      ),
     );
     expect(workflow, contains('default: MediumPhone.arm'));
     expect(workflow, contains('--timeout 45m'));
