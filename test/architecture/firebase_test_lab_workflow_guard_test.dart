@@ -38,6 +38,7 @@ void main() {
         'aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3',
       ),
     );
+    expect(workflow, contains('install_components: alpha'));
     expect(workflow, contains(r'vars.GCP_WORKLOAD_IDENTITY_PROVIDER'));
     expect(workflow, contains(r'vars.GCP_SERVICE_ACCOUNT'));
     expect(workflow, isNot(contains('credentials_json')));
@@ -69,6 +70,8 @@ void main() {
     expect(workflow, contains(r'PATROL_TARGET: ${{ matrix.patrol.target }}'));
     expect(workflow, contains(r'patrol build android \'));
     expect(workflow, contains(r'--target "$PATROL_TARGET" \'));
+    expect(workflow, contains(r'gcloud alpha firebase test android run \'));
+    expect(workflow, contains(r'--grant-permissions=none \'));
     expect(
       workflow,
       contains(
@@ -84,5 +87,8 @@ void main() {
     expect(workflow, contains('default: MediumPhone.arm'));
     expect(workflow, contains('--timeout 45m'));
     expect(workflow, isNot(contains('--use-orchestrator')));
+    expect(workflow, contains('name: Collect Firebase raw results'));
+    expect(workflow, contains(r'gcloud storage rsync --recursive \'));
+    expect(workflow, contains('build/firebase-test-lab/raw-results/'));
   });
 }

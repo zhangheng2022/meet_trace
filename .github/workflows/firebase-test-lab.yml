@@ -84,6 +84,7 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
         with:
+          install_components: alpha
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
           version: "580.0.0"
 
@@ -138,20 +139,41 @@ jobs:
         shell: bash
         run: |
           set +e
-          gcloud firebase test android run \
+          gcloud alpha firebase test android run \
             --project "$FIREBASE_PROJECT_ID" \
             --type instrumentation \
             --app build/app/outputs/apk/debug/app-debug.apk \
             --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device "model=$DEVICE_MODEL,version=$ANDROID_VERSION,locale=en,orientation=portrait" \
+            --grant-permissions=none \
             --timeout 45m \
             --client-details "matrixLabel=meettrace-api${ANDROID_VERSION}-${PATROL_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --results-history-name meettrace-patrol-master \
             2>&1 | tee build/firebase-test-lab/gcloud-output.txt
           test_exit_code=${PIPESTATUS[0]}
           set -e
+          results_uri="$(
+            sed -nE \
+              's#^Raw results will be stored in your GCS bucket at \[https://console\.developers\.google\.com/storage/browser/([^]]+)/\]$#gs://\1#p' \
+              build/firebase-test-lab/gcloud-output.txt |
+              tail -n 1
+          )"
           echo "exit_code=$test_exit_code" >> "$GITHUB_OUTPUT"
+          echo "results_uri=$results_uri" >> "$GITHUB_OUTPUT"
           exit "$test_exit_code"
+
+      - name: Collect Firebase raw results
+        if: always() && steps.firebase-test.outputs.results_uri != ''
+        continue-on-error: true
+        shell: bash
+        env:
+          RESULTS_URI: ${{ steps.firebase-test.outputs.results_uri }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/firebase-test-lab/raw-results
+          gcloud storage rsync --recursive \
+            "$RESULTS_URI" \
+            build/firebase-test-lab/raw-results
 
       - name: Write run summary
         if: always()
@@ -176,5 +198,6 @@ jobs:
             build/firebase-test-lab/apk-sha256.txt
             build/firebase-test-lab/device-model.json
             build/firebase-test-lab/gcloud-output.txt
+            build/firebase-test-lab/raw-results/
           if-no-files-found: warn
           retention-days: 14
