@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 from pathlib import Path
 
 
@@ -54,24 +53,21 @@ def classify(paths: list[str], *, force_all: bool = False) -> dict[str, bool]:
     return result
 
 
-def _changed_paths(base: str, head: str) -> list[str]:
-    output = subprocess.check_output(
-        ["git", "diff", "--name-only", "-z", base, head],
-    )
-    return [part.decode("utf-8") for part in output.split(b"\0") if part]
+def _paths_from_file(path: Path) -> list[str]:
+    return [part.decode("utf-8") for part in path.read_bytes().split(b"\0") if part]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--all", action="store_true", dest="force_all")
-    parser.add_argument("--git-diff", nargs=2, metavar=("BASE", "HEAD"))
+    parser.add_argument("--path-file", type=Path)
     parser.add_argument("--path", action="append", default=[])
     parser.add_argument("--github-output", type=Path)
     args = parser.parse_args()
 
     paths = list(args.path)
-    if args.git_diff:
-        paths.extend(_changed_paths(*args.git_diff))
+    if args.path_file:
+        paths.extend(_paths_from_file(args.path_file))
     result = classify(paths, force_all=args.force_all)
 
     if args.github_output:

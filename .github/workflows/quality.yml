@@ -45,8 +45,10 @@ jobs:
             python3 tool/ci/classify_changes.py \
               --all --github-output "$GITHUB_OUTPUT"
           else
+            git diff --name-only -z "$BASE_SHA" "$GITHUB_SHA" \
+              > "$RUNNER_TEMP/meettrace-changed-paths"
             python3 tool/ci/classify_changes.py \
-              --git-diff "$BASE_SHA" "$GITHUB_SHA" \
+              --path-file "$RUNNER_TEMP/meettrace-changed-paths" \
               --github-output "$GITHUB_OUTPUT"
           fi
 
