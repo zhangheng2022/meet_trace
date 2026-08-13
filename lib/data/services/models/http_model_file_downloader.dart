@@ -76,9 +76,8 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
       }
 
       final effectiveStart = acceptedResume ? resumeFrom : 0;
-      output = await File(
-        destinationPath,
-      ).open(mode: acceptedResume ? FileMode.append : FileMode.write);
+      output = await File(destinationPath)
+          .open(mode: acceptedResume ? FileMode.append : FileMode.write);
       var written = effectiveStart;
       onProgress(written);
       await for (final chunk in response) {

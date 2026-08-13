@@ -8,6 +8,7 @@ import '../../../../../../domain/models/transcript.dart';
 import '../../../../../../domain/use_cases/revise_final_transcript.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_sheet.dart';
+import '../../../../../core/app_text_field.dart';
 import '../../../view_models/detail/meeting_detail_view_model.dart';
 import '../../../view_models/detail/meeting_speaker_labels.dart';
 import '../widgets/meeting_detail_formatters.dart';
@@ -138,20 +139,16 @@ final class TranscriptSectionState extends State<TranscriptSection> {
               ),
             ),
             SizedBox(height: appStyle.spaceXs),
-            FTextField(
+            AppTextField(
               key: ValueKey('segment-speaker-${segment.id}'),
-              control: FTextFieldControl.managed(
-                controller: _speakers[segment.id]!,
-              ),
-              label: const Text('说话人'),
+              controller: _speakers[segment.id]!,
+              label: '说话人',
             ),
             SizedBox(height: appStyle.spaceSm),
-            FTextField(
+            AppTextField(
               key: ValueKey('segment-text-${segment.id}'),
-              control: FTextFieldControl.managed(
-                controller: _texts[segment.id]!,
-              ),
-              label: const Text('转录内容'),
+              controller: _texts[segment.id]!,
+              label: '转录内容',
               maxLines: 4,
             ),
             SizedBox(height: appStyle.spaceMd),
@@ -493,12 +490,10 @@ final class _SpeakerManagementSheetState
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    FTextField(
+                    AppTextField(
                       key: ValueKey('speaker-label-$keyId'),
-                      control: FTextFieldControl.managed(
-                        controller: _controller!,
-                      ),
-                      label: const Text('显示名称'),
+                      controller: _controller!,
+                      label: '显示名称',
                       hint: '输入说话人名称',
                     ),
                     if (_saveFailed) ...[

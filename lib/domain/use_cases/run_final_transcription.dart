@@ -15,8 +15,10 @@ import 'map_speaker_turns.dart';
 
 export '../ports/final_transcription.dart';
 
-typedef FinalTranscriptionSnapshotIdFactory =
-    String Function(String meetingId, DateTime createdAt);
+typedef FinalTranscriptionSnapshotIdFactory = String Function(
+  String meetingId,
+  DateTime createdAt,
+);
 
 final class FinalTranscriptionException implements Exception {
   const FinalTranscriptionException(this.code);
@@ -335,7 +337,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
           );
       validateSpeakerTurns(turns, audioDurationMs);
       if (turns.isEmpty) {
-        return _degradedDiarization(
+        return await _degradedDiarization(
           taskId: taskId,
           meetingId: meetingId,
           createdAt: startedAt,

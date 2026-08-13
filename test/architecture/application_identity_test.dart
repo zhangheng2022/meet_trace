@@ -8,9 +8,8 @@ void main() {
     final activity = File(
       'android/app/src/main/kotlin/com/meettrace/app/MainActivity.kt',
     );
-    final xcodeProject = await File(
-      'ios/Runner.xcodeproj/project.pbxproj',
-    ).readAsString();
+    final xcodeProject = await File('ios/Runner.xcodeproj/project.pbxproj')
+        .readAsString();
 
     expect(gradle, contains('namespace = "com.meettrace.app"'));
     expect(gradle, contains('applicationId = "com.meettrace.app"'));
@@ -26,15 +25,13 @@ void main() {
       false,
     );
     expect(
-      RegExp(
-        r'PRODUCT_BUNDLE_IDENTIFIER = com\.meettrace\.app;',
-      ).allMatches(xcodeProject),
+      RegExp(r'PRODUCT_BUNDLE_IDENTIFIER = com\.meettrace\.app;')
+          .allMatches(xcodeProject),
       hasLength(3),
     );
     expect(
-      RegExp(
-        r'PRODUCT_BUNDLE_IDENTIFIER = com\.meettrace\.app\.RunnerTests;',
-      ).allMatches(xcodeProject),
+      RegExp(r'PRODUCT_BUNDLE_IDENTIFIER = com\.meettrace\.app\.RunnerTests;')
+          .allMatches(xcodeProject),
       hasLength(3),
     );
 

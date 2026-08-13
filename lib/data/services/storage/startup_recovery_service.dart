@@ -102,9 +102,8 @@ final class StartupRecoveryService {
                 'meetings',
                 {
                   'audio_path': finalPath,
-                  'audio_duration_ms': recordingDurationForBytes(
-                    persistedBytes,
-                  ).inMilliseconds,
+                  'audio_duration_ms': recordingDurationForBytes(persistedBytes)
+                      .inMilliseconds,
                   'status': MeetingState.processing.name,
                   'last_error_code': null,
                 },

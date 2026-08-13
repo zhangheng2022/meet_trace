@@ -96,16 +96,14 @@ void main() {
 
     final modelTemp = Directory(layout.modelTempDirectory('qwen', '1'));
     await modelTemp.create(recursive: true);
-    await File(
-      '${modelTemp.path}${Platform.pathSeparator}partial.onnx',
-    ).writeAsBytes([1]);
+    await File('${modelTemp.path}${Platform.pathSeparator}partial.onnx')
+        .writeAsBytes([1]);
     final shareTemp = Directory(
       layout.meetingShareTempDirectory(recordingMeeting.id),
     );
     await shareTemp.create(recursive: true);
-    await File(
-      '${shareTemp.path}${Platform.pathSeparator}stale.wav',
-    ).writeAsBytes([1]);
+    await File('${shareTemp.path}${Platform.pathSeparator}stale.wav')
+        .writeAsBytes([1]);
 
     final first = await recovery.recover(now: now);
     final second = await recovery.recover(now: now);
@@ -128,9 +126,8 @@ void main() {
     expect(await File(recoveredMeeting.audioPath!).length(), 32000);
     expect(recoveredMeeting.audioDurationMs, 1000);
     expect(
-      (await JsonRecordingCheckpointStore(
-        layout,
-      ).load(recordingMeeting.id))?.state,
+      (await JsonRecordingCheckpointStore(layout).load(recordingMeeting.id))
+          ?.state,
       RecordingCheckpointState.finalized,
     );
     expect((await tasks.getById('task-1'))!.state, ProcessingState.queued);

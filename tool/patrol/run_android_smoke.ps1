@@ -322,7 +322,7 @@ $flutterRoot = (Resolve-Path -LiteralPath (
 $dart = Join-Path $flutterRoot 'bin\cache\dart-sdk\bin\dart.exe'
 
 if (-not (Test-Path -LiteralPath $patrol)) {
-    throw '未找到 Patrol CLI；请运行 dart pub global activate patrol_cli 4.6.1。'
+    throw '未找到 Patrol CLI；请运行 dart pub global activate patrol_cli 4.7.0。'
 }
 if (-not (Test-Path -LiteralPath $dart)) {
     throw "未找到 Flutter 内置 Dart：$dart"

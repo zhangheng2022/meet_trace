@@ -6,11 +6,10 @@ import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 import '../../models/runtime/silero_vad_manifest.dart';
 import '../../../domain/models/asr_preview.dart';
 
-typedef SherpaOnnxVadRuntimeFactory =
-    SherpaOnnxVadRuntime Function({
-      required sherpa.VadModelConfig config,
-      required double bufferSizeInSeconds,
-    });
+typedef SherpaOnnxVadRuntimeFactory = SherpaOnnxVadRuntime Function({
+  required sherpa.VadModelConfig config,
+  required double bufferSizeInSeconds,
+});
 
 abstract interface class VoiceActivitySegmenter {
   int get sampleRate;

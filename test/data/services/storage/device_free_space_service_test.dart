@@ -34,9 +34,8 @@ void main() {
         3221225472,
       );
       expect(
-        await DeviceRecordingStorageCapacityProvider(
-          freeSpace: service,
-        ).getFreeBytes(),
+        await DeviceRecordingStorageCapacityProvider(freeSpace: service)
+            .getFreeBytes(),
         3221225472,
       );
     });

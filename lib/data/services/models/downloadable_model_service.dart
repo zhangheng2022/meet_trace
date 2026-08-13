@@ -234,44 +234,43 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
     required Future<void> Function(int verifiedBytes) onCommitting,
   }) async {
     try {
-      return await RuntimeArtifactInstallTransaction(
-        verifier: verifier,
-      ).install(
-        manifest: manifest,
-        tempPath: tempPath,
-        finalPath: finalPath,
-        tempRoot: fileLayout.modelTempRoot,
-        finalRoot: fileLayout.modelsRoot,
-        throwIfCanceled: token.throwIfCanceled,
-        download:
-            ({
-              required file,
-              required destinationPath,
-              required resumeFrom,
-              required onProgress,
-            }) async {
-              final result = await downloader.download(
-                source: Uri.parse(file.url),
-                destinationPath: destinationPath,
-                resumeFrom: resumeFrom,
-                expectedBytes: file.bytes,
-                cancellation: token,
-                onProgress: onProgress,
-              );
-              return RuntimeArtifactDownloadOutcome(
-                finalBytes: result.finalBytes,
-                resumed: result.resumed,
-              );
-            },
-        onProgress: (completedBytes, totalBytes) => _notify(
-          onProgress,
-          DownloadableModelPhase.downloading,
-          completedBytes,
-          totalBytes,
-        ),
-        onVerifying: onVerifying,
-        onCommitting: onCommitting,
-      );
+      return await RuntimeArtifactInstallTransaction(verifier: verifier)
+          .install(
+            manifest: manifest,
+            tempPath: tempPath,
+            finalPath: finalPath,
+            tempRoot: fileLayout.modelTempRoot,
+            finalRoot: fileLayout.modelsRoot,
+            throwIfCanceled: token.throwIfCanceled,
+            download:
+                ({
+                  required file,
+                  required destinationPath,
+                  required resumeFrom,
+                  required onProgress,
+                }) async {
+                  final result = await downloader.download(
+                    source: Uri.parse(file.url),
+                    destinationPath: destinationPath,
+                    resumeFrom: resumeFrom,
+                    expectedBytes: file.bytes,
+                    cancellation: token,
+                    onProgress: onProgress,
+                  );
+                  return RuntimeArtifactDownloadOutcome(
+                    finalBytes: result.finalBytes,
+                    resumed: result.resumed,
+                  );
+                },
+            onProgress: (completedBytes, totalBytes) => _notify(
+              onProgress,
+              DownloadableModelPhase.downloading,
+              completedBytes,
+              totalBytes,
+            ),
+            onVerifying: onVerifying,
+            onCommitting: onCommitting,
+          );
     } on RuntimeArtifactInstallException catch (error) {
       throw DownloadableModelException(
         code: switch (error.failure) {

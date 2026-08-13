@@ -14,8 +14,10 @@ import '../../../../../domain/ports/recording_telemetry.dart';
 import '../../../../../domain/use_cases/manage_recording_session.dart';
 import '../../../../../domain/use_cases/start_meeting.dart';
 
-typedef RecordingTickerFactory =
-    Timer Function(Duration duration, void Function(Timer timer) callback);
+typedef RecordingTickerFactory = Timer Function(
+  Duration duration,
+  void Function(Timer timer) callback,
+);
 
 const recordingWaveformSampleCapacity = 48;
 const recordingWaveformSampleInterval = Duration(milliseconds: 100);

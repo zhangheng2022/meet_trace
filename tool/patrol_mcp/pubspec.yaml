@@ -2,7 +2,7 @@ name: meettrace_patrol_mcp
 publish_to: none
 
 environment:
-  sdk: ^3.12.0
+  sdk: ^3.13.0
 
 dependencies:
   patrol_mcp: ^0.2.0

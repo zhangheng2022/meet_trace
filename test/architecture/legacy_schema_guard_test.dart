@@ -34,9 +34,8 @@ void main() {
   });
 
   test('meetings 建表语句不包含遗留列', () {
-    final schema = File(
-      'lib/data/services/storage/app_database.dart',
-    ).readAsStringSync();
+    final schema = File('lib/data/services/storage/app_database.dart')
+        .readAsStringSync();
     final meetingsDdl = RegExp(
       r"""CREATE TABLE meetings \(([\s\S]*?)\)\s*'''""",
     ).firstMatch(schema);
@@ -56,12 +55,10 @@ void main() {
       'meettrace-legacy-column-',
     );
     addTearDown(() => root.delete(recursive: true));
-    File(
-      p.join(root.path, 'bad.dart'),
-    ).writeAsStringSync("'requested_model_id': meeting.requestedModelId,\n");
-    File(
-      p.join(root.path, 'clean.dart'),
-    ).writeAsStringSync("'recording_model_id': meeting.recordingModelId,\n");
+    File(p.join(root.path, 'bad.dart'))
+        .writeAsStringSync("'requested_model_id': meeting.requestedModelId,\n");
+    File(p.join(root.path, 'clean.dart'))
+        .writeAsStringSync("'recording_model_id': meeting.recordingModelId,\n");
 
     final violations = _legacyColumnViolations(root.path, legacyColumns);
 

@@ -601,14 +601,13 @@ void main() {
     final fixture = _fixture(_meeting());
     final completion = Completer<FinalTranscriptionResult>();
     var backCalls = 0;
-    fixture.runner.onCall =
-        ({
-          required meetingId,
-          required modelId,
-          required modelVersion,
-          required retrySnapshotId,
-          required onProgress,
-        }) => completion.future;
+    fixture.runner.onCall = ({
+      required meetingId,
+      required modelId,
+      required modelVersion,
+      required retrySnapshotId,
+      required onProgress,
+    }) => completion.future;
 
     await tester.pumpWidget(
       Application(

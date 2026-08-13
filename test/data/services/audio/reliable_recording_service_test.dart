@@ -365,9 +365,8 @@ void main() {
     expect(capture.disposeCalls, 1);
     expect(foreground.events, ['stop']);
     expect(
-      await File(
-        layout.meetingAudioTempPath('meeting-checkpoint-failure'),
-      ).exists(),
+      await File(layout.meetingAudioTempPath('meeting-checkpoint-failure'))
+          .exists(),
       isFalse,
     );
   });

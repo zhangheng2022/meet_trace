@@ -35,8 +35,9 @@ final class ModelDownloadCanceledException implements Exception {
   const ModelDownloadCanceledException();
 }
 
-typedef DownloadableModelProgressCallback =
-    void Function(DownloadableModelProgress progress);
+typedef DownloadableModelProgressCallback = void Function(
+  DownloadableModelProgress progress,
+);
 
 final class ModelDownloadCancellationToken {
   bool _isCanceled = false;

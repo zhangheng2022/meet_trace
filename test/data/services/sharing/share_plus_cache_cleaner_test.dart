@@ -23,9 +23,8 @@ void main() {
     final pluginCache = Directory(p.join(cacheRoot.path, 'share_plus'));
     final sibling = File(p.join(cacheRoot.path, 'keep.txt'));
     await pluginCache.create(recursive: true);
-    await File(
-      p.join(pluginCache.path, 'meeting-audio.wav'),
-    ).writeAsBytes([1, 2, 3]);
+    await File(p.join(pluginCache.path, 'meeting-audio.wav'))
+        .writeAsBytes([1, 2, 3]);
     await sibling.writeAsString('keep');
     final cleaner = SharePlusCacheCleaner(
       cacheDirectoryProvider: () async => cacheRoot,

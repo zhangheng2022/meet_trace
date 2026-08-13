@@ -19,23 +19,23 @@ concurrency:
 jobs:
   flutter-quality:
     name: Flutter quality and Android package audit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Flutter 3.44.9
+      - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: "3.44.9"
+          flutter-version-file: ".fvmrc"
           cache: true
 
       - name: Capture toolchain snapshot
@@ -83,7 +83,7 @@ jobs:
 
       - name: Upload quality evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: meettrace-quality-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

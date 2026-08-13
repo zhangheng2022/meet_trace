@@ -48,12 +48,11 @@ typedef RuntimeArtifactDownload =
       required void Function(int absoluteFileBytes) onProgress,
     });
 
-typedef RuntimeArtifactPreparation =
-    Future<void> Function({
-      required String downloadPath,
-      required String installationPath,
-      required void Function() throwIfCanceled,
-    });
+typedef RuntimeArtifactPreparation = Future<void> Function({
+  required String downloadPath,
+  required String installationPath,
+  required void Function() throwIfCanceled,
+});
 
 /// 共享 ASR 与 VAD 的文件下载、续传、校验和原子目录切换事务。
 ///

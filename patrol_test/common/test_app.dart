@@ -7,13 +7,12 @@ import '../keys.dart';
 import '../modules/modules.dart';
 import '../system/system.dart';
 
-typedef TestAppCallback =
-    Future<void> Function(
-      PatrolIntegrationTester $,
-      Modules modules,
-      System system,
-      ApiClients apiClients,
-    );
+typedef TestAppCallback = Future<void> Function(
+  PatrolIntegrationTester $,
+  Modules modules,
+  System system,
+  ApiClients apiClients,
+);
 
 @isTest
 void testApp(

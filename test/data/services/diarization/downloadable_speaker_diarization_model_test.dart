@@ -87,9 +87,8 @@ void main() {
     );
 
     expect(
-      Directory(
-        layout.modelVersionDirectory('speaker-test', 'v1'),
-      ).existsSync(),
+      Directory(layout.modelVersionDirectory('speaker-test', 'v1'))
+          .existsSync(),
       isFalse,
     );
     expect(
@@ -126,9 +125,8 @@ void main() {
     expect(Directory(p.join(tempRoot, 'download')).existsSync(), isTrue);
     expect(Directory(p.join(tempRoot, 'install')).existsSync(), isFalse);
     expect(
-      Directory(
-        layout.modelVersionDirectory('speaker-test', 'v1'),
-      ).existsSync(),
+      Directory(layout.modelVersionDirectory('speaker-test', 'v1'))
+          .existsSync(),
       isFalse,
     );
   });

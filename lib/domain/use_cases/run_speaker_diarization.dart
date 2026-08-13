@@ -96,7 +96,7 @@ final class SpeakerDiarizationCoordinator implements SpeakerDiarizationRunner {
           );
       validateSpeakerTurns(turns, eligible.$1.audioDurationMs);
       if (turns.isEmpty) {
-        return _degrade(
+        return await _degrade(
           snapshot: eligible.$2,
           taskId: taskId,
           createdAt: startedAt,

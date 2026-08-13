@@ -26,8 +26,9 @@ const meettraceFallbackPcmRecordConfig = RecordConfig(
   audioInterruption: AudioInterruptionMode.pauseResume,
 );
 
-typedef PcmStreamStarter =
-    Future<Stream<Uint8List>> Function(RecordConfig config);
+typedef PcmStreamStarter = Future<Stream<Uint8List>> Function(
+  RecordConfig config,
+);
 
 Future<Stream<Uint8List>> startPcmStreamWithEnhancementFallback(
   PcmStreamStarter startStream,

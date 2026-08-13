@@ -144,14 +144,13 @@ final class DetailProcessingTaskRepository implements ProcessingTaskRepository {
   }
 }
 
-typedef DetailTranscriptionCall =
-    Future<FinalTranscriptionResult> Function({
-      required String meetingId,
-      required String? modelId,
-      required String? modelVersion,
-      required String? retrySnapshotId,
-      required FinalTranscriptionProgressCallback? onProgress,
-    });
+typedef DetailTranscriptionCall = Future<FinalTranscriptionResult> Function({
+  required String meetingId,
+  required String? modelId,
+  required String? modelVersion,
+  required String? retrySnapshotId,
+  required FinalTranscriptionProgressCallback? onProgress,
+});
 
 final class DetailTranscriptionRunner implements FinalTranscriptionRunner {
   DetailTranscriptionRunner(

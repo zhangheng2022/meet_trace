@@ -665,9 +665,9 @@ int? _acceptanceEvidenceCount(Map<String, String>? evidence) {
   if (evidence == null) {
     return null;
   }
-  return [
-    for (var i = 1; i <= 18; i++) 'AT-${i.toString().padLeft(2, '0')}',
-  ].where((id) => evidence[id]?.trim().isNotEmpty == true).length;
+  return [for (var i = 1; i <= 18; i++) 'AT-${i.toString().padLeft(2, '0')}']
+      .where((id) => evidence[id]?.trim().isNotEmpty == true)
+      .length;
 }
 
 ReleaseGateResult _speakerCountsGate(List<int>? value) {

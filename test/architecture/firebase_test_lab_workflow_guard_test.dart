@@ -4,9 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Firebase Test Lab 工作流仅允许从 master 手动运行', () {
-    final workflow = File(
-      '.github/workflows/firebase-test-lab.yml',
-    ).readAsStringSync();
+    final workflow = File('.github/workflows/firebase-test-lab.yml')
+        .readAsStringSync();
 
     final triggerBlock = workflow.substring(
       workflow.indexOf('on:'),
@@ -20,9 +19,8 @@ void main() {
   });
 
   test('Firebase Test Lab 工作流使用 OIDC 和完整 Patrol 测试矩阵', () {
-    final workflow = File(
-      '.github/workflows/firebase-test-lab.yml',
-    ).readAsStringSync();
+    final workflow = File('.github/workflows/firebase-test-lab.yml')
+        .readAsStringSync();
 
     expect(workflow, contains('id-token: write'));
     expect(workflow, contains('FIREBASE_PROJECT_ID: meet-trace'));
@@ -62,6 +60,11 @@ void main() {
     );
     expect(workflow, contains('fail-fast: false'));
     expect(workflow, contains('max-parallel: 2'));
+    expect(workflow, contains('android_version: ["35", "36"]'));
+    expect(
+      workflow,
+      contains(r'ANDROID_VERSION: ${{ matrix.android_version }}'),
+    );
     expect(workflow, contains(r'PATROL_NAME: ${{ matrix.patrol.name }}'));
     expect(workflow, contains(r'PATROL_TARGET: ${{ matrix.patrol.target }}'));
     expect(workflow, contains(r'patrol build android \'));
@@ -69,13 +72,13 @@ void main() {
     expect(
       workflow,
       contains(
-        r'matrixLabel=meettrace-${PATROL_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}',
+        r'matrixLabel=meettrace-api${ANDROID_VERSION}-${PATROL_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}',
       ),
     );
     expect(
       workflow,
       contains(
-        r'name: firebase-test-lab-${{ matrix.patrol.name }}-${{ github.run_id }}-${{ github.run_attempt }}',
+        r'name: firebase-test-lab-api-${{ matrix.android_version }}-${{ matrix.patrol.name }}-${{ github.run_id }}-${{ github.run_attempt }}',
       ),
     );
     expect(workflow, contains('default: MediumPhone.arm'));

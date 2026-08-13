@@ -4,9 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Android 声明 microphone 前台服务且不包含自建原生桥接', () async {
-    final manifest = await File(
-      'android/app/src/main/AndroidManifest.xml',
-    ).readAsString();
+    final manifest = await File('android/app/src/main/AndroidManifest.xml')
+        .readAsString();
 
     expect(
       manifest,

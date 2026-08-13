@@ -93,9 +93,8 @@ final class AndroidProcAsrDeviceRiskMonitor implements AsrDeviceRiskMonitor {
 Map<String, int> _parseMemInfo(String source) {
   final values = <String, int>{};
   for (final line in source.split('\n')) {
-    final match = RegExp(
-      r'^([A-Za-z_()]+):\s+(\d+)\s+kB$',
-    ).firstMatch(line.trim());
+    final match = RegExp(r'^([A-Za-z_()]+):\s+(\d+)\s+kB$')
+        .firstMatch(line.trim());
     if (match != null) {
       values[match.group(1)!] = int.parse(match.group(2)!) * 1024;
     }

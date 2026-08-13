@@ -10,18 +10,16 @@ void main() {
   late Map<String, dynamic> source;
 
   setUp(() {
-    source =
-        jsonDecode(
-              File(
-                p.join(
-                  Directory.current.path,
-                  'assets',
-                  'models',
-                  'speaker-diarization-manifest.json',
-                ),
-              ).readAsStringSync(),
-            )
-            as Map<String, dynamic>;
+    source = jsonDecode(
+      File(
+        p.join(
+          Directory.current.path,
+          'assets',
+          'models',
+          'speaker-diarization-manifest.json',
+        ),
+      ).readAsStringSync(),
+    ) as Map<String, dynamic>;
   });
 
   test('固定 Manifest 只安装 INT8 分割模型、许可和嵌入模型', () {

@@ -19,17 +19,20 @@ concurrency:
 jobs:
   build-ios-unsigned:
     name: Build and inspect unsigned iOS app
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 90
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Flutter 3.44.9
+      - name: Select Xcode 26.6
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+
+      - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: "3.44.9"
+          flutter-version-file: ".fvmrc"
           cache: true
 
       - name: Capture toolchain snapshot
@@ -60,7 +63,7 @@ jobs:
           } | tee build/ios/unsigned/toolchain.txt
 
       - name: Resolve dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Analyze
         run: flutter analyze
@@ -168,7 +171,7 @@ jobs:
 
       - name: Upload unsigned build evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: meettrace-ios-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

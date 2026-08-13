@@ -7,7 +7,7 @@ void main() {
     final pubspec = await File('pubspec.yaml').readAsString();
     final main = await File('lib/main.dart').readAsString();
 
-    expect(pubspec, contains('sherpa_onnx: 1.13.4'));
+    expect(pubspec, contains('sherpa_onnx: 1.13.5'));
     expect(main, contains('sherpaOnnxRuntimeInitializer.initialize()'));
   });
 

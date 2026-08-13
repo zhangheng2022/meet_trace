@@ -8,12 +8,6 @@ on:
         required: true
         default: MediumPhone.arm
         type: string
-      android_version:
-        description: Firebase Test Lab Android version ID
-        required: true
-        default: "35"
-        type: string
-
 permissions: {}
 
 concurrency:
@@ -22,13 +16,14 @@ concurrency:
 
 jobs:
   firebase-test-lab:
-    name: Patrol ${{ matrix.patrol.name }} on Firebase Test Lab
-    runs-on: ubuntu-latest
+    name: Patrol ${{ matrix.patrol.name }} on Android ${{ matrix.android_version }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 75
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
+        android_version: ["35", "36"]
         patrol:
           - name: harness-smoke
             target: patrol_test/harness_smoke_test.dart
@@ -46,13 +41,13 @@ jobs:
     env:
       FIREBASE_PROJECT_ID: meet-trace
       DEVICE_MODEL: ${{ inputs.device_model }}
-      ANDROID_VERSION: ${{ inputs.android_version }}
+      ANDROID_VERSION: ${{ matrix.android_version }}
       PATROL_NAME: ${{ matrix.patrol.name }}
       PATROL_TARGET: ${{ matrix.patrol.target }}
 
     steps:
       - name: Checkout requested commit
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
 
@@ -90,6 +85,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
         with:
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
+          version: "580.0.0"
 
       - name: Validate Firebase device
         shell: bash
@@ -107,22 +103,22 @@ jobs:
             }
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Flutter 3.44.9
+      - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: "3.44.9"
+          flutter-version-file: ".fvmrc"
           cache: true
 
       - name: Resolve dependencies
         run: flutter pub get --enforce-lockfile
 
       - name: Install Patrol CLI
-        run: dart pub global activate patrol_cli 4.6.1
+        run: dart pub global activate patrol_cli 4.7.0
 
       - name: Build Firebase instrumentation APKs
         shell: bash
@@ -149,7 +145,7 @@ jobs:
             --test build/app/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
             --device "model=$DEVICE_MODEL,version=$ANDROID_VERSION,locale=en,orientation=portrait" \
             --timeout 45m \
-            --client-details "matrixLabel=meettrace-${PATROL_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --client-details "matrixLabel=meettrace-api${ANDROID_VERSION}-${PATROL_NAME}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --results-history-name meettrace-patrol-master \
             2>&1 | tee build/firebase-test-lab/gcloud-output.txt
           test_exit_code=${PIPESTATUS[0]}
@@ -173,9 +169,9 @@ jobs:
 
       - name: Upload Firebase run evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: firebase-test-lab-${{ matrix.patrol.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: firebase-test-lab-api-${{ matrix.android_version }}-${{ matrix.patrol.name }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             build/firebase-test-lab/apk-sha256.txt
             build/firebase-test-lab/device-model.json

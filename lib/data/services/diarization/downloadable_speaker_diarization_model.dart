@@ -178,9 +178,8 @@ final class DownloadableSpeakerDiarizationModelService
                 installationPath,
                 manifest.embeddingModel.installation.path,
               );
-              await Directory(
-                p.dirname(embeddingTarget),
-              ).create(recursive: true);
+              await Directory(p.dirname(embeddingTarget))
+                  .create(recursive: true);
               await embeddingSource.copy(embeddingTarget);
               throwIfCanceled();
             },

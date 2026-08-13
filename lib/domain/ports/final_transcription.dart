@@ -3,8 +3,9 @@ import '../models/speaker_diarization.dart';
 import '../models/transcript.dart';
 import 'asr_engine.dart';
 
-typedef FinalTranscriptionProgressCallback =
-    void Function(AsrFinalizationProgress progress);
+typedef FinalTranscriptionProgressCallback = void Function(
+  AsrFinalizationProgress progress,
+);
 
 final class FinalTranscriptionResult {
   const FinalTranscriptionResult({

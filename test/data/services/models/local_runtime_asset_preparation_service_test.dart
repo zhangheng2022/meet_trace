@@ -37,14 +37,12 @@ void main() {
           registry: AsrModelRegistry.alpha,
           currentAppVersion: '1.0.0',
         ).parse(
-          File(
-            p.join(root, 'assets', 'models', 'manifest.json'),
-          ).readAsStringSync(),
+          File(p.join(root, 'assets', 'models', 'manifest.json'))
+              .readAsStringSync(),
         );
     final vadManifest = const SileroVadManifestParser().parse(
-      File(
-        p.join(root, 'assets', 'models', 'silero-vad-manifest.json'),
-      ).readAsStringSync(),
+      File(p.join(root, 'assets', 'models', 'silero-vad-manifest.json'))
+          .readAsStringSync(),
     );
     final speakerManifest = const SpeakerDiarizationManifestParser().parse(
       File(

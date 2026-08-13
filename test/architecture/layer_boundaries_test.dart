@@ -163,9 +163,9 @@ void main() {
   });
 
   test('顶层组合根只编排子容器，不重新聚合 data 与 ui 依赖', () {
-    final imports = _importsUnder(
-      'lib/app/meettrace_dependencies.dart',
-    ).map((entry) => entry.uri).toList();
+    final imports = _importsUnder('lib/app/meettrace_dependencies.dart')
+        .map((entry) => entry.uri)
+        .toList();
     final violations = imports.where(
       (uri) => uri.contains('/data/') || uri.contains('/ui/'),
     );

@@ -18,7 +18,7 @@ String _job(String workflow, String job, [String? nextJob]) {
 
 void main() {
   group('GitHub Alpha 发布守卫', () {
-    test('工作流使用当前稳定的官方 Action 主版本', () async {
+    test('工作流使用不可变的 Action 完整提交 SHA', () async {
       final workflowFiles = await Directory('.github/workflows')
           .list()
           .where(
@@ -33,17 +33,37 @@ void main() {
       )).join('\n');
 
       expect(
-        RegExp(
-          r'actions/checkout@[^\s]+',
-        ).allMatches(workflows).map((match) => match.group(0)).toSet(),
-        {'actions/checkout@v7'},
+        RegExp(r'actions/checkout@[^\s]+')
+            .allMatches(workflows)
+            .map((match) => match.group(0))
+            .toSet(),
+        {
+          'actions/checkout@'
+              '3d3c42e5aac5ba805825da76410c181273ba90b1',
+        },
       );
       expect(
-        RegExp(
-          r'actions/setup-java@[^\s]+',
-        ).allMatches(workflows).map((match) => match.group(0)).toSet(),
-        {'actions/setup-java@v5'},
+        RegExp(r'actions/setup-java@[^\s]+')
+            .allMatches(workflows)
+            .map((match) => match.group(0))
+            .toSet(),
+        {
+          'actions/setup-java@'
+              'b6effb05e454b25005698d916606bdc6ffcbf961',
+        },
       );
+      expect(
+        RegExp(r'uses:\s+[^@\s]+@([^\s]+)')
+            .allMatches(workflows)
+            .every(
+              (match) => RegExp(r'^[0-9a-f]{40}$').hasMatch(match.group(1)!),
+            ),
+        isTrue,
+      );
+      expect(workflows, isNot(contains('runs-on: ubuntu-latest')));
+      expect(workflows, isNot(contains('runs-on: macos-latest')));
+      expect(workflows, contains('runs-on: ubuntu-24.04'));
+      expect(workflows, contains('runs-on: macos-26'));
     });
 
     test('所有 Flutter 工作流固定到已验证的工具链版本', () async {
@@ -60,15 +80,20 @@ void main() {
         workflowFiles.map((file) => file.readAsString()),
       )).join('\n');
 
-      final flutterSetupCount = RegExp(
-        r'uses: subosito/flutter-action@[^\s]+',
-      ).allMatches(workflows).length;
-      final pinnedVersionCount = RegExp(
-        r'flutter-version: "3\.44\.9"',
-      ).allMatches(workflows).length;
+      final flutterSetupCount = RegExp(r'uses: subosito/flutter-action@[^\s]+')
+          .allMatches(workflows)
+          .length;
+      final versionFileCount = RegExp(r'flutter-version-file: "\.fvmrc"')
+          .allMatches(workflows)
+          .length;
+      final fvmConfig = jsonDecode(
+        await File('.fvmrc').readAsString(),
+      ) as Map<String, Object?>;
 
       expect(flutterSetupCount, greaterThan(0));
-      expect(pinnedVersionCount, flutterSetupCount);
+      expect(versionFileCount, flutterSetupCount);
+      expect(fvmConfig['flutter'], '3.47.0');
+      expect(workflows, isNot(contains('flutter-version:')));
       expect(workflows, isNot(contains('channel: stable')));
     });
 
@@ -161,7 +186,13 @@ void main() {
       expect(android, contains('ANDROID_SIGNING_CERT_SHA256'));
       expect(android, contains(r'^.*certificate SHA-256 digest:'));
       expect(android, isNot(contains(r'^Signer #1 certificate SHA-256')));
-      expect(android, contains('uses: actions/attest@v4'));
+      expect(
+        android,
+        contains(
+          'uses: actions/attest@'
+          '1e69f48acb82d1966a394da916b4c1698aa569d6',
+        ),
+      );
       expect(android, contains('"job": "android"'));
       expect(android, contains(r'if ($abis.Count -ne 1'));
       expect(android, isNot(contains('build/app/outputs/flutter-apk/*.apk')));
@@ -173,8 +204,26 @@ void main() {
 
       expect(ios, contains('environment: testflight'));
       expect(ios, contains('contents: read'));
-      expect(ios, contains('uses: actions/attest@v4'));
-      expect(ios, contains('run: fastlane ios upload_testflight'));
+      expect(
+        ios,
+        contains(
+          'uses: actions/attest@'
+          '1e69f48acb82d1966a394da916b4c1698aa569d6',
+        ),
+      );
+      expect(
+        ios,
+        contains(
+          'uses: ruby/setup-ruby@'
+          '95ef2b042f9d7a56d8268cba8559e2842e2ad01b',
+        ),
+      );
+      expect(ios, contains('run: bundle exec fastlane ios upload_testflight'));
+      expect(await File('Gemfile').readAsString(), contains('2.238.0'));
+      expect(
+        await File('Gemfile.lock').readAsString(),
+        contains('fastlane (2.238.0)'),
+      );
       expect(ios, contains('"job": "ios"'));
       expect(ios, isNot(contains('gh release upload')));
       expect(ios, isNot(contains('build/ios/testflight/*.ipa')));
@@ -204,13 +253,9 @@ void main() {
     });
 
     test('原质量记录工具继续保留为非阻断记录', () async {
-      final decoded =
-          jsonDecode(
-                await File(
-                  'docs/quality/alpha_release_input.json',
-                ).readAsString(),
-              )
-              as Map<String, Object?>;
+      final decoded = jsonDecode(
+        await File('docs/quality/alpha_release_input.json').readAsString(),
+      ) as Map<String, Object?>;
       final senseVoice = decoded['senseVoice']! as Map<String, Object?>;
 
       expect(decoded['schemaVersion'], 4);

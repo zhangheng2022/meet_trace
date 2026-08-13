@@ -419,9 +419,8 @@ final class _FakeDownloader implements ModelFileDownloader {
     calls.add(
       _DownloadCall(path: p.basename(destinationPath), resumeFrom: resumeFrom),
     );
-    final output = await File(
-      destinationPath,
-    ).open(mode: resumeFrom == 0 ? FileMode.write : FileMode.append);
+    final output = await File(destinationPath)
+        .open(mode: resumeFrom == 0 ? FileMode.write : FileMode.append);
     var written = resumeFrom;
     try {
       for (final byte in bytes.skip(resumeFrom)) {

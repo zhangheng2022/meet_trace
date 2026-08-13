@@ -35,15 +35,12 @@ void main() {
   Future<void> seedLegacyInstallation() async {
     await layout.createBaseDirectories();
     await File(layout.databasePath).writeAsString('legacy-db');
-    await File(
-      p.join(layout.meetingsRoot, 'old-meeting', 'audio', 'fact.pcm'),
-    ).create(recursive: true);
-    await File(
-      p.join(layout.modelsRoot, 'sense-voice', '1', 'model.int8.onnx'),
-    ).create(recursive: true);
-    await File(
-      layout.meetingAudioCheckpointPath('old-meeting'),
-    ).create(recursive: true);
+    await File(p.join(layout.meetingsRoot, 'old-meeting', 'audio', 'fact.pcm'))
+        .create(recursive: true);
+    await File(p.join(layout.modelsRoot, 'sense-voice', '1', 'model.int8.onnx'))
+        .create(recursive: true);
+    await File(layout.meetingAudioCheckpointPath('old-meeting'))
+        .create(recursive: true);
   }
 
   test('首次安装没有标记时只建立基线，不清除任何内容', () async {

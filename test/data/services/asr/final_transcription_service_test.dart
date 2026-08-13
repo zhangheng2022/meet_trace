@@ -708,12 +708,11 @@ final class _NonCancelableDiarizationService
   }
 }
 
-typedef _ResultBuilder =
-    TranscriptSnapshot Function({
-      required AsrModelDescriptor descriptor,
-      required String meetingId,
-      required String snapshotId,
-    });
+typedef _ResultBuilder = TranscriptSnapshot Function({
+  required AsrModelDescriptor descriptor,
+  required String meetingId,
+  required String snapshotId,
+});
 
 final class _EngineFactory implements AsrEngineFactory {
   final List<(String, String)> createCalls = [];

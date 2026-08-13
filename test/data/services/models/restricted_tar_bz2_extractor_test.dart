@@ -39,21 +39,18 @@ void main() {
     );
 
     expect(
-      File(
-        p.join(fixture.installationPath, 'segmentation', 'model.int8.onnx'),
-      ).readAsBytesSync(),
+      File(p.join(fixture.installationPath, 'segmentation', 'model.int8.onnx'))
+          .readAsBytesSync(),
       [1, 2, 3],
     );
     expect(
-      File(
-        p.join(fixture.installationPath, 'segmentation', 'LICENSE'),
-      ).readAsBytesSync(),
+      File(p.join(fixture.installationPath, 'segmentation', 'LICENSE'))
+          .readAsBytesSync(),
       [4, 5],
     );
     expect(
-      File(
-        p.join(fixture.installationPath, 'bundle', 'model.onnx'),
-      ).existsSync(),
+      File(p.join(fixture.installationPath, 'bundle', 'model.onnx'))
+          .existsSync(),
       isFalse,
     );
   });

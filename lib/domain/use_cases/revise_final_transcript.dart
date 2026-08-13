@@ -31,8 +31,10 @@ final class TranscriptRevisionException implements Exception {
   final String code;
 }
 
-typedef TranscriptRevisionSnapshotIdFactory =
-    String Function(TranscriptSnapshot source, DateTime createdAt);
+typedef TranscriptRevisionSnapshotIdFactory = String Function(
+  TranscriptSnapshot source,
+  DateTime createdAt,
+);
 
 final class ReviseFinalTranscriptUseCase {
   ReviseFinalTranscriptUseCase({

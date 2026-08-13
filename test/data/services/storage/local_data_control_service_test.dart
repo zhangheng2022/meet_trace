@@ -18,12 +18,10 @@ void main() {
     temporary = await Directory.systemTemp.createTemp('meettrace-diagnostics-');
     layout = AppFileLayout(rootPath: temporary.path);
     await layout.createBaseDirectories();
-    await File(
-      layout.meetingAudioPath('secret-id'),
-    ).parent.create(recursive: true);
-    await File(
-      layout.meetingAudioPath('secret-id'),
-    ).writeAsBytes(List.filled(32, 1));
+    await File(layout.meetingAudioPath('secret-id')).parent
+        .create(recursive: true);
+    await File(layout.meetingAudioPath('secret-id'))
+        .writeAsBytes(List.filled(32, 1));
     await File(layout.databasePath).writeAsBytes(List.filled(8, 2));
   });
 

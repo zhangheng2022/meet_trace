@@ -20,12 +20,11 @@ enum AppWindowSizeClass {
   }
 }
 
-typedef AppResponsiveWidgetBuilder =
-    Widget Function(
-      BuildContext context,
-      AppWindowSizeClass sizeClass,
-      BoxConstraints constraints,
-    );
+typedef AppResponsiveWidgetBuilder = Widget Function(
+  BuildContext context,
+  AppWindowSizeClass sizeClass,
+  BoxConstraints constraints,
+);
 
 /// 只根据父布局约束选择布局，不读取设备型号、方向或平台字符串。
 final class AppResponsiveBuilder extends StatelessWidget {

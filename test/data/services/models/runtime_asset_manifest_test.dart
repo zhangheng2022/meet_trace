@@ -17,9 +17,8 @@ void main() {
           registry: AsrModelRegistry.alpha,
           currentAppVersion: '1.0.0',
         ).parse(
-          File(
-            p.join(projectRoot, 'assets', 'models', 'manifest.json'),
-          ).readAsStringSync(),
+          File(p.join(projectRoot, 'assets', 'models', 'manifest.json'))
+              .readAsStringSync(),
         );
     final model = manifest.models.single;
 
@@ -51,16 +50,14 @@ void main() {
               currentAppVersion: '1.0.0',
             )
             .parse(
-              File(
-                p.join(projectRoot, 'assets', 'models', 'manifest.json'),
-              ).readAsStringSync(),
+              File(p.join(projectRoot, 'assets', 'models', 'manifest.json'))
+                  .readAsStringSync(),
             )
             .models
             .single;
     final vad = const SileroVadManifestParser().parse(
-      File(
-        p.join(projectRoot, 'assets', 'models', 'silero-vad-manifest.json'),
-      ).readAsStringSync(),
+      File(p.join(projectRoot, 'assets', 'models', 'silero-vad-manifest.json'))
+          .readAsStringSync(),
     );
     final speaker = const SpeakerDiarizationManifestParser().parse(
       File(
@@ -107,9 +104,8 @@ void main() {
   });
 
   test('Flutter 安装包资产只声明 Manifest 与许可，不声明任何模型权重', () {
-    final pubspec = File(
-      p.join(projectRoot, 'pubspec.yaml'),
-    ).readAsStringSync();
+    final pubspec = File(p.join(projectRoot, 'pubspec.yaml'))
+        .readAsStringSync();
 
     expect(pubspec, isNot(contains('.onnx')));
     expect(pubspec, isNot(contains('assets/models/sherpa-onnx-')));
