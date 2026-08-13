@@ -1,0 +1,11 @@
+---
+exclude_paths:
+  - ".agents/**"
+  - ".claude/**"
+
+engines:
+  dartanalyzer:
+    # Codacy 的托管 Dart Analyzer 不解析 Flutter test package graph，
+    # 测试代码由仓库内的 flutter analyze 与 flutter test 负责。
+    exclude_paths:
+      - "test/**"

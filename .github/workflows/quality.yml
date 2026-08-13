@@ -1,4 +1,4 @@
-name: Flutter Quality
+name: Flutter CI
 
 on:
   workflow_dispatch:
@@ -13,24 +13,86 @@ permissions:
   contents: read
 
 concurrency:
-  group: flutter-quality-${{ github.workflow }}-${{ github.ref }}
+  group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  flutter-quality:
-    name: Flutter quality and Android package audit
+  classify:
+    name: Classify changed paths
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 5
+    outputs:
+      core: ${{ steps.changes.outputs.core }}
+      android: ${{ steps.changes.outputs.android }}
+      ios: ${{ steps.changes.outputs.ios }}
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Classify changes
+        id: changes
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" || \
+                -z "$BASE_SHA" || \
+                "$BASE_SHA" =~ ^0+$ ]]; then
+            python3 tool/ci/classify_changes.py \
+              --all --github-output "$GITHUB_OUTPUT"
+          else
+            git diff --name-only -z "$BASE_SHA" "$GITHUB_SHA" \
+              > "$RUNNER_TEMP/meettrace-changed-paths"
+            FORCE_ALL=false
+            while IFS= read -r -d '' CHANGED_PATH; do
+              case "$CHANGED_PATH" in
+                .github/workflows/quality.yml|tool/ci/classify_changes.py)
+                  FORCE_ALL=true
+                  break
+                  ;;
+              esac
+            done < "$RUNNER_TEMP/meettrace-changed-paths"
+
+            if [[ "$FORCE_ALL" == "true" ]]; then
+              for TARGET in core android ios; do
+                echo "$TARGET=true" >> "$GITHUB_OUTPUT"
+              done
+            else
+              python3 tool/ci/classify_changes.py \
+                --path-file "$RUNNER_TEMP/meettrace-changed-paths" \
+                --github-output "$GITHUB_OUTPUT"
+            fi
+          fi
+
+  flutter-quality:
+    name: Flutter core quality and Android package audit
+    needs: classify
+    if: needs.classify.outputs.core == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/_flutter-core.yml
+    with:
+      checkout_ref: ${{ github.sha }}
+      build_android: ${{ needs.classify.outputs.android == 'true' }}
+      upload_evidence: ${{ needs.classify.outputs.android == 'true' }}
+
+  ios-unsigned:
+    name: Build and inspect unsigned iOS app
+    needs: classify
+    if: needs.classify.outputs.ios == 'true'
+    runs-on: macos-26
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Java 17
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: temurin
-          java-version: "17"
+      - name: Select Xcode 26.6
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
 
       - name: Set up Flutter 3.47.0
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -42,53 +104,158 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p build/quality
+          mkdir -p build/ios/unsigned
           {
             echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "commit_sha=$GITHUB_SHA"
+            echo "runner_arch=$(uname -m)"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_name=${RUNNER_NAME}"
+            echo "--- macOS ---"
+            sw_vers
+            echo "--- Xcode ---"
+            xcode-select -p
+            xcodebuild -version
+            echo "--- Flutter ---"
             flutter --version
+            echo "--- Dart ---"
             dart --version 2>&1
-            java -version 2>&1
-          } | tee build/quality/toolchain.txt
+            echo "--- CocoaPods ---"
+            pod --version
+            echo "--- Memory ---"
+            sysctl -n hw.memsize
+            echo "--- Disk ---"
+            df -h
+          } | tee build/ios/unsigned/toolchain.txt
 
-      - name: Resolve locked dependencies
+      - name: Resolve dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Check formatting
-        run: >-
-          dart format --output=none --set-exit-if-changed
-          lib test tool
+      - name: Build Debug app without code signing
+        run: flutter build ios --debug --no-codesign
 
-      - name: Analyze
-        run: flutter analyze
+      - name: Build Release app without code signing
+        run: flutter build ios --release --no-codesign
 
-      - name: Test
-        run: flutter test
-
-      - name: Build Android Debug APK
-        run: flutter build apk --debug
-
-      - name: Inspect Android Debug APK
-        shell: pwsh
-        run: >-
-          ./tool/benchmarks/inspect_debug_apk.ps1
-          -ApkPath build/app/outputs/flutter-apk/app-debug.apk
-          -ReportPath build/quality/android-apk-inspection.json
-
-      - name: Write APK checksum
+      - name: Inspect Release app bundle
         shell: bash
-        run: >-
-          sha256sum build/app/outputs/flutter-apk/app-debug.apk
-          > build/quality/android-debug-apk.sha256
+        run: |
+          bash tool/benchmarks/inspect_ios_app.sh \
+            build/ios/iphoneos/Runner.app \
+            build/ios/unsigned/ios-app-inspection.json
 
-      - name: Upload quality evidence
+      - name: Write unsigned app bundle metadata
+        shell: bash
+        env:
+          BUILD_APP_PATH: build/ios/iphoneos/Runner.app
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/build/ios/unsigned"
+
+          python3 - <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import platform
+          import subprocess
+          from pathlib import Path
+
+          def output(*command: str) -> str:
+              return subprocess.check_output(command, text=True, stderr=subprocess.STDOUT).strip()
+
+          app_path = Path(os.environ["BUILD_APP_PATH"])
+          if not app_path.is_dir():
+              raise SystemExit(f"Missing app bundle: {app_path}")
+
+          tree_digest = hashlib.sha256()
+          total_bytes = 0
+          for entry in sorted(app_path.rglob("*"), key=lambda path: path.as_posix()):
+              relative = entry.relative_to(app_path).as_posix()
+              tree_digest.update(relative.encode("utf-8"))
+              tree_digest.update(b"\0")
+              if entry.is_symlink():
+                  tree_digest.update(os.readlink(entry).encode("utf-8"))
+                  continue
+              if not entry.is_file():
+                  continue
+              total_bytes += entry.stat().st_size
+              with entry.open("rb") as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                      tree_digest.update(chunk)
+
+          metadata = {
+              "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "commitSha": os.environ["GITHUB_SHA"],
+              "ref": os.environ["GITHUB_REF"],
+              "runId": os.environ["GITHUB_RUN_ID"],
+              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "runner": {
+                  "os": os.environ["RUNNER_OS"],
+                  "architecture": platform.machine(),
+                  "macos": output("sw_vers", "-productVersion"),
+              },
+              "xcode": output("xcodebuild", "-version"),
+              "flutter": json.loads(output("flutter", "--version", "--machine")),
+              "cocoapods": output("pod", "--version"),
+              "artifact": {
+                  "name": app_path.name,
+                  "bytes": total_bytes,
+                  "treeSha256": tree_digest.hexdigest(),
+                  "kind": "unsigned-app-bundle",
+                  "distributionSigned": False,
+                  "directlyInstallable": False,
+                  "packagedForDistribution": False,
+              },
+          }
+          report_path = Path("build/ios/unsigned/build-metadata.json")
+          report_path.write_text(
+              json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(f"Build metadata: {report_path}")
+          PY
+
+      - name: Capture final disk usage
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p build/ios/unsigned
+          {
+            echo "--- Final disk usage ---"
+            df -h
+            echo "--- Unsigned outputs ---"
+            find build/ios/unsigned -maxdepth 1 -type f -print 2>/dev/null || true
+          } | tee -a build/ios/unsigned/toolchain.txt
+
+      - name: Upload unsigned build evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: meettrace-quality-${{ github.run_id }}-${{ github.run_attempt }}
+          name: meettrace-ios-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            build/quality/*.json
-            build/quality/*.sha256
-            build/quality/*.txt
+            build/ios/unsigned/*.json
+            build/ios/unsigned/*.txt
           if-no-files-found: warn
           retention-days: 7
+          compression-level: 0
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs: [classify, flutter-quality, ios-unsigned]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      CLASSIFY_RESULT: ${{ needs.classify.result }}
+      FLUTTER_RESULT: ${{ needs.flutter-quality.result }}
+      IOS_RESULT: ${{ needs.ios-unsigned.result }}
+    steps:
+      - name: Require successful selected jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$CLASSIFY_RESULT" == "success" ]]
+          for result in "$FLUTTER_RESULT" "$IOS_RESULT"; do
+            [[ "$result" == "success" || "$result" == "skipped" ]]
+          done

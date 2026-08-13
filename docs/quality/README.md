@@ -19,8 +19,8 @@
 
 | 范围 | 当前入口 | 必须证明 |
 |---|---|---|
-| 日常质量 | `.github/workflows/quality.yml` | 依赖锁、格式、分析、测试、Debug APK 构建与包审计 |
-| iOS 无签名 | `.github/workflows/ios-unsigned.yml` | Debug/Release 无签名构建、App bundle 审计、工具链和产物摘要 |
+| 跨平台 CI | `.github/workflows/quality.yml` | 按变更路径执行格式、分析、测试、Android Debug APK 与 iOS 无签名构建审计，并始终汇总 `CI Gate` |
+| 可复用质量核心 | `.github/workflows/_flutter-core.yml` | 为 PR CI 与 Alpha Release 提供同一套格式、分析和测试门禁 |
 | 正式候选 | `.github/workflows/alpha-release.yml` | 同一 SHA、Android 签名 arm64 APK、iOS TestFlight、候选清单及一次公开批准 |
 | 本地交付 | `dart format lib test`、`flutter analyze`、`flutter test` | 当前工作树通过；代码变更按 AGENTS 完成 OCR 和目标平台构建 |
 

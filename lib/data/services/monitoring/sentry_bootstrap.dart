@@ -34,6 +34,8 @@ final class SentryRuntimeConfiguration {
     required this.enabled,
     required this.dsn,
     required this.environment,
+    required this.release,
+    required this.dist,
     required this.tracesSampleRate,
     required this.profilesSampleRate,
     required this.replaySessionSampleRate,
@@ -47,6 +49,8 @@ final class SentryRuntimeConfiguration {
   final bool enabled;
   final String dsn;
   final String environment;
+  final String? release;
+  final String? dist;
   final double tracesSampleRate;
   final double profilesSampleRate;
   final double replaySessionSampleRate;
@@ -66,6 +70,8 @@ final class SentryRuntimeConfiguration {
         'SENTRY_ENVIRONMENT',
         defaultValue: kReleaseMode ? 'production' : 'development',
       ),
+      release: const String.fromEnvironment('SENTRY_RELEASE'),
+      dist: const String.fromEnvironment('SENTRY_DIST'),
       tracesSampleRate: const String.fromEnvironment(
         'SENTRY_TRACES_SAMPLE_RATE',
         defaultValue: '0.2',
@@ -90,6 +96,8 @@ final class SentryRuntimeConfiguration {
     required bool enabled,
     required String dsn,
     required String environment,
+    String release = '',
+    String dist = '',
     required String tracesSampleRate,
     required String profilesSampleRate,
     required String replaySessionSampleRate,
@@ -103,6 +111,8 @@ final class SentryRuntimeConfiguration {
       environment: normalizedEnvironment.isEmpty
           ? 'production'
           : normalizedEnvironment,
+      release: _normalizedOptional(release),
+      dist: _normalizedOptional(dist),
       tracesSampleRate: _parseSampleRate(tracesSampleRate, fallback: 0.2),
       profilesSampleRate: _parseSampleRate(profilesSampleRate, fallback: 0.1),
       replaySessionSampleRate: _parseSampleRate(
@@ -172,6 +182,13 @@ final class SentryRuntimeConfiguration {
       ..enableFramesTracking = true
       ..enableNativeTraceSync = true;
 
+    if (release case final release?) {
+      options.release = release;
+    }
+    if (dist case final dist?) {
+      options.dist = dist;
+    }
+
     options.tracesSampler = (_) => gate.recordingActive ? 0 : tracesSampleRate;
     options.beforeSendTransaction = (transaction, _) =>
         gate.recordingActive ? null : transaction;
@@ -201,6 +218,11 @@ final class SentryRuntimeConfiguration {
       return fallback;
     }
     return parsed.clamp(0, 1).toDouble();
+  }
+
+  static String? _normalizedOptional(String value) {
+    final normalized = value.trim();
+    return normalized.isEmpty ? null : normalized;
   }
 }
 
