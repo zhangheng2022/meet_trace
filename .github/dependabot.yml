@@ -51,3 +51,13 @@ updates:
       day: monday
       time: "09:00"
       timezone: Asia/Shanghai
+    ignore:
+      # AGP 与 Gradle 的次版本必须按官方兼容矩阵协调升级。
+      - dependency-name: com.android.application
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+      - dependency-name: gradle-wrapper
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
