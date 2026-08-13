@@ -16,8 +16,8 @@ def extract_dart(path: Path) -> dict:
 
     # Remove inline and multi-line comments while leaving string literals untouched to prevent stripping URLs/paths inside strings
     comment_string_pattern = re.compile(
-        r'"""(?:\\.|[\s\S])*?"""'
-        r"|'''(?:\\.|[\s\S])*?'''"
+        r'"""(?:\\[\s\S]|[^\\])*?"""'
+        r"|'''(?:\\[\s\S]|[^\\])*?'''"
         r'|"(?:\\.|[^"\\])*"'
         r"|'(?:\\.|[^'\\])*'"
         r"|/\*[\s\S]*?\*/"

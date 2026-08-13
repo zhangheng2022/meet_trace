@@ -51,13 +51,13 @@ updates:
       day: monday
       time: "09:00"
       timezone: Asia/Shanghai
-    ignore:
-      # AGP 与 Gradle 的次版本必须按官方兼容矩阵协调升级。
+    allow:
+      # 常规更新只自动跟进已验证版本线内的补丁；安全更新不受
+      # allow.update-types 限制，仍可提出跨版本修复供人工评估。
       - dependency-name: com.android.application
         update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
+          - version-update:semver-patch
       - dependency-name: gradle-wrapper
         update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
+          - version-update:semver-patch
+      - dependency-name: org.jetbrains.kotlin.android

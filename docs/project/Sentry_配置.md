@@ -22,6 +22,8 @@
 | `SENTRY_ENABLED` | Release 为 `true`，其他模式为 `false` | 总开关；DSN 为空时强制关闭 |
 | `SENTRY_DSN` | 当前 MeetTrace Sentry 项目的公开 DSN | 可切换项目；不是上传权限凭据 |
 | `SENTRY_ENVIRONMENT` | Release 为 `production`，其他模式为 `development` | Sentry 环境名 |
+| `SENTRY_RELEASE` | 空，由 SDK 自动识别 | 正式候选显式使用 `com.meettrace.app@<version>+<build>` |
+| `SENTRY_DIST` | 空，由 SDK 自动识别 | 正式候选显式使用共享构建号 |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.2` | 性能事务采样率，限制在 `0..1` |
 | `SENTRY_PROFILES_SAMPLE_RATE` | `0.1` | Profiling 相对采样率，限制在 `0..1` |
 | `SENTRY_REPLAY_SESSION_SAMPLE_RATE` | `0.1` | 普通 Session Replay 采样率 |
@@ -51,9 +53,12 @@ flutter build apk --release --dart-define=SENTRY_ENABLED=false
    auth_token=<Sentry Auth Token>
    ```
 
-2. CI Secret `SENTRY_AUTH_TOKEN`。
+2. `android-alpha` 与 `testflight` Environment 中的 CI Secret
+   `SENTRY_AUTH_TOKEN`。两处均使用同一枚最小权限 Token，禁止放到仓库级
+   Secret 或 PR 工作流。
 
-构建完成后按实际产物运行：
+构建完成后按实际产物运行；正式发布工作流会在 Android APK 和 iOS Archive
+生成后自动执行，并等待 Sentry 服务端完成处理：
 
 ```powershell
 dart run sentry_dart_plugin

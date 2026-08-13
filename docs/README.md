@@ -24,6 +24,7 @@
 | [质量与验收](./quality/README.md) | 自动化门禁、设备矩阵、未闭环风险和证据要求 | 当前质量入口 |
 | [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md) | 签名、候选、TestFlight、GitHub Pre-release 和撤回 Runbook | 发布操作入口 |
 | [Sentry 配置](./project/Sentry_配置.md) | 运行时采样、隐私边界和符号上传 | 监控 Runbook |
+| [Flutter CI/CD 工作流规格](../spec/spec-process-cicd-flutter-ci.md) | 常规 CI、平台选择、稳定 Gate 与发布工作流契约 | 工作流维护规格 |
 | [AGENTS](../AGENTS.md) | 架构、实现、测试、审查和安全约束 | 仓库协作规则 |
 
 根目录 README 只介绍项目；PRODUCT 只提供产品上下文；两者不得扩展 PRD。工作流的真实行为以 `.github/workflows/` 和相应守卫测试为准，Runbook 只解释维护者操作。

@@ -113,7 +113,10 @@ void main() {
       expect(workflow, contains('\n  android:'));
       expect(workflow, contains('\n  ios:'));
       expect(workflow, contains('\n  publish:'));
-      expect(workflow, isNot(contains('uses: ./.github/workflows/')));
+      expect(workflow, contains('uses: ./.github/workflows/_flutter-core.yml'));
+      final reusableQuality = await _workflow('_flutter-core.yml');
+      expect(reusableQuality, contains('workflow_call:'));
+      expect(reusableQuality, isNot(contains('workflow_dispatch:')));
 
       final dispatchInputs = workflow.substring(
         workflow.indexOf('  workflow_dispatch:'),
@@ -227,6 +230,79 @@ void main() {
       expect(ios, contains('"job": "ios"'));
       expect(ios, isNot(contains('gh release upload')));
       expect(ios, isNot(contains('build/ios/testflight/*.ipa')));
+    });
+
+    test('iOS 无签名检查只保留审计证据且不打包 IPA', () async {
+      final workflow = await _workflow('quality.yml');
+      final ios = _job(workflow, 'ios-unsigned', 'ci-gate');
+
+      expect(ios, contains('Build Release app without code signing'));
+      expect(ios, contains('Write unsigned app bundle metadata'));
+      expect(ios, contains('unsigned-app-bundle'));
+      expect(ios, isNot(contains('Package unsigned IPA')));
+      expect(ios, isNot(contains('Payload/Runner.app')));
+      expect(ios, isNot(contains('build/ios/unsigned/*.ipa')));
+      expect(ios, isNot(contains('build/ios/unsigned/*.sha256')));
+      expect(ios, isNot(contains('\n      - name: Analyze')));
+      expect(ios, isNot(contains('\n      - name: Test')));
+    });
+
+    test('常规 CI 使用稳定 Gate 并按变更路径选择平台', () async {
+      final workflow = await _workflow('quality.yml');
+      final reusable = await _workflow('_flutter-core.yml');
+      final classifier = await File('tool/ci/classify_changes.py')
+          .readAsString();
+
+      expect(workflow, contains('\n  classify:'));
+      expect(workflow, contains('tool/ci/classify_changes.py'));
+      expect(workflow, contains('\n  flutter-quality:'));
+      expect(workflow, contains('\n  ios-unsigned:'));
+      expect(workflow, contains('\n  ci-gate:'));
+      expect(workflow, contains('name: CI Gate'));
+      expect(workflow, contains('if: always()'));
+      expect(
+        workflow,
+        contains('needs: [classify, flutter-quality, ios-unsigned]'),
+      );
+      expect(workflow, contains('uses: ./.github/workflows/_flutter-core.yml'));
+      expect(workflow, isNot(contains('\n    paths:')));
+      expect(workflow, isNot(contains('\n    paths-ignore:')));
+
+      expect(reusable, contains('workflow_call:'));
+      expect(reusable, contains('flutter pub get --enforce-lockfile'));
+      expect(reusable, contains('dart format --output=none'));
+      expect(reusable, contains('run: flutter analyze'));
+      expect(reusable, contains('run: flutter test'));
+      expect(reusable, contains('if: inputs.build_android'));
+
+      expect(
+        classifier,
+        contains('cannot silently bypass platform validation'),
+      );
+      expect(classifier, contains('return {key: True for key in result}'));
+    });
+
+    test('正式双平台构建使用 Environment Secret 上传 Sentry 符号', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final android = _job(workflow, 'android', 'ios');
+      final ios = _job(workflow, 'ios', 'publish');
+
+      for (final job in [android, ios]) {
+        expect(job, contains('SENTRY_AUTH_TOKEN:'));
+        expect(job, contains(r'${{ secrets.SENTRY_AUTH_TOKEN }}'));
+        expect(job, contains('dart run sentry_dart_plugin'));
+        expect(job, contains(r'--sentry-define="release=$SENTRY_RELEASE"'));
+        expect(job, contains(r'--sentry-define="dist=$SENTRY_DIST"'));
+        expect(job, contains('SENTRY_RELEASE='));
+        expect(job, contains('SENTRY_DIST='));
+        expect(job, contains('failed after 3 attempts'));
+      }
+
+      final nonReleaseWorkflows = [
+        await _workflow('quality.yml'),
+        await _workflow('firebase-test-lab.yml'),
+      ].join('\n');
+      expect(nonReleaseWorkflows, isNot(contains('SENTRY_AUTH_TOKEN')));
     });
 
     test('publish job 是唯一公开批准且支持不重建地后补链接', () async {

@@ -172,31 +172,13 @@ jobs:
     name: Automatic technical checks
     if: needs.prepare.outputs.mode == 'candidate'
     needs: prepare
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ needs.prepare.outputs.candidate_sha }}
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: temurin
-          java-version: "17"
-      - name: Set up Flutter 3.47.0
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version-file: ".fvmrc"
-          cache: true
-      - name: Resolve locked dependencies
-        run: flutter pub get --enforce-lockfile
-      - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib test tool
-      - name: Analyze
-        run: flutter analyze
-      - name: Test
-        run: flutter test
+    uses: ./.github/workflows/_flutter-core.yml
+    with:
+      checkout_ref: ${{ needs.prepare.outputs.candidate_sha }}
+      build_android: false
+      upload_evidence: false
 
   android:
     if: needs.prepare.outputs.mode == 'candidate'
@@ -263,6 +245,8 @@ jobs:
           set -euo pipefail
           [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
           echo "ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "SENTRY_RELEASE=com.meettrace.app@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "Android versionCode: $RELEASE_BUILD_NUMBER"
 
       - name: Decode Android signing keystore
@@ -291,13 +275,35 @@ jobs:
             --target-platform android-arm64 \
             --split-per-abi \
             --build-name="$MARKETING_VERSION" \
-            --build-number="$ANDROID_BUILD_NUMBER"
+            --build-number="$ANDROID_BUILD_NUMBER" \
+            --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE" \
+            --dart-define="SENTRY_DIST=$SENTRY_DIST"
           source_apk="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
           apk_path="build/android/alpha/meettrace-${RELEASE_ID}-android-arm64.apk"
           [[ -s "$source_apk" ]]
           mkdir -p "$(dirname "$apk_path")"
           mv -- "$source_apk" "$apk_path"
           echo "APK_PATH=$apk_path" >> "$GITHUB_ENV"
+
+      - name: Upload Android debug symbols to Sentry
+        shell: bash
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_LOG_LEVEL: info
+        run: |
+          set -euo pipefail
+          [[ -n "${SENTRY_AUTH_TOKEN//[[:space:]]/}" ]]
+          for attempt in 1 2 3; do
+            if dart run sentry_dart_plugin \
+              --sentry-define="symbols_path=build" \
+              --sentry-define="release=$SENTRY_RELEASE" \
+              --sentry-define="dist=$SENTRY_DIST"; then
+              exit 0
+            fi
+            sleep "$((attempt * 10))"
+          done
+          echo "Sentry Android debug symbol upload failed after 3 attempts." >&2
+          exit 1
 
       - name: Inspect APK contents
         shell: pwsh
@@ -568,6 +574,8 @@ jobs:
           set -euo pipefail
           [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
           echo "IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "SENTRY_RELEASE=$IOS_BUNDLE_ID@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "TestFlight build number: $RELEASE_BUILD_NUMBER"
 
       - name: Build and inspect unsigned Release app
@@ -576,7 +584,10 @@ jobs:
           set -euo pipefail
           flutter build ios \
             --release --no-codesign \
-            --build-number="$IOS_BUILD_NUMBER"
+            --build-name="$MARKETING_VERSION" \
+            --build-number="$IOS_BUILD_NUMBER" \
+            --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE" \
+            --dart-define="SENTRY_DIST=$SENTRY_DIST"
           bash tool/benchmarks/inspect_ios_app.sh \
             build/ios/iphoneos/Runner.app \
             build/ios/testflight/ios-app-inspection.json
@@ -968,6 +979,28 @@ jobs:
           report_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           print(f"Candidate manifest: {report_path}")
           PY
+
+      - name: Upload iOS debug symbols to Sentry
+        shell: bash
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_LOG_LEVEL: info
+        run: |
+          set -euo pipefail
+          [[ -n "${SENTRY_AUTH_TOKEN//[[:space:]]/}" ]]
+          symbols_path="$RUNNER_TEMP/MeetTrace.xcarchive/dSYMs"
+          [[ -d "$symbols_path" ]]
+          for attempt in 1 2 3; do
+            if dart run sentry_dart_plugin \
+              --sentry-define="symbols_path=$symbols_path" \
+              --sentry-define="release=$SENTRY_RELEASE" \
+              --sentry-define="dist=$SENTRY_DIST"; then
+              exit 0
+            fi
+            sleep "$((attempt * 10))"
+          done
+          echo "Sentry iOS debug symbol upload failed after 3 attempts." >&2
+          exit 1
 
       - name: Generate IPA provenance attestation
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2

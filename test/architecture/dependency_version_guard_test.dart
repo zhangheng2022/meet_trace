@@ -3,6 +3,30 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+({int major, int minor, int patch}) _versionFrom(
+  String source,
+  RegExp pattern,
+) {
+  final match = pattern.firstMatch(source);
+  expect(match, isNotNull, reason: '未找到受控工具链版本');
+  return (
+    major: int.parse(match!.group(1)!),
+    minor: int.parse(match.group(2)!),
+    patch: int.parse(match.group(3)!),
+  );
+}
+
+void _expectPatchLine(
+  ({int major, int minor, int patch}) actual, {
+  required int major,
+  required int minor,
+  required int minimumPatch,
+}) {
+  expect(actual.major, major);
+  expect(actual.minor, minor);
+  expect(actual.patch, greaterThanOrEqualTo(minimumPatch));
+}
+
 void main() {
   group('依赖与工具链版本守卫', () {
     test('Flutter、Dart、Android 与 iOS 使用已验证的统一版本', () async {
@@ -22,15 +46,37 @@ void main() {
 
       expect(fvmConfig['flutter'], '3.47.0');
       expect(pubspec, contains('sdk: ^3.13.0'));
-      expect(
-        androidSettings,
-        contains('id("com.android.application") version "9.1.0"'),
+      _expectPatchLine(
+        _versionFrom(
+          androidSettings,
+          RegExp(
+            r'id\("com\.android\.application"\) version "(\d+)\.(\d+)\.(\d+)"',
+          ),
+        ),
+        major: 9,
+        minor: 1,
+        minimumPatch: 0,
       );
-      expect(
-        androidSettings,
-        contains('id("org.jetbrains.kotlin.android") version "2.4.10"'),
+      _expectPatchLine(
+        _versionFrom(
+          androidSettings,
+          RegExp(
+            r'id\("org\.jetbrains\.kotlin\.android"\) version "(\d+)\.(\d+)\.(\d+)"',
+          ),
+        ),
+        major: 2,
+        minor: 4,
+        minimumPatch: 10,
       );
-      expect(gradleWrapper, contains('gradle-9.3.1-all.zip'));
+      _expectPatchLine(
+        _versionFrom(
+          gradleWrapper,
+          RegExp(r'gradle-(\d+)\.(\d+)\.(\d+)-all\.zip'),
+        ),
+        major: 9,
+        minor: 3,
+        minimumPatch: 1,
+      );
       expect(
         RegExp(r'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;').allMatches(iosProject),
         hasLength(3),
@@ -76,6 +122,18 @@ void main() {
         expect(dependabot, contains('package-ecosystem: $ecosystem'));
       }
       expect(dependabot, contains('directory: "/tool/patrol_mcp"'));
+      expect(dependabot, contains('dependency-name: com.android.application'));
+      expect(dependabot, contains('dependency-name: gradle-wrapper'));
+      expect(
+        dependabot,
+        contains('dependency-name: org.jetbrains.kotlin.android'),
+      );
+      expect(
+        RegExp(r'version-update:semver-patch').allMatches(dependabot),
+        hasLength(2),
+      );
+      expect(dependabot, isNot(contains('version-update:semver-minor')));
+      expect(dependabot, isNot(contains('version-update:semver-major')));
     });
   });
 }

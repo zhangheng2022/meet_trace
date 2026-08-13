@@ -17,6 +17,8 @@ void main() {
     test('规范化环境并约束全部采样率', () {
       final configuration = _configuration(
         environment: ' staging ',
+        release: ' com.meettrace.app@1.0.0+7 ',
+        dist: ' 7 ',
         tracesSampleRate: '1.5',
         profilesSampleRate: '-0.2',
         replaySessionSampleRate: 'invalid',
@@ -24,6 +26,8 @@ void main() {
       );
 
       expect(configuration.environment, 'staging');
+      expect(configuration.release, 'com.meettrace.app@1.0.0+7');
+      expect(configuration.dist, '7');
       expect(configuration.tracesSampleRate, 1);
       expect(configuration.profilesSampleRate, 0);
       expect(configuration.replaySessionSampleRate, 0.1);
@@ -31,13 +35,18 @@ void main() {
     });
 
     test('启用完整 Sentry 功能并保留 Replay 遮罩', () {
-      final configuration = _configuration();
+      final configuration = _configuration(
+        release: 'com.meettrace.app@1.0.0+7',
+        dist: '7',
+      );
       final options = SentryFlutterOptions();
 
       configuration.applyTo(options);
 
       expect(options.dsn, configuration.dsn);
       expect(options.environment, 'production');
+      expect(options.release, 'com.meettrace.app@1.0.0+7');
+      expect(options.dist, '7');
       expect(options.sampleRate, 1);
       expect(options.sendDefaultPii, isTrue);
       expect(options.attachStacktrace, isTrue);
@@ -121,6 +130,8 @@ SentryRuntimeConfiguration _configuration({
   bool enabled = true,
   String dsn = 'https://public@example.ingest.sentry.io/1',
   String environment = 'production',
+  String release = '',
+  String dist = '',
   String tracesSampleRate = '0.2',
   String profilesSampleRate = '0.1',
   String replaySessionSampleRate = '0.1',
@@ -130,6 +141,8 @@ SentryRuntimeConfiguration _configuration({
     enabled: enabled,
     dsn: dsn,
     environment: environment,
+    release: release,
+    dist: dist,
     tracesSampleRate: tracesSampleRate,
     profilesSampleRate: profilesSampleRate,
     replaySessionSampleRate: replaySessionSampleRate,

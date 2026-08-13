@@ -63,16 +63,20 @@ def _safe_filename(url: str, suffix: str) -> str:
 
 def _detect_url_type(url: str) -> str:
     """Classify the URL for targeted extraction."""
-    lower = url.lower()
-    if "twitter.com" in lower or "x.com" in lower:
-        return "tweet"
-    if "arxiv.org" in lower:
-        return "arxiv"
-    if "github.com" in lower:
-        return "github"
-    if "youtube.com" in lower or "youtu.be" in lower:
-        return "youtube"
     parsed = urllib.parse.urlparse(url)
+    hostname = (parsed.hostname or "").lower().rstrip(".")
+
+    def host_is(domain: str) -> bool:
+        return hostname == domain or hostname.endswith(f".{domain}")
+
+    if host_is("twitter.com") or host_is("x.com"):
+        return "tweet"
+    if host_is("arxiv.org"):
+        return "arxiv"
+    if host_is("github.com"):
+        return "github"
+    if host_is("youtube.com") or host_is("youtu.be"):
+        return "youtube"
     path = parsed.path.lower()
     if path.endswith(".pdf"):
         return "pdf"
@@ -88,8 +92,18 @@ def _fetch_html(url: str) -> str:
 def _html_to_markdown(html: str, url: str) -> str:
     """Convert HTML to clean markdown. Uses markdownify if available, else basic strip."""
     # Always pre-strip script/style so their text content never leaks into output
-    html = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE)
-    html = re.sub(r"<style[^>]*>.*?</style>", "", html, flags=re.DOTALL | re.IGNORECASE)
+    html = re.sub(
+        r"<script\b[^>]*>.*?</script\b[^>]*>",
+        "",
+        html,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    html = re.sub(
+        r"<style\b[^>]*>.*?</style\b[^>]*>",
+        "",
+        html,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
     try:
         from markdownify import markdownify
         return markdownify(html, heading_style="ATX", bullets="-", strip=["img"])
