@@ -286,11 +286,34 @@ void main() {
       final configuration = await File('.codacy.yml').readAsString();
 
       expect(configuration, startsWith('---'));
+      expect(configuration, contains('- ".agents/**"'));
+      expect(configuration, contains('- ".claude/**"'));
       expect(configuration, contains('dartanalyzer:'));
       expect(configuration, contains('- "test/**"'));
       expect(configuration, isNot(contains('lib/**')));
       expect(configuration, isNot(contains('tool/**')));
       expect(configuration, isNot(contains('languages:')));
+    });
+
+    test('CodeQL 使用高级配置并排除代理技能目录', () async {
+      final workflow = await _workflow('codeql.yml');
+      final configuration = await File('.github/codeql/codeql-config.yml')
+          .readAsString();
+
+      expect(workflow, contains('name: CodeQL'));
+      expect(
+        workflow,
+        contains('config-file: ./.github/codeql/codeql-config.yml'),
+      );
+      expect(workflow, contains('github/codeql-action/init@'));
+      expect(workflow, contains('github/codeql-action/analyze@'));
+      expect(workflow, contains('fail-fast: false'));
+      expect(workflow, contains('- actions'));
+      expect(workflow, contains('- c-cpp'));
+      expect(workflow, contains('- python'));
+      expect(configuration, contains('paths-ignore:'));
+      expect(configuration, contains('- ".agents/**"'));
+      expect(configuration, contains('- ".claude/**"'));
     });
 
     test('正式双平台构建使用 Environment Secret 上传 Sentry 符号', () async {

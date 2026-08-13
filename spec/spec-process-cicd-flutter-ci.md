@@ -19,6 +19,7 @@
 | `.github/workflows/_flutter-core.yml` | `workflow_call` | 锁定依赖、格式化、分析、测试及可选 Android APK 审计 |
 | `.github/workflows/alpha-release.yml` | 手动 | 同一 SHA 的 Android 候选、TestFlight 构建与公开批准 |
 | `.github/workflows/firebase-test-lab.yml` | 手动/被调用 | Android 真机实验室验证 |
+| `.github/workflows/codeql.yml` | PR、`master` push、每周、手动 | 使用高级配置扫描 Actions、C/C++ 与 Python，排除代理技能目录 |
 
 ## 3. 常规 CI 流程
 
@@ -92,6 +93,9 @@ Codacy 托管的 Dart Analyzer 不负责 `test/**`，因为它不解析 Flutter 
 `flutter_test` package graph；测试代码仍由仓库内锁定 Flutter 版本执行的
 `flutter analyze` 和 `flutter test` 强制检查。Codacy 继续分析 `lib/**` 与其他
 受支持源码，不得把整个 Dart 语言关闭。
+
+`.agents/**` 与 `.claude/**` 同时从 Codacy 全局分析和 CodeQL 高级配置中排除；
+这两个目录保持主分支原状，不属于项目质量检测与审查范围。
 
 ## 8. 验证与变更管理
 

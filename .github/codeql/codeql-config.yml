@@ -1,0 +1,5 @@
+name: MeetTrace CodeQL configuration
+
+paths-ignore:
+  - ".agents/**"
+  - ".claude/**"
