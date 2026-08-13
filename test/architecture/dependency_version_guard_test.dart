@@ -28,7 +28,7 @@ void main() {
       );
       expect(
         androidSettings,
-        contains('id("org.jetbrains.kotlin.android") version "2.4.0"'),
+        contains('id("org.jetbrains.kotlin.android") version "2.4.10"'),
       );
       expect(gradleWrapper, contains('gradle-9.3.1-all.zip'));
       expect(
