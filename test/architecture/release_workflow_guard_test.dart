@@ -282,6 +282,17 @@ void main() {
       expect(classifier, contains('return {key: True for key in result}'));
     });
 
+    test('Codacy 仅跳过无法解析 Flutter package graph 的测试代码', () async {
+      final configuration = await File('.codacy.yml').readAsString();
+
+      expect(configuration, startsWith('---'));
+      expect(configuration, contains('dartanalyzer:'));
+      expect(configuration, contains('- "test/**"'));
+      expect(configuration, isNot(contains('lib/**')));
+      expect(configuration, isNot(contains('tool/**')));
+      expect(configuration, isNot(contains('languages:')));
+    });
+
     test('正式双平台构建使用 Environment Secret 上传 Sentry 符号', () async {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');

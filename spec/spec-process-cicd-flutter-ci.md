@@ -89,6 +89,11 @@ Android 符号上传在 `android-alpha` Environment 中执行；iOS dSYM 上传�
 - Secrets 不得进入 PR 工作流、日志、仓库文件或非发布 Artifact。
 - 历史 Artifact 默认等待保留期到期，不执行批量删除。
 
+Codacy 托管的 Dart Analyzer 不负责 `test/**`，因为它不解析 Flutter 的
+`flutter_test` package graph；测试代码仍由仓库内锁定 Flutter 版本执行的
+`flutter analyze` 和 `flutter test` 强制检查。Codacy 继续分析 `lib/**` 与其他
+受支持源码，不得把整个 Dart 语言关闭。
+
 ## 8. 验证与变更管理
 
 修改这些工作流时至少运行：
