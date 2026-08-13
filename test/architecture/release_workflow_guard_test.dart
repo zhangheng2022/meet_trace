@@ -46,6 +46,32 @@ void main() {
       );
     });
 
+    test('所有 Flutter 工作流固定到已验证的工具链版本', () async {
+      final workflowFiles = await Directory('.github/workflows')
+          .list()
+          .where(
+            (entry) =>
+                entry is File &&
+                (entry.path.endsWith('.yml') || entry.path.endsWith('.yaml')),
+          )
+          .cast<File>()
+          .toList();
+      final workflows = (await Future.wait(
+        workflowFiles.map((file) => file.readAsString()),
+      )).join('\n');
+
+      final flutterSetupCount = RegExp(
+        r'uses: subosito/flutter-action@[^\s]+',
+      ).allMatches(workflows).length;
+      final pinnedVersionCount = RegExp(
+        r'flutter-version: "3\.44\.9"',
+      ).allMatches(workflows).length;
+
+      expect(flutterSetupCount, greaterThan(0));
+      expect(pinnedVersionCount, flutterSetupCount);
+      expect(workflows, isNot(contains('channel: stable')));
+    });
+
     test('正式发布只保留一个 YML 和一个手动入口', () async {
       final workflow = await _workflow('alpha-release.yml');
       final obsoleteWorkflows = [
