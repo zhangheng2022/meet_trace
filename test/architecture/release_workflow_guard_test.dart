@@ -185,7 +185,34 @@ void main() {
       expect(android, contains(r'git tag -a "$RELEASE_ID"'));
       expect(android, contains(r'.isDraft <<<"$release_json")" == true'));
       expect(android, contains('--draft --prerelease'));
-      expect(android, contains('--clobber'));
+      expect(android, contains('id: staged'));
+      expect(android, contains('Reusing immutable staged Android candidate'));
+      expect(android, contains(r'.artifact.sha256'));
+      expect(android, contains('Existing draft candidate is incomplete'));
+      expect(android, contains('Refusing to overwrite assets'));
+      expect(android, isNot(contains('--clobber')));
+      const freshCandidateSteps = [
+        'Set up Java 17',
+        'Set up Flutter 3.47.0',
+        'Resolve locked dependencies',
+        'Decode Android signing keystore',
+        'Build signed Android Release APK',
+        'Upload Android debug symbols to Sentry',
+        'Inspect APK contents',
+        'Verify APK signature and certificate',
+        'Write Android candidate manifest',
+        'Generate APK provenance attestation',
+        "Stage APK in this repository's draft release",
+      ];
+      for (final step in freshCandidateSteps) {
+        expect(
+          android,
+          contains(
+            '      - name: $step\n'
+            "        if: steps.staged.outputs.reuse != 'true'",
+          ),
+        );
+      }
       expect(android, contains('ANDROID_SIGNING_CERT_SHA256'));
       expect(android, contains(r'^.*certificate SHA-256 digest:'));
       expect(android, isNot(contains(r'^Signer #1 certificate SHA-256')));
@@ -221,11 +248,18 @@ void main() {
           '95ef2b042f9d7a56d8268cba8559e2842e2ad01b',
         ),
       );
+      expect(ios, contains('bundle exec ruby -rxcodeproj'));
       expect(ios, contains('run: bundle exec fastlane ios upload_testflight'));
-      expect(await File('Gemfile').readAsString(), contains('2.238.0'));
+      final gemfile = await File('Gemfile').readAsString();
+      expect(gemfile, contains('gem "fastlane", "2.238.0"'));
+      expect(gemfile, contains('gem "xcodeproj", "1.28.1"'));
       expect(
         await File('Gemfile.lock').readAsString(),
         contains('fastlane (2.238.0)'),
+      );
+      expect(
+        await File('Gemfile.lock').readAsString(),
+        contains('xcodeproj (= 1.28.1)'),
       );
       expect(ios, contains('"job": "ios"'));
       expect(ios, isNot(contains('gh release upload')));

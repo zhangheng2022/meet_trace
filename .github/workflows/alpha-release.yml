@@ -222,21 +222,6 @@ jobs:
           echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
           echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
 
-      - name: Set up Java 17
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Set up Flutter 3.47.0
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version-file: ".fvmrc"
-          cache: true
-
-      - name: Resolve locked dependencies
-        run: flutter pub get --enforce-lockfile
-
       - name: Prepare release build number
         shell: bash
         env:
@@ -249,7 +234,100 @@ jobs:
           echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "Android versionCode: $RELEASE_BUILD_NUMBER"
 
+      - name: Reuse immutable staged Android candidate
+        id: staged
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/android/alpha
+
+          if ! release_json="$(
+            gh release view "$RELEASE_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json isDraft,isPrerelease,assets 2>/dev/null
+          )"; then
+            echo "reuse=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]
+          [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+
+          apk_name="meettrace-${RELEASE_ID}-android-arm64.apk"
+          evidence_assets=(
+            android-apk-inspection.json
+            android-release-apk.sha256
+            apksigner.txt
+            candidate-manifest.json
+            signing-certificate.sha256
+          )
+          required_assets=("$apk_name" "${evidence_assets[@]}")
+          for asset_name in "${required_assets[@]}"; do
+            jq -e --arg name "$asset_name" \
+              '.assets | any(.name == $name)' <<<"$release_json" >/dev/null || {
+                echo "Existing draft candidate is incomplete: missing $asset_name" >&2
+                exit 1
+              }
+          done
+
+          for asset_name in "${evidence_assets[@]}"; do
+            asset_url="$(
+              jq -er --arg name "$asset_name" \
+                '.assets[] | select(.name == $name) | .apiUrl' <<<"$release_json"
+            )"
+            gh api -H "Accept: application/octet-stream" "$asset_url" \
+              > "build/android/alpha/$asset_name"
+          done
+
+          manifest=build/android/alpha/candidate-manifest.json
+          jq -e \
+            --arg release_id "$RELEASE_ID" \
+            --arg candidate_sha "$CANDIDATE_SHA" \
+            --arg build_number "$ANDROID_BUILD_NUMBER" \
+            --arg apk_name "$apk_name" \
+            '.platform == "android" and
+             .releaseId == $release_id and
+             .commitSha == $candidate_sha and
+             (.buildNumber | tostring) == $build_number and
+             .artifact.name == $apk_name and
+             (.artifact.sha256 | test("^[0-9a-f]{64}$"))' \
+            "$manifest" >/dev/null
+
+          manifest_digest="sha256:$(jq -er .artifact.sha256 "$manifest")"
+          staged_digest="$(
+            jq -er --arg name "$apk_name" \
+              '.assets[] | select(.name == $name) | .digest' <<<"$release_json"
+          )"
+          [[ "$staged_digest" == "$manifest_digest" ]] || {
+            echo "Staged Android APK digest does not match its candidate manifest" >&2
+            exit 1
+          }
+
+          echo "reuse=true" >> "$GITHUB_OUTPUT"
+          echo "Reusing immutable staged Android candidate $RELEASE_ID"
+
+      - name: Set up Java 17
+        if: steps.staged.outputs.reuse != 'true'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter 3.47.0
+        if: steps.staged.outputs.reuse != 'true'
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: ".fvmrc"
+          cache: true
+
+      - name: Resolve locked dependencies
+        if: steps.staged.outputs.reuse != 'true'
+        run: flutter pub get --enforce-lockfile
+
       - name: Decode Android signing keystore
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -263,6 +341,7 @@ jobs:
           echo "MEETTRACE_ANDROID_KEYSTORE_PATH=$keystore_path" >> "$GITHUB_ENV"
 
       - name: Build signed Android Release APK
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           MEETTRACE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -286,6 +365,7 @@ jobs:
           echo "APK_PATH=$apk_path" >> "$GITHUB_ENV"
 
       - name: Upload Android debug symbols to Sentry
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -306,6 +386,7 @@ jobs:
           exit 1
 
       - name: Inspect APK contents
+        if: steps.staged.outputs.reuse != 'true'
         shell: pwsh
         run: |
           ./tool/benchmarks/inspect_debug_apk.ps1 `
@@ -319,6 +400,7 @@ jobs:
           }
 
       - name: Verify APK signature and certificate
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           EXPECTED_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
@@ -336,6 +418,7 @@ jobs:
           sha256sum "$APK_PATH" | tee build/android/alpha/android-release-apk.sha256
 
       - name: Write Android candidate manifest
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -377,11 +460,13 @@ jobs:
           PY
 
       - name: Generate APK provenance attestation
+        if: steps.staged.outputs.reuse != 'true'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: ${{ env.APK_PATH }}
 
       - name: Stage APK in this repository's draft release
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -415,19 +500,16 @@ jobs:
             fi
           } > "$notes_path"
 
-          if release_json="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease 2>/dev/null)"; then
-            [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]
-            [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
-            gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
-              --title "MeetTrace $RELEASE_ID Android candidate" --notes-file "$notes_path"
-          else
-            gh release create "$RELEASE_ID" \
-              --repo "$GITHUB_REPOSITORY" \
-              --verify-tag \
-              --draft --prerelease \
-              --title "MeetTrace $RELEASE_ID Android candidate" \
-              --notes-file "$notes_path"
+          if gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Refusing to overwrite assets in existing release $RELEASE_ID" >&2
+            exit 1
           fi
+          gh release create "$RELEASE_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --draft --prerelease \
+            --title "MeetTrace $RELEASE_ID Android candidate" \
+            --notes-file "$notes_path"
 
           gh release upload "$RELEASE_ID" \
             "$APK_PATH" \
@@ -436,8 +518,7 @@ jobs:
             build/android/alpha/candidate-manifest.json \
             build/android/alpha/android-apk-inspection.json \
             build/android/alpha/apksigner.txt \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
+            --repo "$GITHUB_REPOSITORY"
 
       - name: Upload non-sensitive Android candidate evidence
         if: always()
@@ -794,7 +875,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ruby -rxcodeproj <<'RUBY'
+          bundle exec ruby -rxcodeproj <<'RUBY'
           project_path = "ios/Runner.xcodeproj"
           project = Xcodeproj::Project.open(project_path)
           runner = project.targets.find { |target| target.name == "Runner" }
