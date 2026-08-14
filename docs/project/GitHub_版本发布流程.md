@@ -36,9 +36,10 @@ flowchart LR
 | Android | 正式签名、仅 `arm64-v8a`，公开附件名为 `meettrace-<release-id>-android-arm64.apk` |
 | iOS | 仅 TestFlight，不上传 IPA 到 Actions Artifact 或 GitHub Release |
 | 候选身份 | Android 与 iOS 必须来自同一 annotated tag 和提交 SHA |
+| Release 资产 | 只保留 Android APK 与 `candidate-manifest.json`；签名、包检查和 iOS 证据放在 Actions Artifact |
 | 首次启动资源 | Release 说明明确约下载 286.3 MB |
 
-Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、候选 SHA 和已分配构建号，并替换 Draft 候选资产。新候选从所有已有 Draft/公开候选清单的最大构建号连续加一。Draft 一旦公开，标签、APK 和候选清单不可覆盖；代码或二进制修复必须使用新的 Alpha 序号向前发布。
+Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、候选 SHA、已分配构建号和不可变 Android 候选，不覆盖已有 APK。新候选从所有已有 Draft/公开候选清单的最大构建号连续加一。Draft 一旦公开，标签、APK 和候选清单不可覆盖；代码或二进制修复必须使用新的 Alpha 序号向前发布。
 
 ## 3. GitHub 配置
 
@@ -82,12 +83,13 @@ iOS Secrets：
 
 - `release_id`：必填，例如 `v1.0.0-alpha.1`；
 - `release_notes`：可选；
-- `ios_testflight_external_url`：可选，格式为 `https://testflight.apple.com/join/<code>`。
+- `ios_testflight_external_url`：可选，格式为 `https://testflight.apple.com/join/<code>`；
+- `resume_run_id`：仅在 Android、iOS 候选均成功而最终公开失败时填写原运行 ID；正常发布留空。
 
 Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；iOS job 成功后从 TestFlight 安装同一候选。完成所需的 AT-01～AT-18 真机检查后，回到等待中的 `Approve and publish` job 批准公开。自动化会再次校验：
 
 - annotated tag、release ID、marketing version 与 candidate SHA；
-- 两份候选清单来自本次统一运行且 SHA 一致；
+- Android 与 iOS 候选证据属于指定运行和同一 SHA；复用的不可变 Android 候选可来自更早的暂存运行；
 - Draft APK 名称、字节数和 SHA-256 未变化；
 - Release 仍是 Draft prerelease。
 
@@ -102,11 +104,12 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 3. 填写外部测试链接，可选填新的补充说明；
 4. 通过同一个 `github-release` 批准。
 
-工作流会自动进入 `metadata` 模式，验证现有公开 APK 和双平台清单后只更新说明，不运行构建，也不覆盖任何资产。
+工作流会自动进入 `metadata` 模式，验证现有公开 APK 和候选清单后只更新说明，不运行构建，也不覆盖任何资产。
 
 ## 6. 撤回与恢复
 
-- Draft 阶段失败：修复 Secrets、Apple 配置或工作流后，用同一发布标识重跑。
+- Draft 阶段构建失败：修复 Secrets、Apple 配置或工作流后，用同一发布标识重跑。
+- Android 与 iOS 均成功、仅最终公开失败：修复工作流后新建一次手动运行，填写同一 `release_id` 和原 `resume_run_id`。恢复模式只复核原候选并进入公开批准，不重新构建，也不重复上传 TestFlight。
 - 已公开严重问题：保留 Release、tag 和 APK，在说明顶部标记“已撤回，不建议安装”。
 - 修复版本：合并新提交，提高 Alpha 序号并重新运行。
 - 不删除、不移动、不覆盖已公开版本的身份或资产。

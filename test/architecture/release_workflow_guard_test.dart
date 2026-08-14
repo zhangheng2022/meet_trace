@@ -163,10 +163,6 @@ void main() {
       expect(android, contains(r'ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
       expect(ios, contains(r'IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
       expect(workflow, contains('Android and iOS build numbers differ'));
-      expect(
-        workflow,
-        contains('Existing Android and iOS build numbers differ'),
-      );
       expect(workflow, isNot(contains('GITHUB_RUN_NUMBER * 100')));
     });
 
@@ -384,6 +380,7 @@ void main() {
 
       expect(publish, contains('environment: github-release'));
       expect(publish, contains("needs.prepare.outputs.mode == 'candidate'"));
+      expect(publish, contains("needs.prepare.outputs.mode == 'resume'"));
       expect(publish, contains("needs.prepare.outputs.mode == 'metadata'"));
       expect(publish, contains('android-candidate-manifest.json'));
       expect(publish, contains('ios-candidate-manifest.json'));
@@ -394,10 +391,77 @@ void main() {
       expect(publish, contains('endswith(".ipa")'));
       expect(publish, contains('--draft=false --prerelease'));
       expect(publish, isNot(contains('gh release create')));
+      expect(publish, isNot(contains('gh release upload')));
+      expect(publish, isNot(contains('--clobber')));
       expect(publish, isNot(contains('git tag -a')));
       expect(
         publish.indexOf('Staged Android APK digest changed'),
         lessThan(publish.indexOf('--draft=false --prerelease')),
+      );
+    });
+
+    test('Release 只保留 APK 与单一候选清单，详细证据进入 Artifact', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final android = _job(workflow, 'android', 'ios');
+      final publish = _job(workflow, 'publish');
+      final uploadStart = android.indexOf('          gh release upload');
+      final uploadEnd = android.indexOf(
+        r'            --repo "$GITHUB_REPOSITORY"',
+        uploadStart,
+      );
+      expect(uploadStart, greaterThanOrEqualTo(0));
+      expect(uploadEnd, greaterThan(uploadStart));
+      final releaseUpload = android.substring(uploadStart, uploadEnd);
+
+      expect(releaseUpload, contains(r'"$APK_PATH"'));
+      expect(
+        releaseUpload,
+        contains('build/android/alpha/candidate-manifest.json'),
+      );
+      for (final redundantAsset in [
+        'android-apk-inspection.json',
+        'android-release-apk.sha256',
+        'apksigner.txt',
+        'signing-certificate.sha256',
+      ]) {
+        expect(releaseUpload, isNot(contains(redundantAsset)));
+        expect(android, contains(redundantAsset));
+        expect(publish, contains(redundantAsset));
+      }
+      expect(android, contains('build/android/alpha/*.json'));
+      expect(android, contains('build/android/alpha/*.sha256'));
+      expect(android, contains('build/android/alpha/*.txt'));
+      expect(publish, contains('Remove redundant Release evidence assets'));
+    });
+
+    test('失败发布可复用已成功的双平台候选且不重复上传 TestFlight', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final android = _job(workflow, 'android', 'ios');
+      final ios = _job(workflow, 'ios', 'publish');
+      final publish = _job(workflow, 'publish');
+
+      expect(workflow, contains('resume_run_id:'));
+      expect(workflow, contains('mode=resume'));
+      expect(
+        android,
+        contains("if: needs.prepare.outputs.mode == 'candidate'"),
+      );
+      expect(ios, contains("if: needs.prepare.outputs.mode == 'candidate'"));
+      expect(
+        publish,
+        contains('Download candidate evidence from the verified run'),
+      );
+      expect(publish, contains(r'gh run view "$source_run_id"'));
+      expect(publish, contains('.workflowName == "Alpha Release"'));
+      expect(
+        publish,
+        contains(
+          'Source run did not complete both release candidates successfully',
+        ),
+      );
+      expect(
+        publish,
+        contains('iOS candidate does not belong to the verified source run'),
       );
     });
 

@@ -9,6 +9,7 @@
 - Android、iOS 原生变更仅触发对应平台检查；未知路径保守执行完整 CI。
 - iOS 无签名构建只上传 JSON/TXT 审计证据，不生成或上传 IPA。
 - 正式 Android 候选进入 GitHub Draft Release；正式 iOS 只进入 TestFlight。
+- GitHub Release 只保留 Android APK 与单一候选清单，详细签名和包检查证据进入短期 Actions Artifact。
 - Sentry 符号上传仅在受保护的发布 Environment 中运行，并与应用内 release/dist 完全一致。
 
 ## 2. 工作流清单
@@ -80,6 +81,8 @@ flowchart LR
 - `SENTRY_DIST=<build>`
 
 Android 符号上传在 `android-alpha` Environment 中执行；iOS dSYM 上传在 `testflight` Environment 中执行。两者只读取对应 Environment 的 `SENTRY_AUTH_TOKEN`，失败最多重试三次，最终失败阻断该平台候选。
+
+Android APK 与 `candidate-manifest.json` 是 Release 中仅有的自定义资产；APK 检查、签名输出、证书摘要和 iOS 候选清单保存在 Actions Artifact，不上传 IPA。若双平台 job 已成功、仅最终公开 job 失败，可通过可选的 `resume_run_id` 复核原运行证据并继续批准，不得再次构建或重复上传同一 TestFlight build。
 
 ## 7. 安全与依赖维护
 

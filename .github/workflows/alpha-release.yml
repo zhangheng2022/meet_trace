@@ -15,6 +15,10 @@ on:
         description: Optional TestFlight external testing URL
         required: false
         type: string
+      resume_run_id:
+        description: Optional successful candidate run ID to finalize without rebuilding
+        required: false
+        type: string
 
 permissions: {}
 
@@ -48,12 +52,16 @@ jobs:
           RELEASE_ID: ${{ inputs.release_id }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
           TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]]
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           if [[ -n "$TESTFLIGHT_URL" ]]; then
             [[ "$TESTFLIGHT_URL" =~ ^https://testflight\.apple\.com/join/[A-Za-z0-9]+/?$ ]]
+          fi
+          if [[ -n "$RESUME_RUN_ID" ]]; then
+            [[ "$RESUME_RUN_ID" =~ ^[1-9][0-9]*$ ]]
           fi
           visibility="$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)"
           [[ "$visibility" == "PUBLIC" ]]
@@ -80,9 +88,17 @@ jobs:
             [[ "$(jq -r .tagName <<<"$release_json")" == "$RELEASE_ID" ]]
             if [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]; then
               [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
-              mode=candidate
+              if [[ -n "$RESUME_RUN_ID" ]]; then
+                mode=resume
+              else
+                mode=candidate
+              fi
             else
               [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+              if [[ -n "$RESUME_RUN_ID" ]]; then
+                echo "A resume run can only finalize an existing Draft Release" >&2
+                exit 1
+              fi
               mode=metadata
               if [[ -z "$TESTFLIGHT_URL" && -z "$RELEASE_NOTES" ]]; then
                 echo "A public release rerun must provide a TestFlight URL or release notes" >&2
@@ -90,6 +106,10 @@ jobs:
               fi
             fi
           else
+            if [[ -n "$RESUME_RUN_ID" ]]; then
+              echo "A resume run requires an existing Draft Release" >&2
+              exit 1
+            fi
             mode=candidate
           fi
 
@@ -98,7 +118,7 @@ jobs:
 
       - name: Allocate shared release build number
         id: build_number
-        if: steps.resolve.outputs.mode == 'candidate'
+        if: steps.resolve.outputs.mode == 'candidate' || steps.resolve.outputs.mode == 'resume'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -256,14 +276,7 @@ jobs:
           [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
 
           apk_name="meettrace-${RELEASE_ID}-android-arm64.apk"
-          evidence_assets=(
-            android-apk-inspection.json
-            android-release-apk.sha256
-            apksigner.txt
-            candidate-manifest.json
-            signing-certificate.sha256
-          )
-          required_assets=("$apk_name" "${evidence_assets[@]}")
+          required_assets=("$apk_name" candidate-manifest.json)
           for asset_name in "${required_assets[@]}"; do
             jq -e --arg name "$asset_name" \
               '.assets | any(.name == $name)' <<<"$release_json" >/dev/null || {
@@ -272,14 +285,13 @@ jobs:
               }
           done
 
-          for asset_name in "${evidence_assets[@]}"; do
-            asset_url="$(
-              jq -er --arg name "$asset_name" \
-                '.assets[] | select(.name == $name) | .apiUrl' <<<"$release_json"
-            )"
-            gh api -H "Accept: application/octet-stream" "$asset_url" \
-              > "build/android/alpha/$asset_name"
-          done
+          asset_url="$(
+            jq -er \
+              '.assets[] | select(.name == "candidate-manifest.json") | .apiUrl' \
+              <<<"$release_json"
+          )"
+          gh api -H "Accept: application/octet-stream" "$asset_url" \
+            > build/android/alpha/candidate-manifest.json
 
           manifest=build/android/alpha/candidate-manifest.json
           jq -e \
@@ -513,11 +525,7 @@ jobs:
 
           gh release upload "$RELEASE_ID" \
             "$APK_PATH" \
-            build/android/alpha/android-release-apk.sha256 \
-            build/android/alpha/signing-certificate.sha256 \
             build/android/alpha/candidate-manifest.json \
-            build/android/alpha/android-apk-inspection.json \
-            build/android/alpha/apksigner.txt \
             --repo "$GITHUB_REPOSITORY"
 
       - name: Upload non-sensitive Android candidate evidence
@@ -1142,7 +1150,9 @@ jobs:
     if: >-
       always() && needs.prepare.result == 'success' &&
       (needs.prepare.outputs.mode == 'metadata' ||
-      (needs.android.result == 'success' && needs.ios.result == 'success'))
+      needs.prepare.outputs.mode == 'resume' ||
+      (needs.prepare.outputs.mode == 'candidate' &&
+      needs.android.result == 'success' && needs.ios.result == 'success'))
     needs: [prepare, android, ios]
     permissions:
       actions: read
@@ -1168,7 +1178,7 @@ jobs:
           TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
         run: |
           set -euo pipefail
-          [[ "$RELEASE_MODE" == candidate || "$RELEASE_MODE" == metadata ]]
+          [[ "$RELEASE_MODE" == candidate || "$RELEASE_MODE" == resume || "$RELEASE_MODE" == metadata ]]
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$(git rev-parse HEAD)" == "$CANDIDATE_SHA" ]]
@@ -1184,7 +1194,7 @@ jobs:
           release_json="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName)"
           [[ "$(jq -r .tagName <<<"$release_json")" == "$RELEASE_ID" ]]
           [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
-          if [[ "$RELEASE_MODE" == candidate ]]; then
+          if [[ "$RELEASE_MODE" == candidate || "$RELEASE_MODE" == resume ]]; then
             [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]
           else
             [[ "$(jq -r .isDraft <<<"$release_json")" == false ]]
@@ -1193,15 +1203,44 @@ jobs:
           echo "CANDIDATE_SHA=$CANDIDATE_SHA" >> "$GITHUB_ENV"
           echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
 
-      - name: Download candidate evidence from this run
-        if: needs.prepare.outputs.mode == 'candidate'
+      - name: Download candidate evidence from the verified run
+        if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
+          RESUME_RUN_ID: ${{ inputs.resume_run_id }}
         run: |
           set -euo pipefail
+          if [[ "$RELEASE_MODE" == resume ]]; then
+            source_run_id="$RESUME_RUN_ID"
+          else
+            source_run_id="$GITHUB_RUN_ID"
+          fi
+          [[ "$source_run_id" =~ ^[1-9][0-9]*$ ]]
+
+          source_run="$(
+            gh run view "$source_run_id" --repo "$GITHUB_REPOSITORY" \
+              --json workflowName,event,jobs
+          )"
+          jq -e '
+            .workflowName == "Alpha Release" and
+            .event == "workflow_dispatch" and
+            ([.jobs[] | select(
+              .name == "Build, sign, and stage Android Alpha" and
+              .conclusion == "success"
+            )] | length == 1) and
+            ([.jobs[] | select(
+              .name == "Build, sign, and upload iOS app" and
+              .conclusion == "success"
+            )] | length == 1)
+          ' <<<"$source_run" >/dev/null || {
+            echo "Source run did not complete both release candidates successfully" >&2
+            exit 1
+          }
+
           mkdir -p build/finalize/android build/finalize/ios
-          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100")"
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$source_run_id/artifacts?per_page=100")"
           select_artifact() {
             local prefix="$1"
             jq -r --arg prefix "$prefix" '
@@ -1218,9 +1257,10 @@ jobs:
           unzip -q build/finalize/ios.zip -d build/finalize/ios
           cp build/finalize/android/candidate-manifest.json build/finalize/android-candidate-manifest.json
           cp build/finalize/ios/candidate-manifest.json build/finalize/ios-candidate-manifest.json
+          echo "SOURCE_RUN_ID=$source_run_id" >> "$GITHUB_ENV"
 
       - name: Download staged Android APK
-        if: needs.prepare.outputs.mode == 'candidate'
+        if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1232,7 +1272,7 @@ jobs:
             --dir build/finalize/staged
 
       - name: Cross-check candidate manifests and staged APK
-        if: needs.prepare.outputs.mode == 'candidate'
+        if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1248,6 +1288,7 @@ jobs:
           import hashlib
           import json
           import os
+          import re
           from pathlib import Path
 
           root = Path("build/finalize")
@@ -1260,7 +1301,6 @@ jobs:
               "releaseId": os.environ["RELEASE_ID"],
               "marketingVersion": os.environ["MARKETING_VERSION"],
               "commitSha": os.environ["CANDIDATE_SHA"],
-              "runId": os.environ["GITHUB_RUN_ID"],
           }
           for name, manifest, platform, job in (
               ("Android", android, "android", "android"),
@@ -1275,6 +1315,10 @@ jobs:
                   or manifest.get("job") != job
               ):
                   raise SystemExit(f"{name} candidate origin is invalid")
+          if not re.fullmatch(r"[1-9][0-9]*", str(android.get("runId", ""))):
+              raise SystemExit("Android candidate run identity is invalid")
+          if str(ios.get("runId")) != os.environ["SOURCE_RUN_ID"]:
+              raise SystemExit("iOS candidate does not belong to the verified source run")
           if str(android.get("buildNumber")) != str(ios.get("buildNumber")):
               raise SystemExit("Android and iOS build numbers differ")
 
@@ -1301,8 +1345,7 @@ jobs:
           ' <<<"$release_assets" >/dev/null
           mkdir -p build/finalize/published
           gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "android-candidate-manifest.json" \
-            --pattern "ios-candidate-manifest.json" \
+            --pattern "candidate-manifest.json" \
             --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
             --dir build/finalize/published
           python3 - <<'PY'
@@ -1312,37 +1355,55 @@ jobs:
           from pathlib import Path
 
           root = Path("build/finalize/published")
-          android = json.loads((root / "android-candidate-manifest.json").read_text())
-          ios = json.loads((root / "ios-candidate-manifest.json").read_text())
+          android = json.loads((root / "candidate-manifest.json").read_text())
           expected_apk_name = f"meettrace-{os.environ['RELEASE_ID']}-android-arm64.apk"
           if android.get("artifact", {}).get("name") != expected_apk_name:
               raise SystemExit("Existing public Android APK identity changed")
-          for manifest, platform, job in (
-              (android, "android", "android"),
-              (ios, "ios", "ios"),
+          if android.get("releaseId") != os.environ["RELEASE_ID"]:
+              raise SystemExit("Existing public release evidence changed")
+          if android.get("commitSha") != os.environ["CANDIDATE_SHA"]:
+              raise SystemExit("Existing public release evidence changed")
+          if android.get("marketingVersion") != os.environ["MARKETING_VERSION"]:
+              raise SystemExit("Existing public release evidence changed")
+          if (
+              android.get("platform") != "android"
+              or android.get("workflowFile") != ".github/workflows/alpha-release.yml"
+              or android.get("job") != "android"
           ):
-              if manifest.get("releaseId") != os.environ["RELEASE_ID"]:
-                  raise SystemExit("Existing public release evidence changed")
-              if manifest.get("commitSha") != os.environ["CANDIDATE_SHA"]:
-                  raise SystemExit("Existing public release evidence changed")
-              if manifest.get("marketingVersion") != os.environ["MARKETING_VERSION"]:
-                  raise SystemExit("Existing public release evidence changed")
-              if (
-                  manifest.get("platform") != platform
-                  or manifest.get("workflowFile") != ".github/workflows/alpha-release.yml"
-                  or manifest.get("job") != job
-              ):
-                  raise SystemExit("Existing public release evidence changed")
-          if str(android.get("buildNumber")) != str(ios.get("buildNumber")):
-              raise SystemExit("Existing Android and iOS build numbers differ")
-          if str(android.get("runId")) != str(ios.get("runId")):
-              raise SystemExit("Existing public candidate run identities differ")
+              raise SystemExit("Existing public release evidence changed")
           apk = root / android["artifact"]["name"]
           if not apk.is_file() or apk.stat().st_size != android["artifact"]["bytes"]:
               raise SystemExit("Existing public Android APK changed")
           if hashlib.sha256(apk.read_bytes()).hexdigest() != android["artifact"]["sha256"]:
               raise SystemExit("Existing public Android APK changed")
           PY
+
+      - name: Remove redundant Release evidence assets
+        if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_assets="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets)"
+          redundant_assets=(
+            android-apk-inspection.json
+            android-release-apk.sha256
+            apksigner.txt
+            signing-certificate.sha256
+            android-candidate-manifest.json
+            ios-candidate-manifest.json
+          )
+          for asset_name in "${redundant_assets[@]}"; do
+            asset_url="$(
+              jq -r --arg name "$asset_name" \
+                '.assets[] | select(.name == $name) | .apiUrl' <<<"$release_assets"
+            )"
+            if [[ -n "$asset_url" ]]; then
+              gh api --method DELETE "$asset_url"
+              echo "Removed redundant Release asset: $asset_name"
+            fi
+          done
 
       - name: Write public release notes
         shell: bash
@@ -1387,7 +1448,7 @@ jobs:
               echo "- Android APK：本 Release 附件（仅 Android 7.0+、arm64-v8a）"
               echo "$testflight_line"
               echo "- 候选提交：\`$CANDIDATE_SHA\`"
-              echo "- 候选流程：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+              echo "- 候选流程：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID"
               echo
               echo "## Android 安装提示"
               echo
@@ -1411,11 +1472,7 @@ jobs:
           RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
         run: |
           set -euo pipefail
-          if [[ "$RELEASE_MODE" == candidate ]]; then
-            gh release upload "$RELEASE_ID" \
-              build/finalize/android-candidate-manifest.json \
-              build/finalize/ios-candidate-manifest.json \
-              --repo "$GITHUB_REPOSITORY" --clobber
+          if [[ "$RELEASE_MODE" == candidate || "$RELEASE_MODE" == resume ]]; then
             gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
               --title "MeetTrace $RELEASE_ID" \
               --notes-file "$PUBLIC_NOTES_PATH" \
