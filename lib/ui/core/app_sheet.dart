@@ -7,18 +7,20 @@ import '../../theme/theme.dart';
 final class AppSheetSurface extends StatelessWidget {
   const AppSheetSurface({
     required this.title,
-    required this.description,
     required this.semanticsLabel,
     required this.child,
+    this.description,
+    this.compact = false,
     this.footer,
     this.surfaceKey,
     super.key,
   });
 
   final String title;
-  final String description;
+  final String? description;
   final String semanticsLabel;
   final Widget child;
+  final bool compact;
   final Widget? footer;
   final Key? surfaceKey;
 
@@ -46,26 +48,32 @@ final class AppSheetSurface extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   appStyle.spaceMd,
-                  appStyle.spaceLg,
+                  compact ? appStyle.spaceMd : appStyle.spaceLg,
                   appStyle.spaceMd,
-                  appStyle.spaceLg,
+                  compact ? appStyle.spaceMd : appStyle.spaceLg,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(title, style: theme.typography.display.lg),
-                    SizedBox(height: appStyle.spaceSm),
-                    Text(
-                      description,
-                      style: theme.typography.body.sm.copyWith(
-                        color: theme.colors.mutedForeground,
+                    if (description case final description?) ...[
+                      SizedBox(height: appStyle.spaceSm),
+                      Text(
+                        description,
+                        style: theme.typography.body.sm.copyWith(
+                          color: theme.colors.mutedForeground,
+                        ),
                       ),
+                    ],
+                    SizedBox(
+                      height: compact ? appStyle.spaceSm : appStyle.spaceLg,
                     ),
-                    SizedBox(height: appStyle.spaceLg),
                     child,
                     if (footer != null) ...[
-                      SizedBox(height: appStyle.spaceLg),
+                      SizedBox(
+                        height: compact ? appStyle.spaceMd : appStyle.spaceLg,
+                      ),
                       footer!,
                     ],
                   ],

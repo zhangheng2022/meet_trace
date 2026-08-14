@@ -15,6 +15,7 @@ final class AppTextField extends StatelessWidget {
     this.hint,
     this.maxLines = 1,
     this.maxLength,
+    this.counterVisibilityThreshold,
     this.autofocus = false,
     this.enabled = true,
     this.errorText,
@@ -22,13 +23,20 @@ final class AppTextField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     super.key,
-  });
+  }) : assert(
+         counterVisibilityThreshold == null ||
+             (maxLength != null &&
+                 counterVisibilityThreshold >= 0 &&
+                 counterVisibilityThreshold <= maxLength),
+         'counterVisibilityThreshold requires a matching maxLength.',
+       );
 
   final TextEditingController controller;
   final String label;
   final String? hint;
   final int maxLines;
   final int? maxLength;
+  final int? counterVisibilityThreshold;
   final bool autofocus;
   final bool enabled;
   final String? errorText;
@@ -40,6 +48,8 @@ final class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
+    final counterThreshold = counterVisibilityThreshold;
+    final counterLimit = maxLength;
     final borderRadius = BorderRadius.circular(appStyle.cardRadius);
     final enabledBorder = OutlineInputBorder(
       borderRadius: borderRadius,
@@ -55,6 +65,24 @@ final class AppTextField extends StatelessWidget {
         controller: controller,
         maxLines: maxLines,
         maxLength: maxLength,
+        buildCounter: counterThreshold == null || counterLimit == null
+            ? null
+            : (
+                context, {
+                required currentLength,
+                required isFocused,
+                required maxLength,
+              }) {
+                if (currentLength < counterThreshold) {
+                  return null;
+                }
+                return Text(
+                  '$currentLength/$counterLimit',
+                  style: theme.typography.body.sm.copyWith(
+                    color: theme.colors.mutedForeground,
+                  ),
+                );
+              },
         autofocus: autofocus,
         enabled: enabled,
         textInputAction: textInputAction,

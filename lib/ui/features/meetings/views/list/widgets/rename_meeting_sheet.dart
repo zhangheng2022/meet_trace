@@ -61,8 +61,8 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
       child: AppSheetSurface(
         surfaceKey: const ValueKey('rename-meeting-sheet'),
         title: '重命名会议',
-        description: '只修改显示标题，不会改变事实音频、会议时间、转录或处理状态。',
         semanticsLabel: '重命名会议',
+        compact: true,
         footer: LayoutBuilder(
           builder: (context, constraints) {
             final cancel = FButton(
@@ -76,7 +76,7 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
               key: const ValueKey('save-rename-meeting'),
               size: FButtonSizeVariant.lg,
               onPress: _canSave ? () => unawaited(_save()) : null,
-              child: Text(_saving ? '正在保存' : '保存标题'),
+              child: Text(_saving ? '正在保存' : '保存'),
             );
             if (constraints.maxWidth < appStyle.dualActionMinWidth ||
                 MediaQuery.textScalerOf(context).scale(1) > 1.4) {
@@ -107,6 +107,7 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
               label: '会议标题',
               hint: '输入会议标题',
               maxLength: meetingTitleMaxLength,
+              counterVisibilityThreshold: 50,
               autofocus: true,
               enabled: !_saving,
               errorText: _validationMessage,

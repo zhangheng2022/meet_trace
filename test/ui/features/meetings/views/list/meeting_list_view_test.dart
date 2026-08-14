@@ -745,9 +745,17 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('rename-meeting-completed')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('rename-meeting-sheet')), findsOneWidget);
+    final sheet = find.byKey(const ValueKey('rename-meeting-sheet'));
+    expect(sheet, findsOneWidget);
+    expect(find.text('只修改显示标题，不会改变事实音频、会议时间、转录或处理状态。'), findsNothing);
+    expect(tester.getSize(sheet).height, lessThan(240));
+    expect(find.text('4/60'), findsNothing);
+    expect(
+      find.descendant(of: sheet, matching: find.text('保存')),
+      findsOneWidget,
+    );
     final field = find.descendant(
-      of: find.byKey(const ValueKey('rename-meeting-title-field')),
+      of: sheet,
       matching: find.byType(EditableText),
     );
     final editable = tester.widget<EditableText>(field);
@@ -756,6 +764,10 @@ void main() {
       editable.controller.selection,
       const TextSelection(baseOffset: 0, extentOffset: 4),
     );
+
+    await tester.enterText(field, List.filled(50, '会').join());
+    await tester.pump();
+    expect(find.text('50/60'), findsOneWidget);
 
     await tester.enterText(field, '  产品复盘会  ');
     await tester.pump();
