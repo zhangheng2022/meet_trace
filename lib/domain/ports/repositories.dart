@@ -9,7 +9,13 @@ abstract interface class MeetingRepository {
 
   Stream<List<Meeting>> watchAll();
 
+  /// 保存会议生命周期数据；现有会议标题只能通过 [updateTitle] 修改。
   Future<void> save(Meeting meeting);
+
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  });
 
   Future<void> delete(String meetingId);
 }

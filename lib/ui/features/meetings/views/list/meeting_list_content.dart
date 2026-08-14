@@ -25,8 +25,11 @@ final class MeetingListContent extends StatefulWidget {
     this.onOpenRecordingConditions,
     this.onRetryReadiness,
     this.deletingMeetingIds = const <String>{},
+    this.renamingMeetingIds = const <String>{},
     this.canDeleteMeeting,
+    this.canRenameMeeting,
     this.onDeleteMeeting,
+    this.onRenameMeeting,
     this.now,
     super.key,
   });
@@ -39,8 +42,11 @@ final class MeetingListContent extends StatefulWidget {
   final VoidCallback? onOpenRecordingConditions;
   final Future<void> Function()? onRetryReadiness;
   final Set<String> deletingMeetingIds;
+  final Set<String> renamingMeetingIds;
   final bool Function(Meeting)? canDeleteMeeting;
+  final bool Function(Meeting)? canRenameMeeting;
   final Future<void> Function(Meeting)? onDeleteMeeting;
+  final Future<void> Function(Meeting)? onRenameMeeting;
   final DateTime Function()? now;
 
   @override
@@ -212,13 +218,45 @@ final class _MeetingListContentState extends State<MeetingListContent> {
   ) {
     final meeting = meetings[index];
     final deleting = widget.deletingMeetingIds.contains(meeting.id);
+    final renaming = widget.renamingMeetingIds.contains(meeting.id);
     final canDelete =
         !deleting && (widget.canDeleteMeeting?.call(meeting) ?? false);
-    final revealed = canDelete && _revealedMeetingId == meeting.id;
+    final canRename =
+        !renaming && (widget.canRenameMeeting?.call(meeting) ?? false);
+    void requestRename() {
+      setState(() => _revealedMeetingId = null);
+      unawaited(widget.onRenameMeeting?.call(meeting));
+    }
+
+    void requestDelete() {
+      setState(() => _revealedMeetingId = null);
+      unawaited(widget.onDeleteMeeting?.call(meeting));
+    }
+
+    final actions = [
+      if (canRename)
+        AppSwipeAction(
+          key: ValueKey('rename-meeting-${meeting.id}'),
+          label: '重命名',
+          icon: FLucideIcons.pencil,
+          semanticsHint: '打开会议标题编辑面板',
+          onPress: requestRename,
+        ),
+      if (canDelete)
+        AppSwipeAction(
+          key: ValueKey('delete-meeting-${meeting.id}'),
+          label: '删除',
+          icon: FLucideIcons.trash2,
+          tone: AppSwipeActionTone.destructive,
+          semanticsHint: '打开永久删除确认',
+          onPress: requestDelete,
+        ),
+    ];
+    final revealed = actions.isNotEmpty && _revealedMeetingId == meeting.id;
     return AppSwipeActionRow(
       key: ValueKey('swipe-meeting-${meeting.id}'),
       revealed: revealed,
-      enabled: canDelete,
+      enabled: actions.isNotEmpty,
       onSwipeStart: () {
         final revealedId = _revealedMeetingId;
         if (revealedId != null && revealedId != meeting.id) {
@@ -227,18 +265,14 @@ final class _MeetingListContentState extends State<MeetingListContent> {
       },
       onRevealChanged: (value) =>
           setState(() => _revealedMeetingId = value ? meeting.id : null),
-      actionKey: ValueKey('delete-meeting-${meeting.id}'),
-      actionLabel: '删除',
-      actionIcon: FLucideIcons.trash2,
-      onAction: () {
-        setState(() => _revealedMeetingId = null);
-        unawaited(widget.onDeleteMeeting?.call(meeting));
-      },
+      actions: actions,
       child: MeetingLedgerRow(
         meeting: meeting,
         referenceTime: referenceTime,
         deleting: deleting,
+        renaming: renaming,
         deletable: canDelete,
+        renameable: canRename,
         selected:
             sizeClass == AppWindowSizeClass.expanded &&
             meeting.id == _selectedMeeting(meetings)?.id,
@@ -253,6 +287,8 @@ final class _MeetingListContentState extends State<MeetingListContent> {
             widget.onOpenMeeting?.call(meeting);
           }
         },
+        onRename: canRename ? requestRename : null,
+        onDelete: canDelete ? requestDelete : null,
         showDivider: index < meetings.length - 1,
       ),
     );

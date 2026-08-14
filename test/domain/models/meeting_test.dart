@@ -98,6 +98,41 @@ void main() {
     );
   });
 
+  group('会议重命名', () {
+    test('去除首尾空格并保留原会议事实', () {
+      final original = _meeting(status: MeetingState.processing);
+
+      final renamed = original.rename('  产品评审会  ');
+
+      expect(renamed.title, '产品评审会');
+      expect(renamed.id, original.id);
+      expect(renamed.status, original.status);
+      expect(renamed.recordingModelId, original.recordingModelId);
+      expect(original.title, '周会');
+    });
+
+    test('拒绝空标题、换行和超过 60 个用户可见字符的标题', () {
+      expect(
+        () => _meeting().rename('   '),
+        throwsA(isA<DomainInvariantViolation>()),
+      );
+      expect(
+        () => _meeting().rename('第一行\n第二行'),
+        throwsA(isA<DomainInvariantViolation>()),
+      );
+      expect(
+        () => _meeting().rename(List.filled(61, '会').join()),
+        throwsA(isA<DomainInvariantViolation>()),
+      );
+    });
+
+    test('组合 emoji 按用户可见字符计数', () {
+      final title = List.filled(60, '👨‍👩‍👧‍👦').join();
+
+      expect(_meeting().rename(title).title, title);
+    });
+  });
+
   test('事实音频封存后记录结束时间、路径和时长并进入待处理', () {
     final recording = _meeting().startRecording(
       startedAt: DateTime.utc(2026, 7, 24, 3),

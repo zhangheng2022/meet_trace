@@ -537,6 +537,16 @@ final class _MeetingRepository implements MeetingRepository {
   }
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async {
+    final updated = value!.rename(title);
+    value = updated;
+    return updated;
+  }
+
+  @override
   Future<void> delete(String meetingId) async {
     if (value?.id == meetingId) {
       value = null;

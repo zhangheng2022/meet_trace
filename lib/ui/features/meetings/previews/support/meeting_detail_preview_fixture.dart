@@ -22,6 +22,16 @@ final class _PreviewMeetingRepository implements MeetingRepository {
   }
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async {
+    final updated = meeting!.rename(title);
+    meeting = updated;
+    return updated;
+  }
+
+  @override
   Stream<List<Meeting>> watchAll() => Stream.value([?meeting]);
 }
 

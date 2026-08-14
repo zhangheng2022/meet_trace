@@ -30,6 +30,7 @@ environment:
 dependencies:
   archive: 4.0.9
   audioplayers: 6.8.1
+  characters: 1.4.1
   flutter:
     sdk: flutter
 

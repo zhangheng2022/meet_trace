@@ -138,6 +138,18 @@ final class _InMemoryMeetingRepository implements MeetingRepository {
   }
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async {
+    final current = _meetings[meetingId];
+    if (current == null) throw StateError('meeting not found');
+    final updated = current.rename(title);
+    _meetings[meetingId] = updated;
+    return updated;
+  }
+
+  @override
   Stream<List<Meeting>> watchAll() {
     return Stream.value(List.unmodifiable(_meetings.values));
   }

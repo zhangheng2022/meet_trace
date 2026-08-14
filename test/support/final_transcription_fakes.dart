@@ -24,6 +24,16 @@ final class DetailMeetingRepository implements MeetingRepository {
   }
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async {
+    final current = await getById(meetingId);
+    if (current == null) throw StateError('meeting not found');
+    return value = current.rename(title);
+  }
+
+  @override
   Future<void> delete(String meetingId) async {
     if (value?.id == meetingId) {
       value = null;

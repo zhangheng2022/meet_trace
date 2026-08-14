@@ -19,6 +19,7 @@ import '../../../../core/view_state.dart';
 import '../../view_models/list/meeting_list_view_model.dart';
 import 'meeting_list_content.dart';
 import 'widgets/recording_conditions_sheet.dart';
+import 'widgets/rename_meeting_sheet.dart';
 
 final class MeetingListView extends StatefulWidget {
   const MeetingListView({
@@ -46,6 +47,7 @@ final class MeetingListView extends StatefulWidget {
 
 final class _MeetingListViewState extends State<MeetingListView> {
   bool _deleteDialogOpen = false;
+  bool _renameSheetOpen = false;
 
   @override
   void initState() {
@@ -93,11 +95,17 @@ final class _MeetingListViewState extends State<MeetingListView> {
         onRetryReadiness: widget.viewModel?.refreshReadiness,
         deletingMeetingIds:
             widget.viewModel?.deletingMeetingIds ?? const <String>{},
+        renamingMeetingIds:
+            widget.viewModel?.renamingMeetingIds ?? const <String>{},
         canDeleteMeeting: widget.viewModel?.canDeleteMeeting,
+        canRenameMeeting: widget.viewModel?.canRenameMeeting,
         now: widget.now,
         onDeleteMeeting: widget.viewModel == null
             ? null
             : _requestDeleteMeeting,
+        onRenameMeeting: widget.viewModel == null
+            ? null
+            : _requestRenameMeeting,
       ),
     );
   }
@@ -166,6 +174,42 @@ final class _MeetingListViewState extends State<MeetingListView> {
       description: deleted
           ? Text(meeting.title)
           : Text(viewModel.deleteErrorMessage ?? '会议正在录音或处理中，暂时不能删除'),
+    );
+  }
+
+  Future<void> _requestRenameMeeting(Meeting meeting) async {
+    final viewModel = widget.viewModel;
+    if (_renameSheetOpen ||
+        viewModel == null ||
+        !viewModel.canRenameMeeting(meeting)) {
+      return;
+    }
+    _renameSheetOpen = true;
+    String? renamedTitle;
+    try {
+      renamedTitle = await showFSheet<String>(
+        context: context,
+        side: FLayout.btt,
+        useSafeArea: true,
+        mainAxisMaxRatio: 0.72,
+        barrierLabel: '关闭重命名会议面板',
+        builder: (context) => RenameMeetingSheet(
+          meeting: meeting,
+          onSave: (title) => viewModel.renameMeeting(meeting, title),
+        ),
+      );
+    } finally {
+      _renameSheetOpen = false;
+    }
+    if (renamedTitle == null || !mounted) {
+      return;
+    }
+    showFToast(
+      context: context,
+      variant: FToastVariant.primary,
+      icon: const Icon(FLucideIcons.circleCheck),
+      title: const Text('会议标题已更新'),
+      description: Text(renamedTitle),
     );
   }
 }

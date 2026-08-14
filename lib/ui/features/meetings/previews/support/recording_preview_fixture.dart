@@ -13,6 +13,12 @@ final class _PreviewMeetingRepository implements MeetingRepository {
   Future<void> save(Meeting meeting) async {}
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async => throw UnsupportedError('not used in recording preview');
+
+  @override
   Stream<List<Meeting>> watchAll() => const Stream.empty();
 }
 

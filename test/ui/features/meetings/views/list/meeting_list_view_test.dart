@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
@@ -645,11 +646,37 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
+
+    Navigator.of(
+      tester.element(
+        find.byKey(const ValueKey('recording-conditions-sheet-surface')),
+      ),
+    ).pop();
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byKey(const ValueKey('meeting-recording')),
+      const Offset(-140, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('rename-meeting-recording')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('rename-meeting-sheet')), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('save-rename-meeting'))).dy,
+      lessThan(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('cancel-rename-meeting')))
+            .dy,
+      ),
+    );
+    expect(tester.takeException(), isNull);
     viewModel.dispose();
     await repository.dispose();
   });
 
-  testWidgets('左滑只揭示删除操作并在取消确认后保留会议', (WidgetTester tester) async {
+  testWidgets('左滑揭示重命名和删除并在取消删除后保留会议', (WidgetTester tester) async {
+    final semantics = tester.ensureSemantics();
     final repository = _MeetingRepository();
     final viewModel = MeetingListViewModel(
       meetings: repository,
@@ -666,11 +693,22 @@ void main() {
     await tester.pump();
 
     final row = find.byKey(const ValueKey('meeting-completed'));
+    final customActionLabels = tester
+        .getSemantics(row)
+        .getSemanticsData()
+        .customSemanticsActionIds!
+        .map((id) => CustomSemanticsAction.getAction(id)!.label)
+        .toSet();
+    expect(customActionLabels, containsAll(['重命名会议', '删除会议']));
     final originalX = tester.getTopLeft(row).dx;
     await tester.drag(row, const Offset(-140, 0));
     await tester.pumpAndSettle();
 
     expect(tester.getTopLeft(row).dx, lessThan(originalX));
+    expect(
+      find.byKey(const ValueKey('rename-meeting-completed')),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const ValueKey('delete-meeting-completed')));
     await tester.pumpAndSettle();
 
@@ -681,6 +719,99 @@ void main() {
 
     expect(repository.deleted, isEmpty);
     expect(find.text('产品评审'), findsOneWidget);
+    semantics.dispose();
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('重命名面板预填并选中标题，保存后同步刷新列表', (WidgetTester tester) async {
+    final repository = _MeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+    await tester.pumpWidget(
+      Application(home: MeetingListView(viewModel: viewModel)),
+    );
+    repository.emit([_meeting('completed', '产品评审', MeetingState.completed)]);
+    await tester.pump();
+
+    await tester.drag(
+      find.byKey(const ValueKey('meeting-completed')),
+      const Offset(-180, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('rename-meeting-completed')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('rename-meeting-sheet')), findsOneWidget);
+    final field = find.descendant(
+      of: find.byKey(const ValueKey('rename-meeting-title-field')),
+      matching: find.byType(EditableText),
+    );
+    final editable = tester.widget<EditableText>(field);
+    expect(editable.controller.text, '产品评审');
+    expect(
+      editable.controller.selection,
+      const TextSelection(baseOffset: 0, extentOffset: 4),
+    );
+
+    await tester.enterText(field, '  产品复盘会  ');
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('save-rename-meeting')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('产品复盘会'), findsWidgets);
+    expect(find.text('产品评审'), findsNothing);
+    expect(find.text('会议标题已更新'), findsOneWidget);
+    viewModel.dispose();
+    await repository.dispose();
+  });
+
+  testWidgets('无效标题阻止保存，持久化失败时保留输入和面板', (WidgetTester tester) async {
+    final repository = _MeetingRepository(failRename: true);
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+    await tester.pumpWidget(
+      Application(home: MeetingListView(viewModel: viewModel)),
+    );
+    repository.emit([_meeting('failed', '原始标题', MeetingState.failed)]);
+    await tester.pump();
+    await tester.drag(
+      find.byKey(const ValueKey('meeting-failed')),
+      const Offset(-180, 0),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('rename-meeting-failed')));
+    await tester.pumpAndSettle();
+    final field = find.descendant(
+      of: find.byKey(const ValueKey('rename-meeting-title-field')),
+      matching: find.byType(EditableText),
+    );
+
+    await tester.enterText(field, '   ');
+    await tester.pump();
+    expect(find.text('请输入会议标题'), findsOneWidget);
+    expect(
+      tester
+          .widget<FButton>(find.byKey(const ValueKey('save-rename-meeting')))
+          .onPress,
+      isNull,
+    );
+
+    await tester.enterText(field, '保留的输入');
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('save-rename-meeting')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('rename-meeting-sheet')), findsOneWidget);
+    expect(find.text('重命名失败，原会议标题仍保留。请重试。'), findsOneWidget);
+    expect(tester.widget<EditableText>(field).controller.text, '保留的输入');
+    expect(find.text('原始标题'), findsOneWidget);
     viewModel.dispose();
     await repository.dispose();
   });
@@ -719,7 +850,7 @@ void main() {
     await repository.dispose();
   });
 
-  testWidgets('录音中和后台处理中会议不响应左滑删除', (WidgetTester tester) async {
+  testWidgets('录音中和后台处理中的会议仅揭示重命名操作', (WidgetTester tester) async {
     final repository = _MeetingRepository();
     final viewModel = MeetingListViewModel(
       meetings: repository,
@@ -741,7 +872,9 @@ void main() {
       final originalX = tester.getTopLeft(row).dx;
       await tester.drag(row, const Offset(-140, 0));
       await tester.pumpAndSettle();
-      expect(tester.getTopLeft(row).dx, originalX);
+      expect(tester.getTopLeft(row).dx, lessThan(originalX));
+      expect(find.byKey(ValueKey('rename-meeting-$id')), findsOneWidget);
+      expect(find.byKey(ValueKey('delete-meeting-$id')), findsNothing);
     }
 
     expect(repository.deleted, isEmpty);
@@ -751,6 +884,9 @@ void main() {
 }
 
 final class _MeetingRepository implements MeetingRepository {
+  _MeetingRepository({this.failRename = false});
+
+  final bool failRename;
   final StreamController<List<Meeting>> _changes =
       StreamController<List<Meeting>>.broadcast();
   final List<String> deleted = [];
@@ -787,6 +923,20 @@ final class _MeetingRepository implements MeetingRepository {
 
   @override
   Future<void> save(Meeting meeting) async {}
+
+  @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async {
+    if (failRename) throw StateError('database rename failed');
+    final index = _meetings.indexWhere((meeting) => meeting.id == meetingId);
+    if (index < 0) throw StateError('meeting not found');
+    final updated = _meetings[index].rename(title);
+    _meetings[index] = updated;
+    _changes.add(List.unmodifiable(_meetings));
+    return updated;
+  }
 
   @override
   Stream<List<Meeting>> watchAll() => _changes.stream;

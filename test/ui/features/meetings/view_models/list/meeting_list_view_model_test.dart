@@ -169,6 +169,28 @@ void main() {
     viewModel.dispose();
     await repository.dispose();
   });
+
+  test('全部会议状态均允许重命名且成功后清除进行中状态', () async {
+    final repository = _StreamingMeetingRepository();
+    final viewModel = MeetingListViewModel(
+      meetings: repository,
+      readinessChecker: TestMeetingReadinessChecker(),
+      deletion: _deletion(repository),
+    );
+    for (final state in MeetingState.values) {
+      expect(viewModel.canRenameMeeting(_meeting(state: state)), isTrue);
+    }
+    final meeting = _meeting(state: MeetingState.processing);
+    repository.emit([meeting]);
+
+    expect(await viewModel.renameMeeting(meeting, '  新标题  '), isTrue);
+    expect(viewModel.isRenamingMeeting(meeting.id), isFalse);
+    expect((await repository.getById(meeting.id))!.title, '新标题');
+    expect(viewModel.renameErrorMessage, isNull);
+
+    viewModel.dispose();
+    await repository.dispose();
+  });
 }
 
 final class _StreamingMeetingRepository implements MeetingRepository {
@@ -214,6 +236,19 @@ final class _StreamingMeetingRepository implements MeetingRepository {
 
   @override
   Future<void> save(Meeting meeting) async {}
+
+  @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async {
+    final index = _meetings.indexWhere((meeting) => meeting.id == meetingId);
+    if (index < 0) throw StateError('meeting not found');
+    final updated = _meetings[index].rename(title);
+    _meetings[index] = updated;
+    _controller.add(List.unmodifiable(_meetings));
+    return updated;
+  }
 
   @override
   Stream<List<Meeting>> watchAll() => _controller.stream;

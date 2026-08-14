@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/semantics.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/meeting.dart';
@@ -12,9 +13,13 @@ final class MeetingLedgerRow extends StatelessWidget {
     required this.meeting,
     required this.referenceTime,
     required this.deleting,
+    required this.renaming,
     required this.deletable,
+    required this.renameable,
     required this.selected,
     required this.onPress,
+    this.onRename,
+    this.onDelete,
     required this.showDivider,
     super.key,
   });
@@ -22,9 +27,13 @@ final class MeetingLedgerRow extends StatelessWidget {
   final Meeting meeting;
   final DateTime referenceTime;
   final bool deleting;
+  final bool renaming;
   final bool deletable;
+  final bool renameable;
   final bool selected;
   final VoidCallback? onPress;
+  final VoidCallback? onRename;
+  final VoidCallback? onDelete;
   final bool showDivider;
 
   @override
@@ -40,10 +49,14 @@ final class MeetingLedgerRow extends StatelessWidget {
       metaLabel: meetingDurationLabel(
         Duration(milliseconds: meeting.audioDurationMs),
       ),
-      statusIcon: deleting
+      statusIcon: deleting || renaming
           ? FLucideIcons.loaderCircle
           : meetingStatusIcon(meeting.status),
-      statusLabel: deleting ? '正在删除' : meetingLedgerStatus(meeting),
+      statusLabel: deleting
+          ? '正在删除'
+          : renaming
+          ? '正在重命名'
+          : meetingLedgerStatus(meeting),
       emphasized: meeting.status == MeetingState.recording,
       selected: selected,
       showDivider: showDivider,
@@ -51,16 +64,33 @@ final class MeetingLedgerRow extends StatelessWidget {
           '打开会议：${meeting.title}，'
           '${semanticDateTimeLabel(meeting.createdAt, reference: referenceTime)}，'
           '${meetingStatusLabel(meeting.status)}',
-      semanticsHint: deleting
-          ? '正在删除本机会议数据'
+      semanticsHint: deleting || renaming
+          ? deleting
+                ? '正在删除本机会议数据'
+                : '正在保存新会议标题'
           : [
               if (meeting.status == MeetingState.failed)
                 '查看失败原因和事实音频状态'
               else
                 '查看会议详情',
-              if (deletable) '向左滑动显示删除操作',
+              if (renameable && deletable) '向左滑动显示重命名和删除操作',
+              if (renameable && !deletable) '向左滑动显示重命名操作',
             ].join('；'),
+      customSemanticsActions: _customSemanticsActions(),
       onPress: onPress,
     );
+  }
+
+  Map<CustomSemanticsAction, VoidCallback> _customSemanticsActions() {
+    final actions = <CustomSemanticsAction, VoidCallback>{};
+    final rename = onRename;
+    final delete = onDelete;
+    if (rename != null) {
+      actions[const CustomSemanticsAction(label: '重命名会议')] = rename;
+    }
+    if (delete != null) {
+      actions[const CustomSemanticsAction(label: '删除会议')] = delete;
+    }
+    return actions;
   }
 }

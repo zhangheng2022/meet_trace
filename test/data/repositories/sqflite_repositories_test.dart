@@ -87,6 +87,35 @@ void main() {
     expect(completed.lastErrorCode, isNull);
   });
 
+  test('重命名只更新标题且最终快照激活不会回退标题', () async {
+    final staleMeeting = _meeting('meeting-1', status: MeetingState.processing);
+    await meetings.save(staleMeeting);
+
+    final renamed = await meetings.updateTitle(
+      meetingId: 'meeting-1',
+      title: '产品评审会',
+    );
+    await transcripts.saveFinalAndActivate(
+      snapshot: _snapshot(
+        id: 'snapshot-after-rename',
+        meetingId: 'meeting-1',
+        status: TranscriptSnapshotStatus.complete,
+      ),
+      expectedActiveSnapshotId: null,
+    );
+
+    final completed = (await meetings.getById('meeting-1'))!;
+    expect(renamed.status, MeetingState.processing);
+    expect(completed.title, '产品评审会');
+    expect(completed.status, MeetingState.completed);
+    expect(completed.recordingModelId, 'paraformer');
+
+    await meetings.save(staleMeeting.fail(errorCode: 'processing.failed'));
+    final failed = (await meetings.getById('meeting-1'))!;
+    expect(failed.title, '产品评审会');
+    expect(failed.status, MeetingState.failed);
+  });
+
   test('删除会议只级联删除目标会议派生数据', () async {
     await meetings.save(_meeting('meeting-1'));
     await meetings.save(_meeting('meeting-2'));

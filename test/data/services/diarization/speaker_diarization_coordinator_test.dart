@@ -276,6 +276,12 @@ final class _MeetingRepository implements MeetingRepository {
   Future<void> save(Meeting meeting) async {}
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async => throw UnsupportedError('not used');
+
+  @override
   Future<void> delete(String meetingId) async {}
 }
 

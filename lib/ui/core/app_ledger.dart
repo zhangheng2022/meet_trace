@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/semantics.dart';
 import 'package:forui/forui.dart';
 
 import '../../theme/theme.dart';
@@ -62,6 +63,7 @@ final class AppLedgerRow extends StatelessWidget {
     this.onPress,
     this.semanticsLabel,
     this.semanticsHint,
+    this.customSemanticsActions,
     super.key,
   });
 
@@ -77,6 +79,7 @@ final class AppLedgerRow extends StatelessWidget {
   final VoidCallback? onPress;
   final String? semanticsLabel;
   final String? semanticsHint;
+  final Map<CustomSemanticsAction, VoidCallback>? customSemanticsActions;
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +239,11 @@ final class AppLedgerRow extends StatelessWidget {
             onPress: onPress,
             child: content,
           );
-    return Semantics(selected: selected, child: result);
+    return Semantics(
+      selected: selected,
+      customSemanticsActions: customSemanticsActions,
+      child: result,
+    );
   }
 }
 

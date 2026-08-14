@@ -175,6 +175,20 @@ final class TestMeetingRepository implements MeetingRepository {
   }
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async {
+    final current = await getById(meetingId);
+    if (current == null) throw StateError('meeting not found');
+    final updated = current.rename(title);
+    saved
+      ..removeWhere((meeting) => meeting.id == meetingId)
+      ..add(updated);
+    return updated;
+  }
+
+  @override
   Future<void> delete(String meetingId) async {
     saved.removeWhere((meeting) => meeting.id == meetingId);
   }

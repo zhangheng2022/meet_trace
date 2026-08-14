@@ -49,9 +49,12 @@ Meeting meetingFromRow(Map<String, Object?> row) {
 
 Future<void> upsertMeeting(DatabaseExecutor executor, Meeting meeting) async {
   final row = meetingToRow(meeting);
+  // 标题由 MeetingRepository.updateTitle 独立拥有。生命周期保存可能持有
+  // 长任务开始前的旧 Meeting，更新现有行时不得把用户的新标题覆盖回去。
+  final lifecycleRow = Map<String, Object?>.of(row)..remove('title');
   final updated = await executor.update(
     'meetings',
-    row,
+    lifecycleRow,
     where: 'id = ?',
     whereArgs: [meeting.id],
   );

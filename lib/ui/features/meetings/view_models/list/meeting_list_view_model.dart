@@ -8,6 +8,7 @@ import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../domain/ports/repositories.dart';
 import '../../../../../domain/use_cases/check_meeting_readiness.dart';
 import '../../../../../domain/use_cases/delete_meeting.dart';
+import '../../../../../domain/use_cases/rename_meeting.dart';
 import '../../../../core/view_state.dart';
 
 enum MeetingReadinessStatus {
@@ -49,11 +50,13 @@ final class MeetingListViewModel extends ChangeNotifier {
     required this.meetings,
     required this.readinessChecker,
     required this.deletion,
-  });
+    RenameMeetingUseCase? renaming,
+  }) : renaming = renaming ?? RenameMeetingUseCase(meetings: meetings);
 
   final MeetingRepository meetings;
   final MeetingReadinessChecker readinessChecker;
   final DeleteMeetingUseCase deletion;
+  final RenameMeetingUseCase renaming;
 
   ViewState<List<Meeting>> _state = const ViewLoading();
   MeetingReadinessViewState _readiness =
@@ -61,19 +64,30 @@ final class MeetingListViewModel extends ChangeNotifier {
   StreamSubscription<List<Meeting>>? _subscription;
   Future<void>? _readinessOperation;
   final Set<String> _deletingMeetingIds = {};
+  final Set<String> _renamingMeetingIds = {};
   String? _deleteErrorMessage;
+  String? _renameErrorMessage;
   bool _disposed = false;
 
   ViewState<List<Meeting>> get state => _state;
   MeetingReadinessViewState get readiness => _readiness;
   Set<String> get deletingMeetingIds => Set.unmodifiable(_deletingMeetingIds);
   String? get deleteErrorMessage => _deleteErrorMessage;
+  Set<String> get renamingMeetingIds => Set.unmodifiable(_renamingMeetingIds);
+  String? get renameErrorMessage => _renameErrorMessage;
 
   bool isDeletingMeeting(String meetingId) =>
       _deletingMeetingIds.contains(meetingId);
 
+  bool isRenamingMeeting(String meetingId) =>
+      _renamingMeetingIds.contains(meetingId);
+
+  bool canRenameMeeting(Meeting meeting) =>
+      !isDeletingMeeting(meeting.id) && !isRenamingMeeting(meeting.id);
+
   bool canDeleteMeeting(Meeting meeting) =>
       !isDeletingMeeting(meeting.id) &&
+      !isRenamingMeeting(meeting.id) &&
       switch (meeting.status) {
         MeetingState.created ||
         MeetingState.completed ||
@@ -160,6 +174,25 @@ final class MeetingListViewModel extends ChangeNotifier {
       return false;
     } finally {
       _deletingMeetingIds.remove(meeting.id);
+      _notify();
+    }
+  }
+
+  Future<bool> renameMeeting(Meeting meeting, String title) async {
+    if (!canRenameMeeting(meeting)) {
+      return false;
+    }
+    _renameErrorMessage = null;
+    _renamingMeetingIds.add(meeting.id);
+    _notify();
+    try {
+      await renaming.execute(meetingId: meeting.id, title: title);
+      return true;
+    } on Object {
+      _renameErrorMessage = '重命名失败，原会议标题仍保留';
+      return false;
+    } finally {
+      _renamingMeetingIds.remove(meeting.id);
       _notify();
     }
   }

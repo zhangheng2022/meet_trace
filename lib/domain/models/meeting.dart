@@ -1,8 +1,29 @@
+import 'package:characters/characters.dart';
+
 import 'domain_exception.dart';
 import 'transcript.dart';
 import 'workflow_states.dart';
 
 const _notProvided = Object();
+const meetingTitleMaxLength = 60;
+
+enum MeetingTitleIssue { empty, multiline, tooLong }
+
+String normalizeMeetingTitle(String value) => value.trim();
+
+MeetingTitleIssue? meetingTitleIssue(String value) {
+  final normalized = normalizeMeetingTitle(value);
+  if (normalized.isEmpty) {
+    return MeetingTitleIssue.empty;
+  }
+  if (normalized.contains('\n') || normalized.contains('\r')) {
+    return MeetingTitleIssue.multiline;
+  }
+  if (normalized.characters.length > meetingTitleMaxLength) {
+    return MeetingTitleIssue.tooLong;
+  }
+  return null;
+}
 
 String meetingStartTimeLabel(DateTime startedAt) {
   final local = startedAt.toLocal();
@@ -65,6 +86,18 @@ final class Meeting {
   final String? lastErrorCode;
 
   bool get isRecordingModelLocked => status != MeetingState.created;
+
+  Meeting rename(String value) {
+    final issue = meetingTitleIssue(value);
+    if (issue != null) {
+      throw DomainInvariantViolation(switch (issue) {
+        MeetingTitleIssue.empty => '会议标题不能为空',
+        MeetingTitleIssue.multiline => '会议标题只能使用单行文本',
+        MeetingTitleIssue.tooLong => '会议标题不能超过 $meetingTitleMaxLength 个字符',
+      });
+    }
+    return _copyWith(title: normalizeMeetingTitle(value));
+  }
 
   Meeting changeRecordingModel({
     required String recordingModelId,

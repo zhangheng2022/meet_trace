@@ -14,6 +14,13 @@ final class AppTextField extends StatelessWidget {
     required this.label,
     this.hint,
     this.maxLines = 1,
+    this.maxLength,
+    this.autofocus = false,
+    this.enabled = true,
+    this.errorText,
+    this.textInputAction,
+    this.onChanged,
+    this.onSubmitted,
     super.key,
   });
 
@@ -21,6 +28,13 @@ final class AppTextField extends StatelessWidget {
   final String label;
   final String? hint;
   final int maxLines;
+  final int? maxLength;
+  final bool autofocus;
+  final bool enabled;
+  final String? errorText;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +54,18 @@ final class AppTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         maxLines: maxLines,
+        maxLength: maxLength,
+        autofocus: autofocus,
+        enabled: enabled,
+        textInputAction: textInputAction,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
         cursorColor: theme.colors.foreground,
         style: theme.typography.body.md,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
+          errorText: errorText,
           labelStyle: theme.typography.body.sm.copyWith(
             color: theme.colors.mutedForeground,
           ),

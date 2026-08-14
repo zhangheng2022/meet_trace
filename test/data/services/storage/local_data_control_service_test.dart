@@ -87,6 +87,13 @@ final class _Meetings implements MeetingRepository {
   Future<void> save(Meeting meeting) async {}
 
   @override
+  Future<Meeting> updateTitle({
+    required String meetingId,
+    required String title,
+  }) async =>
+      values.singleWhere((meeting) => meeting.id == meetingId).rename(title);
+
+  @override
   Stream<List<Meeting>> watchAll() => Stream.value(values);
 }
 

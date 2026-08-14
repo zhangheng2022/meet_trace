@@ -3,7 +3,27 @@ import 'package:forui/forui.dart';
 
 import '../../theme/theme.dart';
 
-/// 横向拖动后揭示单个尾部操作的受控列表行。
+enum AppSwipeActionTone { neutral, destructive }
+
+final class AppSwipeAction {
+  const AppSwipeAction({
+    required this.label,
+    required this.icon,
+    required this.onPress,
+    this.tone = AppSwipeActionTone.neutral,
+    this.semanticsHint,
+    this.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPress;
+  final AppSwipeActionTone tone;
+  final String? semanticsHint;
+  final Key? key;
+}
+
+/// 横向拖动后揭示一个或多个尾部操作的受控列表行。
 ///
 /// 操作只会被揭示，不会由完整滑动直接执行。父级通过 [revealed] 保证同一时间
 /// 只有一行处于展开状态。
@@ -12,11 +32,8 @@ final class AppSwipeActionRow extends StatefulWidget {
     required this.revealed,
     required this.enabled,
     required this.onRevealChanged,
-    required this.actionLabel,
-    required this.actionIcon,
-    required this.onAction,
+    required this.actions,
     required this.child,
-    this.actionKey,
     this.onSwipeStart,
     super.key,
   });
@@ -24,10 +41,7 @@ final class AppSwipeActionRow extends StatefulWidget {
   final bool revealed;
   final bool enabled;
   final ValueChanged<bool> onRevealChanged;
-  final String actionLabel;
-  final IconData actionIcon;
-  final VoidCallback onAction;
-  final Key? actionKey;
+  final List<AppSwipeAction> actions;
   final VoidCallback? onSwipeStart;
   final Widget child;
 
@@ -110,19 +124,20 @@ final class _AppSwipeActionRowState extends State<AppSwipeActionRow>
     );
   }
 
-  void _handleAction() {
+  void _handleAction(AppSwipeAction action) {
     _settle(false);
     if (widget.revealed) {
       widget.onRevealChanged(false);
     }
-    widget.onAction();
+    action.onPress();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    final actionExtent = appStyle.controlHeight + appStyle.spaceLg;
+    final itemExtent = appStyle.controlHeight + appStyle.spaceLg;
+    final actionExtent = itemExtent * widget.actions.length;
 
     return ClipRect(
       child: Stack(
@@ -144,48 +159,17 @@ final class _AppSwipeActionRowState extends State<AppSwipeActionRow>
                       ),
                     );
                   },
-                  child: FTappable(
-                    key: widget.actionKey,
-                    style: const FTappableStyleDelta.delta(
-                      motion: FTappableMotion.none,
-                    ),
-                    semanticsLabel: widget.actionLabel,
-                    semanticsHint: '打开永久删除确认',
-                    onPress: _handleAction,
-                    builder: (context, variants, child) {
-                      final pressed = variants.contains(
-                        FTappableVariant.pressed,
-                      );
-                      return ColoredBox(
-                        color: Color.lerp(
-                          theme.colors.destructive,
-                          theme.colors.destructiveForeground,
-                          pressed ? 0.12 : 0,
-                        )!,
-                        child: child!,
-                      );
-                    },
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            widget.actionIcon,
-                            size: 18,
-                            color: theme.colors.destructiveForeground,
+                  child: Row(
+                    children: [
+                      for (final action in widget.actions)
+                        SizedBox(
+                          width: itemExtent,
+                          child: _SwipeActionButton(
+                            action: action,
+                            onPress: () => _handleAction(action),
                           ),
-                          SizedBox(height: appStyle.space2Xs),
-                          Text(
-                            widget.actionLabel,
-                            maxLines: 1,
-                            style: theme.typography.body.xs.copyWith(
-                              color: theme.colors.destructiveForeground,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
+                    ],
                   ),
                 ),
               ),
@@ -208,6 +192,57 @@ final class _AppSwipeActionRowState extends State<AppSwipeActionRow>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+final class _SwipeActionButton extends StatelessWidget {
+  const _SwipeActionButton({required this.action, required this.onPress});
+
+  final AppSwipeAction action;
+  final VoidCallback onPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.theme;
+    final appStyle = theme.style.app;
+    final destructive = action.tone == AppSwipeActionTone.destructive;
+    final background = destructive
+        ? theme.colors.destructive
+        : theme.colors.muted;
+    final foreground = destructive
+        ? theme.colors.destructiveForeground
+        : theme.colors.foreground;
+    return FTappable(
+      key: action.key,
+      style: const FTappableStyleDelta.delta(motion: FTappableMotion.none),
+      semanticsLabel: action.label,
+      semanticsHint: action.semanticsHint,
+      onPress: onPress,
+      builder: (context, variants, child) {
+        final pressed = variants.contains(FTappableVariant.pressed);
+        return ColoredBox(
+          color: Color.lerp(background, foreground, pressed ? 0.12 : 0)!,
+          child: child!,
+        );
+      },
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(action.icon, size: 18, color: foreground),
+            SizedBox(height: appStyle.space2Xs),
+            Text(
+              action.label,
+              maxLines: 1,
+              style: theme.typography.body.xs.copyWith(
+                color: foreground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

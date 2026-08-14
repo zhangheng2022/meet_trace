@@ -17,6 +17,7 @@ import '../domain/use_cases/delete_meeting.dart';
 import '../domain/use_cases/initialize_runtime_assets.dart';
 import '../domain/use_cases/manage_recording_session.dart';
 import '../domain/use_cases/revise_final_transcript.dart';
+import '../domain/use_cases/rename_meeting.dart';
 import '../domain/use_cases/share_meeting_audio.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../ui/core/asr_model_option.dart';
@@ -47,6 +48,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         meetings: storage.meetings,
         files: MeetingDirectoryDeletionService(layout: storage.fileLayout),
       ),
+      renaming: RenameMeetingUseCase(meetings: storage.meetings),
     );
   }
 
