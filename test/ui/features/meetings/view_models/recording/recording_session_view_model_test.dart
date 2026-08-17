@@ -5,10 +5,13 @@ import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/asr_preview.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/recording.dart';
+import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/asr_preview_session.dart';
+import 'package:meettrace/domain/ports/desktop_lifecycle.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
+import 'package:meettrace/domain/ports/recording_system_lifecycle.dart';
 import 'package:meettrace/domain/ports/recording_telemetry.dart';
 import 'package:meettrace/domain/use_cases/manage_recording_session.dart';
 import 'package:meettrace/domain/use_cases/start_meeting.dart';
@@ -294,6 +297,172 @@ void main() {
     viewModel.dispose();
     await preview.close();
   });
+
+  test('录音开始前保护窗口并在安全封存后解除保护', () async {
+    final desktopLifecycle = _DesktopLifecycle();
+    final recording = _RecordingService()
+      ..durationValue = const Duration(seconds: 5);
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      desktopLifecycle: desktopLifecycle,
+    );
+
+    expect(await viewModel.start(), isTrue);
+    expect(desktopLifecycle.recordingStates, [true]);
+
+    expect(await viewModel.stop(), isNotNull);
+    expect(desktopLifecycle.recordingStates, [true, false]);
+
+    viewModel.dispose();
+    await desktopLifecycle.close();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('解除桌面窗口保护失败不回滚已封存会议', () async {
+    final desktopLifecycle = _DesktopLifecycle();
+    final recording = _RecordingService()
+      ..durationValue = const Duration(seconds: 5);
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      desktopLifecycle: desktopLifecycle,
+    );
+    await viewModel.start();
+    desktopLifecycle.failWhenDeactivating = true;
+
+    final completed = await viewModel.stop();
+
+    expect(completed?.status, MeetingState.processing);
+    expect(desktopLifecycle.recordingStates, [true, false]);
+    expect(viewModel.errorMessage, isNull);
+
+    viewModel.dispose();
+    await desktopLifecycle.close();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('事实录音启动失败后立即解除窗口退出保护', () async {
+    final desktopLifecycle = _DesktopLifecycle();
+    final recording = _RecordingService()
+      ..startError = const ReliableRecordingException(
+        code: 'recording.permission_denied',
+        message: 'denied',
+      );
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      desktopLifecycle: desktopLifecycle,
+    );
+
+    expect(await viewModel.start(), isFalse);
+    expect(desktopLifecycle.recordingStates, [true, false]);
+
+    viewModel.dispose();
+    await desktopLifecycle.close();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('托盘停止并退出先封存会议再允许 Win32 退出', () async {
+    final meetings = TestMeetingRepository();
+    final desktopLifecycle = _DesktopLifecycle();
+    final recording = _RecordingService()
+      ..durationValue = const Duration(seconds: 9);
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: meetings,
+      recording: recording,
+      preview: preview,
+      desktopLifecycle: desktopLifecycle,
+    );
+    await viewModel.start();
+
+    desktopLifecycle.requestStopAndExit();
+    await pumpEventQueue(times: 10);
+
+    expect(meetings.saved.last.status, MeetingState.processing);
+    expect(desktopLifecycle.confirmExitCalls, 1);
+    expect(desktopLifecycle.cancelExitReasons, isEmpty);
+    expect(desktopLifecycle.recordingStates, [true, false]);
+
+    viewModel.dispose();
+    await desktopLifecycle.close();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('托盘封存失败时取消退出并保留窗口保护', () async {
+    final desktopLifecycle = _DesktopLifecycle();
+    final recording = _RecordingService()
+      ..stopError = const ReliableRecordingException(
+        code: 'recording.stop_failed',
+        message: 'stop failed',
+      );
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      desktopLifecycle: desktopLifecycle,
+    );
+    await viewModel.start();
+
+    desktopLifecycle.requestStopAndExit();
+    await pumpEventQueue(times: 10);
+
+    expect(desktopLifecycle.confirmExitCalls, 0);
+    expect(desktopLifecycle.cancelExitReasons.single, contains('封存失败'));
+    expect(desktopLifecycle.recordingStates, [true]);
+
+    viewModel.dispose();
+    await desktopLifecycle.close();
+    await recording.close();
+    await preview.close();
+  });
+
+  test('桌面系统事件按到达顺序串行交给录音生命周期', () async {
+    final desktopLifecycle = _DesktopLifecycle();
+    final recording = _RecordingService();
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+      desktopLifecycle: desktopLifecycle,
+    );
+    await viewModel.start();
+    recording.suspendBarrier = Completer<void>();
+
+    desktopLifecycle.emitSystemEvent(DesktopSystemEvent.suspending);
+    desktopLifecycle.emitSystemEvent(DesktopSystemEvent.resumed);
+    await pumpEventQueue(times: 3);
+    expect(recording.systemLifecycleEvents, ['suspending']);
+
+    recording.suspendBarrier!.complete();
+    await pumpEventQueue(times: 10);
+    expect(recording.systemLifecycleEvents, ['suspending', 'resumed']);
+
+    desktopLifecycle.emitSystemEvent(DesktopSystemEvent.sessionEnding);
+    await pumpEventQueue(times: 10);
+    expect(recording.systemLifecycleEvents, [
+      'suspending',
+      'resumed',
+      'sessionEnding',
+    ]);
+    viewModel.dispose();
+    await desktopLifecycle.close();
+    await recording.close();
+    await preview.close();
+  });
 }
 
 RecordingSessionViewModel _viewModel({
@@ -302,6 +471,8 @@ RecordingSessionViewModel _viewModel({
   required _PreviewSession preview,
   RecordingTickerFactory? audioLevelTickerFactory,
   RecordingTelemetryGate telemetry = const NoopRecordingTelemetryGate(),
+  DesktopLifecycle desktopLifecycle = const NoopDesktopLifecycle(),
+  RecordingSystemLifecycle? recordingSystemLifecycle,
 }) {
   final descriptor = AsrModelRegistry.alpha.requireById(
     senseVoiceDefaultModelId,
@@ -320,6 +491,7 @@ RecordingSessionViewModel _viewModel({
     session: StartedMeetingSession(
       meeting: meeting,
       engine: TestAsrEngine(descriptor),
+      recordingInput: const LockedRecordingInput.systemDefault(),
     ),
     recording: recording,
     preview: preview,
@@ -332,7 +504,60 @@ RecordingSessionViewModel _viewModel({
     tickerFactory: (_, _) => Timer(const Duration(days: 1), () {}),
     audioLevelTickerFactory: audioLevelTickerFactory,
     telemetry: telemetry,
+    desktopLifecycle: desktopLifecycle,
+    recordingSystemLifecycle: recordingSystemLifecycle ?? recording,
   );
+}
+
+final class _DesktopLifecycle implements DesktopLifecycle {
+  final StreamController<DesktopExitRequest> _requests =
+      StreamController<DesktopExitRequest>.broadcast(sync: true);
+  final StreamController<DesktopSystemEvent> _systemEvents =
+      StreamController<DesktopSystemEvent>.broadcast(sync: true);
+  final List<bool> recordingStates = [];
+  final List<String> cancelExitReasons = [];
+  int confirmExitCalls = 0;
+  bool failWhenDeactivating = false;
+
+  @override
+  Stream<DesktopExitRequest> get exitRequests => _requests.stream;
+
+  @override
+  Stream<DesktopSystemEvent> get systemEvents => _systemEvents.stream;
+
+  void requestStopAndExit() {
+    _requests.add(DesktopExitRequest.stopRecordingAndExit);
+  }
+
+  void emitSystemEvent(DesktopSystemEvent event) {
+    _systemEvents.add(event);
+  }
+
+  @override
+  Future<void> setRecordingActive(bool active) async {
+    recordingStates.add(active);
+    if (!active && failWhenDeactivating) {
+      throw StateError('desktop channel failed');
+    }
+  }
+
+  @override
+  Future<void> confirmExit() async {
+    confirmExitCalls++;
+  }
+
+  @override
+  Future<void> cancelExit({required String reason}) async {
+    cancelExitReasons.add(reason);
+  }
+
+  @override
+  Future<void> dispose() async {}
+
+  Future<void> close() async {
+    await _requests.close();
+    await _systemEvents.close();
+  }
 }
 
 final class _RecordingTelemetryGate implements RecordingTelemetryGate {
@@ -345,15 +570,19 @@ final class _RecordingTelemetryGate implements RecordingTelemetryGate {
   }
 }
 
-final class _RecordingService implements RecordingSessionService {
+final class _RecordingService
+    implements RecordingSessionService, RecordingSystemLifecycle {
   final StreamController<RecordingAudioLevel> _audioLevels =
       StreamController<RecordingAudioLevel>.broadcast(sync: true);
   RecordingState _state = RecordingState.idle;
   Duration durationValue = Duration.zero;
   Object? startError;
+  Object? stopError;
   Completer<void>? stopBarrier;
   bool _started = false;
   Duration _audioCapturedThrough = Duration.zero;
+  final List<String> systemLifecycleEvents = [];
+  Completer<void>? suspendBarrier;
 
   @override
   Stream<RecordingAudioLevel> get audioLevelChanges => _audioLevels.stream;
@@ -382,6 +611,22 @@ final class _RecordingService implements RecordingSessionService {
   }
 
   @override
+  Future<void> handleSystemSuspending() async {
+    systemLifecycleEvents.add('suspending');
+    await suspendBarrier?.future;
+  }
+
+  @override
+  Future<void> handleSystemResumed() async {
+    systemLifecycleEvents.add('resumed');
+  }
+
+  @override
+  Future<void> prepareForSystemExit() async {
+    systemLifecycleEvents.add('sessionEnding');
+  }
+
+  @override
   Future<void> start({required String meetingId}) async {
     final error = startError;
     if (error != null) {
@@ -404,6 +649,10 @@ final class _RecordingService implements RecordingSessionService {
   @override
   Future<RecordingArtifact> stop() async {
     await stopBarrier?.future;
+    final error = stopError;
+    if (error != null) {
+      throw error;
+    }
     _started = false;
     _state = RecordingState.completed;
     return RecordingArtifact(

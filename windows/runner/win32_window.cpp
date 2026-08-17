@@ -153,6 +153,26 @@ bool Win32Window::Show() {
   return ShowWindow(window_handle_, SW_SHOWNORMAL);
 }
 
+void Win32Window::Activate() {
+  if (!window_handle_) {
+    return;
+  }
+  if (IsIconic(window_handle_)) {
+    ShowWindow(window_handle_, SW_RESTORE);
+  } else {
+    ShowWindow(window_handle_, SW_SHOW);
+  }
+  SetForegroundWindow(window_handle_);
+  BringWindowToTop(window_handle_);
+  if (child_content_ != nullptr) {
+    SetFocus(child_content_);
+  }
+}
+
+void Win32Window::SetMinimumSize(const Size& size) {
+  minimum_size_ = size;
+}
+
 // static
 LRESULT CALLBACK Win32Window::WndProc(HWND const window,
                                       UINT const message,
@@ -179,6 +199,27 @@ Win32Window::MessageHandler(HWND hwnd,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
   switch (message) {
+    case WM_GETMINMAXINFO: {
+      if (minimum_size_.width == 0 || minimum_size_.height == 0) {
+        break;
+      }
+      const UINT window_dpi = GetDpiForWindow(hwnd);
+      const UINT dpi = window_dpi == 0 ? 96 : window_dpi;
+      RECT minimum_rect = {
+          0,
+          0,
+          Scale(minimum_size_.width, dpi / 96.0),
+          Scale(minimum_size_.height, dpi / 96.0),
+      };
+      AdjustWindowRectExForDpi(
+          &minimum_rect, static_cast<DWORD>(GetWindowLong(hwnd, GWL_STYLE)),
+          FALSE, static_cast<DWORD>(GetWindowLong(hwnd, GWL_EXSTYLE)), dpi);
+      auto min_max = reinterpret_cast<MINMAXINFO*>(lparam);
+      min_max->ptMinTrackSize.x = minimum_rect.right - minimum_rect.left;
+      min_max->ptMinTrackSize.y = minimum_rect.bottom - minimum_rect.top;
+      return 0;
+    }
+
     case WM_DESTROY:
       window_handle_ = nullptr;
       Destroy();

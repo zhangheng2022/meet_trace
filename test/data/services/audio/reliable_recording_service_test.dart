@@ -4,12 +4,16 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/audio/recording_checkpoint_store.dart';
+import 'package:meettrace/data/services/audio/recording_continuity_event_store.dart';
 import 'package:meettrace/data/services/audio/recording_ports.dart';
 import 'package:meettrace/data/services/audio/reliable_recording_service.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/domain/models/recording.dart';
+import 'package:meettrace/domain/models/recording_continuity_event.dart';
+import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
+import 'package:meettrace/domain/use_cases/lock_recording_input.dart';
 
 void main() {
   late Directory root;
@@ -43,12 +47,20 @@ void main() {
     int checkpointSaveBytesThreshold =
         defaultRecordingCheckpointSaveBytesThreshold,
     DateTime Function()? now,
+    bool enableInputRecovery = false,
+    LockedRecordingInput initialInput =
+        const LockedRecordingInput.systemDefault(),
   }) {
     return ReliableRecordingService(
       capture: capture,
       layout: layout,
       checkpoints: checkpointStore ?? checkpoints,
+      continuityEvents: JsonRecordingContinuityEventStore(layout),
       storageCapacity: FixedRecordingStorageCapacity(freeBytes),
+      initialInput: initialInput,
+      inputRecoveryPlanner: enableInputRecovery
+          ? const PlanRecordingInputRecoveryUseCase()
+          : null,
       foreground: foreground,
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
@@ -371,23 +383,254 @@ void main() {
     );
   });
 
-  test('采集流异步报错后仍可封存已持久化事实音频', () async {
-    final service = createService();
+  test('采集流异步报错后刷新事实并仅一次切到系统默认输入', () async {
+    final service = createService(
+      enableInputRecovery: true,
+      factCommitInterval: const Duration(milliseconds: 20),
+    );
     await service.start(meetingId: 'meeting-capture-error');
     capture.add(_pcmBytes(recordingBytesPerSecond));
-    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
-
     capture.addError(StateError('microphone interrupted'));
-    await _waitFor(() => service.state == RecordingState.failed);
+    await _waitFor(() => capture.startInputs.length == 2);
+    await _waitFor(() => service.state == RecordingState.recording);
+    expect(capture.startInputs, hasLength(2));
+    expect(service.state, RecordingState.recording);
+    expect(capture.startInputs.last.usesSystemDefault, isTrue);
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond * 2);
 
     expect(service.canFinalize, isTrue);
     final result = await service.stop();
 
-    expect(result.bytes, recordingBytesPerSecond);
-    expect(result.duration, const Duration(seconds: 1));
+    expect(result.bytes, recordingBytesPerSecond * 2);
+    expect(result.duration, const Duration(seconds: 2));
     expect(await File(result.audioPath).exists(), isTrue);
     expect(service.state, RecordingState.completed);
     expect(foreground.events.last, 'stop');
+    final continuity = await JsonRecordingContinuityEventStore(layout)
+        .read('meeting-capture-error');
+    expect(continuity.map((event) => event.kind), [
+      RecordingContinuityEventKind.interruptionStarted,
+      RecordingContinuityEventKind.switchedToSystemDefault,
+    ]);
+    expect(continuity.first.incidentId, continuity.last.incidentId);
+    expect(continuity.first.persistedBytes, recordingBytesPerSecond);
+    expect(continuity.last.inputLabel, '系统默认麦克风');
+  });
+
+  test('默认输入回退后的第二次流中断进入真实 interrupted 且可封存', () async {
+    final service = createService(enableInputRecovery: true);
+    await service.start(meetingId: 'meeting-capture-interrupted');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
+
+    capture.addError(StateError('selected microphone disconnected'));
+    await _waitFor(() => capture.startInputs.length == 2);
+    capture.addError(StateError('default microphone disconnected'));
+    await _waitFor(() => service.state == RecordingState.interrupted);
+
+    expect(capture.startInputs, hasLength(2));
+    expect(service.canFinalize, isTrue);
+    final result = await service.stop();
+    expect(result.bytes, recordingBytesPerSecond);
+    expect(service.state, RecordingState.completed);
+    final continuity = await JsonRecordingContinuityEventStore(layout)
+        .read('meeting-capture-interrupted');
+    expect(continuity.map((event) => event.kind), [
+      RecordingContinuityEventKind.interruptionStarted,
+      RecordingContinuityEventKind.switchedToSystemDefault,
+      RecordingContinuityEventKind.interruptionStarted,
+      RecordingContinuityEventKind.recordingInterrupted,
+    ]);
+    expect(continuity[2].incidentId, continuity[3].incidentId);
+  });
+
+  test('设备中断时平台 stop 超时不复用 recorder 并进入 interrupted', () async {
+    final service = createService(enableInputRecovery: true);
+    await service.start(meetingId: 'meeting-recovery-stop-timeout');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
+    final stopBlocker = Completer<void>();
+    capture.stopBlocker = stopBlocker;
+    addTearDown(() {
+      if (!stopBlocker.isCompleted) {
+        stopBlocker.complete();
+      }
+    });
+
+    capture.addError(StateError('microphone disconnected'));
+    await _waitFor(() => service.state == RecordingState.interrupted);
+
+    expect(capture.startInputs, hasLength(1));
+    stopBlocker.complete();
+    await _waitFor(() => !capture.isStarted);
+    final result = await service.stop();
+    expect(result.bytes, recordingBytesPerSecond);
+    expect(service.state, RecordingState.completed);
+  });
+
+  test('系统挂起先排空事实 PCM 并在同一字节偏移保存检查点和缺口起点', () async {
+    final service = createService(
+      factCommitInterval: const Duration(milliseconds: 20),
+    );
+    await service.start(meetingId: 'meeting-system-suspend');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await Future<void>.delayed(Duration.zero);
+
+    await service.handleSystemSuspending();
+
+    expect(service.state, RecordingState.recovering);
+    expect(capture.streamPaused, isTrue);
+    expect(service.persistedBytes, recordingBytesPerSecond);
+    final checkpoint = await checkpoints.load('meeting-system-suspend');
+    expect(checkpoint?.state, RecordingCheckpointState.recording);
+    expect(checkpoint?.persistedBytes, recordingBytesPerSecond);
+    final continuity = await JsonRecordingContinuityEventStore(layout)
+        .read('meeting-system-suspend');
+    expect(
+      continuity.single.kind,
+      RecordingContinuityEventKind.systemSuspended,
+    );
+    expect(continuity.single.persistedBytes, recordingBytesPerSecond);
+
+    await service.handleSystemResumed();
+    await service.stop();
+  });
+
+  test('系统恢复后重开同一锁定输入并继续同一会议事实音频', () async {
+    const selectedInput = LockedRecordingInput.device(
+      RecordingInputDevice(id: 'usb-mic', label: 'USB 麦克风'),
+    );
+    final service = createService(initialInput: selectedInput);
+    await service.start(meetingId: 'meeting-system-resume');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
+
+    await service.handleSystemSuspending();
+    await service.handleSystemResumed();
+
+    expect(service.state, RecordingState.recording);
+    expect(capture.startInputs, [selectedInput, selectedInput]);
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond * 2);
+    final result = await service.stop();
+    expect(result.bytes, recordingBytesPerSecond * 2);
+    final continuity = await JsonRecordingContinuityEventStore(layout)
+        .read('meeting-system-resume');
+    expect(continuity.map((event) => event.kind), [
+      RecordingContinuityEventKind.systemSuspended,
+      RecordingContinuityEventKind.systemResumed,
+    ]);
+    expect(continuity.first.incidentId, continuity.last.incidentId);
+    expect(continuity.last.inputLabel, 'USB 麦克风');
+  });
+
+  test('系统恢复时锁定设备失效仅一次降级到系统默认输入', () async {
+    const selectedInput = LockedRecordingInput.device(
+      RecordingInputDevice(id: 'dock-mic', label: '扩展坞麦克风'),
+    );
+    final service = createService(
+      initialInput: selectedInput,
+      enableInputRecovery: true,
+    );
+    await service.start(meetingId: 'meeting-system-fallback');
+    capture.add(_pcmBytes(3200));
+    await _waitFor(() => service.persistedBytes == 3200);
+    await service.handleSystemSuspending();
+    capture.remainingStartFailures = 1;
+
+    await service.handleSystemResumed();
+
+    expect(service.state, RecordingState.recording);
+    expect(capture.startInputs, [
+      selectedInput,
+      selectedInput,
+      const LockedRecordingInput.systemDefault(),
+    ]);
+    final continuity = await JsonRecordingContinuityEventStore(layout)
+        .read('meeting-system-fallback');
+    expect(continuity.map((event) => event.kind), [
+      RecordingContinuityEventKind.systemSuspended,
+      RecordingContinuityEventKind.switchedToSystemDefault,
+      RecordingContinuityEventKind.systemResumed,
+    ]);
+    expect(continuity.map((event) => event.incidentId).toSet(), hasLength(1));
+    await service.stop();
+  });
+
+  test('系统恢复关闭旧 recorder 超时后进入可封存的真实中断状态', () async {
+    final service = createService(enableInputRecovery: true);
+    await service.start(meetingId: 'meeting-system-resume-timeout');
+    capture.add(_pcmBytes(3200));
+    await _waitFor(() => service.persistedBytes == 3200);
+    await service.handleSystemSuspending();
+    final stopBlocker = Completer<void>();
+    capture.stopBlocker = stopBlocker;
+    addTearDown(() {
+      if (!stopBlocker.isCompleted) {
+        stopBlocker.complete();
+      }
+    });
+
+    await service.handleSystemResumed();
+
+    expect(service.state, RecordingState.interrupted);
+    expect(service.canFinalize, isTrue);
+    expect(capture.startInputs, hasLength(1));
+    final continuity = await JsonRecordingContinuityEventStore(layout)
+        .read('meeting-system-resume-timeout');
+    expect(continuity.map((event) => event.kind), [
+      RecordingContinuityEventKind.systemSuspended,
+      RecordingContinuityEventKind.systemResumeFailed,
+    ]);
+    stopBlocker.complete();
+    await _waitFor(() => !capture.isStarted);
+    final result = await service.stop();
+    expect(result.bytes, 3200);
+  });
+
+  test('系统会话结束通知排空写入并更新可恢复检查点', () async {
+    final tracking = _TrackingRecordingCheckpointStore(checkpoints);
+    final service = createService(
+      checkpointStore: tracking,
+      factCommitInterval: const Duration(milliseconds: 20),
+    );
+    await service.start(meetingId: 'meeting-session-ending');
+    capture.add(_pcmBytes(6400));
+    await Future<void>.delayed(Duration.zero);
+    final savesBefore = tracking.completedSaves;
+
+    await service.prepareForSystemExit();
+
+    expect(service.persistedBytes, 6400);
+    expect(tracking.completedSaves, greaterThan(savesBefore));
+    final checkpoint = await checkpoints.load('meeting-session-ending');
+    expect(checkpoint?.persistedBytes, 6400);
+    expect(checkpoint?.state, RecordingCheckpointState.recording);
+    await service.stop();
+  });
+
+  test('用户封存会等待正在执行的系统挂起检查点完成', () async {
+    final service = createService(
+      factCommitInterval: const Duration(milliseconds: 20),
+    );
+    await service.start(meetingId: 'meeting-stop-during-suspend');
+    capture.add(_pcmBytes(6400));
+    await Future<void>.delayed(Duration.zero);
+
+    final suspending = service.handleSystemSuspending();
+    final stopping = service.stop();
+    await suspending;
+    final result = await stopping;
+
+    expect(result.bytes, 6400);
+    expect(service.state, RecordingState.completed);
+    final continuity = await JsonRecordingContinuityEventStore(layout)
+        .read('meeting-stop-during-suspend');
+    expect(
+      continuity.single.kind,
+      RecordingContinuityEventKind.systemSuspended,
+    );
   });
 
   test('平台 recorder 停止不返回时仍封存已写盘事实音频', () async {
@@ -479,27 +722,31 @@ Future<void> _waitFor(
 }
 
 final class FakePcmAudioCapture implements PcmAudioCapture {
-  final StreamController<Uint8List> _controller = StreamController<Uint8List>();
+  StreamController<Uint8List>? _controller;
 
   bool permissionGranted = true;
   bool _started = false;
+  bool get isStarted => _started;
+  bool get streamPaused => _controller?.isPaused ?? false;
+  final List<LockedRecordingInput> startInputs = [];
   int stopCalls = 0;
   int disposeCalls = 0;
   Object? disposeError;
   Completer<void>? stopBlocker;
+  int remainingStartFailures = 0;
 
   void add(Uint8List bytes) {
     if (!_started) {
       throw StateError('capture has not started');
     }
-    _controller.add(Uint8List.fromList(bytes));
+    _controller!.add(Uint8List.fromList(bytes));
   }
 
   void addError(Object error) {
     if (!_started) {
       throw StateError('capture has not started');
     }
-    _controller.addError(error);
+    _controller!.addError(error);
   }
 
   @override
@@ -508,9 +755,17 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
   }
 
   @override
-  Future<Stream<Uint8List>> start() async {
+  Future<Stream<Uint8List>> start({
+    LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
+  }) async {
+    startInputs.add(input);
+    if (remainingStartFailures > 0) {
+      remainingStartFailures--;
+      throw StateError('configured capture start failure');
+    }
+    _controller = StreamController<Uint8List>();
     _started = true;
-    return _controller.stream;
+    return _controller!.stream;
   }
 
   @override
@@ -523,8 +778,9 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
   Future<void> stop() async {
     stopCalls++;
     await stopBlocker?.future;
-    if (_started && !_controller.isClosed) {
-      await _controller.close();
+    final controller = _controller;
+    if (_started && controller != null && !controller.isClosed) {
+      await controller.close();
     }
     _started = false;
   }
@@ -532,8 +788,9 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
   @override
   Future<void> dispose() async {
     disposeCalls++;
-    if (!_controller.isClosed) {
-      final closing = _controller.close();
+    final controller = _controller;
+    if (controller != null && !controller.isClosed) {
+      final closing = controller.close();
       if (_started) {
         await closing;
       }

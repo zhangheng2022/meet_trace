@@ -1,19 +1,26 @@
 import '../models/asr_model_registry.dart';
 import '../models/meeting.dart';
 import '../models/meeting_readiness.dart';
+import '../models/recording_input.dart';
 import '../models/workflow_states.dart';
 import '../ports/asr_engine.dart';
 import '../ports/repositories.dart';
 import 'check_meeting_readiness.dart';
+import 'lock_recording_input.dart';
 
 final class StartedMeetingSession {
-  const StartedMeetingSession({required this.meeting, required this.engine});
+  const StartedMeetingSession({
+    required this.meeting,
+    required this.engine,
+    required this.recordingInput,
+  });
 
   final Meeting meeting;
   final AsrEngine engine;
+  final LockedRecordingInput recordingInput;
 }
 
-enum StartMeetingBlockReason { readiness }
+enum StartMeetingBlockReason { readiness, recordingInputUnavailable }
 
 final class StartMeetingBlocked implements Exception {
   const StartMeetingBlocked(this.reason, {this.readiness});
@@ -30,6 +37,7 @@ final class StartMeetingUseCase {
     required this.readinessChecker,
     required this.meetingIdFactory,
     required this.now,
+    required this.recordingInputLock,
     AsrModelRegistry? registry,
   }) : registry = registry ?? AsrModelRegistry.alpha;
 
@@ -38,6 +46,7 @@ final class StartMeetingUseCase {
   final MeetingReadinessChecker readinessChecker;
   final String Function() meetingIdFactory;
   final DateTime Function() now;
+  final LockRecordingInputUseCase recordingInputLock;
   final AsrModelRegistry registry;
 
   Future<StartedMeetingSession> execute() async {
@@ -59,6 +68,7 @@ final class StartMeetingUseCase {
     }
     AsrEngine? engine;
     try {
+      final recordingInput = await _lockRecordingInput();
       engine = await engineFactory.create(
         modelId: descriptor.modelId,
         modelVersion: descriptor.version,
@@ -80,10 +90,24 @@ final class StartMeetingUseCase {
       );
       final started = created.startRecording(startedAt: timestamp);
       await meetings.save(started);
-      return StartedMeetingSession(meeting: started, engine: engine);
+      return StartedMeetingSession(
+        meeting: started,
+        engine: engine,
+        recordingInput: recordingInput,
+      );
     } on Object {
       await engine?.dispose();
       rethrow;
+    }
+  }
+
+  Future<LockedRecordingInput> _lockRecordingInput() async {
+    try {
+      return await recordingInputLock.execute();
+    } on RecordingInputUnavailableException {
+      throw StartMeetingBlocked(
+        StartMeetingBlockReason.recordingInputUnavailable,
+      );
     }
   }
 }

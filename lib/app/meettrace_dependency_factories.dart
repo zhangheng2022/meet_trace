@@ -1,8 +1,13 @@
+import 'package:flutter/foundation.dart';
+
 import '../data/services/asr/asr_preview_coordinator.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/pcm_audio_playback_service.dart';
 import '../data/services/audio/platform_recording_foreground_lifecycle.dart';
+import '../data/services/audio/platform_recording_input_recovery.dart';
+import '../data/services/audio/record_input_device_catalog.dart';
 import '../data/services/audio/record_pcm_audio_capture.dart';
+import '../data/services/audio/recording_continuity_event_store.dart';
 import '../data/services/audio/recording_checkpoint_store.dart';
 import '../data/services/audio/reliable_recording_service.dart';
 import '../data/services/models/model_download_types.dart';
@@ -111,6 +116,12 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         repair: download,
         pause: () => cancellation?.cancel(),
       ),
+      recordingInputPreferences: defaultTargetPlatform == TargetPlatform.windows
+          ? storage.recordingInputPreferences
+          : null,
+      recordingInputDevices: defaultTargetPlatform == TargetPlatform.windows
+          ? RecordInputDeviceCatalog()
+          : null,
     );
   }
 
@@ -134,6 +145,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         meetingIdFactory: () =>
             'meeting-${DateTime.now().microsecondsSinceEpoch}',
         now: DateTime.now,
+        recordingInputLock: meeting.recordingInputLock,
       ),
     );
   }
@@ -147,8 +159,11 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
     );
     final recording = ReliableRecordingService(
       capture: RecordPcmAudioCapture(),
+      initialInput: session.recordingInput,
+      inputRecoveryPlanner: createRecordingInputRecoveryPlanner(),
       layout: storage.fileLayout,
       checkpoints: JsonRecordingCheckpointStore(storage.fileLayout),
+      continuityEvents: JsonRecordingContinuityEventStore(storage.fileLayout),
       storageCapacity: const DeviceRecordingStorageCapacityProvider(),
       foreground: createRecordingForegroundLifecycle(),
       previewSink: preview,
@@ -165,6 +180,8 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         now: DateTime.now,
       ),
       telemetry: sentryRecordingTelemetryGate,
+      desktopLifecycle: meeting.desktopLifecycle,
+      recordingSystemLifecycle: recording,
     );
   }
 }

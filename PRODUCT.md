@@ -8,7 +8,7 @@ adaptive
 
 ## Users
 
-主要用户是使用普通话或中英混合会议、需要快速回顾会议内容的 Android 与 iOS 个人用户。
+主要用户是使用普通话或中英混合会议、需要快速回顾会议内容的 Android、iOS 与 Windows 个人用户。
 他们可能处于临时讨论、日常工作会议、研究同步或长时间会议中，希望无需注册或稳定网络，
 即可可靠留下完整录音并获得可核对的转录与说话人标签。
 
@@ -52,11 +52,11 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 
 ## Capabilities and Constraints
 
-- 会迹是 Android 与 iOS 双平台自适应产品；同一业务能力在两端共享，界面结构、导航、
-  系统反馈和交互细节分别遵循 Android 与 iOS 的原生惯例。
+- 会迹是 Android、iOS 与 Windows 三平台自适应产品；同一业务能力共享 Domain 与 ViewModel，界面结构、导航、
+  系统反馈和交互细节分别遵循移动端与 Windows 桌面惯例。
 - 当前可运行实现和质量证据仍以 Android Alpha 为基线；iOS 端尚未形成等价的
   录音、端侧 ASR、后台生命周期、模型分发与真机验收证据，不得表述为已经交付。
-- Web 和桌面端不在当前产品范围。
+- Windows 已进入 PRD V1.1，但当前仍是未交付范围；Web、Linux 与 macOS 不在当前产品范围。
 - Alpha 不提供登录、账号、跨设备同步、团队协作、日历机器人、自动入会或多人在线编辑。
 - 本地完整音频是唯一事实源，录音写入与 ASR 推理必须独立运行。
 - App 私有目录保存会议录音、转录、模型与派生数据；卸载应用可能永久删除这些数据。
@@ -65,7 +65,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - 会中转录是可降级、可重建的临时结果，不得冒充最终转录。
 - 说话人分离在普通话 2～4 人会议上提供质量承诺；其他语言可运行但不承诺准确率。
 - 会中转录与会后说话人分离都是可降级能力，不得阻塞事实录音；分离失败写入单一说话人结果。
-- SenseVoice、Silero VAD、Pyannote 与 3D-Speaker 权重不得进入 APK/IPA；首次初始化通过固定 HTTPS Manifest
+- SenseVoice、Silero VAD、Pyannote 与 3D-Speaker 权重不得进入 APK、IPA 构建产物或 MSIX；首次初始化通过固定 HTTPS Manifest
   下载、续传、校验并原子激活。完整资源集合未就绪时不得进入首页。
 - 设置保存全局默认模型；首页不提供本场模型覆盖，开始会议后模型锁定。
 - 同一场会议所选模型同时负责会中和最终转录，不自动切换模型，不混合两个模型的输出。
@@ -73,12 +73,13 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - 会后重新转录生成独立快照；新快照完整写入并校验成功后，才能替换当前结果。
 - 录音、转录、说话人标签、分享临时文件和模型状态必须支持明确的失败说明与可恢复操作。
 - Alpha 不接入业务分析埋点；Release 默认启用 Sentry 崩溃、性能、日志、指标、遮罩 Replay/截图/View Hierarchy、交互和请求诊断，不增加首次同意。用户主动导出的诊断包不包含音频或完整转录。
-- Android Alpha 候选只构建 `arm64-v8a` APK，先暂存到当前仓库 Draft Release；Android 与 iOS 同一提交均验收通过后才公开原 APK，禁止重建、覆盖或移动版本标签。
+- Android Alpha 候选只构建 `arm64-v8a` APK，Windows 只构建 x64 MSIX；Android、iOS 与 Windows 同一提交均验收通过后才统一公开，禁止重建、覆盖或移动版本标签。
 - iOS Alpha 只经 TestFlight 分发，GitHub 不上传 IPA；外部测试链接可在最终 Pre-release 中提供，尚未就绪时明确标记待提供。
+- Windows 首选 SignPath Foundation 免费开源签名并随 GitHub Pre-release 分发，申请失败时使用 Microsoft Store 免费签名与 Package Flight；三平台只提供单一 Alpha 自动更新频道。
 - Flutter UI 遵循 `View → ViewModel → Use Case / Port → Repository / Service`，功能 UI
   不直接访问 ONNX、存储或 HTTP。
 - 共享界面优先使用 Forui 组件和主题令牌；平台导航、返回手势、系统权限、分享、
-  后台录音与辅助功能必须保留 Android 和 iOS 各自的原生语义。
+  后台/托盘录音与辅助功能必须保留 Android、iOS 和 Windows 各自的原生语义。
 
 ## Brand Commitments
 
@@ -92,17 +93,17 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 
 ## Evidence on Hand
 
-- `docs/product/Alpha_PRD_无登录版.md`：Android + iOS Alpha 的范围、用户流程、
+- `docs/product/Alpha_PRD_无登录版.md`：Android + iOS + Windows Alpha 的范围、用户流程、
   功能需求与验收标准。
 - `docs/technical/端侧_SenseVoice_转录技术方案.md`：录音、初始化下载、模型锁定、存储与降级边界。
 - `docs/quality/README.md`：自动化门禁、设备矩阵、未闭环风险和候选证据要求。
-- `DESIGN.md`：当前多页面视觉系统、机器可读令牌、组件规范与双平台自适应规则。
+- `DESIGN.md`：当前多页面视觉系统、机器可读令牌、组件规范与三平台自适应规则。
 - `lib/` 与 `test/`：现有实现、组件测试和领域测试；设备验收记录以 `docs/quality/` 为准。
 - `ios/`：Flutter iOS 工程壳、麦克风用途和 audio 后台模式；目前不构成 iOS 录音、
   模型、后台生命周期或真机验收已完成的证据。
 - 当前没有可用于产品宣传的客户名单、用户评价、媒体报道、商业指标或公开效果声明；
   后续设计与文案不得虚构这些证明材料。
-- Alpha 的 SenseVoice 固定语料评测、Android/iOS 目标 arm64 真机回归、完整验收证据及
+- Alpha 的 SenseVoice 固定语料评测、Android/iOS 目标 arm64 真机与 Windows x64 设备回归、完整验收证据及
   资源许可仍需以活动质量文档为准，不得将未闭环事项表述为已经完成。
 
 ## Product Principles
@@ -112,7 +113,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 3. **选择必须明确。** 模型切换、降级、分享、删除和重新处理不得静默发生。
 4. **本地能力优先。** 无登录、弱网可用、端侧转录和最小化数据外发是产品长期边界。
 5. **降级仍然可信。** 能力不可用时保留事实数据、解释当前状态并提供真实的恢复路径。
-6. **发布必须可追溯。** 公开安装包必须是双平台同候选验收过的原始资产；撤回保留记录并用新版本向前修复。
+6. **发布必须可追溯。** 公开安装包必须是三平台同候选验收过的原始资产；撤回保留记录并用新版本向前修复。
 
 ## Accessibility & Inclusion
 

@@ -1,6 +1,8 @@
 // THESIS: 设置页是一张本地运行账本，让用户确认新会议默认值、离线资源和本机数据状态。
 // OWN-WORLD: 连续分区、细规则线、对齐数值与按状态提升的维护操作，不使用卡片仪表盘。
 // STORY: 先确认新会议使用什么，再核对资源是否可用，最后查看存储、隐私与诊断入口。
+// FIRST VIEWPORT: 宽屏维持设置双栏，录音输入位于左栏会议默认与离线资源之间；紧凑宽度自然下排。
+// FORM: 继承既有 Quiet Evidence Ledger 的窄范围扩展，不启动新的视觉世界或概念选型。
 
 import 'dart:async';
 
@@ -8,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../domain/models/asr_model.dart';
+import '../../../../domain/models/recording_input.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/asr_model_option.dart';
 import '../../../core/app_back_icon.dart';
@@ -83,6 +86,10 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
           descriptor: descriptor,
           loading: viewModel.isLoading,
         ),
+        if (viewModel.supportsRecordingInputSelection) ...[
+          SizedBox(height: appStyle.spaceXl),
+          _RecordingInputSection(viewModel: viewModel),
+        ],
         SizedBox(height: appStyle.spaceXl),
         _OfflineResourcesSection(
           option: option,
@@ -167,6 +174,174 @@ final class _MeetingDefaultsSection extends StatelessWidget {
       ),
     );
   }
+}
+
+final class _RecordingInputSection extends StatelessWidget {
+  const _RecordingInputSection({required this.viewModel});
+
+  final ModelSettingsViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final appStyle = context.theme.style.app;
+    final preference = viewModel.recordingInputPreference;
+    final missingSelectedDevice =
+        preference != null && !viewModel.selectedRecordingInputAvailable;
+    final devices = viewModel.recordingInputOptions;
+    return _SettingsSection(
+      key: const ValueKey('recording-input-section'),
+      title: '录音输入',
+      topRule: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '新会议开始时锁定这里的选择；会议中设备断开时仅回退一次系统默认麦克风。',
+            style: context.theme.typography.body.sm.copyWith(
+              color: context.theme.colors.mutedForeground,
+            ),
+          ),
+          SizedBox(height: appStyle.spaceMd),
+          if (viewModel.recordingInputErrorMessage case final message?) ...[
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: const Text('麦克风设置未完成'),
+              subtitle: Text(message),
+            ),
+            SizedBox(height: appStyle.spaceMd),
+          ],
+          if (preference == null) ...[
+            if (viewModel.recordingInputsLoading)
+              const FProgress(semanticsLabel: '正在读取 Windows 麦克风列表'),
+          ] else ...[
+            FTileGroup(
+              semanticsLabel: 'Windows 录音输入设备',
+              children: [
+                _RecordingInputTile(
+                  key: const ValueKey('recording-input-system-default'),
+                  label: '系统默认麦克风',
+                  detail: '由 Windows 在每场会议开始时解析',
+                  selected: preference.usesSystemDefault,
+                  enabled:
+                      !viewModel.recordingInputBusy &&
+                      !viewModel.recordingInputsLoading,
+                  onPress: () => unawaited(
+                    viewModel.selectRecordingInput(
+                      const RecordingInputPreference.systemDefault(),
+                    ),
+                  ),
+                ),
+                if (missingSelectedDevice)
+                  _RecordingInputTile(
+                    key: const ValueKey('recording-input-unavailable'),
+                    label: preference.lastKnownLabel!,
+                    detail: '当前不可用，请连接设备或选择其他麦克风',
+                    selected: true,
+                    enabled: false,
+                    onPress: null,
+                  ),
+                for (final device in devices)
+                  _RecordingInputTile(
+                    key: ValueKey('recording-input-${device.id}'),
+                    label: device.label,
+                    detail: 'Windows 输入设备',
+                    selected: preference.deviceId == device.id,
+                    enabled:
+                        !viewModel.recordingInputBusy &&
+                        !viewModel.recordingInputsLoading,
+                    onPress: () => unawaited(
+                      viewModel.selectRecordingInput(
+                        RecordingInputPreference.device(
+                          deviceId: device.id,
+                          lastKnownLabel: device.label,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (devices.isEmpty) ...[
+              SizedBox(height: appStyle.spaceSm),
+              Text(
+                '未发现其他麦克风，仍可使用系统默认麦克风。',
+                style: context.theme.typography.body.sm.copyWith(
+                  color: context.theme.colors.mutedForeground,
+                ),
+              ),
+            ],
+            if (viewModel.recordingInputsLoading) ...[
+              SizedBox(height: appStyle.spaceSm),
+              const FProgress(semanticsLabel: '正在重新扫描 Windows 麦克风列表'),
+            ],
+          ],
+          if (viewModel.recordingInputStatusMessage case final status?) ...[
+            SizedBox(height: appStyle.spaceSm),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                status,
+                style: context.theme.typography.body.sm.copyWith(
+                  color: context.theme.colors.mutedForeground,
+                ),
+              ),
+            ),
+          ],
+          SizedBox(height: appStyle.spaceSm),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: FButton(
+              key: const ValueKey('refresh-recording-inputs'),
+              variant: FButtonVariant.ghost,
+              onPress:
+                  viewModel.recordingInputsLoading ||
+                      viewModel.recordingInputBusy
+                  ? null
+                  : () => unawaited(viewModel.refreshRecordingInputs()),
+              prefix: const Icon(FLucideIcons.refreshCcw),
+              child: const Text('重新扫描麦克风'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _RecordingInputTile extends StatelessWidget with FTileMixin {
+  const _RecordingInputTile({
+    required this.label,
+    required this.detail,
+    required this.selected,
+    required this.enabled,
+    required this.onPress,
+    super.key,
+  });
+
+  final String label;
+  final String detail;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback? onPress;
+
+  @override
+  Widget build(BuildContext context) => MergeSemantics(
+    child: Semantics(
+      inMutuallyExclusiveGroup: true,
+      selected: selected,
+      child: FTile(
+        selected: selected,
+        semanticsLabel: '$label，$detail',
+        prefix: const Icon(FLucideIcons.mic),
+        title: Text(label),
+        subtitle: Text(detail),
+        suffix: selected
+            ? const ExcludeSemantics(child: Icon(FLucideIcons.check))
+            : null,
+        enabled: enabled,
+        onPress: onPress,
+      ),
+    ),
+  );
 }
 
 final class _OfflineResourcesSection extends StatelessWidget {

@@ -1449,6 +1449,8 @@ jobs:
               echo "$testflight_line"
               echo "- 候选提交：\`$CANDIDATE_SHA\`"
               echo "- 候选流程：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID"
+              echo "- Code signing policy：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$CANDIDATE_SHA/CODE_SIGNING_POLICY.md"
+              echo "- 隐私政策：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$CANDIDATE_SHA/PRIVACY.md"
               echo
               echo "## Android 安装提示"
               echo

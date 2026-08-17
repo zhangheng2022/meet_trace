@@ -168,6 +168,8 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
 bool _isActive(RecordingState state) => {
   RecordingState.starting,
   RecordingState.recording,
+  RecordingState.recovering,
+  RecordingState.interrupted,
   RecordingState.paused,
   RecordingState.finalizing,
 }.contains(state);

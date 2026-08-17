@@ -44,6 +44,25 @@ void main() {
         throwsA(isA<InvalidStateTransitionException>()),
       );
     });
+
+    test('输入中断允许恢复录音或封存已有事实音频', () {
+      expect(
+        RecordingState.recording.transitionTo(RecordingState.recovering),
+        RecordingState.recovering,
+      );
+      expect(
+        RecordingState.recovering.transitionTo(RecordingState.recording),
+        RecordingState.recording,
+      );
+      expect(
+        RecordingState.recovering.transitionTo(RecordingState.interrupted),
+        RecordingState.interrupted,
+      );
+      expect(
+        RecordingState.interrupted.transitionTo(RecordingState.finalizing),
+        RecordingState.finalizing,
+      );
+    });
   });
 
   group('ProcessingStateMachine', () {

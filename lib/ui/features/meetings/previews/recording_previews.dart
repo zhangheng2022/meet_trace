@@ -12,6 +12,7 @@ import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/asr_preview.dart';
 import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/recording.dart';
+import '../../../../domain/models/recording_input.dart';
 import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/ports/asr_engine.dart';
@@ -57,6 +58,7 @@ Widget _recordingPreview(AsrPreviewState state) {
         session: StartedMeetingSession(
           meeting: meeting,
           engine: _PreviewAsrEngine(descriptor),
+          recordingInput: const LockedRecordingInput.systemDefault(),
         ),
         recording: recording,
         preview: preview,
