@@ -25,6 +25,7 @@ jobs:
       core: ${{ steps.changes.outputs.core }}
       android: ${{ steps.changes.outputs.android }}
       ios: ${{ steps.changes.outputs.ios }}
+      windows: ${{ steps.changes.outputs.windows }}
     steps:
       - name: Checkout repository history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -58,7 +59,7 @@ jobs:
             done < "$RUNNER_TEMP/meettrace-changed-paths"
 
             if [[ "$FORCE_ALL" == "true" ]]; then
-              for TARGET in core android ios; do
+              for TARGET in core android ios windows; do
                 echo "$TARGET=true" >> "$GITHUB_OUTPUT"
               done
             else
@@ -240,22 +241,152 @@ jobs:
           retention-days: 7
           compression-level: 0
 
+  windows-msix-probe:
+    name: Build and inspect unsigned Windows MSIX probe
+    needs: classify
+    if: needs.classify.outputs.windows == 'true'
+    runs-on: windows-2025
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java 17 for JNI headers
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.2.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: ".fvmrc"
+          cache: true
+
+      - name: Capture Windows toolchain snapshot
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path build/windows/msix | Out-Null
+          $os = Get-CimInstance Win32_OperatingSystem
+          $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+          $installedRoots = Get-ItemProperty `
+            'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots' `
+            -ErrorAction Stop
+          $sdkRoot = $installedRoots.KitsRoot10
+          if ([string]::IsNullOrWhiteSpace($sdkRoot)) {
+            throw 'Windows SDK KitsRoot10 is missing from Installed Roots.'
+          }
+          $makeAppx = Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'bin') `
+            -Recurse -Filter makeappx.exe |
+            Where-Object { $_.FullName -match '\\x64\\makeappx\.exe$' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if ($null -eq $makeAppx) {
+            throw 'Windows SDK does not provide x64 MakeAppx.exe.'
+          }
+          @(
+            "captured_at_utc=$([DateTimeOffset]::UtcNow.ToString('O'))"
+            "runner_os=$env:RUNNER_OS"
+            "runner_arch=$env:RUNNER_ARCH"
+            "windows_caption=$($os.Caption)"
+            "windows_version=$($os.Version)"
+            "cpu=$($cpu.Name)"
+            "logical_processors=$($cpu.NumberOfLogicalProcessors)"
+            "memory_bytes=$($os.TotalVisibleMemorySize * 1KB)"
+            "java_home=$env:JAVA_HOME"
+            "makeappx=$($makeAppx.FullName)"
+            '--- Flutter ---'
+            (flutter --version)
+            '--- Dart ---'
+            (dart --version 2>&1)
+          ) | Set-Content -LiteralPath build/windows/msix/toolchain.txt -Encoding utf8
+
+      - name: Resolve locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Prepare MSIX probe version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pubspec = Get-Content -LiteralPath pubspec.yaml -Raw
+          $match = [regex]::Match(
+            $pubspec,
+            '(?m)^version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)\s*(?:#.*)?$'
+          )
+          if (-not $match.Success) {
+            throw 'pubspec.yaml version must use major.minor.patch+build.'
+          }
+          $packageVersion = '{0}.{1}.{2}.{3}' -f `
+            $match.Groups[1].Value, `
+            $match.Groups[2].Value, `
+            $match.Groups[3].Value, `
+            $match.Groups[4].Value
+          "MEETTRACE_MSIX_VERSION=$packageVersion" | Out-File `
+            -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build Windows x64 Release with remote diagnostics disabled
+        run: >-
+          flutter build windows --release
+          --dart-define=SENTRY_ENABLED=false
+
+      - name: Create unsigned MSIX development probe
+        shell: pwsh
+        run: |
+          pwsh -NoLogo -NoProfile -File tool/windows/package_msix.ps1 `
+            -Publisher 'CN=MeetTrace Development' `
+            -DevelopmentProbe `
+            -PackageVersion $env:MEETTRACE_MSIX_VERSION `
+            -OutputPath build/windows/msix/meettrace-ci-probe-windows-x64.msix
+
+      - name: Inspect MSIX identity and content
+        shell: pwsh
+        run: |
+          pwsh -NoLogo -NoProfile -File tool/benchmarks/inspect_msix.ps1 `
+            -MsixPath build/windows/msix/meettrace-ci-probe-windows-x64.msix `
+            -ExpectedPublisher 'CN=MeetTrace Development' `
+            -ExpectedVersion $env:MEETTRACE_MSIX_VERSION `
+            -ReportPath build/windows/msix/msix-inspection.json
+
+      - name: Remove non-distributable MSIX probe
+        if: always()
+        shell: pwsh
+        run: |
+          $probe = 'build/windows/msix/meettrace-ci-probe-windows-x64.msix'
+          if (Test-Path -LiteralPath $probe -PathType Leaf) {
+            Remove-Item -LiteralPath $probe -Force
+          }
+
+      - name: Upload Windows package evidence only
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-windows-msix-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/windows/msix/*.json
+            build/windows/msix/*.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
   ci-gate:
     name: CI Gate
     if: always()
-    needs: [classify, flutter-quality, ios-unsigned]
+    needs: [classify, flutter-quality, ios-unsigned, windows-msix-probe]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       CLASSIFY_RESULT: ${{ needs.classify.result }}
       FLUTTER_RESULT: ${{ needs.flutter-quality.result }}
       IOS_RESULT: ${{ needs.ios-unsigned.result }}
+      WINDOWS_RESULT: ${{ needs.windows-msix-probe.result }}
     steps:
       - name: Require successful selected jobs
         shell: bash
         run: |
           set -euo pipefail
           [[ "$CLASSIFY_RESULT" == "success" ]]
-          for result in "$FLUTTER_RESULT" "$IOS_RESULT"; do
+          for result in "$FLUTTER_RESULT" "$IOS_RESULT" "$WINDOWS_RESULT"; do
             [[ "$result" == "success" || "$result" == "skipped" ]]
           done
