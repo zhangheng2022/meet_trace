@@ -328,6 +328,7 @@ void main() {
 
       expect(windows, contains('runs-on: windows-2025'));
       expect(windows, contains('Set up Java 17 for JNI headers'));
+      expect(windows, contains('Windows SDK KitsRoot10 is missing'));
       expect(windows, contains('flutter build windows --release'));
       expect(windows, contains('--dart-define=SENTRY_ENABLED=false'));
       expect(windows, contains("-Publisher 'CN=MeetTrace Development'"));
@@ -339,6 +340,7 @@ void main() {
       expect(windows, isNot(contains('build/windows/msix/*.msix')));
       expect(windows, isNot(contains('gh release upload')));
       expect(windows, isNot(contains('New-SelfSignedCertificate')));
+      expect(windows, contains(r'\s*(?:#.*)?$'));
     });
 
     test('Codacy 仅跳过无法解析 Flutter package graph 的测试代码', () async {

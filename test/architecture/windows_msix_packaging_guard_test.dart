@@ -35,6 +35,7 @@ void main() {
       );
       expect(script, contains(r'& $makeAppx pack /o /v /h SHA256'));
       expect(script, contains(r'signed = $false'));
+      expect(script, contains(r'\s*(?:#.*)?$'));
       expect(script, isNot(contains('New-SelfSignedCertificate')));
       expect(script, isNot(contains('signtool sign')));
       expect(script, isNot(contains('.pfx')));

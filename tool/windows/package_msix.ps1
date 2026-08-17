@@ -21,7 +21,10 @@ function Resolve-PackageVersion {
     }
 
     $pubspec = Get-Content -LiteralPath (Join-Path $repoRoot 'pubspec.yaml') -Raw
-    $match = [regex]::Match($pubspec, '(?m)^version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)\s*$')
+    $match = [regex]::Match(
+        $pubspec,
+        '(?m)^version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)\s*(?:#.*)?$'
+    )
     if (-not $match.Success) {
         throw 'pubspec.yaml version must use major.minor.patch+build.'
     }

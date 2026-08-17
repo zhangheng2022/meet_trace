@@ -271,8 +271,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path build/windows/msix | Out-Null
           $os = Get-CimInstance Win32_OperatingSystem
           $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
-          $sdkRoot = (Get-ItemProperty `
-            'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots').KitsRoot10
+          $installedRoots = Get-ItemProperty `
+            'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots' `
+            -ErrorAction Stop
+          $sdkRoot = $installedRoots.KitsRoot10
+          if ([string]::IsNullOrWhiteSpace($sdkRoot)) {
+            throw 'Windows SDK KitsRoot10 is missing from Installed Roots.'
+          }
           $makeAppx = Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'bin') `
             -Recurse -Filter makeappx.exe |
             Where-Object { $_.FullName -match '\\x64\\makeappx\.exe$' } |
@@ -308,7 +313,7 @@ jobs:
           $pubspec = Get-Content -LiteralPath pubspec.yaml -Raw
           $match = [regex]::Match(
             $pubspec,
-            '(?m)^version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)\s*$'
+            '(?m)^version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)\s*(?:#.*)?$'
           )
           if (-not $match.Success) {
             throw 'pubspec.yaml version must use major.minor.patch+build.'
