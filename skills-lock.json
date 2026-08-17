@@ -143,13 +143,13 @@
       "source": "graphify-labs/graphify",
       "sourceType": "github",
       "skillPath": "graphify/SKILL.md",
-      "computedHash": "fdc0ec9d5674e5f9669a24cf1d1ba0e92830095a9372bb316327e33f8913f038"
+      "computedHash": "c6cd8bd5e6c0ff63753d14241b3d322c127ca3ae81b7b33e2a3a45da3275912e"
     },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grill-me/SKILL.md",
-      "computedHash": "7edd436132b43ea2973710f0c28a9879c9b0910651eb89a991a7e98cb6dbbacb"
+      "computedHash": "5e0c683385eafd83f106ac6c9d67dfbbfe5aa4b3fe65aad114eb1055a99c818f"
     },
     "open-code-review-delegate": {
       "source": "alibaba/open-code-review",
