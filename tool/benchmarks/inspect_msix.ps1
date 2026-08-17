@@ -81,12 +81,13 @@ $signerSubject = $null
 if ($RequireSignature) {
     $authenticodeCommand = Get-Command Get-AuthenticodeSignature -ErrorAction SilentlyContinue
     if ($null -eq $authenticodeCommand) {
-        throw 'Authenticode verification is unavailable on this platform.'
-    }
-    $signature = Get-AuthenticodeSignature -LiteralPath $MsixPath
-    $authenticodeStatus = $signature.Status.ToString()
-    if ($null -ne $signature.SignerCertificate) {
-        $signerSubject = $signature.SignerCertificate.Subject
+        $authenticodeStatus = 'Unavailable'
+    } else {
+        $signature = Get-AuthenticodeSignature -LiteralPath $MsixPath
+        $authenticodeStatus = $signature.Status.ToString()
+        if ($null -ne $signature.SignerCertificate) {
+            $signerSubject = $signature.SignerCertificate.Subject
+        }
     }
 }
 
@@ -136,7 +137,7 @@ if ([string]::IsNullOrWhiteSpace($ReportPath)) {
 $ReportPath = [System.IO.Path]::GetFullPath($ReportPath)
 New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($ReportPath)) | Out-Null
 $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ReportPath -Encoding utf8
-Write-Host "MSIX inspection report: $ReportPath"
+Write-Output "MSIX inspection report: $ReportPath"
 
 $failedChecks = @($checks.GetEnumerator() | Where-Object { -not $_.Value })
 if ($failedChecks.Count -gt 0 -or $missingEntries.Count -gt 0 -or

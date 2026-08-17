@@ -199,8 +199,8 @@ try {
     }
     $metadataPath = "$OutputPath.packaging.json"
     $metadata | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $metadataPath -Encoding utf8
-    Write-Host "Unsigned MSIX created: $OutputPath"
-    Write-Host "Packaging metadata: $metadataPath"
+    Write-Output "Unsigned MSIX created: $OutputPath"
+    Write-Output "Packaging metadata: $metadataPath"
 } finally {
     $resolvedStaging = [System.IO.Path]::GetFullPath($stagingPath)
     $resolvedParent = [System.IO.Path]::GetFullPath($stagingParent) + [System.IO.Path]::DirectorySeparatorChar
