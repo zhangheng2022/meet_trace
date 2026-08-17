@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def classify(paths: list[str], *, force_all: bool = False) -> dict[str, bool]:
-    result = {"core": False, "android": False, "ios": False}
+    result = {"core": False, "android": False, "ios": False, "windows": False}
     if force_all:
         return {key: True for key in result}
 
@@ -26,7 +26,7 @@ def classify(paths: list[str], *, force_all: bool = False) -> dict[str, bool]:
             "pubspec.yaml",
             "pubspec.lock",
         }:
-            result.update(core=True, android=True, ios=True)
+            result.update(core=True, android=True, ios=True, windows=True)
             continue
 
         if path.startswith("android/"):
@@ -35,6 +35,10 @@ def classify(paths: list[str], *, force_all: bool = False) -> dict[str, bool]:
 
         if path.startswith("ios/") or path in {"Gemfile", "Gemfile.lock"}:
             result.update(core=True, ios=True)
+            continue
+
+        if path.startswith("windows/"):
+            result.update(core=True, windows=True)
             continue
 
         if path.startswith(("test/", "patrol_test/")):

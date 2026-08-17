@@ -1,6 +1,6 @@
 # 会迹（MeetTrace）质量与验收
 
-> 状态：活动；Android 已有公开 Alpha，iOS 证据未闭环，Windows 工程能力实施中，三平台统一发布尚未实现
+> 状态：活动；Android 已有公开 Alpha，iOS 证据未闭环，Windows 已有未签名 MSIX 开发探针，正式签名与三平台统一发布尚未实现
 >
 > 更新日期：2026-08-15
 >
@@ -14,7 +14,7 @@
 - SenseVoice、Silero VAD、Pyannote 和 3D-Speaker 运行时下载、严格校验、联合最终快照及文本/WAV 分享主链已实现。
 - Android/iOS 的目标 arm64 真机仍须完成录音连续性、ASR、说话人分离、分享、资源、温控和无障碍验收；任何旧候选的结果不能沿用到新 SHA。
 - 官方 `sherpa_onnx 1.13.5` 已补充完整波形输入缓冲区释放。当前候选仍需完成 Android/iOS 重复长会议内存验证；证据闭环前不得据此扩大分发，运行失败时继续降级为单一说话人。
-- Windows x64 Debug/Release 工程、SQLite FFI、输入设备锁定/一次回退、连续性事件、单实例激活、录音 close 转托盘、“停止并退出”安全封存及睡眠/恢复缺口记录链已实现并有自动化/本机构建冒烟。自动更新已实现批准/撤回/防降级、自动下载、录音与处理期 deferred、数据代警告的 Domain 编排，以及签名 envelope 的确定性解析边界；正式 Manifest URL、验签公钥、平台下载/安装 adapter 尚未接线。真实睡眠与托盘 PCM 增长、MSIX、签名、自动更新端到端、CI 与目标设备证据仍未闭环，Windows 当前不得标记为受支持。
+- Windows x64 Debug/Release 工程、SQLite FFI、输入设备锁定/一次回退、连续性事件、单实例激活、录音 close 转托盘、“停止并退出”安全封存及睡眠/恢复缺口记录链已实现并有自动化/本机构建冒烟。常规 CI 已加入未签名 MSIX 开发探针，审计固定身份、Windows 10 22H2/x64、运行资产以及模型权重/用户数据/凭据禁入；探针在上传证据前删除，不可作为发行包。自动更新已实现批准/撤回/防降级、自动下载、录音与处理期 deferred、数据代警告的 Domain 编排，以及签名 envelope 的确定性解析边界；正式 Manifest URL、验签公钥、平台下载/安装 adapter 尚未接线。真实睡眠与托盘 PCM 增长、正式 MSIX 签名、自动更新端到端、统一发布 CI 与目标设备证据仍未闭环，Windows 当前不得标记为受支持。
 - PRD V1.1 要求后续候选改为 Android/iOS/Windows 同 SHA 的三平台统一门禁；在工作流和 AT-21～AT-26 完成前，现有双平台发布流程不能宣称满足 V1.1 完成定义。
 
 ## 自动化门禁
@@ -24,7 +24,7 @@
 | 跨平台 CI | `.github/workflows/quality.yml` | 按变更路径执行格式、分析、测试、Android Debug APK 与 iOS 无签名构建审计，并始终汇总 `CI Gate` |
 | 可复用质量核心 | `.github/workflows/_flutter-core.yml` | 为 PR CI 与 Alpha Release 提供同一套格式、分析和测试门禁 |
 | 正式候选 | `.github/workflows/alpha-release.yml` | 同一 SHA、Android 签名 arm64 APK、iOS TestFlight、候选清单及一次公开批准 |
-| Windows 目标门禁 | 待扩展 `quality.yml` / `alpha-release.yml` | Windows x64 Debug/Release、MSIX 审计与签名、三平台同 SHA/版本、自动更新不可见 Draft |
+| Windows 目标门禁 | `quality.yml` 已有开发探针；待扩展 `alpha-release.yml` | 正式 MSIX 签名、三平台同 SHA/版本、自动更新不可见 Draft |
 | 本地交付 | `dart format lib test`、`flutter analyze`、`flutter test` | 当前工作树通过；代码变更按 AGENTS 完成 OCR 和目标平台构建 |
 
 自动化失败时不得发布。自动化通过只证明技术检查，不代表目标设备、准确率、能耗或用户验收通过。

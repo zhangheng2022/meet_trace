@@ -1,6 +1,6 @@
 # Flutter CI/CD 工作流规格
 
-> 当前状态：本文描述仓库现有 Android+iOS 工作流。PRD V1.1 已要求 Windows、全平台自动更新和三平台统一发布；在技术方案第 13 节阶段 5 完成并同步本文前，现有工作流不满足新的 Alpha 完成定义，也不得据此公开 Windows 支持。
+> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针审计，但正式 SignPath 签名、三平台统一候选和目标设备验收仍未完成；不得据此公开 Windows 支持。
 
 ## 1. 目标与边界
 
@@ -8,7 +8,7 @@
 
 - 分支保护始终可以依赖名称稳定的 `CI Gate`，不因路径过滤而缺失。
 - Flutter 格式化、静态分析和测试只定义一次，由常规 CI 与正式发布复用。
-- Android、iOS 原生变更仅触发对应平台检查；未知路径保守执行完整 CI。
+- Android、iOS、Windows 原生变更仅触发对应平台检查；未知路径保守执行完整 CI。
 - iOS 无签名构建只上传 JSON/TXT 审计证据，不生成或上传 IPA。
 - 正式 Android 候选进入 GitHub Draft Release；正式 iOS 只进入 TestFlight。
 - GitHub Release 只保留 Android APK 与单一候选清单，详细签名和包检查证据进入短期 Actions Artifact。
@@ -32,26 +32,33 @@ flowchart LR
   B -->|"core=true"| C["Reusable Flutter Core"]
   B -->|"android=true"| C
   B -->|"ios=true"| D["Unsigned iOS app audit"]
+  B -->|"windows=true"| W["Unsigned Windows MSIX probe"]
   B -->|"文档或 Graphify 输出"| E["CI Gate"]
   C --> E
   D --> E
+  W --> E
 ```
 
 ### 3.1 路径分类契约
 
-`tool/ci/classify_changes.py` 输出字符串布尔值 `core`、`android`、`ios`：
+`tool/ci/classify_changes.py` 输出字符串布尔值 `core`、`android`、`ios`、`windows`：
 
-- `lib/`、`assets/`、依赖文件、工具脚本和工作流：三个输出均为 `true`。
+- `lib/`、`assets/`、依赖文件、工具脚本和工作流：四个输出均为 `true`。
 - `android/`：`core=true`、`android=true`。
 - `ios/`、`Gemfile`、`Gemfile.lock`：`core=true`、`ios=true`。
+- `windows/`：`core=true`、`windows=true`。
 - `test/`：只设置 `core=true`。
-- 文档、Graphify 输出、`.agents/**` 与 `.claude/**`：三个输出均为 `false`；代理技能目录不属于项目质量检测范围。
-- 未识别路径：三个输出均为 `true`，不得静默漏检。
+- 文档、Graphify 输出、`.agents/**` 与 `.claude/**`：四个输出均为 `false`；代理技能目录不属于项目质量检测范围。
+- 未识别路径：四个输出均为 `true`，不得静默漏检。
 - 手动执行、缺失基准 SHA 或全零基准 SHA：等同完整 CI。
 
 ### 3.2 稳定 Gate 契约
 
-`CI Gate` 必须使用 `if: always()` 并依赖分类、Flutter Core 和 iOS 检查。分类必须成功；按条件执行的任务必须为 `success`，未选中的任务只能为 `skipped`。工作流触发器不得使用顶层 `paths` 或 `paths-ignore`，以免 required check 消失。
+`CI Gate` 必须使用 `if: always()` 并依赖分类、Flutter Core、iOS 和 Windows 检查。分类必须成功；按条件执行的任务必须为 `success`，未选中的任务只能为 `skipped`。工作流触发器不得使用顶层 `paths` 或 `paths-ignore`，以免 required check 消失。
+
+### 3.3 Windows MSIX 开发探针
+
+Windows job 固定使用 `windows-2025`、Java 17 与仓库锁定的 Flutter。它以 `SENTRY_ENABLED=false` 构建 x64 Release，使用 `CN=MeetTrace Development` 生成未签名 MSIX，只验证 manifest、包身份、运行资产、模型权重/用户数据/凭据禁入和 SHA-256。job 在上传前删除 `.msix`，Artifact 只保留 JSON/TXT 证据；开发探针不得进入 Release，也不得替代 SignPath 正式 Publisher、签名链和目标设备安装证据。
 
 ## 4. 可复用 Flutter Core
 
