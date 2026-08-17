@@ -25,6 +25,8 @@
 
 全部公开版本见 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
 
+Windows 正式签名遵循 [Code signing policy](CODE_SIGNING_POLICY.md)，各平台的数据与网络边界见[隐私政策](PRIVACY.md)。
+
 ## 核心能力
 
 - 可靠的本地会议录音、检查点与异常恢复，音频写入和推理解耦。
@@ -42,6 +44,8 @@
 - 音频分享从事实 PCM 生成临时 WAV，完成、取消或失败后清理，不改写源录音。
 - Release 默认启用 Sentry 远程诊断，但不主动附加事实音频、WAV、转录快照或说话人结果。
 - 删除会议会级联删除该会议的音频、转录、标签和处理记录。
+
+完整披露、平台差异和联系入口见[隐私政策](PRIVACY.md)。
 
 ## 平台状态
 

@@ -86,6 +86,23 @@ Windows 凭据名称在签名路线选定并完成供应商探针后固定：Sig
 - 仓库必须公开，Workflow permissions 允许 `GITHUB_TOKEN` 写入当前仓库 Release。
 - SignPath 免费 OSS 签名要求仓库启用 MFA、公开 Code signing policy，并明确 committer、reviewer 与 approver；申请未通过前不得公开 Windows 安装包。
 
+### SignPath Foundation 申请基线
+
+申请使用以下公开事实，不创建自签名或个人证书兜底：
+
+| 项目 | 值 |
+|---|---|
+| 仓库 | `https://github.com/zhangheng2022/meet_trace`（Public） |
+| 开源许可 | MIT，根目录 `LICENSE` |
+| 已发布版本 | `https://github.com/zhangheng2022/meet_trace/releases` |
+| Code signing policy | `https://github.com/zhangheng2022/meet_trace/blob/master/CODE_SIGNING_POLICY.md` |
+| 隐私政策 | `https://github.com/zhangheng2022/meet_trace/blob/master/PRIVACY.md` |
+| Committer / Reviewer / Approver | `https://github.com/zhangheng2022`；单维护者阶段角色重叠，但外部贡献仍须审查 |
+| 正式签名范围 | Windows 10 22H2/11 x64 MSIX；不签模型权重或上游独立二进制 |
+| 遥测 | SignPath Windows 候选固定 `SENTRY_ENABLED=false` |
+
+提交申请前必须先把本分支合并到公开 `master`，使上述链接可访问；为 GitHub 与 SignPath 账户启用 MFA；确认当前 Release 下载页出现 `Code signing policy` 链接。申请接受后，将 SignPath 返回的 Organization、Project、Signing Policy、Artifact Configuration 和正式证书 Subject 录入 `windows-alpha` Environment，再据此冻结 MSIX Publisher。申请拒绝时保留拒绝记录并切换 Microsoft Store MSIX 路线，不尝试规避审核。
+
 ## 4. 运行与验收
 
 在 `master` 的 Actions 页面打开 `Alpha Release`，只填写：
