@@ -5,7 +5,7 @@ import 'package:meettrace/domain/use_cases/lock_recording_input.dart';
 
 void main() {
   group('LockRecordingInputUseCase', () {
-    test('系统默认保持延迟解析且不枚举设备', () async {
+    test('系统默认在确认存在可用输入后保持延迟解析', () async {
       final devices = _DeviceCatalog(const [
         RecordingInputDevice(id: 'mic-1', label: 'USB 麦克风'),
       ]);
@@ -19,7 +19,27 @@ void main() {
       final locked = await useCase.execute();
 
       expect(locked.usesSystemDefault, isTrue);
-      expect(devices.listCalls, 0);
+      expect(devices.listCalls, 1);
+    });
+
+    test('系统默认但没有任何输入设备时阻止开始', () async {
+      final useCase = LockRecordingInputUseCase(
+        preferences: _PreferenceRepository(
+          const RecordingInputPreference.systemDefault(),
+        ),
+        devices: _DeviceCatalog(const []),
+      );
+
+      await expectLater(
+        useCase.execute(),
+        throwsA(
+          isA<RecordingInputUnavailableException>().having(
+            (error) => error.reason,
+            'reason',
+            RecordingInputUnavailableReason.noAvailableDevice,
+          ),
+        ),
+      );
     });
 
     test('显式偏好按稳定 ID 锁定当次枚举的设备身份', () async {
@@ -51,7 +71,9 @@ void main() {
             lastKnownLabel: '拔出的 USB 麦克风',
           ),
         ),
-        devices: _DeviceCatalog(const []),
+        devices: _DeviceCatalog(const [
+          RecordingInputDevice(id: 'mic-other', label: '内置麦克风'),
+        ]),
       );
 
       await expectLater(
@@ -59,6 +81,11 @@ void main() {
         throwsA(
           isA<RecordingInputUnavailableException>()
               .having((error) => error.deviceId, 'deviceId', 'missing')
+              .having(
+                (error) => error.reason,
+                'reason',
+                RecordingInputUnavailableReason.preferredDeviceUnavailable,
+              )
               .having(
                 (error) => error.lastKnownLabel,
                 'lastKnownLabel',

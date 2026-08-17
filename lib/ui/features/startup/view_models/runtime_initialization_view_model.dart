@@ -22,22 +22,26 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
   RuntimeInitializationProgress _state;
   Future<void>? _operation;
   Future<void>? _resumeOperation;
+  bool _pauseRequested = false;
   bool _disposed = false;
 
   RuntimeInitializationProgress get state => _state;
   bool get isReady => _state.phase == RuntimeInitializationPhase.ready;
 
-  Future<void> start() {
+  Future<void> start() => _start();
+
+  Future<void> _start({bool resumePausedDownload = false}) {
     final current = _operation;
     if (current != null) {
       return current;
     }
     late final Future<void> operation;
-    operation = _run().whenComplete(() {
-      if (identical(_operation, operation)) {
-        _operation = null;
-      }
-    });
+    operation = _run(resumePausedDownload: resumePausedDownload)
+        .whenComplete(() {
+          if (identical(_operation, operation)) {
+            _operation = null;
+          }
+        });
     _operation = operation;
     return operation;
   }
@@ -81,24 +85,50 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
   }
 
   Future<void> _resume() async {
-    await _operation;
-    await start();
+    final resumePausedDownload =
+        _state.phase == RuntimeInitializationPhase.paused;
+    final current = _operation;
+    if (current != null) {
+      await current;
+    }
+    await _start(resumePausedDownload: resumePausedDownload);
     _surfaceRetryFailure();
   }
 
-  void pause() => _initialize.pause();
+  void pause() {
+    _pauseRequested = true;
+    _initialize.pause();
+  }
 
-  Future<void> _run() async {
+  Future<void> _run({bool resumePausedDownload = false}) async {
+    _pauseRequested = false;
+    final previous = _state;
     _set(
       RuntimeInitializationProgress(
-        phase: RuntimeInitializationPhase.checking,
-        completedBytes: _state.completedBytes,
-        totalBytes: _state.totalBytes,
-        message: '正在检查本地转录资源',
+        phase: resumePausedDownload
+            ? RuntimeInitializationPhase.downloading
+            : RuntimeInitializationPhase.checking,
+        completedBytes: previous.completedBytes,
+        totalBytes: previous.totalBytes,
+        resourceName: previous.resourceName,
+        message: resumePausedDownload ? '正在从当前进度继续下载' : '正在检查本地转录资源',
       ),
     );
     try {
-      await _initialize.execute(onProgress: _set, forceRepair: _forceRepair);
+      await _initialize.execute(
+        onProgress: (progress) {
+          if (resumePausedDownload &&
+              progress.phase == RuntimeInitializationPhase.checking) {
+            return;
+          }
+          _set(progress);
+          if (_pauseRequested &&
+              progress.phase == RuntimeInitializationPhase.downloading) {
+            _initialize.pause();
+          }
+        },
+        forceRepair: _forceRepair,
+      );
       _forceRepair = false;
     } on RuntimeInitializationException catch (error) {
       final phase = switch (error.code) {
@@ -114,6 +144,7 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
           phase: phase,
           completedBytes: _state.completedBytes,
           totalBytes: _state.totalBytes,
+          resourceName: _state.resourceName,
           message: error.message,
           shortageBytes: error.shortageBytes,
         ),
@@ -124,9 +155,12 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
           phase: RuntimeInitializationPhase.failed,
           completedBytes: _state.completedBytes,
           totalBytes: _state.totalBytes,
+          resourceName: _state.resourceName,
           message: '离线转录资源准备失败，请重试',
         ),
       );
+    } finally {
+      _pauseRequested = false;
     }
   }
 

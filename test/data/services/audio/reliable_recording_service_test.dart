@@ -383,6 +383,30 @@ void main() {
     );
   });
 
+  test('采集启动时没有输入设备会保留稳定错误码', () async {
+    capture.startError = const PcmAudioCaptureException(
+      failure: PcmAudioCaptureFailure.inputUnavailable,
+    );
+    final service = createService();
+
+    await expectLater(
+      service.start(meetingId: 'meeting-no-input'),
+      throwsA(
+        isA<ReliableRecordingException>().having(
+          (error) => error.code,
+          'code',
+          'recording.input_unavailable',
+        ),
+      ),
+    );
+
+    expect(service.state, RecordingState.failed);
+    expect(
+      await File(layout.meetingAudioTempPath('meeting-no-input')).exists(),
+      isFalse,
+    );
+  });
+
   test('采集流异步报错后刷新事实并仅一次切到系统默认输入', () async {
     final service = createService(
       enableInputRecovery: true,
@@ -734,6 +758,7 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
   Object? disposeError;
   Completer<void>? stopBlocker;
   int remainingStartFailures = 0;
+  Object? startError;
 
   void add(Uint8List bytes) {
     if (!_started) {
@@ -759,6 +784,10 @@ final class FakePcmAudioCapture implements PcmAudioCapture {
     LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
   }) async {
     startInputs.add(input);
+    final configuredStartError = startError;
+    if (configuredStartError != null) {
+      throw configuredStartError;
+    }
     if (remainingStartFailures > 0) {
       remainingStartFailures--;
       throw StateError('configured capture start failure');

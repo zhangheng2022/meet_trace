@@ -80,12 +80,15 @@ void main() {
 
     await viewModel.start();
     final retry = viewModel.resume();
-    await port.downloadStarted.future;
     expect(viewModel.state.phase, RuntimeInitializationPhase.downloading);
 
     viewModel.pause();
+    expect(port.pauses, 1);
+    port.completePreflight();
+    await port.downloadStarted.future;
     await retry;
 
+    expect(port.pauses, 2);
     expect(viewModel.state.phase, RuntimeInitializationPhase.paused);
     expect(viewModel.state.message, '下载已暂停，已完成的分片会保留');
     expect(viewModel.state.message, isNot(startsWith('重试未成功：')));
@@ -94,9 +97,12 @@ void main() {
 }
 
 final class _PauseOnResumePreparation implements RuntimeAssetPreparationPort {
+  final Completer<void> _preflightCompletion = Completer<void>();
   final Completer<void> downloadStarted = Completer<void>();
   final Completer<void> _pauseSignal = Completer<void>();
   int attempts = 0;
+  int pauses = 0;
+  bool _downloadActive = false;
 
   @override
   Future<void> prepare({
@@ -106,10 +112,20 @@ final class _PauseOnResumePreparation implements RuntimeAssetPreparationPort {
     attempts++;
     if (attempts == 1) {
       throw const RuntimeInitializationException(
-        code: 'runtime.network.offline',
-        message: '首次初始化需要联网下载离线运行资源',
+        code: 'runtime.download.paused',
+        message: '下载已暂停，已完成的分片会保留',
       );
     }
+    onProgress(
+      const RuntimeInitializationProgress(
+        phase: RuntimeInitializationPhase.checking,
+        completedBytes: 27000000,
+        totalBytes: 286314800,
+        resourceName: 'SenseVoice',
+      ),
+    );
+    await _preflightCompletion.future;
+    _downloadActive = true;
     onProgress(
       const RuntimeInitializationProgress(
         phase: RuntimeInitializationPhase.downloading,
@@ -126,12 +142,19 @@ final class _PauseOnResumePreparation implements RuntimeAssetPreparationPort {
     );
   }
 
+  void completePreflight() {
+    if (!_preflightCompletion.isCompleted) {
+      _preflightCompletion.complete();
+    }
+  }
+
   @override
   Future<void> grantMobileConsent() async {}
 
   @override
   void pause() {
-    if (!_pauseSignal.isCompleted) {
+    pauses++;
+    if (_downloadActive && !_pauseSignal.isCompleted) {
       _pauseSignal.complete();
     }
   }

@@ -17,8 +17,21 @@ import '../ui/features/startup/view_models/runtime_initialization_view_model.dar
 import 'meettrace_dependencies.dart';
 import 'meettrace_dependency_factories.dart';
 
+typedef MeetTraceDependenciesLoader = Future<MeetTraceDependencies> Function();
+typedef MeetTraceBootstrapPreflight = Future<void> Function();
+
+Future<void> clearMeetTraceBootstrapCache() =>
+    const SharePlusCacheCleaner().clear();
+
 final class MeetTraceBootstrap extends StatefulWidget {
-  const MeetTraceBootstrap({super.key});
+  const MeetTraceBootstrap({
+    super.key,
+    this.loadDependencies = MeetTraceDependencies.create,
+    this.preflight = clearMeetTraceBootstrapCache,
+  });
+
+  final MeetTraceDependenciesLoader loadDependencies;
+  final MeetTraceBootstrapPreflight preflight;
 
   @override
   State<MeetTraceBootstrap> createState() => _MeetTraceBootstrapState();
@@ -26,17 +39,45 @@ final class MeetTraceBootstrap extends StatefulWidget {
 
 final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
   late Future<MeetTraceDependencies> _loading;
+  Future<MeetTraceDependencies>? _activeLoading;
   MeetTraceDependencies? _dependencies;
 
   @override
   void initState() {
     super.initState();
-    _loading = _createDependencies();
+    _loading = _beginLoading();
   }
 
   Future<MeetTraceDependencies> _createDependencies() async {
-    await const SharePlusCacheCleaner().clear();
-    return MeetTraceDependencies.create();
+    await widget.preflight();
+    return widget.loadDependencies();
+  }
+
+  Future<MeetTraceDependencies> _beginLoading() {
+    final operation = _createDependencies();
+    _activeLoading = operation;
+    unawaited(
+      operation.then<void>(
+        (_) => _finishLoading(operation),
+        onError: (Object _, StackTrace _) => _finishLoading(operation),
+      ),
+    );
+    return operation;
+  }
+
+  void _finishLoading(Future<MeetTraceDependencies> operation) {
+    if (identical(_activeLoading, operation)) {
+      _activeLoading = null;
+    }
+  }
+
+  void _retry() {
+    if (_activeLoading != null) {
+      return;
+    }
+    setState(() {
+      _loading = _beginLoading();
+    });
   }
 
   @override
@@ -44,28 +85,19 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
     return FutureBuilder<MeetTraceDependencies>(
       future: _loading,
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          void retry() {
-            setState(() {
-              _loading = _createDependencies();
-            });
-          }
-
-          if (snapshot.error is LocalDataGenerationMarkerReadException) {
-            return MeetTraceDataReadBlockedView(onRetry: retry);
-          }
-          return MeetTraceInitializationBlockedView(
-            onRetry: () {
-              retry();
-            },
-          );
-        }
-        final dependencies = snapshot.data;
-        if (dependencies == null) {
+        if (snapshot.connectionState != ConnectionState.done) {
           return const MeetTraceStartupView();
         }
+        if (snapshot.hasError) {
+          if (snapshot.error is LocalDataGenerationMarkerReadException) {
+            return MeetTraceDataReadBlockedView(onRetry: _retry);
+          }
+          return MeetTraceInitializationBlockedView(onRetry: _retry);
+        }
+        final dependencies = snapshot.data;
+        assert(dependencies != null, '依赖初始化完成时必须返回依赖实例');
         _dependencies ??= dependencies;
-        return _RuntimeInitializationGate(dependencies: dependencies);
+        return _RuntimeInitializationGate(dependencies: dependencies!);
       },
     );
   }

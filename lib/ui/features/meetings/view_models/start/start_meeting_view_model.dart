@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../../domain/models/meeting_readiness.dart';
 import '../../../../../domain/ports/asr_engine.dart';
+import '../../../../../domain/use_cases/lock_recording_input.dart';
 import '../../../../../domain/use_cases/start_meeting.dart';
 
 /// 使用全局默认模型直接创建会议，不提供本场标题或模型覆盖。
@@ -80,7 +81,13 @@ String _startBlockedMessage(StartMeetingBlocked error) {
   return switch (error.reason) {
     StartMeetingBlockReason.readiness => _readinessMessage(error.readiness!),
     StartMeetingBlockReason.recordingInputUnavailable =>
-      '已选择的麦克风当前不可用，请在设置中改用可用设备或系统默认麦克风。',
+      switch (error.inputUnavailableReason) {
+        RecordingInputUnavailableReason.noAvailableDevice =>
+          '未检测到可用麦克风，请连接或启用输入设备后重试。',
+        RecordingInputUnavailableReason.preferredDeviceUnavailable =>
+          '所选麦克风当前不可用，请在设置中重新选择。',
+        null => '麦克风当前不可用，请检查输入设备后重试。',
+      },
   };
 }
 

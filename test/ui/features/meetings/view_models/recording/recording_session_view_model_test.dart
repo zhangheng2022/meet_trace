@@ -269,6 +269,28 @@ void main() {
     await preview.close();
   });
 
+  test('录音启动时输入设备消失会显示准确恢复提示', () async {
+    final meetings = TestMeetingRepository();
+    final recording = _RecordingService()
+      ..startError = const ReliableRecordingException(
+        code: 'recording.input_unavailable',
+        message: 'no input',
+      );
+    final preview = _PreviewSession();
+    final viewModel = _viewModel(
+      meetings: meetings,
+      recording: recording,
+      preview: preview,
+    );
+
+    expect(await viewModel.start(), isFalse);
+    expect(viewModel.meeting.lastErrorCode, 'recording.input_unavailable');
+    expect(viewModel.errorMessage, contains('未检测到可用麦克风'));
+
+    viewModel.dispose();
+    await preview.close();
+  });
+
   test('预览停止和释放失败不回滚已封存的事实音频', () async {
     final meetings = TestMeetingRepository();
     final recording = _RecordingService()

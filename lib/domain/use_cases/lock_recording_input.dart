@@ -1,18 +1,26 @@
 import '../models/recording_input.dart';
 import '../ports/recording_input.dart';
 
+enum RecordingInputUnavailableReason {
+  noAvailableDevice,
+  preferredDeviceUnavailable,
+}
+
 final class RecordingInputUnavailableException implements Exception {
   const RecordingInputUnavailableException({
-    required this.deviceId,
-    required this.lastKnownLabel,
+    required this.reason,
+    this.deviceId,
+    this.lastKnownLabel,
   });
 
-  final String deviceId;
-  final String lastKnownLabel;
+  final RecordingInputUnavailableReason reason;
+  final String? deviceId;
+  final String? lastKnownLabel;
 
   @override
   String toString() =>
-      'RecordingInputUnavailableException($deviceId, $lastKnownLabel)';
+      'RecordingInputUnavailableException(${reason.name}, '
+      '$deviceId, $lastKnownLabel)';
 }
 
 /// 在会议创建边界读取一次全局偏好并冻结，不在录音中重新解析设置。
@@ -27,19 +35,27 @@ final class LockRecordingInputUseCase {
 
   Future<LockedRecordingInput> execute() async {
     final preference = await preferences.getPreference();
+    final available = await devices.listAvailable();
+    if (available.isEmpty) {
+      throw RecordingInputUnavailableException(
+        reason: RecordingInputUnavailableReason.noAvailableDevice,
+        deviceId: preference.deviceId,
+        lastKnownLabel: preference.lastKnownLabel,
+      );
+    }
     if (preference.usesSystemDefault) {
       return const LockedRecordingInput.systemDefault();
     }
 
-    final available = await devices.listAvailable();
     for (final device in available) {
       if (device.id == preference.deviceId) {
         return LockedRecordingInput.device(device);
       }
     }
     throw RecordingInputUnavailableException(
-      deviceId: preference.deviceId!,
-      lastKnownLabel: preference.lastKnownLabel!,
+      reason: RecordingInputUnavailableReason.preferredDeviceUnavailable,
+      deviceId: preference.deviceId,
+      lastKnownLabel: preference.lastKnownLabel,
     );
   }
 }

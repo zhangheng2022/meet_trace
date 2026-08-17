@@ -134,6 +134,51 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('暂停后继续下载直接进入稳定下载态', (tester) async {
+    final preparation = _PausedThenResumePreparation();
+    final viewModel = RuntimeInitializationViewModel(
+      InitializeRuntimeAssetsUseCase(preparation),
+    );
+    addTearDown(viewModel.dispose);
+    await viewModel.start();
+
+    await tester.pumpWidget(
+      Application(home: MeetTraceStartupView(viewModel: viewModel)),
+    );
+
+    expect(find.text('下载已暂停'), findsOneWidget);
+    expect(find.text('27.6 MB / 286.3 MB'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('resume-runtime-download')),
+      findsOneWidget,
+    );
+    final contentSize = tester.getSize(
+      find.byKey(const ValueKey('meettrace-startup-progress-content')),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('resume-runtime-download')));
+    await tester.pump();
+
+    expect(find.text('检查离线资源'), findsNothing);
+    expect(find.text('下载离线资源'), findsOneWidget);
+    expect(find.text('27.6 MB / 286.3 MB'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('pause-runtime-download')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('resume-runtime-download')), findsNothing);
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey('meettrace-startup-progress-content')),
+      ),
+      contentSize,
+    );
+    expect(tester.takeException(), isNull);
+
+    preparation.complete();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('快速检查至少等待品牌动画完成后再进入首页', (tester) async {
     final preparation = _ControlledPreparation();
     final viewModel = RuntimeInitializationViewModel(
@@ -408,6 +453,55 @@ final class _DownloadingPreparation implements RuntimeAssetPreparationPort {
         resourceName: 'SenseVoice',
       ),
     );
+  }
+
+  @override
+  Future<void> grantMobileConsent() async {}
+
+  @override
+  void pause() {}
+}
+
+final class _PausedThenResumePreparation
+    implements RuntimeAssetPreparationPort {
+  final Completer<void> _resumeCompletion = Completer<void>();
+  int _attempts = 0;
+
+  @override
+  Future<void> prepare({
+    required void Function(RuntimeInitializationProgress progress) onProgress,
+    bool forceRepair = false,
+  }) async {
+    _attempts++;
+    if (_attempts == 1) {
+      onProgress(
+        const RuntimeInitializationProgress(
+          phase: RuntimeInitializationPhase.downloading,
+          completedBytes: 27600000,
+          totalBytes: 286314800,
+          resourceName: 'SenseVoice + Silero VAD',
+        ),
+      );
+      throw const RuntimeInitializationException(
+        code: 'runtime.download.paused',
+        message: '下载已暂停，已完成的分片会保留',
+      );
+    }
+    onProgress(
+      const RuntimeInitializationProgress(
+        phase: RuntimeInitializationPhase.checking,
+        completedBytes: 27600000,
+        totalBytes: 286314800,
+        resourceName: 'SenseVoice + Silero VAD',
+      ),
+    );
+    await _resumeCompletion.future;
+  }
+
+  void complete() {
+    if (!_resumeCompletion.isCompleted) {
+      _resumeCompletion.complete();
+    }
   }
 
   @override

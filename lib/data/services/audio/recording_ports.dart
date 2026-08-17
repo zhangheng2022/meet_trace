@@ -5,6 +5,18 @@ import 'dart:typed_data';
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/recording_input.dart';
 
+enum PcmAudioCaptureFailure { inputUnavailable }
+
+final class PcmAudioCaptureException implements Exception {
+  const PcmAudioCaptureException({required this.failure, this.cause});
+
+  final PcmAudioCaptureFailure failure;
+  final Object? cause;
+
+  @override
+  String toString() => 'PcmAudioCaptureException(${failure.name})';
+}
+
 abstract interface class PcmAudioCapture {
   Future<bool> hasPermission({bool request = true});
 

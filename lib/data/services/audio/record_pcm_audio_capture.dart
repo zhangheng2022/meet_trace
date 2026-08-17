@@ -30,6 +30,7 @@ const meettraceFallbackPcmRecordConfig = RecordConfig(
 typedef PcmStreamStarter = Future<Stream<Uint8List>> Function(
   RecordConfig config,
 );
+typedef PcmInputDeviceReader = Future<List<InputDevice>> Function();
 
 Future<Stream<Uint8List>> startPcmStreamWithEnhancementFallback(
   PcmStreamStarter startStream, {
@@ -48,6 +49,36 @@ Future<Stream<Uint8List>> startPcmStreamWithEnhancementFallback(
     } on Exception {
       Error.throwWithStackTrace(enhancementError, enhancementStackTrace);
     }
+  }
+}
+
+Future<Stream<Uint8List>> startPcmStreamWithInputAvailabilityCheck(
+  PcmStreamStarter startStream,
+  PcmInputDeviceReader readInputDevices, {
+  LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
+}) async {
+  try {
+    return await startPcmStreamWithEnhancementFallback(
+      startStream,
+      input: input,
+    );
+  } on Exception catch (error, stackTrace) {
+    bool? hasNoInputDevices;
+    try {
+      hasNoInputDevices = (await readInputDevices()).isEmpty;
+    } on Object {
+      // 枚举失败时保留原始启动错误，避免用诊断旁路覆盖真实原因。
+    }
+    if (hasNoInputDevices == true) {
+      Error.throwWithStackTrace(
+        PcmAudioCaptureException(
+          failure: PcmAudioCaptureFailure.inputUnavailable,
+          cause: error,
+        ),
+        stackTrace,
+      );
+    }
+    Error.throwWithStackTrace(error, stackTrace);
   }
 }
 
@@ -76,8 +107,9 @@ final class RecordPcmAudioCapture implements PcmAudioCapture {
   Future<Stream<Uint8List>> start({
     LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
   }) {
-    return startPcmStreamWithEnhancementFallback(
+    return startPcmStreamWithInputAvailabilityCheck(
       (config) => _recorder.startStream(config),
+      _recorder.listInputDevices,
       input: input,
     );
   }

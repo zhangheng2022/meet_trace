@@ -122,7 +122,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       return true;
     } on ManageRecordingSessionException catch (error) {
       _meeting = error.meeting;
-      _errorMessage = '录音无法启动，请检查麦克风权限和可用空间';
+      _errorMessage = _recordingStartFailureMessage(error.cause);
       await _disposePreviewBestEffort();
       return false;
     } on Object {
@@ -415,6 +415,19 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     transcriptListenable.dispose();
     super.dispose();
   }
+}
+
+String _recordingStartFailureMessage(Object error) {
+  if (error is! ReliableRecordingException) {
+    return '录音无法启动，请确认麦克风可用后重试';
+  }
+  return switch (error.code) {
+    'recording.permission_denied' => '无法使用麦克风，请在系统设置中授予麦克风权限后重试',
+    'recording.storage_insufficient' => '存储空间不足，请至少保留 128 MB 可用空间后重试',
+    'recording.input_unavailable' => '未检测到可用麦克风，请连接或启用输入设备后重试',
+    'recording.audio_already_exists' => '该会议已有事实音频，为避免覆盖已停止录音',
+    _ => '录音无法启动，请确认麦克风可用后重试',
+  };
 }
 
 int _compareSegments(

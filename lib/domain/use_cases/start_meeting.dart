@@ -23,10 +23,15 @@ final class StartedMeetingSession {
 enum StartMeetingBlockReason { readiness, recordingInputUnavailable }
 
 final class StartMeetingBlocked implements Exception {
-  const StartMeetingBlocked(this.reason, {this.readiness});
+  const StartMeetingBlocked(
+    this.reason, {
+    this.readiness,
+    this.inputUnavailableReason,
+  });
 
   final StartMeetingBlockReason reason;
   final MeetingReadiness? readiness;
+  final RecordingInputUnavailableReason? inputUnavailableReason;
 }
 
 /// 校验真实启动条件、锁定模型并持久化会议的单一业务入口。
@@ -104,9 +109,10 @@ final class StartMeetingUseCase {
   Future<LockedRecordingInput> _lockRecordingInput() async {
     try {
       return await recordingInputLock.execute();
-    } on RecordingInputUnavailableException {
+    } on RecordingInputUnavailableException catch (error) {
       throw StartMeetingBlocked(
         StartMeetingBlockReason.recordingInputUnavailable,
+        inputUnavailableReason: error.reason,
       );
     }
   }

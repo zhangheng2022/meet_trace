@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/audio/record_pcm_audio_capture.dart';
+import 'package:meettrace/data/services/audio/recording_ports.dart';
 import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:record/record.dart';
 
@@ -59,6 +60,40 @@ void main() {
       throwsA(same(enhancementError)),
     );
     expect(attempts, 2);
+  });
+
+  test('启动失败且设备枚举为空时归类为输入设备不可用', () async {
+    final startError = Exception('platform capture failed');
+
+    await expectLater(
+      startPcmStreamWithInputAvailabilityCheck(
+        (_) async => throw startError,
+        () async => const [],
+      ),
+      throwsA(
+        isA<PcmAudioCaptureException>()
+            .having(
+              (error) => error.failure,
+              'failure',
+              PcmAudioCaptureFailure.inputUnavailable,
+            )
+            .having((error) => error.cause, 'cause', same(startError)),
+      ),
+    );
+  });
+
+  test('启动失败但仍有输入设备时保留平台错误', () async {
+    final enhancementError = Exception('capture backend failed');
+
+    await expectLater(
+      startPcmStreamWithInputAvailabilityCheck((config) async {
+        if (config.autoGain) {
+          throw enhancementError;
+        }
+        throw Exception('fallback capture failed');
+      }, () async => const [InputDevice(id: 'mic-1', label: 'USB 麦克风')]),
+      throwsA(same(enhancementError)),
+    );
   });
 
   test('显式输入设备同时应用到增强与基础 PCM 配置', () async {

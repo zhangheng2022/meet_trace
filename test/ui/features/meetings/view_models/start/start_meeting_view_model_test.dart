@@ -147,6 +147,28 @@ void main() {
           lastKnownLabel: '拔出的麦克风',
         ),
       ),
+      devices: const _RecordingInputDevices([
+        RecordingInputDevice(id: 'mic-other', label: '内置麦克风'),
+      ]),
+    );
+    final viewModel = _viewModel(
+      meetings,
+      factory,
+      recordingInputLock: inputLock,
+    );
+
+    expect(await viewModel.start(), isNull);
+    expect(viewModel.errorMessage, contains('所选麦克风当前不可用'));
+    expect(meetings.saved, isEmpty);
+    expect(factory.calls, isEmpty);
+    viewModel.dispose();
+  });
+
+  test('系统默认但没有任何输入设备时不创建会议或初始化模型', () async {
+    final inputLock = LockRecordingInputUseCase(
+      preferences: _RecordingInputPreferences(
+        const RecordingInputPreference.systemDefault(),
+      ),
       devices: const _RecordingInputDevices([]),
     );
     final viewModel = _viewModel(
@@ -156,7 +178,7 @@ void main() {
     );
 
     expect(await viewModel.start(), isNull);
-    expect(viewModel.errorMessage, contains('已选择的麦克风当前不可用'));
+    expect(viewModel.errorMessage, contains('未检测到可用麦克风'));
     expect(meetings.saved, isEmpty);
     expect(factory.calls, isEmpty);
     viewModel.dispose();
@@ -182,7 +204,9 @@ StartMeetingViewModel _viewModel(
             preferences: _RecordingInputPreferences(
               const RecordingInputPreference.systemDefault(),
             ),
-            devices: const _RecordingInputDevices([]),
+            devices: const _RecordingInputDevices([
+              RecordingInputDevice(id: 'mic-default', label: '系统麦克风'),
+            ]),
           ),
     ),
   );

@@ -43,12 +43,12 @@ final class RuntimeAssetDependencies {
     final manifest = ModelManifestParser(
       registry: registry,
       currentAppVersion: '1.0.0',
-    ).parse(await rootBundle.loadString('assets/models/manifest.json'));
+    ).parse(await loadRuntimeManifestAsset('assets/models/manifest.json'));
     final vadManifest = const SileroVadManifestParser().parse(
-      await rootBundle.loadString(sileroVadManifestAssetPath),
+      await loadRuntimeManifestAsset(sileroVadManifestAssetPath),
     );
     final speakerManifest = const SpeakerDiarizationManifestParser().parse(
-      await rootBundle.loadString(speakerDiarizationManifestAssetPath),
+      await loadRuntimeManifestAsset(speakerDiarizationManifestAssetPath),
     );
     final capacity = const DeviceStorageCapacityProvider();
     final network = ConnectivityDownloadNetworkStatusProvider();
@@ -96,4 +96,10 @@ final class RuntimeAssetDependencies {
   }
 
   Future<void> dispose() async {}
+}
+
+/// Manifest 很小且是启动硬依赖。绕过 [CachingAssetBundle] 的字符串缓存，
+/// 避免开发构建替换资源目录时的一次瞬时读取失败污染后续显式重试。
+Future<String> loadRuntimeManifestAsset(String path, {AssetBundle? bundle}) {
+  return (bundle ?? rootBundle).loadString(path, cache: false);
 }

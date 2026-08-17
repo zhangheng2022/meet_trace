@@ -194,6 +194,17 @@ final class ReliableRecordingService
       if (error is ReliableRecordingException) {
         Error.throwWithStackTrace(error, stackTrace);
       }
+      if (error is PcmAudioCaptureException &&
+          error.failure == PcmAudioCaptureFailure.inputUnavailable) {
+        Error.throwWithStackTrace(
+          ReliableRecordingException(
+            code: 'recording.input_unavailable',
+            message: '未检测到可用麦克风输入设备',
+            cause: error.cause ?? error,
+          ),
+          stackTrace,
+        );
+      }
       Error.throwWithStackTrace(
         ReliableRecordingException(
           code: 'recording.start_failed',
