@@ -64,6 +64,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   forui_cli: ^0.25.0
+  flutter_launcher_icons: ^0.14.4
 
 patrol:
   app_name: 会迹
@@ -132,3 +133,13 @@ sentry:
   wait_for_processing: true
   project: meettrace
   org: zhangheng-bc
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/stitch/meettrace-app-icon.png
+  remove_alpha_ios: true
+  windows:
+    generate: true
+    image_path: assets/branding/stitch/meettrace-app-icon.png
+    icon_size: 256
