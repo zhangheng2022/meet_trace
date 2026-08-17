@@ -471,7 +471,7 @@ void main() {
       ) as Map<String, Object?>;
       final senseVoice = decoded['senseVoice']! as Map<String, Object?>;
 
-      expect(decoded['schemaVersion'], 4);
+      expect(decoded['schemaVersion'], 5);
       expect(senseVoice['runtimeDownloadBytes'], 286314800);
       expect(decoded, contains('acceptanceEvidence'));
       expect(

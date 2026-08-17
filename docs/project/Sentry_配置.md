@@ -2,7 +2,7 @@
 
 > 状态：活动
 >
-> 更新日期：2026-08-06
+> 更新日期：2026-08-14；Windows 原生符号与托盘录音期 Gate 待实现
 
 ## 1. 产品决策
 
@@ -71,7 +71,7 @@ Auth Token 具备上传权限，严禁写入 `pubspec.yaml`、Dart 源码、构�
 首次验证在 `development` 环境手动触发受控异常，确认：
 
 - Sentry 收到错误、性能、日志、指标和遮罩后的 Replay/截图/View Hierarchy；
-- Release/Dist 与安装包版本一致，Dart 与 Android/iOS 原生栈可符号化；
+- Release/Dist 与安装包版本一致，Dart 与 Android/iOS/Windows 原生栈可符号化；
 - 遮罩画面不显示会议转录、说话人标签或普通图片；
 - 录音期间不产生新 Tracing/Profiling、交互 Breadcrumb、错误截图或 View Hierarchy；
 - Sentry 初始化失败、离线或上传超时时，应用仍启动且事实录音连续写入。

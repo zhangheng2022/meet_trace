@@ -2,7 +2,7 @@
   <img src="assets/branding/stitch/meettrace-app-icon.svg" width="112" alt="会迹 MeetTrace 图标">
   <h1>会迹（MeetTrace）</h1>
   <p><strong>本地优先、可核对、不会为推理牺牲录音的会议记录应用。</strong></p>
-  <p>Flutter · Android / iOS · 端侧 ASR · 本地事实音频</p>
+  <p>Flutter · Android / iOS · Windows 规划中 · 端侧 ASR · 本地事实音频</p>
 </div>
 
 <div align="center">
@@ -14,7 +14,7 @@
 会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要验证基线；iOS 已有构建和 TestFlight 上传证据，但目标真机验收尚未闭环。说话人分离还存在已接受的上游内存风险，失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要验证基线；iOS 已有构建和 TestFlight 上传证据，但目标真机验收尚未闭环；Windows 已实现单实例、托盘安全封存及睡眠/恢复缺口记录首轮代码，但真实托盘与睡眠录音、MSIX、签名、自动更新和目标设备验收尚未完成，当前不可视为受支持。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
 
 ## 安装测试版
 
@@ -49,13 +49,14 @@
 |---|---:|---|
 | Android | API 24 / Android 7.0 | 当前开发与验证基线 |
 | iOS | iOS 15.0 | 构建与 TestFlight 最低基线；当前设备真机验收未闭环 |
-| 其他平台 | — | 不属于 Alpha 支持范围 |
+| Windows | Windows 10 22H2、x64 | PRD V1.1 规划中；尚无可公开安装的受支持版本 |
+| 其他平台 | — | Web、Linux 与 macOS 不属于 Alpha 支持范围 |
 
 ## 技术概览
 
 项目遵循 `View → ViewModel → Use Case / Port → Repository / Service`。Domain 保持纯 Dart，UI 不直接访问 SQLite、HTTP、录音插件或 ONNX；ASR 仅通过官方 `sherpa_onnx` Flutter/Dart 包接入。
 
-运行时固定使用 SenseVoice INT8、Silero VAD、Pyannote INT8 和 3D-Speaker。模型权重不进入 APK/IPA，而是在首次初始化时按固定 Manifest 下载并校验。详细设计见[技术方案](docs/technical/端侧_SenseVoice_转录技术方案.md)，当前设备与发布门槛见[质量与验收](docs/quality/README.md)。
+运行时固定使用 SenseVoice INT8、Silero VAD、Pyannote INT8 和 3D-Speaker。模型权重不进入 APK、IPA 构建产物或 MSIX，而是在首次初始化时按固定 Manifest 下载并校验。详细设计见[技术方案](docs/technical/端侧_SenseVoice_转录技术方案.md)，当前设备与发布门槛见[质量与验收](docs/quality/README.md)。
 
 ## 开始开发
 
@@ -83,7 +84,7 @@ flutter build apk --debug
 flutter build ios --debug --no-codesign
 ```
 
-正式候选必须从统一 `Alpha Release` 入口生成；Android 与 iOS 同一 SHA 验收通过后才公开原 Android APK，iOS 不向 GitHub 上传 IPA。维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
+PRD V1.1 的目标候选必须从统一 `Alpha Release` 入口生成；Android、iOS 与 Windows 同一 SHA 验收通过后才公开，iOS 不向 GitHub 上传 IPA。当前工作流尚未完成 Windows job，因此在三平台门禁落地前不得公开宣称 Windows 支持。维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
 
 ## 参与贡献
 
@@ -91,7 +92,7 @@ flutter build ios --debug --no-codesign
 
 - [项目文档中心](docs/README.md)：活动文档、权威关系和阅读路径。
 - [Alpha PRD](docs/product/Alpha_PRD_无登录版.md)：产品范围与验收标准。
-- [交互与视觉规范](DESIGN.md)：Forui、主题和双平台 UI 规则。
+- [交互与视觉规范](DESIGN.md)：Forui、主题和三平台自适应 UI 规则。
 - [仓库协作指南](AGENTS.md)：架构、测试、审查和安全约束。
 
 产品范围或 P0 验收变化必须先更新 PRD。不要提交录音、模型权重、密钥、`build/` 或 `coverage/`。当前质量状态和剩余门槛见[质量与验收](docs/quality/README.md)。

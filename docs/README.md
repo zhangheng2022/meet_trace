@@ -2,7 +2,7 @@
 
 > 状态：活动；项目文档唯一导航入口
 >
-> 更新日期：2026-08-11
+> 更新日期：2026-08-14
 >
 > 原则：仓库只保留当前仍需维护的文档，阶段记录和旧方案由 Git 历史追溯。
 
@@ -18,11 +18,11 @@
 | 文档 | 职责 | 权威级别 |
 |---|---|---|
 | [Alpha PRD](./product/Alpha_PRD_无登录版.md) | 产品范围、P0、功能要求和验收标准 | 产品唯一事实源 |
-| [DESIGN](../DESIGN.md) | 交互、视觉、组件和双平台自适应规则 | 设计权威，服从 PRD |
+| [DESIGN](../DESIGN.md) | 交互、视觉、组件和三平台自适应规则 | 设计权威，服从 PRD |
 | [产品上下文](../PRODUCT.md) | 用户、定位和产品原则的精简上下文 | PRD 派生摘要 |
 | [端侧转录技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | 固定资源、初始化、录音、ASR、分离、快照和分享契约 | 技术权威，服从 PRD |
 | [质量与验收](./quality/README.md) | 自动化门禁、设备矩阵、未闭环风险和证据要求 | 当前质量入口 |
-| [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md) | 签名、候选、TestFlight、GitHub Pre-release 和撤回 Runbook | 发布操作入口 |
+| [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md) | 三平台签名、候选、TestFlight/MSIX、GitHub Pre-release、自动更新和撤回 Runbook | 发布操作入口；Windows 未实现前为目标合同 |
 | [Sentry 配置](./project/Sentry_配置.md) | 运行时采样、隐私边界和符号上传 | 监控 Runbook |
 | [Flutter CI/CD 工作流规格](../spec/spec-process-cicd-flutter-ci.md) | 常规 CI、平台选择、稳定 Gate 与发布工作流契约 | 工作流维护规格 |
 | [AGENTS](../AGENTS.md) | 架构、实现、测试、审查和安全约束 | 仓库协作规则 |
