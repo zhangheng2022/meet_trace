@@ -9,7 +9,9 @@ import '../../../../../domain/models/recording.dart';
 import '../../../../../domain/models/transcript.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../domain/ports/asr_preview_session.dart';
+import '../../../../../domain/ports/desktop_lifecycle.dart';
 import '../../../../../domain/ports/recording_session.dart';
+import '../../../../../domain/ports/recording_system_lifecycle.dart';
 import '../../../../../domain/ports/recording_telemetry.dart';
 import '../../../../../domain/use_cases/manage_recording_session.dart';
 import '../../../../../domain/use_cases/start_meeting.dart';
@@ -30,6 +32,8 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     required this.preview,
     required this.sessionLifecycle,
     this.telemetry = const NoopRecordingTelemetryGate(),
+    this.desktopLifecycle = const NoopDesktopLifecycle(),
+    this.recordingSystemLifecycle = const NoopRecordingSystemLifecycle(),
     RecordingTickerFactory? tickerFactory,
     RecordingTickerFactory? audioLevelTickerFactory,
   }) : _meeting = session.meeting,
@@ -37,12 +41,20 @@ final class RecordingSessionViewModel extends ChangeNotifier {
        _audioLevelTickerFactory = audioLevelTickerFactory ?? Timer.periodic,
        _previewMetrics = preview.metrics {
     _segmentsView = UnmodifiableListView(_orderedSegments);
+    _desktopExitSubscription = desktopLifecycle.exitRequests.listen(
+      _handleDesktopExitRequest,
+    );
+    _desktopSystemEventSubscription = desktopLifecycle.systemEvents.listen(
+      _queueDesktopSystemEvent,
+    );
   }
 
   final RecordingSessionService recording;
   final AsrPreviewSession preview;
   final ManageRecordingSessionUseCase sessionLifecycle;
   final RecordingTelemetryGate telemetry;
+  final DesktopLifecycle desktopLifecycle;
+  final RecordingSystemLifecycle recordingSystemLifecycle;
   final RecordingTickerFactory _tickerFactory;
   final RecordingTickerFactory _audioLevelTickerFactory;
 
@@ -63,6 +75,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   StreamSubscription<TranscriptEvent>? _eventSubscription;
   StreamSubscription<AsrPreviewMetrics>? _metricsSubscription;
   StreamSubscription<RecordingAudioLevel>? _audioLevelSubscription;
+  late final StreamSubscription<DesktopExitRequest> _desktopExitSubscription;
+  late final StreamSubscription<DesktopSystemEvent>
+  _desktopSystemEventSubscription;
+  Future<void> _desktopSystemEventTail = Future<void>.value();
   Timer? _ticker;
   Timer? _audioLevelTicker;
   Duration? _latestAudioLevelCapturedThrough;
@@ -70,6 +86,8 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   bool _isBusy = false;
   bool _isFinalizing = false;
   bool _disposed = false;
+  bool _desktopExitInProgress = false;
+  RecordingState? _lastObservedRecordingState;
 
   Meeting get meeting => _meeting;
   RecordingState get recordingState => recording.state;
@@ -92,6 +110,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     _subscribePreview();
     _setBusy(true);
     telemetry.setRecordingActive(true);
+    await _setDesktopRecordingActiveBestEffort(true);
     try {
       await sessionLifecycle.start(_meeting);
       refreshDuration();
@@ -114,6 +133,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       if (recordingState != RecordingState.recording &&
           recordingState != RecordingState.paused) {
         telemetry.setRecordingActive(false);
+        await _setDesktopRecordingActiveBestEffort(false);
       }
       _setBusy(false);
     }
@@ -152,6 +172,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     _pendingAudioLevels.clear();
     try {
       _meeting = await sessionLifecycle.finish(_meeting);
+      await _setDesktopRecordingActiveBestEffort(false);
       durationListenable.value = Duration(
         milliseconds: _meeting.audioDurationMs,
       );
@@ -177,11 +198,64 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> _handleDesktopExitRequest(DesktopExitRequest request) async {
+    if (_disposed || _desktopExitInProgress) {
+      return;
+    }
+    _desktopExitInProgress = true;
+    try {
+      final completed = await stop();
+      if (completed != null) {
+        await desktopLifecycle.confirmExit();
+      } else {
+        await desktopLifecycle.cancelExit(
+          reason: _errorMessage ?? '事实音频尚未安全封存',
+        );
+      }
+    } finally {
+      _desktopExitInProgress = false;
+    }
+  }
+
+  void _queueDesktopSystemEvent(DesktopSystemEvent event) {
+    _desktopSystemEventTail = _desktopSystemEventTail.then((_) async {
+      if (_disposed) {
+        return;
+      }
+      try {
+        switch (event) {
+          case DesktopSystemEvent.suspending:
+            await recordingSystemLifecycle.handleSystemSuspending();
+          case DesktopSystemEvent.resumed:
+            await recordingSystemLifecycle.handleSystemResumed();
+          case DesktopSystemEvent.sessionEnding:
+            await recordingSystemLifecycle.prepareForSystemExit();
+        }
+        refreshDuration();
+      } on Object {
+        // 系统事件是保护性旁路；失败状态由录音服务保存，不能反向中断 UI 线程。
+      }
+    });
+  }
+
+  Future<void> _setDesktopRecordingActiveBestEffort(bool active) async {
+    try {
+      await desktopLifecycle.setRecordingActive(active);
+    } on Object {
+      // 桌面外壳是保护层；其异常不得阻断或回滚事实录音主链。
+    }
+  }
+
   void refreshDuration() {
     if (_disposed) {
       return;
     }
     durationListenable.value = recording.duration;
+    final currentState = recordingState;
+    if (_lastObservedRecordingState != currentState) {
+      _lastObservedRecordingState = currentState;
+      _notify();
+    }
   }
 
   Future<void> _runRecordingAction(
@@ -323,6 +397,8 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    unawaited(_desktopExitSubscription.cancel());
+    unawaited(_desktopSystemEventSubscription.cancel());
     _ticker?.cancel();
     _audioLevelTicker?.cancel();
     _pendingAudioLevels.clear();

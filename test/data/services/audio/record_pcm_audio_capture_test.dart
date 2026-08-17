@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/audio/record_pcm_audio_capture.dart';
+import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:record/record.dart';
 
 void main() {
@@ -58,5 +59,31 @@ void main() {
       throwsA(same(enhancementError)),
     );
     expect(attempts, 2);
+  });
+
+  test('显式输入设备同时应用到增强与基础 PCM 配置', () async {
+    final attemptedConfigs = <RecordConfig>[];
+
+    await startPcmStreamWithEnhancementFallback(
+      (config) async {
+        attemptedConfigs.add(config);
+        if (attemptedConfigs.length == 1) {
+          throw Exception('voice processing unavailable');
+        }
+        return const Stream<Uint8List>.empty();
+      },
+      input: const LockedRecordingInput.device(
+        RecordingInputDevice(id: 'mic-1', label: 'USB 麦克风'),
+      ),
+    );
+
+    expect(attemptedConfigs, hasLength(2));
+    for (final config in attemptedConfigs) {
+      expect(config.device?.id, 'mic-1');
+      expect(config.device?.label, 'USB 麦克风');
+      expect(config.encoder, AudioEncoder.pcm16bits);
+      expect(config.sampleRate, 16000);
+      expect(config.numChannels, 1);
+    }
   });
 }

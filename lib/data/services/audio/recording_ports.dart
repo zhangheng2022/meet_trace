@@ -3,11 +3,14 @@ import 'dart:collection';
 import 'dart:typed_data';
 
 import '../../../domain/models/recording.dart';
+import '../../../domain/models/recording_input.dart';
 
 abstract interface class PcmAudioCapture {
   Future<bool> hasPermission({bool request = true});
 
-  Future<Stream<Uint8List>> start();
+  Future<Stream<Uint8List>> start({
+    LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
+  });
 
   Future<void> pause();
 

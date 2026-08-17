@@ -79,6 +79,8 @@ final class StartMeetingViewModel extends ChangeNotifier {
 String _startBlockedMessage(StartMeetingBlocked error) {
   return switch (error.reason) {
     StartMeetingBlockReason.readiness => _readinessMessage(error.readiness!),
+    StartMeetingBlockReason.recordingInputUnavailable =>
+      '已选择的麦克风当前不可用，请在设置中改用可用设备或系统默认麦克风。',
   };
 }
 

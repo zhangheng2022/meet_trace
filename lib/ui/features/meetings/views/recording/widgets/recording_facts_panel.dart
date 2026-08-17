@@ -82,6 +82,8 @@ final class RecordingFactsPanel extends StatelessWidget {
                         RecordingAudioWaveformState.waiting,
                       RecordingState.recording =>
                         RecordingAudioWaveformState.live,
+                      RecordingState.recovering || RecordingState.interrupted =>
+                        RecordingAudioWaveformState.stopped,
                       RecordingState.paused =>
                         RecordingAudioWaveformState.paused,
                       RecordingState.finalizing ||
@@ -216,6 +218,8 @@ final class _RecordingFactRow extends StatelessWidget {
 String _recordingShortLabel(RecordingState state) => switch (state) {
   RecordingState.idle || RecordingState.starting => '准备录音',
   RecordingState.recording => '录音中',
+  RecordingState.recovering => '正在恢复',
+  RecordingState.interrupted => '录音已中断',
   RecordingState.paused => '已暂停',
   RecordingState.finalizing => '正在保存',
   RecordingState.completed => '已保存',
@@ -225,6 +229,8 @@ String _recordingShortLabel(RecordingState state) => switch (state) {
 String _recordingLabel(RecordingState state) => switch (state) {
   RecordingState.idle || RecordingState.starting => '正在启动事实录音',
   RecordingState.recording => '事实音频正在安全写入',
+  RecordingState.recovering => '输入中断，正在切换系统默认麦克风',
+  RecordingState.interrupted => '事实录音已中断，可结束会议以保存已有音频',
   RecordingState.paused => '事实录音已暂停',
   RecordingState.finalizing => '正在封存事实音频',
   RecordingState.completed => '事实音频已保存',

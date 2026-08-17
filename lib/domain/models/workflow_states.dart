@@ -4,6 +4,8 @@ enum RecordingState {
   idle,
   starting,
   recording,
+  recovering,
+  interrupted,
   paused,
   finalizing,
   completed,
@@ -86,7 +88,18 @@ extension RecordingStateTransition on RecordingState {
         RecordingState.failed,
       }.contains(next),
       RecordingState.recording => {
+        RecordingState.recovering,
         RecordingState.paused,
+        RecordingState.finalizing,
+        RecordingState.failed,
+      }.contains(next),
+      RecordingState.recovering => {
+        RecordingState.recording,
+        RecordingState.interrupted,
+        RecordingState.finalizing,
+        RecordingState.failed,
+      }.contains(next),
+      RecordingState.interrupted => {
         RecordingState.finalizing,
         RecordingState.failed,
       }.contains(next),

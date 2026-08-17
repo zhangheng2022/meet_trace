@@ -8,6 +8,7 @@ import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/asr_preview.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/recording.dart';
+import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/asr_preview_session.dart';
@@ -251,6 +252,34 @@ void main() {
     await fixture.dispose();
   });
 
+  testWidgets('默认输入回退失败后明确显示录音已中断且不伪装实时输入', (WidgetTester tester) async {
+    final fixture = _fixture();
+
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    fixture.recording
+      ..durationValue = const Duration(seconds: 6)
+      ..interruptWithFinalizableAudio();
+    fixture.viewModel.refreshDuration();
+    await tester.pump();
+
+    expect(fixture.viewModel.recordingState, RecordingState.interrupted);
+    expect(fixture.viewModel.canStop, isTrue);
+    expect(find.text('录音已中断'), findsOneWidget);
+    expect(find.text('事实录音已中断，可结束会议以保存已有音频'), findsOneWidget);
+    expect(find.text('事实音频正在安全写入'), findsNothing);
+    expect(find.text('麦克风输入 · 实时反馈'), findsNothing);
+    expect(find.text('麦克风输入 · 已停止'), findsOneWidget);
+    await fixture.dispose();
+  });
+
   testWidgets('320 宽度和 2.0 字体缩放下关键状态与操作不溢出', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(320, 760);
     tester.view.devicePixelRatio = 1;
@@ -465,6 +494,7 @@ _Fixture _fixture() {
     session: StartedMeetingSession(
       meeting: meeting,
       engine: TestAsrEngine(descriptor),
+      recordingInput: const LockedRecordingInput.systemDefault(),
     ),
     recording: recording,
     preview: preview,
@@ -522,6 +552,8 @@ final class _RecordingService implements RecordingSessionService {
   bool get canFinalize =>
       _hasFinalizableAudio &&
       (_state == RecordingState.recording ||
+          _state == RecordingState.recovering ||
+          _state == RecordingState.interrupted ||
           _state == RecordingState.paused ||
           _state == RecordingState.failed);
 
@@ -546,6 +578,10 @@ final class _RecordingService implements RecordingSessionService {
 
   void failWithFinalizableAudio() {
     _state = RecordingState.failed;
+  }
+
+  void interruptWithFinalizableAudio() {
+    _state = RecordingState.interrupted;
   }
 
   Future<void> close() => _audioLevels.close();

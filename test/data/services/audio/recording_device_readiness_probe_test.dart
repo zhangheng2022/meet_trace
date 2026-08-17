@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/audio/recording_device_readiness_probe.dart';
 import 'package:meettrace/data/services/audio/recording_ports.dart';
+import 'package:meettrace/domain/models/recording_input.dart';
 
 void main() {
   test('设备预检并行读取麦克风权限和空间并释放录音器', () async {
@@ -43,7 +44,9 @@ final class _Capture implements PcmAudioCapture {
   Future<void> resume() async {}
 
   @override
-  Future<Stream<Uint8List>> start() async => const Stream.empty();
+  Future<Stream<Uint8List>> start({
+    LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
+  }) async => const Stream.empty();
 
   @override
   Future<void> stop() async {}

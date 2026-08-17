@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:record/record.dart';
 
+import '../../../domain/models/recording_input.dart';
 import 'recording_ports.dart';
 
 const meettracePcmRecordConfig = RecordConfig(
@@ -31,17 +32,33 @@ typedef PcmStreamStarter = Future<Stream<Uint8List>> Function(
 );
 
 Future<Stream<Uint8List>> startPcmStreamWithEnhancementFallback(
-  PcmStreamStarter startStream,
-) async {
+  PcmStreamStarter startStream, {
+  LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
+}) async {
+  final primaryConfig = _configForInput(meettracePcmRecordConfig, input);
+  final fallbackConfig = _configForInput(
+    meettraceFallbackPcmRecordConfig,
+    input,
+  );
   try {
-    return await startStream(meettracePcmRecordConfig);
+    return await startStream(primaryConfig);
   } on Exception catch (enhancementError, enhancementStackTrace) {
     try {
-      return await startStream(meettraceFallbackPcmRecordConfig);
+      return await startStream(fallbackConfig);
     } on Exception {
       Error.throwWithStackTrace(enhancementError, enhancementStackTrace);
     }
   }
+}
+
+RecordConfig _configForInput(RecordConfig config, LockedRecordingInput input) {
+  final device = input.device;
+  if (device == null) {
+    return config;
+  }
+  return config.copyWith(
+    device: (value: InputDevice(id: device.id, label: device.label)),
+  );
 }
 
 final class RecordPcmAudioCapture implements PcmAudioCapture {
@@ -56,9 +73,12 @@ final class RecordPcmAudioCapture implements PcmAudioCapture {
   }
 
   @override
-  Future<Stream<Uint8List>> start() {
+  Future<Stream<Uint8List>> start({
+    LockedRecordingInput input = const LockedRecordingInput.systemDefault(),
+  }) {
     return startPcmStreamWithEnhancementFallback(
       (config) => _recorder.startStream(config),
+      input: input,
     );
   }
 

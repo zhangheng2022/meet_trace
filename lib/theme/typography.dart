@@ -1,5 +1,14 @@
 part of 'theme.dart';
 
+const _appFontFallback = <String>[
+  'Microsoft YaHei UI',
+  'Microsoft YaHei',
+  'Segoe UI',
+  'Noto Sans SC',
+  'PingFang SC',
+  'Roboto',
+];
+
 /// 事实账本字阶：系统字体、两档主要字重和稳定的数字排版。
 FTypography _typography({required FColors colors, required bool touch}) =>
     FTypography(
@@ -13,6 +22,7 @@ FTypeface _display({
   String fontFamily = FTypeface.defaultFontFamily,
   List<String>? fontFamilyFallback,
 }) {
+  final fallback = fontFamilyFallback ?? _appFontFallback;
   final scale = touch ? 1.0 : 0.92;
   TextStyle style(
     double size,
@@ -22,7 +32,7 @@ FTypeface _display({
   }) => TextStyle(
     color: colors.foreground,
     fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
+    fontFamilyFallback: fallback,
     fontSize: size * scale,
     height: height,
     fontWeight: weight,
@@ -32,7 +42,7 @@ FTypeface _display({
 
   return FTypeface(
     fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
+    fontFamilyFallback: fallback,
     xs3: style(10, 1.2, weight: FontWeight.w500),
     xs2: style(12, 1.25, weight: FontWeight.w500),
     xs: style(13, 1.35, weight: FontWeight.w500, letterSpacing: 0.1),
@@ -56,6 +66,7 @@ FTypeface _body({
   String fontFamily = FTypeface.defaultFontFamily,
   List<String>? fontFamilyFallback,
 }) {
+  final fallback = fontFamilyFallback ?? _appFontFallback;
   final scale = touch ? 1.0 : 0.92;
   TextStyle style(
     double size,
@@ -65,7 +76,7 @@ FTypeface _body({
   }) => TextStyle(
     color: colors.foreground,
     fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
+    fontFamilyFallback: fallback,
     fontSize: size * scale,
     height: height,
     fontWeight: weight,
@@ -75,7 +86,7 @@ FTypeface _body({
 
   return FTypeface(
     fontFamily: fontFamily,
-    fontFamilyFallback: fontFamilyFallback,
+    fontFamilyFallback: fallback,
     xs3: style(10, 1.2, weight: FontWeight.w500),
     xs2: style(12, 1.3, weight: FontWeight.w500),
     xs: style(13, 1.35, weight: FontWeight.w500, letterSpacing: 0.1),

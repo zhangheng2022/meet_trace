@@ -5,8 +5,13 @@ import 'dart:typed_data';
 
 import '../../../domain/models/meeting_readiness.dart';
 import '../../../domain/models/recording.dart';
+import '../../../domain/models/recording_continuity_event.dart';
+import '../../../domain/models/recording_input.dart';
 import '../../../domain/models/workflow_states.dart';
+import '../../../domain/ports/recording_continuity.dart';
 import '../../../domain/ports/recording_session.dart';
+import '../../../domain/ports/recording_system_lifecycle.dart';
+import '../../../domain/use_cases/lock_recording_input.dart';
 import '../storage/app_file_layout.dart';
 import '../storage/durable_file_committer.dart';
 import 'pcm_audio_level_meter.dart';
@@ -19,12 +24,16 @@ const defaultRecordingFactCommitInterval = Duration(milliseconds: 250);
 const defaultRecordingCheckpointSaveInterval = Duration(seconds: 5);
 const defaultRecordingCheckpointSaveBytesThreshold = 512 * 1024;
 
-final class ReliableRecordingService implements RecordingSessionService {
+final class ReliableRecordingService
+    implements RecordingSessionService, RecordingSystemLifecycle {
   ReliableRecordingService({
     required this.capture,
     required this.layout,
     required this.checkpoints,
     required this.storageCapacity,
+    this.initialInput = const LockedRecordingInput.systemDefault(),
+    this.inputRecoveryPlanner,
+    this.continuityEvents = const NoopRecordingContinuityEventStore(),
     this.foreground = const NoopRecordingForegroundLifecycle(),
     RecordingPreviewSink previewSink = const DiscardingRecordingPreviewSink(),
     this.fileCommitter = const DurableFileCommitter(),
@@ -85,6 +94,9 @@ final class ReliableRecordingService implements RecordingSessionService {
   final AppFileLayout layout;
   final RecordingCheckpointStore checkpoints;
   final RecordingStorageCapacityProvider storageCapacity;
+  final LockedRecordingInput initialInput;
+  final PlanRecordingInputRecoveryUseCase? inputRecoveryPlanner;
+  final RecordingContinuityEventStore continuityEvents;
   final RecordingForegroundLifecycle foreground;
   final DurableFileCommitter fileCommitter;
   final int minimumFreeBytes;
@@ -103,6 +115,13 @@ final class ReliableRecordingService implements RecordingSessionService {
   RandomAccessFile? _output;
   StreamSubscription<Uint8List>? _audioSubscription;
   Completer<void>? _captureDone;
+  int _captureGeneration = 0;
+  bool _captureRecoveryActive = false;
+  String? _systemSuspendIncidentId;
+  Completer<void>? _systemLifecycleCompletion;
+  RecordingInputRecoveryState _inputRecoveryState =
+      const RecordingInputRecoveryState();
+  late LockedRecordingInput _activeInput;
   final Queue<Uint8List> _pendingFactChunks = Queue<Uint8List>();
   Future<void> _writeTail = Future<void>.value();
   bool _writeDrainActive = false;
@@ -123,6 +142,8 @@ final class ReliableRecordingService implements RecordingSessionService {
   @override
   bool get canFinalize =>
       _state == RecordingState.recording ||
+      _state == RecordingState.recovering ||
+      _state == RecordingState.interrupted ||
       _state == RecordingState.paused ||
       (_state == RecordingState.failed && _output != null);
   int get droppedPreviewChunks => _asrPreview.droppedChunks;
@@ -134,6 +155,7 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
     _state = RecordingState.starting;
     _meetingId = meetingId;
+    _activeInput = initialInput;
 
     try {
       if (!await capture.hasPermission()) {
@@ -163,22 +185,8 @@ final class ReliableRecordingService implements RecordingSessionService {
       _output = await tempFile.open(mode: FileMode.write);
       await _saveCheckpoint(RecordingCheckpointState.recording);
       await foreground.start(meetingId: meetingId);
-      final stream = await capture.start();
-      _captureDone = Completer<void>();
-      late final StreamSubscription<Uint8List> subscription;
-      subscription = stream.listen(
-        _queueChunk,
-        onError: (Object error, StackTrace stackTrace) {
-          _state = RecordingState.failed;
-          if (!subscription.isPaused) {
-            subscription.pause();
-          }
-          _completeCapture();
-        },
-        onDone: _completeCapture,
-        cancelOnError: false,
-      );
-      _audioSubscription = subscription;
+      final stream = await capture.start(input: initialInput);
+      _attachCaptureStream(stream);
       _state = RecordingState.recording;
     } on Object catch (error, stackTrace) {
       await _cleanupFailedStart(meetingId);
@@ -229,6 +237,177 @@ final class ReliableRecordingService implements RecordingSessionService {
     _state = RecordingState.recording;
   }
 
+  @override
+  Future<void> handleSystemSuspending() async {
+    if (_state != RecordingState.recording ||
+        _systemSuspendIncidentId != null) {
+      return;
+    }
+    final suspendedAt = now().toUtc();
+    final incidentId =
+        '${_meetingId!}-system-${suspendedAt.microsecondsSinceEpoch}';
+    _systemSuspendIncidentId = incidentId;
+    final lifecycleCompletion = Completer<void>();
+    _systemLifecycleCompletion = lifecycleCompletion;
+    _captureRecoveryActive = true;
+    _state = RecordingState.recovering;
+    final subscription = _audioSubscription;
+    if (subscription != null && !subscription.isPaused) {
+      // 先冻结 Dart 侧事件投递，再等待已经进入写盘队列的 PCM。这样挂起处理
+      // 返回后不会还有旧流字节越过本次 flush/checkpoint 边界。
+      subscription.pause();
+    }
+    try {
+      await _writeTail;
+      _throwWriteErrorIfAny();
+      await _flushOutput();
+      await _saveCheckpoint(RecordingCheckpointState.recording);
+      await _appendContinuityEventBestEffort(
+        incidentId: incidentId,
+        kind: RecordingContinuityEventKind.systemSuspended,
+        input: _activeInput,
+        at: suspendedAt,
+      );
+    } on Object {
+      if (_state == RecordingState.recovering) {
+        _state = RecordingState.failed;
+      }
+      _systemSuspendIncidentId = null;
+      _captureRecoveryActive = false;
+      rethrow;
+    } finally {
+      if (!lifecycleCompletion.isCompleted) {
+        lifecycleCompletion.complete();
+      }
+      if (identical(_systemLifecycleCompletion, lifecycleCompletion)) {
+        _systemLifecycleCompletion = null;
+      }
+    }
+  }
+
+  @override
+  Future<void> handleSystemResumed() async {
+    final incidentId = _systemSuspendIncidentId;
+    if (incidentId == null || _state != RecordingState.recovering) {
+      return;
+    }
+    final lifecycleCompletion = Completer<void>();
+    _systemLifecycleCompletion = lifecycleCompletion;
+    final suspendedInput = _activeInput;
+    final oldSubscription = _audioSubscription;
+    try {
+      if (oldSubscription != null) {
+        try {
+          await oldSubscription.cancel().timeout(captureStopTimeout);
+        } on Object {
+          // 系统挂起后的旧事件流可能已失效，继续关闭平台 recorder。
+        }
+      }
+      _audioSubscription = null;
+      _completeCapture();
+      try {
+        await capture.stop().timeout(captureStopTimeout);
+      } on TimeoutException {
+        _captureStopTimedOut = true;
+        await _markSystemResumeFailed(incidentId, suspendedInput);
+        return;
+      } on Object {
+        // 某些 Windows 音频驱动在恢复后报告已停止；仍允许重新启动锁定输入。
+      }
+      if (_state != RecordingState.recovering) {
+        return;
+      }
+
+      LockedRecordingInput resumedInput = suspendedInput;
+      Stream<Uint8List> stream;
+      try {
+        stream = await capture.start(input: resumedInput);
+      } on Object {
+        final recoveryPlanner = inputRecoveryPlanner;
+        if (recoveryPlanner == null) {
+          await _markSystemResumeFailed(incidentId, suspendedInput);
+          return;
+        }
+        final decision = recoveryPlanner.execute(_inputRecoveryState);
+        _inputRecoveryState = decision.nextState;
+        if (decision.action == RecordingInputRecoveryAction.interrupt) {
+          await _markSystemResumeFailed(incidentId, suspendedInput);
+          return;
+        }
+        resumedInput = const LockedRecordingInput.systemDefault();
+        try {
+          stream = await capture.start(input: resumedInput);
+        } on Object {
+          await _markSystemResumeFailed(incidentId, resumedInput);
+          return;
+        }
+        await _appendContinuityEventBestEffort(
+          incidentId: incidentId,
+          kind: RecordingContinuityEventKind.switchedToSystemDefault,
+          input: resumedInput,
+        );
+      }
+      if (_state != RecordingState.recovering) {
+        return;
+      }
+      _activeInput = resumedInput;
+      // 新流可能在 listen 时同步投递错误，因此先释放恢复门再接入。
+      _captureRecoveryActive = false;
+      _state = RecordingState.recording;
+      _attachCaptureStream(stream);
+      await _appendContinuityEventBestEffort(
+        incidentId: incidentId,
+        kind: RecordingContinuityEventKind.systemResumed,
+        input: resumedInput,
+      );
+    } finally {
+      if (_systemSuspendIncidentId == incidentId) {
+        _systemSuspendIncidentId = null;
+      }
+      _captureRecoveryActive = false;
+      if (!lifecycleCompletion.isCompleted) {
+        lifecycleCompletion.complete();
+      }
+      if (identical(_systemLifecycleCompletion, lifecycleCompletion)) {
+        _systemLifecycleCompletion = null;
+      }
+    }
+  }
+
+  @override
+  Future<void> prepareForSystemExit() async {
+    await _systemLifecycleCompletion?.future;
+    if (_state != RecordingState.recording &&
+        _state != RecordingState.recovering &&
+        _state != RecordingState.paused &&
+        _state != RecordingState.interrupted) {
+      return;
+    }
+    await _writeTail;
+    _throwWriteErrorIfAny();
+    await _flushOutput();
+    await _saveCheckpoint(
+      _state == RecordingState.paused
+          ? RecordingCheckpointState.paused
+          : RecordingCheckpointState.recording,
+    );
+  }
+
+  Future<void> _markSystemResumeFailed(
+    String incidentId,
+    LockedRecordingInput input,
+  ) async {
+    if (_state != RecordingState.recovering) {
+      return;
+    }
+    _state = RecordingState.interrupted;
+    await _appendContinuityEventBestEffort(
+      incidentId: incidentId,
+      kind: RecordingContinuityEventKind.systemResumeFailed,
+      input: input,
+    );
+  }
+
   Future<void> flush() async {
     await _writeTail;
     _throwWriteErrorIfAny();
@@ -239,10 +418,133 @@ final class ReliableRecordingService implements RecordingSessionService {
     await _saveCheckpoint(checkpointState);
   }
 
+  void _attachCaptureStream(Stream<Uint8List> stream) {
+    final generation = ++_captureGeneration;
+    _captureDone = Completer<void>();
+    late final StreamSubscription<Uint8List> subscription;
+    subscription = stream.listen(
+      _queueChunk,
+      onError: (Object error, StackTrace stackTrace) {
+        if (!subscription.isPaused) {
+          subscription.pause();
+        }
+        _completeCapture(generation);
+        unawaited(_recoverCapture(subscription, generation));
+      },
+      onDone: () {
+        _completeCapture(generation);
+        unawaited(_recoverCapture(subscription, generation));
+      },
+      cancelOnError: false,
+    );
+    _audioSubscription = subscription;
+  }
+
+  Future<void> _recoverCapture(
+    StreamSubscription<Uint8List> failedSubscription,
+    int generation,
+  ) async {
+    if (_captureRecoveryActive ||
+        generation != _captureGeneration ||
+        _state != RecordingState.recording) {
+      return;
+    }
+    final recoveryPlanner = inputRecoveryPlanner;
+    if (recoveryPlanner == null) {
+      _state = RecordingState.failed;
+      return;
+    }
+    _captureRecoveryActive = true;
+    _state = RecordingState.recovering;
+    final interruptedAt = now().toUtc();
+    final incidentId =
+        '${_meetingId!}-$generation-${interruptedAt.microsecondsSinceEpoch}';
+    try {
+      await _writeTail;
+      _throwWriteErrorIfAny();
+      await _flushOutput();
+      await _saveCheckpoint(RecordingCheckpointState.recording);
+      await _appendContinuityEventBestEffort(
+        incidentId: incidentId,
+        kind: RecordingContinuityEventKind.interruptionStarted,
+        input: _activeInput,
+        at: interruptedAt,
+      );
+
+      final decision = recoveryPlanner.execute(_inputRecoveryState);
+      _inputRecoveryState = decision.nextState;
+      if (decision.action == RecordingInputRecoveryAction.interrupt) {
+        _state = RecordingState.interrupted;
+        await _appendContinuityEventBestEffort(
+          incidentId: incidentId,
+          kind: RecordingContinuityEventKind.recordingInterrupted,
+          input: _activeInput,
+        );
+        return;
+      }
+
+      try {
+        await failedSubscription.cancel().timeout(captureStopTimeout);
+      } on Object {
+        // 旧平台流已失效，取消失败不阻止对系统默认输入的唯一一次尝试。
+      }
+      try {
+        await capture.stop().timeout(captureStopTimeout);
+      } on TimeoutException {
+        _state = RecordingState.interrupted;
+        await _appendContinuityEventBestEffort(
+          incidentId: incidentId,
+          kind: RecordingContinuityEventKind.recordingInterrupted,
+          input: _activeInput,
+        );
+        return;
+      } on Object {
+        // 设备中断时 stop 可能同步失败；仍继续唯一一次默认输入尝试。
+      }
+      if (_state != RecordingState.recovering) {
+        return;
+      }
+      final stream = await capture.start(
+        input: const LockedRecordingInput.systemDefault(),
+      );
+      if (_state != RecordingState.recovering) {
+        return;
+      }
+      _activeInput = const LockedRecordingInput.systemDefault();
+      await _appendContinuityEventBestEffort(
+        incidentId: incidentId,
+        kind: RecordingContinuityEventKind.switchedToSystemDefault,
+        input: _activeInput,
+      );
+      if (_state != RecordingState.recovering) {
+        return;
+      }
+      // 新流可能在 listen 时立即投递已缓存错误，先释放恢复门才能接住第二次中断。
+      _captureRecoveryActive = false;
+      _state = RecordingState.recording;
+      _attachCaptureStream(stream);
+    } on Object {
+      if (_state == RecordingState.recovering) {
+        _state = RecordingState.interrupted;
+        await _appendContinuityEventBestEffort(
+          incidentId: incidentId,
+          kind: RecordingContinuityEventKind.recordingInterrupted,
+          input: _activeInput,
+        );
+      }
+    } finally {
+      _captureRecoveryActive = false;
+    }
+  }
+
   @override
   Future<RecordingArtifact> stop() async {
     if (!canFinalize) {
       throw StateError('当前状态不能结束录音：${_state.name}');
+    }
+    await _systemLifecycleCompletion?.future;
+    if (!canFinalize) {
+      throw StateError('系统生命周期处理后不能结束录音：${_state.name}');
     }
     final meetingId = _meetingId!;
     _state = RecordingState.finalizing;
@@ -429,7 +731,10 @@ final class ReliableRecordingService implements RecordingSessionService {
     }
   }
 
-  void _completeCapture() {
+  void _completeCapture([int? generation]) {
+    if (generation != null && generation != _captureGeneration) {
+      return;
+    }
     final done = _captureDone;
     if (done != null && !done.isCompleted) {
       done.complete();
@@ -529,6 +834,28 @@ final class ReliableRecordingService implements RecordingSessionService {
       await _saveCheckpoint(state);
     } on Object {
       // 最终文件或原始失败优先，checkpoint 可由启动恢复重建。
+    }
+  }
+
+  Future<void> _appendContinuityEventBestEffort({
+    required String incidentId,
+    required RecordingContinuityEventKind kind,
+    required LockedRecordingInput input,
+    DateTime? at,
+  }) async {
+    try {
+      await continuityEvents.append(
+        RecordingContinuityEvent(
+          meetingId: _meetingId!,
+          incidentId: incidentId,
+          kind: kind,
+          at: (at ?? now()).toUtc(),
+          persistedBytes: _persistedBytes,
+          inputLabel: input.displayLabel,
+        ),
+      );
+    } on Object {
+      // 连续性旁路日志失败不得停止或污染事实 PCM 写入。
     }
   }
 }

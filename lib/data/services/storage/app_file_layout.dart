@@ -48,6 +48,18 @@ final class AppFileLayout {
     return p.join(meetingAudioDirectory(meetingId), 'checkpoint.json.previous');
   }
 
+  String meetingContinuityPath(String meetingId) {
+    return p.join(meetingDirectory(meetingId), 'continuity.json');
+  }
+
+  String meetingContinuityNextPath(String meetingId) {
+    return p.join(meetingDirectory(meetingId), 'continuity.json.next');
+  }
+
+  String meetingContinuityPreviousPath(String meetingId) {
+    return p.join(meetingDirectory(meetingId), 'continuity.json.previous');
+  }
+
   String meetingShareTempDirectory(String meetingId) {
     return p.join(meetingDirectory(meetingId), '.share');
   }

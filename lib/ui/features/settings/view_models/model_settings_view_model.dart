@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/model_installation.dart';
+import '../../../../domain/models/recording_input.dart';
+import '../../../../domain/ports/recording_input.dart';
 import '../../../../domain/ports/repositories.dart';
 import '../../../core/asr_model_option.dart';
 
@@ -13,6 +15,8 @@ final class ModelSettingsViewModel extends ChangeNotifier {
     required this.installations,
     AsrModelRegistry? registry,
     this.actions = const ModelMaintenanceActions(),
+    this.recordingInputPreferences,
+    this.recordingInputDevices,
   }) : registry = registry ?? AsrModelRegistry.alpha,
        _defaultModelId = (registry ?? AsrModelRegistry.alpha).defaultModelId;
 
@@ -20,21 +24,44 @@ final class ModelSettingsViewModel extends ChangeNotifier {
   final ModelInstallationRepository installations;
   final AsrModelRegistry registry;
   final ModelMaintenanceActions actions;
+  final RecordingInputPreferenceRepository? recordingInputPreferences;
+  final RecordingInputDeviceCatalog? recordingInputDevices;
 
   StreamSubscription<List<ModelInstallation>>? _subscription;
   Future<void>? _loadingOperation;
   bool _isLoading = true;
   bool _isBusy = false;
   bool _disposed = false;
+  bool _recordingInputsLoading = false;
+  bool _recordingInputBusy = false;
   String _defaultModelId;
   String? _errorMessage;
+  String? _recordingInputErrorMessage;
+  String? _recordingInputStatusMessage;
   List<AsrModelOption> _options = const [];
+  RecordingInputPreference? _recordingInputPreference;
+  List<RecordingInputDevice> _recordingInputOptions = const [];
 
   bool get isLoading => _isLoading;
   bool get isBusy => _isBusy;
   String get defaultModelId => _defaultModelId;
   String? get errorMessage => _errorMessage;
   List<AsrModelOption> get options => List.unmodifiable(_options);
+  bool get supportsRecordingInputSelection =>
+      recordingInputPreferences != null && recordingInputDevices != null;
+  bool get recordingInputsLoading => _recordingInputsLoading;
+  bool get recordingInputBusy => _recordingInputBusy;
+  String? get recordingInputErrorMessage => _recordingInputErrorMessage;
+  String? get recordingInputStatusMessage => _recordingInputStatusMessage;
+  RecordingInputPreference? get recordingInputPreference =>
+      _recordingInputPreference;
+  List<RecordingInputDevice> get recordingInputOptions =>
+      List.unmodifiable(_recordingInputOptions);
+  bool get selectedRecordingInputAvailable =>
+      _recordingInputPreference?.usesSystemDefault == true ||
+      _recordingInputOptions.any(
+        (device) => device.id == _recordingInputPreference?.deviceId,
+      );
 
   Future<void> load() => _loadingOperation ??= _load();
 
@@ -63,6 +90,53 @@ final class ModelSettingsViewModel extends ChangeNotifier {
 
   Future<void> repairModel() => _runAction(actions.repair);
 
+  Future<void> refreshRecordingInputs() async {
+    if (!supportsRecordingInputSelection || _recordingInputsLoading) {
+      return;
+    }
+    _recordingInputsLoading = true;
+    _recordingInputErrorMessage = null;
+    _recordingInputStatusMessage = '正在扫描麦克风';
+    _notify();
+    try {
+      final preference = await recordingInputPreferences!.getPreference();
+      final devices = await recordingInputDevices!.listAvailable();
+      _recordingInputPreference = preference;
+      _recordingInputOptions = devices;
+      _recordingInputStatusMessage = devices.isEmpty
+          ? '未发现其他麦克风'
+          : '已发现 ${devices.length} 个 Windows 输入设备';
+    } on Object {
+      _recordingInputErrorMessage = '无法读取 Windows 麦克风列表，请检查系统麦克风权限后重试';
+      _recordingInputStatusMessage = '麦克风扫描失败';
+    } finally {
+      _recordingInputsLoading = false;
+      _notify();
+    }
+  }
+
+  Future<void> selectRecordingInput(RecordingInputPreference preference) async {
+    if (!supportsRecordingInputSelection ||
+        _recordingInputBusy ||
+        _recordingInputsLoading ||
+        _disposed ||
+        preference == _recordingInputPreference) {
+      return;
+    }
+    _recordingInputBusy = true;
+    _recordingInputErrorMessage = null;
+    _notify();
+    try {
+      await recordingInputPreferences!.setPreference(preference);
+      _recordingInputPreference = preference;
+    } on Object {
+      _recordingInputErrorMessage = '麦克风偏好保存失败，请重试';
+    } finally {
+      _recordingInputBusy = false;
+      _notify();
+    }
+  }
+
   void pauseRepair() {
     if (_disposed) {
       return;
@@ -74,6 +148,7 @@ final class ModelSettingsViewModel extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+    final recordingInputs = refreshRecordingInputs();
     try {
       final defaultModelId = await preferences.getDefaultModelId();
       registry.requireById(defaultModelId);
@@ -107,6 +182,7 @@ final class ModelSettingsViewModel extends ChangeNotifier {
       _isLoading = false;
       _notify();
     }
+    await recordingInputs;
   }
 
   void _applyInstallations(List<ModelInstallation> installations) {
