@@ -34,7 +34,7 @@ void main() {
   test('文档与 Graphify 输出只运行稳定 Gate', () async {
     expect(
       await _classify(['docs/quality/README.md', 'graphify-out/graph.json']),
-      {'core': false, 'android': false, 'ios': false},
+      {'core': false, 'android': false, 'ios': false, 'windows': false},
     );
   });
 
@@ -43,11 +43,19 @@ void main() {
       'core': true,
       'android': true,
       'ios': false,
+      'windows': false,
     });
     expect(await _classify(['ios/Runner.xcodeproj/project.pbxproj']), {
       'core': true,
       'android': false,
       'ios': true,
+      'windows': false,
+    });
+    expect(await _classify(['windows/runner/main.cpp']), {
+      'core': true,
+      'android': false,
+      'ios': false,
+      'windows': true,
     });
   });
 
@@ -61,6 +69,7 @@ void main() {
         'core': true,
         'android': true,
         'ios': true,
+        'windows': true,
       }, reason: path);
     }
   });
@@ -70,11 +79,13 @@ void main() {
       'core': true,
       'android': false,
       'ios': false,
+      'windows': false,
     });
     expect(await _classify(['new_platform/source.custom']), {
       'core': true,
       'android': true,
       'ios': true,
+      'windows': true,
     });
   });
 
@@ -86,7 +97,12 @@ void main() {
       '.claude/skills/graphify/skill.md',
     ]);
 
-    expect(result, {'core': false, 'android': false, 'ios': false});
+    expect(result, {
+      'core': false,
+      'android': false,
+      'ios': false,
+      'windows': false,
+    });
   });
 
   test('NUL 分隔路径文件保留特殊文件名边界', () async {
@@ -95,6 +111,11 @@ void main() {
       'lib/path\nwith-newline.dart',
     ]);
 
-    expect(result, {'core': true, 'android': true, 'ios': true});
+    expect(result, {
+      'core': true,
+      'android': true,
+      'ios': true,
+      'windows': true,
+    });
   });
 }

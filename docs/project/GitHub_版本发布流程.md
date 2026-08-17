@@ -1,6 +1,6 @@
 # 会迹（MeetTrace）GitHub Alpha 版本发布流程
 
-> 状态：目标 Runbook；Windows job、签名与自动更新尚未实现，完成前不得按三平台流程发布
+> 状态：目标 Runbook；常规 CI 已有 Windows MSIX 开发探针，正式发布 job、签名与自动更新尚未实现，完成前不得按三平台流程发布
 >
 > 上游需求：[Android + iOS + Windows Alpha PRD V1.1](../product/Alpha_PRD_无登录版.md)
 

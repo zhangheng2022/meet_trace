@@ -3,8 +3,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-Future<String> _workflow(String name) =>
-    File('.github/workflows/$name').readAsString();
+Future<String> _workflow(String name) async => (await File(
+  '.github/workflows/$name',
+).readAsString()).replaceAll('\r\n', '\n').replaceAll('\r', '\n');
 
 String _job(String workflow, String job, [String? nextJob]) {
   final start = workflow.indexOf('\n  $job:');
@@ -264,7 +265,7 @@ void main() {
 
     test('iOS 无签名检查只保留审计证据且不打包 IPA', () async {
       final workflow = await _workflow('quality.yml');
-      final ios = _job(workflow, 'ios-unsigned', 'ci-gate');
+      final ios = _job(workflow, 'ios-unsigned', 'windows-msix-probe');
 
       expect(ios, contains('Build Release app without code signing'));
       expect(ios, contains('Write unsigned app bundle metadata'));
@@ -292,12 +293,16 @@ void main() {
       expect(workflow, contains('echo "\$TARGET=true"'));
       expect(workflow, contains('\n  flutter-quality:'));
       expect(workflow, contains('\n  ios-unsigned:'));
+      expect(workflow, contains('\n  windows-msix-probe:'));
       expect(workflow, contains('\n  ci-gate:'));
       expect(workflow, contains('name: CI Gate'));
       expect(workflow, contains('if: always()'));
       expect(
         workflow,
-        contains('needs: [classify, flutter-quality, ios-unsigned]'),
+        contains(
+          'needs: [classify, flutter-quality, ios-unsigned, '
+          'windows-msix-probe]',
+        ),
       );
       expect(workflow, contains('uses: ./.github/workflows/_flutter-core.yml'));
       expect(workflow, isNot(contains('\n    paths:')));
@@ -315,6 +320,27 @@ void main() {
         contains('cannot silently bypass platform validation'),
       );
       expect(classifier, contains('return {key: True for key in result}'));
+    });
+
+    test('Windows CI 仅保留不可分发的 MSIX 探针证据', () async {
+      final workflow = await _workflow('quality.yml');
+      final windows = _job(workflow, 'windows-msix-probe', 'ci-gate');
+
+      expect(windows, contains('runs-on: windows-2025'));
+      expect(windows, contains('Set up Java 17 for JNI headers'));
+      expect(windows, contains('Windows SDK KitsRoot10 is missing'));
+      expect(windows, contains('flutter build windows --release'));
+      expect(windows, contains('--dart-define=SENTRY_ENABLED=false'));
+      expect(windows, contains("-Publisher 'CN=MeetTrace Development'"));
+      expect(windows, contains('-DevelopmentProbe'));
+      expect(windows, contains('tool/benchmarks/inspect_msix.ps1'));
+      expect(windows, contains('Remove non-distributable MSIX probe'));
+      expect(windows, contains('build/windows/msix/*.json'));
+      expect(windows, contains('build/windows/msix/*.txt'));
+      expect(windows, isNot(contains('build/windows/msix/*.msix')));
+      expect(windows, isNot(contains('gh release upload')));
+      expect(windows, isNot(contains('New-SelfSignedCertificate')));
+      expect(windows, contains(r'\s*(?:#.*)?$'));
     });
 
     test('Codacy 仅跳过无法解析 Flutter package graph 的测试代码', () async {
