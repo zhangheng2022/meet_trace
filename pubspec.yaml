@@ -46,7 +46,7 @@ dependencies:
   sherpa_onnx: 1.13.5
   share_plus: 13.3.0
   sqflite: 2.4.3
-  sqflite_common_ffi: 2.4.2
+  sqflite_common_ffi: ^2.4.2+1
 
 dev_dependencies:
   flutter_test:
