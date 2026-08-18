@@ -2,7 +2,7 @@
 
 > 状态：活动；Android 已有公开 Alpha，iOS 证据未闭环，Windows 已有固定 Store 身份的正式候选 job，Store 限定受众/Flight 与正式认证、目标设备证据及三平台统一发布尚未闭环
 >
-> 更新日期：2026-08-15
+> 更新日期：2026-08-18
 >
 > 上游：[Alpha PRD V1.1](../product/Alpha_PRD_无登录版.md)
 
@@ -13,7 +13,7 @@
 - 仓库已具备格式、静态分析、测试、Android 包审计、iOS 无签名构建审计和统一 Alpha 候选流程；真实行为以 `.github/workflows/` 及守卫测试为准。
 - SenseVoice、Silero VAD、Pyannote 和 3D-Speaker 运行时下载、严格校验、联合最终快照及文本/WAV 分享主链已实现。
 - Android/iOS 的目标 arm64 真机仍须完成录音连续性、ASR、说话人分离、分享、资源、温控和无障碍验收；任何旧候选的结果不能沿用到新 SHA。
-- 官方 `sherpa_onnx 1.13.5` 已补充完整波形输入缓冲区释放。当前候选仍需完成 Android/iOS 重复长会议内存验证；证据闭环前不得据此扩大分发，运行失败时继续降级为单一说话人。
+- 官方 `sherpa_onnx 1.13.6` 继承了完整波形输入缓冲区释放修复。当前候选仍需完成 Android/iOS/Windows 重复长会议内存验证；证据闭环前不得据此扩大分发，运行失败时继续降级为单一说话人。
 - Windows x64 Debug/Release 工程、SQLite FFI、输入设备锁定/一次回退、连续性事件、单实例激活、录音 close 转托盘、“停止并退出”安全封存及睡眠/恢复缺口记录链已实现并有自动化/本机构建冒烟。常规 CI 保留不可分发开发探针；正式 `Alpha Release` 已生成固定 Partner Center 身份的 Store MSIX，审计 Windows 10 22H2/x64、运行资产以及模型权重/用户数据/凭据禁入，并只上传 Actions Artifact。自动更新解析器只接受 Store ID `9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`。真实睡眠与托盘 PCM 增长、首次 Private audience（后续 Package Flight）验收、正式 Store 认证、安装更新端到端、统一公开与目标设备证据仍未闭环，Windows 当前不得标记为受支持。
 - PRD V1.1 要求 Android/iOS/Windows 同 SHA 的三平台统一门禁；Windows 候选 job 已接入，但 AT-21～AT-26、Store 限定受众/Flight、正式认证与最终公开证据未完成前不能宣称满足 V1.1 完成定义。
 

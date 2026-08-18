@@ -1,6 +1,6 @@
 # 会迹（MeetTrace）端侧 SenseVoice 与说话人分离技术方案
 
-> 日期：2026-08-15
+> 日期：2026-08-18
 > 对应 PRD：V1.1
 > 状态：活动；Android/iOS 主链已实现，Windows 输入、桌面生命周期与睡眠恢复首轮已落地；Microsoft Store 固定身份、Store MSIX 候选 job 和更新 Manifest 的 Store-only 解析边界已实现，Store 限定受众/Flight 与正式认证、平台 adapter 和三平台统一发布仍待按第 13 节验收
 
@@ -126,7 +126,7 @@ Windows 的全局输入偏好保存稳定设备标识和可读名称，“系统
 
 `SherpaOnnxSpeakerDiarizationService` 只通过官方 `OfflineSpeakerDiarization` Dart API 接入，不自建 JNI、FFI/C API 或原生桥接。固定输入为 16 kHz 单声道事实 PCM；分段使用 Pyannote INT8，嵌入使用 3D-Speaker，`numClusters=-1`。模型在独立 isolate 中按任务创建和释放；worker 在模型初始化尚未完成时也可被 Domain 超时直接终止，不能让已降级任务继续占用 CPU/内存。聚类 threshold 必须在不少于 60 分钟的普通话 2/3/4 人标注语料上校准并固定到 Manifest/配置，UI 不暴露该参数。
 
-供应链审查确认官方 [`sherpa_onnx 1.13.5` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.5/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart)已为 `process` 与 `processWithCallback` 的 `calloc<Float>(samples.length)` 输入缓冲区增加 `finally` 释放，替代存在完整波形原生堆遗留风险的 1.13.4。生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；升级候选必须通过 Android、iOS 与 Windows 重复长会议内存验证，不能仅凭上游代码变更宣称目标设备风险已经闭环。
+供应链审查确认官方 [`sherpa_onnx 1.13.6` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.6/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart)继承了 1.13.5 为 `process` 与 `processWithCallback` 的 `calloc<Float>(samples.length)` 输入缓冲区增加 `finally` 释放的修复，替代存在完整波形原生堆遗留风险的 1.13.4。生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；升级候选必须通过 Android、iOS 与 Windows 重复长会议内存验证，不能仅凭上游代码变更宣称目标设备风险已经闭环。
 
 录音封存后，`FinalResultCoordinator` 从同一事实音频并行启动最终 ASR 与离线分离，两者运行在独立 worker/isolate，不能占用录音写入队列。跨会议的联合最终推理由应用级 FIFO 调度器限制为单并发，同一会议内部 ASR 与分离仍并行。ASR 成功且分离成功时，按时间重叠把 `SpeakerTurn` 映射到最终转录片段；分离超时、空结果、内存或推理失败时生成明确的单一说话人降级结果。只有两条任务都结束后才以一次事务写入并激活最终快照；ASR 失败时保留事实音频和旧活动快照，不发布半成品。
 
