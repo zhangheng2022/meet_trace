@@ -75,7 +75,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - Alpha 不接入业务分析埋点；Release 默认启用 Sentry 崩溃、性能、日志、指标、遮罩 Replay/截图/View Hierarchy、交互和请求诊断，不增加首次同意。用户主动导出的诊断包不包含音频或完整转录。
 - Android Alpha 候选只构建 `arm64-v8a` APK，Windows 只构建 x64 MSIX；Android、iOS 与 Windows 同一提交均验收通过后才统一公开，禁止重建、覆盖或移动版本标签。
 - iOS Alpha 只经 TestFlight 分发，GitHub 不上传 IPA；外部测试链接可在最终 Pre-release 中提供，尚未就绪时明确标记待提供。
-- Windows 首选 SignPath Foundation 免费开源签名并随 GitHub Pre-release 分发，申请失败时使用 Microsoft Store 免费签名与 Package Flight；三平台只提供单一 Alpha 自动更新频道。
+- Windows 当前固定使用 Microsoft Store 身份与 Store 内置更新；首次发布使用 Private audience 验收，已有公开版本的后续更新使用 Package Flight，GitHub Pre-release 不附带 MSIX。SignPath 申请仅保留为未来可能替换 Store 的待审核方案，未验证包身份兼容性并更新 PRD 前不得接线，两个 Windows 包身份不得并存；三平台只提供单一 Alpha 自动更新频道。
 - Flutter UI 遵循 `View → ViewModel → Use Case / Port → Repository / Service`，功能 UI
   不直接访问 ONNX、存储或 HTTP。
 - 共享界面优先使用 Forui 组件和主题令牌；平台导航、返回手势、系统权限、分享、

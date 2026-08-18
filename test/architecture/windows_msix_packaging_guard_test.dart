@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +27,8 @@ void main() {
       final script = await File('tool/windows/package_msix.ps1').readAsString();
 
       expect(script, contains(r'[switch]$DevelopmentProbe'));
+      expect(script, contains(r'[switch]$MicrosoftStore'));
+      expect(script, contains('windows\\packaging\\msix\\store_identity.json'));
       expect(script, contains("'CN=MeetTrace Development'"));
       expect(
         script,
@@ -35,10 +38,56 @@ void main() {
       );
       expect(script, contains(r'& $makeAppx pack /o /v /h SHA256'));
       expect(script, contains(r'signed = $false'));
+      expect(
+        script,
+        contains('Microsoft Store MSIX PackageVersion major must be greater'),
+      );
+      expect(
+        script,
+        contains('Microsoft Store reserves the fourth PackageVersion part'),
+      );
+      expect(
+        script,
+        contains(
+          'Microsoft Store PackageVersion must use '
+          '1.0.<shared build number>.0',
+        ),
+      );
       expect(script, contains(r'\s*(?:#.*)?$'));
       expect(script, isNot(contains('New-SelfSignedCertificate')));
       expect(script, isNot(contains('signtool sign')));
       expect(script, isNot(contains('.pfx')));
+    });
+
+    test('Microsoft Store 身份与 Partner Center 完全一致', () async {
+      final identity = jsonDecode(
+        await File('windows/packaging/msix/store_identity.json').readAsString(),
+      ) as Map<String, Object?>;
+
+      expect(identity['schemaVersion'], 1);
+      expect(identity['displayName'], 'MeetTrace');
+      expect(identity['identityName'], 'zhangheng2026.MeetTrace');
+      expect(identity['publisher'], 'CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B');
+      expect(identity['publisherDisplayName'], 'zhangheng2026');
+      expect(
+        identity['packageFamilyName'],
+        'zhangheng2026.MeetTrace_vaaj3dqegb9y0',
+      );
+      expect(identity['storeId'], '9PHHSJMWK06G');
+      expect(
+        identity['storeUri'],
+        'ms-windows-store://pdp/?productid=9PHHSJMWK06G',
+      );
+      expect(
+        identity['storeUrl'],
+        'https://apps.microsoft.com/detail/9PHHSJMWK06G',
+      );
+
+      final updateParser = await File(
+        'lib/data/services/updates/signed_app_update_manifest_parser.dart',
+      ).readAsString();
+      expect(updateParser, contains("'${identity['identityName']}'"));
+      expect(updateParser, contains("'${identity['storeUri']}'"));
     });
 
     test('Windows 可执行文件元数据不再使用模板公司身份', () async {
@@ -56,6 +105,7 @@ void main() {
       expect(script, contains('Get-AuthenticodeSignature'));
       expect(script, contains(r"$authenticodeStatus -ceq 'Valid'"));
       expect(script, contains(r'$signerSubject -ceq $ExpectedPublisher'));
+      expect(script, contains(r'$ExpectedPublisherDisplayName'));
     });
 
     test('CMake 始终把安装阶段固定到 Flutter bundle', () async {

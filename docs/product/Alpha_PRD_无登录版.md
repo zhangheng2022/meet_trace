@@ -16,7 +16,7 @@
 - 音频、转录和说话人结果默认只保存在设备上；只有用户主动执行独立的“分享音频”操作并二次确认后，临时 WAV 副本才进入系统分享面板。Release 默认启用 Sentry 远程诊断，但不得把事实 PCM、WAV、转录快照或说话人结果作为 Attachment 或自定义 Payload 主动上传。
 - 当前 ASR 只支持 SenseVoice；其他模型待定，不承诺等级、发布时间或自动切换。
 - Android、iOS 与 Windows 必须基于同一候选提交完成构建并由维护者实际验收后，才允许对外发布该 Alpha；自动化只执行技术检查，不替代三平台人工验收，任一平台失败均阻断统一发布。
-- Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX；在三平台验收完成前，两者仅暂存在当前公开源码仓库的 GitHub Draft Release 中，不得公开安装。最终验收通过后发布同一 Draft 为 GitHub Pre-release，不重建、不覆盖资产，也不移动已有标签。
+- Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX。验收前 Android APK 暂存在 GitHub Draft Release；Windows Store MSIX 只进入当前运行的 Actions Artifact，并由维护者把同一字节用于 Partner Center 限定受众或 Flight 验收，不进入 GitHub Release。最终验收通过且同一包已在 Store 公开可安装后，才发布同一 Draft 为 GitHub Pre-release；不得重建、覆盖资产或移动已有标签。
 - iOS Alpha 的编译与分发最低版本为 iOS 15；从当前候选起不再支持 iOS 13/14，也不为已安装旧 TestFlight 构建提供专门迁移版。iOS 候选只通过 TestFlight 分发，不在 GitHub Release 上传 IPA。最终 GitHub Pre-release 可填写 TestFlight 外部测试链接；尚未获批或未创建时必须明确标记“外部测试链接待提供”，不得伪造链接或绕过 Beta App Review。
 - iOS 15 最低版本通过工程配置、构建产物审计和 TestFlight 分发门禁验证；Alpha 不要求额外保有 iOS 15 真机。功能、录音连续性、推理、能耗和无障碍验收使用当前可用的受支持 iPhone/iPad 真机，质量记录必须明确最低版本未做真机覆盖。
 - Windows 最低支持 Windows 10 22H2 与 Windows 11，仅支持 x64；性能验收基线为 8 GB RAM、普通四核 CPU，不要求独立显卡。低于 8 GB 允许安装和事实录音，但必须明确提示设备不在受支持的推理性能范围。
@@ -74,14 +74,15 @@
 ### 3.1 Alpha 对外分发
 
 - Android 公开安装入口为当前公开源码仓库的 GitHub Pre-release 附件，文件名固定为 `meettrace-<release-id>-android-arm64.apk`；不使用私有分发仓库。
-- Windows 首选公开入口为同一 GitHub Pre-release 中经 SignPath Foundation 签名的 `meettrace-<release-id>-windows-x64.msix` 与稳定 HTTPS `.appinstaller`。若 SignPath 申请未通过，则 Windows 改由 Microsoft Store 免费签名和分发，候选使用 Package Flight 验收；同一候选不得同时维护互不兼容的两个 Windows 包身份。
-- GitHub Actions 只公开一个手动入口 `Alpha Release`。必填项仅为发布标识；发布说明和 TestFlight 外部链接均可选。工作流依次执行技术检查、Android 与 Windows 候选构建和暂存、iOS TestFlight 上传，并在公开发布前等待一次人工批准；Microsoft Store 兜底路线用 Package Flight 替代 Windows Draft 资产。
-- 候选阶段创建或更新 Draft Release，上传签名 APK、签名 MSIX、三平台候选清单、校验和与非敏感签名证据。相同发布标识可在 Draft 阶段重试，但已成功且身份匹配的不可变候选必须复用；Draft 一旦公开，标签、APK、MSIX 和候选清单不得覆盖。
-- 最终发布必须核对 Android、iOS 与 Windows 工作流均成功，候选提交 SHA、发布标识和共用构建号一致，并验证公开资产与候选清单逐字节一致。维护者完成三平台验收后，在 `github-release` 环境执行一次批准，将原 Draft 公开为 GitHub Pre-release；Windows Store 兜底路线必须在同一次批准后公开已认证的 Store submission。
+- Windows 当前唯一公开入口为 Microsoft Store 产品 `9PHHSJMWK06G`。MSIX 必须使用固定 `Identity Name=zhangheng2026.MeetTrace`、`Publisher=CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B`、`PublisherDisplayName=zhangheng2026` 和 PFN `zhangheng2026.MeetTrace_vaaj3dqegb9y0`；Store 包版本固定映射为 `1.0.<共享发布构建号>.0`，营销版本另行记录。首次公开前使用 Private audience 验收；应用已有公开 non-flighted submission 后，后续候选使用 Package Flight 并把同一包拉入正式 submission。更新由 Store 管理，GitHub Release 不上传 MSIX 或 `.appinstaller`。
+- SignPath 申请仅保留为未来可能替换 Store 的待审核路线，不接入当前工作流。只有证书 Subject 与升级/数据连续性影响验证完成、PRD 再次更新并明确停止 Store 路线后，才可启用 GitHub MSIX；任何时刻不得并存两个 Windows 包身份。
+- GitHub Actions 只公开一个手动入口 `Alpha Release`。必填项仅为发布标识；发布说明和 TestFlight 外部链接均可选。工作流依次执行技术检查、Android Draft 候选构建、iOS TestFlight 上传和 Windows Store 候选构建，将 Windows MSIX 保存在 Actions Artifact，随后等待一次人工批准。
+- 候选阶段创建或更新 Draft Release，只上传签名 APK 与 Android 公开候选清单；iOS 和 Windows 的二进制及三平台详细证据只进入各自平台或 Actions Artifact。相同发布标识可在 Draft 阶段重试，但已成功且身份匹配的不可变候选必须复用；Draft 一旦公开，标签、APK 和公开候选清单不得覆盖。
+- 最终发布必须核对 Android、iOS 与 Windows 工作流均成功，候选提交 SHA、发布标识和共用构建号一致，并逐字节验证 Android Draft APK 与 Windows Store 上传候选。维护者完成三平台验收，确认同一 Windows MSIX 已通过正式 Store 认证并可从产品页安装后，才在 `github-release` 环境执行一次批准，将原 Draft 公开为 GitHub Pre-release。
 - TestFlight 外部测试链接不阻断首次公开发布；缺失时发布说明标记“外部测试链接待提供”。链接获批后可再次运行同一发布标识，只更新公开说明，不重建或覆盖三平台资产。
 - GitHub Pre-release 的安装说明必须分别说明 Android、iOS 与 Windows 的系统/架构、安装入口、自动更新方式，以及无登录和云同步、数据仅保存在本机、卸载可能删除数据、Alpha 数据代升级可能清除全部数据并重新下载模型、首次启动约下载 286.3 MB 运行资源等风险。
-- 自动更新只使用单一 Alpha 频道。公开更新 Manifest 与 `.appinstaller` 只能在三平台批准之后原子指向新版本；不得暴露 Draft、Package Flight 或部分通过候选，不得降级，修复必须使用更高版本号向前发布。
-- 严重问题版本不删除 Release、标签、APK 或 MSIX，也不覆盖原资产；将发布说明和更新 Manifest 醒目标记为“已撤回，不建议安装”，修复使用新的版本标识、构建号和候选提交向前发布。
+- 自动更新只使用单一 Alpha 频道。Store 正式 submission 必须先公开并确认可安装，GitHub Pre-release 与公开更新 Manifest 才能随后批准；不得让 Manifest 暴露 Draft、Private audience、Package Flight 或部分通过候选，不得降级，修复必须使用更高版本号向前发布。
+- 严重问题版本不删除 Release、标签、APK 或 Store submission，也不覆盖原资产；将发布说明和更新 Manifest 醒目标记为“已撤回，不建议安装”，修复使用新的版本标识、构建号和候选提交向前发布。
 
 ## 4. 首次初始化流程
 
@@ -175,7 +176,7 @@
 - 应用只消费已通过三平台验收的公开、签名、不可变更新 Manifest；检查失败不得阻断启动、录音、最终处理或本地历史访问。
 - Android 自动检查并下载 `arm64-v8a` APK，严格校验版本、长度、SHA-256、包名和签名证书，再交由系统安装器；始终兼容系统要求的用户确认或未知来源授权，不宣称静默安装。
 - iOS 继续由 TestFlight 分发和更新；应用不得自行替换安装包，实际自动安装受用户 TestFlight/App Store 设置和 Apple 平台规则控制。
-- Windows 首选通过 `.appinstaller` 检查和安装已签名 MSIX；Microsoft Store 兜底路线使用 Store 内置更新。应用运行、录音或最终处理期间不得强制退出或安装。
+- Windows 只通过 Microsoft Store 产品 `9PHHSJMWK06G` 检查、安装和更新；更新 Manifest 必须拒绝 `.appinstaller` 或其他 Store 产品/包身份。应用运行、录音或最终处理期间不得强制退出或安装。
 - 更新不阻断应用启动、不允许降级。若新版本提高数据代并将全清本地数据，必须在安装前展示醒目风险；不得通过静默更新绕过该提示。
 
 ## 7. 性能与质量门槛
@@ -229,9 +230,9 @@
 ## 9. Alpha 完成定义
 
 - 自动化覆盖全部 Manifest、归档解包、下载上限、1 GiB 空间预检、移动网络同意、Windows 自动下载、续传、校验、快速启动、锁定配置、联合快照、分离降级、WAV 分享清理、数据代门全清、Windows 单实例/托盘/设备中断和更新 Manifest 校验。
-- `flutter analyze`、`flutter test`、Android Debug 构建、Windows x64 Debug/Release 构建及 APK/MSIX 权重审计通过；Android Alpha 使用 `com.meettrace.app` 的正式签名 `arm64-v8a` APK，Windows 使用固定包身份的签名 x64 MSIX 或 Store MSIX。
+- `flutter analyze`、`flutter test`、Android Debug 构建、Windows x64 Debug/Release 构建及 APK/MSIX 权重审计通过；Android Alpha 使用 `com.meettrace.app` 的正式签名 `arm64-v8a` APK，Windows 使用上述固定 Microsoft Store 身份的 x64 MSIX。
 - Android、iOS 与 Windows 目标设备应完成 AT-01～AT-26 的适用项并保留记录；维护者须在唯一的公开批准步骤前确认三平台验收结论，iOS Alpha 通过 TestFlight 分发。
-- 最终发布核对同一候选提交的三平台成功结果后，将原 Draft Release 发布为 GitHub Pre-release，并在批准后原子更新单一 Alpha 频道。公开 APK/MSIX 与已验收候选逐字节一致，Release 不包含 IPA；Microsoft Store 兜底路线公开同一已验收 submission。TestFlight 外部测试链接可后补，缺失时公开说明必须标记待提供。
+- 最终发布核对同一候选提交的三平台成功结果，并确认 Microsoft Store 已公开同一已验收 submission 后，才将原 Draft Release 发布为 GitHub Pre-release，并原子更新单一 Alpha 频道。公开 APK 与已验收候选逐字节一致，Release 不包含 IPA 或 MSIX。TestFlight 外部测试链接可后补，缺失时公开说明必须标记待提供。
 - 未解决的 OCR Critical/High 缺陷为零。
 - 官方 `sherpa_onnx` Dart 完整波形缓冲区缺陷作为已接受的 Alpha 风险持续跟踪，不再单独阻断自动分离、Alpha 构建或自动发布流程；仍应记录 30 分钟重复任务内存、DER、人数误差与 RTF，未满足 AT-13 时不得宣称质量达标，并由批准人决定是否接受风险公开 Alpha。
 - Web、Linux 与 macOS 工程壳不属于 Alpha 支持面，不进入发布结论。Windows 只有在 AT-21～AT-26 和三平台统一发布门禁闭环后才能标记为受支持；在此之前 README 和 Release 必须显示“规划中/未就绪”。

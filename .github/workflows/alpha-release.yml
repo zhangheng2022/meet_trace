@@ -1146,14 +1146,225 @@ jobs:
             "$RUNNER_TEMP/meettrace-profile.plist" \
             "$RUNNER_TEMP/ExportOptions.plist"
 
+  windows:
+    if: needs.prepare.outputs.mode == 'candidate'
+    needs: [prepare, quality]
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    name: Build Microsoft Store Windows candidate
+    runs-on: windows-2025
+    timeout-minutes: 90
+    environment: windows-alpha
+    env:
+      RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
+
+    steps:
+      - name: Checkout candidate commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
+          fetch-depth: 0
+
+      - name: Validate candidate and Store identity
+        shell: pwsh
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ((git rev-parse HEAD) -cne $env:CANDIDATE_SHA) {
+            throw 'Windows candidate commit does not match prepare output.'
+          }
+          if ($env:RELEASE_ID -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$') {
+            throw 'Windows release ID is invalid.'
+          }
+          if ($env:RELEASE_BUILD_NUMBER -notmatch '^[1-9][0-9]*$') {
+            throw 'Windows release build number is invalid.'
+          }
+          if ([uint64]$env:RELEASE_BUILD_NUMBER -gt 65535) {
+            throw 'Windows Store package build number exceeds 65535.'
+          }
+          $identity = Get-Content `
+            -LiteralPath windows/packaging/msix/store_identity.json `
+            -Raw | ConvertFrom-Json
+          if ($identity.identityName -cne 'zhangheng2026.MeetTrace' -or
+              $identity.publisher -cne 'CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B' -or
+              $identity.publisherDisplayName -cne 'zhangheng2026' -or
+              $identity.packageFamilyName -cne 'zhangheng2026.MeetTrace_vaaj3dqegb9y0' -or
+              $identity.storeId -cne '9PHHSJMWK06G' -or
+              $identity.storeUri -cne 'ms-windows-store://pdp/?productid=9PHHSJMWK06G' -or
+              $identity.storeUrl -cne 'https://apps.microsoft.com/detail/9PHHSJMWK06G') {
+            throw 'Microsoft Store identity does not match Partner Center.'
+          }
+          $marketingVersion = (Get-Content -LiteralPath pubspec.yaml |
+            Select-String -Pattern '^version:\s*([^+\s]+)\+' |
+            Select-Object -First 1).Matches.Groups[1].Value
+          if ([string]::IsNullOrWhiteSpace($marketingVersion) -or
+              $env:RELEASE_ID -notlike "v$marketingVersion-alpha.*") {
+            throw 'Windows marketing version does not match the release ID.'
+          }
+          "MARKETING_VERSION=$marketingVersion" | Out-File `
+            -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "MEETTRACE_MSIX_VERSION=1.0.$($env:RELEASE_BUILD_NUMBER).0" | Out-File `
+            -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "WINDOWS_MSIX_PATH=build/windows/msix/meettrace-$($env:RELEASE_ID)-windows-store-x64.msix" | Out-File `
+            -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Set up Java 17 for JNI headers
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter 3.47.0
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: ".fvmrc"
+          cache: true
+
+      - name: Resolve locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Capture Windows toolchain snapshot
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path build/windows/msix | Out-Null
+          $os = Get-CimInstance Win32_OperatingSystem
+          $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+          $installedRoots = Get-ItemProperty `
+            'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots' `
+            -ErrorAction Stop
+          $sdkRoot = $installedRoots.KitsRoot10
+          if ([string]::IsNullOrWhiteSpace($sdkRoot)) {
+            throw 'Windows SDK KitsRoot10 is missing from Installed Roots.'
+          }
+          $makeAppx = Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'bin') `
+            -Recurse -Filter makeappx.exe |
+            Where-Object { $_.FullName -match '\\x64\\makeappx\.exe$' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if ($null -eq $makeAppx) {
+            throw 'Windows SDK does not provide x64 MakeAppx.exe.'
+          }
+          @(
+            "captured_at_utc=$([DateTimeOffset]::UtcNow.ToString('O'))"
+            "runner_os=$env:RUNNER_OS"
+            "runner_arch=$env:RUNNER_ARCH"
+            "windows_caption=$($os.Caption)"
+            "windows_version=$($os.Version)"
+            "cpu=$($cpu.Name)"
+            "logical_processors=$($cpu.NumberOfLogicalProcessors)"
+            "memory_bytes=$($os.TotalVisibleMemorySize * 1KB)"
+            "java_home=$env:JAVA_HOME"
+            "makeappx=$($makeAppx.FullName)"
+            '--- Flutter ---'
+            (flutter --version)
+            '--- Dart ---'
+            (dart --version 2>&1)
+          ) | Set-Content -LiteralPath build/windows/msix/toolchain.txt -Encoding utf8
+
+      - name: Build Windows x64 Store Release
+        shell: pwsh
+        run: |
+          flutter build windows --release `
+            --build-name $env:MARKETING_VERSION `
+            --build-number $env:RELEASE_BUILD_NUMBER `
+            --dart-define=SENTRY_ENABLED=false
+
+      - name: Create Microsoft Store MSIX candidate
+        shell: pwsh
+        run: |
+          pwsh -NoLogo -NoProfile -File tool/windows/package_msix.ps1 `
+            -MicrosoftStore `
+            -PackageVersion $env:MEETTRACE_MSIX_VERSION `
+            -OutputPath $env:WINDOWS_MSIX_PATH
+
+      - name: Inspect Store MSIX identity and content
+        shell: pwsh
+        run: |
+          pwsh -NoLogo -NoProfile -File tool/benchmarks/inspect_msix.ps1 `
+            -MsixPath $env:WINDOWS_MSIX_PATH `
+            -ExpectedIdentityName 'zhangheng2026.MeetTrace' `
+            -ExpectedPublisher 'CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B' `
+            -ExpectedPublisherDisplayName 'zhangheng2026' `
+            -ExpectedVersion $env:MEETTRACE_MSIX_VERSION `
+            -ReportPath build/windows/msix/msix-inspection.json
+
+      - name: Write Windows candidate manifest
+        shell: pwsh
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $identity = Get-Content `
+            -LiteralPath windows/packaging/msix/store_identity.json `
+            -Raw | ConvertFrom-Json
+          $artifact = Get-Item -LiteralPath $env:WINDOWS_MSIX_PATH
+          $metadata = [ordered]@{
+            schemaVersion = 1
+            platform = 'windows'
+            distribution = 'microsoftStore'
+            releaseId = $env:RELEASE_ID
+            marketingVersion = $env:MARKETING_VERSION
+            capturedAtUtc = [DateTimeOffset]::UtcNow.ToString('O')
+            repository = $env:GITHUB_REPOSITORY
+            commitSha = $env:CANDIDATE_SHA
+            ref = $env:GITHUB_REF
+            runId = $env:GITHUB_RUN_ID
+            runAttempt = $env:GITHUB_RUN_ATTEMPT
+            buildNumber = $env:RELEASE_BUILD_NUMBER
+            packageVersion = $env:MEETTRACE_MSIX_VERSION
+            packageIdentity = $identity.identityName
+            publisher = $identity.publisher
+            publisherDisplayName = $identity.publisherDisplayName
+            packageFamilyName = $identity.packageFamilyName
+            storeId = $identity.storeId
+            storeUri = $identity.storeUri
+            storeUrl = $identity.storeUrl
+            workflowFile = '.github/workflows/alpha-release.yml'
+            job = 'windows'
+            artifact = [ordered]@{
+              name = $artifact.Name
+              bytes = $artifact.Length
+              sha256 = (Get-FileHash -LiteralPath $artifact.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              storeSubmissionCandidate = $true
+              publiclyInstallable = $false
+            }
+          }
+          $metadata | ConvertTo-Json -Depth 6 | Set-Content `
+            -LiteralPath build/windows/msix/candidate-manifest.json `
+            -Encoding utf8
+
+      - name: Generate Windows candidate provenance attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: build/windows/msix/*.msix
+
+      - name: Upload Microsoft Store candidate and evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-windows-store-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/windows/msix/*.msix
+            build/windows/msix/*.json
+            build/windows/msix/*.txt
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
   publish:
     if: >-
       always() && needs.prepare.result == 'success' &&
       (needs.prepare.outputs.mode == 'metadata' ||
       needs.prepare.outputs.mode == 'resume' ||
       (needs.prepare.outputs.mode == 'candidate' &&
-      needs.android.result == 'success' && needs.ios.result == 'success'))
-    needs: [prepare, android, ios]
+      needs.android.result == 'success' && needs.ios.result == 'success' &&
+      needs.windows.result == 'success'))
+    needs: [prepare, android, ios, windows]
     permissions:
       actions: read
       contents: write
@@ -1233,13 +1444,17 @@ jobs:
             ([.jobs[] | select(
               .name == "Build, sign, and upload iOS app" and
               .conclusion == "success"
+            )] | length == 1) and
+            ([.jobs[] | select(
+              .name == "Build Microsoft Store Windows candidate" and
+              .conclusion == "success"
             )] | length == 1)
           ' <<<"$source_run" >/dev/null || {
-            echo "Source run did not complete both release candidates successfully" >&2
+            echo "Source run did not complete all three release candidates successfully" >&2
             exit 1
           }
 
-          mkdir -p build/finalize/android build/finalize/ios
+          mkdir -p build/finalize/android build/finalize/ios build/finalize/windows
           artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$source_run_id/artifacts?per_page=100")"
           select_artifact() {
             local prefix="$1"
@@ -1250,13 +1465,17 @@ jobs:
           }
           android_id="$(select_artifact meettrace-android-alpha-)"
           ios_id="$(select_artifact meettrace-ios-testflight-)"
-          [[ "$android_id" =~ ^[0-9]+$ && "$ios_id" =~ ^[0-9]+$ ]]
+          windows_id="$(select_artifact meettrace-windows-store-)"
+          [[ "$android_id" =~ ^[0-9]+$ && "$ios_id" =~ ^[0-9]+$ && "$windows_id" =~ ^[0-9]+$ ]]
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$android_id/zip" > build/finalize/android.zip
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ios_id/zip" > build/finalize/ios.zip
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$windows_id/zip" > build/finalize/windows.zip
           unzip -q build/finalize/android.zip -d build/finalize/android
           unzip -q build/finalize/ios.zip -d build/finalize/ios
+          unzip -q build/finalize/windows.zip -d build/finalize/windows
           cp build/finalize/android/candidate-manifest.json build/finalize/android-candidate-manifest.json
           cp build/finalize/ios/candidate-manifest.json build/finalize/ios-candidate-manifest.json
+          cp build/finalize/windows/candidate-manifest.json build/finalize/windows-candidate-manifest.json
           echo "SOURCE_RUN_ID=$source_run_id" >> "$GITHUB_ENV"
 
       - name: Download staged Android APK
@@ -1282,7 +1501,8 @@ jobs:
           release_assets="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets)"
           jq -e --arg apk "$expected_apk" '
             ([.assets[].name | select(ascii_downcase | endswith(".apk"))] == [$apk]) and
-            ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0)
+            ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0) and
+            ([.assets[].name | select(ascii_downcase | endswith(".msix"))] | length == 0)
           ' <<<"$release_assets" >/dev/null
           python3 - <<'PY'
           import hashlib
@@ -1294,6 +1514,7 @@ jobs:
           root = Path("build/finalize")
           android = json.loads((root / "android-candidate-manifest.json").read_text())
           ios = json.loads((root / "ios-candidate-manifest.json").read_text())
+          windows = json.loads((root / "windows-candidate-manifest.json").read_text(encoding="utf-8-sig"))
           expected_apk_name = f"meettrace-{os.environ['RELEASE_ID']}-android-arm64.apk"
           if android.get("artifact", {}).get("name") != expected_apk_name:
               raise SystemExit("Android candidate manifest has an unexpected APK name")
@@ -1305,6 +1526,7 @@ jobs:
           for name, manifest, platform, job in (
               ("Android", android, "android", "android"),
               ("iOS", ios, "ios", "ios"),
+              ("Windows", windows, "windows", "windows"),
           ):
               for key, value in expected.items():
                   if str(manifest.get(key)) != value:
@@ -1319,8 +1541,29 @@ jobs:
               raise SystemExit("Android candidate run identity is invalid")
           if str(ios.get("runId")) != os.environ["SOURCE_RUN_ID"]:
               raise SystemExit("iOS candidate does not belong to the verified source run")
-          if str(android.get("buildNumber")) != str(ios.get("buildNumber")):
-              raise SystemExit("Android and iOS build numbers differ")
+          if str(windows.get("runId")) != os.environ["SOURCE_RUN_ID"]:
+              raise SystemExit("Windows candidate does not belong to the verified source run")
+          build_numbers = {
+              str(android.get("buildNumber")),
+              str(ios.get("buildNumber")),
+              str(windows.get("buildNumber")),
+          }
+          if len(build_numbers) != 1:
+              raise SystemExit("Android, iOS, and Windows build numbers differ")
+          if (
+              windows.get("distribution") != "microsoftStore"
+              or windows.get("packageIdentity") != "zhangheng2026.MeetTrace"
+              or windows.get("publisher") != "CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B"
+              or windows.get("publisherDisplayName") != "zhangheng2026"
+              or windows.get("packageFamilyName") != "zhangheng2026.MeetTrace_vaaj3dqegb9y0"
+              or windows.get("storeId") != "9PHHSJMWK06G"
+              or windows.get("storeUri") != "ms-windows-store://pdp/?productid=9PHHSJMWK06G"
+              or windows.get("storeUrl") != "https://apps.microsoft.com/detail/9PHHSJMWK06G"
+          ):
+              raise SystemExit("Windows candidate Store identity changed")
+          expected_store_version = f"1.0.{windows.get('buildNumber')}.0"
+          if windows.get("packageVersion") != expected_store_version:
+              raise SystemExit("Windows Store package version mapping changed")
 
           apk = root / "staged" / android["artifact"]["name"]
           if not apk.is_file() or apk.stat().st_size != android["artifact"]["bytes"]:
@@ -1328,6 +1571,11 @@ jobs:
           digest = hashlib.sha256(apk.read_bytes()).hexdigest()
           if digest != android["artifact"]["sha256"]:
               raise SystemExit("Staged Android APK digest changed")
+          msix = root / "windows" / windows["artifact"]["name"]
+          if not msix.is_file() or msix.stat().st_size != windows["artifact"]["bytes"]:
+              raise SystemExit("Windows Store candidate size changed")
+          if hashlib.sha256(msix.read_bytes()).hexdigest() != windows["artifact"]["sha256"]:
+              raise SystemExit("Windows Store candidate digest changed")
           PY
 
       - name: Validate immutable assets for a metadata-only update
@@ -1341,7 +1589,8 @@ jobs:
           release_assets="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets)"
           jq -e --arg apk "$expected_apk" '
             ([.assets[].name | select(ascii_downcase | endswith(".apk"))] == [$apk]) and
-            ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0)
+            ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0) and
+            ([.assets[].name | select(ascii_downcase | endswith(".msix"))] | length == 0)
           ' <<<"$release_assets" >/dev/null
           mkdir -p build/finalize/published
           gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
@@ -1443,13 +1692,13 @@ jobs:
               testflight_line="- iOS TestFlight 外部测试链接：待提供"
             fi
             {
-              echo "MeetTrace \`$RELEASE_ID\` Alpha 已完成 Android 与 iOS 候选验收。"
+              echo "MeetTrace \`$RELEASE_ID\` Alpha 已完成 Android、iOS 与 Windows 候选验收。"
               echo
               echo "- Android APK：本 Release 附件（仅 Android 7.0+、arm64-v8a）"
               echo "$testflight_line"
+              echo "- Windows Microsoft Store：https://apps.microsoft.com/detail/9PHHSJMWK06G"
               echo "- 候选提交：\`$CANDIDATE_SHA\`"
               echo "- 候选流程：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID"
-              echo "- Code signing policy：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$CANDIDATE_SHA/CODE_SIGNING_POLICY.md"
               echo "- 隐私政策：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$CANDIDATE_SHA/PRIVACY.md"
               echo
               echo "## Android 安装提示"
@@ -1493,4 +1742,5 @@ jobs:
             echo "- Release: \`$RELEASE_ID\`"
             echo "- Candidate: \`$CANDIDATE_SHA\`"
             echo "- Mode: \`${{ needs.prepare.outputs.mode }}\`"
+            echo "- Windows Store ID: \`9PHHSJMWK06G\`"
           } >> "$GITHUB_STEP_SUMMARY"

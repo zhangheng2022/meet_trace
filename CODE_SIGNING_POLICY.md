@@ -2,6 +2,8 @@
 
 Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
 
+> 状态：仅供仍在审核的未来 GitHub MSIX 路线使用，未接入当前发布工作流。Windows 当前只通过 Microsoft Store 分发；除非证书身份兼容性验证和 PRD 更新均完成，否则不得启用本政策或与 Store 包并存。
+
 本政策适用于 MeetTrace 仓库生成并以 SignPath Foundation 名义签名的 Windows x64 MSIX。Android APK 使用独立的 Android 发布密钥，iOS 仅通过 TestFlight 分发；两者不使用 SignPath Foundation 证书。
 
 ## 团队角色

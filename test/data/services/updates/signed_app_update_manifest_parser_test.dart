@@ -60,7 +60,7 @@ void main() {
     }
   });
 
-  test('各平台只接受 HTTPS TestFlight、App Installer 或 Store 固定路线', () async {
+  test('Windows 只接受固定 Microsoft Store 产品和包身份', () async {
     final parser = SignedAppUpdateManifestParser(
       signatureVerifier: _SignatureVerifier(),
     );
@@ -74,8 +74,45 @@ void main() {
     );
 
     expect(ios.artifact.installUri.host, 'testflight.apple.com');
-    expect(windows.artifact.installUri.scheme, 'https');
+    expect(windows.artifact.installUri.scheme, 'ms-windows-store');
+    expect(windows.artifact.packageIdentity, 'zhangheng2026.MeetTrace');
+    expect(windows.artifact.signingIdentitySha256, isNull);
   });
+
+  test('拒绝 App Installer、错误 Store ID 和错误 Windows 包身份', () async {
+    for (final mutation in <void Function(Map<String, Object?>)>[
+      (payload) {
+        final windows = _windowsArtifact(payload);
+        windows['distribution'] = 'appInstaller';
+        windows['installUri'] =
+            'https://updates.example.test/meettrace.appinstaller';
+      },
+      (payload) => _windowsArtifact(payload)['installUri'] =
+          'ms-windows-store://pdp/?productid=EXAMPLE',
+      (payload) => _windowsArtifact(payload)['installUri'] =
+          'ms-windows-store://attacker@pdp/?productid=9PHHSJMWK06G',
+      (payload) => _windowsArtifact(payload)['installUri'] =
+          'ms-windows-store://pdp/?productid=9PHHSJMWK06G&mode=extra',
+      (payload) =>
+          _windowsArtifact(payload)['packageIdentity'] = 'MeetTrace.Alpha',
+    ]) {
+      final parser = SignedAppUpdateManifestParser(
+        signatureVerifier: _SignatureVerifier(),
+      );
+      await expectLater(
+        parser.parse(
+          _envelopeBytes(mutate: mutation),
+          platform: AppUpdatePlatform.windows,
+        ),
+        throwsA(isA<FormatException>()),
+      );
+    }
+  });
+}
+
+Map<String, Object?> _windowsArtifact(Map<String, Object?> payload) {
+  final artifacts = payload['artifacts']! as Map<String, Object?>;
+  return artifacts['windows']! as Map<String, Object?>;
 }
 
 List<int> _envelopeBytes({void Function(Map<String, Object?>)? mutate}) {
@@ -105,10 +142,9 @@ List<int> _envelopeBytes({void Function(Map<String, Object?>)? mutate}) {
       },
       'windows': <String, Object?>{
         'artifactId': 'windows-11',
-        'installUri': 'https://updates.example.test/meettrace.appinstaller',
-        'distribution': 'appInstaller',
-        'packageIdentity': 'MeetTrace.Alpha',
-        'signingIdentitySha256': hash,
+        'installUri': 'ms-windows-store://pdp/?productid=9PHHSJMWK06G',
+        'distribution': 'store',
+        'packageIdentity': 'zhangheng2026.MeetTrace',
       },
     },
   };

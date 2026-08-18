@@ -1,12 +1,12 @@
 param(
     [string]$BuildDirectory,
-    [Parameter(Mandatory = $true)]
     [string]$Publisher,
-    [string]$PublisherDisplayName = 'SignPath Foundation',
-    [string]$IdentityName = 'com.meettrace.app',
+    [string]$PublisherDisplayName,
+    [string]$IdentityName,
     [string]$PackageVersion,
     [string]$OutputPath,
     [string]$MakeAppxPath,
+    [switch]$MicrosoftStore,
     [switch]$DevelopmentProbe
 )
 
@@ -108,6 +108,23 @@ function Escape-XmlValue {
     return [System.Security.SecurityElement]::Escape($Value)
 }
 
+if ($MicrosoftStore -and $DevelopmentProbe) {
+    throw 'MicrosoftStore and DevelopmentProbe are mutually exclusive.'
+}
+if ($MicrosoftStore) {
+    $storeIdentityPath = Join-Path $repoRoot 'windows\packaging\msix\store_identity.json'
+    if (-not (Test-Path -LiteralPath $storeIdentityPath -PathType Leaf)) {
+        throw 'Microsoft Store identity configuration is missing.'
+    }
+    $storeIdentity = Get-Content -LiteralPath $storeIdentityPath -Raw | ConvertFrom-Json
+    if ($storeIdentity.schemaVersion -ne 1) {
+        throw 'Microsoft Store identity schemaVersion is unsupported.'
+    }
+    $IdentityName = [string]$storeIdentity.identityName
+    $Publisher = [string]$storeIdentity.publisher
+    $PublisherDisplayName = [string]$storeIdentity.publisherDisplayName
+}
+
 if ([string]::IsNullOrWhiteSpace($Publisher) -or $Publisher -notmatch '^CN=') {
     throw 'Publisher must be the complete certificate Subject and start with CN=.'
 }
@@ -123,9 +140,24 @@ if ($DevelopmentProbe) {
 } elseif ($Publisher -match '(?i)(development|example|contoso|localhost|test)') {
     throw 'Development or placeholder publishers cannot create a production MSIX.'
 }
+if ([string]::IsNullOrWhiteSpace($PublisherDisplayName)) {
+    throw 'PublisherDisplayName must be a non-empty value.'
+}
 
 $PackageVersion = Resolve-PackageVersion -RequestedVersion $PackageVersion
 Assert-PackageVersion -Version $PackageVersion
+if ($MicrosoftStore) {
+    $storeVersionParts = $PackageVersion.Split('.')
+    if ([uint32]$storeVersionParts[0] -eq 0) {
+        throw 'Microsoft Store MSIX PackageVersion major must be greater than 0.'
+    }
+    if ([uint32]$storeVersionParts[3] -ne 0) {
+        throw 'Microsoft Store reserves the fourth PackageVersion part; it must be 0.'
+    }
+    if ($PackageVersion -notmatch '^1\.0\.[1-9][0-9]*\.0$') {
+        throw 'Microsoft Store PackageVersion must use 1.0.<shared build number>.0.'
+    }
+}
 
 if ([string]::IsNullOrWhiteSpace($BuildDirectory)) {
     $BuildDirectory = Join-Path $repoRoot 'build\windows\x64\runner\Release'
@@ -197,7 +229,10 @@ try {
         publisher = $Publisher
         packageVersion = $PackageVersion
         architecture = 'x64'
+        distribution = if ($MicrosoftStore) { 'microsoftStore' } elseif ($DevelopmentProbe) { 'developmentProbe' } else { 'direct' }
+        publisherDisplayName = $PublisherDisplayName
         developmentProbe = [bool]$DevelopmentProbe
+        microsoftStore = [bool]$MicrosoftStore
         signed = $false
     }
     $metadataPath = "$OutputPath.packaging.json"

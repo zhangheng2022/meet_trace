@@ -2,7 +2,7 @@
 
 > 日期：2026-08-15
 > 对应 PRD：V1.1
-> 状态：活动；Android/iOS 主链已实现，Windows 输入、桌面生命周期与睡眠恢复首轮已落地；自动更新 Domain 门禁和签名 Manifest 解析边界已实现，正式验签/平台 adapter、打包和三平台统一发布待按第 13 节实施并验收
+> 状态：活动；Android/iOS 主链已实现，Windows 输入、桌面生命周期与睡眠恢复首轮已落地；Microsoft Store 固定身份、Store MSIX 候选 job 和更新 Manifest 的 Store-only 解析边界已实现，Store 限定受众/Flight 与正式认证、平台 adapter 和三平台统一发布仍待按第 13 节验收
 
 ## 1. 目标
 
@@ -148,7 +148,7 @@ Windows 使用 `path_provider_windows` 返回的应用本地支持目录作为�
 
 Windows runner 在数据库初始化前使用同一用户会话内的命名互斥体和激活事件阻止第二实例；第二次启动只唤醒现有窗口。录音 ViewModel 通过 `DesktopLifecycle` Port 和 MethodChannel 同步保护状态：窗口外壳在录音中拦截 close 请求并隐藏到托盘，托盘菜单只发送“打开会迹”或“停止并退出”领域命令，不直接停止插件或删除文件；只有事实 PCM 封存且会议状态保存成功后 Dart 才确认原生退出，失败则恢复窗口并保持保护。空闲 close 正常退出。系统锁屏、最小化和失焦不改变录音状态；runner 将 `WM_POWERBROADCAST` 的挂起/恢复与 `WM_QUERYENDSESSION` 映射为有序领域事件。挂起前先排空已进入 Dart 的 PCM、刷新文件与检查点并记录字节偏移；恢复时先重开会议锁定输入，失败后仅允许一次系统默认输入降级，同一 `incidentId` 记录缺口起止或真实恢复失败。注销/关机属于尽力刷新，冷启动恢复仍以检查点和已落盘 PCM 为准，不等待 OS、也不把未收到的音频补零伪装为事实。
 
-自动更新由 `AppUpdatePort` 消费单一 Alpha 频道的签名 Manifest，Domain 校验候选构建号必须高于当前版本，并要求状态为公开批准。签名 envelope 直接覆盖 Base64 解码后的原始 payload 字节，避免 JSON 重排歧义；parser 先验签，再限定 `alpha` 频道、公开批准/撤回状态、同 SHA 候选和各平台固定入口。Android adapter 下载 APK 后验证长度、SHA-256、包名和签名证书再交给系统安装器；iOS adapter 只表达 TestFlight 管理状态，不自行安装；Windows 首选由 `.appinstaller`/App Installer 执行 MSIX 更新，SignPath 不可用时切换为 Microsoft Store adapter。录音或最终处理运行时更新状态只能是 deferred；提高数据代必须在平台安装交接前取得清理确认。任何 adapter 都不得退出进程、阻断事实写入或绕过数据代清理警告。正式 Manifest URL、签名算法/公钥和固定平台包身份确定前，不装配生产下载与安装 adapter。
+自动更新由 `AppUpdatePort` 消费单一 Alpha 频道的签名 Manifest，Domain 校验候选构建号必须高于当前版本，并要求状态为公开批准。签名 envelope 直接覆盖 Base64 解码后的原始 payload 字节，避免 JSON 重排歧义；parser 先验签，再限定 `alpha` 频道、公开批准/撤回状态、同 SHA 候选和各平台固定入口。Android adapter 下载 APK 后验证长度、SHA-256、包名和签名证书再交给系统安装器；iOS adapter 只表达 TestFlight 管理状态，不自行安装；Windows 只接受 `ms-windows-store://pdp/?productid=9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`，拒绝 `.appinstaller` 与其他 Store 产品。录音或最终处理运行时更新状态只能是 deferred；提高数据代必须在平台安装交接前取得清理确认。任何 adapter 都不得退出进程、阻断事实写入或绕过数据代清理警告。正式 Manifest URL、签名算法/公钥和平台安装 adapter 确定前，不装配生产更新入口。
 
 App 不接入业务分析埋点或总结网关。Release 组合根通过 data/service 层初始化 Sentry，启用 PII、日志、指标、截图、View Hierarchy、交互、失败请求、原生崩溃、ANR、Tracing、Profiling 和 Replay；画面内容保持全量文本与图片遮罩。录音 ViewModel 通过 domain Port 驱动遥测 Gate，录音期间停止新 Tracing/Profiling、交互 Breadcrumb、错误截图和 View Hierarchy，崩溃与 ANR 保持开启。官方 SDK 9.26 无公开 Replay 暂停 API，录音期间继续遮罩采集，不增加私有原生桥接。Sentry 初始化失败时组合根降级为无监控启动；不得阻断事实录音。诊断导出仍只包含白名单状态、错误码和设备指标，不包含音频或完整转录。
 
@@ -174,7 +174,7 @@ App 不接入业务分析埋点或总结网关。Release 组合根通过 data/se
 | Windows 第二实例 | 激活已有窗口，不打开数据库、不启动新录音 |
 | 更新 Manifest 不可用或签名/哈希失败 | 忽略候选并保留当前版本；不阻断启动、录音或历史访问 |
 | 录音/最终处理期间发现更新 | 标记 deferred，任务结束且应用空闲后再交给平台更新器 |
-| SignPath 申请失败 | 不使用自签名包公开分发，切换 Microsoft Store 签名、Package Flight 和内置更新路线 |
+| SignPath 审核结果到达 | 当前 Store 路线不变；只记录结果。启用 GitHub MSIX 前必须验证包身份兼容性、更新 PRD 并停止 Store 路线 |
 
 ## 11. 安装包与供应链门禁
 
@@ -183,9 +183,9 @@ App 不接入业务分析埋点或总结网关。Release 组合根通过 data/se
 - Manifest 与归档解析拒绝 HTTP、路径穿越、绝对路径、符号链接、重复文件、空哈希、错误总量和不兼容 schema。
 - Pyannote MIT 许可与 3D-Speaker 精确模型许可/NOTICE 均须进入安装包；精确权重许可未确认时不得发布。
 - 依赖只允许官方 `sherpa_onnx` 包，不新增 JNI、FFI/C API、自建 C/C++ 链或手工 `jniLibs`。
-- Windows 只构建 x64 MSIX。包 Identity、Publisher、版本和 Upgrade 路径必须固定；首选 SignPath Foundation 免费 OSS 签名，每次签名由可验证 CI 产物和人工批准驱动，私钥不得进入 GitHub Secrets。申请失败时只允许切换 Microsoft Store MSIX，不允许自签名或未签名公开包。
-- SignPath 路线必须在仓库公开 Code signing policy，启用维护者 MFA，明确 committer/reviewer/approver，审计所有随包二进制和许可证；签名使用 SHA-256 和可信时间戳并验证完整链。Microsoft Store 路线必须保留相同产品版本与候选 SHA 证据。
-- APK、MSIX、三平台候选清单和公开更新 Manifest 都是不可变发布证据；iOS IPA 只进入 TestFlight。公开更新指针只能在三平台批准后改变，不得指向 Draft 或 Package Flight。
+- Windows 只构建 x64 MSIX，当前唯一正式路线为 Microsoft Store。Manifest 固定 Store 的 Name、Publisher、PublisherDisplayName，Store 包版本使用 `1.0.<共享发布构建号>.0` 传输映射并另行记录营销版本；候选从可验证 CI 进入 Actions Artifact。首次发布通过 Private audience 验收，已有公开版本的后续更新通过 Package Flight 验收，再把同一包用于正式 submission。Store 签名前的候选不得放入 GitHub Release 或引导用户旁加载。
+- SignPath Code signing policy 仅作为仍在审核的未来直发方案保留，当前工作流不得引用 SignPath 凭据或生成第二个 Windows 包身份。若未来考虑启用，必须先验证证书 Subject、升级和数据连续性，更新 PRD，并停止 Store 路线。
+- APK、Store submission、三平台候选清单和公开更新 Manifest 都是不可变发布证据；iOS IPA 只进入 TestFlight，Windows MSIX 只进入 Actions Artifact/Partner Center。公开更新指针只能在三平台批准后改变，不得指向 Draft 或 Package Flight。
 
 ## 12. 验证
 
@@ -214,9 +214,9 @@ flutter build windows --release
 | 1. 构建与依赖探针 | Windows x64 Debug/Release 构建；验证 `record_windows`、`sherpa_onnx_windows`、SQLite FFI、播放和分享 | 不加载权重的构建/启动冒烟通过；记录插件能力缺口，不用私有 sherpa 绑定绕过 |
 | 2. Domain 与 data 能力 | 输入设备、连续性事件、桌面生命周期、单实例和更新 Port/Use Case；Windows adapter | Domain 不导入平台包；单元测试覆盖锁定、断开、睡眠、第二实例和更新 deferred |
 | 3. 桌面体验 | 托盘与 close 语义、窗口最小尺寸、现有双栏复用、键鼠焦点和屏幕阅读器 | Widget/integration 测试通过；录音中关闭窗口不丢 PCM；空闲关闭正常退出 |
-| 4. 更新与打包 | Android 更新 adapter、iOS TestFlight 状态、Windows MSIX/`.appinstaller`、签名策略和公开 Manifest | 更新只消费批准候选；录音/处理期不安装；SignPath 申请完成或 Store 兜底已验证 |
+| 4. 更新与打包 | Android 更新 adapter、iOS TestFlight 状态、Windows Store MSIX、Store-only 更新入口和公开 Manifest | 更新只消费批准候选；录音/处理期不安装；固定 Store 身份、首次 Private audience/后续 Flight 与正式 submission 已验证 |
 | 5. CI/CD | Windows runner、MSIX 审计、三平台候选清单、同 SHA/版本门禁和原子公开更新指针 | 任一平台失败阻断；Draft/Flight 不可被自动更新发现；公开资产不可覆盖 |
 | 6. 目标设备验收 | Windows 10 22H2/11 x64、8 GB/四核基线的 30 分钟主链、设备中断、托盘、更新、无障碍 | PRD AT-21～AT-26 与三平台共同门槛全部留证，OCR Critical/High 为零 |
-| 7. 首次统一发布 | 同一 SHA 的 Android APK、iOS TestFlight 与 Windows MSIX/Store submission | 三平台人工批准后一次公开；此时才把 README 的 Windows 状态改为“受支持” |
+| 7. 首次统一发布 | 同一 SHA 的 Android APK、iOS TestFlight 与 Windows Store submission | 三平台验收后先确认 Store submission 已公开可安装，再批准 GitHub Pre-release；此时才把 README 的 Windows 状态改为“受支持” |
 
 实施代码时按 `Domain Model → Port/Use Case → data adapter → ViewModel → View → 组合根` 顺序推进。每个行为阶段先补 `dart-add-unit-test` 或 `flutter-add-widget-test`，交付前运行格式化、静态分析、全量测试、Android/Windows 构建、目标设备验收和 `$open-code-review-delegate`；代码改动完成后运行 `graphify update .`。

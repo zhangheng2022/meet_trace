@@ -1,6 +1,6 @@
 # Flutter CI/CD 工作流规格
 
-> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针审计，但正式 SignPath 签名、三平台统一候选和目标设备验收仍未完成；不得据此公开 Windows 支持。
+> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已生成固定 Microsoft Store 身份的 Windows 候选并纳入三平台门禁，但 Store 限定受众/Flight、正式认证、Store 更新和目标设备验收仍未完成；不得据此公开 Windows 支持。
 
 ## 1. 目标与边界
 
@@ -58,7 +58,9 @@ flowchart LR
 
 ### 3.3 Windows MSIX 开发探针
 
-Windows job 固定使用 `windows-2025`、Java 17 与仓库锁定的 Flutter。它以 `SENTRY_ENABLED=false` 构建 x64 Release，使用 `CN=MeetTrace Development` 生成未签名 MSIX，只验证 manifest、包身份、运行资产、模型权重/用户数据/凭据禁入和 SHA-256。job 在上传前删除 `.msix`，Artifact 只保留 JSON/TXT 证据；开发探针不得进入 Release，也不得替代 SignPath 正式 Publisher、签名链和目标设备安装证据。
+常规 Windows job 固定使用 `windows-2025`、Java 17 与仓库锁定的 Flutter。它以 `SENTRY_ENABLED=false` 构建 x64 Release，使用 `CN=MeetTrace Development` 生成未签名探针，只验证 manifest、运行资产、模型权重/用户数据/凭据禁入和 SHA-256；上传证据前删除包体。
+
+正式 `Alpha Release` 的 Windows job 使用 Partner Center 固定 Name、Publisher、PublisherDisplayName、PFN 和 Store ID 构建 Store MSIX，生成候选清单与 provenance，并把 MSIX 只上传 Actions Artifact。发布批准必须验证三平台同 SHA、版本和构建号；GitHub Release 明确拒绝 IPA 与 MSIX。首次发布用 Private audience 验收，已有公开版本的后续更新用 Package Flight；同一包进入正式 submission、通过认证并确认 Store 可安装后，才允许批准 GitHub Pre-release。
 
 ## 4. 可复用 Flutter Core
 

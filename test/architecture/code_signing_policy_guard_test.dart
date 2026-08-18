@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('仓库首页与发布说明公开 SignPath 要求的 Code signing policy', () async {
+  test('保留 SignPath 审核材料但当前发布工作流不接线', () async {
     final readme = await File('README.md').readAsString();
     final policy = await File('CODE_SIGNING_POLICY.md').readAsString();
     final workflow = await File('.github/workflows/alpha-release.yml')
@@ -11,7 +11,8 @@ void main() {
 
     expect(readme, contains('Code signing policy'));
     expect(readme, contains('CODE_SIGNING_POLICY.md'));
-    expect(workflow, contains('Code signing policy'));
+    expect(workflow, isNot(contains('SignPath')));
+    expect(workflow, contains('Build Microsoft Store Windows candidate'));
     expect(
       policy,
       contains(
@@ -21,6 +22,8 @@ void main() {
       ),
     );
     expect(policy, contains('https://github.com/zhangheng2022'));
+    expect(policy, contains('未接入当前发布工作流'));
+    expect(policy, contains('不得启用本政策或与 Store 包并存'));
     expect(policy, contains('[隐私政策](PRIVACY.md)'));
     expect(policy, contains('SENTRY_ENABLED=false'));
     expect(policy, contains('不允许用自签名包、未签名包或个人 PFX 进行公开分发'));

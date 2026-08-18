@@ -3,6 +3,10 @@ import 'dart:typed_data';
 
 import '../../../domain/models/app_update.dart';
 
+const _microsoftStorePackageIdentity = 'zhangheng2026.MeetTrace';
+const _microsoftStoreInstallUri =
+    'ms-windows-store://pdp/?productid=9PHHSJMWK06G';
+
 enum AppUpdatePlatform { android, ios, windows }
 
 abstract interface class AppUpdateManifestSignatureVerifier {
@@ -130,20 +134,20 @@ final class SignedAppUpdateManifestParser {
         );
       case AppUpdatePlatform.windows:
         final distribution = _text(json, 'distribution');
-        if (distribution == 'appInstaller') {
-          _requireHttps(installUri);
-        } else if (distribution == 'store') {
-          if (installUri.scheme != 'ms-windows-store') {
-            throw const FormatException('Store 更新入口 scheme 不匹配');
-          }
-        } else {
-          throw const FormatException('Windows 更新分发路线不受支持');
+        if (distribution != 'store') {
+          throw const FormatException('Windows 当前只接受 Microsoft Store 更新');
+        }
+        if (installUri.toString() != _microsoftStoreInstallUri) {
+          throw const FormatException('Store 更新入口与固定产品 ID 不匹配');
+        }
+        final packageIdentity = _text(json, 'packageIdentity');
+        if (packageIdentity != _microsoftStorePackageIdentity) {
+          throw const FormatException('Windows Store 包身份不匹配');
         }
         return VerifiedPlatformUpdateArtifact(
           platform: platform,
           installUri: installUri,
-          packageIdentity: _text(json, 'packageIdentity'),
-          signingIdentitySha256: _sha(json, 'signingIdentitySha256'),
+          packageIdentity: packageIdentity,
         );
     }
   }

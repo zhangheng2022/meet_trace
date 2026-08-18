@@ -113,6 +113,7 @@ void main() {
       expect(workflow, contains('workflow_dispatch:'));
       expect(workflow, contains('\n  android:'));
       expect(workflow, contains('\n  ios:'));
+      expect(workflow, contains('\n  windows:'));
       expect(workflow, contains('\n  publish:'));
       expect(workflow, contains('uses: ./.github/workflows/_flutter-core.yml'));
       final reusableQuality = await _workflow('_flutter-core.yml');
@@ -140,10 +141,11 @@ void main() {
       expect(workflow, isNot(contains('release-gate-report')));
     });
 
-    test('Android 与 iOS 共享连续递增的发布构建号', () async {
+    test('Android、iOS 与 Windows 共享连续递增的发布构建号', () async {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');
-      final ios = _job(workflow, 'ios', 'publish');
+      final ios = _job(workflow, 'ios', 'windows');
+      final windows = _job(workflow, 'windows', 'publish');
 
       expect(
         workflow,
@@ -159,11 +161,20 @@ void main() {
         RegExp(
           r'RELEASE_BUILD_NUMBER: \$\{\{ needs\.prepare\.outputs\.build_number \}\}',
         ).allMatches(workflow),
-        hasLength(2),
+        hasLength(3),
       );
       expect(android, contains(r'ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
       expect(ios, contains(r'IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
-      expect(workflow, contains('Android and iOS build numbers differ'));
+      expect(
+        windows,
+        contains(
+          r'RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}',
+        ),
+      );
+      expect(
+        workflow,
+        contains('Android, iOS, and Windows build numbers differ'),
+      );
       expect(workflow, isNot(contains('GITHUB_RUN_NUMBER * 100')));
     });
 
@@ -227,7 +238,7 @@ void main() {
 
     test('iOS job 只上传 TestFlight 且不向 GitHub 暴露 IPA', () async {
       final workflow = await _workflow('alpha-release.yml');
-      final ios = _job(workflow, 'ios', 'publish');
+      final ios = _job(workflow, 'ios', 'windows');
 
       expect(ios, contains('environment: testflight'));
       expect(ios, contains('contents: read'));
@@ -261,6 +272,39 @@ void main() {
       expect(ios, contains('"job": "ios"'));
       expect(ios, isNot(contains('gh release upload')));
       expect(ios, isNot(contains('build/ios/testflight/*.ipa')));
+    });
+
+    test('Windows 正式候选只进入 Microsoft Store Artifact', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final windows = _job(workflow, 'windows', 'publish');
+
+      expect(windows, contains('runs-on: windows-2025'));
+      expect(windows, contains('environment: windows-alpha'));
+      expect(windows, contains('Build Windows x64 Store Release'));
+      expect(windows, contains('-MicrosoftStore'));
+      expect(
+        windows,
+        contains(r'MEETTRACE_MSIX_VERSION=1.0.$($env:RELEASE_BUILD_NUMBER).0'),
+      );
+      expect(
+        windows,
+        contains('Windows Store package build number exceeds 65535'),
+      );
+      expect(windows, contains('zhangheng2026.MeetTrace'));
+      expect(windows, contains('CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B'));
+      expect(
+        windows,
+        contains(r'publisherDisplayName = $identity.publisherDisplayName'),
+      );
+      expect(windows, contains(r'storeId = $identity.storeId'));
+      expect(windows, contains(r'storeUrl = $identity.storeUrl'));
+      expect(windows, contains('meettrace-windows-store-'));
+      expect(windows, contains('build/windows/msix/*.msix'));
+      expect(windows, contains('retention-days: 90'));
+      expect(windows, isNot(contains('if: always()')));
+      expect(windows, isNot(contains('gh release upload')));
+      expect(windows, isNot(contains('New-SelfSignedCertificate')));
+      expect(windows, isNot(contains('signtool sign')));
     });
 
     test('iOS 无签名检查只保留审计证据且不打包 IPA', () async {
@@ -377,10 +421,10 @@ void main() {
       expect(configuration, contains('- ".claude/**"'));
     });
 
-    test('正式双平台构建使用 Environment Secret 上传 Sentry 符号', () async {
+    test('Android 与 iOS 正式构建使用 Environment Secret 上传 Sentry 符号', () async {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');
-      final ios = _job(workflow, 'ios', 'publish');
+      final ios = _job(workflow, 'ios', 'windows');
 
       for (final job in [android, ios]) {
         expect(job, contains('SENTRY_AUTH_TOKEN:'));
@@ -410,11 +454,20 @@ void main() {
       expect(publish, contains("needs.prepare.outputs.mode == 'metadata'"));
       expect(publish, contains('android-candidate-manifest.json'));
       expect(publish, contains('ios-candidate-manifest.json'));
+      expect(publish, contains('windows-candidate-manifest.json'));
+      expect(publish, contains('meettrace-windows-store-'));
+      expect(publish, contains('9PHHSJMWK06G'));
+      expect(publish, contains('Windows candidate Store identity changed'));
+      expect(
+        publish,
+        contains('Windows Store package version mapping changed'),
+      );
       expect(publish, contains('https://testflight\\.apple\\.com/join/'));
       expect(publish, contains('iOS TestFlight 外部测试链接：待提供'));
       expect(publish, contains('Staged Android APK digest changed'));
       expect(publish, contains('Existing public Android APK changed'));
       expect(publish, contains('endswith(".ipa")'));
+      expect(publish, contains('endswith(".msix")'));
       expect(publish, contains('--draft=false --prerelease'));
       expect(publish, isNot(contains('gh release create')));
       expect(publish, isNot(contains('gh release upload')));
@@ -460,10 +513,11 @@ void main() {
       expect(publish, contains('Remove redundant Release evidence assets'));
     });
 
-    test('失败发布可复用已成功的双平台候选且不重复上传 TestFlight', () async {
+    test('失败发布可复用已成功的三平台候选且不重复构建或上传', () async {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');
-      final ios = _job(workflow, 'ios', 'publish');
+      final ios = _job(workflow, 'ios', 'windows');
+      final windows = _job(workflow, 'windows', 'publish');
       final publish = _job(workflow, 'publish');
 
       expect(workflow, contains('resume_run_id:'));
@@ -474,6 +528,10 @@ void main() {
       );
       expect(ios, contains("if: needs.prepare.outputs.mode == 'candidate'"));
       expect(
+        windows,
+        contains("if: needs.prepare.outputs.mode == 'candidate'"),
+      );
+      expect(
         publish,
         contains('Download candidate evidence from the verified run'),
       );
@@ -482,12 +540,18 @@ void main() {
       expect(
         publish,
         contains(
-          'Source run did not complete both release candidates successfully',
+          'Source run did not complete all three release candidates successfully',
         ),
       );
       expect(
         publish,
         contains('iOS candidate does not belong to the verified source run'),
+      );
+      expect(
+        publish,
+        contains(
+          'Windows candidate does not belong to the verified source run',
+        ),
       );
     });
 

@@ -13,7 +13,7 @@
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
 - 新会议按本地开始时间生成确定性标题。Alpha 不提供 AI 总结或总结网关；文本分享只包含最终转录，音频分享必须使用独立入口、二次确认和临时 WAV，且不得改写事实 PCM。
 - 扩展 P0 前必须先更新 PRD。
-- Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX；Android、iOS、Windows 同一 SHA 均验收通过后才公开原 Draft 为 GitHub Pre-release。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 首选 SignPath Foundation 免费签名，申请失败时使用 Microsoft Store。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。
+- Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX；Android、iOS、Windows 同一 SHA 均验收通过后才公开原 Draft 为 GitHub Pre-release。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 当前只通过 Microsoft Store 分发和更新，Store 包不得上传 GitHub Release。SignPath 申请仅作为未来可能替换 Store 的待审核路线，不接入当前发布工作流；启用前必须验证包身份兼容性并更新 PRD，禁止两个 Windows 包身份并存。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。
 
 ## 架构与项目结构
 

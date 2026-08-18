@@ -14,7 +14,7 @@
 会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要验证基线；iOS 已有构建和 TestFlight 上传证据，但目标真机验收尚未闭环；Windows 已实现单实例、托盘安全封存、睡眠/恢复缺口记录，以及未签名 MSIX 开发探针的生成与审计，但正式 SignPath 签名、真实托盘与睡眠录音、自动更新和目标设备验收尚未完成，当前不可视为受支持。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要验证基线；iOS 已有构建和 TestFlight 上传证据，但目标真机验收尚未闭环；Windows 已固定 Microsoft Store 包身份并具备 Store MSIX 候选构建与审计，仍需完成首次 Private audience（后续版本使用 Package Flight）认证、真实托盘与睡眠录音、自动更新和目标设备验收，当前不可视为受支持。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
 
 ## 安装测试版
 
@@ -25,7 +25,7 @@
 
 全部公开版本见 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
 
-Windows 正式签名遵循 [Code signing policy](CODE_SIGNING_POLICY.md)，各平台的数据与网络边界见[隐私政策](PRIVACY.md)。
+Windows 当前由 Microsoft Store 完成签名和分发；[Code signing policy](CODE_SIGNING_POLICY.md) 仅保留给尚未接入的未来 SignPath 路线。各平台的数据与网络边界见[隐私政策](PRIVACY.md)。
 
 ## 核心能力
 
@@ -88,7 +88,7 @@ flutter build apk --debug
 flutter build ios --debug --no-codesign
 ```
 
-PRD V1.1 的目标候选必须从统一 `Alpha Release` 入口生成；Android、iOS 与 Windows 同一 SHA 验收通过后才公开，iOS 不向 GitHub 上传 IPA。常规 CI 已有不可分发的 Windows MSIX 开发探针，但正式发布工作流尚未完成 Windows 签名候选 job，因此在三平台门禁落地前不得公开宣称 Windows 支持。维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
+PRD V1.1 的目标候选必须从统一 `Alpha Release` 入口生成；Android、iOS 与 Windows 同一 SHA 验收通过后才公开，iOS 不向 GitHub 上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。正式工作流已生成固定 Store 身份的 Windows 候选，但 Store 限定受众/Flight、认证、目标设备验收和公开发布尚未闭环，因此不得公开宣称 Windows 支持。维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
 
 ## 参与贡献
 

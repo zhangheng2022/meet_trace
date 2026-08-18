@@ -6,6 +6,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ExpectedVersion,
     [string]$ExpectedIdentityName = 'com.meettrace.app',
+    [string]$ExpectedPublisherDisplayName,
     [string]$ReportPath,
     [switch]$RequireSignature
 )
@@ -39,6 +40,12 @@ try {
 }
 
 $identity = $manifest.SelectSingleNode("/*[local-name()='Package']/*[local-name()='Identity']")
+$properties = $manifest.SelectSingleNode("/*[local-name()='Package']/*[local-name()='Properties']")
+$publisherDisplayName = if ($null -eq $properties) {
+    $null
+} else {
+    $properties.SelectSingleNode("*[local-name()='PublisherDisplayName']")
+}
 $application = $manifest.SelectSingleNode("//*[local-name()='Application']")
 $targetFamily = $manifest.SelectSingleNode("//*[local-name()='TargetDeviceFamily']")
 $capabilities = @($manifest.SelectNodes("//*[local-name()='Capability' or local-name()='DeviceCapability']") |
@@ -94,6 +101,9 @@ if ($RequireSignature) {
 $checks = [ordered]@{
     identityNameMatches = $null -ne $identity -and $identity.GetAttribute('Name') -ceq $ExpectedIdentityName
     publisherMatches = $null -ne $identity -and $identity.GetAttribute('Publisher') -ceq $ExpectedPublisher
+    publisherDisplayNameMatches = [string]::IsNullOrWhiteSpace($ExpectedPublisherDisplayName) -or
+        ($null -ne $publisherDisplayName -and
+        $publisherDisplayName.InnerText -ceq $ExpectedPublisherDisplayName)
     versionMatches = $null -ne $identity -and $identity.GetAttribute('Version') -ceq $ExpectedVersion
     architectureIsX64 = $null -ne $identity -and $identity.GetAttribute('ProcessorArchitecture') -ceq 'x64'
     executableMatches = $null -ne $application -and $application.GetAttribute('Executable') -ceq 'meettrace.exe'
@@ -123,6 +133,7 @@ $report = [ordered]@{
     hasSignature = $hasSignature
     authenticodeStatus = $authenticodeStatus
     signerSubject = $signerSubject
+    publisherDisplayName = if ($null -eq $publisherDisplayName) { $null } else { $publisherDisplayName.InnerText }
     checks = $checks
     requiredEntries = $requiredEntries
     missingEntries = $missingEntries

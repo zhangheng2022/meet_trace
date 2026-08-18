@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _publisher = 'CN=MeetTrace Development';
+const _publisherDisplayName = 'MeetTrace Development';
 const _version = '1.0.0.1';
 
 const _manifest =
@@ -15,6 +16,7 @@ const _manifest =
  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
  IgnorableNamespaces="uap uap10 rescap">
  <Identity Name="com.meettrace.app" Publisher="$_publisher" Version="$_version" ProcessorArchitecture="x64" />
+ <Properties><PublisherDisplayName>$_publisherDisplayName</PublisherDisplayName></Properties>
  <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19045.0" MaxVersionTested="10.0.26100.0" /></Dependencies>
  <Applications><Application Id="MeetTrace" Executable="meettrace.exe" uap10:RuntimeBehavior="packagedClassicApp" uap10:TrustLevel="mediumIL" /></Applications>
  <Capabilities><Capability Name="internetClient" /><rescap:Capability Name="runFullTrust" /><DeviceCapability Name="microphone" /></Capabilities>
@@ -45,6 +47,7 @@ const _requiredEntries = <String>{
 Future<({ProcessResult result, Map<String, Object?>? report})> _inspect(
   Set<String> extraEntries, {
   bool requireSignature = false,
+  String expectedPublisherDisplayName = _publisherDisplayName,
 }) async {
   final temporaryDirectory = await Directory.systemTemp.createTemp(
     'meettrace-msix-inspection-',
@@ -70,6 +73,8 @@ Future<({ProcessResult result, Map<String, Object?>? report})> _inspect(
     _publisher,
     '-ExpectedVersion',
     _version,
+    '-ExpectedPublisherDisplayName',
+    expectedPublisherDisplayName,
     '-ReportPath',
     reportFile.path,
     if (requireSignature) '-RequireSignature',
@@ -96,6 +101,18 @@ void main() {
     expect(inspected.report?['forbiddenCredentials'], isEmpty);
     expect(inspected.report?['hasSignature'], isFalse);
     expect(inspected.report?['authenticodeStatus'], 'NotChecked');
+    expect(inspected.report?['publisherDisplayName'], _publisherDisplayName);
+  });
+
+  test('MSIX 审计拒绝 PublisherDisplayName 不匹配', () async {
+    final inspected = await _inspect(
+      const {},
+      expectedPublisherDisplayName: 'Attacker',
+    );
+
+    expect(inspected.result.exitCode, isNot(0));
+    final checks = inspected.report!['checks']! as Map<String, Object?>;
+    expect(checks['publisherDisplayNameMatches'], isFalse);
   });
 
   test('MSIX 审计拒绝模型权重、用户录音和签名私钥', () async {
