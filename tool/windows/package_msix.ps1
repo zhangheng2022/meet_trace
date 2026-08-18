@@ -123,6 +123,12 @@ if ($MicrosoftStore) {
     $IdentityName = [string]$storeIdentity.identityName
     $Publisher = [string]$storeIdentity.publisher
     $PublisherDisplayName = [string]$storeIdentity.publisherDisplayName
+} elseif ($DevelopmentProbe) {
+    if ($Publisher -ne 'CN=MeetTrace Development') {
+        throw 'DevelopmentProbe must use the fixed CN=MeetTrace Development publisher.'
+    }
+    $IdentityName = 'com.meettrace.app'
+    $PublisherDisplayName = 'MeetTrace Development'
 }
 
 if ([string]::IsNullOrWhiteSpace($Publisher) -or $Publisher -notmatch '^CN=') {
@@ -132,12 +138,8 @@ if ([string]::IsNullOrWhiteSpace($IdentityName) -or
     $IdentityName -notmatch '^[A-Za-z0-9.-]{3,50}$') {
     throw 'IdentityName must contain 3-50 letters, digits, periods, or hyphens.'
 }
-if ($DevelopmentProbe) {
-    if ($Publisher -ne 'CN=MeetTrace Development') {
-        throw 'DevelopmentProbe must use the fixed CN=MeetTrace Development publisher.'
-    }
-    $PublisherDisplayName = 'MeetTrace Development'
-} elseif ($Publisher -match '(?i)(development|example|contoso|localhost|test)') {
+if (-not $DevelopmentProbe -and
+    $Publisher -match '(?i)(development|example|contoso|localhost|test)') {
     throw 'Development or placeholder publishers cannot create a production MSIX.'
 }
 if ([string]::IsNullOrWhiteSpace($PublisherDisplayName)) {

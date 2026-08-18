@@ -30,6 +30,12 @@ void main() {
       expect(script, contains(r'[switch]$MicrosoftStore'));
       expect(script, contains('windows\\packaging\\msix\\store_identity.json'));
       expect(script, contains("'CN=MeetTrace Development'"));
+      expect(script, contains(r"$IdentityName = 'com.meettrace.app'"));
+      expect(
+        script.indexOf(r"$IdentityName = 'com.meettrace.app'"),
+        lessThan(script.indexOf("IdentityName -notmatch")),
+        reason: '开发探针必须在统一身份校验前注入固定 IdentityName',
+      );
       expect(
         script,
         contains(
