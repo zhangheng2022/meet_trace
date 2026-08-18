@@ -38,12 +38,12 @@ dependencies:
   crypto: 3.0.7
   disk_space_2: 1.0.13
   forui: ^0.25.0
-  flutter_foreground_task: 10.0.0
+  flutter_foreground_task: ^11.0.0
   path: 1.9.1
   path_provider: 2.1.6
   record: 7.1.1
   sentry_flutter: ^9.26.0
-  sherpa_onnx: 1.13.5
+  sherpa_onnx: ^1.13.6
   share_plus: 13.3.0
   sqflite: 2.4.3
   sqflite_common_ffi: ^2.4.2+1
