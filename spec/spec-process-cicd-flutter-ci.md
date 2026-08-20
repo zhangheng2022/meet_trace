@@ -1,6 +1,6 @@
 # Flutter CI/CD 工作流规格
 
-> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已生成固定 Microsoft Store 身份候选，并在公开前机器核验正式 submission，签名自动更新指针生产链已闭合；Partner Center 凭据、Store 限定受众/Flight、首次正式认证和首次统一公开运行仍未完成，不得据此公开 Windows 支持。
+> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已生成固定 Microsoft Store 身份候选，并在公开前通过受保护人工证明或可选 Partner Center API 核验正式 submission，签名自动更新指针生产链已闭合；Store 限定受众/Flight、首次正式认证和首次统一公开运行仍未完成，不得据此公开 Windows 支持。
 
 ## 1. 目标与边界
 
@@ -62,7 +62,7 @@ flowchart LR
 
 常规 Windows job 固定使用 `windows-2025`、Java 17 与仓库锁定的 Flutter。它以 `SENTRY_ENABLED=false` 构建 x64 Release，使用 `CN=MeetTrace Development` 生成未签名探针，只验证 manifest、运行资产、模型权重/用户数据/凭据禁入和 SHA-256；上传证据前删除包体。
 
-正式 `Alpha Release` 的 Windows job 使用 Partner Center 固定 Name、Publisher、PublisherDisplayName、PFN 和 Store ID 构建 Store MSIX，生成候选清单与 provenance，并把 MSIX 只上传 Actions Artifact。发布批准必须验证三平台同 SHA、版本和构建号；GitHub Release 明确拒绝 IPA 与 MSIX。首次发布用 Private audience 验收，已有公开版本的后续更新用 Package Flight；同一包进入正式 submission、通过认证并确认 Store 可安装后，才允许批准。批准后工作流还须机器核验正式 submission 为 Published/Public、同版本且唯一 x64 包已上传，通过后才允许公开 GitHub Pre-release 和更新指针。
+正式 `Alpha Release` 的 Windows job 使用 Partner Center 固定 Name、Publisher、PublisherDisplayName、PFN 和 Store ID 构建 Store MSIX，生成候选清单与 provenance，并把 MSIX 只上传 Actions Artifact。发布批准必须验证三平台同 SHA、版本和构建号；GitHub Release 明确拒绝 IPA 与 MSIX。首次发布用 Private audience 验收，已有公开版本的后续更新用 Package Flight；同一包进入正式 submission、通过认证并确认 Store 可安装后，才允许批准。Windows job 会输出绑定 Store ID、Published/Public、版本、x64 和候选 SHA-256 的审批评论；默认 `manual` 模式只有从本次运行的 `github-release` 已批准记录核验该精确评论后，才把审批记录为 Store 正式 submission 的人工证明。`api` 模式在审批后机器核验其为 Published/Public、同版本且唯一 x64 包已上传。任一路径通过后才允许公开 GitHub Pre-release 和更新指针。
 
 ## 4. 可复用 Flutter Core
 
@@ -88,7 +88,7 @@ flowchart LR
 
 ## 6. Alpha 发布与 Sentry
 
-完整 Alpha 发布编排、Store 正式 submission 机器门禁、输入输出与故障策略以 [Alpha Release 端到端规格](spec-process-cicd-alpha-release.md)为准。本节只描述与常规 CI 共用的构建和 Sentry 契约。
+完整 Alpha 发布编排、Store 正式 submission 的受保护人工证明/可选 API 门禁、输入输出与故障策略以 [Alpha Release 端到端规格](spec-process-cicd-alpha-release.md)为准。本节只描述与常规 CI 共用的构建和 Sentry 契约。
 
 `alpha-release.yml` 对选定 SHA 先调用 Flutter Core，再分配 Android/iOS 共用构建号。运行时通过 `--dart-define` 注入：
 
@@ -99,7 +99,7 @@ Android 符号上传在 `android-alpha` Environment 中执行；iOS dSYM 上传�
 
 Android APK 与 `candidate-manifest.json` 是 Release 中仅有的自定义资产；APK 检查、签名输出、证书摘要和 iOS 候选清单保存在 Actions Artifact，不上传 IPA。若三平台 job 已成功、仅最终公开 job 失败，可通过可选的 `resume_run_id` 复核原运行证据并继续批准，不得再次构建或重复上传同一 TestFlight/Store build。
 
-`github-release` Environment 保存 `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64` 与 Store 正式 submission 核验所需的四项 Partner Center 凭据。候选或恢复发布在唯一人工批准后先以官方 Store CLI 查询产品 `9PHHSJMWK06G`，只上传脱敏回执；原始响应必须删除。状态、可见性、文件名、包版本、x64 架构或上传状态任一不匹配时，不得公开 Release 或生成新指针。元数据修复、指针修复和撤回复用原发布时的核验结果，不被新的 Store 查询阻断。
+`github-release` Environment 必须保存 `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`；只有选择 `api` 模式时才保存 Store 正式 submission 核验所需的四项 Partner Center 凭据。候选或恢复发布在唯一人工批准后，`manual` 模式通过 GitHub Actions 审批 API 核验精确候选评论并生成脱敏回执，`api` 模式以官方 Store CLI 查询产品 `9PHHSJMWK06G` 并删除原始响应。状态、可见性、文件名、包版本、x64 架构、上传状态或人工审批合同任一不匹配时，不得公开 Release 或生成新指针。元数据修复、指针修复和撤回复用原发布时的核验结果，不被新的 Store 查询阻断。
 
 通过 Store 门禁后，工作流从 Android 候选证据、固定 TestFlight/Store 入口、当前数据代和候选 SHA 生成紧凑 payload，校验私钥导出的公钥与客户端内置公钥一致，并验证上一 envelope 的签名与状态迁移。Contents API 写入携带上一 blob SHA，避免并发覆盖；新公开版本构建号必须递增，同版本仅允许指针修复或从 `publicApproved` 撤回，撤回后不得重新公开同一构建。
 

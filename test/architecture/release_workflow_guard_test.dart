@@ -17,6 +17,14 @@ String _job(String workflow, String job, [String? nextJob]) {
   return workflow.substring(start, end);
 }
 
+String _step(String job, String step, String nextStep) {
+  final start = job.indexOf('\n      - name: $step');
+  final end = job.indexOf('\n      - name: $nextStep', start + 1);
+  expect(start, greaterThanOrEqualTo(0));
+  expect(end, greaterThan(start));
+  return job.substring(start, end);
+}
+
 void main() {
   group('GitHub Alpha 发布守卫', () {
     test('工作流使用不可变的 Action 完整提交 SHA', () async {
@@ -479,10 +487,69 @@ void main() {
       );
     });
 
-    test('公开批准后先机器验证同一 Microsoft Store production submission', () async {
+    test('无 Entra 时使用受保护人工证明且保留可选 Store API 核验', () async {
       final workflow = await _workflow('alpha-release.yml');
+      final windows = _job(workflow, 'windows', 'publish');
       final publish = _job(workflow, 'publish');
+      final apiSetup = _step(
+        publish,
+        'Set up Microsoft Store CLI v0.4.0',
+        'Verify public Microsoft Store production submission',
+      );
+      final apiVerificationStep = _step(
+        publish,
+        'Verify public Microsoft Store production submission',
+        'Record protected manual Microsoft Store production approval',
+      );
+      final manualVerificationStep = _step(
+        publish,
+        'Record protected manual Microsoft Store production approval',
+        'Remove Microsoft Store CLI credentials',
+      );
 
+      expect(workflow, contains('store_verification_mode:'));
+      expect(workflow, contains('default: manual'));
+      expect(workflow, contains('- manual\n          - api'));
+      expect(
+        windows,
+        contains(
+          'STORE \$(\$identity.storeId) Published Public '
+          '\$(\$metadata.packageVersion) x64 \$(\$metadata.artifact.sha256)',
+        ),
+      );
+      expect(windows, contains('GITHUB_STEP_SUMMARY'));
+      expect(
+        publish,
+        contains('Record protected manual Microsoft Store production approval'),
+      );
+      expect(
+        publish,
+        contains('verificationMode: "manualEnvironmentApproval"'),
+      );
+      expect(publish, contains('evidenceSource: "github-release"'));
+      expect(
+        manualVerificationStep,
+        contains('actions/runs/\$GITHUB_RUN_ID/approvals'),
+      );
+      expect(manualVerificationStep, contains('.comment == \$expected'));
+      expect(
+        manualVerificationStep,
+        contains('any(.environments[]?; .name == "github-release")'),
+      );
+      expect(manualVerificationStep, contains('approvalReviewer'));
+      expect(manualVerificationStep, contains('approvalCommentSha256'));
+      expect(publish, contains("inputs.store_verification_mode == 'manual'"));
+      expect(publish, contains("inputs.store_verification_mode == 'api'"));
+      expect(apiSetup, contains("inputs.store_verification_mode == 'api'"));
+      expect(
+        apiVerificationStep,
+        contains("inputs.store_verification_mode == 'api'"),
+      );
+      expect(
+        manualVerificationStep,
+        contains("inputs.store_verification_mode == 'manual'"),
+      );
+      expect(manualVerificationStep, isNot(contains('PARTNER_CENTER_')));
       expect(
         publish,
         contains(
@@ -521,7 +588,10 @@ void main() {
         isNot(contains('meettrace-store-submission.json\n          path:')),
       );
 
-      final storeVerification = publish.indexOf(
+      final manualVerification = publish.indexOf(
+        'Record protected manual Microsoft Store production approval',
+      );
+      final apiVerification = publish.indexOf(
         'Verify public Microsoft Store production submission',
       );
       final pointerPreparation = publish.indexOf(
@@ -533,8 +603,10 @@ void main() {
       final pointerPublication = publish.indexOf(
         'Atomically publish signed automatic-update pointer',
       );
-      expect(storeVerification, greaterThanOrEqualTo(0));
-      expect(storeVerification, lessThan(pointerPreparation));
+      expect(manualVerification, greaterThanOrEqualTo(0));
+      expect(apiVerification, greaterThanOrEqualTo(0));
+      expect(manualVerification, lessThan(pointerPreparation));
+      expect(apiVerification, lessThan(pointerPreparation));
       expect(pointerPreparation, lessThan(releasePublication));
       expect(releasePublication, lessThan(pointerPublication));
     });

@@ -69,6 +69,7 @@ Map<String, Object?> verifyMicrosoftStoreSubmission(
   return <String, Object?>{
     'schemaVersion': 1,
     'distribution': 'microsoftStore',
+    'verificationMode': 'partnerCenterApi',
     'productId': request.productId,
     'submissionId': submissionId,
     'status': 'Published',
