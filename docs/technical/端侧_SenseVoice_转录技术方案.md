@@ -2,7 +2,7 @@
 
 > 日期：2026-08-18
 > 对应 PRD：V1.2
-> 状态：活动；Android/iOS 主链已实现，Windows 输入、桌面生命周期与睡眠恢复首轮已落地；Microsoft Store 固定身份、Store MSIX 候选 job 和更新 Manifest 的 Store-only 解析边界已实现，Store 限定受众/Flight 与正式认证、平台 adapter 和三平台统一发布仍待按第 13 节验收
+> 状态：活动；Android/iOS 主链已实现，Windows 输入、桌面生命周期与睡眠恢复首轮已落地；自动更新的签名 Manifest、三平台 adapter、延后状态和原子发布链已实现，Store 限定受众/Flight、正式认证及首次三平台统一发布仍待按第 13 节验收
 
 ## 1. 目标
 
@@ -148,7 +148,9 @@ Windows 使用 `path_provider_windows` 返回的应用本地支持目录作为�
 
 Windows runner 在数据库初始化前使用同一用户会话内的命名互斥体和激活事件阻止第二实例；第二次启动只唤醒现有窗口。录音 ViewModel 通过 `DesktopLifecycle` Port 和 MethodChannel 同步保护状态：窗口外壳在录音中拦截 close 请求并隐藏到托盘，托盘菜单只发送“打开会迹”或“停止并退出”领域命令，不直接停止插件或删除文件；只有事实 PCM 封存且会议状态保存成功后 Dart 才确认原生退出，失败则恢复窗口并保持保护。空闲 close 正常退出。系统锁屏、最小化和失焦不改变录音状态；runner 将 `WM_POWERBROADCAST` 的挂起/恢复与 `WM_QUERYENDSESSION` 映射为有序领域事件。挂起前先排空已进入 Dart 的 PCM、刷新文件与检查点并记录字节偏移；恢复时先重开会议锁定输入，失败后仅允许一次系统默认输入降级，同一 `incidentId` 记录缺口起止或真实恢复失败。注销/关机属于尽力刷新，冷启动恢复仍以检查点和已落盘 PCM 为准，不等待 OS、也不把未收到的音频补零伪装为事实。
 
-自动更新由 `AppUpdatePort` 消费单一 Alpha 频道的签名 Manifest，Domain 校验候选构建号必须高于当前版本，并要求状态为公开批准。签名 envelope 直接覆盖 Base64 解码后的原始 payload 字节，避免 JSON 重排歧义；parser 先验签，再限定 `alpha` 频道、公开批准/撤回状态、同 SHA 候选和各平台固定入口。Android adapter 下载 APK 后验证长度、SHA-256、包名和签名证书再交给系统安装器；iOS adapter 只表达 TestFlight 管理状态，不自行安装；Windows 只接受 `ms-windows-store://pdp/?productid=9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`，拒绝 `.appinstaller` 与其他 Store 产品。录音或最终处理运行时更新状态只能是 deferred；提高数据代必须在平台安装交接前取得清理确认。任何 adapter 都不得退出进程、阻断事实写入或绕过数据代清理警告。正式 Manifest URL、签名算法/公钥和平台安装 adapter 确定前，不装配生产更新入口。
+自动更新由 `AppUpdatePort` 消费 `updates/alpha/alpha.json` 的单一 Alpha 频道签名 Manifest，Domain 校验候选构建号必须高于当前版本，并要求状态为公开批准。签名 envelope 直接覆盖 Base64 解码后的原始 payload 字节，避免 JSON 重排歧义；parser 先用内置 Ed25519 公钥验签，再限定 `alpha` 频道、公开批准/撤回状态、同 SHA 候选和各平台固定入口。Android adapter 把不超过 512 MiB 的 APK 下载到应用私有目录，下载前必须在包体之外保留 128 MiB 录音空间，并验证长度、SHA-256、包名、版本/构建号和签名证书，交接系统安装器前再次复核；iOS 只打开受限 TestFlight URL；Windows 只接受 `ms-windows-store://pdp/?productid=9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`，拒绝 `.appinstaller` 与其他 Store 产品。录音或最终处理运行时更新状态只能是 deferred，回到空闲后自动续检；提高数据代必须在平台安装交接前取得清理确认。检查、下载或交接失败均不阻断启动、事实写入或历史访问。
+
+发布工作流仅从 `github-release` Environment 读取 Ed25519 私钥 seed。它验证上一指针的签名和单调构建号，在 GitHub Pre-release 已公开后用 Contents API 的旧 blob SHA 原子更新 `updates/alpha`；修复允许同 release/build 重签，撤回只允许当前 `publicApproved` 变为 `withdrawn`，已撤回版本不能重新公开。密钥不进入命令行、日志、Artifact、Release 或生成分支。
 
 App 不接入业务分析埋点或总结网关。Release 组合根通过 data/service 层初始化 Sentry，启用 PII、日志、指标、截图、View Hierarchy、交互、失败请求、原生崩溃、ANR、Tracing、Profiling 和 Replay；画面内容保持全量文本与图片遮罩。录音 ViewModel 通过 domain Port 驱动遥测 Gate，录音期间停止新 Tracing/Profiling、交互 Breadcrumb、错误截图和 View Hierarchy，崩溃与 ANR 保持开启。官方 SDK 9.26 无公开 Replay 暂停 API，录音期间继续遮罩采集，不增加私有原生桥接。Sentry 初始化失败时组合根降级为无监控启动；不得阻断事实录音。诊断导出仍只包含白名单状态、错误码和设备指标，不包含音频或完整转录。
 

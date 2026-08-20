@@ -10,6 +10,7 @@ final class CheckForAppUpdateUseCase {
   Future<AppUpdateDecision> execute({
     required InstalledAppVersion installed,
     required AppUpdateWorkload workload,
+    AppUpdateWorkload Function()? currentWorkload,
   }) async {
     AppUpdateCandidate? candidate;
     try {
@@ -22,7 +23,7 @@ final class CheckForAppUpdateUseCase {
         !candidate.isNewerThan(installed)) {
       return const AppUpdateDecision(kind: AppUpdateDecisionKind.noUpdate);
     }
-    if (workload != AppUpdateWorkload.idle) {
+    if ((currentWorkload?.call() ?? workload) != AppUpdateWorkload.idle) {
       return AppUpdateDecision(
         kind: AppUpdateDecisionKind.deferred,
         candidate: candidate,

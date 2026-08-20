@@ -11,3 +11,8 @@ abstract interface class AppUpdatePort {
 
   Future<void> requestInstall(AppUpdateCandidate candidate);
 }
+
+/// 读取当前安装包的营销版本、共享构建号和本地数据代。
+abstract interface class InstalledAppVersionPort {
+  Future<InstalledAppVersion> read();
+}

@@ -1,6 +1,6 @@
 # Flutter CI/CD 工作流规格
 
-> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已生成固定 Microsoft Store 身份的 Windows 候选并纳入三平台门禁，但 Store 限定受众/Flight、正式认证、Store 更新和统一公开仍未完成；不得据此公开 Windows 支持。
+> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已生成固定 Microsoft Store 身份的 Windows 候选并纳入三平台门禁，签名自动更新指针生产链已闭合；Store 限定受众/Flight、正式认证和首次统一公开仍未完成，不得据此公开 Windows 支持。
 
 ## 1. 目标与边界
 
@@ -11,7 +11,9 @@
 - Android、iOS、Windows 原生变更仅触发对应平台检查；未知路径保守执行完整 CI。
 - iOS 无签名构建只上传 JSON/TXT 审计证据，不生成或上传 IPA。
 - 正式 Android 候选进入 GitHub Draft Release；正式 iOS 只进入 TestFlight。
+- 正式三平台构建均注入同一营销版本和共享构建号；客户端只由正式发布工作流显式启用生产更新入口。
 - GitHub Release 只保留 Android APK 与单一候选清单，详细签名和包检查证据进入短期 Actions Artifact。
+- 最终批准先公开 Pre-release，再以 Ed25519 签名并原子前移 `updates/alpha/alpha.json`；撤回不删除或覆盖资产。
 - Sentry 符号上传仅在受保护的发布 Environment 中运行，并与应用内 release/dist 完全一致。
 
 ## 2. 工作流清单
@@ -93,7 +95,9 @@ flowchart LR
 
 Android 符号上传在 `android-alpha` Environment 中执行；iOS dSYM 上传在 `testflight` Environment 中执行。两者只读取对应 Environment 的 `SENTRY_AUTH_TOKEN`，失败最多重试三次，最终失败阻断该平台候选。
 
-Android APK 与 `candidate-manifest.json` 是 Release 中仅有的自定义资产；APK 检查、签名输出、证书摘要和 iOS 候选清单保存在 Actions Artifact，不上传 IPA。若双平台 job 已成功、仅最终公开 job 失败，可通过可选的 `resume_run_id` 复核原运行证据并继续批准，不得再次构建或重复上传同一 TestFlight build。
+Android APK 与 `candidate-manifest.json` 是 Release 中仅有的自定义资产；APK 检查、签名输出、证书摘要和 iOS 候选清单保存在 Actions Artifact，不上传 IPA。若三平台 job 已成功、仅最终公开 job 失败，可通过可选的 `resume_run_id` 复核原运行证据并继续批准，不得再次构建或重复上传同一 TestFlight/Store build。
+
+`github-release` Environment 保存 `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`。工作流从 Android 候选证据、固定 TestFlight/Store 入口、当前数据代和候选 SHA 生成紧凑 payload，校验私钥导出的公钥与客户端内置公钥一致，并验证上一 envelope 的签名与状态迁移。Contents API 写入携带上一 blob SHA，避免并发覆盖；新公开版本构建号必须递增，同版本仅允许指针修复或从 `publicApproved` 撤回，撤回后不得重新公开同一构建。
 
 ## 7. 安全与依赖维护
 

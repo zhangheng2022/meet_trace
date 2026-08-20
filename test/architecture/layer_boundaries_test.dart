@@ -173,8 +173,8 @@ void main() {
     expect(violations, isEmpty);
     expect(
       imports.length,
-      lessThanOrEqualTo(4),
-      reason: '顶层组合根应保持为 Storage、Runtime、Meeting 子容器编排壳',
+      lessThanOrEqualTo(5),
+      reason: '顶层组合根应保持为 Storage、Runtime、Meeting、Update 子容器编排壳',
     );
   });
 }

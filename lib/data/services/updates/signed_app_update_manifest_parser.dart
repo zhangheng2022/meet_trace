@@ -6,6 +6,7 @@ import '../../../domain/models/app_update.dart';
 const _microsoftStorePackageIdentity = 'zhangheng2026.MeetTrace';
 const _microsoftStoreInstallUri =
     'ms-windows-store://pdp/?productid=9PHHSJMWK06G';
+const _maxAndroidUpdateBytes = 512 * 1024 * 1024;
 
 enum AppUpdatePlatform { android, ios, windows }
 
@@ -111,6 +112,10 @@ final class SignedAppUpdateManifestParser {
     switch (platform) {
       case AppUpdatePlatform.android:
         _requireHttps(installUri);
+        final bytes = _positiveInt(json, 'bytes');
+        if (bytes > _maxAndroidUpdateBytes) {
+          throw const FormatException('Android 更新包超过 512 MiB 上限');
+        }
         final packageIdentity = _text(json, 'packageIdentity');
         if (packageIdentity != 'com.meettrace.app') {
           throw const FormatException('Android 更新包名不匹配');
@@ -118,14 +123,21 @@ final class SignedAppUpdateManifestParser {
         return VerifiedPlatformUpdateArtifact(
           platform: platform,
           installUri: installUri,
-          bytes: _positiveInt(json, 'bytes'),
+          bytes: bytes,
           sha256: _sha(json, 'sha256'),
           packageIdentity: packageIdentity,
           signingIdentitySha256: _sha(json, 'signingIdentitySha256'),
         );
       case AppUpdatePlatform.ios:
         _requireHttps(installUri);
-        if (installUri.host != 'testflight.apple.com') {
+        final validPath =
+            installUri.path == '/' ||
+            RegExp(r'^/join/[A-Za-z0-9]+/?$').hasMatch(installUri.path);
+        if (_text(json, 'distribution') != 'testflight' ||
+            installUri.host != 'testflight.apple.com' ||
+            installUri.query.isNotEmpty ||
+            installUri.fragment.isNotEmpty ||
+            !validPath) {
           throw const FormatException('iOS 更新入口必须是 TestFlight');
         }
         return VerifiedPlatformUpdateArtifact(
