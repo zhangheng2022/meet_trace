@@ -21,7 +21,7 @@
 | [DESIGN](../DESIGN.md) | 交互、视觉、组件和三平台自适应规则 | 设计权威，服从 PRD |
 | [产品上下文](../PRODUCT.md) | 用户、定位和产品原则的精简上下文 | PRD 派生摘要 |
 | [端侧转录技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | 固定资源、初始化、录音、ASR、分离、快照和分享契约 | 技术权威，服从 PRD |
-| [质量与验收](./quality/README.md) | 自动化门禁、设备矩阵、未闭环风险和证据要求 | 当前质量入口 |
+| [质量与验收](./quality/README.md) | 自动化、构建、分发门禁和未闭环风险 | 当前质量入口 |
 | [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md) | 三平台签名、候选、TestFlight/MSIX、GitHub Pre-release、自动更新和撤回 Runbook | 发布操作入口；Store 验收与公开未闭环前仍含目标合同 |
 | [Sentry 配置](./project/Sentry_配置.md) | 运行时采样、隐私边界和符号上传 | 监控 Runbook |
 | [Code signing policy](../CODE_SIGNING_POLICY.md) | 待审核 SignPath 路线的角色、可签名内容、批准与撤回规则 | 未来直发签名政策；当前 Store 发布不使用 |
@@ -46,13 +46,12 @@
 - 新文档必须承担现有文档无法覆盖的长期职责；否则更新现有事实源。
 - 产品范围变化先改 PRD，再同步 DESIGN、PRODUCT、技术方案、质量文档和 AGENTS。
 - 工作流或平台门槛变化时，同步质量文档和发布 Runbook；不要复制整份 YAML 行为规格。
-- 质量证据必须带提交 SHA、日期、环境、设备和命令；旧证据不能证明新候选。
+- 构建、签名、包审计和分发记录必须带提交 SHA、日期、环境和命令；旧记录不能证明新候选。
 - 重命名或删除文档后检查全仓 Markdown 本地链接，并运行 `graphify update .`。
 
 ## 非文档事实源
 
 - `.github/workflows/`：CI 和发版行为。
 - `lib/`、`test/`、平台目录：实际实现与自动化验证。
-- `docs/quality/alpha_release_input.json`：可选的非阻断验收记录模板。
 - `.impeccable/design.json`、`forui.yaml`、`lib/theme/`：设计令牌的工程落点。
 - Git 历史：所有已删除方案、审计快照和阶段证据的唯一追溯入口。

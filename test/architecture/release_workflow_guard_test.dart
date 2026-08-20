@@ -554,20 +554,5 @@ void main() {
         ),
       );
     });
-
-    test('原质量记录工具继续保留为非阻断记录', () async {
-      final decoded = jsonDecode(
-        await File('docs/quality/alpha_release_input.json').readAsString(),
-      ) as Map<String, Object?>;
-      final senseVoice = decoded['senseVoice']! as Map<String, Object?>;
-
-      expect(decoded['schemaVersion'], 5);
-      expect(senseVoice['runtimeDownloadBytes'], 286314800);
-      expect(decoded, contains('acceptanceEvidence'));
-      expect(
-        await File('tool/benchmarks/evaluate_alpha_release.dart').exists(),
-        isTrue,
-      );
-    });
   });
 }

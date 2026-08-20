@@ -6,14 +6,14 @@
 
 ## 产品边界
 
-- 会迹（MeetTrace）是 Android + iOS + Windows 自适应 Alpha，不提供登录或跨设备同步；三平台排期以 PRD 门槛评估为准，不继承原 Android 两周假设。Windows 在 PRD AT-21～AT-26 与统一发布门禁闭环前仍须标记为规划中。
+- 会迹（MeetTrace）是 Android + iOS + Windows 自适应 Alpha，不提供登录或跨设备同步；三平台排期以 PRD 门槛评估为准，不继承原 Android 两周假设。Windows 在 PRD AT-21～AT-26 的自动化、分发与统一发布门禁闭环前仍须标记为规划中。
 - 本地音频是唯一事实源；推理变慢或失败时，录音必须继续。说话人分离是首次初始化阻断的真实能力，会议结束后与最终 ASR 并行运行；运行失败时降级为单一说话人。
 - 端侧 ASR 当前仅使用官方 sherpa-onnx `sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17`；其他模型待定，不得以占位项或隐藏入口提前暴露。
 - SenseVoice、Silero VAD、Pyannote 与 3D-Speaker 权重均不得进入 APK、IPA 构建产物或 MSIX；首次初始化时按固定 Manifest 下载并严格校验，完整资源集合未就绪前首页保持阻断。
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
 - 新会议按本地开始时间生成确定性标题。Alpha 不提供 AI 总结或总结网关；文本分享只包含最终转录，音频分享必须使用独立入口、二次确认和临时 WAV，且不得改写事实 PCM。
 - 扩展 P0 前必须先更新 PRD。
-- Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX；Android、iOS、Windows 同一 SHA 均验收通过后才公开原 Draft 为 GitHub Pre-release。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 当前只通过 Microsoft Store 分发和更新，Store 包不得上传 GitHub Release。SignPath 申请仅作为未来可能替换 Store 的待审核路线，不接入当前发布工作流；启用前必须验证包身份兼容性并更新 PRD，禁止两个 Windows 包身份并存。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。
+- Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX；Android、iOS、Windows 同一 SHA 的构建、自动化和分发门禁通过后才公开原 Draft 为 GitHub Pre-release。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 当前只通过 Microsoft Store 分发和更新，Store 包不得上传 GitHub Release。SignPath 申请仅作为未来可能替换 Store 的待审核路线，不接入当前发布工作流；启用前必须验证包身份兼容性并更新 PRD，禁止两个 Windows 包身份并存。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。
 
 ## 架构与项目结构
 
@@ -24,7 +24,7 @@
 - `lib/domain/{models,ports,use_cases}/`：业务概念、纯 Dart 能力端口和可复用编排。
 - `lib/data/{models,repositories,services}/`：端口实现，以及持久化、HTTP、音频、模型管理和 ASR 适配器。
 
-Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 ONNX、存储或 HTTP。ASR 实现统一 `AsrEngine` 端口，由 Factory 按会议锁定的模型创建；当前仅 SenseVoice 一个模型，后续新增模型必须复用同一端口，具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，真机验收记录放在 `docs/quality/`，需求和技术决策放在 `docs/`。
+Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模型，不得直接调用 ONNX、存储或 HTTP。ASR 实现统一 `AsrEngine` 端口，由 Factory 按会议锁定的模型创建；当前仅 SenseVoice 一个模型，后续新增模型必须复用同一端口，具体 Engine 不得泄漏到 UI 或 ViewModel。音频写入与 ASR 必须独立运行；有界队列可以丢弃实时预览任务，但不能丢失录音。`test/` 镜像源码路径，需求和技术决策放在 `docs/`。
 
 ## Forui 优先
 
@@ -51,7 +51,7 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - `flutter build windows --release`：构建待 MSIX 打包的 Windows x64 Release 产物。
 - `flutter build ios --debug --no-codesign`：在 macOS/Xcode 环境构建 iOS Alpha 调试产物。
 
-测试文件使用 `*_test.dart`。优先覆盖录音连续性、模型校验、初始化下载与续传、会议模型锁定、积压恢复、转录排序、说话人时间段映射、快照原子切换、音频分享临时文件清理、Windows 单实例/托盘/输入设备中断/睡眠恢复、全平台更新 deferred，以及 Forui 的加载、空白和错误状态。SenseVoice 必须在目标设备上记录 RTF、延迟、内存、能耗、温控和关键事实召回率；说话人分离必须记录 DER、人数误差和 RTF。
+测试文件使用 `*_test.dart`。优先覆盖录音连续性、模型校验、初始化下载与续传、会议模型锁定、积压恢复、转录排序、说话人时间段映射、快照原子切换、音频分享临时文件清理、Windows 单实例/托盘/输入设备中断/睡眠恢复、全平台更新 deferred，以及 Forui 的加载、空白和错误状态。SenseVoice 的 RTF、延迟、内存、能耗、温控和关键事实召回率，以及说话人分离的 DER、人数误差和 RTF，均为可选的非阻断工程观测，不要求形成候选设备证据，也不进入发布结论。
 
 ## OCR 代码审查
 

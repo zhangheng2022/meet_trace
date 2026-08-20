@@ -1,7 +1,7 @@
 # 会迹（MeetTrace）Android + iOS + Windows Alpha 产品需求文档（无登录版）
 
-> 版本：V1.1
-> 日期：2026-08-18
+> 版本：V1.2
+> 日期：2026-08-20
 > 状态：活动；产品范围与验收标准的唯一事实源
 > 技术方案：[端侧 SenseVoice 转录技术方案](../technical/端侧_SenseVoice_转录技术方案.md)
 
@@ -15,11 +15,11 @@
 - 不提供登录、跨设备同步、云端实时 ASR 或 AI 总结；App 不配置任何总结网关。
 - 音频、转录和说话人结果默认只保存在设备上；只有用户主动执行独立的“分享音频”操作并二次确认后，临时 WAV 副本才进入系统分享面板。Release 默认启用 Sentry 远程诊断，但不得把事实 PCM、WAV、转录快照或说话人结果作为 Attachment 或自定义 Payload 主动上传。
 - 当前 ASR 只支持 SenseVoice；其他模型待定，不承诺等级、发布时间或自动切换。
-- Android、iOS 与 Windows 必须基于同一候选提交完成构建并由维护者实际验收后，才允许对外发布该 Alpha；自动化只执行技术检查，不替代三平台人工验收，任一平台失败均阻断统一发布。
-- Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX。验收前 Android APK 暂存在 GitHub Draft Release；Windows Store MSIX 只进入当前运行的 Actions Artifact，并由维护者把同一字节用于 Partner Center 限定受众或 Flight 验收，不进入 GitHub Release。最终验收通过且同一包已在 Store 公开可安装后，才发布同一 Draft 为 GitHub Pre-release；不得重建、覆盖资产或移动已有标签。
+- Android、iOS 与 Windows 必须基于同一候选提交完成构建、自动化门禁和分发完整性检查后，才允许对外发布该 Alpha；不要求提交目标设备人工验收证据。任一平台的构建、自动化或分发门禁失败均阻断统一发布。
+- Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX。公开前 Android APK 暂存在 GitHub Draft Release；Windows Store MSIX 只进入当前运行的 Actions Artifact，并由维护者把同一字节用于 Partner Center Private audience 或 Package Flight，不进入 GitHub Release。同一包通过正式 Store 认证且公开可安装后，才发布同一 Draft 为 GitHub Pre-release；不得重建、覆盖资产或移动已有标签。
 - iOS Alpha 的编译与分发最低版本为 iOS 15；从当前候选起不再支持 iOS 13/14，也不为已安装旧 TestFlight 构建提供专门迁移版。iOS 候选只通过 TestFlight 分发，不在 GitHub Release 上传 IPA。最终 GitHub Pre-release 可填写 TestFlight 外部测试链接；尚未获批或未创建时必须明确标记“外部测试链接待提供”，不得伪造链接或绕过 Beta App Review。
-- iOS 15 最低版本通过工程配置、构建产物审计和 TestFlight 分发门禁验证；Alpha 不要求额外保有 iOS 15 真机。功能、录音连续性、推理、能耗和无障碍验收使用当前可用的受支持 iPhone/iPad 真机，质量记录必须明确最低版本未做真机覆盖。
-- Windows 最低支持 Windows 10 22H2 与 Windows 11，仅支持 x64；性能验收基线为 8 GB RAM、普通四核 CPU，不要求独立显卡。低于 8 GB 允许安装和事实录音，但必须明确提示设备不在受支持的推理性能范围。
+- iOS 15 最低版本通过工程配置、构建产物审计和 TestFlight 分发门禁验证；Alpha 不要求额外的目标设备人工证据。
+- Windows 最低支持 Windows 10 22H2 与 Windows 11，仅支持 x64；8 GB RAM、普通四核 CPU、无独立显卡作为非阻断性能观测基线。低于 8 GB 允许安装和事实录音，但必须明确提示推理性能可能受限。
 - Windows 首版只采集麦克风，不采集或混合系统播放音频；不得以“支持 Windows”暗示可以直接捕获同机线上会议的系统声音。
 
 ## 2. 当前模型决策
@@ -53,7 +53,7 @@
 
 说话人分离是首次初始化阻断能力，但不是事实音频来源。录音期间不运行分离；会议结束后，最终 ASR 与离线说话人分离并行处理。两条任务结束后只发布一次最终快照；分离失败时写入明确的单一说话人降级结果，不得阻止最终文本落地或损坏事实音频。
 
-当前固定使用官方 `sherpa_onnx 1.13.6`。该版本继承 1.13.5 在 Dart `OfflineSpeakerDiarization.process*` 的 `finally` 块中释放完整波形原生 `Float` 输入缓冲区的修复，因此 1.13.4 的单次 30 分钟音频至少遗留 `115,200,000` B 的已知风险不再适用于当前依赖。升级候选仍须在 Android、iOS 与 Windows 目标设备完成重复长会议内存验证，证据闭环前不得据此扩大分发。Debug 与 Release 组合根继续启用官方公开 API 的真实分离服务，所有会议默认开启，不设置会议时长上限；设置中保留全局关闭开关，关闭后后续最终转录不启动分离。仍禁止通过私有包 API、自建 FFI 或原生桥接规避；运行失败、超时或资源不足时继续按单一说话人降级，事实录音和最终文本不得受损。
+当前固定使用官方 `sherpa_onnx 1.13.6`。该版本继承 1.13.5 在 Dart `OfflineSpeakerDiarization.process*` 的 `finally` 块中释放完整波形原生 `Float` 输入缓冲区的修复，因此 1.13.4 的单次 30 分钟音频至少遗留 `115,200,000` B 的已知风险不再适用于当前依赖。重复长会议内存可作为非阻断工程观测，但不要求形成候选设备证据。Debug 与 Release 组合根继续启用官方公开 API 的真实分离服务，所有会议默认开启，不设置会议时长上限；设置中保留全局关闭开关，关闭后后续最终转录不启动分离。仍禁止通过私有包 API、自建 FFI 或原生桥接规避；运行失败、超时或资源不足时继续按单一说话人降级，事实录音和最终文本不得受损。
 
 ## 3. P0 范围
 
@@ -67,7 +67,7 @@
 - 文本分享与音频分享分开；音频经二次确认后临时封装为 WAV，分享完成后清理临时副本。
 - Android/iOS 后台录音、Windows 托盘持续录音、三平台系统中断、可访问性和安装包审计。
 - Windows 全局麦克风选择、会议输入设备锁定、设备断开恢复、单实例和安全退出。
-- 单一 Alpha 频道的全平台自动更新；只能发现三平台均验收通过的公开候选，录音或最终处理期间不得强制安装或退出。
+- 单一 Alpha 频道的全平台自动更新；只能发现三平台构建、自动化和分发门禁均通过的公开候选，录音或最终处理期间不得强制安装或退出。
 
 不在 Alpha 范围：登录、同步、云端实时 ASR、AI 总结、总结证据链、会中实时说话人分离、非普通话说话人准确率承诺、会议中切换模型、混合模型输出、自动替用户切换模型、业务分析埋点、Windows ARM64/32 位、Windows 7/8、系统音频录制、多个应用实例、多窗口、开机自启、复杂快捷键、拖拽导入和自定义更新频道。
 
@@ -78,7 +78,7 @@
 - SignPath 申请仅保留为未来可能替换 Store 的待审核路线，不接入当前工作流。只有证书 Subject 与升级/数据连续性影响验证完成、PRD 再次更新并明确停止 Store 路线后，才可启用 GitHub MSIX；任何时刻不得并存两个 Windows 包身份。
 - GitHub Actions 只公开一个手动入口 `Alpha Release`。必填项仅为发布标识；发布说明和 TestFlight 外部链接均可选。工作流依次执行技术检查、Android Draft 候选构建、iOS TestFlight 上传和 Windows Store 候选构建，将 Windows MSIX 保存在 Actions Artifact，随后等待一次人工批准。
 - 候选阶段创建或更新 Draft Release，只上传签名 APK 与 Android 公开候选清单；iOS 和 Windows 的二进制及三平台详细证据只进入各自平台或 Actions Artifact。相同发布标识可在 Draft 阶段重试，但已成功且身份匹配的不可变候选必须复用；Draft 一旦公开，标签、APK 和公开候选清单不得覆盖。
-- 最终发布必须核对 Android、iOS 与 Windows 工作流均成功，候选提交 SHA、发布标识和共用构建号一致，并逐字节验证 Android Draft APK 与 Windows Store 上传候选。维护者完成三平台验收，确认同一 Windows MSIX 已通过正式 Store 认证并可从产品页安装后，才在 `github-release` 环境执行一次批准，将原 Draft 公开为 GitHub Pre-release。
+- 最终发布必须核对 Android、iOS 与 Windows 工作流均成功，候选提交 SHA、发布标识和共用构建号一致，并逐字节验证 Android Draft APK 与 Windows Store 上传候选。确认同一 Windows MSIX 已通过正式 Store 认证并可从产品页安装后，才在 `github-release` 环境执行一次批准，将原 Draft 公开为 GitHub Pre-release；该批准不要求目标设备人工证据。
 - TestFlight 外部测试链接不阻断首次公开发布；缺失时发布说明标记“外部测试链接待提供”。链接获批后可再次运行同一发布标识，只更新公开说明，不重建或覆盖三平台资产。
 - GitHub Pre-release 的安装说明必须分别说明 Android、iOS 与 Windows 的系统/架构、安装入口、自动更新方式，以及无登录和云同步、数据仅保存在本机、卸载可能删除数据、Alpha 数据代升级可能清除全部数据并重新下载模型、首次启动约下载 286.3 MB 运行资源等风险。
 - 自动更新只使用单一 Alpha 频道。Store 正式 submission 必须先公开并确认可安装，GitHub Pre-release 与公开更新 Manifest 才能随后批准；不得让 Manifest 暴露 Draft、Private audience、Package Flight 或部分通过候选，不得降级，修复必须使用更高版本号向前发布。
@@ -179,9 +179,11 @@
 - Windows 只通过 Microsoft Store 产品 `9PHHSJMWK06G` 检查、安装和更新；更新 Manifest 必须拒绝 `.appinstaller` 或其他 Store 产品/包身份。应用运行、录音或最终处理期间不得强制退出或安装。
 - 更新不阻断应用启动、不允许降级。若新版本提高数据代并将全清本地数据，必须在安装前展示醒目风险；不得通过静默更新绕过该提示。
 
-## 7. 性能与质量门槛
+## 7. 性能与质量观测目标
 
-| 指标 | 门槛 |
+下列运行指标用于工程优化与风险观察，不要求按候选或平台提交目标设备证据，也不阻断 Alpha 构建、分发或统一发布。资源下载量和初始化空间仍属于功能硬约束。
+
+| 指标 | 目标 |
 | --- | --- |
 | 全部运行时模型下载量 | ≤ `300,000,000` 字节（十进制） |
 | 初始化空间预检 | ≥ `1,073,741,824` 可用字节 |
@@ -194,7 +196,7 @@
 | 说话人分离 RTF | 30 分钟音频 `≤ 15` 分钟，即 `≤ 0.5` |
 | 30 分钟音频完整率 | `100%` |
 
-30 分钟目标设备测试必须记录绝对电量变化、起止温度、最高温度、内存峰值和热降频现象，不以相对旧模型的百分比替代。指标须在 Android、iOS 与 Windows 目标设备、同一固定语料上分别留证；Windows 额外记录 CPU 型号、核心数、RAM、进程峰值工作集和峰值 CPU，占用数据不能替代 RTF、完整率与召回门槛。
+团队可按需要运行固定语料或长会议基准，记录 RTF、延迟、召回率、DER、人数误差、内存、能耗和温控；这些结果只用于工程判断，不进入候选发布结论。
 
 ## 8. 验收场景
 
@@ -211,19 +213,19 @@
 | AT-09 | 开始会议 | 锁定 ID、版本、auto 和 ITN，预览/最终共用 |
 | AT-10 | ASR 积压或失败 | 允许丢预览任务，录音完整且继续 |
 | AT-11 | 联合最终处理 | ASR 与分离并行；成功时一次发布最终快照，分离失败时发布单一说话人降级结果；ASR 失败保留音频和旧快照 |
-| AT-12 | 30 分钟会议 | 音频 100% 完整，达到 RTF/延迟/召回并记录能耗温控 |
-| AT-13 | 普通话说话人分离 | 2/3/4 人固定语料满足 DER、人数误差与 RTF 门槛，失败降级不损坏音频或文本 |
+| AT-12 | 长录音自动化回归 | 合成 30 分钟 PCM 的写入、封存和恢复保持字节完整，不要求目标设备记录 |
+| AT-13 | 说话人分离自动化回归 | fake worker 覆盖并行、映射、超时、失败与单一说话人降级，不要求准确率设备证据 |
 | AT-14 | 旧 Alpha 安装升级 | 提升数据代并全清旧数据后重走初始化；无残留旧数据库、音频、模型或检查点 |
-| AT-15 | 三平台系统中断 | 准确呈现平台状态，可恢复已落盘事实音频；Windows 睡眠缺口、设备切换和恢复时间可核对 |
-| AT-16 | 手机/平板/桌面与无障碍 | 关键页面无溢出；移动端返回手势与 Dynamic Type/VoiceOver 可用；Windows 鼠标、键盘焦点和屏幕阅读器可用 |
+| AT-15 | 三平台系统中断契约 | 自动化覆盖平台事件、已落盘事实音频恢复、Windows 睡眠缺口和设备切换状态 |
+| AT-16 | 自适应与无障碍契约 | Widget/integration 测试覆盖关键页面布局、返回语义、字体缩放、键盘焦点和可访问标签 |
 | AT-17 | 文本分享 | 只分享标题、时间和带说话人/时间戳的最终转录，不附带音频 |
 | AT-18 | 音频分享 | 每次二次确认；临时 WAV 可播放且与源 PCM 时长一致，完成/取消/失败后无残留副本 |
 | AT-19 | Sentry 遥测 | Release 默认启用且 Debug/Profile 默认关闭；采样率、PII、遮罩与录音期暂停规则符合 FR-004；SDK 初始化失败不阻断启动或事实录音 |
 | AT-20 | 会议重命名 | 全部未删除状态均可改为单行 1～60 字符标题；列表、详情及后续分享使用新标题，后台处理不回退标题，事实 PCM、时间、转录和快照不变 |
 | AT-21 | Windows 安装与单实例 | Windows 10 22H2/11 x64 可安装、启动和卸载；签名链、Publisher、包版本和架构正确；重复启动只激活现有实例 |
-| AT-22 | Windows 托盘录音 | 录音中关闭窗口转入托盘且事实 PCM 持续增长；托盘停止并退出可封存会议；空闲关闭正常退出 |
-| AT-23 | Windows 输入设备 | 会议开始锁定输入；设备断开后按 FR-001 切换或中断，不伪造持续录音，事实记录可核对 |
-| AT-24 | Windows 30 分钟基线 | 8 GB RAM、普通四核 x64 CPU、无独显要求的基线设备满足完整率、RTF、延迟、召回、DER 和人数误差门槛 |
+| AT-22 | Windows 托盘录音契约 | 自动化覆盖录音中 close 转托盘、停止并退出安全封存和空闲正常退出 |
+| AT-23 | Windows 输入设备契约 | 自动化覆盖会议输入锁定、设备断开后一次回退或真实中断，不伪造持续录音 |
+| AT-24 | Windows 构建与包审计 | x64 Release 与固定 Store 身份 MSIX 构建通过，运行资产、包身份和禁止内容审计通过 |
 | AT-25 | 三平台自动更新 | 只发现已公开批准的新版本；校验失败不安装；录音/最终处理期间不强制退出；数据代清理前明确警告；不允许降级 |
 | AT-26 | 三平台统一发布 | APK、TestFlight 构建与 MSIX/Store 包来自同一 SHA 和版本，任一平台失败均阻断公开；更新 Manifest 不暴露未批准候选 |
 
@@ -231,10 +233,10 @@
 
 - 自动化覆盖全部 Manifest、归档解包、下载上限、1 GiB 空间预检、移动网络同意、Windows 自动下载、续传、校验、快速启动、锁定配置、联合快照、分离降级、WAV 分享清理、数据代门全清、Windows 单实例/托盘/设备中断和更新 Manifest 校验。
 - `flutter analyze`、`flutter test`、Android Debug 构建、Windows x64 Debug/Release 构建及 APK/MSIX 权重审计通过；Android Alpha 使用 `com.meettrace.app` 的正式签名 `arm64-v8a` APK，Windows 使用上述固定 Microsoft Store 身份的 x64 MSIX。
-- Android、iOS 与 Windows 目标设备应完成 AT-01～AT-26 的适用项并保留记录；维护者须在唯一的公开批准步骤前确认三平台验收结论，iOS Alpha 通过 TestFlight 分发。
-- 最终发布核对同一候选提交的三平台成功结果，并确认 Microsoft Store 已公开同一已验收 submission 后，才将原 Draft Release 发布为 GitHub Pre-release，并原子更新单一 Alpha 频道。公开 APK 与已验收候选逐字节一致，Release 不包含 IPA 或 MSIX。TestFlight 外部测试链接可后补，缺失时公开说明必须标记待提供。
+- AT-01～AT-26 由自动化、构建审计和分发门禁覆盖；不要求目标设备人工验收记录。iOS Alpha 通过 TestFlight 分发。
+- 最终发布核对同一候选提交的三平台成功结果，并确认 Microsoft Store 已公开同一 submission 后，才将原 Draft Release 发布为 GitHub Pre-release，并原子更新单一 Alpha 频道。公开 APK 与候选逐字节一致，Release 不包含 IPA 或 MSIX。TestFlight 外部测试链接可后补，缺失时公开说明必须标记待提供。
 - 未解决的 OCR Critical/High 缺陷为零。
-- 官方 `sherpa_onnx` Dart 完整波形缓冲区缺陷作为已接受的 Alpha 风险持续跟踪，不再单独阻断自动分离、Alpha 构建或自动发布流程；仍应记录 30 分钟重复任务内存、DER、人数误差与 RTF，未满足 AT-13 时不得宣称质量达标，并由批准人决定是否接受风险公开 Alpha。
+- 官方 `sherpa_onnx` Dart 完整波形缓冲区风险继续作为非阻断工程观测；可按需要记录重复任务内存、DER、人数误差与 RTF，但不要求形成候选证据，也不阻断自动分离、Alpha 构建或发布。
 - Web、Linux 与 macOS 工程壳不属于 Alpha 支持面，不进入发布结论。Windows 只有在 AT-21～AT-26 和三平台统一发布门禁闭环后才能标记为受支持；在此之前 README 和 Release 必须显示“规划中/未就绪”。
 
 ## 10. 变更规则
