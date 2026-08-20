@@ -479,6 +479,66 @@ void main() {
       );
     });
 
+    test('公开批准后先机器验证同一 Microsoft Store production submission', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final publish = _job(workflow, 'publish');
+
+      expect(
+        publish,
+        contains(
+          'microsoft/microsoft-store-apppublisher@'
+          '15abd1c50fcc164b19cb240fb04ef3c49bf715a2',
+        ),
+      );
+      expect(publish, contains('version: v0.4.0'));
+      for (final secret in <String>[
+        'PARTNER_CENTER_TENANT_ID',
+        'PARTNER_CENTER_SELLER_ID',
+        'PARTNER_CENTER_CLIENT_ID',
+        'PARTNER_CENTER_CLIENT_SECRET',
+      ]) {
+        expect(
+          publish,
+          contains(
+            r'${{ secrets.'
+            '$secret'
+            ' }}',
+          ),
+        );
+      }
+      expect(publish, contains('msstore submission get 9PHHSJMWK06G'));
+      expect(
+        publish,
+        contains(
+          'dart run tool/release/verify_microsoft_store_submission.dart',
+        ),
+      );
+      expect(publish, contains('msstore reconfigure --reset'));
+      expect(publish, isNot(contains('msstore reconfigure --reset || true')));
+      expect(publish, contains('windows-store-production-receipt.json'));
+      expect(
+        publish,
+        isNot(contains('meettrace-store-submission.json\n          path:')),
+      );
+
+      final storeVerification = publish.indexOf(
+        'Verify public Microsoft Store production submission',
+      );
+      final pointerPreparation = publish.indexOf(
+        'Prepare signed automatic-update pointer',
+      );
+      final releasePublication = publish.indexOf(
+        'Publish verified draft or update public link',
+      );
+      final pointerPublication = publish.indexOf(
+        'Atomically publish signed automatic-update pointer',
+      );
+      expect(storeVerification, greaterThanOrEqualTo(0));
+      expect(storeVerification, lessThan(pointerPreparation));
+      expect(pointerPreparation, lessThan(releasePublication));
+      expect(releasePublication, lessThan(pointerPublication));
+    });
+
     test('三平台正式包启用签名自动更新且指针只在公开后原子写入', () async {
       final workflow = await _workflow('alpha-release.yml');
       final runtimeConfiguration = await File(

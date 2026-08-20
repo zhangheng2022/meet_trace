@@ -1,6 +1,6 @@
 # 会迹（MeetTrace）GitHub Alpha 版本发布流程
 
-> 状态：活动 Runbook；正式工作流已闭合签名更新 Manifest 的生成、原子发布、修复与撤回，Store 限定受众/Flight、正式认证和首次三平台公开运行仍待验收，完成前不得宣称 Windows 受支持
+> 状态：活动 Runbook；正式工作流已闭合签名更新 Manifest 与 Store 正式 submission 的公开状态机器门禁；Partner Center 凭据配置、限定受众/Flight、首次正式认证和首次三平台公开运行仍待验收，完成前不得宣称 Windows 受支持
 >
 > 上游需求：[Android + iOS + Windows Alpha PRD V1.2](../product/Alpha_PRD_无登录版.md)
 
@@ -15,7 +15,7 @@ Actions 页面只需要手动运行 `Alpha Release`。Android、iOS、Windows �
 5. 自动构建固定 Store 身份的 Windows x64 MSIX，完成内容审计和 provenance，将包体及证据上传 Actions Artifact；不上传 GitHub Release。
 6. 维护者下载确切 Windows Artifact 并逐字节核对 SHA-256。首次 Store 发布把同一包提交到 Private audience；已有公开版本的后续更新提交 Package Flight。等待认证并完成 Windows 分发验证。
 7. 将同一包用于正式 non-flighted submission：首次发布把 audience 改为 Public，后续版本从 Flight 拉取已验证包。完成正式认证和发布，并确认 Store 产品页可安装该版本。
-8. 工作流仍停在 `Approve and deploy public Alpha`。维护者核对三个候选的构建、自动化和分发状态后，在 `github-release` Environment 点击批准，原 Draft 才公开为 GitHub Pre-release；公开更新 Manifest 只指向已公开 Store 产品，不读取 Draft、Private audience 或 Package Flight。
+8. 工作流仍停在 `Approve and deploy public Alpha`。维护者核对三个候选的构建、自动化和分发状态后，在 `github-release` Environment 点击批准。工作流随即通过官方 Store CLI 查询正式 submission，并要求状态为 `Published`、可见性为 `Public`、包版本与候选一致且唯一包为已上传的 x64 MSIX；通过后原 Draft 才公开为 GitHub Pre-release 并前移更新 Manifest。原始 Partner Center 响应会立即删除，只保留脱敏核验回执。
 
 ```mermaid
 flowchart LR
@@ -25,7 +25,9 @@ flowchart LR
   D --> E[Windows Actions Artifact]
   E --> F[Private audience 或 Store Flight 分发验证]
   F --> G[正式 Store submission 已公开]
-  G --> H[GitHub 一次批准与更新指针]
+  G --> H[GitHub 一次批准]
+  H --> I[Store 正式 submission 机器核验]
+  I --> J[公开 Pre-release 与更新指针]
 ```
 
 `expected_sha`、`gate_input_path` 和候选 run ID 均不需要填写。发布流程只读取构建、自动化、包审计和分发状态。
@@ -56,7 +58,7 @@ Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、
 | `android-alpha` | 无 | 保存 Android keystore 与证书摘要 |
 | `testflight` | 无 | 保存 Apple distribution、profile、Team 与 API Key |
 | `windows-alpha` | 无 | 当前不保存凭据；Store 身份是仓库中的非敏感固定配置，包体由维护者手工上传 Partner Center |
-| `github-release` | 一名 required reviewer；允许 self review | 唯一公开批准 |
+| `github-release` | 一名 required reviewer；允许 self review | 唯一公开批准、更新指针签名和 Store 正式 submission 只读核验 |
 
 所有 Environment 仅允许 `master`。如果旧配置给 `android-alpha`、`testflight` 或 `windows-alpha` 设置了 reviewer，需要移除，否则流程会出现额外审批。`github-release` 的最终批准不得早于 Windows 限定受众/Flight 分发验证、正式 Store 认证与公开可安装检查。
 
@@ -81,8 +83,12 @@ iOS Secrets：
 最终公开 Secrets（仅 `github-release` Environment）：
 
 - `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`：32 字节 Ed25519 私钥 seed 的 Base64；客户端只内置对应公钥和 key ID，私钥不得出现在日志、Artifact、Release 或仓库历史中。
+- `PARTNER_CENTER_TENANT_ID`：Partner Center 关联的 Microsoft Entra tenant ID。
+- `PARTNER_CENTER_SELLER_ID`：Partner Center seller ID。
+- `PARTNER_CENTER_CLIENT_ID`：具备查询目标应用 submission 所需最小权限的 Microsoft Entra application/client ID。
+- `PARTNER_CENTER_CLIENT_SECRET`：上述应用的 client secret；不得进入日志、Artifact、Release 或仓库历史。
 
-当前 Windows job 不调用 Partner Center API，也不需要 Windows Secrets。维护者从 Actions Artifact 下载经校验的 Store MSIX，首次发布手工提交 Private audience，后续版本手工提交 Package Flight，并让正式 non-flighted submission 复用同一包；不得重新打包或签名。未来如自动化 Store 提交，只能使用 Partner Center 最小权限凭据，并需另行审查权限、撤回和重试边界。任何路线都不得把自签名 PFX、USB Token 私钥或可导出的正式私钥放入 Secrets。
+Windows 候选 job 不调用 Partner Center API，也不保存 Windows Secrets；维护者仍从 Actions Artifact 下载经校验的 Store MSIX，首次发布手工提交 Private audience，后续版本手工提交 Package Flight，并让正式 non-flighted submission 复用同一包。最终公开 job 只在一次批准后使用 `github-release` 凭据读取正式 submission，不创建、提交、修改或撤回 Store 状态。原始响应可能包含短期下载地址，工作流必须在核验后删除，只上传不含凭据和 URL 的 `windows-store-production-receipt.json`。任何路线都不得重新打包或签名，也不得把自签名 PFX、USB Token 私钥或可导出的正式私钥放入 Secrets。
 
 ### Rulesets 与权限
 
@@ -120,13 +126,14 @@ iOS Secrets：
 - `withdraw_update`：仅撤回已公开版本时选择；正常发布和元数据修复保持关闭。
 - `repair_update_pointer`：仅 GitHub Release 已公开、但签名指针发布失败或需要幂等修复时选择；不能与 `withdraw_update` 同时选择。
 
-Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；iOS job 成功后从 TestFlight 安装同一候选；Windows 从 `meettrace-windows-store-<run>-<attempt>` Artifact 取得确切 MSIX，并核对候选清单 SHA-256。首次发布使用 Private audience，后续版本使用 Package Flight；自动化、构建审计与分发门禁通过后，让正式 non-flighted submission 复用同一包并发布。确认 Store 产品页已可安装该版本后，回到等待中的 `Approve and deploy public Alpha` job 批准 GitHub 公开。该步骤不要求目标设备人工证据；自动化会再次校验：
+Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；iOS job 成功后从 TestFlight 安装同一候选；Windows 从 `meettrace-windows-store-<run>-<attempt>` Artifact 取得确切 MSIX，并核对候选清单 SHA-256。首次发布使用 Private audience，后续版本使用 Package Flight；自动化、构建审计与分发门禁通过后，让正式 non-flighted submission 复用同一包并发布。确认 Store 产品页已可安装该版本后，回到等待中的 `Approve and deploy public Alpha` job 批准；该步骤不要求目标设备人工证据。批准后、公开前，自动化会再次校验：
 
 - annotated tag、release ID、marketing version 与 candidate SHA；
 - Android、iOS 与 Windows 候选证据属于指定运行和同一 SHA、版本与构建号；复用的不可变候选可来自更早的暂存运行；
 - Draft APK 与 Windows Store 候选的名称、包身份、字节数、SHA-256 和来源证据未变化；
 - Release 仍是 Draft prerelease。
-- Store 产品已公开同一候选；公开更新 Manifest 当前仍指向旧版本，且新指针只会在本次批准后写入。
+- Store 查询结果属于产品 `9PHHSJMWK06G`，正式 submission 为 `Published` 和 `Public`，且唯一包的文件名、`1.0.<共享发布构建号>.0` 版本、x64 架构与 `Uploaded` 状态全部匹配候选；
+- 公开更新 Manifest 当前仍指向旧版本，且新指针只会在 Store 机器核验和本次批准后写入。
 - Android 候选清单包含包名和发布证书 SHA-256；签名更新 payload 固定记录三平台入口、同一构建号、数据代和候选 SHA。
 
 任一技术校验失败都不会公开 Draft。批准人依据构建、自动化、包审计和分发状态作出公开决定；流程不读取额外 JSON 质量输入。
@@ -159,10 +166,11 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 - [ ] `windows-alpha` 没有 required reviewer、Windows Secrets 或可导出私钥。
 - [ ] `github-release` 已配置一名 required reviewer，并允许 self review。
 - [ ] `github-release` 已配置 `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`，公钥与客户端固定 key ID 对应。
+- [ ] `github-release` 已配置 `PARTNER_CENTER_TENANT_ID`、`PARTNER_CENTER_SELLER_ID`、`PARTNER_CENTER_CLIENT_ID` 和 `PARTNER_CENTER_CLIENT_SECRET`；Microsoft Entra 应用已关联 Partner Center，并具备读取目标产品 submission 的最小权限。
 - [ ] `master` 与 `v*` Ruleset 已启用。
 - [ ] Workflow permissions 允许 Actions 写 Release。
 - [ ] Actions 页面只有 `Alpha Release` 作为手动正式发版入口。
-- [ ] Microsoft Store 固定身份与当前候选完全一致；首次 Private audience 或后续 Package Flight 分发验证已完成，正式 Store submission 已认证、公开且可安装同一包。
+- [ ] Microsoft Store 产品已完成 Partner Center 初始配置，固定身份与当前候选完全一致；首次 Private audience 或后续 Package Flight 分发验证已完成，正式 Store submission 已认证、公开且可安装同一包。
 - [ ] 当前候选已按[质量与验收](../quality/README.md)通过三平台构建、自动化和分发门禁，再批准公开。
 - [ ] 公开更新 Manifest 仍指向旧版 Store 候选，且更新动作位于最终批准之后；仓库和 Release 不存在 `.appinstaller` 或 MSIX。
 - [ ] `updates/alpha` 无人工提交，当前 `alpha.json` 可通过客户端内置 Ed25519 公钥验签，构建号未回退。
