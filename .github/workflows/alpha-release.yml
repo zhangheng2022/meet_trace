@@ -1636,6 +1636,82 @@ jobs:
               raise SystemExit("Windows Store candidate digest changed")
           PY
 
+      - name: Set up Microsoft Store CLI v0.4.0
+        if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
+        uses: microsoft/microsoft-store-apppublisher@15abd1c50fcc164b19cb240fb04ef3c49bf715a2 # v1.1
+        with:
+          version: v0.4.0
+
+      - name: Verify public Microsoft Store production submission
+        if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
+        shell: bash
+        env:
+          PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+          PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+          PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+          PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          for name in \
+            PARTNER_CENTER_TENANT_ID \
+            PARTNER_CENTER_SELLER_ID \
+            PARTNER_CENTER_CLIENT_ID \
+            PARTNER_CENTER_CLIENT_SECRET; do
+            value="${!name-}"
+            [[ -n "${value//[[:space:]]/}" ]] || {
+              echo "Missing protected github-release secret: $name" >&2
+              exit 1
+            }
+          done
+
+          msstore settings --enableTelemetry false
+          msstore reconfigure \
+            --tenantId "$PARTNER_CENTER_TENANT_ID" \
+            --sellerId "$PARTNER_CENTER_SELLER_ID" \
+            --clientId "$PARTNER_CENTER_CLIENT_ID" \
+            --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
+
+          raw_submission="$RUNNER_TEMP/meettrace-store-submission.json"
+          trap 'rm -f -- "$raw_submission"' EXIT
+          msstore submission get 9PHHSJMWK06G > "$raw_submission"
+          expected_version="$(jq -er .packageVersion build/finalize/windows-candidate-manifest.json)"
+          expected_artifact="$(jq -er .artifact.name build/finalize/windows-candidate-manifest.json)"
+          dart run tool/release/verify_microsoft_store_submission.dart \
+            --input "$raw_submission" \
+            --output build/finalize/windows-store-production-receipt.json \
+            --product-id 9PHHSJMWK06G \
+            --expected-version "$expected_version" \
+            --expected-artifact-name "$expected_artifact" \
+            --release-id "$RELEASE_ID" \
+            --candidate-sha "$CANDIDATE_SHA" \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          rm -f -- "$raw_submission"
+          trap - EXIT
+
+      - name: Remove Microsoft Store CLI credentials
+        if: >-
+          always() &&
+          (needs.prepare.outputs.mode == 'candidate' ||
+          needs.prepare.outputs.mode == 'resume')
+        shell: bash
+        run: |
+          if command -v msstore >/dev/null 2>&1; then
+            msstore reconfigure --reset
+          fi
+
+      - name: Upload Microsoft Store production receipt
+        if: >-
+          (needs.prepare.outputs.mode == 'candidate' ||
+          needs.prepare.outputs.mode == 'resume') && success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-windows-store-production-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/finalize/windows-store-production-receipt.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
       - name: Validate immutable assets for a metadata-only update
         if: needs.prepare.outputs.mode == 'metadata'
         shell: bash
@@ -1905,4 +1981,9 @@ jobs:
             echo "- Mode: \`${{ needs.prepare.outputs.mode }}\`"
             echo "- Update pointer: \`$UPDATE_POINTER_STATUS\` build \`$UPDATE_POINTER_BUILD_NUMBER\`"
             echo "- Windows Store ID: \`9PHHSJMWK06G\`"
+            if [[ -s build/finalize/windows-store-production-receipt.json ]]; then
+              echo "- Windows Store submission: \`$(jq -r .submissionId build/finalize/windows-store-production-receipt.json)\`"
+              echo "- Windows Store status: \`$(jq -r .status build/finalize/windows-store-production-receipt.json)\` / \`$(jq -r .visibility build/finalize/windows-store-production-receipt.json)\`"
+              echo "- Windows Store package: \`$(jq -r .package.version build/finalize/windows-store-production-receipt.json)\` \`x64\`"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
