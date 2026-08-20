@@ -6,6 +6,8 @@
 
 ## 产品边界
 
+活动需求以 `docs/product/Alpha_PRD_无登录版.md` 为产品事实源，并由 `docs/README.md` 统一导航；本节只保留实现时必须高频核对的不变量。产品范围或 P0 验收标准发生变化时，必须依次执行 `$grill-me`、更新 PRD、在同一 PR 中同步本文件，再开始实现。PRD 与本文件冲突时必须停止实施并先消除冲突，不得自行选择其一。
+
 - 会迹（MeetTrace）是 Android + iOS + Windows 自适应 Alpha，不提供登录或跨设备同步；三平台排期以 PRD 门槛评估为准，不继承原 Android 两周假设。Windows 在 PRD AT-21～AT-26 的自动化、分发与统一发布门禁闭环前仍须标记为规划中。
 - 本地音频是唯一事实源；推理变慢或失败时，录音必须继续。说话人分离是首次初始化阻断的真实能力，会议结束后与最终 ASR 并行运行；运行失败时降级为单一说话人。
 - 端侧 ASR 当前仅使用官方 sherpa-onnx `sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17`；其他模型待定，不得以占位项或隐藏入口提前暴露。
@@ -35,14 +37,12 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - 新增功能或重构使用 `flutter-apply-architecture-best-practices`；行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`；交付前使用 `dart-run-static-analysis`；代码审查使用 `$open-code-review-delegate`。
 - sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入。禁止自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工 `jniLibs`；ASR 模型仅在 data/service 层通过统一 `AsrEngine` 适配。
 - 官方包缺少目标能力时，先调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。
-- 变更产品范围或 P0 验收标准前运行 `$grill-me`。
 - 活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留副本，历史由 Git 保存。
 
 ## 常用命令与质量门槛
-- 优先使用`flutter run -d <device-id>`：在 Android 或 iOS 设备上调试运行
-- 优先使用真机，真机不可用时使用模拟器
+
 - `flutter pub get`：解析依赖。
-- `flutter run -d <device-id>`：在 Android 或 iOS 设备上运行。
+- `flutter run -d <device-id>`：在 Android 或 iOS 设备上调试，优先使用真机，真机不可用时使用模拟器。
 - `dart format lib test`：格式化 Dart 源码。
 - `flutter analyze`：执行 `flutter_lints` 静态检查。
 - `flutter test`：运行单元测试和组件测试。
@@ -51,26 +51,37 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - `flutter build windows --release`：构建待 MSIX 打包的 Windows x64 Release 产物。
 - `flutter build ios --debug --no-codesign`：在 macOS/Xcode 环境构建 iOS Alpha 调试产物。
 
+最低验证按变更范围确定：
+
+- 纯文档变更运行 `git diff --check`，并人工核对链接、命令和 Markdown 结构；由 CI 路径分类决定是否跳过 Flutter 与平台构建。
+- Dart 或 Flutter 变更至少运行格式化、`flutter analyze` 和受影响测试；跨模块、公共行为或回归风险较高的变更运行完整 `flutter test`。
+- 平台目录、构建配置、依赖或发布工作流变更运行对应平台构建及相关守卫测试；修改 CI 路径分类时必须验证各类代表路径。
+- 本地调试构建不能替代发布工作流和 PRD 规定的发布门禁。无法运行适用验证时，必须在 PR 中说明原因、风险和补偿验证，不得写成已通过。
+
 测试文件使用 `*_test.dart`。优先覆盖录音连续性、模型校验、初始化下载与续传、会议模型锁定、积压恢复、转录排序、说话人时间段映射、快照原子切换、音频分享临时文件清理、Windows 单实例/托盘/输入设备中断/睡眠恢复、全平台更新 deferred，以及 Forui 的加载、空白和错误状态。SenseVoice 的 RTF、延迟、内存、能耗、温控和关键事实召回率，以及说话人分离的 DER、人数误差和 RTF，均为可选的非阻断工程观测，不要求形成候选设备证据，也不进入发布结论。
 
 ## OCR 代码审查
 
-代码审查统一使用 `$open-code-review-delegate`。OCR 只负责确定范围、排除项和适用规则，缺陷判断与误报过滤由审查代理完成。
+所有 PR 都必须使用 `$open-code-review-delegate` 完成审查。OCR 只负责确定范围、排除项和适用规则，缺陷判断、人工补充审查与误报过滤由审查代理完成。
 
-- 按目标使用 workspace、range 或 commit 模式；必须审查 preview 返回的全部 reviewable 文件，并按 `ocr delegate rule` 的规则检查真实 diff 或未跟踪文件。
+- 按目标使用 workspace、range 或 commit 模式；先运行 preview，再按 `ocr delegate rule` 的规则检查全部 reviewable 文件及其真实 diff 或未跟踪文件。
 - 使用 `--background` 或 `--background-file` 注入 PRD、技术方案和用户影响。涉及录音、模型锁定、联合最终快照、说话人分离、音频分享或数据删除时，必须带上相应产品边界。
-- 生成文件只能通过明确的 `--exclude` 模式排除并说明原因，不得让构建产物或依赖噪声掩盖源码改动。
+- preview 排除的 Markdown、生成文件或不支持文件仍须人工检查真实 diff，并逐项记录排除原因；不得让构建产物或依赖噪声掩盖源码改动。
+- 审查总结必须覆盖 preview 返回的每个文件，报告总数、已审查数、跳过数和原因，覆盖率必须为 100%。
 - 按 Critical、High、Medium、Low 报告精确路径、行号、触发条件、用户影响和修复建议。始终报告 Critical/High；只报告有实际影响的 Medium 和明确有价值的 Low；疑似误报静默丢弃。
-- 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并重新审查。涉及 `lib/`、平台目录、数据库 schema/迁移或构建配置的变更，交付或创建 PR 前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
+- 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并重新审查。PR 转为 Ready 或合并前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
 - OCR 不能替代格式化、静态检查、测试和目标平台构建；修复后重新运行受影响验证并审查新 diff。
 
 ## 提交、PR 与安全
 
-- 所有仓库变更，包括代码、测试、配置和文档，都必须在独立分支提交并通过 PR 合并；禁止直接向默认分支提交或推送。分支默认使用 `codex/` 前缀，除非用户明确指定其他命名。
-- PR 必须完成适用的格式化、静态检查、测试、构建和 OCR 审查。所有必需 CI 检查通过、Critical/High 问题清零后方可合并；保留 Medium 时必须在 PR 中说明风险、理由和后续动作。
+- 所有仓库变更，包括代码、测试、配置和文档，都必须在独立分支提交并通过 PR 合并；禁止直接向默认分支提交或推送。Codex 创建的分支默认使用 `codex/` 前缀，除非用户明确指定其他命名。
+- 开始修改前检查工作区和分支状态，保留用户已有变更；只暂存本次确认的路径，禁止使用 `git add .`、`git add -A` 或同类全量暂存命令，不得将无关修改混入提交。
+- PR 默认创建为 Draft，且保持单一目的和可审查范围。适用的格式化、静态检查、测试、构建和 OCR 审查完成后才能转为 Ready。
+- 必需 CI 检查以默认分支保护规则为准；全部通过且 Critical/High 问题清零后方可合并。非必需检查失败或长期 pending 时也必须评估并在 PR 中说明，不能静默忽略；保留 Medium 时必须说明风险、理由和后续动作。
+- 只有用户明确授权后才能合并 PR。默认使用 squash merge 以保持线性历史；合并后删除功能分支、同步本地默认分支并确认工作区干净。禁止使用 merge commit 合并默认分支。
 - 提交信息优先使用中文。提交标题应简短并使用祈使语气，例如 `增加 ASR 积压恢复`。
 - PR 必须引用对应 PRD 章节，说明用户影响，并列出验证命令和 OCR 范围；UI 变更需附截图。不涉及 PRD 或 UI 时须在 PR 中明确标注不适用。
-- 禁止提交密钥、录音、下载的模型、`build/` 或 `coverage/`。
+- 禁止提交密钥、令牌、`.env`、签名证书、keystore、provisioning profile、录音、下载的模型、`build/` 或 `coverage/`。未经用户明确授权，禁止强制推送、重写共享历史、移动已发布 tag，或使用破坏性 Git 命令覆盖未确认修改。
 
 ## graphify
 
