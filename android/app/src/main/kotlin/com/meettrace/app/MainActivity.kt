@@ -1,5 +1,6 @@
 package com.meettrace.app
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -8,9 +9,12 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 
 class MainActivity : FlutterActivity() {
     private val updateChannel = "com.meettrace.app/app_update"
@@ -18,23 +22,37 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, updateChannel)
-            .setMethodCallHandler { call, result ->
-                val path = call.argument<String>("path")
-                if (path.isNullOrBlank()) {
-                    result.error("invalid_path", "APK path is required", null)
-                    return@setMethodCallHandler
-                }
-                try {
-                    val apk = trustedUpdateFile(path)
-                    when (call.method) {
-                        "inspectApk" -> result.success(inspectApk(apk))
-                        "requestInstall" -> requestInstall(apk, result)
-                        else -> result.notImplemented()
-                    }
-                } catch (error: Exception) {
-                    result.error("app_update_failed", error.message, null)
-                }
+            .setMethodCallHandler(::handleUpdateMethod)
+    }
+
+    private fun handleUpdateMethod(call: MethodCall, result: MethodChannel.Result) {
+        val path = call.argument<String>("path")
+        if (path.isNullOrBlank()) {
+            result.error("invalid_path", "APK path is required", null)
+            return
+        }
+        try {
+            val apk = trustedUpdateFile(path)
+            when (call.method) {
+                "inspectApk" -> result.success(inspectApk(apk))
+                "requestInstall" -> requestInstall(apk, result)
+                else -> result.notImplemented()
             }
+        } catch (error: IOException) {
+            reportUpdateFailure(result, error)
+        } catch (error: IllegalArgumentException) {
+            reportUpdateFailure(result, error)
+        } catch (error: SecurityException) {
+            reportUpdateFailure(result, error)
+        } catch (error: ActivityNotFoundException) {
+            reportUpdateFailure(result, error)
+        } catch (error: NoSuchAlgorithmException) {
+            reportUpdateFailure(result, error)
+        }
+    }
+
+    private fun reportUpdateFailure(result: MethodChannel.Result, error: Exception) {
+        result.error("app_update_failed", error.message, null)
     }
 
     private fun trustedUpdateFile(path: String): File {
