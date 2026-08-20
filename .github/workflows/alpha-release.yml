@@ -19,6 +19,16 @@ on:
         description: Optional successful candidate run ID to finalize without rebuilding
         required: false
         type: string
+      withdraw_update:
+        description: Withdraw this public version from automatic update discovery without deleting assets
+        required: false
+        default: false
+        type: boolean
+      repair_update_pointer:
+        description: Re-sign and repair the pointer for this existing public release
+        required: false
+        default: false
+        type: boolean
 
 permissions: {}
 
@@ -53,6 +63,8 @@ jobs:
           RELEASE_NOTES: ${{ inputs.release_notes }}
           TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
           RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+          WITHDRAW_UPDATE: ${{ inputs.withdraw_update }}
+          REPAIR_UPDATE_POINTER: ${{ inputs.repair_update_pointer }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]]
@@ -100,8 +112,8 @@ jobs:
                 exit 1
               fi
               mode=metadata
-              if [[ -z "$TESTFLIGHT_URL" && -z "$RELEASE_NOTES" ]]; then
-                echo "A public release rerun must provide a TestFlight URL or release notes" >&2
+              if [[ -z "$TESTFLIGHT_URL" && -z "$RELEASE_NOTES" && "$WITHDRAW_UPDATE" != true && "$REPAIR_UPDATE_POINTER" != true ]]; then
+                echo "A public release rerun must repair metadata or withdraw automatic discovery" >&2
                 exit 1
               fi
             fi
@@ -111,6 +123,19 @@ jobs:
               exit 1
             fi
             mode=candidate
+          fi
+
+          if [[ "$WITHDRAW_UPDATE" == true && "$mode" != metadata ]]; then
+            echo "Only an existing public release can be withdrawn" >&2
+            exit 1
+          fi
+          if [[ "$REPAIR_UPDATE_POINTER" == true && "$mode" != metadata ]]; then
+            echo "Only an existing public release can repair its update pointer" >&2
+            exit 1
+          fi
+          if [[ "$WITHDRAW_UPDATE" == true && "$REPAIR_UPDATE_POINTER" == true ]]; then
+            echo "Withdrawal and pointer repair are mutually exclusive" >&2
+            exit 1
           fi
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
@@ -367,6 +392,9 @@ jobs:
             --split-per-abi \
             --build-name="$MARKETING_VERSION" \
             --build-number="$ANDROID_BUILD_NUMBER" \
+            --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true \
+            --dart-define="MEETTRACE_VERSION_NAME=$MARKETING_VERSION" \
+            --dart-define="MEETTRACE_BUILD_NUMBER=$ANDROID_BUILD_NUMBER" \
             --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE" \
             --dart-define="SENTRY_DIST=$SENTRY_DIST"
           source_apk="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
@@ -446,6 +474,11 @@ jobs:
 
           apk = Path(os.environ["APK_PATH"])
           digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+          signing_identity = Path(
+              "build/android/alpha/signing-certificate.sha256"
+          ).read_text().strip().replace(":", "").lower()
+          if len(signing_identity) != 64:
+              raise SystemExit("Android signing identity digest is invalid")
           manifest = {
               "schemaVersion": 1,
               "platform": "android",
@@ -457,6 +490,8 @@ jobs:
               "job": "android",
               "runId": os.environ["GITHUB_RUN_ID"],
               "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "packageIdentity": "com.meettrace.app",
+              "signingIdentitySha256": signing_identity,
               "artifact": {"name": apk.name, "bytes": apk.stat().st_size, "sha256": digest},
               "distribution": {
                   "repository": os.environ["GITHUB_REPOSITORY"],
@@ -675,6 +710,9 @@ jobs:
             --release --no-codesign \
             --build-name="$MARKETING_VERSION" \
             --build-number="$IOS_BUILD_NUMBER" \
+            --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true \
+            --dart-define="MEETTRACE_VERSION_NAME=$MARKETING_VERSION" \
+            --dart-define="MEETTRACE_BUILD_NUMBER=$IOS_BUILD_NUMBER" \
             --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE" \
             --dart-define="SENTRY_DIST=$SENTRY_DIST"
           bash tool/benchmarks/inspect_ios_app.sh \
@@ -1272,6 +1310,9 @@ jobs:
           flutter build windows --release `
             --build-name $env:MARKETING_VERSION `
             --build-number $env:RELEASE_BUILD_NUMBER `
+            --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true `
+            --dart-define=MEETTRACE_VERSION_NAME=$env:MARKETING_VERSION `
+            --dart-define=MEETTRACE_BUILD_NUMBER=$env:RELEASE_BUILD_NUMBER `
             --dart-define=SENTRY_ENABLED=false
 
       - name: Create Microsoft Store MSIX candidate
@@ -1378,6 +1419,15 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.candidate_sha }}
           fetch-depth: 0
+
+      - name: Set up Flutter for update-manifest signing
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: ".fvmrc"
+          cache: true
+
+      - name: Resolve locked Dart dependencies
+        run: flutter pub get --enforce-lockfile
 
       - name: Validate release identity and public metadata
         shell: bash
@@ -1537,6 +1587,14 @@ jobs:
                   or manifest.get("job") != job
               ):
                   raise SystemExit(f"{name} candidate origin is invalid")
+          if (
+              android.get("packageIdentity") != "com.meettrace.app"
+              or not re.fullmatch(
+                  r"[0-9a-f]{64}",
+                  str(android.get("signingIdentitySha256", "")),
+              )
+          ):
+              raise SystemExit("Android candidate install identity is invalid")
           if not re.fullmatch(r"[1-9][0-9]*", str(android.get("runId", ""))):
               raise SystemExit("Android candidate run identity is invalid")
           if str(ios.get("runId")) != os.environ["SOURCE_RUN_ID"]:
@@ -1627,6 +1685,74 @@ jobs:
               raise SystemExit("Existing public Android APK changed")
           PY
 
+      - name: Prepare signed automatic-update pointer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
+          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+          WITHDRAW_UPDATE: ${{ inputs.withdraw_update }}
+          APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/finalize/update
+          android_manifest="build/finalize/android-candidate-manifest.json"
+          if [[ "$RELEASE_MODE" == metadata ]]; then
+            android_manifest="build/finalize/published/candidate-manifest.json"
+          fi
+          [[ -s "$android_manifest" ]]
+          build_number="$(jq -r '.buildNumber | tostring' "$android_manifest")"
+          [[ "$build_number" =~ ^[1-9][0-9]*$ ]]
+          data_generation="$({
+            sed -nE 's/^[[:space:]]*static const currentGeneration = ([1-9][0-9]*);/\1/p' \
+              lib/data/services/storage/local_data_generation_gate.dart
+          })"
+          [[ "$data_generation" =~ ^[1-9][0-9]*$ ]]
+          status=publicApproved
+          if [[ "$WITHDRAW_UPDATE" == true ]]; then
+            status=withdrawn
+          fi
+
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/updates/alpha" \
+              >/dev/null 2>&1; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref='refs/heads/updates/alpha' -f sha="$CANDIDATE_SHA" >/dev/null
+          fi
+
+          previous_args=()
+          previous_sha=""
+          if current="$({
+            gh api "repos/$GITHUB_REPOSITORY/contents/alpha.json?ref=updates%2Falpha"
+          } 2>/dev/null)"; then
+            previous_sha="$(jq -r .sha <<<"$current")"
+            jq -r .content <<<"$current" | tr -d '\n' | base64 --decode \
+              > build/finalize/update/previous-alpha.json
+            previous_args=(--previous build/finalize/update/previous-alpha.json)
+          fi
+          echo "UPDATE_POINTER_PREVIOUS_SHA=$previous_sha" >> "$GITHUB_ENV"
+          echo "UPDATE_POINTER_STATUS=$status" >> "$GITHUB_ENV"
+          echo "UPDATE_POINTER_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+
+          command=(
+            dart run tool/release/create_signed_app_update_manifest.dart
+            --status "$status"
+            --release-id "$RELEASE_ID"
+            --version-name "$MARKETING_VERSION"
+            --build-number "$build_number"
+            --data-generation "$data_generation"
+            --source-sha "$CANDIDATE_SHA"
+            --approved-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            --repository "$GITHUB_REPOSITORY"
+            --android-candidate "$android_manifest"
+            --output build/finalize/update/alpha.json
+          )
+          if [[ -n "$TESTFLIGHT_URL" ]]; then
+            command+=(--testflight-url "$TESTFLIGHT_URL")
+          fi
+          command+=("${previous_args[@]}")
+          "${command[@]}"
+          [[ -s build/finalize/update/alpha.json ]]
+
       - name: Remove redundant Release evidence assets
         if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
         shell: bash
@@ -1661,6 +1787,7 @@ jobs:
           RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
           TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+          WITHDRAW_UPDATE: ${{ inputs.withdraw_update }}
         run: |
           set -euo pipefail
           notes_path="$RUNNER_TEMP/public-release-notes.md"
@@ -1714,6 +1841,16 @@ jobs:
               fi
             } > "$notes_path"
           fi
+          if [[ "$WITHDRAW_UPDATE" == true ]]; then
+            original="$(cat "$notes_path")"
+            {
+              echo "## 已撤回，不建议安装"
+              echo
+              echo "此版本已从应用内自动更新发现中撤回；标签和发布资产按审计要求保留。"
+              echo
+              printf '%s' "$original"
+            } > "$notes_path"
+          fi
           echo "PUBLIC_NOTES_PATH=$notes_path" >> "$GITHUB_ENV"
 
       - name: Publish verified draft or update public link
@@ -1733,6 +1870,30 @@ jobs:
               --notes-file "$PUBLIC_NOTES_PATH" --prerelease
           fi
 
+      - name: Atomically publish signed automatic-update pointer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          encoded="$(base64 -w 0 build/finalize/update/alpha.json)"
+          request="$(jq -n \
+            --arg message "更新 Alpha 自动更新指针：$RELEASE_ID ($UPDATE_POINTER_STATUS)" \
+            --arg content "$encoded" \
+            --arg branch 'updates/alpha' \
+            --arg sha "$UPDATE_POINTER_PREVIOUS_SHA" \
+            '{message: $message, content: $content, branch: $branch}
+             + if $sha == "" then {} else {sha: $sha} end')"
+          jq -e . <<<"$request" >/dev/null
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/alpha.json" \
+            --input - <<<"$request" > build/finalize/update/publish-response.json
+          published="$({
+            gh api "repos/$GITHUB_REPOSITORY/contents/alpha.json?ref=updates%2Falpha"
+          })"
+          jq -r .content <<<"$published" | tr -d '\n' | base64 --decode \
+            > build/finalize/update/published-alpha.json
+          cmp build/finalize/update/alpha.json build/finalize/update/published-alpha.json
+
       - name: Write release summary
         shell: bash
         run: |
@@ -1742,5 +1903,6 @@ jobs:
             echo "- Release: \`$RELEASE_ID\`"
             echo "- Candidate: \`$CANDIDATE_SHA\`"
             echo "- Mode: \`${{ needs.prepare.outputs.mode }}\`"
+            echo "- Update pointer: \`$UPDATE_POINTER_STATUS\` build \`$UPDATE_POINTER_BUILD_NUMBER\`"
             echo "- Windows Store ID: \`9PHHSJMWK06G\`"
           } >> "$GITHUB_STEP_SUMMARY"

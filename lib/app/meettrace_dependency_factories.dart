@@ -33,9 +33,13 @@ import '../ui/features/meetings/view_models/start/start_meeting_view_model.dart'
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
 import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
+import '../ui/features/updates/view_models/app_update_view_model.dart';
 import 'meettrace_dependencies.dart';
 
 extension MeetTraceViewModelFactories on MeetTraceDependencies {
+  AppUpdateViewModel? createAppUpdateViewModel() =>
+      updates?.createViewModel(storage.meetings);
+
   RuntimeInitializationViewModel createRuntimeInitializationViewModel({
     bool forceRepair = false,
   }) {

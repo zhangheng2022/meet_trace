@@ -12,11 +12,13 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../domain/models/meeting.dart';
+import '../../../../../domain/models/app_update.dart';
 import '../../../../../keys.dart';
 import '../../../../core/app_dialog.dart';
 import '../../../../core/branding/meettrace_brand_mark.dart';
 import '../../../../core/view_state.dart';
 import '../../view_models/list/meeting_list_view_model.dart';
+import '../../../updates/view_models/app_update_view_model.dart';
 import 'meeting_list_content.dart';
 import 'widgets/recording_conditions_sheet.dart';
 import 'widgets/rename_meeting_sheet.dart';
@@ -24,6 +26,7 @@ import 'widgets/rename_meeting_sheet.dart';
 final class MeetingListView extends StatefulWidget {
   const MeetingListView({
     this.viewModel,
+    this.updateViewModel,
     this.startingMeeting = false,
     this.onStartMeeting,
     this.onOpenMeeting,
@@ -34,6 +37,7 @@ final class MeetingListView extends StatefulWidget {
   });
 
   final MeetingListViewModel? viewModel;
+  final AppUpdateViewModel? updateViewModel;
   final bool startingMeeting;
   final VoidCallback? onStartMeeting;
   final ValueChanged<Meeting>? onOpenMeeting;
@@ -48,11 +52,25 @@ final class MeetingListView extends StatefulWidget {
 final class _MeetingListViewState extends State<MeetingListView> {
   bool _deleteDialogOpen = false;
   bool _renameSheetOpen = false;
+  bool _updateDialogOpen = false;
+  final Set<String> _promptedUpdateReleaseIds = {};
 
   @override
   void initState() {
     super.initState();
     widget.viewModel?.load();
+    widget.updateViewModel?.addListener(_handleUpdateState);
+    widget.updateViewModel?.start();
+  }
+
+  @override
+  void didUpdateWidget(MeetingListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.updateViewModel, widget.updateViewModel)) {
+      oldWidget.updateViewModel?.removeListener(_handleUpdateState);
+      widget.updateViewModel?.addListener(_handleUpdateState);
+      widget.updateViewModel?.start();
+    }
   }
 
   @override
@@ -211,6 +229,110 @@ final class _MeetingListViewState extends State<MeetingListView> {
       title: const Text('会议标题已更新'),
       description: Text(renamedTitle),
     );
+  }
+
+  void _handleUpdateState() {
+    final decision = widget.updateViewModel?.decision;
+    final candidate = decision?.candidate;
+    if (candidate == null) {
+      return;
+    }
+    if (decision!.kind == AppUpdateDecisionKind.deferred ||
+        decision.kind == AppUpdateDecisionKind.installHandoffFailed) {
+      _promptedUpdateReleaseIds.remove(candidate.releaseId);
+      return;
+    }
+    if (_updateDialogOpen ||
+        _promptedUpdateReleaseIds.contains(candidate.releaseId) ||
+        (decision.kind != AppUpdateDecisionKind.readyToInstall &&
+            decision.kind != AppUpdateDecisionKind.dataResetWarningRequired)) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_promptUpdate(candidate, decision.kind));
+      }
+    });
+  }
+
+  Future<void> _promptUpdate(
+    AppUpdateCandidate candidate,
+    AppUpdateDecisionKind kind,
+  ) async {
+    final viewModel = widget.updateViewModel;
+    if (_updateDialogOpen ||
+        viewModel == null ||
+        _promptedUpdateReleaseIds.contains(candidate.releaseId)) {
+      return;
+    }
+    _updateDialogOpen = true;
+    _promptedUpdateReleaseIds.add(candidate.releaseId);
+    final resetsData = kind == AppUpdateDecisionKind.dataResetWarningRequired;
+    try {
+      final confirmed = await showAppConfirmDialog(
+        context: context,
+        semanticsLabel: resetsData ? '更新会清除本地数据' : '发现会迹新版本',
+        title: resetsData ? '更新前必须确认本地数据风险' : '新版本已通过公开发布门禁',
+        message: resetsData
+            ? '版本 ${candidate.versionName}（构建 ${candidate.buildNumber}）提高了数据代。安装后首次启动会清除本机会议音频、转录、模型和设置，并重新初始化。请先分享或导出需要保留的内容。'
+            : '版本 ${candidate.versionName}（构建 ${candidate.buildNumber}）已准备好。继续后将交给系统安装器、TestFlight 或 Microsoft Store，系统仍可能要求你的确认。',
+        cancelLabel: '稍后处理',
+        confirmLabel: resetsData ? '确认风险并继续' : '继续更新',
+        destructive: resetsData,
+        cancelAutofocus: true,
+        confirmKey: const ValueKey('confirm-app-update'),
+      );
+      if (confirmed != true || !mounted) {
+        return;
+      }
+      final decision = await viewModel.install(
+        dataResetAcknowledged: resetsData,
+      );
+      if (!mounted) {
+        return;
+      }
+      switch (decision.kind) {
+        case AppUpdateDecisionKind.installHandedOff:
+          showFToast(
+            context: context,
+            variant: FToastVariant.primary,
+            icon: const Icon(FLucideIcons.externalLink),
+            title: const Text('已交给系统更新'),
+            description: const Text('录音和本地数据不会在应用内被强制中断'),
+          );
+          break;
+        case AppUpdateDecisionKind.deferred:
+          _promptedUpdateReleaseIds.remove(candidate.releaseId);
+          showFToast(
+            context: context,
+            variant: FToastVariant.primary,
+            icon: const Icon(FLucideIcons.clock),
+            title: const Text('更新已延后'),
+            description: const Text('会议录音或最终处理结束后再提示'),
+          );
+          break;
+        case AppUpdateDecisionKind.installHandoffFailed:
+          _promptedUpdateReleaseIds.remove(candidate.releaseId);
+          showFToast(
+            context: context,
+            variant: FToastVariant.destructive,
+            icon: const Icon(FLucideIcons.circleAlert),
+            title: const Text('暂时无法打开系统更新'),
+            description: const Text('请检查系统安装授权后重试'),
+          );
+          break;
+        default:
+          break;
+      }
+    } finally {
+      _updateDialogOpen = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.updateViewModel?.removeListener(_handleUpdateState);
+    super.dispose();
   }
 }
 

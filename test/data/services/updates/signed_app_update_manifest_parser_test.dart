@@ -46,6 +46,11 @@ void main() {
         final android = artifacts['android']! as Map<String, Object?>;
         android['packageIdentity'] = 'example.attacker';
       },
+      (payload) {
+        final artifacts = payload['artifacts']! as Map<String, Object?>;
+        final android = artifacts['android']! as Map<String, Object?>;
+        android['bytes'] = 512 * 1024 * 1024 + 1;
+      },
     ]) {
       final parser = SignedAppUpdateManifestParser(
         signatureVerifier: _SignatureVerifier(),
@@ -139,6 +144,7 @@ List<int> _envelopeBytes({void Function(Map<String, Object?>)? mutate}) {
       'ios': <String, Object?>{
         'artifactId': 'ios-11',
         'installUri': 'https://testflight.apple.com/join/example',
+        'distribution': 'testflight',
       },
       'windows': <String, Object?>{
         'artifactId': 'windows-11',

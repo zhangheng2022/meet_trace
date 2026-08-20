@@ -479,6 +479,67 @@ void main() {
       );
     });
 
+    test('三平台正式包启用签名自动更新且指针只在公开后原子写入', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final runtimeConfiguration = await File(
+        'lib/data/services/updates/app_update_configuration.dart',
+      ).readAsString();
+      final android = _job(workflow, 'android', 'ios');
+      final ios = _job(workflow, 'ios', 'windows');
+      final windows = _job(workflow, 'windows', 'publish');
+      final publish = _job(workflow, 'publish');
+
+      for (final job in <String>[android, ios, windows]) {
+        expect(job, contains('MEETTRACE_APP_UPDATE_ENABLED=true'));
+        expect(job, contains('MEETTRACE_VERSION_NAME='));
+        expect(job, contains('MEETTRACE_BUILD_NUMBER='));
+      }
+      expect(runtimeConfiguration, contains("'MEETTRACE_APP_UPDATE_ENABLED'"));
+      expect(runtimeConfiguration, contains('defaultValue: false'));
+      expect(
+        runtimeConfiguration,
+        isNot(contains('defaultValue: kReleaseMode')),
+      );
+      expect(workflow, contains('withdraw_update:'));
+      expect(workflow, contains('repair_update_pointer:'));
+      expect(
+        workflow,
+        contains('Withdrawal and pointer repair are mutually exclusive'),
+      );
+      expect(android, contains('"packageIdentity": "com.meettrace.app"'));
+      expect(android, contains('"signingIdentitySha256": signing_identity'));
+      expect(
+        publish,
+        contains(
+          r'APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64 }}',
+        ),
+      );
+      expect(
+        publish,
+        contains(
+          'dart run tool/release/create_signed_app_update_manifest.dart',
+        ),
+      );
+      expect(publish, contains('refs/heads/updates/alpha'));
+      expect(publish, contains('UPDATE_POINTER_PREVIOUS_SHA'));
+      expect(publish, contains(r'sha: $sha'));
+      expect(publish, contains('cmp build/finalize/update/alpha.json'));
+      expect(
+        publish.indexOf('--draft=false --prerelease'),
+        lessThan(
+          publish.indexOf('Atomically publish signed automatic-update pointer'),
+        ),
+      );
+      expect(
+        publish.indexOf('Prepare signed automatic-update pointer'),
+        lessThan(publish.indexOf('--draft=false --prerelease')),
+      );
+      expect(
+        publish,
+        isNot(contains('APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64=')),
+      );
+    });
+
     test('Release 只保留 APK 与单一候选清单，详细证据进入 Artifact', () async {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');

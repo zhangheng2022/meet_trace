@@ -14,6 +14,7 @@ import '../ui/features/meetings/views/recording/recording_bootstrap_view.dart';
 import '../ui/features/settings/views/model_settings_view.dart';
 import '../ui/features/startup/views/meettrace_startup_view.dart';
 import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
+import '../ui/features/updates/view_models/app_update_view_model.dart';
 import 'meettrace_dependencies.dart';
 import 'meettrace_dependency_factories.dart';
 
@@ -174,6 +175,8 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
     with WidgetsBindingObserver {
   late final MeetingListViewModel _meetingList = widget.dependencies
       .createMeetingListViewModel();
+  late final AppUpdateViewModel? _updates = widget.dependencies
+      .createAppUpdateViewModel();
   Future<void>? _startOperation;
 
   @override
@@ -186,6 +189,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_meetingList.refreshReadiness());
+      unawaited(_updates?.check());
     }
   }
 
@@ -193,6 +197,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   Widget build(BuildContext context) {
     return MeetingListView(
       viewModel: _meetingList,
+      updateViewModel: _updates,
       startingMeeting: _startOperation != null,
       onStartMeeting: () => unawaited(_startMeeting()),
       onOpenMeeting: _openMeeting,
@@ -305,6 +310,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _meetingList.dispose();
+    _updates?.dispose();
     super.dispose();
   }
 }
