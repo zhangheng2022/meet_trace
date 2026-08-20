@@ -14,7 +14,7 @@
 会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备构建和 TestFlight 上传链路；Windows 已固定 Microsoft Store 包身份，具备 Store MSIX 候选构建、审计和正式 submission 公开状态机器门禁，仍需配置 Partner Center 凭据并完成首次 Private audience（后续版本使用 Package Flight）认证、自动更新和统一公开运行，当前不可视为受支持。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备构建和 TestFlight 上传链路；Windows 已固定 Microsoft Store 包身份，具备 Store MSIX 候选构建、审计和受保护的正式 submission 人工证明门禁；有 Entra 租户时可切换为 Partner Center API 机器核验。首次 Private audience（后续版本使用 Package Flight）认证、自动更新和统一公开运行仍未完成，当前不可视为受支持。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
 
 ## 安装测试版
 
@@ -88,7 +88,7 @@ flutter build apk --debug
 flutter build ios --debug --no-codesign
 ```
 
-PRD V1.2 的目标候选必须从统一 `Alpha Release` 入口生成；Android、iOS 与 Windows 同一 SHA 的构建、自动化和分发门禁通过后才公开，iOS 不向 GitHub 上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。正式工作流已生成固定 Store 身份候选，并在一次公开批准后机器校验正式 submission 为 Published/Public、同版本唯一 x64 包，再公开 Release 和更新指针；Partner Center 凭据、限定受众/Flight、首次认证、自动更新与首次统一公开运行仍待完成，因此不得公开宣称 Windows 支持。维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
+PRD V1.2 的目标候选必须从统一 `Alpha Release` 入口生成；Android、iOS 与 Windows 同一 SHA 的构建、自动化和分发门禁通过后才公开，iOS 不向 GitHub 上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。正式工作流已生成固定 Store 身份候选，默认由 `github-release` 受保护审批人工证明正式 submission 为 Published/Public、同版本唯一 x64 包；有 Entra 租户时可选择 Partner Center API 机器复核。通过后才公开 Release 和更新指针；限定受众/Flight、首次认证、自动更新与首次统一公开运行仍待完成，因此不得公开宣称 Windows 支持。维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
 
 ## 参与贡献
 

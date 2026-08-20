@@ -13,6 +13,7 @@ void main() {
       );
 
       expect(receipt['productId'], '9PHHSJMWK06G');
+      expect(receipt['verificationMode'], 'partnerCenterApi');
       expect(receipt['submissionId'], 'submission-123');
       expect(receipt['status'], 'Published');
       expect(receipt['visibility'], 'Public');
