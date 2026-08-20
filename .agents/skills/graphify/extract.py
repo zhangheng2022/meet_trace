@@ -45,6 +45,7 @@ from graphify.extractors.elixir import extract_elixir  # noqa: F401
 from graphify.extractors.fortran import _cpp_preprocess, extract_fortran  # noqa: F401
 from graphify.extractors.go import _GO_PREDECLARED_FUNCS, extract_go  # noqa: F401
 from graphify.extractors.json_config import extract_json  # noqa: F401
+from graphify.extractors.commonlisp import extract_commonlisp  # noqa: F401
 from graphify.extractors.markdown import extract_markdown  # noqa: F401
 from graphify.extractors.ocaml import extract_ocaml  # noqa: F401
 from graphify.extractors.pascal_forms import extract_delphi_form, extract_lazarus_form  # noqa: F401
@@ -4924,6 +4925,10 @@ _DISPATCH: dict[str, Any] = {
     ".dart": extract_dart,
     ".ml": extract_ocaml,
     ".mli": extract_ocaml,
+    ".lisp": extract_commonlisp,
+    ".cl": extract_commonlisp,
+    ".lsp": extract_commonlisp,
+    ".asd": extract_commonlisp,
     ".v": extract_verilog,
     ".sv": extract_verilog,
     ".svh": extract_verilog,
@@ -4978,6 +4983,10 @@ _EXTRA_FOR_EXTENSION = {
     ".dme": "dm",
     ".ml": "ocaml",
     ".mli": "ocaml",
+    ".lisp": "commonlisp",
+    ".cl": "commonlisp",
+    ".lsp": "commonlisp",
+    ".asd": "commonlisp",
 }
 
 # Substrings an extractor's error carries to classify why a dependency-backed
@@ -5621,19 +5630,36 @@ def extract(
         # results, so those fall back to the file-node-only arm.
         if len(_res.get("nodes", [])) <= 1 or _pe.get("multiline_error"):
             _rel = os.path.relpath(str(_p), str(root)).replace("\\", "/")
-            _syntax_error_files.append((_rel, _pe.get("first_error_line")))
+            # Symbols recovered from the file, excluding its own file node. This
+            # is what separates the two cases the warning otherwise blurs: a file
+            # that contributed nothing but its file node is a total loss, while
+            # one that yielded most of its symbols and lost an ERROR region is
+            # partial. "May be partially extracted" rendered both identically.
+            _kept = max(len(_res.get("nodes", [])) - 1, 0)
+            _syntax_error_files.append((_rel, _pe.get("first_error_line"), _kept))
     if _syntax_error_files:
+        def _describe_syntax_error(rel: str, line: "int | None", kept: int) -> str:
+            _where = f"first error at line {line}" if line else "syntax error"
+            _got = "no symbols extracted" if kept == 0 else f"{kept} symbol(s) extracted"
+            return f"{rel} ({_where}, {_got})"
+
         _shown = ", ".join(
-            f"{x} (first error at line {ln})" if ln else x
-            for x, ln in _syntax_error_files[:5]
+            _describe_syntax_error(*f) for f in _syntax_error_files[:5]
         )
         _more = (
             f" (+{len(_syntax_error_files) - 5} more)"
             if len(_syntax_error_files) > 5 else ""
         )
+        # No issue reference here. This message used to end in "(#2551)" for
+        # EVERY language, and #2551 is closed and Kotlin-specific ("bundled
+        # grammar rejects one-line type bodies"). It was the only lead the
+        # message offered, so a reader following it landed on a resolved problem
+        # in another language and concluded their own was already tracked
+        # (#2788). The file, the line and the symbol count are the actionable
+        # part; a single hardcoded number cannot be right for every grammar.
         print(
             f"  warning: {len(_syntax_error_files)} file(s) had syntax errors and "
-            f"may be partially extracted: {_shown}{_more} (#2551)",
+            f"may be partially extracted: {_shown}{_more}",
             file=sys.stderr, flush=True,
         )
 
@@ -6485,7 +6511,11 @@ def extract(
                     "relation": "indirect_call",
                     "context": rc.get("context", "argument"),
                     "confidence": "INFERRED",
-                    "confidence_score": 0.8,
+                    # 0.85, not 0.8: the rubric in references/extraction-spec.md
+                    # is a discrete set {0.55, 0.65, 0.75, 0.85, 0.95} and 0.8 is
+                    # not in it. Same tier, same meaning ("strong inference"),
+                    # now a value the documented scale actually contains (#2813).
+                    "confidence_score": 0.85,
                     "source_file": rc.get("source_file", ""),
                     "source_location": rc.get("source_location"),
                     "weight": 1.0,
@@ -6514,7 +6544,9 @@ def extract(
                 confidence_score = 1.0
             else:
                 confidence = "INFERRED"
-                confidence_score = 0.8
+                # 0.85 rather than 0.8 — the rubric's INFERRED set is discrete
+                # and does not contain 0.8 (#2813).
+                confidence_score = 0.85
             all_edges.append({
                 "source": caller,
                 "target": tgt,
