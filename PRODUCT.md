@@ -54,9 +54,8 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 
 - 会迹是 Android、iOS 与 Windows 三平台自适应产品；同一业务能力共享 Domain 与 ViewModel，界面结构、导航、
   系统反馈和交互细节分别遵循移动端与 Windows 桌面惯例。
-- 当前可运行实现和质量证据仍以 Android Alpha 为基线；iOS 端尚未形成等价的
-  录音、端侧 ASR、后台生命周期、模型分发与真机验收证据，不得表述为已经交付。
-- Windows 已进入 PRD V1.1，但当前仍是未交付范围；Web、Linux 与 macOS 不在当前产品范围。
+- 当前可运行实现仍以 Android Alpha 为主要开发基线；iOS 已具备构建和 TestFlight 上传链路，尚未公开分发时不得表述为已经交付。
+- Windows 已进入 PRD V1.2，但当前仍是未交付范围；Web、Linux 与 macOS 不在当前产品范围。
 - Alpha 不提供登录、账号、跨设备同步、团队协作、日历机器人、自动入会或多人在线编辑。
 - 本地完整音频是唯一事实源，录音写入与 ASR 推理必须独立运行。
 - App 私有目录保存会议录音、转录、模型与派生数据；卸载应用可能永久删除这些数据。
@@ -73,7 +72,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - 会后重新转录生成独立快照；新快照完整写入并校验成功后，才能替换当前结果。
 - 录音、转录、说话人标签、分享临时文件和模型状态必须支持明确的失败说明与可恢复操作。
 - Alpha 不接入业务分析埋点；Release 默认启用 Sentry 崩溃、性能、日志、指标、遮罩 Replay/截图/View Hierarchy、交互和请求诊断，不增加首次同意。用户主动导出的诊断包不包含音频或完整转录。
-- Android Alpha 候选只构建 `arm64-v8a` APK，Windows 只构建 x64 MSIX；Android、iOS 与 Windows 同一提交均验收通过后才统一公开，禁止重建、覆盖或移动版本标签。
+- Android Alpha 候选只构建 `arm64-v8a` APK，Windows 只构建 x64 MSIX；Android、iOS 与 Windows 同一提交的构建、自动化和分发门禁通过后才统一公开，禁止重建、覆盖或移动版本标签。
 - iOS Alpha 只经 TestFlight 分发，GitHub 不上传 IPA；外部测试链接可在最终 Pre-release 中提供，尚未就绪时明确标记待提供。
 - Windows 当前固定使用 Microsoft Store 身份与 Store 内置更新；首次发布使用 Private audience 验收，已有公开版本的后续更新使用 Package Flight，GitHub Pre-release 不附带 MSIX。SignPath 申请仅保留为未来可能替换 Store 的待审核方案，未验证包身份兼容性并更新 PRD 前不得接线，两个 Windows 包身份不得并存；三平台只提供单一 Alpha 自动更新频道。
 - Flutter UI 遵循 `View → ViewModel → Use Case / Port → Repository / Service`，功能 UI
@@ -96,15 +95,13 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - `docs/product/Alpha_PRD_无登录版.md`：Android + iOS + Windows Alpha 的范围、用户流程、
   功能需求与验收标准。
 - `docs/technical/端侧_SenseVoice_转录技术方案.md`：录音、初始化下载、模型锁定、存储与降级边界。
-- `docs/quality/README.md`：自动化门禁、设备矩阵、未闭环风险和候选证据要求。
+- `docs/quality/README.md`：自动化、构建、分发门禁与未闭环风险。
 - `DESIGN.md`：当前多页面视觉系统、机器可读令牌、组件规范与三平台自适应规则。
-- `lib/` 与 `test/`：现有实现、组件测试和领域测试；设备验收记录以 `docs/quality/` 为准。
-- `ios/`：Flutter iOS 工程壳、麦克风用途和 audio 后台模式；目前不构成 iOS 录音、
-  模型、后台生命周期或真机验收已完成的证据。
+- `lib/` 与 `test/`：现有实现、组件测试和领域测试。
+- `ios/`：Flutter iOS 工程壳、麦克风用途和 audio 后台模式；TestFlight 分发状态以发布工作流为准。
 - 当前没有可用于产品宣传的客户名单、用户评价、媒体报道、商业指标或公开效果声明；
   后续设计与文案不得虚构这些证明材料。
-- Alpha 的 SenseVoice 固定语料评测、Android/iOS 目标 arm64 真机与 Windows x64 设备回归、完整验收证据及
-  资源许可仍需以活动质量文档为准，不得将未闭环事项表述为已经完成。
+- SenseVoice 与说话人分离指标属于非阻断工程观测；资源许可、构建审计和分发状态以活动质量文档为准，不得将未闭环的分发事项表述为已经完成。
 
 ## Product Principles
 
@@ -113,7 +110,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 3. **选择必须明确。** 模型切换、降级、分享、删除和重新处理不得静默发生。
 4. **本地能力优先。** 无登录、弱网可用、端侧转录和最小化数据外发是产品长期边界。
 5. **降级仍然可信。** 能力不可用时保留事实数据、解释当前状态并提供真实的恢复路径。
-6. **发布必须可追溯。** 公开安装包必须是三平台同候选验收过的原始资产；撤回保留记录并用新版本向前修复。
+6. **发布必须可追溯。** 公开安装包必须是三平台同候选通过构建、自动化和分发门禁的原始资产；撤回保留记录并用新版本向前修复。
 
 ## Accessibility & Inclusion
 

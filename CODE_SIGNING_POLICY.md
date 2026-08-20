@@ -28,7 +28,7 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 2. Android、iOS 与 Windows 候选必须来自同一提交 SHA、发布标识和构建号。Windows 候选先作为不可见候选接受包审计，不能被公开自动更新发现。
 3. SignPath 每次签名均需要 Approver 人工批准。批准人核对来源提交、工作流运行、MSIX SHA-256、文件清单、许可证、产品元数据和候选清单。
 4. 私钥由 SignPath HSM 保管，不导出、不写入 GitHub Secrets，也不允许用自签名包、未签名包或个人 PFX 进行公开分发。
-5. 三平台候选完成适用验收并由 `github-release` Environment 人工批准后，才公开原 Draft 为 GitHub Pre-release，并原子更新公开更新指针。
+5. 三平台候选通过构建、自动化和分发门禁并由 `github-release` Environment 人工批准后，才公开原 Draft 为 GitHub Pre-release，并原子更新公开更新指针。
 
 提交 SignPath 的 Windows 候选必须使用 `SENTRY_ENABLED=false` 构建，因此该签名产物不启动 Sentry 远程诊断。模型下载、分享、TestFlight、Microsoft Store 及未来自动更新的网络边界见[隐私政策](PRIVACY.md)。
 

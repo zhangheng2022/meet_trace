@@ -1,7 +1,7 @@
 # 会迹（MeetTrace）端侧 SenseVoice 与说话人分离技术方案
 
 > 日期：2026-08-18
-> 对应 PRD：V1.1
+> 对应 PRD：V1.2
 > 状态：活动；Android/iOS 主链已实现，Windows 输入、桌面生命周期与睡眠恢复首轮已落地；Microsoft Store 固定身份、Store MSIX 候选 job 和更新 Manifest 的 Store-only 解析边界已实现，Store 限定受众/Flight 与正式认证、平台 adapter 和三平台统一发布仍待按第 13 节验收
 
 ## 1. 目标
@@ -126,7 +126,7 @@ Windows 的全局输入偏好保存稳定设备标识和可读名称，“系统
 
 `SherpaOnnxSpeakerDiarizationService` 只通过官方 `OfflineSpeakerDiarization` Dart API 接入，不自建 JNI、FFI/C API 或原生桥接。固定输入为 16 kHz 单声道事实 PCM；分段使用 Pyannote INT8，嵌入使用 3D-Speaker，`numClusters=-1`。模型在独立 isolate 中按任务创建和释放；worker 在模型初始化尚未完成时也可被 Domain 超时直接终止，不能让已降级任务继续占用 CPU/内存。聚类 threshold 必须在不少于 60 分钟的普通话 2/3/4 人标注语料上校准并固定到 Manifest/配置，UI 不暴露该参数。
 
-供应链审查确认官方 [`sherpa_onnx 1.13.6` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.6/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart)继承了 1.13.5 为 `process` 与 `processWithCallback` 的 `calloc<Float>(samples.length)` 输入缓冲区增加 `finally` 释放的修复，替代存在完整波形原生堆遗留风险的 1.13.4。生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；升级候选必须通过 Android、iOS 与 Windows 重复长会议内存验证，不能仅凭上游代码变更宣称目标设备风险已经闭环。
+供应链审查确认官方 [`sherpa_onnx 1.13.6` Dart 实现](https://github.com/k2-fsa/sherpa-onnx/blob/v1.13.6/flutter/sherpa_onnx/lib/src/offline_speaker_diarization.dart)继承了 1.13.5 为 `process` 与 `processWithCallback` 的 `calloc<Float>(samples.length)` 输入缓冲区增加 `finally` 释放的修复，替代存在完整波形原生堆遗留风险的 1.13.4。生产组合根在 Debug/Release 均装配 `SherpaOnnxSpeakerDiarizationService`，从已校验 Manifest 读取模型路径与推理参数。全局偏好无记录时按开启处理；用户关闭后，`FinalResultCoordinator` 在创建任务前直接跳过分离。实现仍只调用官方公开 API，不导入私有绑定、不自建 FFI；重复长会议内存仅作为非阻断工程观测，不要求形成候选设备证据。
 
 录音封存后，`FinalResultCoordinator` 从同一事实音频并行启动最终 ASR 与离线分离，两者运行在独立 worker/isolate，不能占用录音写入队列。跨会议的联合最终推理由应用级 FIFO 调度器限制为单并发，同一会议内部 ASR 与分离仍并行。ASR 成功且分离成功时，按时间重叠把 `SpeakerTurn` 映射到最终转录片段；分离超时、空结果、内存或推理失败时生成明确的单一说话人降级结果。只有两条任务都结束后才以一次事务写入并激活最终快照；ASR 失败时保留事实音频和旧活动快照，不发布半成品。
 
@@ -162,7 +162,7 @@ App 不接入业务分析埋点或总结网关。Release 组合根通过 data/se
 | SHA/文件集失败 | 不激活，进入修复 |
 | 第二次启动文件缺失/大小异常 | 进入修复并完整校验 |
 | Engine 初始化或推理失败 | 不自动切换；录音继续，显示修复/重试 |
-| 官方 Dart 分离绑定未释放完整波形缓冲区 | 按已接受 Alpha 风险继续启用并记录 30 分钟内存证据；运行失败或资源不足时单一说话人降级，等待官方修复且不使用私有 API 绕过 |
+| 官方 Dart 分离绑定未释放完整波形缓冲区 | 按已接受 Alpha 风险继续启用；可选观测长会议内存，运行失败或资源不足时单一说话人降级，等待官方修复且不使用私有 API 绕过 |
 | 预览积压 | 丢最旧预览任务，绝不丢录音 |
 | 最终转录失败 | 保留事实音频和旧活动快照 |
 | 说话人分离失败/超时/空结果 | 生成单一说话人降级结果，与成功的最终文本一起原子发布 |
@@ -189,7 +189,7 @@ App 不接入业务分析埋点或总结网关。Release 组合根通过 data/se
 
 ## 12. 验证
 
-自动化至少覆盖：Registry 单模型、全部固定 Manifest/hash/revision、300 MB 上限、1 GiB 空间差额、移动网络同意绑定、Windows 自动下载、暂停续传、受限归档解包、所有资源原子准备、快速离线启动、SenseVoice/分离配置、会议锁定、联合任务竞态、全局推理 FIFO、最终静音跳过、VAD 故障阻断发布与可重试错误、VAD 释放异常保留有效片段、单次快照发布、分离降级、手工标签 CAS、确定性标题、WAV 封装与临时清理、旧库阻断、Windows 输入设备锁定/断开、单实例、托盘 close、睡眠缺口、更新延迟和录音连续性。ASR 与分离均通过 fake worker 验证错误、取消、释放和时序；自动化不加载真实模型权重，目标设备性能和准确率由人工验收记录并在公开批准时评估。
+自动化至少覆盖：Registry 单模型、全部固定 Manifest/hash/revision、300 MB 上限、1 GiB 空间差额、移动网络同意绑定、Windows 自动下载、暂停续传、受限归档解包、所有资源原子准备、快速离线启动、SenseVoice/分离配置、会议锁定、联合任务竞态、全局推理 FIFO、最终静音跳过、VAD 故障阻断发布与可重试错误、VAD 释放异常保留有效片段、单次快照发布、分离降级、手工标签 CAS、确定性标题、WAV 封装与临时清理、旧库阻断、Windows 输入设备锁定/断开、单实例、托盘 close、睡眠缺口、更新延迟和录音连续性。ASR 与分离均通过 fake worker 验证错误、取消、释放和时序；自动化不加载真实模型权重。性能与准确率可按需要观测，但不要求目标设备人工证据，也不进入公开批准条件。
 
 交付运行：
 
@@ -202,7 +202,7 @@ flutter build windows --debug
 flutter build windows --release
 ```
 
-目标设备还必须完成 PRD 的 SenseVoice RTF P95、结果延迟 P95、关键事实召回率、说话人 DER/人数误差/RTF、30 分钟电量/温控/内存、后台/托盘录音和音频分享验证。Windows 基线证据不能替代 Android/iOS arm64 真机证据，移动端证据也不能替代 Windows x64 的设备、中断、桌面无障碍和 MSIX 验收。
+SenseVoice RTF、结果延迟、关键事实召回率、说话人 DER/人数误差/RTF、长会议内存、能耗和温控属于非阻断工程观测。候选发布不要求提交设备记录；后台、托盘、音频分享和系统中断继续由自动化契约覆盖，MSIX 安装与升级继续按分发门禁验证。
 
 ## 13. Windows 与统一更新实施顺序
 
@@ -210,13 +210,13 @@ flutter build windows --release
 
 | 阶段 | 交付内容 | 退出条件 |
 | --- | --- | --- |
-| 0. 范围基线 | PRD V1.1、技术方案、质量矩阵和发布合同 | Windows 仍标记“规划中”；产品决策和不支持项无冲突 |
+| 0. 范围基线 | PRD V1.2、技术方案、质量矩阵和发布合同 | Windows 仍标记“规划中”；产品决策和不支持项无冲突 |
 | 1. 构建与依赖探针 | Windows x64 Debug/Release 构建；验证 `record_windows`、`sherpa_onnx_windows`、SQLite FFI、播放和分享 | 不加载权重的构建/启动冒烟通过；记录插件能力缺口，不用私有 sherpa 绑定绕过 |
 | 2. Domain 与 data 能力 | 输入设备、连续性事件、桌面生命周期、单实例和更新 Port/Use Case；Windows adapter | Domain 不导入平台包；单元测试覆盖锁定、断开、睡眠、第二实例和更新 deferred |
 | 3. 桌面体验 | 托盘与 close 语义、窗口最小尺寸、现有双栏复用、键鼠焦点和屏幕阅读器 | Widget/integration 测试通过；录音中关闭窗口不丢 PCM；空闲关闭正常退出 |
 | 4. 更新与打包 | Android 更新 adapter、iOS TestFlight 状态、Windows Store MSIX、Store-only 更新入口和公开 Manifest | 更新只消费批准候选；录音/处理期不安装；固定 Store 身份、首次 Private audience/后续 Flight 与正式 submission 已验证 |
 | 5. CI/CD | Windows runner、MSIX 审计、三平台候选清单、同 SHA/版本门禁和原子公开更新指针 | 任一平台失败阻断；Draft/Flight 不可被自动更新发现；公开资产不可覆盖 |
-| 6. 目标设备验收 | Windows 10 22H2/11 x64、8 GB/四核基线的 30 分钟主链、设备中断、托盘、更新、无障碍 | PRD AT-21～AT-26 与三平台共同门槛全部留证，OCR Critical/High 为零 |
-| 7. 首次统一发布 | 同一 SHA 的 Android APK、iOS TestFlight 与 Windows Store submission | 三平台验收后先确认 Store submission 已公开可安装，再批准 GitHub Pre-release；此时才把 README 的 Windows 状态改为“受支持” |
+| 6. 自动化与分发闭环 | 三平台行为自动化、Windows Store Private audience/Flight、正式认证、安装与更新 | PRD AT-01～AT-26 的自动化、构建和分发门禁通过，OCR Critical/High 为零；不要求目标设备人工证据 |
+| 7. 首次统一发布 | 同一 SHA 的 Android APK、iOS TestFlight 与 Windows Store submission | 确认 Store submission 已公开可安装，再批准 GitHub Pre-release；此时才把 README 的 Windows 状态改为“受支持” |
 
-实施代码时按 `Domain Model → Port/Use Case → data adapter → ViewModel → View → 组合根` 顺序推进。每个行为阶段先补 `dart-add-unit-test` 或 `flutter-add-widget-test`，交付前运行格式化、静态分析、全量测试、Android/Windows 构建、目标设备验收和 `$open-code-review-delegate`；代码改动完成后运行 `graphify update .`。
+实施代码时按 `Domain Model → Port/Use Case → data adapter → ViewModel → View → 组合根` 顺序推进。每个行为阶段先补 `dart-add-unit-test` 或 `flutter-add-widget-test`，交付前运行格式化、静态分析、全量测试、Android/Windows 构建、分发门禁验证和 `$open-code-review-delegate`；代码改动完成后运行 `graphify update .`。

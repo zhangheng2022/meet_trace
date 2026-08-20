@@ -2,7 +2,7 @@
 
 > 状态：活动 Runbook；正式工作流已生成固定 Microsoft Store 身份的 Windows 候选，Store 限定受众/Flight、正式认证、公开发布和自动更新端到端尚未验收，完成前不得宣称 Windows 受支持
 >
-> 上游需求：[Android + iOS + Windows Alpha PRD V1.1](../product/Alpha_PRD_无登录版.md)
+> 上游需求：[Android + iOS + Windows Alpha PRD V1.2](../product/Alpha_PRD_无登录版.md)
 
 ## 1. 最简发布模型
 
@@ -13,9 +13,9 @@ Actions 页面只需要手动运行 `Alpha Release`。Android、iOS、Windows �
 3. 自动构建正式签名的 Android arm64 APK，并暂存到不可见 Draft Release。
 4. 自动构建签名 iOS IPA 并上传 TestFlight；IPA 不进入 GitHub。
 5. 自动构建固定 Store 身份的 Windows x64 MSIX，完成内容审计和 provenance，将包体及证据上传 Actions Artifact；不上传 GitHub Release。
-6. 维护者下载确切 Windows Artifact 并逐字节核对 SHA-256。首次 Store 发布把同一包提交到 Private audience；已有公开版本的后续更新提交 Package Flight。等待认证并完成 Windows 验收。
-7. 将同一包用于正式 non-flighted submission：首次发布把 audience 改为 Public，后续版本从 Flight 拉取已验收包。完成正式认证和发布，并确认 Store 产品页可安装该版本。
-8. 工作流仍停在 `Approve and deploy public Alpha`。维护者完成三个候选验收后，在 `github-release` Environment 点击批准，原 Draft 才公开为 GitHub Pre-release；公开更新 Manifest 只指向已公开 Store 产品，不读取 Draft、Private audience 或 Package Flight。
+6. 维护者下载确切 Windows Artifact 并逐字节核对 SHA-256。首次 Store 发布把同一包提交到 Private audience；已有公开版本的后续更新提交 Package Flight。等待认证并完成 Windows 分发验证。
+7. 将同一包用于正式 non-flighted submission：首次发布把 audience 改为 Public，后续版本从 Flight 拉取已验证包。完成正式认证和发布，并确认 Store 产品页可安装该版本。
+8. 工作流仍停在 `Approve and deploy public Alpha`。维护者核对三个候选的构建、自动化和分发状态后，在 `github-release` Environment 点击批准，原 Draft 才公开为 GitHub Pre-release；公开更新 Manifest 只指向已公开 Store 产品，不读取 Draft、Private audience 或 Package Flight。
 
 ```mermaid
 flowchart LR
@@ -23,12 +23,12 @@ flowchart LR
   B --> C[Android Draft]
   C --> D[iOS TestFlight]
   D --> E[Windows Actions Artifact]
-  E --> F[Private audience 或 Store Flight 验收]
+  E --> F[Private audience 或 Store Flight 分发验证]
   F --> G[正式 Store submission 已公开]
   G --> H[GitHub 一次批准与更新指针]
 ```
 
-`expected_sha`、`gate_input_path` 和候选 run ID 均不需要填写。`docs/quality/alpha_release_input.json` 及 benchmark 工具仍可用于留存质量记录，但不会阻断发布工作流。
+`expected_sha`、`gate_input_path` 和候选 run ID 均不需要填写。发布流程只读取构建、自动化、包审计和分发状态。
 
 ## 2. 版本与分发合同
 
@@ -58,7 +58,7 @@ Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、
 | `windows-alpha` | 无 | 当前不保存凭据；Store 身份是仓库中的非敏感固定配置，包体由维护者手工上传 Partner Center |
 | `github-release` | 一名 required reviewer；允许 self review | 唯一公开批准 |
 
-所有 Environment 仅允许 `master`。如果旧配置给 `android-alpha`、`testflight` 或 `windows-alpha` 设置了 reviewer，需要移除，否则流程会出现额外审批。`github-release` 的最终批准不得早于 Windows 限定受众/Flight 验收、正式 Store 认证与公开可安装检查。
+所有 Environment 仅允许 `master`。如果旧配置给 `android-alpha`、`testflight` 或 `windows-alpha` 设置了 reviewer，需要移除，否则流程会出现额外审批。`github-release` 的最终批准不得早于 Windows 限定受众/Flight 分发验证、正式 Store 认证与公开可安装检查。
 
 Android Secrets：
 
@@ -104,7 +104,7 @@ iOS Secrets：
 
 上述材料仅为已提交申请保留。收到审核结果时只记录，不把 Organization、Project、Signing Policy、Artifact Configuration 或证书 Subject 写入当前 `windows-alpha`。若未来考虑启用 GitHub MSIX，必须先证明证书 Subject 与 Store 包身份兼容，评估升级和本地数据连续性，更新 PRD，并明确停止 Store 路线；否则继续只使用 Microsoft Store。
 
-## 4. 运行与验收
+## 4. 运行与分发验证
 
 在 `master` 的 Actions 页面打开 `Alpha Release`，只填写：
 
@@ -113,7 +113,7 @@ iOS Secrets：
 - `ios_testflight_external_url`：可选，格式为 `https://testflight.apple.com/join/<code>`；
 - `resume_run_id`：仅在 Android、iOS、Windows 候选均成功而最终公开失败时填写原运行 ID；正常发布留空。
 
-Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；iOS job 成功后从 TestFlight 安装同一候选；Windows 从 `meettrace-windows-store-<run>-<attempt>` Artifact 取得确切 MSIX，并核对候选清单 SHA-256。首次发布使用 Private audience，后续版本使用 Package Flight；完成 AT-01～AT-26 的适用项后，让正式 non-flighted submission 复用同一包并发布。确认 Store 产品页已可安装该版本后，回到等待中的 `Approve and deploy public Alpha` job 批准 GitHub 公开。自动化会再次校验：
+Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；iOS job 成功后从 TestFlight 安装同一候选；Windows 从 `meettrace-windows-store-<run>-<attempt>` Artifact 取得确切 MSIX，并核对候选清单 SHA-256。首次发布使用 Private audience，后续版本使用 Package Flight；自动化、构建审计与分发门禁通过后，让正式 non-flighted submission 复用同一包并发布。确认 Store 产品页已可安装该版本后，回到等待中的 `Approve and deploy public Alpha` job 批准 GitHub 公开。该步骤不要求目标设备人工证据；自动化会再次校验：
 
 - annotated tag、release ID、marketing version 与 candidate SHA；
 - Android、iOS 与 Windows 候选证据属于指定运行和同一 SHA、版本与构建号；复用的不可变候选可来自更早的暂存运行；
@@ -121,7 +121,7 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 - Release 仍是 Draft prerelease。
 - Store 产品已公开同一候选；公开更新 Manifest 当前仍指向旧版本，且新指针只会在本次批准后写入。
 
-任一技术校验失败都不会公开 Draft。人工质量结论由批准人负责，不再由 JSON 门禁判定。
+任一技术校验失败都不会公开 Draft。批准人依据构建、自动化、包审计和分发状态作出公开决定；流程不读取额外 JSON 质量输入。
 
 ## 5. 后补 TestFlight 外部链接
 
@@ -152,6 +152,6 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 - [ ] `master` 与 `v*` Ruleset 已启用。
 - [ ] Workflow permissions 允许 Actions 写 Release。
 - [ ] Actions 页面只有 `Alpha Release` 作为手动正式发版入口。
-- [ ] Microsoft Store 固定身份与当前候选完全一致；首次 Private audience 或后续 Package Flight 验收已完成，正式 Store submission 已认证、公开且可安装同一包。
-- [ ] 当前候选已按[质量与验收](../quality/README.md)完成三平台适用项，再批准公开。
+- [ ] Microsoft Store 固定身份与当前候选完全一致；首次 Private audience 或后续 Package Flight 分发验证已完成，正式 Store submission 已认证、公开且可安装同一包。
+- [ ] 当前候选已按[质量与验收](../quality/README.md)通过三平台构建、自动化和分发门禁，再批准公开。
 - [ ] 公开更新 Manifest 仍指向旧版 Store 候选，且更新动作位于最终批准之后；仓库和 Release 不存在 `.appinstaller` 或 MSIX。
