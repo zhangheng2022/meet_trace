@@ -98,12 +98,21 @@ def backup_if_protected(out_dir: Path) -> "Path | None":
         return None
 
 def _obsidian_tag(name: str) -> str:
-    """Sanitize a community name for use as an Obsidian tag.
+    r"""Sanitize a community name for use as an Obsidian tag.
 
-    Obsidian tags only allow alphanumerics, hyphens, underscores, and slashes.
-    Spaces become underscores; everything else is stripped.
+    Obsidian tags accept letters from any language plus digits, hyphens,
+    underscores and slashes; spaces and most punctuation are not allowed, and a
+    tag cannot be digits-only. ``\w`` is Unicode-aware in Python 3, so Hangul,
+    CJK, Cyrillic and accented Latin survive instead of being stripped (#2862):
+    an ASCII-only filter collapsed every non-Latin community label to
+    underscores, so every note in that community carried the same tag.
     """
-    return re.sub(r"[^a-zA-Z0-9_\-/]", "", name.replace(" ", "_"))
+    tag = re.sub(r"[^\w\-/]", "", name.replace(" ", "_"))
+    if not tag.strip("_-/"):
+        return "unnamed"          # label was punctuation only
+    if tag.isdigit():
+        return f"c{tag}"          # Obsidian ignores digits-only tags
+    return tag
 
 
 def _strip_diacritics(text: str | None) -> str:
@@ -157,7 +166,15 @@ from graphify.exporters.base import COMMUNITY_COLORS  # noqa: E402,F401
 from graphify.exporters.html import to_html  # noqa: E402,F401
 
 
-_CONFIDENCE_SCORE_DEFAULTS = {"EXTRACTED": 1.0, "INFERRED": 0.5, "AMBIGUOUS": 0.2}
+# Fallback scores for an edge that carries a confidence tier but no
+# confidence_score. The INFERRED default was 0.5, which references/extraction-spec.md
+# rules out in as many words — "never omit it, never use 0.5 as a default" — and
+# which is not in the discrete INFERRED set {0.55, 0.65, 0.75, 0.85, 0.95} either.
+# It is now the bottom of that set: a missing score is an absence of evidence
+# about strength, so the honest fallback is the weakest value the rubric allows,
+# not a midpoint that reads as a coin flip (#2813). Every AST emission site now
+# supplies its own score, so this is a backstop rather than a routine path.
+_CONFIDENCE_SCORE_DEFAULTS = {"EXTRACTED": 1.0, "INFERRED": 0.55, "AMBIGUOUS": 0.2}
 
 
 def attach_hyperedges(G: nx.Graph, hyperedges: list) -> None:
@@ -332,6 +349,22 @@ def to_json(G: nx.Graph, communities: dict[int, list[str]], output_path: str, *,
         if true_src is not None and true_tgt is not None:
             link["source"] = true_src
             link["target"] = true_tgt
+    # Canonicalize the key order WITHIN each node/link dict. node_link_data always
+    # appends the node key (`id`) at the end, so a node whose `id` was an inline
+    # attribute on a cold build (position varies) lands last after a read-rebuild
+    # (build_from_json consumes `id` as the pure node key). The values are
+    # identical either way, but the field order churns, so a byte-diff of two
+    # equivalent graph.json files is noisy and any position-sensitive consumer
+    # sees a spurious change on every round-trip. Emit a stable order — the
+    # identity keys first, then the remaining keys sorted — so the serialized
+    # form is invariant regardless of how the attribute was stored in memory.
+    def _canonical(item: dict, lead: tuple[str, ...]) -> dict:
+        leading = [k for k in lead if k in item]
+        rest = sorted(k for k in item if k not in leading)
+        return {k: item[k] for k in (*leading, *rest)}
+
+    data["nodes"] = [_canonical(n, ("id", "label")) for n in data["nodes"]]
+    data["links"] = [_canonical(link, ("source", "target", "relation")) for link in data["links"]]
     data["nodes"].sort(key=_json_sort_key)
     data["links"].sort(key=_json_sort_key)
     if "hyperedges" not in getattr(G, "graph", {}):
@@ -832,7 +865,10 @@ def to_obsidian(
     graph_config = {
         "colorGroups": [
             {
-                "query": f"tag:#community/{label.replace(' ', '_')}",
+                # Same sanitizer as the note tags (#2862): built from the raw
+                # label, the canvas colour group queried a tag that no note
+                # carries whenever the label held non-ASCII or punctuation.
+                "query": f"tag:#community/{_obsidian_tag(label)}",
                 "color": {"a": 1, "rgb": int(COMMUNITY_COLORS[cid % len(COMMUNITY_COLORS)].lstrip('#'), 16)}
             }
             for cid, label in sorted((community_labels or {}).items())

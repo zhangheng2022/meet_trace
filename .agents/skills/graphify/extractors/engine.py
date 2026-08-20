@@ -350,6 +350,7 @@ def _java_collect_type_refs(
     generic: bool,
     out: list[tuple[str, str]],
     skip: frozenset[str] | None = None,
+    preserve_qualified: bool = False,
 ) -> None:
     """Walk a Java type expression; append (name, role) tuples."""
     if node is None:
@@ -365,18 +366,26 @@ def _java_collect_type_refs(
             out.append((name, "generic_arg" if generic else "type"))
         return
     if t == "scoped_type_identifier":
-        text = _read_text(node, source).rsplit(".", 1)[-1]
-        if text and text not in _JAVA_BUILTIN_TYPES:
+        raw = _read_text(node, source)
+        simple = raw.rsplit(".", 1)[-1]
+        text = raw if preserve_qualified else raw.rsplit(".", 1)[-1]
+        if text and simple not in _JAVA_BUILTIN_TYPES:
             out.append((text, "generic_arg" if generic else "type"))
         return
     if t == "generic_type":
         for c in node.children:
             if c.type in ("type_identifier", "scoped_type_identifier"):
-                text = _read_text(c, source).rsplit(".", 1)[-1]
+                raw = _read_text(c, source)
+                simple = raw.rsplit(".", 1)[-1]
+                text = (
+                    raw
+                    if preserve_qualified and c.type == "scoped_type_identifier"
+                    else simple
+                )
                 if (
                     text
-                    and text not in _JAVA_BUILTIN_TYPES
-                    and (c.type == "scoped_type_identifier" or text not in skip)
+                    and simple not in _JAVA_BUILTIN_TYPES
+                    and (c.type == "scoped_type_identifier" or simple not in skip)
                 ):
                     out.append((text, "generic_arg" if generic else "type"))
                 break
@@ -384,17 +393,23 @@ def _java_collect_type_refs(
             if c.type == "type_arguments":
                 for arg in c.children:
                     if arg.is_named:
-                        _java_collect_type_refs(arg, source, True, out, skip)
+                        _java_collect_type_refs(
+                            arg, source, True, out, skip, preserve_qualified
+                        )
         return
     if t == "array_type":
         for c in node.children:
             if c.is_named:
-                _java_collect_type_refs(c, source, generic, out, skip)
+                _java_collect_type_refs(
+                    c, source, generic, out, skip, preserve_qualified
+                )
         return
     if node.is_named:
         for c in node.children:
             if c.is_named:
-                _java_collect_type_refs(c, source, generic, out, skip)
+                _java_collect_type_refs(
+                    c, source, generic, out, skip, preserve_qualified
+                )
 
 
 def _java_receiver_type_name(type_node, source: bytes) -> str | None:
@@ -548,21 +563,28 @@ def _java_method_receiver_types(
     return table
 
 
-def _java_annotation_names(declaration_node, source: bytes) -> list[tuple[str, str]]:
-    """Collect ``(simple, raw)`` annotation names from a Java declaration's
-    `modifiers` child. ``raw`` keeps the dotted qualifier of an inline-qualified
-    annotation (``@org.pkg.Foo``); it equals ``simple`` when unqualified."""
-    names: list[tuple[str, str]] = []
+def _java_annotation_nodes(declaration_node) -> list:
+    """Return annotations from a Java declaration's `modifiers` child."""
     modifiers = None
     for child in declaration_node.children:
         if child.type == "modifiers":
             modifiers = child
             break
     if modifiers is None:
-        return names
-    for anno in modifiers.children:
-        if anno.type not in ("marker_annotation", "annotation"):
-            continue
+        return []
+    return [
+        child
+        for child in modifiers.children
+        if child.type in ("marker_annotation", "annotation")
+    ]
+
+
+def _java_annotation_names(declaration_node, source: bytes) -> list[tuple[str, str]]:
+    """Collect ``(simple, raw)`` annotation names from a Java declaration's
+    `modifiers` child. ``raw`` keeps the dotted qualifier of an inline-qualified
+    annotation (``@org.pkg.Foo``); it equals ``simple`` when unqualified."""
+    names: list[tuple[str, str]] = []
+    for anno in _java_annotation_nodes(declaration_node):
         name_node = anno.child_by_field_name("name")
         if name_node is None:
             for sub in anno.children:
@@ -575,6 +597,35 @@ def _java_annotation_names(declaration_node, source: bytes) -> list[tuple[str, s
             if text:
                 names.append((text, raw))
     return names
+
+
+def _java_annotation_class_literal_refs(
+    declaration_node,
+    source: bytes,
+) -> list[str]:
+    """Collect Java type names used as class literals in annotation arguments."""
+    names: list[str] = []
+    for anno in _java_annotation_nodes(declaration_node):
+        arguments = anno.child_by_field_name("arguments")
+        if arguments is None:
+            continue
+        stack = [arguments]
+        while stack:
+            current = stack.pop()
+            if current.type == "class_literal":
+                type_node = next(
+                    (child for child in current.children if child.is_named),
+                    None,
+                )
+                refs: list[tuple[str, str]] = []
+                _java_collect_type_refs(
+                    type_node, source, False, refs, preserve_qualified=True
+                )
+                names.extend(name for name, _role in refs)
+                continue
+            stack.extend(child for child in current.children if child.is_named)
+    return names
+
 
 def _php_name_text(node, source: bytes) -> str | None:
     """Return the unqualified name text from a PHP `name`/`qualified_name` node."""
@@ -2041,9 +2092,11 @@ def _js_member_assignment_target(left, source: bytes):
       module.exports.foo = fn  → ("exports",   None,  "foo")
       Foo.prototype.bar = fn   → ("prototype", "Foo", "bar")
 
-    Any other shape (an arbitrary `obj.x = fn`) returns None and is skipped —
-    capturing those would reintroduce the bare-named / phantom-god-node class
-    of bug the module-level scope guard (#1077) exists to prevent.
+    An arbitrary identifier receiver is returned as ``("object", name, member)``.
+    It is only materialized after the caller proves that the identifier is a
+    direct object-literal binding in the enclosing function. Keeping that scope
+    check at the caller avoids the bare-named / phantom-god-node failure mode
+    that the module-level guard (#1077) prevents.
     """
     if left is None or left.type != "member_expression":
         return None
@@ -2061,7 +2114,7 @@ def _js_member_assignment_target(left, source: bytes):
     if obj.type == "identifier":
         if _read_text(obj, source) == "exports":
             return ("exports", None, member_name)
-        return None
+        return ("object", _read_text(obj, source), member_name)
     if obj.type == "member_expression":
         # module.exports.X  or  Foo.prototype.X
         inner_obj = obj.child_by_field_name("object")
@@ -3351,6 +3404,7 @@ def _extract_generic(
                                         if tid.is_named:
                                             _emit_java_parent_type(tid, "inherits", line)
 
+                annotation_targets: set[str] = set()
                 for anno_name, anno_raw in _java_annotation_names(node, source):
                     # An inline-qualified annotation (`@org.pkg.Foo`) keeps its
                     # full dotted name so a bare same-named local class can't
@@ -3360,9 +3414,16 @@ def _extract_generic(
                     if "." in anno_raw and config.ts_module == "tree_sitter_java":
                         anno_name = anno_raw
                     target_nid = ensure_named_node(anno_name, line)
-                    if target_nid != class_nid:
+                    if target_nid != class_nid and target_nid not in annotation_targets:
                         add_edge(class_nid, target_nid, "references", line,
                                  context="attribute")
+                        annotation_targets.add(target_nid)
+                for ref_name in _java_annotation_class_literal_refs(node, source):
+                    target_nid = ensure_named_node(ref_name, line)
+                    if target_nid != class_nid and target_nid not in annotation_targets:
+                        add_edge(class_nid, target_nid, "references", line,
+                                 context="attribute")
+                        annotation_targets.add(target_nid)
 
                 if t == "record_declaration":
                     components = node.child_by_field_name("parameters")
@@ -3440,6 +3501,59 @@ def _extract_generic(
                             if target_nid != class_nid:
                                 add_edge(class_nid, target_nid, "references",
                                          cp_line, context=ctx)
+
+            # C#: a primary constructor (`class Foo(IBar bar)`, C# 12+) declares
+            # its dependencies on the type declaration itself rather than in a
+            # field or property, so neither the field_declaration nor the
+            # property_declaration handler ever sees them — the parameter type
+            # got no references edge, and because the name was never registered
+            # in csharp_field_types, _csharp_method_receiver_types could not type
+            # the receiver either, so calls through it (`bar.Baz()`) lost their
+            # calls edge as well. The Scala class_parameters branch directly
+            # above is the analogue; Kotlin's is #2063. Grammar note: the list is
+            # an UNNAMED child of the declaration, so child_by_field_name(
+            # "parameters") returns None and the children must be scanned.
+            if config.ts_module == "tree_sitter_c_sharp" and t in (
+                "class_declaration",
+                "record_declaration",
+                "struct_declaration",
+            ):
+                csharp_type_params = _csharp_type_parameters_in_scope(node, source)
+                for c in node.children:
+                    if c.type != "parameter_list":
+                        continue
+                    for param in c.children:
+                        if param.type != "parameter":
+                            continue
+                        ptype = param.child_by_field_name("type")
+                        if ptype is None:
+                            continue
+                        pname = param.child_by_field_name("name")
+                        p_line = param.start_point[0] + 1
+                        # Receiver binding mirrors the field_declaration rule:
+                        # Pascal-case only (a primitive owns no resolvable
+                        # method) and never a bare type parameter (`T item`).
+                        recv = _csharp_receiver_type_name(ptype, source)
+                        if (pname is not None and recv and recv[:1].isupper()
+                                and recv not in csharp_type_params):
+                            csharp_field_types.setdefault(class_nid, {})[
+                                _read_text(pname, source)
+                            ] = recv
+                        refs = []
+                        _csharp_collect_type_refs(
+                            ptype, source, False, refs, csharp_type_params
+                        )
+                        for ref_name, role, qualified, qualifier in refs:
+                            ctx = "generic_arg" if role == "generic_arg" else "field"
+                            target_nid = ensure_named_node(ref_name, p_line)
+                            if target_nid != class_nid:
+                                metadata = {"ref_token": ref_name}
+                                if qualified:
+                                    metadata["qualified"] = True
+                                if qualifier:
+                                    metadata["ref_qualifier"] = qualifier
+                                add_edge(class_nid, target_nid, "references",
+                                         p_line, context=ctx, metadata=metadata)
 
             # C++-specific: inheritance via base_class_clause (class and struct).
             # tree-sitter-cpp shape:
@@ -3666,6 +3780,23 @@ def _extract_generic(
                     if target_nid != parent_class_nid:
                         add_edge(parent_class_nid, target_nid, "references",
                                  line, context=ctx)
+            return
+
+        if (config.ts_module == "tree_sitter_java"
+                and t == "annotation_type_element_declaration"
+                and parent_class_nid):
+            type_node = node.child_by_field_name("type")
+            line = node.start_point[0] + 1
+            refs: list[tuple[str, str]] = []
+            _java_collect_type_refs(
+                type_node, source, False, refs, preserve_qualified=True
+            )
+            for ref_name, role in refs:
+                ctx = "generic_arg" if role == "generic_arg" else "return_type"
+                target_nid = ensure_named_node(ref_name, line)
+                if target_nid != parent_class_nid:
+                    add_edge(parent_class_nid, target_nid, "references",
+                             line, context=ctx)
             return
 
         if (config.ts_module == "tree_sitter_php"
@@ -4018,13 +4149,21 @@ def _extract_generic(
                         target_nid = ensure_named_node(ref_name, line)
                         if target_nid != func_nid:
                             add_edge(func_nid, target_nid, "references", line, context=ctx)
+                annotation_targets: set[str] = set()
                 for anno_name, anno_raw in _java_annotation_names(node, source):
                     # Inline-qualified: keep the dotted name (#2504); see the
                     # class-level annotation handling above.
                     target_nid = ensure_named_node(
                         anno_raw if "." in anno_raw else anno_name, line)
-                    if target_nid != func_nid:
+                    if target_nid != func_nid and target_nid not in annotation_targets:
                         add_edge(func_nid, target_nid, "references", line, context="attribute")
+                        annotation_targets.add(target_nid)
+                for ref_name in _java_annotation_class_literal_refs(node, source):
+                    target_nid = ensure_named_node(ref_name, line)
+                    if target_nid != func_nid and target_nid not in annotation_targets:
+                        add_edge(func_nid, target_nid, "references", line,
+                                 context="attribute")
+                        annotation_targets.add(target_nid)
 
             if config.ts_module == "tree_sitter_php":
                 params_container = None
@@ -4240,17 +4379,32 @@ def _extract_generic(
                                      line, context=ctx)
 
             body = _find_body(node, config)
-            # JS/TS: capture `this.X = () => {}` / `this.X = function(){}`
-            # assigned directly in this function/constructor body. They live
-            # inside the body (otherwise only walked for calls), so without this
-            # they are never emitted — the dominant miss on constructor-style
-            # ("function Foo(){ this.bar = () => {} }") and many CommonJS repos.
-            # Owner is the enclosing class when present (a constructor's methods
-            # belong to the class), else the function itself.
+            # JS/TS: capture callable members assigned directly in a function
+            # body. Besides constructor-style `this.X = fn`, factories commonly
+            # create an object literal and assign its public surface with
+            # `api.X = fn`. These statements otherwise live only in a body that
+            # is walked for calls, so their symbols vanish from the graph.
             if body is not None and config.ts_module in (
                 "tree_sitter_javascript", "tree_sitter_typescript"
             ):
-                this_owner_nid = parent_class_nid if parent_class_nid else func_nid
+                function_owner_nid = parent_class_nid if parent_class_nid else func_nid
+                object_bindings: dict[str, object] = {}
+                for stmt in body.children:
+                    if stmt.type not in ("lexical_declaration", "variable_declaration"):
+                        continue
+                    for declarator in stmt.children:
+                        if declarator.type != "variable_declarator":
+                            continue
+                        name = declarator.child_by_field_name("name")
+                        value = declarator.child_by_field_name("value")
+                        if name is not None and name.type == "identifier" \
+                                and value is not None and value.type == "object":
+                            object_bindings[_read_text(name, source)] = declarator
+                # A factory object gets one owner node and one `contains` edge no
+                # matter how many methods hang off it. add_node dedups on id, but
+                # add_edge does not, so without this guard N assigned methods would
+                # emit N identical `contains` edges (the flood #1077 warns against).
+                contained_owners: set[str] = set()
                 for stmt in body.children:
                     if stmt.type != "expression_statement":
                         continue
@@ -4263,13 +4417,25 @@ def _extract_generic(
                         continue
                     tgt = _js_member_assignment_target(
                         assign.child_by_field_name("left"), source)
-                    if tgt is None or tgt[0] != "this":
+                    if tgt is None:
+                        continue
+                    if tgt[0] == "this":
+                        owner_nid = function_owner_nid
+                    elif tgt[0] == "object" and tgt[1] in object_bindings:
+                        object_name = tgt[1]
+                        owner_nid = _make_id(function_owner_nid, object_name)
+                        owner_line = object_bindings[object_name].start_point[0] + 1
+                        add_node(owner_nid, object_name, owner_line)
+                        if owner_nid not in contained_owners:
+                            contained_owners.add(owner_nid)
+                            add_edge(function_owner_nid, owner_nid, "contains", owner_line)
+                    else:
                         continue
                     m_name = tgt[2]
                     m_line = stmt.start_point[0] + 1
-                    m_nid = _make_id(this_owner_nid, m_name)
+                    m_nid = _make_id(owner_nid, m_name)
                     add_node(m_nid, f".{m_name}()", m_line)
-                    add_edge(this_owner_nid, m_nid, "method", m_line)
+                    add_edge(owner_nid, m_nid, "method", m_line)
                     m_body = val.child_by_field_name("body")
                     if m_body:
                         function_bodies.append((m_nid, m_body))
@@ -4602,6 +4768,12 @@ def _extract_generic(
             "relation": "indirect_call",
             "context": context,
             "confidence": "INFERRED",
+            # 0.85 = "strong inference" on the extraction-spec rubric. The symbol
+            # link is direct — the function is named right here — but that it is
+            # ever INVOKED is the inference, which is why this is not the 0.95
+            # tier. Previously no score was emitted at all and the edge inherited
+            # the 0.5 default the rubric forbids (#2813).
+            "confidence_score": 0.85,
             "source_file": str_path,
             "source_location": f"L{loc_node.start_point[0] + 1}",
             "weight": 1.0,
