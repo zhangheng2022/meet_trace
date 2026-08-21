@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Alpha Release
-version: 1.2
+version: 1.3
 date_created: 2026-08-20
-last_updated: 2026-08-21
+last_updated: 2026-08-22
 owner: MeetTrace Maintainers
 tags: [process, cicd, github-actions, release, android, ios, windows, auto-update]
 ---
@@ -121,7 +121,7 @@ flowchart TD
 - Android 与 Windows 候选 job 最长 90 分钟，iOS 候选 job 最长 120 分钟，最终公开 job 最长 30 分钟。
 - 发布候选必须来自 `master` 历史；禁止移动既有 tag。
 - 既有共享构建号低于 `2001` 时，下一候选一次性从 `2001` 开始，随后连续递增。Android schema 2 候选的包基础构建号固定为共享构建号减 `2000`，保留 Flutter 默认 ARM64 `+2000` ABI 偏移，使 APK 实际 `versionCode`、iOS 构建号和 Windows Store 第三段一致。签名更新指针必须携带候选清单实测的 Android `versionCode`，客户端不得自行推导。
-- 不兼容 schema 1 的既有 Android 安装：`2405` 不能系统升级到新序列首包 `2001`，用户需卸载重装；新序列从 `2001` 起严格递增并支持后续自动更新。iOS 与 Windows 不重置共享构建号。
+- 仅当前公开 Alpha 受支持。工作流可安全分发更高构建号，但不得把版本递增、更新 Manifest 或平台商店入口解释为任意旧 Alpha 可系统升级、兼容旧数据或完成迁移；Alpha 不提供降级或迁移合同。破坏性版本必须在应用内安装前提示全部本地数据清除范围并取得确认，录音或最终处理期间不得强制安装、退出或清理。
 - Microsoft Store 首次产品提交、Private audience 和 Flight 的人员/组配置属于 Partner Center bootstrap；`manual` 模式由审批人核对正式 submission，并逐字复制 Windows job 生成的 `STORE <Store ID> Published Public <版本> x64 <MSIX SHA-256>` 评论；`api` 模式由工作流复核，不得把人工证据描述为自动化查询。
 - `manual` 模式未从本次运行找到匹配的 `github-release` 已批准记录，或 `api` 模式验证失败、超时、凭据缺失时，保持 Draft 和旧更新指针，不得降级放行。
 
@@ -161,7 +161,7 @@ flowchart TD
 | Store submission 同时含非 x64 包 | 不公开 | `manual` 核对包列表；`api` 检查架构集合 |
 | TestFlight 外部链接缺失 | 允许公开，但说明标记待提供 | Release notes 检查 |
 | 同版本已撤回 | 禁止重新公开 | 签名指针状态迁移检查 |
-| 首个 schema 2 统一候选 | 共享构建号为 `2001`；Android 基础构建号为 `1`、实际 `versionCode` 为 `2001`；iOS 与 Windows 同为 `2001`；不声明兼容旧 Android Alpha 安装 | 三平台候选清单、APK badging 和客户端安装前验包测试 |
+| 首个 schema 2 统一候选 | 共享构建号为 `2001`；Android 基础构建号为 `1`、实际 `versionCode` 为 `2001`；iOS 与 Windows 同为 `2001`；不声明兼容任何旧 Alpha 安装或数据 | 三平台候选清单、APK badging 和客户端安装前验包测试 |
 | API 返回未知状态或关键字段类型错误 | `api` 模式失败关闭 | 严格枚举状态并校验关键 schema；无关新增字段可忽略 |
 
 ## Validation Criteria
@@ -188,6 +188,7 @@ flowchart TD
 | 1.0 | 2026-08-20 | 定义三平台候选、Store 生产验证、统一公开与签名更新指针的纵向合同 | Codex |
 | 1.1 | 2026-08-20 | 增加无 Entra 的受保护人工证明默认路径，并保留可选 Partner Center API 核验 | Codex |
 | 1.2 | 2026-08-21 | 保留 Android ABI split，将三平台实际构建号统一到 `2001` 起连续递增，并明确不兼容旧 Android Alpha 安装 | Codex |
+| 1.3 | 2026-08-22 | 明确仅支持当前公开 Alpha，更新与统一发布不构成任意 Alpha 间安装或数据兼容承诺 | Codex |
 
 ## Related Specifications
 

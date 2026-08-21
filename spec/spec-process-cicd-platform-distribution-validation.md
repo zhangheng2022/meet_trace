@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Platform Distribution Validation
-version: 1.4
+version: 1.5
 date_created: 2026-08-21
-last_updated: 2026-08-21
+last_updated: 2026-08-22
 owner: MeetTrace Maintainers
 tags: [process, cicd, github-actions, distribution, android, ios, windows, auto-update]
 ---
@@ -95,7 +95,7 @@ flowchart TD
 ## Execution Constraints
 
 - `resolve` 使用公开 Release、GitHub Actions Artifact 和 `updates/alpha`；来源证据过期时失败关闭，不能凭手工复制的 JSON 补齐。同一运行重跑产生同前缀 Artifact 时，只按 `created_at` 与 ID 选择最新未过期项，并把确切名称传给下游 job。
-- Android 公开 APK 只有 `arm64-v8a`，不得改用 x64 GitHub 模拟器或重新签名。schema 1 遗留候选按共享构建号与默认 ARM64 `+2000` 偏移核对；schema 2 候选必须同时提供 Android 基础构建号和实测 `versionCode`，且实测值同时等于基础构建号加 `2000` 和跨平台共享构建号。营销版本、包名和签名世系均须匹配。跨 schema 验证不要求系统版本码递增，也不表述为旧 Alpha 到新序列的系统升级；Firebase Robo 只证明当前公开包可安装和启动。
+- Android 公开 APK 只有 `arm64-v8a`，不得改用 x64 GitHub 模拟器或重新签名。schema 1 遗留候选按共享构建号与默认 ARM64 `+2000` 偏移核对；schema 2 候选必须同时提供 Android 基础构建号和实测 `versionCode`，且实测值同时等于基础构建号加 `2000` 和跨平台共享构建号。营销版本、包名和签名世系均须匹配。跨 schema 验证不要求系统版本码递增，也不表述为任意旧 Alpha 到当前 Alpha 的系统升级、兼容或数据迁移；Firebase Robo 只证明当前公开包可安装和启动。
 - iOS 当前自动化证明相同签名候选已由来源 job 提交 TestFlight，不调用 App Store Connect 查询处理完成或外部测试可用性；不得夸大为真实终端安装。
 - Windows `Update` 模式要求专用机在新版公开前已保留确切旧版 Store 包；Store 不提供任意历史版本回装接口，工作流不得旁加载 MSIX 冒充分发更新。
 - 专用 Windows 运行器必须是一次只跑一个验证任务的隔离账号，使用 Windows 10 22H2/11 x64 客户端（拒绝 Windows Server），装有 GitHub CLI、WinGet 和 `msstore` source，并允许启动桌面应用；服务会话无法最小化、恢复并前置窗口时不得绕过启动检查。
@@ -143,6 +143,7 @@ flowchart TD
 
 | Version | Date | Changes | Author |
 |---|---|---|---|
+| 1.5 | 2026-08-22 | 明确分发验证只证明当前公开 Alpha，不提供任意旧 Alpha 的安装升级或数据兼容承诺 | Codex |
 | 1.4 | 2026-08-21 | 支持 Android schema 2 基础构建号与实测 split `versionCode`，将后者绑定统一共享构建号，并明确跨序列不提供旧版升级兼容 | Codex |
 | 1.3 | 2026-08-21 | 明确 Flutter arm64 split APK 的 `versionCode` 与共享构建号映射 | Codex |
 | 1.2 | 2026-08-21 | 兼容新版 `apksigner` 签名标签，并同步专用 Environment 与 runner 已配置的当前事实 | Codex |
