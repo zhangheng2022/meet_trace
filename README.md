@@ -2,7 +2,7 @@
   <img src="assets/branding/stitch/meettrace-app-icon.svg" width="112" alt="会迹 MeetTrace 图标">
   <h1>会迹（MeetTrace）</h1>
   <p><strong>本地优先、可核对、不会为推理牺牲录音的会议记录应用。</strong></p>
-  <p>Flutter · Android / iOS · Windows Store Alpha · 端侧 ASR · 本地事实音频</p>
+  <p>Flutter · Android / iOS · Windows 规划中 · 端侧 ASR · 本地事实音频</p>
 </div>
 
 <div align="center">
@@ -14,7 +14,7 @@
 会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备构建和 TestFlight 上传链路；Windows 已使用固定 Microsoft Store 包身份完成限定受众、正式认证和首次三平台统一公开，公开更新指针也已前移。Windows 的 Store 安装、卸载和更新纵向自动化仍待闭环，因此当前只作为公开 Store Alpha 提供，尚不视为完全受支持。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备构建和 TestFlight 上传链路；Windows 已使用固定 Microsoft Store 包身份完成限定受众、正式认证和首次三平台统一公开，公开更新指针也已前移。但 Store 安装、卸载和更新纵向自动化仍待闭环，因此 Windows 按产品门槛继续标记为“规划中/未就绪”，不视为受支持平台。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
 
 ## 安装测试版
 
@@ -22,7 +22,7 @@
 - 首次启动约下载 286.3 MB 运行资源，并要求应用所在卷至少有 1 GiB 可用空间。
 - 应用不提供登录或云同步；卸载会删除本机数据，Alpha 升级也可能清除旧数据并重新下载模型。
 - iOS 仅通过 TestFlight 分发；当前外部测试链接待提供。
-- Windows 仅通过 [Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) 分发，支持 Windows 10 22H2/11 x64；安装和 Store 更新纵向自动化闭环前仍按未完全支持处理。
+- Windows Store 页面已公开并仅提供 Windows 10 22H2/11 x64 包；可在 [Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) 查看，但安装、卸载和 Store 更新纵向自动化闭环前仍为“规划中/未就绪”。
 
 全部公开版本见 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
 
@@ -54,7 +54,7 @@ Windows 当前由 Microsoft Store 完成签名和分发；[Code signing policy](
 |---|---:|---|
 | Android | API 24 / Android 7.0 | 当前开发与验证基线 |
 | iOS | iOS 15.0 | 构建与 TestFlight 最低基线 |
-| Windows | Windows 10 22H2、x64 | 已公开 Microsoft Store Alpha；AT-21/AT-25 安装与更新纵向自动化仍待闭环 |
+| Windows | Windows 10 22H2、x64 | 规划中/未就绪；Store 已公开，AT-21/AT-25 安装、卸载与更新纵向自动化仍待闭环 |
 | 其他平台 | — | Web、Linux 与 macOS 不属于 Alpha 支持范围 |
 
 ## 技术概览
@@ -89,7 +89,14 @@ flutter build apk --debug
 flutter build ios --debug --no-codesign
 ```
 
-PRD V1.2 的目标候选必须从统一 `Alpha Release` 入口生成；Android、iOS 与 Windows 同一 SHA 的构建、自动化和分发门禁通过后才公开，iOS 不向 GitHub 上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。正式工作流已完成固定 Store 身份候选、受保护人工证明、公开 GitHub Pre-release 和签名更新指针的首次生产闭环；有 Entra 租户时仍可选择 Partner Center API 机器复核。Windows 在 AT-21/AT-25 的 Store 安装、卸载和更新纵向自动化闭环前仍不得宣称完全受支持。维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
+PRD V1.2 的目标候选必须从统一 `Alpha Release` 入口生成：
+
+- Android、iOS 与 Windows 必须来自同一 SHA，三平台构建、自动化和分发门禁全部通过后才能公开。
+- GitHub Release 只发布 Android APK 和候选 Manifest；iOS 不上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。
+- 正式工作流已完成固定 Store 身份候选、受保护人工证明、公开 GitHub Pre-release 和签名更新指针的首次生产闭环；有 Entra 租户时仍可选择 Partner Center API 机器复核。
+- Windows 只有在 AT-21～AT-26 全部闭环后才能标记为受支持；当前 AT-21/AT-25 的 Store 安装、卸载和更新纵向自动化仍待完成，因此必须保持“规划中/未就绪”。
+
+维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
 
 ## 参与贡献
 
