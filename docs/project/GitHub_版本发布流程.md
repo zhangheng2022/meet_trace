@@ -40,8 +40,8 @@ flowchart LR
 | 项目 | 规则 |
 |---|---|
 | Release ID/tag | `v<pubspec marketing version>-alpha.<正整数>` |
-| 三平台构建号 | 从已有 Release 候选清单的最大构建号连续 `+1`；同一 Draft 重跑复用原号，Android、iOS 与 Windows 始终一致 |
-| Android | 正式签名、仅 `arm64-v8a`，公开附件名为 `meettrace-<release-id>-android-arm64.apk` |
+| 三平台构建号 | 既有候选之后把下一共享构建号统一提升到 `2001`，此后从已有 Release 候选清单的最大构建号连续 `+1`；同一 Draft 重跑复用原号，Android 实际 `versionCode`、iOS `CFBundleVersion` 与 Windows Store 第三段始终一致 |
+| Android | 正式签名、仅 `arm64-v8a`，保留 `--split-per-abi`，公开附件名为 `meettrace-<release-id>-android-arm64.apk`；传给 Flutter 的包基础构建号等于共享构建号减 `2000`，由 Flutter 默认 ARM64 ABI 偏移还原为相同的实际 `versionCode`。首个新候选输入 `1`、产出 `2001`；候选清单保存基础构建号和实测 `versionCode`，客户端不自行计算偏移 |
 | iOS | 仅 TestFlight，不上传 IPA 到 Actions Artifact 或 GitHub Release |
 | Windows | Windows 10 22H2/11、仅 x64；固定 Store ID `9PHHSJMWK06G`，MSIX 只进入 Actions Artifact 与 Partner Center |
 | Windows Store 包版本 | `1.0.<共享发布构建号>.0`；共享构建号不超过 `65535`，营销版本另行记录，第一段不得为 `0`，Store 保留的第四段固定为 `0` |
@@ -51,6 +51,8 @@ flowchart LR
 | 首次启动资源 | Release 说明明确约下载 286.3 MB |
 
 Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、候选 SHA、已分配构建号和身份匹配的不可变 Android/iOS/Windows 候选，不覆盖已成功资产。新候选从所有已有 Draft/公开候选清单的最大构建号连续加一。Draft 一旦公开，标签、APK 和公开候选清单不可覆盖；Private audience、Flight 与正式 Store submission 必须复用同一候选包，代码或二进制修复必须使用新的 Alpha 序号向前发布。
+
+共享构建号低于 `2001` 时，下一候选一次性从 `2001` 开始；随后按 `2002 → 2003` 连续递增。Android 的包基础构建号分别为 `1 → 2 → 3`，实际系统版本码与 iOS、Windows 的共享构建号一致。同一 Draft 重跑必须复用原号。仅当前公开 Alpha 受支持；任意旧 Alpha 到新 Alpha 的系统安装升级、数据读取和迁移均不作保证。自动更新仍用于安全分发已批准候选，但不构成兼容性承诺。
 
 ## 3. GitHub 配置
 
@@ -180,7 +182,7 @@ $payload | gh api repos/zhangheng2022/meet_trace/dispatches `
 
 工作流先使用客户端同一 Ed25519 公钥验签 `updates/alpha`，再把公开 APK、iOS/Windows 候选、来源运行和 Windows Published/Public 回执绑定到同一提交、版本和构建号。随后：
 
-1. Android 从 GitHub Release 下载确切 arm64 APK，核对 SHA-256，在 Firebase Test Lab ARM 设备以 `--no-resign` 原样安装并启动。该步骤证明当前公开包可安装启动，并核对上一公开 APK 的包名、递增构建号和发布证书世系；不把它表述为系统级 APK 旧版升级。
+1. Android 从 GitHub Release 下载确切 arm64 APK，核对 SHA-256，在 Firebase Test Lab ARM 设备以 `--no-resign` 原样安装并启动。验证器对 schema 1 遗留包核对共享构建号与默认 ARM64 ABI 偏移，对 schema 2 新包核对清单记录的 Android 基础构建号和真实 `versionCode`。该步骤只证明当前公开包可安装启动并核对包名与发布证书世系；不得据此声明任何旧 Alpha 可升级、兼容或迁移。
 2. iOS 复核来源运行的签名 TestFlight 候选和成功上传 job，任何 IPA 出现在证据目录都会失败。当前不调用 App Store Connect 查询处理完成或终端安装状态。
 3. Windows 只调度 `[self-hosted, Windows, X64, meettrace-store]` 专用机和 `windows-store-validation` Environment。脚本只从 `msstore` 安装或更新产品 `9PHHSJMWK06G`，核对固定包身份、x64 和确切版本，连续启动两次验证单实例，最后只卸载当前运行器账号的包。
 
