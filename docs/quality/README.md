@@ -14,7 +14,7 @@
 - SenseVoice、Silero VAD、Pyannote 和 3D-Speaker 运行时下载、严格校验、联合最终快照及文本/WAV 分享主链已实现。
 - Patrol/Firebase Test Lab、Widget、Domain、Data 与平台守卫继续承担自动化回归，但不要求提交目标设备人工证据，也不将性能或准确率记录作为发布阻断条件。
 - 官方 `sherpa_onnx 1.13.6` 继承了完整波形输入缓冲区释放修复。重复长会议内存、RTF、DER、能耗和温控可作为非阻断工程观测；运行失败时继续降级为单一说话人。
-- Windows x64 Debug/Release 工程、SQLite FFI、输入设备锁定/一次回退、连续性事件、单实例激活、录音 close 转托盘、“停止并退出”安全封存及睡眠/恢复缺口记录链已实现并有自动化/本机构建冒烟。常规 CI 保留不可分发开发探针；正式 `Alpha Release` 已生成并审计固定 Partner Center 身份的 Store MSIX，只把包体上传 Actions Artifact。限定受众、正式 Store 认证、Published/Public 人工证明、公开 GitHub Pre-release 和签名 `updates/alpha` 指针已完成首次生产闭环；有 Entra 租户时可选 API 模式继续机器复核。自动更新解析器只接受 Store ID `9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`。`Platform Distribution Validation` 已定义公开合同与 Store 生命周期自动化，但仓库尚无专用 Windows 自托管运行器，也尚无成功的真实安装/更新/卸载运行；Windows 当前必须继续标记为“规划中/未就绪”。
+- Windows x64 Debug/Release 工程、SQLite FFI、输入设备锁定/一次回退、连续性事件、单实例激活、录音 close 转托盘、“停止并退出”安全封存及睡眠/恢复缺口记录链已实现并有自动化/本机构建冒烟。常规 CI 保留不可分发开发探针；正式 `Alpha Release` 已生成并审计固定 Partner Center 身份的 Store MSIX，只把包体上传 Actions Artifact。限定受众、正式 Store 认证、Published/Public 人工证明、公开 GitHub Pre-release 和签名 `updates/alpha` 指针已完成首次生产闭环；有 Entra 租户时可选 API 模式继续机器复核。自动更新解析器只接受 Store ID `9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`。`Platform Distribution Validation` 已定义公开合同与 Store 生命周期自动化，受保护 Environment 和专用 Windows 自托管运行器也已配置，但尚无成功的真实安装/更新/卸载完整运行；Windows 当前必须继续标记为“规划中/未就绪”。
 - PRD V1.2 要求 Android/iOS/Windows 同 SHA 的构建、自动化、分发与统一公开门禁；不再要求目标设备人工验收记录。
 
 ## 自动化门禁
@@ -25,7 +25,7 @@
 | 可复用质量核心 | `.github/workflows/_flutter-core.yml` | 为 PR CI 与 Alpha Release 提供同一套格式、分析和测试门禁 |
 | 正式候选 | `.github/workflows/alpha-release.yml` | 同一 SHA、Android 签名 arm64 APK、iOS TestFlight、Windows Store MSIX Artifact、三平台候选清单及一次公开批准 |
 | 公开分发纵向验证 | `.github/workflows/platform-distribution-validation.yml` | 验签公开指针并绑定三平台候选；Android 在 Firebase ARM 原样安装启动，iOS 复核 TestFlight 上传证据，Windows 在专用自托管机执行 Store 安装/更新/启动/卸载；实现已就绪但真实 Windows 运行尚未完成 |
-| Windows 发布门禁 | `quality.yml` 开发探针；`alpha-release.yml` Store 候选与公开状态核验；`platform-distribution-validation.yml` 真实生命周期 | 固定 Store 身份、三平台同 SHA/版本、Published/Public 回执和候选摘要已形成机器合同；仍需配置专用运行器并分别成功执行 `InstallUninstall` 与后续版本 `Update`，完成前不得宣称闭环 |
+| Windows 发布门禁 | `quality.yml` 开发探针；`alpha-release.yml` Store 候选与公开状态核验；`platform-distribution-validation.yml` 真实生命周期 | 固定 Store 身份、三平台同 SHA/版本、Published/Public 回执和候选摘要已形成机器合同；专用运行器已配置，仍需分别成功执行 `InstallUninstall` 与后续版本 `Update`，完成前不得宣称闭环 |
 | 本地交付 | `dart format lib test`、`flutter analyze`、`flutter test` | 当前工作树通过；代码变更按 AGENTS 完成 OCR 和目标平台构建 |
 
 自动化失败时不得发布。性能、准确率、能耗、温控和设备实验室结果均为非阻断工程观测，不要求形成候选证据。

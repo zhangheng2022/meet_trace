@@ -184,7 +184,7 @@ $payload | gh api repos/zhangheng2022/meet_trace/dispatches `
 2. iOS 复核来源运行的签名 TestFlight 候选和成功上传 job，任何 IPA 出现在证据目录都会失败。当前不调用 App Store Connect 查询处理完成或终端安装状态。
 3. Windows 只调度 `[self-hosted, Windows, X64, meettrace-store]` 专用机和 `windows-store-validation` Environment。脚本只从 `msstore` 安装或更新产品 `9PHHSJMWK06G`，核对固定包身份、x64 和确切版本，连续启动两次验证单实例，最后只卸载当前运行器账号的包。
 
-仓库当前尚无该专用运行器，因此工作流实现合并不等于纵向闭环。必须先完成专用机注册和 `InstallUninstall` 成功运行；真实 `Update` 还需要在下一版本公开前保留旧版 Store 安装或虚拟机快照。两个 Windows 模式及最终三平台 Gate 全部成功前，Windows 仍显示“规划中/未就绪”。详细合同见[平台分发纵向验证规格](../../spec/spec-process-cicd-platform-distribution-validation.md)。
+仓库已配置受保护 Environment 和该专用运行器，但基础设施就绪不等于纵向闭环。必须先完成 `InstallUninstall` 成功运行；真实 `Update` 还需要在下一版本公开前保留旧版 Store 安装或虚拟机快照。两个 Windows 模式及最终三平台 Gate 全部成功前，Windows 仍显示“规划中/未就绪”。详细合同见[平台分发纵向验证规格](../../spec/spec-process-cicd-platform-distribution-validation.md)。
 
 ## 5. 后补 TestFlight 外部链接
 

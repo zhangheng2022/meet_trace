@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Platform Distribution Validation
-version: 1.1
+version: 1.2
 date_created: 2026-08-21
 last_updated: 2026-08-21
 owner: MeetTrace Maintainers
@@ -15,7 +15,7 @@ tags: [process, cicd, github-actions, distribution, android, ios, windows, auto-
 
 **Trigger Events**：仅接受默认分支上的 `repository_dispatch` 事件类型 `platform-distribution-validation`，由具备仓库操作权限的维护者通过 GitHub API 发起。它不会在 Actions 页面增加第二个手动入口，也不是正式发版入口；不构建、不签名、不上传 Store/TestFlight、不修改 Release 或更新指针。
 
-**Current Readiness**：工作流、解析器、脚本和守卫可由 PR 交付；仓库尚无带 `meettrace-store` 标签的专用自托管 Windows x64 运行器，因此在该运行器配置且完整运行成功前，Windows 继续标记为“规划中/未就绪”。
+**Current Readiness**：`windows-store-validation` Environment 和带 `meettrace-store` 标签的专用自托管 Windows x64 运行器已配置；首次完整 `InstallUninstall`、后续 `Update` 与最终 Gate 尚未全部成功，因此 Windows 继续标记为“规划中/未就绪”。
 
 ## Execution Flow Diagram
 
@@ -125,7 +125,7 @@ flowchart TD
 ## Validation Criteria
 
 - VLD-001：YAML 与守卫测试证明工作流只有只读权限、不可变 Action SHA，且使用 `repository_dispatch` 保持 `Alpha Release` 为 Actions 页面唯一手动入口。
-- VLD-002：公开更新解析器单元测试覆盖有效合同、摘要错、撤回状态、来源运行错和发布运行错。
+- VLD-002：公开更新解析器单元测试覆盖有效合同、摘要错、撤回状态、来源运行错和发布运行错；APK 签名解析兼容 `apksigner` 的旧式 `Signer #N` 与新版 `V<N> Signer:` 证书摘要标签，并拒绝零个或多个不同摘要。
 - VLD-003：PowerShell 可解析，安全环境变量、事件和分支检查发生在首次包状态变更之前。
 - VLD-004：工作流守卫覆盖 Firebase ARM/不重签、iOS 无 IPA、Windows 专用机/当前用户卸载及最终无旁路 Gate。
 - VLD-005：首次真实运行必须保留三个平台 Artifact 和成功 Gate；在此之前不得把 Windows 状态改为就绪。
@@ -143,6 +143,7 @@ flowchart TD
 
 | Version | Date | Changes | Author |
 |---|---|---|---|
+| 1.2 | 2026-08-21 | 兼容新版 `apksigner` 签名标签，并同步专用 Environment 与 runner 已配置的当前事实 | Codex |
 | 1.1 | 2026-08-21 | 区分候选来源与实际发布运行，选择最新 Artifact，并强化 Windows 客户端与窗口激活验证 | Codex |
 | 1.0 | 2026-08-21 | 定义公开合同、Android ARM 安装、TestFlight 证据和专用 Windows Store 生命周期纵向验证 | Codex |
 
