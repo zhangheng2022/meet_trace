@@ -32,6 +32,7 @@ void main() {
       expectedReleaseId: 'v1.1.0-alpha.1',
       expectedRepository: 'example/meettrace',
       expectedSourceRunId: 123,
+      expectedPublishRunId: 456,
       signatureVerifier: Ed25519AppUpdateSignatureVerifier(
         expectedKeyId: 'alpha-0123456789abcdef',
         publicKeyBytes: publicKey,
@@ -50,6 +51,7 @@ void main() {
     expect(receipt.windowsStoreId, '9PHHSJMWK06G');
     expect(receipt.windowsPackageVersion, '1.0.11.0');
     expect(receipt.toJson()['sourceRunId'], 123);
+    expect(receipt.toJson()['publishRunId'], 456);
   });
 
   test('拒绝公开 manifest 与签名指针的身份或摘要不一致', () async {
@@ -69,6 +71,7 @@ void main() {
         expectedReleaseId: 'v1.1.0-alpha.1',
         expectedRepository: 'example/meettrace',
         expectedSourceRunId: 123,
+        expectedPublishRunId: 456,
         signatureVerifier: Ed25519AppUpdateSignatureVerifier(
           expectedKeyId: 'alpha-0123456789abcdef',
           publicKeyBytes: publicKey,
@@ -105,6 +108,7 @@ void main() {
         expectedReleaseId: 'v1.1.0-alpha.1',
         expectedRepository: 'example/meettrace',
         expectedSourceRunId: 123,
+        expectedPublishRunId: 456,
         signatureVerifier: verifier,
       ),
       throwsStateError,
@@ -120,6 +124,7 @@ void main() {
         expectedReleaseId: 'v1.1.0-alpha.1',
         expectedRepository: 'example/meettrace',
         expectedSourceRunId: 999,
+        expectedPublishRunId: 456,
         signatureVerifier: verifier,
       ),
       throwsFormatException,
@@ -146,6 +151,7 @@ void main() {
       expectedReleaseId: 'v1.1.0-alpha.1',
       expectedRepository: 'example/meettrace',
       expectedSourceRunId: 123,
+      expectedPublishRunId: 456,
       signatureVerifier: Ed25519AppUpdateSignatureVerifier(
         expectedKeyId: 'alpha-0123456789abcdef',
         publicKeyBytes: publicKey,
@@ -154,6 +160,31 @@ void main() {
 
     expect(receipt.windowsVerificationMode, 'partnerCenterApi');
     expect(receipt.windowsArtifactSha256, 'd' * 64);
+  });
+
+  test('拒绝与生产回执不一致的实际发布运行', () async {
+    final envelope = await createSignedAppUpdateManifest(
+      _request(seed: seed, publicKey: publicKey),
+    );
+
+    await expectLater(
+      validatePublicUpdateContract(
+        envelopeBytes: envelope,
+        androidCandidate: _androidCandidate(),
+        iosCandidate: _iosCandidate(),
+        windowsCandidate: _windowsCandidate(),
+        windowsProductionReceipt: _windowsProductionReceipt(),
+        expectedReleaseId: 'v1.1.0-alpha.1',
+        expectedRepository: 'example/meettrace',
+        expectedSourceRunId: 123,
+        expectedPublishRunId: 999,
+        signatureVerifier: Ed25519AppUpdateSignatureVerifier(
+          expectedKeyId: 'alpha-0123456789abcdef',
+          publicKeyBytes: publicKey,
+        ),
+      ),
+      throwsFormatException,
+    );
   });
 
   test('拒绝被改写的 Windows 人工批准评论', () async {
@@ -174,6 +205,7 @@ void main() {
         expectedReleaseId: 'v1.1.0-alpha.1',
         expectedRepository: 'example/meettrace',
         expectedSourceRunId: 123,
+        expectedPublishRunId: 456,
         signatureVerifier: Ed25519AppUpdateSignatureVerifier(
           expectedKeyId: 'alpha-0123456789abcdef',
           publicKeyBytes: publicKey,
@@ -293,7 +325,7 @@ Map<String, Object?> _windowsProductionReceipt() {
     'candidateCommitSha': '0123456789abcdef0123456789abcdef01234567',
     'sourceRunId': 123,
     'approval': <String, Object?>{
-      'runId': 123,
+      'runId': 456,
       'environment': 'github-release',
       'reviewer': 'reviewer',
       'comment': comment,

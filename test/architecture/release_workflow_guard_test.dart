@@ -751,6 +751,11 @@ void main() {
     test('公开分发验证只接受默认分支调度事件和不可变生产合同', () async {
       final workflow = await _workflow('platform-distribution-validation.yml');
       final resolve = _job(workflow, 'resolve', 'android_public_install');
+      final runVerification = _step(
+        resolve,
+        'Verify source, publish run, and Android signing lineage',
+        'Export validated contract',
+      );
 
       expect(workflow, contains('name: Platform Distribution Validation'));
       expect(workflow, contains('repository_dispatch:'));
@@ -764,9 +769,15 @@ void main() {
         contains('dart run tool/release/verify_public_update.dart'),
       );
       expect(resolve, contains('--windows-production-receipt'));
+      expect(resolve, contains(r'--publish-run-id "$PUBLISH_RUN_ID"'));
       expect(resolve, contains('.workflowName == "Alpha Release"'));
       expect(resolve, contains('.conclusion == "success"'));
       expect(resolve, contains(r'.headSha == $sha'));
+      expect(runVerification, contains(r'gh run view "$SOURCE_RUN_ID"'));
+      expect(runVerification, contains(r'gh run view "$PUBLISH_RUN_ID"'));
+      expect(runVerification, contains('build/distribution/publish-run.json'));
+      expect(resolve, contains('sort_by(.created_at, .id)'));
+      expect(resolve, contains('matching unexpired artifact was not found'));
       expect(resolve, contains(r'git cat-file -t "$RELEASE_ID"'));
       expect(resolve, contains(r'git rev-list -n 1 "$RELEASE_ID"'));
       expect(resolve, contains('Android signing lineage changed'));
@@ -807,7 +818,11 @@ void main() {
       final workflow = await _workflow('platform-distribution-validation.yml');
       final ios = _job(workflow, 'ios_testflight_evidence', 'windows_store');
 
-      expect(ios, contains(r'meettrace-ios-testflight-${SOURCE_RUN_ID}-*'));
+      expect(ios, contains(r'--name "$IOS_SOURCE_ARTIFACT_NAME"'));
+      expect(
+        ios,
+        isNot(contains(r'meettrace-ios-testflight-${SOURCE_RUN_ID}-*')),
+      );
       expect(ios, contains("-iname '*.ipa'"));
       expect(ios, contains('ipaExposed'));
       expect(ios, contains('testFlightSubmissionEvidence'));
@@ -848,6 +863,17 @@ void main() {
         contains(r"$env:GITHUB_EVENT_NAME -cne 'repository_dispatch'"),
       );
       expect(script, contains('winget source list --disable-interactivity'));
+      expect(script, contains(r'[int]$os.ProductType -ne 1'));
+      expect(script, contains('MeetTraceWindowValidation'));
+      expect(script, contains(r'ShowWindowAsync($windowHandle, 6)'));
+      expect(script, contains(r'GetForegroundWindow() -eq $windowHandle'));
+      expect(
+        script,
+        contains(
+          'Second launch did not restore and foreground the existing '
+          'MeetTrace window.',
+        ),
+      );
       expect(script, contains(r"'install', '--id', $storeId"));
       expect(script, contains(r"'upgrade', '--id', $storeId"));
       expect(script, contains('[CmdletBinding(SupportsShouldProcess)]'));

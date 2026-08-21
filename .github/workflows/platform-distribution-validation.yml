@@ -26,10 +26,14 @@ jobs:
       windows_artifact_sha256: ${{ steps.contract.outputs.windows_artifact_sha256 }}
       android_artifact_name: ${{ steps.contract.outputs.android_artifact_name }}
       android_artifact_sha256: ${{ steps.contract.outputs.android_artifact_sha256 }}
+      ios_source_artifact_name: ${{ steps.source_artifacts.outputs.ios_artifact_name }}
+      windows_source_artifact_name: ${{ steps.source_artifacts.outputs.windows_artifact_name }}
+      contract_artifact_name: ${{ steps.contract.outputs.contract_artifact_name }}
     env:
       RELEASE_ID: ${{ github.event.client_payload.release_id }}
       PREVIOUS_ANDROID_RELEASE_ID: ${{ github.event.client_payload.previous_android_release_id }}
       SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
+      PUBLISH_RUN_ID: ${{ github.event.client_payload.publish_run_id }}
       WINDOWS_VALIDATION_MODE: ${{ github.event.client_payload.windows_validation_mode }}
       WINDOWS_PREVIOUS_VERSION: ${{ github.event.client_payload.windows_previous_version }}
 
@@ -50,6 +54,7 @@ jobs:
           [[ "$PREVIOUS_ANDROID_RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$RELEASE_ID" != "$PREVIOUS_ANDROID_RELEASE_ID" ]]
           [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$PUBLISH_RUN_ID" =~ ^[1-9][0-9]*$ ]]
           if [[ "$WINDOWS_VALIDATION_MODE" == "Update" ]]; then
             [[ "$WINDOWS_PREVIOUS_VERSION" =~ ^1\.0\.[1-9][0-9]*\.0$ ]]
           else
@@ -72,7 +77,8 @@ jobs:
       - name: Resolve locked dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Download public release and source evidence
+      - name: Download public release and latest source evidence
+        id: source_artifacts
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -114,32 +120,65 @@ jobs:
             --pattern candidate-manifest.json --pattern "*.apk" \
             --dir build/distribution/previous
 
-          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "meettrace-ios-testflight-${SOURCE_RUN_ID}-*" \
-            --dir build/distribution/source/ios
-          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "meettrace-windows-store-${SOURCE_RUN_ID}-*" \
-            --dir build/distribution/source/windows
-          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "meettrace-windows-store-production-${SOURCE_RUN_ID}-*" \
-            --dir build/distribution/source/production
+          source_artifacts="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts?per_page=100"
+          )"
+          publish_artifacts="$(
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PUBLISH_RUN_ID/artifacts?per_page=100"
+          )"
+          select_artifact() {
+            local artifacts="$1"
+            local prefix="$2"
+            jq -cer --arg prefix "$prefix" '
+              [.artifacts[] | select(
+                .expired == false and (.name | startswith($prefix))
+              )]
+              | sort_by(.created_at, .id)
+              | last // error("matching unexpired artifact was not found")
+            ' <<<"$artifacts"
+          }
+          download_artifact() {
+            local artifact="$1"
+            local destination="$2"
+            local archive="$RUNNER_TEMP/artifact-$(jq -r .id <<<"$artifact").zip"
+            gh api \
+              "repos/$GITHUB_REPOSITORY/actions/artifacts/$(jq -r .id <<<"$artifact")/zip" \
+              > "$archive"
+            unzip -q "$archive" -d "$destination"
+          }
 
-          mapfile -t ios_manifests < <(
-            find build/distribution/source/ios -type f -name candidate-manifest.json
-          )
-          mapfile -t windows_manifests < <(
-            find build/distribution/source/windows -type f -name candidate-manifest.json
-          )
-          mapfile -t production_receipts < <(
-            find build/distribution/source/production -type f \
-              -name windows-store-production-receipt.json
-          )
-          [[ "${#ios_manifests[@]}" == "1" ]]
-          [[ "${#windows_manifests[@]}" == "1" ]]
-          [[ "${#production_receipts[@]}" == "1" ]]
-          cp "${ios_manifests[0]}" build/distribution/ios-candidate-manifest.json
-          cp "${windows_manifests[0]}" build/distribution/windows-candidate-manifest.json
-          cp "${production_receipts[0]}" \
+          ios_artifact="$(
+            select_artifact "$source_artifacts" \
+              "meettrace-ios-testflight-${SOURCE_RUN_ID}-"
+          )"
+          windows_artifact="$(
+            select_artifact "$source_artifacts" \
+              "meettrace-windows-store-${SOURCE_RUN_ID}-"
+          )"
+          production_artifact="$(
+            select_artifact "$publish_artifacts" \
+              "meettrace-windows-store-production-${PUBLISH_RUN_ID}-"
+          )"
+          ios_artifact_name="$(jq -r .name <<<"$ios_artifact")"
+          windows_artifact_name="$(jq -r .name <<<"$windows_artifact")"
+          production_artifact_name="$(jq -r .name <<<"$production_artifact")"
+          [[ "$ios_artifact_name" =~ ^meettrace-ios-testflight-${SOURCE_RUN_ID}-[1-9][0-9]*$ ]]
+          [[ "$windows_artifact_name" =~ ^meettrace-windows-store-${SOURCE_RUN_ID}-[1-9][0-9]*$ ]]
+          [[ "$production_artifact_name" =~ ^meettrace-windows-store-production-${PUBLISH_RUN_ID}-[1-9][0-9]*$ ]]
+          download_artifact "$ios_artifact" build/distribution/source/ios
+          download_artifact "$windows_artifact" build/distribution/source/windows
+          download_artifact "$production_artifact" build/distribution/source/production
+          echo "ios_artifact_name=$ios_artifact_name" >> "$GITHUB_OUTPUT"
+          echo "windows_artifact_name=$windows_artifact_name" >> "$GITHUB_OUTPUT"
+
+          [[ -s build/distribution/source/ios/candidate-manifest.json ]]
+          [[ -s build/distribution/source/windows/candidate-manifest.json ]]
+          [[ -s build/distribution/source/production/windows-store-production-receipt.json ]]
+          cp build/distribution/source/ios/candidate-manifest.json \
+            build/distribution/ios-candidate-manifest.json
+          cp build/distribution/source/windows/candidate-manifest.json \
+            build/distribution/windows-candidate-manifest.json
+          cp build/distribution/source/production/windows-store-production-receipt.json \
             build/distribution/windows-store-production-receipt.json
 
           gh api --method GET \
@@ -162,9 +201,10 @@ jobs:
             --release-id "$RELEASE_ID" \
             --repository "$GITHUB_REPOSITORY" \
             --source-run-id "$SOURCE_RUN_ID" \
+            --publish-run-id "$PUBLISH_RUN_ID" \
             --output build/distribution/public-update-receipt.json
 
-      - name: Verify source run and Android signing lineage
+      - name: Verify source, publish run, and Android signing lineage
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -173,19 +213,28 @@ jobs:
           gh run view "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
             --json databaseId,workflowName,event,conclusion,headSha,jobs \
             > build/distribution/source-run.json
+          gh run view "$PUBLISH_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --json databaseId,workflowName,event,conclusion,headSha,jobs \
+            > build/distribution/publish-run.json
           jq -e \
             --argjson run "$SOURCE_RUN_ID" \
             --arg sha "$(jq -r .sourceCommitSha build/distribution/public-update-receipt.json)" '
             .databaseId == $run and
             .workflowName == "Alpha Release" and
             .event == "workflow_dispatch" and
-            .conclusion == "success" and
             .headSha == $sha and
             ([.jobs[] | select(.name == "Build, sign, and stage Android Alpha" and .conclusion == "success")] | length == 1) and
             ([.jobs[] | select(.name == "Build, sign, and upload iOS app" and .conclusion == "success")] | length == 1) and
-            ([.jobs[] | select(.name == "Build Microsoft Store Windows candidate" and .conclusion == "success")] | length == 1) and
-            ([.jobs[] | select(.name == "Approve and deploy public Alpha" and .conclusion == "success")] | length == 1)
+            ([.jobs[] | select(.name == "Build Microsoft Store Windows candidate" and .conclusion == "success")] | length == 1)
           ' build/distribution/source-run.json >/dev/null
+          jq -e \
+            --argjson run "$PUBLISH_RUN_ID" '
+            .databaseId == $run and
+            .workflowName == "Alpha Release" and
+            .event == "workflow_dispatch" and
+            .conclusion == "success" and
+            ([.jobs[] | select(.name == "Approve and deploy public Alpha" and .conclusion == "success")] | length == 1)
+          ' build/distribution/publish-run.json >/dev/null
           [[ "$(git cat-file -t "$RELEASE_ID")" == "tag" ]]
           tag_commit="$(git rev-list -n 1 "$RELEASE_ID")"
           source_commit="$(jq -r .sourceCommitSha build/distribution/public-update-receipt.json)"
@@ -215,9 +264,9 @@ jobs:
           from pathlib import Path
 
           root = Path("build/distribution")
-          current = json.loads((root / "current/candidate-manifest.json").read_text())
-          previous = json.loads((root / "previous/candidate-manifest.json").read_text())
-          receipt = json.loads((root / "public-update-receipt.json").read_text())
+          current = json.loads((root / "current/candidate-manifest.json").read_text(encoding="utf-8-sig"))
+          previous = json.loads((root / "previous/candidate-manifest.json").read_text(encoding="utf-8-sig"))
+          receipt = json.loads((root / "public-update-receipt.json").read_text(encoding="utf-8-sig"))
           windows = json.loads((root / "windows-candidate-manifest.json").read_text(encoding="utf-8-sig"))
 
           def one_file(directory: Path, suffix: str) -> Path:
@@ -312,6 +361,7 @@ jobs:
             echo "windows_artifact_sha256=$(jq -r .windows.artifactSha256 "$receipt")"
             echo "android_artifact_name=$(jq -r .android.artifactName "$receipt")"
             echo "android_artifact_sha256=$(jq -r .android.sha256 "$receipt")"
+            echo "contract_artifact_name=platform-distribution-contract-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Upload public distribution contract
@@ -322,6 +372,7 @@ jobs:
             build/distribution/public-update-receipt.json
             build/distribution/android-signing-lineage-receipt.json
             build/distribution/source-run.json
+            build/distribution/publish-run.json
             build/distribution/ios-candidate-manifest.json
             build/distribution/windows-candidate-manifest.json
             build/distribution/windows-store-production-receipt.json
@@ -344,6 +395,7 @@ jobs:
       ANDROID_VERSION: ${{ github.event.client_payload.android_version || '35' }}
       ANDROID_ARTIFACT_NAME: ${{ needs.resolve.outputs.android_artifact_name }}
       ANDROID_ARTIFACT_SHA256: ${{ needs.resolve.outputs.android_artifact_sha256 }}
+      CONTRACT_ARTIFACT_NAME: ${{ needs.resolve.outputs.contract_artifact_name }}
 
     steps:
       - name: Validate Firebase configuration
@@ -383,7 +435,7 @@ jobs:
             --pattern "$ANDROID_ARTIFACT_NAME" \
             --dir build/platform-validation/android
           gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "platform-distribution-contract-*" \
+            --name "$CONTRACT_ARTIFACT_NAME" \
             --dir build/platform-validation/contract
           apk="build/platform-validation/android/$ANDROID_ARTIFACT_NAME"
           [[ -s "$apk" ]]
@@ -485,6 +537,8 @@ jobs:
     env:
       RELEASE_ID: ${{ github.event.client_payload.release_id }}
       SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
+      IOS_SOURCE_ARTIFACT_NAME: ${{ needs.resolve.outputs.ios_source_artifact_name }}
+      CONTRACT_ARTIFACT_NAME: ${{ needs.resolve.outputs.contract_artifact_name }}
 
     steps:
       - name: Download immutable contract and TestFlight evidence
@@ -495,10 +549,10 @@ jobs:
           set -euo pipefail
           mkdir -p build/platform-validation/ios build/platform-validation/contract
           gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "platform-distribution-contract-*" \
+            --name "$CONTRACT_ARTIFACT_NAME" \
             --dir build/platform-validation/contract
           gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "meettrace-ios-testflight-${SOURCE_RUN_ID}-*" \
+            --name "$IOS_SOURCE_ARTIFACT_NAME" \
             --dir build/platform-validation/ios
 
       - name: Verify TestFlight candidate without exposing IPA
@@ -519,8 +573,8 @@ jobs:
           receipts = list((root / "contract").rglob("public-update-receipt.json"))
           if len(manifests) != 1 or len(receipts) != 1:
               raise SystemExit("Expected one iOS manifest and one public contract")
-          manifest = json.loads(manifests[0].read_text())
-          contract = json.loads(receipts[0].read_text())
+          manifest = json.loads(manifests[0].read_text(encoding="utf-8-sig"))
+          contract = json.loads(receipts[0].read_text(encoding="utf-8-sig"))
           expected = {
               "schemaVersion": 1,
               "platform": "ios",
@@ -573,6 +627,8 @@ jobs:
       MEETTRACE_DEDICATED_STORE_VALIDATION: "1"
       RELEASE_ID: ${{ github.event.client_payload.release_id }}
       SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
+      WINDOWS_SOURCE_ARTIFACT_NAME: ${{ needs.resolve.outputs.windows_source_artifact_name }}
+      CONTRACT_ARTIFACT_NAME: ${{ needs.resolve.outputs.contract_artifact_name }}
       WINDOWS_VALIDATION_MODE: ${{ github.event.client_payload.windows_validation_mode }}
       WINDOWS_PREVIOUS_VERSION: ${{ github.event.client_payload.windows_previous_version }}
       WINDOWS_PACKAGE_VERSION: ${{ needs.resolve.outputs.windows_package_version }}
@@ -609,11 +665,11 @@ jobs:
           New-Item -ItemType Directory -Force `
             -Path build/platform-validation/windows | Out-Null
           gh run download $env:GITHUB_RUN_ID --repo $env:GITHUB_REPOSITORY `
-            --pattern 'platform-distribution-contract-*' `
+            --name $env:CONTRACT_ARTIFACT_NAME `
             --dir build/platform-validation/contract
           if ($LASTEXITCODE -ne 0) { throw 'Unable to download public contract.' }
           gh run download $env:SOURCE_RUN_ID --repo $env:GITHUB_REPOSITORY `
-            --pattern "meettrace-windows-store-$($env:SOURCE_RUN_ID)-*" `
+            --name $env:WINDOWS_SOURCE_ARTIFACT_NAME `
             --dir build/platform-validation/windows
           if ($LASTEXITCODE -ne 0) { throw 'Unable to download Windows evidence.' }
 
@@ -675,6 +731,7 @@ jobs:
     env:
       RELEASE_ID: ${{ github.event.client_payload.release_id }}
       SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
+      PUBLISH_RUN_ID: ${{ github.event.client_payload.publish_run_id }}
     steps:
       - name: Record complete validation
         shell: bash
@@ -688,4 +745,5 @@ jobs:
             echo '- Windows Store install lifecycle: verified on the dedicated runner'
             echo "- Release: \`$RELEASE_ID\`"
             echo "- Source run: \`$SOURCE_RUN_ID\`"
+            echo "- Publish run: \`$PUBLISH_RUN_ID\`"
           } >> "$GITHUB_STEP_SUMMARY"

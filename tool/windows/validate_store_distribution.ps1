@@ -122,31 +122,108 @@ function Assert-PackageIdentity {
     }
 }
 
+function Initialize-WindowValidationApi {
+    if ($null -ne ('MeetTraceWindowValidation' -as [type])) {
+        return
+    }
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class MeetTraceWindowValidation
+{
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindowAsync(IntPtr windowHandle, int command);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr windowHandle);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+}
+'@
+}
+
+function Wait-MeetTraceMainWindow {
+    param(
+        [Parameter(Mandatory = $true)][int]$ProcessId,
+        [int]$TimeoutSeconds = 60
+    )
+
+    $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+        if ($null -ne $process) {
+            $process.Refresh()
+            if ($process.MainWindowHandle -ne [IntPtr]::Zero) {
+                return $process.MainWindowHandle
+            }
+        }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTimeOffset]::UtcNow -lt $deadline)
+    throw 'MeetTrace did not expose a main window in time.'
+}
+
 function Assert-SingleInstanceLaunch {
-    $operations.Add('launch shell:AppsFolder twice and require one meettrace process')
+    $operations.Add(
+        'launch shell:AppsFolder twice and require one process plus restored foreground window'
+    )
+    Initialize-WindowValidationApi
     Get-Process -Name $processName -ErrorAction SilentlyContinue |
         Stop-Process -Force -ErrorAction SilentlyContinue
     $appUserModelId = "$packageFamilyName!$applicationId"
-    Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$appUserModelId"
-    $deadline = [DateTimeOffset]::UtcNow.AddSeconds(60)
-    do {
-        $processes = @(Get-Process -Name $processName -ErrorAction SilentlyContinue)
-        if ($processes.Count -gt 0) {
-            break
+    try {
+        Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$appUserModelId"
+        $deadline = [DateTimeOffset]::UtcNow.AddSeconds(60)
+        do {
+            $processes = @(Get-Process -Name $processName -ErrorAction SilentlyContinue)
+            if ($processes.Count -gt 0) {
+                break
+            }
+            Start-Sleep -Seconds 2
+        } while ([DateTimeOffset]::UtcNow -lt $deadline)
+        if ($processes.Count -ne 1) {
+            throw 'MeetTrace did not start as exactly one process.'
         }
-        Start-Sleep -Seconds 2
-    } while ([DateTimeOffset]::UtcNow -lt $deadline)
-    if ($processes.Count -ne 1) {
-        throw 'MeetTrace did not start as exactly one process.'
-    }
 
-    Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$appUserModelId"
-    Start-Sleep -Seconds 5
-    $processes = @(Get-Process -Name $processName -ErrorAction SilentlyContinue)
-    if ($processes.Count -ne 1) {
-        throw 'Launching MeetTrace twice did not preserve a single process.'
+        $originalProcessId = $processes[0].Id
+        $windowHandle = Wait-MeetTraceMainWindow -ProcessId $originalProcessId
+        $null = [MeetTraceWindowValidation]::ShowWindowAsync($windowHandle, 6)
+        $deadline = [DateTimeOffset]::UtcNow.AddSeconds(10)
+        do {
+            if ([MeetTraceWindowValidation]::IsIconic($windowHandle)) {
+                break
+            }
+            Start-Sleep -Milliseconds 250
+        } while ([DateTimeOffset]::UtcNow -lt $deadline)
+        if (-not [MeetTraceWindowValidation]::IsIconic($windowHandle)) {
+            throw 'MeetTrace main window could not be minimized before activation validation.'
+        }
+
+        Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$appUserModelId"
+        $deadline = [DateTimeOffset]::UtcNow.AddSeconds(30)
+        $activated = $false
+        do {
+            $processes = @(Get-Process -Name $processName -ErrorAction SilentlyContinue)
+            if ($processes.Count -eq 1 -and $processes[0].Id -eq $originalProcessId) {
+                $processes[0].Refresh()
+                $windowHandle = $processes[0].MainWindowHandle
+                if ($windowHandle -ne [IntPtr]::Zero -and
+                    -not [MeetTraceWindowValidation]::IsIconic($windowHandle) -and
+                    [MeetTraceWindowValidation]::GetForegroundWindow() -eq $windowHandle) {
+                    $activated = $true
+                    break
+                }
+            }
+            Start-Sleep -Milliseconds 250
+        } while ([DateTimeOffset]::UtcNow -lt $deadline)
+        if (-not $activated) {
+            throw 'Second launch did not restore and foreground the existing MeetTrace window.'
+        }
+    } finally {
+        Get-Process -Name $processName -ErrorAction SilentlyContinue |
+            Stop-Process -Force -ErrorAction SilentlyContinue
     }
-    $processes | Stop-Process -Force
 }
 
 function Remove-MeetTracePackage {
@@ -183,8 +260,9 @@ try {
 
     $os = Get-CimInstance Win32_OperatingSystem
     if ([Environment]::Is64BitOperatingSystem -ne $true -or
+        [int]$os.ProductType -ne 1 -or
         [version]$os.Version -lt [version]'10.0.19045.0') {
-        throw 'Store validation requires Windows 10 22H2 or newer x64.'
+        throw 'Store validation requires a Windows 10 22H2 or newer x64 client.'
     }
     if ($null -eq (Get-Command winget -ErrorAction SilentlyContinue)) {
         throw 'Windows Package Manager winget is required.'

@@ -7,11 +7,7 @@ Future<void> main(List<String> arguments) async {
   try {
     final options = _parseOptions(arguments);
     final envelope = await File(_required(options, 'envelope')).readAsBytes();
-    final candidate = Map<String, Object?>.from(
-      jsonDecode(
-        await File(_required(options, 'android-candidate')).readAsString(),
-      ) as Map,
-    );
+    final candidate = _readJsonObject(_required(options, 'android-candidate'));
     final iosCandidate = _readJsonObject(_required(options, 'ios-candidate'));
     final windowsCandidate = _readJsonObject(
       _required(options, 'windows-candidate'),
@@ -28,6 +24,7 @@ Future<void> main(List<String> arguments) async {
       expectedReleaseId: _required(options, 'release-id'),
       expectedRepository: _required(options, 'repository'),
       expectedSourceRunId: int.parse(_required(options, 'source-run-id')),
+      expectedPublishRunId: int.parse(_required(options, 'publish-run-id')),
     );
     final output = File(_required(options, 'output'));
     await output.parent.create(recursive: true);
@@ -41,8 +38,19 @@ Future<void> main(List<String> arguments) async {
   }
 }
 
-Map<String, Object?> _readJsonObject(String path) =>
-    Map<String, Object?>.from(jsonDecode(File(path).readAsStringSync()) as Map);
+Map<String, Object?> _readJsonObject(String path) {
+  final bytes = File(path).readAsBytesSync();
+  final start =
+      bytes.length >= 3 &&
+          bytes[0] == 0xef &&
+          bytes[1] == 0xbb &&
+          bytes[2] == 0xbf
+      ? 3
+      : 0;
+  return Map<String, Object?>.from(
+    jsonDecode(utf8.decode(bytes.sublist(start))) as Map,
+  );
+}
 
 Map<String, String> _parseOptions(List<String> arguments) {
   if (arguments.length.isOdd) {

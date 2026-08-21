@@ -21,6 +21,7 @@ final class PublicUpdateValidationReceipt {
     required this.dataGeneration,
     required this.sourceCommitSha,
     required this.sourceRunId,
+    required this.publishRunId,
     required this.approvedAt,
     required this.androidArtifactName,
     required this.androidBytes,
@@ -43,6 +44,7 @@ final class PublicUpdateValidationReceipt {
   final int dataGeneration;
   final String sourceCommitSha;
   final int sourceRunId;
+  final int publishRunId;
   final DateTime approvedAt;
   final String androidArtifactName;
   final int androidBytes;
@@ -70,6 +72,7 @@ final class PublicUpdateValidationReceipt {
     'dataGeneration': dataGeneration,
     'sourceCommitSha': sourceCommitSha,
     'sourceRunId': sourceRunId,
+    'publishRunId': publishRunId,
     'approvedAt': approvedAt.toUtc().toIso8601String(),
     'android': <String, Object?>{
       'artifactName': androidArtifactName,
@@ -108,6 +111,7 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
   required String expectedReleaseId,
   required String expectedRepository,
   required int expectedSourceRunId,
+  required int expectedPublishRunId,
   AppUpdateManifestSignatureVerifier? signatureVerifier,
 }) async {
   if (!RegExp(r'^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$')
@@ -120,6 +124,9 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
   }
   if (expectedSourceRunId <= 0) {
     throw const FormatException('待验证 source run ID 必须为正整数');
+  }
+  if (expectedPublishRunId <= 0) {
+    throw const FormatException('待验证 publish run ID 必须为正整数');
   }
 
   final parser = SignedAppUpdateManifestParser(
@@ -369,7 +376,7 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
       'evidenceSource',
       'github-release',
     );
-    if (_positiveInt(approval, 'runId') != expectedSourceRunId) {
+    if (_positiveInt(approval, 'runId') != expectedPublishRunId) {
       throw const FormatException('Windows 审批运行不匹配');
     }
     _requireCandidateValue(approval, 'environment', 'github-release');
@@ -393,6 +400,7 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
     dataGeneration: candidate.dataGeneration,
     sourceCommitSha: candidate.sourceCommitSha,
     sourceRunId: expectedSourceRunId,
+    publishRunId: expectedPublishRunId,
     approvedAt: candidate.approvedAt,
     androidArtifactName: artifactName,
     androidBytes: artifactBytes,

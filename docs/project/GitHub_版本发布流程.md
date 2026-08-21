@@ -157,6 +157,7 @@ $payload = @{
     release_id = 'v1.0.0-alpha.5'
     previous_android_release_id = 'v1.0.0-alpha.2'
     source_run_id = '32362248666'
+    publish_run_id = '32362248666'
     windows_validation_mode = 'InstallUninstall'
     windows_previous_version = ''
     android_device_model = 'MediumPhone.arm'
@@ -171,7 +172,8 @@ $payload | gh api repos/zhangheng2022/meet_trace/dispatches `
 
 - `release_id`：当前公开版本；
 - `previous_android_release_id`：更低构建号、同签名身份的公开 Android 版本；
-- `source_run_id`：生成并公开当前候选的成功 `Alpha Release` 运行；
+- `source_run_id`：生成当前三平台候选且候选 job 成功的 `Alpha Release` 运行；
+- `publish_run_id`：生成 Store 生产回执并成功完成公开 job 的实际运行；恢复发布时它与 `source_run_id` 不同，普通发布通常相同；
 - `windows_validation_mode`：首次验证选 `InstallUninstall`；已为下一版本保留旧版专用机快照时选 `Update`；
 - `windows_previous_version`：仅 `Update` 填写专用机已安装的确切 `1.0.<build>.0`；
 - Android Firebase ARM 模型与版本通常保持默认 `MediumPhone.arm` / `35`。
