@@ -1,6 +1,6 @@
 # 会迹（MeetTrace）GitHub Alpha 版本发布流程
 
-> 状态：活动 Runbook；正式工作流已闭合签名更新 Manifest 与 Store 正式 submission 的受保护人工证明门禁，并保留可选 Partner Center API 机器核验；限定受众/Flight、首次正式认证和首次三平台公开运行仍待验收，完成前不得宣称 Windows 受支持
+> 状态：活动 Runbook；正式工作流已完成限定受众、首次 Store 正式认证、受保护人工证明、三平台统一公开和签名更新指针的首次生产闭环，并保留可选 Partner Center API 机器核验；Windows 安装、卸载和 Store 更新纵向自动化闭环前不得宣称完全受支持
 >
 > 上游需求：[Android + iOS + Windows Alpha PRD V1.2](../product/Alpha_PRD_无登录版.md)
 

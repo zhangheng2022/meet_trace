@@ -22,7 +22,7 @@
 | [产品上下文](../PRODUCT.md) | 用户、定位和产品原则的精简上下文 | PRD 派生摘要 |
 | [端侧转录技术方案](./technical/端侧_SenseVoice_转录技术方案.md) | 固定资源、初始化、录音、ASR、分离、快照和分享契约 | 技术权威，服从 PRD |
 | [质量与验收](./quality/README.md) | 自动化、构建、分发门禁和未闭环风险 | 当前质量入口 |
-| [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md) | 三平台签名、候选、TestFlight/MSIX、GitHub Pre-release、自动更新和撤回 Runbook | 发布操作入口；Store 验收与公开未闭环前仍含目标合同 |
+| [GitHub Alpha 发布流程](./project/GitHub_版本发布流程.md) | 三平台签名、候选、TestFlight/MSIX、GitHub Pre-release、自动更新和撤回 Runbook | 发布操作入口；当前 Store 公开基线与后续候选合同 |
 | [Sentry 配置](./project/Sentry_配置.md) | 运行时采样、隐私边界和符号上传 | 监控 Runbook |
 | [Code signing policy](../CODE_SIGNING_POLICY.md) | 待审核 SignPath 路线的角色、可签名内容、批准与撤回规则 | 未来直发签名政策；当前 Store 发布不使用 |
 | [隐私政策](../PRIVACY.md) | 本机数据、网络访问、平台诊断差异和删除方式 | 对外隐私披露 |
