@@ -783,6 +783,8 @@ void main() {
       expect(resolve, contains('Android signing lineage changed'));
       expect(resolve, contains('aapt" dump badging'));
       expect(resolve, contains('apksigner" verify --print-certs'));
+      expect(runVerification, contains(r'(?:Signer #\d+|V\d+ Signer:)'));
+      expect(runVerification, contains('len(signing_digests) != 1'));
       expect(
         resolve,
         contains(

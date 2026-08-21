@@ -302,7 +302,7 @@ jobs:
               re.MULTILINE,
           )
           signing_pattern = re.compile(
-              r"^Signer #1 certificate SHA-256 digest: ([0-9a-fA-F]{64})$",
+              r"^(?:Signer #\d+|V\d+ Signer:) certificate SHA-256 digest: ([0-9a-fA-F]{64})$",
               re.MULTILINE,
           )
           apk_identities = []
@@ -310,15 +310,17 @@ jobs:
               badging = (root / f"{label}-apk-badging.txt").read_text()
               signing = (root / f"{label}-apk-signing.txt").read_text()
               package_match = package_pattern.search(badging)
-              signing_match = signing_pattern.search(signing)
-              if package_match is None or signing_match is None:
+              signing_digests = {
+                  match.lower() for match in signing_pattern.findall(signing)
+              }
+              if package_match is None or len(signing_digests) != 1:
                   raise SystemExit(f"Cannot parse {label} APK identity")
               apk_identities.append(
                   {
                       "packageIdentity": package_match.group(1),
                       "buildNumber": int(package_match.group(2)),
                       "versionName": package_match.group(3),
-                      "signingIdentitySha256": signing_match.group(1).lower(),
+                      "signingIdentitySha256": next(iter(signing_digests)),
                   }
               )
           current_identity, previous_identity = apk_identities

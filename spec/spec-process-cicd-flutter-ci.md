@@ -1,6 +1,6 @@
 # Flutter CI/CD 工作流规格
 
-> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已以固定 Microsoft Store 身份完成限定受众、首次正式认证、三平台统一公开和签名更新指针首次生产运行。发布后平台分发纵向验证工作流已定义，但专用 Windows 自托管运行器及真实 Store 安装、更新、卸载尚未完成，不得据此公开 Windows 支持。
+> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已以固定 Microsoft Store 身份完成限定受众、首次正式认证、三平台统一公开和签名更新指针首次生产运行。发布后平台分发纵向验证工作流、受保护 Environment 与专用 Windows 自托管运行器已配置，但真实 Store 安装、更新、卸载尚未全部成功，不得据此公开 Windows 支持。
 
 ## 1. 目标与边界
 
