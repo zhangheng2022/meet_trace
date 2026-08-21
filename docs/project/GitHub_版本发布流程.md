@@ -62,6 +62,7 @@ Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、
 | `testflight` | 无 | 保存 Apple distribution、profile、Team 与 API Key |
 | `windows-alpha` | 无 | 当前不保存凭据；Store 身份是仓库中的非敏感固定配置，包体由维护者手工上传 Partner Center |
 | `github-release` | 一名 required reviewer；允许 self review | 唯一公开批准、Store 正式 submission 人工证明、更新指针签名和可选 API 只读核验 |
+| `windows-store-validation` | 一名 required reviewer | 仅允许 `master` 在专用自托管 Windows 账号执行当前用户 Store 安装、更新和卸载；不保存 Secret |
 
 所有 Environment 仅允许 `master`。如果旧配置给 `android-alpha`、`testflight` 或 `windows-alpha` 设置了 reviewer，需要移除，否则流程会出现额外审批。`github-release` 的最终批准不得早于 Windows 限定受众/Flight 分发验证、正式 Store 认证与公开可安装检查。
 
@@ -145,6 +146,46 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 
 任一技术校验失败都不会公开 Draft。批准人依据构建、自动化、包审计和分发状态作出公开决定；流程不读取额外 JSON 质量输入。
 
+### 4.1 公开后的平台分发纵向验证
+
+`Alpha Release` 仍是 Actions 页面唯一手动入口。版本已经公开且签名 `updates/alpha` 指针完成前移后，由具备仓库操作权限的维护者发送 `repository_dispatch` 事件 `platform-distribution-validation`。以下 PowerShell 示例先触发首次 `InstallUninstall`；值必须替换为当前公开候选：
+
+```powershell
+$payload = @{
+  event_type = 'platform-distribution-validation'
+  client_payload = @{
+    release_id = 'v1.0.0-alpha.5'
+    previous_android_release_id = 'v1.0.0-alpha.2'
+    source_run_id = '32362248666'
+    publish_run_id = '32362248666'
+    windows_validation_mode = 'InstallUninstall'
+    windows_previous_version = ''
+    android_device_model = 'MediumPhone.arm'
+    android_version = '35'
+  }
+} | ConvertTo-Json -Depth 4
+$payload | gh api repos/zhangheng2022/meet_trace/dispatches `
+  --method POST --input -
+```
+
+事件 payload 字段：
+
+- `release_id`：当前公开版本；
+- `previous_android_release_id`：更低构建号、同签名身份的公开 Android 版本；
+- `source_run_id`：生成当前三平台候选且候选 job 成功的 `Alpha Release` 运行；
+- `publish_run_id`：生成 Store 生产回执并成功完成公开 job 的实际运行；恢复发布时它与 `source_run_id` 不同，普通发布通常相同；
+- `windows_validation_mode`：首次验证选 `InstallUninstall`；已为下一版本保留旧版专用机快照时选 `Update`；
+- `windows_previous_version`：仅 `Update` 填写专用机已安装的确切 `1.0.<build>.0`；
+- Android Firebase ARM 模型与版本通常保持默认 `MediumPhone.arm` / `35`。
+
+工作流先使用客户端同一 Ed25519 公钥验签 `updates/alpha`，再把公开 APK、iOS/Windows 候选、来源运行和 Windows Published/Public 回执绑定到同一提交、版本和构建号。随后：
+
+1. Android 从 GitHub Release 下载确切 arm64 APK，核对 SHA-256，在 Firebase Test Lab ARM 设备以 `--no-resign` 原样安装并启动。该步骤证明当前公开包可安装启动，并核对上一公开 APK 的包名、递增构建号和发布证书世系；不把它表述为系统级 APK 旧版升级。
+2. iOS 复核来源运行的签名 TestFlight 候选和成功上传 job，任何 IPA 出现在证据目录都会失败。当前不调用 App Store Connect 查询处理完成或终端安装状态。
+3. Windows 只调度 `[self-hosted, Windows, X64, meettrace-store]` 专用机和 `windows-store-validation` Environment。脚本只从 `msstore` 安装或更新产品 `9PHHSJMWK06G`，核对固定包身份、x64 和确切版本，连续启动两次验证单实例，最后只卸载当前运行器账号的包。
+
+仓库当前尚无该专用运行器，因此工作流实现合并不等于纵向闭环。必须先完成专用机注册和 `InstallUninstall` 成功运行；真实 `Update` 还需要在下一版本公开前保留旧版 Store 安装或虚拟机快照。两个 Windows 模式及最终三平台 Gate 全部成功前，Windows 仍显示“规划中/未就绪”。详细合同见[平台分发纵向验证规格](../../spec/spec-process-cicd-platform-distribution-validation.md)。
+
 ## 5. 后补 TestFlight 外部链接
 
 链接未获批时可先公开，Release 说明显示“iOS TestFlight 外部测试链接：待提供”。获批后：
@@ -172,6 +213,7 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 - [ ] `testflight` 已配置全部 Secrets，且没有 required reviewer。
 - [ ] `windows-alpha` 没有 required reviewer、Windows Secrets 或可导出私钥。
 - [ ] `github-release` 已配置一名 required reviewer，并允许 self review。
+- [ ] `windows-store-validation` 已限制为 `master` 并配置一名 required reviewer；环境中没有 Store、Partner Center 或签名 Secret。
 - [ ] `github-release` 已配置 `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`，公钥与客户端固定 key ID 对应。
 - [ ] 默认 `manual` 模式不配置 Partner Center 空 Secrets；若选择 `api`，`github-release` 已配置四项 Partner Center Secrets，且 Entra 应用具备读取目标产品 submission 的最小权限。
 - [ ] `master` 与 `v*` Ruleset 已启用。
@@ -182,3 +224,4 @@ Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；i
 - [ ] 当前候选已按[质量与验收](../quality/README.md)通过三平台构建、自动化和分发门禁，再批准公开。
 - [ ] 公开更新 Manifest 仍指向旧版 Store 候选，且更新动作位于最终批准之后；仓库和 Release 不存在 `.appinstaller` 或 MSIX。
 - [ ] `updates/alpha` 无人工提交，当前 `alpha.json` 可通过客户端内置 Ed25519 公钥验签，构建号未回退。
+- [ ] 需要评估 Windows 就绪状态时，专用自托管运行器已分别完成真实 `InstallUninstall` 和后续版本 `Update`，且 `Platform Distribution Validation` 最终 Gate 成功；未完成时继续标记“规划中/未就绪”。
