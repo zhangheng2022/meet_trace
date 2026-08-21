@@ -850,6 +850,15 @@ void main() {
       expect(script, contains('winget source list --disable-interactivity'));
       expect(script, contains(r"'install', '--id', $storeId"));
       expect(script, contains(r"'upgrade', '--id', $storeId"));
+      expect(script, contains('[CmdletBinding(SupportsShouldProcess)]'));
+      expect(script, contains(r'$PSCmdlet.ShouldProcess('));
+      expect(
+        script,
+        contains(
+          'Store validation cannot complete without removing the '
+          'current-user package.',
+        ),
+      );
       expect(script, contains('Remove-AppxPackage -Package'));
       expect(script, isNot(contains('Remove-AppxPackage -AllUsers')));
       expect(script, isNot(contains('Get-AppxPackage -AllUsers')));

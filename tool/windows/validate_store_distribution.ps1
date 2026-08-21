@@ -150,9 +150,17 @@ function Assert-SingleInstanceLaunch {
 }
 
 function Remove-MeetTracePackage {
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+
     $package = Get-MeetTracePackage
     if ($null -eq $package) {
         return
+    }
+    if (-not $PSCmdlet.ShouldProcess(
+            $package.PackageFullName,
+            'Remove current-user Appx package')) {
+        throw 'Store validation cannot complete without removing the current-user package.'
     }
     $operations.Add('Remove-AppxPackage current-user package')
     Remove-AppxPackage -Package $package.PackageFullName -ErrorAction Stop
