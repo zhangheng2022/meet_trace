@@ -288,7 +288,7 @@ jobs:
           verify_file(previous_apk, previous["artifact"])
           verify_file(windows_msix, windows["artifact"])
 
-          if previous.get("schemaVersion") != 1 or previous.get("platform") != "android":
+          if previous.get("schemaVersion") not in (1, 2) or previous.get("platform") != "android":
               raise SystemExit("Previous Android manifest schema is invalid")
           if previous.get("releaseId") != os.environ["PREVIOUS_ANDROID_RELEASE_ID"]:
               raise SystemExit("Previous Android release identity changed")
@@ -306,6 +306,29 @@ jobs:
               re.MULTILINE,
           )
           android_arm64_version_code_offset = 2000
+
+          def expected_version_code(manifest: dict, label: str) -> tuple[int, int | None]:
+              schema_version = int(manifest.get("schemaVersion", 0))
+              shared_build_number = int(manifest.get("buildNumber", 0))
+              if schema_version == 1:
+                  return shared_build_number + android_arm64_version_code_offset, None
+              if schema_version == 2:
+                  android_base_build_number = int(
+                      manifest.get("androidBaseBuildNumber", 0)
+                  )
+                  declared_version_code = int(manifest.get("versionCode", 0))
+                  if (
+                      android_base_build_number <= 0
+                      or declared_version_code
+                      != android_base_build_number + android_arm64_version_code_offset
+                      or declared_version_code != shared_build_number
+                  ):
+                      raise SystemExit(
+                          f"{label} Android arm64 split versionCode mapping is invalid"
+                      )
+                  return declared_version_code, android_base_build_number
+              raise SystemExit(f"{label} Android candidate schema is unsupported")
+
           apk_identities = []
           for label in ("current", "previous"):
               badging = (root / f"{label}-apk-badging.txt").read_text()
@@ -329,7 +352,16 @@ jobs:
               raise SystemExit("Android APK package identity changed")
           if current_identity["versionName"] != current.get("marketingVersion") or previous_identity["versionName"] != previous.get("marketingVersion"):
               raise SystemExit("Android APK marketing version differs from candidate manifest")
-          if current_identity["versionCode"] != int(current["buildNumber"]) + android_arm64_version_code_offset or previous_identity["versionCode"] != int(previous["buildNumber"]) + android_arm64_version_code_offset:
+          current_expected_version_code, current_android_base_build_number = (
+              expected_version_code(current, "Current")
+          )
+          previous_expected_version_code, previous_android_base_build_number = (
+              expected_version_code(previous, "Previous")
+          )
+          if (
+              current_identity["versionCode"] != current_expected_version_code
+              or previous_identity["versionCode"] != previous_expected_version_code
+          ):
               raise SystemExit("Android APK version code differs from the arm64 split candidate build")
           if current_identity["signingIdentitySha256"] != current["signingIdentitySha256"] or previous_identity["signingIdentitySha256"] != current["signingIdentitySha256"]:
               raise SystemExit("Android signing lineage changed")
@@ -343,9 +375,11 @@ jobs:
               "currentReleaseId": current["releaseId"],
               "currentBuildNumber": int(current["buildNumber"]),
               "currentVersionCode": current_identity["versionCode"],
+              "currentAndroidBaseBuildNumber": current_android_base_build_number,
               "previousReleaseId": previous["releaseId"],
               "previousBuildNumber": int(previous["buildNumber"]),
               "previousVersionCode": previous_identity["versionCode"],
+              "previousAndroidBaseBuildNumber": previous_android_base_build_number,
               "arm64VersionCodeOffset": android_arm64_version_code_offset,
               "packageIdentity": current_identity["packageIdentity"],
               "signingIdentitySha256": current_identity["signingIdentitySha256"],

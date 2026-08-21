@@ -78,6 +78,26 @@ Future<List<int>> createSignedAppUpdateManifest(
     request.androidCandidate,
     'signingIdentitySha256',
   );
+  final candidateSchema = _positiveInt(
+    request.androidCandidate,
+    'schemaVersion',
+  );
+  if (candidateSchema != 1 && candidateSchema != 2) {
+    throw const FormatException('Android 候选 schemaVersion 不受支持');
+  }
+  final androidVersionCode = candidateSchema == 2
+      ? _positiveInt(request.androidCandidate, 'versionCode')
+      : null;
+  if (candidateSchema == 2) {
+    final androidBaseBuildNumber = _positiveInt(
+      request.androidCandidate,
+      'androidBaseBuildNumber',
+    );
+    if (androidVersionCode != androidBaseBuildNumber + 2000 ||
+        androidVersionCode != request.buildNumber) {
+      throw const FormatException('Android arm64 split versionCode 映射无效');
+    }
+  }
   if (_text(request.androidCandidate, 'packageIdentity') !=
       'com.meettrace.app') {
     throw const FormatException('Android 候选包名不匹配');
@@ -104,6 +124,7 @@ Future<List<int>> createSignedAppUpdateManifest(
         'sha256': _sha256(artifact, 'sha256'),
         'packageIdentity': 'com.meettrace.app',
         'signingIdentitySha256': signingIdentity,
+        'versionCode': ?androidVersionCode,
       },
       'ios': <String, Object?>{
         'artifactId': 'ios-testflight-${request.buildNumber}',

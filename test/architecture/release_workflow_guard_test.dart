@@ -162,6 +162,7 @@ void main() {
         ),
       );
       expect(workflow, contains('Allocate shared release build number'));
+      expect(workflow, contains('build_number=2001'));
       expect(workflow, contains('gh api --paginate'));
       expect(workflow, contains('max_build_number + 1'));
       expect(workflow, contains('Reusing build number'));
@@ -172,6 +173,22 @@ void main() {
         hasLength(3),
       );
       expect(android, contains(r'ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
+      expect(
+        android,
+        contains(
+          r'ANDROID_PACKAGE_BUILD_NUMBER=$((RELEASE_BUILD_NUMBER - 2000))',
+        ),
+      );
+      expect(
+        android,
+        contains(r'--build-number="$ANDROID_PACKAGE_BUILD_NUMBER"'),
+      );
+      expect(
+        android,
+        contains(
+          r'--dart-define="MEETTRACE_BUILD_NUMBER=$ANDROID_BUILD_NUMBER"',
+        ),
+      );
       expect(ios, contains(r'IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
       expect(
         windows,
@@ -183,6 +200,10 @@ void main() {
         workflow,
         contains('Android, iOS, and Windows build numbers differ'),
       );
+      expect(
+        workflow,
+        contains('version_code != int(os.environ["ANDROID_BUILD_NUMBER"])'),
+      );
       expect(workflow, isNot(contains('GITHUB_RUN_NUMBER * 100')));
     });
 
@@ -193,6 +214,12 @@ void main() {
       expect(android, contains('environment: android-alpha'));
       expect(android, contains('--target-platform android-arm64'));
       expect(android, contains('--split-per-abi'));
+      expect(android, contains('"androidBaseBuildNumber"'));
+      expect(android, contains('"versionCode"'));
+      expect(
+        android,
+        contains('version_code != android_base_build_number + 2000'),
+      );
       expect(
         android,
         contains('build/app/outputs/flutter-apk/app-arm64-v8a-release.apk'),
@@ -788,6 +815,10 @@ void main() {
       expect(
         runVerification,
         contains('android_arm64_version_code_offset = 2000'),
+      );
+      expect(
+        runVerification,
+        contains('previous.get("schemaVersion") not in (1, 2)'),
       );
       expect(
         runVerification,

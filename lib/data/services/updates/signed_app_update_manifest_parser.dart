@@ -23,6 +23,7 @@ final class VerifiedPlatformUpdateArtifact {
   const VerifiedPlatformUpdateArtifact({
     required this.platform,
     required this.installUri,
+    this.versionCode,
     this.bytes,
     this.sha256,
     this.packageIdentity,
@@ -31,6 +32,7 @@ final class VerifiedPlatformUpdateArtifact {
 
   final AppUpdatePlatform platform;
   final Uri installUri;
+  final int? versionCode;
   final int? bytes;
   final String? sha256;
   final String? packageIdentity;
@@ -91,10 +93,15 @@ final class SignedAppUpdateManifestParser {
     final artifactJson = _jsonObject(artifacts[platform.name], platform.name);
     final artifactId = _text(artifactJson, 'artifactId');
     final artifact = _parseArtifact(platform, artifactJson);
+    final buildNumber = _positiveInt(payload, 'buildNumber');
+    if (artifact.versionCode case final int versionCode
+        when versionCode != buildNumber) {
+      throw const FormatException('Android APK versionCode 与共享构建号不匹配');
+    }
     final candidate = AppUpdateCandidate(
       releaseId: _text(payload, 'releaseId'),
       versionName: _text(payload, 'versionName'),
-      buildNumber: _positiveInt(payload, 'buildNumber'),
+      buildNumber: buildNumber,
       dataGeneration: _positiveInt(payload, 'dataGeneration'),
       status: status,
       sourceCommitSha: _sha(payload, 'sourceCommitSha'),
@@ -123,6 +130,7 @@ final class SignedAppUpdateManifestParser {
         return VerifiedPlatformUpdateArtifact(
           platform: platform,
           installUri: installUri,
+          versionCode: _optionalPositiveInt(json, 'versionCode'),
           bytes: bytes,
           sha256: _sha(json, 'sha256'),
           packageIdentity: packageIdentity,
@@ -187,6 +195,11 @@ int _positiveInt(Map<String, Object?> json, String key) {
     throw FormatException('$key 必须是正整数');
   }
   return value;
+}
+
+int? _optionalPositiveInt(Map<String, Object?> json, String key) {
+  if (!json.containsKey(key)) return null;
+  return _positiveInt(json, key);
 }
 
 String _sha(Map<String, Object?> json, String key) {

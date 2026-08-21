@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Alpha Release
-version: 1.1
+version: 1.2
 date_created: 2026-08-20
-last_updated: 2026-08-20
+last_updated: 2026-08-21
 owner: MeetTrace Maintainers
 tags: [process, cicd, github-actions, release, android, ios, windows, auto-update]
 ---
@@ -60,7 +60,7 @@ flowchart TD
 |---|---|---|---|
 | REL-001 | 单一入口绑定 `master` 不可变提交 | High | 候选 SHA 属于 `master`，tag 与 Draft Release 均绑定该 SHA |
 | REL-002 | 三平台使用同一发布标识、营销版本和共享构建号 | High | 三份候选清单逐字段一致 |
-| REL-003 | Android 仅公开签名 `arm64-v8a` APK | High | Release 中恰有一个预期 APK，摘要和签名身份匹配候选证据 |
+| REL-003 | Android 仅公开签名 `arm64-v8a` split APK | High | Release 中恰有一个预期 APK；共享构建号从 `2001` 开始，Android 输入基础构建号 `1` 后由默认 ABI 偏移生成相同的真实 `versionCode=2001`，摘要和签名身份匹配候选证据 |
 | REL-004 | iOS 仅上传 TestFlight | High | GitHub Release 与 Artifact 均不公开 IPA |
 | REL-005 | Windows 仅通过固定 Microsoft Store 产品分发 | High | Store ID、包身份、Publisher、PFN、版本映射和 x64 架构匹配固定合同 |
 | REL-006 | Store 正式版本先于 GitHub 与更新指针公开 | High | `github-release` 审批人逐项确认并提交精确 Store/状态/版本/x64/SHA-256 评论，或 API 回执证明 submission 为 `Published`、`Public` 且包含同一 `1.0.<build>.0` x64 包，否则失败关闭 |
@@ -120,6 +120,8 @@ flowchart TD
 - 同一时间最多运行一个 Alpha Release；已有运行不得被新运行取消。
 - Android 与 Windows 候选 job 最长 90 分钟，iOS 候选 job 最长 120 分钟，最终公开 job 最长 30 分钟。
 - 发布候选必须来自 `master` 历史；禁止移动既有 tag。
+- 既有共享构建号低于 `2001` 时，下一候选一次性从 `2001` 开始，随后连续递增。Android schema 2 候选的包基础构建号固定为共享构建号减 `2000`，保留 Flutter 默认 ARM64 `+2000` ABI 偏移，使 APK 实际 `versionCode`、iOS 构建号和 Windows Store 第三段一致。签名更新指针必须携带候选清单实测的 Android `versionCode`，客户端不得自行推导。
+- 不兼容 schema 1 的既有 Android 安装：`2405` 不能系统升级到新序列首包 `2001`，用户需卸载重装；新序列从 `2001` 起严格递增并支持后续自动更新。iOS 与 Windows 不重置共享构建号。
 - Microsoft Store 首次产品提交、Private audience 和 Flight 的人员/组配置属于 Partner Center bootstrap；`manual` 模式由审批人核对正式 submission，并逐字复制 Windows job 生成的 `STORE <Store ID> Published Public <版本> x64 <MSIX SHA-256>` 评论；`api` 模式由工作流复核，不得把人工证据描述为自动化查询。
 - `manual` 模式未从本次运行找到匹配的 `github-release` 已批准记录，或 `api` 模式验证失败、超时、凭据缺失时，保持 Draft 和旧更新指针，不得降级放行。
 
@@ -159,6 +161,7 @@ flowchart TD
 | Store submission 同时含非 x64 包 | 不公开 | `manual` 核对包列表；`api` 检查架构集合 |
 | TestFlight 外部链接缺失 | 允许公开，但说明标记待提供 | Release notes 检查 |
 | 同版本已撤回 | 禁止重新公开 | 签名指针状态迁移检查 |
+| 首个 schema 2 统一候选 | 共享构建号为 `2001`；Android 基础构建号为 `1`、实际 `versionCode` 为 `2001`；iOS 与 Windows 同为 `2001`；不声明兼容旧 Android Alpha 安装 | 三平台候选清单、APK badging 和客户端安装前验包测试 |
 | API 返回未知状态或关键字段类型错误 | `api` 模式失败关闭 | 严格枚举状态并校验关键 schema；无关新增字段可忽略 |
 
 ## Validation Criteria
@@ -168,6 +171,7 @@ flowchart TD
 - VLD-003：YAML/Actions 语法有效，第三方 Actions 固定完整提交。
 - VLD-004：发布守卫证明 Store 验证发生在 Release 公开和更新指针写入之前。
 - VLD-005：完整 Flutter 测试、静态分析和 OCR 审查通过。
+- VLD-006：守卫测试证明保留 `--split-per-abi`，共享构建号从 `2001` 连续递增，Android 基础构建号等于共享构建号减 `2000`，APK 实测 `versionCode` 与共享构建号相同并写入候选和签名更新指针；客户端按该实测值验包。
 
 ## Change Management
 
@@ -183,6 +187,7 @@ flowchart TD
 |---|---|---|---|
 | 1.0 | 2026-08-20 | 定义三平台候选、Store 生产验证、统一公开与签名更新指针的纵向合同 | Codex |
 | 1.1 | 2026-08-20 | 增加无 Entra 的受保护人工证明默认路径，并保留可选 Partner Center API 核验 | Codex |
+| 1.2 | 2026-08-21 | 保留 Android ABI split，将三平台实际构建号统一到 `2001` 起连续递增，并明确不兼容旧 Android Alpha 安装 | Codex |
 
 ## Related Specifications
 
