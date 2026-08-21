@@ -786,6 +786,18 @@ void main() {
       expect(runVerification, contains(r'(?:Signer #\d+|V\d+ Signer:)'));
       expect(runVerification, contains('len(signing_digests) != 1'));
       expect(
+        runVerification,
+        contains('android_arm64_version_code_offset = 2000'),
+      );
+      expect(
+        runVerification,
+        contains('Android APK marketing version differs'),
+      );
+      expect(
+        runVerification,
+        contains('Android APK version code differs from the arm64 split'),
+      );
+      expect(
         resolve,
         contains(
           'actions/setup-java@'

@@ -305,6 +305,7 @@ jobs:
               r"^(?:Signer #\d+|V\d+ Signer:) certificate SHA-256 digest: ([0-9a-fA-F]{64})$",
               re.MULTILINE,
           )
+          android_arm64_version_code_offset = 2000
           apk_identities = []
           for label in ("current", "previous"):
               badging = (root / f"{label}-apk-badging.txt").read_text()
@@ -318,7 +319,7 @@ jobs:
               apk_identities.append(
                   {
                       "packageIdentity": package_match.group(1),
-                      "buildNumber": int(package_match.group(2)),
+                      "versionCode": int(package_match.group(2)),
                       "versionName": package_match.group(3),
                       "signingIdentitySha256": next(iter(signing_digests)),
                   }
@@ -326,8 +327,10 @@ jobs:
           current_identity, previous_identity = apk_identities
           if current_identity["packageIdentity"] != "com.meettrace.app" or previous_identity["packageIdentity"] != "com.meettrace.app":
               raise SystemExit("Android APK package identity changed")
-          if current_identity["buildNumber"] != int(current["buildNumber"]) or previous_identity["buildNumber"] != int(previous["buildNumber"]):
-              raise SystemExit("Android APK build number differs from candidate manifest")
+          if current_identity["versionName"] != current.get("marketingVersion") or previous_identity["versionName"] != previous.get("marketingVersion"):
+              raise SystemExit("Android APK marketing version differs from candidate manifest")
+          if current_identity["versionCode"] != int(current["buildNumber"]) + android_arm64_version_code_offset or previous_identity["versionCode"] != int(previous["buildNumber"]) + android_arm64_version_code_offset:
+              raise SystemExit("Android APK version code differs from the arm64 split candidate build")
           if current_identity["signingIdentitySha256"] != current["signingIdentitySha256"] or previous_identity["signingIdentitySha256"] != current["signingIdentitySha256"]:
               raise SystemExit("Android signing lineage changed")
           if previous.get("packageIdentity") not in (None, "com.meettrace.app"):
@@ -339,8 +342,11 @@ jobs:
               "schemaVersion": 1,
               "currentReleaseId": current["releaseId"],
               "currentBuildNumber": int(current["buildNumber"]),
+              "currentVersionCode": current_identity["versionCode"],
               "previousReleaseId": previous["releaseId"],
               "previousBuildNumber": int(previous["buildNumber"]),
+              "previousVersionCode": previous_identity["versionCode"],
+              "arm64VersionCodeOffset": android_arm64_version_code_offset,
               "packageIdentity": current_identity["packageIdentity"],
               "signingIdentitySha256": current_identity["signingIdentitySha256"],
           }

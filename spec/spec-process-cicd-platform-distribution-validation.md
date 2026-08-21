@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Platform Distribution Validation
-version: 1.2
+version: 1.3
 date_created: 2026-08-21
 last_updated: 2026-08-21
 owner: MeetTrace Maintainers
@@ -95,7 +95,7 @@ flowchart TD
 ## Execution Constraints
 
 - `resolve` 使用公开 Release、GitHub Actions Artifact 和 `updates/alpha`；来源证据过期时失败关闭，不能凭手工复制的 JSON 补齐。同一运行重跑产生同前缀 Artifact 时，只按 `created_at` 与 ID 选择最新未过期项，并把确切名称传给下游 job。
-- Android 公开 APK 只有 `arm64-v8a`，不得改用 x64 GitHub 模拟器或重新签名。Firebase Robo 证明当前公开包可安装和启动；Android 包级旧版到新版升级仍由签名世系、递增构建号和应用内更新单元测试覆盖，不能把它描述成真实系统升级验证。
+- Android 公开 APK 只有 `arm64-v8a`，不得改用 x64 GitHub 模拟器或重新签名。候选清单保存跨平台共享构建号；Flutter `--split-per-abi` 生成的 arm64 APK `versionCode` 必须等于共享构建号加 `2000`，且营销版本、包名和签名世系均须匹配。Firebase Robo 证明当前公开包可安装和启动；Android 包级旧版到新版升级仍由签名世系、递增构建号和应用内更新单元测试覆盖，不能把它描述成真实系统升级验证。
 - iOS 当前自动化证明相同签名候选已由来源 job 提交 TestFlight，不调用 App Store Connect 查询处理完成或外部测试可用性；不得夸大为真实终端安装。
 - Windows `Update` 模式要求专用机在新版公开前已保留确切旧版 Store 包；Store 不提供任意历史版本回装接口，工作流不得旁加载 MSIX 冒充分发更新。
 - 专用 Windows 运行器必须是一次只跑一个验证任务的隔离账号，使用 Windows 10 22H2/11 x64 客户端（拒绝 Windows Server），装有 GitHub CLI、WinGet 和 `msstore` source，并允许启动桌面应用；服务会话无法最小化、恢复并前置窗口时不得绕过启动检查。
@@ -125,7 +125,7 @@ flowchart TD
 ## Validation Criteria
 
 - VLD-001：YAML 与守卫测试证明工作流只有只读权限、不可变 Action SHA，且使用 `repository_dispatch` 保持 `Alpha Release` 为 Actions 页面唯一手动入口。
-- VLD-002：公开更新解析器单元测试覆盖有效合同、摘要错、撤回状态、来源运行错和发布运行错；APK 签名解析兼容 `apksigner` 的旧式 `Signer #N` 与新版 `V<N> Signer:` 证书摘要标签，并拒绝零个或多个不同摘要。
+- VLD-002：公开更新解析器单元测试覆盖有效合同、摘要错、撤回状态、来源运行错和发布运行错；APK 签名解析兼容 `apksigner` 的旧式 `Signer #N` 与新版 `V<N> Signer:` 证书摘要标签，并拒绝零个或多个不同摘要；arm64 APK 的营销版本和带 `2000` ABI 偏移的 `versionCode` 必须匹配候选清单。
 - VLD-003：PowerShell 可解析，安全环境变量、事件和分支检查发生在首次包状态变更之前。
 - VLD-004：工作流守卫覆盖 Firebase ARM/不重签、iOS 无 IPA、Windows 专用机/当前用户卸载及最终无旁路 Gate。
 - VLD-005：首次真实运行必须保留三个平台 Artifact 和成功 Gate；在此之前不得把 Windows 状态改为就绪。
@@ -143,6 +143,7 @@ flowchart TD
 
 | Version | Date | Changes | Author |
 |---|---|---|---|
+| 1.3 | 2026-08-21 | 明确 Flutter arm64 split APK 的 `versionCode` 与共享构建号映射 | Codex |
 | 1.2 | 2026-08-21 | 兼容新版 `apksigner` 签名标签，并同步专用 Environment 与 runner 已配置的当前事实 | Codex |
 | 1.1 | 2026-08-21 | 区分候选来源与实际发布运行，选择最新 Artifact，并强化 Windows 客户端与窗口激活验证 | Codex |
 | 1.0 | 2026-08-21 | 定义公开合同、Android ARM 安装、TestFlight 证据和专用 Windows Store 生命周期纵向验证 | Codex |

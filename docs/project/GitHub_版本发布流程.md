@@ -41,7 +41,7 @@ flowchart LR
 |---|---|
 | Release ID/tag | `v<pubspec marketing version>-alpha.<正整数>` |
 | 三平台构建号 | 从已有 Release 候选清单的最大构建号连续 `+1`；同一 Draft 重跑复用原号，Android、iOS 与 Windows 始终一致 |
-| Android | 正式签名、仅 `arm64-v8a`，公开附件名为 `meettrace-<release-id>-android-arm64.apk` |
+| Android | 正式签名、仅 `arm64-v8a`，公开附件名为 `meettrace-<release-id>-android-arm64.apk`；候选清单保存共享构建号，Flutter split APK 的 `versionCode` 固定为该构建号加 `2000` |
 | iOS | 仅 TestFlight，不上传 IPA 到 Actions Artifact 或 GitHub Release |
 | Windows | Windows 10 22H2/11、仅 x64；固定 Store ID `9PHHSJMWK06G`，MSIX 只进入 Actions Artifact 与 Partner Center |
 | Windows Store 包版本 | `1.0.<共享发布构建号>.0`；共享构建号不超过 `65535`，营销版本另行记录，第一段不得为 `0`，Store 保留的第四段固定为 `0` |
