@@ -747,5 +747,128 @@ void main() {
         ),
       );
     });
+
+    test('公开分发验证只接受默认分支调度事件和不可变生产合同', () async {
+      final workflow = await _workflow('platform-distribution-validation.yml');
+      final resolve = _job(workflow, 'resolve', 'android_public_install');
+
+      expect(workflow, contains('name: Platform Distribution Validation'));
+      expect(workflow, contains('repository_dispatch:'));
+      expect(workflow, contains('types: [platform-distribution-validation]'));
+      expect(workflow, isNot(contains('  workflow_dispatch:')));
+      expect(workflow, contains('cancel-in-progress: false'));
+      expect(resolve, contains('fetch-depth: 0'));
+      expect(resolve, contains(r'[[ "$GITHUB_REF" == "refs/heads/master" ]]'));
+      expect(
+        resolve,
+        contains('dart run tool/release/verify_public_update.dart'),
+      );
+      expect(resolve, contains('--windows-production-receipt'));
+      expect(resolve, contains('.workflowName == "Alpha Release"'));
+      expect(resolve, contains('.conclusion == "success"'));
+      expect(resolve, contains(r'.headSha == $sha'));
+      expect(resolve, contains(r'git cat-file -t "$RELEASE_ID"'));
+      expect(resolve, contains(r'git rev-list -n 1 "$RELEASE_ID"'));
+      expect(resolve, contains('Android signing lineage changed'));
+      expect(resolve, contains('aapt" dump badging'));
+      expect(resolve, contains('apksigner" verify --print-certs'));
+      expect(
+        resolve,
+        contains(
+          'actions/setup-java@'
+          'b6effb05e454b25005698d916606bdc6ffcbf961',
+        ),
+      );
+      expect(resolve, contains('Artifact digest changed:'));
+      expect(resolve, contains('updates/alpha'));
+      expect(resolve, isNot(contains(r'${{ secrets.')));
+    });
+
+    test('Android 公开 APK 在 ARM Test Lab 原样安装启动', () async {
+      final workflow = await _workflow('platform-distribution-validation.yml');
+      final android = _job(
+        workflow,
+        'android_public_install',
+        'ios_testflight_evidence',
+      );
+
+      expect(workflow, contains("|| 'MediumPhone.arm'"));
+      expect(android, contains('gcloud firebase test android run'));
+      expect(android, contains('--type robo'));
+      expect(android, contains('--no-resign'));
+      expect(android, contains('arm64-v8a'));
+      expect(android, contains('.supportedAbis'));
+      expect(android, contains('sha256sum --check --strict'));
+      expect(android, isNot(contains('--additional-apks')));
+      expect(android, isNot(contains('app-x86_64')));
+    });
+
+    test('iOS 只复核 TestFlight 提交证据且不下载或上传 IPA', () async {
+      final workflow = await _workflow('platform-distribution-validation.yml');
+      final ios = _job(workflow, 'ios_testflight_evidence', 'windows_store');
+
+      expect(ios, contains(r'meettrace-ios-testflight-${SOURCE_RUN_ID}-*'));
+      expect(ios, contains("-iname '*.ipa'"));
+      expect(ios, contains('ipaExposed'));
+      expect(ios, contains('testFlightSubmissionEvidence'));
+      expect(ios, isNot(contains('fastlane ios upload_testflight')));
+      expect(ios, isNot(contains('gh release upload')));
+    });
+
+    test('Windows Store 生命周期只在受保护专用自托管机执行', () async {
+      final workflow = await _workflow('platform-distribution-validation.yml');
+      final windows = _job(workflow, 'windows_store', 'validation_gate');
+      final script = await File('tool/windows/validate_store_distribution.ps1')
+          .readAsString();
+
+      expect(
+        windows,
+        contains('runs-on: [self-hosted, Windows, X64, meettrace-store]'),
+      );
+      expect(windows, contains('environment: windows-store-validation'));
+      expect(windows, contains('MEETTRACE_DEDICATED_STORE_VALIDATION: "1"'));
+      expect(windows, contains("RUNNER_ENVIRONMENT -cne 'self-hosted'"));
+      expect(windows, contains('validate_store_distribution.ps1'));
+      expect(windows, contains(r'-Mode $env:WINDOWS_VALIDATION_MODE'));
+      expect(
+        windows,
+        contains(r'-PreviousVersion $env:WINDOWS_PREVIOUS_VERSION'),
+      );
+      expect(
+        windows,
+        isNot(contains(r"-Mode '${{ github.event.client_payload")),
+      );
+      expect(windows, contains('Revalidate Windows candidate bytes'));
+      expect(script, contains("ValidateSet('InstallUninstall', 'Update')"));
+      expect(script, contains(r"$storeId = '9PHHSJMWK06G'"));
+      expect(script, contains(r"$identityName = 'zhangheng2026.MeetTrace'"));
+      expect(script, contains(r"$env:GITHUB_REF -cne 'refs/heads/master'"));
+      expect(
+        script,
+        contains(r"$env:GITHUB_EVENT_NAME -cne 'repository_dispatch'"),
+      );
+      expect(script, contains('winget source list --disable-interactivity'));
+      expect(script, contains(r"'install', '--id', $storeId"));
+      expect(script, contains(r"'upgrade', '--id', $storeId"));
+      expect(script, contains('Remove-AppxPackage -Package'));
+      expect(script, isNot(contains('Remove-AppxPackage -AllUsers')));
+      expect(script, isNot(contains('Get-AppxPackage -AllUsers')));
+    });
+
+    test('纵向验证必须等待三个平台成功且没有旁路', () async {
+      final workflow = await _workflow('platform-distribution-validation.yml');
+      final gate = _job(workflow, 'validation_gate');
+
+      expect(
+        workflow,
+        contains(
+          'needs: [resolve, android_public_install, '
+          'ios_testflight_evidence, windows_store]',
+        ),
+      );
+      expect(gate, contains('Platform distribution validation passed'));
+      expect(gate, isNot(contains('if: always()')));
+      expect(workflow, isNot(contains('continue-on-error: true\n    name:')));
+    });
   });
 }

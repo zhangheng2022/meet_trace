@@ -1,6 +1,6 @@
 # Flutter CI/CD 工作流规格
 
-> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已生成固定 Microsoft Store 身份候选，并在公开前通过受保护人工证明或可选 Partner Center API 核验正式 submission，签名自动更新指针生产链已闭合；Store 限定受众/Flight、首次正式认证和首次统一公开运行仍未完成，不得据此公开 Windows 支持。
+> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已以固定 Microsoft Store 身份完成限定受众、首次正式认证、三平台统一公开和签名更新指针首次生产运行。发布后平台分发纵向验证工作流已定义，但专用 Windows 自托管运行器及真实 Store 安装、更新、卸载尚未完成，不得据此公开 Windows 支持。
 
 ## 1. 目标与边界
 
@@ -23,6 +23,7 @@
 | `.github/workflows/quality.yml` | PR、`master` push、手动 | 分类变更、执行所需平台检查、汇总稳定 Gate |
 | `.github/workflows/_flutter-core.yml` | `workflow_call` | 锁定依赖、格式化、分析、测试及可选 Android APK 审计 |
 | `.github/workflows/alpha-release.yml` | 手动 | 同一 SHA 的 Android 候选、TestFlight 构建与公开批准 |
+| `.github/workflows/platform-distribution-validation.yml` | `repository_dispatch` | 公开合同复核、Android ARM 安装启动、TestFlight 证据和专用 Windows Store 生命周期；不新增 Actions 手动入口 |
 | `.github/workflows/firebase-test-lab.yml` | 手动/被调用 | Android 设备实验室自动化回归，不作为发布证据门禁 |
 | `.github/workflows/codeql.yml` | PR、`master` push、每周、手动 | 使用高级配置扫描 Actions、C/C++ 与 Python，排除代理技能目录 |
 
