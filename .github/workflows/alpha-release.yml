@@ -616,6 +616,7 @@ jobs:
     if: needs.prepare.outputs.mode == 'candidate'
     needs: [prepare, android]
     permissions:
+      actions: read
       contents: read
       id-token: write
       attestations: write
@@ -676,21 +677,145 @@ jobs:
           echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
           echo "CANDIDATE_REF=refs/tags/$RELEASE_ID" >> "$GITHUB_ENV"
 
+      - name: Prepare release build number
+        shell: bash
+        env:
+          RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          echo "IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "SENTRY_RELEASE=$IOS_BUNDLE_ID@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "TestFlight build number: $RELEASE_BUILD_NUMBER"
+
+      - name: Reuse immutable uploaded TestFlight candidate
+        id: staged
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/ios/testflight
+          runs_json="$RUNNER_TEMP/meettrace-ios-prior-runs.json"
+          gh run list \
+            --workflow alpha-release.yml \
+            --limit 100 \
+            --json databaseId,status,conclusion,createdAt > "$runs_json"
+
+          while IFS= read -r source_run_id; do
+            [[ -n "$source_run_id" ]] || continue
+            [[ "$source_run_id" != "$GITHUB_RUN_ID" ]] || continue
+
+            successful_ios_jobs="$(
+              gh run view "$source_run_id" --json jobs --jq \
+                '[.jobs[] | select(.name == "Build, sign, and upload iOS app" and .conclusion == "success")] | length'
+            )"
+            [[ "$successful_ios_jobs" == "1" ]] || continue
+
+            artifacts_json="$RUNNER_TEMP/meettrace-ios-artifacts-$source_run_id.json"
+            gh api \
+              "repos/$GITHUB_REPOSITORY/actions/runs/$source_run_id/artifacts?per_page=100" \
+              > "$artifacts_json"
+            artifact_tsv="$(
+              jq -r --arg prefix "meettrace-ios-testflight-$source_run_id-" '
+                [.artifacts[]
+                  | select(.expired == false and (.name | startswith($prefix)))]
+                | if length == 1 then
+                    "\(.[0].id)\t\(.[0].name)"
+                  else
+                    empty
+                  end
+              ' "$artifacts_json"
+            )"
+            [[ -n "$artifact_tsv" ]] || continue
+            IFS=$'\t' read -r source_artifact_id source_artifact_name <<< "$artifact_tsv"
+
+            source_dir="$(mktemp -d "$RUNNER_TEMP/meettrace-ios-reuse.XXXXXX")"
+            gh run download "$source_run_id" \
+              --name "$source_artifact_name" \
+              --dir "$source_dir"
+            candidate_count="$(find "$source_dir" -type f -name 'candidate-manifest.json' | wc -l | tr -d ' ')"
+            [[ "$candidate_count" == "1" ]] || continue
+            candidate_manifest="$(find "$source_dir" -type f -name 'candidate-manifest.json' -print -quit)"
+
+            if ! jq -e \
+              --arg release_id "$RELEASE_ID" \
+              --arg candidate_sha "$CANDIDATE_SHA" \
+              --arg build_number "$IOS_BUILD_NUMBER" \
+              --arg bundle_id "$IOS_BUNDLE_ID" \
+              --arg external_group "$TESTFLIGHT_EXTERNAL_GROUP" \
+              --arg public_link "$TESTFLIGHT_PUBLIC_LINK" '
+                .schemaVersion == 1 and
+                .platform == "ios" and
+                .releaseId == $release_id and
+                .commitSha == $candidate_sha and
+                .buildNumber == $build_number and
+                .bundleId == $bundle_id and
+                .externalGroup == $external_group and
+                .publicLink == $public_link and
+                .artifact.name == ("meettrace-testflight-" + $build_number + ".ipa") and
+                .artifact.distributionSigned == true and
+                .artifact.testFlightUploadCandidate == true and
+                (.artifact.bytes | type == "number" and . > 0) and
+                (.artifact.sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+              ' "$candidate_manifest" >/dev/null; then
+              continue
+            fi
+
+            find "$source_dir" -type f \
+              \( -name '*.json' -o -name '*.sha256' -o -name '*.txt' \) \
+              ! -name 'candidate-manifest.json' \
+              -exec cp {} build/ios/testflight/ \;
+            jq \
+              --arg run_id "$GITHUB_RUN_ID" \
+              --arg run_attempt "$GITHUB_RUN_ATTEMPT" \
+              --argjson source_run_id "$source_run_id" \
+              --argjson source_artifact_id "$source_artifact_id" \
+              --arg source_artifact_name "$source_artifact_name" '
+                .runId = $run_id |
+                .runAttempt = $run_attempt |
+                .reuse = {
+                  sourceRunId: $source_run_id,
+                  sourceArtifactId: $source_artifact_id,
+                  sourceArtifactName: $source_artifact_name
+                }
+              ' "$candidate_manifest" > build/ios/testflight/candidate-manifest.json
+
+            echo "reuse=true" >> "$GITHUB_OUTPUT"
+            echo "source_run_id=$source_run_id" >> "$GITHUB_OUTPUT"
+            echo "source_artifact_name=$source_artifact_name" >> "$GITHUB_OUTPUT"
+            exit 0
+          done < <(
+            jq -r \
+              --argjson current_run "$GITHUB_RUN_ID" '
+                .[]
+                | select(.status == "completed" and .databaseId != $current_run)
+                | .databaseId
+              ' "$runs_json"
+          )
+
+          echo "reuse=false" >> "$GITHUB_OUTPUT"
+
       - name: Select Xcode 26.6
+        if: steps.staged.outputs.reuse != 'true'
         run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
 
       - name: Set up Ruby
+        if: steps.staged.outputs.reuse != 'true'
         uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
         with:
           bundler-cache: true
 
       - name: Set up Flutter 3.47.0
+        if: steps.staged.outputs.reuse != 'true'
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version-file: ".fvmrc"
           cache: true
 
       - name: Capture toolchain snapshot
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -720,21 +845,11 @@ jobs:
           } | tee build/ios/testflight/toolchain.txt
 
       - name: Resolve dependencies
+        if: steps.staged.outputs.reuse != 'true'
         run: flutter pub get --enforce-lockfile
 
-      - name: Prepare release build number
-        shell: bash
-        env:
-          RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
-        run: |
-          set -euo pipefail
-          [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
-          echo "IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "SENTRY_RELEASE=$IOS_BUNDLE_ID@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "TestFlight build number: $RELEASE_BUILD_NUMBER"
-
       - name: Build and inspect unsigned Release app
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -752,6 +867,7 @@ jobs:
             build/ios/testflight/ios-app-inspection.json
 
       - name: Validate and decode signing materials
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
@@ -831,6 +947,7 @@ jobs:
           PY
 
       - name: Import distribution certificate
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
@@ -873,6 +990,7 @@ jobs:
           echo "IOS_DISTRIBUTION_IDENTITY=$identity_sha" >> "$GITHUB_ENV"
 
       - name: Validate and install provisioning profile
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -950,6 +1068,7 @@ jobs:
           PY
 
       - name: Configure Runner target signing
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -992,6 +1111,7 @@ jobs:
           RUBY
 
       - name: Archive and export signed IPA
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -1053,6 +1173,7 @@ jobs:
           echo "IPA_PATH=$output_ipa" >> "$GITHUB_ENV"
 
       - name: Verify signed IPA
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -1142,6 +1263,7 @@ jobs:
           PY
 
       - name: Upload iOS debug symbols to Sentry
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -1164,17 +1286,20 @@ jobs:
           exit 1
 
       - name: Generate IPA provenance attestation
+        if: steps.staged.outputs.reuse != 'true'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: ${{ env.IPA_PATH }}
 
       - name: Upload IPA to TestFlight
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
           TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}
         run: bundle exec fastlane ios upload_testflight
 
       - name: Write release summary
+        if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           {
@@ -1187,6 +1312,22 @@ jobs:
             echo "- Processing and Beta App Review are submitted automatically; public release waits for Testing."
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Write reused TestFlight candidate summary
+        if: steps.staged.outputs.reuse == 'true'
+        shell: bash
+        env:
+          SOURCE_RUN_ID: ${{ steps.staged.outputs.source_run_id }}
+          SOURCE_ARTIFACT_NAME: ${{ steps.staged.outputs.source_artifact_name }}
+        run: |
+          {
+            echo "## Existing TestFlight upload reused"
+            echo
+            echo "- Build number: \`$IOS_BUILD_NUMBER\`"
+            echo "- Source run: \`$SOURCE_RUN_ID\`"
+            echo "- Evidence artifact: \`$SOURCE_ARTIFACT_NAME\`"
+            echo "- The signed IPA was not rebuilt or uploaded again."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload signed build evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -1197,7 +1338,7 @@ jobs:
             build/ios/testflight/*.json
             build/ios/testflight/*.txt
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 30
 
       - name: Remove temporary signing materials
         if: always()

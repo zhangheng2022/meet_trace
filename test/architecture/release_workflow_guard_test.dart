@@ -287,6 +287,7 @@ void main() {
       final ios = _job(workflow, 'ios', 'windows');
 
       expect(ios, contains('environment: testflight'));
+      expect(ios, contains('actions: read'));
       expect(ios, contains('contents: read'));
       expect(
         ios,
@@ -318,6 +319,30 @@ void main() {
       expect(ios, contains('"job": "ios"'));
       expect(ios, isNot(contains('gh release upload')));
       expect(ios, isNot(contains('build/ios/testflight/*.ipa')));
+    });
+
+    test('iOS 恢复执行复用不可变 TestFlight 候选且不重复上传', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final ios = _job(workflow, 'ios', 'windows');
+
+      expect(ios, contains('Reuse immutable uploaded TestFlight candidate'));
+      expect(ios, contains('--limit 100'));
+      expect(ios, contains(r'--arg candidate_sha "$CANDIDATE_SHA"'));
+      expect(ios, contains(r'.commitSha == $candidate_sha'));
+      expect(ios, contains(r'meettrace-ios-testflight-$source_run_id-'));
+      expect(ios, contains(r'test("^[0-9a-f]{64}$")'));
+      expect(ios, contains(r'.runId = $run_id'));
+      expect(ios, contains(r'sourceArtifactId: $source_artifact_id'));
+      expect(ios, contains("if: steps.staged.outputs.reuse != 'true'"));
+      expect(
+        ios,
+        contains(
+          "- name: Upload IPA to TestFlight\n"
+          "        if: steps.staged.outputs.reuse != 'true'",
+        ),
+      );
+      expect(ios, contains("if: steps.staged.outputs.reuse == 'true'"));
+      expect(ios, contains('retention-days: 30'));
     });
 
     test('Windows 正式候选只进入 Microsoft Store Artifact', () async {
