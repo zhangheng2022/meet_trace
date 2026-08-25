@@ -588,7 +588,10 @@ void main() {
         windowsFlight,
         contains('candidate-or-newer Package Flight submission'),
       );
-      expect(windowsFlight, contains('contains only lower package versions'));
+      expect(windowsFlight, contains(r"$submissionStatus -eq 'published'"));
+      expect(windowsFlight, contains(r'$existingName -ceq $artifactName'));
+      expect(windowsFlight, contains('IsNullOrWhiteSpace'));
+      expect(windowsFlight, contains('or the exact pending candidate'));
       expect(
         windowsFlight,
         contains(r'--flightId $env:PARTNER_CENTER_FLIGHT_ID'),
@@ -631,7 +634,10 @@ void main() {
         storeRecovery,
         contains('candidate-or-newer Package Flight submission'),
       );
-      expect(storeRecovery, contains('contains only lower package versions'));
+      expect(storeRecovery, contains(r"$submissionStatus -eq 'published'"));
+      expect(storeRecovery, contains(r'$existingName -ceq $artifactName'));
+      expect(storeRecovery, contains('IsNullOrWhiteSpace'));
+      expect(storeRecovery, contains('or the exact pending candidate'));
       expect(
         storeRecovery,
         contains(r'actions/jobs/$($env:SOURCE_WINDOWS_JOB_ID)/rerun'),
