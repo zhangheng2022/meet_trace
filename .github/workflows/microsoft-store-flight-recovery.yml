@@ -1,0 +1,312 @@
+name: Microsoft Store Flight Recovery
+
+on:
+  repository_dispatch:
+    types: [microsoft-store-flight-recovery]
+
+permissions: {}
+
+concurrency:
+  group: alpha-release
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    name: Recover Microsoft Store Package Flight
+    runs-on: windows-2025
+    timeout-minutes: 30
+    environment: microsoft-store
+    permissions:
+      actions: write
+      # Draft Releases require push-capable contents access even for reads.
+      contents: write
+    env:
+      RELEASE_ID: ${{ github.event.client_payload.release_id }}
+      CANDIDATE_SHA: ${{ github.event.client_payload.candidate_sha }}
+      SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
+      PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}
+    steps:
+      - name: Validate failed Alpha source run
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:SOURCE_RUN_ID -notmatch '^[1-9][0-9]*$' -or
+              $env:CANDIDATE_SHA -notmatch '^[0-9a-f]{40}$' -or
+              $env:RELEASE_ID -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$') {
+            throw 'Invalid Microsoft Store recovery identity.'
+          }
+
+          $sourceJson = gh run view $env:SOURCE_RUN_ID `
+            --repo $env:GITHUB_REPOSITORY `
+            --json event,workflowName,headBranch,headSha,status,conclusion,jobs
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to inspect the Alpha source run.'
+          }
+          $source = $sourceJson | ConvertFrom-Json
+          if ($source.workflowName -cne 'Alpha Release' -or
+              $source.event -cne 'workflow_dispatch' -or
+              $source.headBranch -cne 'master' -or
+              $source.headSha -cne $env:CANDIDATE_SHA -or
+              $source.status -cne 'completed' -or
+              $source.conclusion -cne 'failure') {
+            throw 'Microsoft Store recovery source run is not an eligible failed Alpha run.'
+          }
+
+          foreach ($jobName in @(
+              'Build, sign, and stage Android Alpha',
+              'Build, sign, and upload iOS app',
+              'Build Microsoft Store Windows candidate')) {
+            $matches = @($source.jobs | Where-Object {
+                $_.name -ceq $jobName -and $_.conclusion -ceq 'success'
+              })
+            if ($matches.Count -ne 1) {
+              throw "Source Alpha candidate job is not uniquely successful: $jobName"
+            }
+          }
+          $windowsJob = @($source.jobs | Where-Object {
+              $_.name -ceq 'Build Microsoft Store Windows candidate' -and
+              $_.conclusion -ceq 'success'
+            })[0]
+          if ([long]$windowsJob.databaseId -le 0) {
+            throw 'Source Windows candidate job ID is invalid.'
+          }
+          "SOURCE_WINDOWS_JOB_ID=$([long]$windowsJob.databaseId)" |
+            Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+
+          $releaseJson = gh release view $env:RELEASE_ID `
+            --repo $env:GITHUB_REPOSITORY `
+            --json isDraft,isPrerelease,tagName
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to inspect the source Draft Release.'
+          }
+          $release = $releaseJson | ConvertFrom-Json
+          if ($release.tagName -cne $env:RELEASE_ID -or
+              $release.isDraft -ne $true -or
+              $release.isPrerelease -ne $true) {
+            throw 'Microsoft Store recovery requires the original Draft Pre-release.'
+          }
+
+      - name: Checkout immutable candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.client_payload.candidate_sha }}
+
+      - name: Set up Microsoft Store CLI v0.4.1
+        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
+        with:
+          version: v0.4.1
+
+      - name: Download and verify immutable Windows candidate
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:PARTNER_CENTER_FLIGHT_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') {
+            throw 'Invalid protected Microsoft Store Flight ID.'
+          }
+
+          $candidateDir = Join-Path $env:GITHUB_WORKSPACE 'build/store-flight-recovery/candidate'
+          New-Item -ItemType Directory -Path $candidateDir -Force | Out-Null
+          $artifactsJson = gh api `
+            "repos/$($env:GITHUB_REPOSITORY)/actions/runs/$($env:SOURCE_RUN_ID)/artifacts?per_page=100"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to list source Windows Store candidate artifacts.'
+          }
+          $artifactResponse = $artifactsJson | ConvertFrom-Json
+          $availableArtifacts = @($artifactResponse.artifacts)
+          if ([int]$artifactResponse.total_count -gt $availableArtifacts.Count) {
+            throw 'Source Windows Store candidate artifact listing was truncated.'
+          }
+          $artifactPattern = '^meettrace-windows-store-' +
+            [regex]::Escape($env:SOURCE_RUN_ID) + '-[1-9][0-9]*$'
+          $artifact = $availableArtifacts |
+            Where-Object {
+              $_.expired -eq $false -and ([string]$_.name) -cmatch $artifactPattern
+            } |
+            Sort-Object -Property id -Descending |
+            Select-Object -First 1
+          if ($null -eq $artifact) {
+            throw 'No immutable Windows Store candidate is available for recovery.'
+          }
+          gh run download $env:SOURCE_RUN_ID `
+            --repo $env:GITHUB_REPOSITORY `
+            --name ([string]$artifact.name) `
+            --dir $candidateDir
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to download the source Windows Store candidate.'
+          }
+
+          $manifestPath = Join-Path $candidateDir 'candidate-manifest.json'
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          $msixPath = Join-Path $candidateDir $manifest.artifact.name
+          if (-not (Test-Path -LiteralPath $msixPath -PathType Leaf)) {
+            throw 'Recovered Windows Store candidate is missing.'
+          }
+          $actualDigest = (Get-FileHash -LiteralPath $msixPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualDigest -cne $manifest.artifact.sha256 -or
+              $manifest.releaseId -cne $env:RELEASE_ID -or
+              $manifest.commitSha -cne $env:CANDIDATE_SHA -or
+              $manifest.distribution -cne 'microsoftStore' -or
+              $manifest.artifact.storeSubmissionCandidate -ne $true) {
+            throw 'Recovered Windows Store candidate identity or digest changed.'
+          }
+          "WINDOWS_MSIX_PATH=$msixPath" |
+            Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+          "WINDOWS_MANIFEST_PATH=$manifestPath" |
+            Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Submit or reuse fixed Package Flight
+        shell: pwsh
+        env:
+          PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+          PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+          PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+          PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($name in @(
+              'PARTNER_CENTER_TENANT_ID',
+              'PARTNER_CENTER_SELLER_ID',
+              'PARTNER_CENTER_CLIENT_ID',
+              'PARTNER_CENTER_CLIENT_SECRET')) {
+            if ([string]::IsNullOrWhiteSpace(
+                [Environment]::GetEnvironmentVariable($name))) {
+              throw "Missing protected microsoft-store secret: $name"
+            }
+          }
+          msstore reconfigure `
+            --tenantId $env:PARTNER_CENTER_TENANT_ID `
+            --sellerId $env:PARTNER_CENTER_SELLER_ID `
+            --clientId $env:PARTNER_CENTER_CLIENT_ID `
+            --clientSecret $env:PARTNER_CENTER_CLIENT_SECRET
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to configure Microsoft Store CLI credentials.'
+          }
+          msstore settings --enableTelemetry false
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to disable Microsoft Store CLI telemetry.'
+          }
+
+          $manifest = Get-Content -LiteralPath $env:WINDOWS_MANIFEST_PATH -Raw | ConvertFrom-Json
+          $artifactName = [string]$manifest.artifact.name
+          $packageVersion = [string]$manifest.packageVersion
+          $existingPath = Join-Path $env:RUNNER_TEMP 'existing-flight-submission.json'
+          $existingOutput = & msstore flights submission get `
+            9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID 2>$null
+          $existingExitCode = $LASTEXITCODE
+          $reuse = $false
+          if ($existingExitCode -eq 0) {
+            $existingOutput | Set-Content -LiteralPath $existingPath -Encoding utf8
+            $submission = Get-Content -LiteralPath $existingPath -Raw | ConvertFrom-Json
+            $packages = @($submission.ApplicationPackages)
+            $exact = @($packages | Where-Object {
+                $_.FileName -ceq $artifactName -and $_.Version -ceq $packageVersion
+              })
+            if ($exact.Count -eq 1 -and $packages.Count -eq 1) {
+              $reuse = $true
+            } elseif ($packages.Count -gt 0 -and
+                ([string]$submission.Status).ToLowerInvariant() -ne 'published') {
+              throw 'A different Package Flight submission is already pending.'
+            }
+          }
+
+          if (-not $reuse) {
+            $inputDirectory = Split-Path -Parent $env:WINDOWS_MSIX_PATH
+            msstore publish $env:GITHUB_WORKSPACE `
+              --inputDirectory $inputDirectory `
+              --appId 9PHHSJMWK06G `
+              --flightId $env:PARTNER_CENTER_FLIGHT_ID
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Microsoft Store Package Flight recovery submission failed.'
+            }
+            $requestState = 'submitted'
+          } else {
+            $requestState = 'reused'
+          }
+
+          $evidenceDir = Join-Path $env:GITHUB_WORKSPACE 'build/store-flight-recovery/evidence'
+          New-Item -ItemType Directory -Path $evidenceDir -Force | Out-Null
+          [ordered]@{
+            schemaVersion = 1
+            distribution = 'microsoftStoreFlightRecovery'
+            state = $requestState
+            productId = '9PHHSJMWK06G'
+            flightId = $env:PARTNER_CENTER_FLIGHT_ID
+            releaseId = $env:RELEASE_ID
+            candidateCommitSha = $env:CANDIDATE_SHA
+            sourceRunId = [long]$env:SOURCE_RUN_ID
+            recoveryRunId = [long]$env:GITHUB_RUN_ID
+            submittedAtUtc = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+            package = [ordered]@{
+              fileName = $artifactName
+              version = $packageVersion
+              architecture = 'x64'
+              candidateSha256 = [string]$manifest.artifact.sha256
+            }
+          } | ConvertTo-Json -Depth 6 | Set-Content `
+            -LiteralPath (Join-Path $evidenceDir 'submission-request.json') `
+            -Encoding utf8
+
+      - name: Remove Microsoft Store CLI credentials
+        if: always()
+        shell: pwsh
+        env:
+          PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+        run: |
+          $source = @'
+          using System;
+          using System.ComponentModel;
+          using System.Runtime.InteropServices;
+
+          public static class MeetTraceCredentialCleanup
+          {
+              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
+                  CharSet = CharSet.Unicode, SetLastError = true)]
+              private static extern bool CredDelete(string target, int type, int flags);
+
+              public static void Delete(string target)
+              {
+                  if (!CredDelete(target, 1, 0))
+                  {
+                      int error = Marshal.GetLastWin32Error();
+                      if (error != 1168)
+                      {
+                          throw new Win32Exception(error);
+                      }
+                  }
+              }
+          }
+          '@
+          Add-Type -TypeDefinition $source
+          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
+            [MeetTraceCredentialCleanup]::Delete(
+              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
+            )
+          }
+
+      - name: Upload recovery evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-windows-flight-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/store-flight-recovery/evidence/submission-request.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+      - name: Retry original Alpha Windows path
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:SOURCE_WINDOWS_JOB_ID -notmatch '^[1-9][0-9]*$') {
+            throw 'Source Windows candidate job ID is invalid.'
+          }
+          gh api --method POST `
+            "repos/$($env:GITHUB_REPOSITORY)/actions/jobs/$($env:SOURCE_WINDOWS_JOB_ID)/rerun"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to queue the original Alpha Windows retry.'
+          }

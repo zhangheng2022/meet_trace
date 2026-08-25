@@ -1584,8 +1584,9 @@ jobs:
           }
 
           if (-not $reuse) {
+            $inputDirectory = Split-Path -Parent $env:WINDOWS_MSIX_PATH
             msstore publish $env:GITHUB_WORKSPACE `
-              --inputFile $env:WINDOWS_MSIX_PATH `
+              --inputDirectory $inputDirectory `
               --appId 9PHHSJMWK06G `
               --flightId $env:PARTNER_CENTER_FLIGHT_ID
             if ($LASTEXITCODE -ne 0) {

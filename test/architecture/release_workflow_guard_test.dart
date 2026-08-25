@@ -108,6 +108,9 @@ void main() {
 
     test('正式发布只保留一个 YML 和一个手动入口', () async {
       final workflow = await _workflow('alpha-release.yml');
+      final storeRecovery = await _workflow(
+        'microsoft-store-flight-recovery.yml',
+      );
       final obsoleteWorkflows = [
         'android-alpha.yml',
         'ios-testflight.yml',
@@ -127,6 +130,11 @@ void main() {
       final reusableQuality = await _workflow('_flutter-core.yml');
       expect(reusableQuality, contains('workflow_call:'));
       expect(reusableQuality, isNot(contains('workflow_dispatch:')));
+      expect(storeRecovery, isNot(contains('workflow_dispatch:')));
+      expect(
+        storeRecovery,
+        contains('types: [microsoft-store-flight-recovery]'),
+      );
 
       final dispatchInputs = workflow.substring(
         workflow.indexOf('  workflow_dispatch:'),
@@ -572,6 +580,8 @@ void main() {
           ),
         ),
       );
+      expect(windowsFlight, contains(r'--inputDirectory $inputDirectory'));
+      expect(windowsFlight, isNot(contains('--inputFile')));
       expect(
         windowsFlight,
         contains(r'--flightId $env:PARTNER_CENTER_FLIGHT_ID'),
@@ -597,6 +607,21 @@ void main() {
         ),
       );
       expect(windowsFlight, contains('version: v0.4.1'));
+      final storeRecovery = await _workflow(
+        'microsoft-store-flight-recovery.yml',
+      );
+      expect(storeRecovery, contains('environment: microsoft-store'));
+      expect(storeRecovery, contains('actions: write'));
+      expect(storeRecovery, contains("workflowName -cne 'Alpha Release'"));
+      expect(storeRecovery, contains("headBranch -cne 'master'"));
+      expect(storeRecovery, contains("conclusion -cne 'failure'"));
+      expect(storeRecovery, contains(r'[regex]::Escape($env:SOURCE_RUN_ID)'));
+      expect(storeRecovery, contains(r'--inputDirectory $inputDirectory'));
+      expect(storeRecovery, isNot(contains('--inputFile')));
+      expect(
+        storeRecovery,
+        contains(r'actions/jobs/$($env:SOURCE_WINDOWS_JOB_ID)/rerun'),
+      );
       for (final secret in <String>[
         'PARTNER_CENTER_TENANT_ID',
         'PARTNER_CENTER_SELLER_ID',
