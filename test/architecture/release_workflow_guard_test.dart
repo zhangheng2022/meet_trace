@@ -581,7 +581,7 @@ void main() {
         publish,
         contains(
           'microsoft/microsoft-store-apppublisher@'
-          '15abd1c50fcc164b19cb240fb04ef3c49bf715a2',
+          'cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0',
         ),
       );
       expect(publish, contains('version: v0.4.0'));
