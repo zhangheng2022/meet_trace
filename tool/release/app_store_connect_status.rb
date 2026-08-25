@@ -121,7 +121,6 @@ groups_response = request(
   {
     "filter[app]" => app.fetch("id"),
     "filter[name]" => external_group,
-    "filter[builds]" => build.fetch("id"),
     "fields[betaGroups]" => "name,isInternalGroup,publicLinkEnabled,publicLink",
     "limit" => "2"
   }
@@ -137,6 +136,18 @@ raise "Expected the fixed external group exactly once" unless matching_groups.le
 matching_group = matching_groups.first
 group_attributes = matching_group.fetch("attributes")
 raise "Fixed TestFlight group must be external" unless group_attributes.fetch("isInternalGroup") == false
+
+group_id = matching_group.fetch("id")
+raise "Fixed TestFlight group ID is unsafe" unless group_id.match?(/\A[A-Za-z0-9-]{1,128}\z/)
+group_builds_response = request(
+  "/betaGroups/#{group_id}/builds",
+  { "fields[builds]" => "version", "limit" => "200" }
+)
+group_builds = group_builds_response.fetch("data")
+raise "Fixed TestFlight group builds data must be an array" unless group_builds.is_a?(Array)
+unless group_builds.count { |item| item.fetch("id", nil) == build.fetch("id") } == 1
+  raise "Exact build is not assigned to the fixed TestFlight group"
+end
 build_attributes = build.fetch("attributes")
 detail_attributes = beta_detail.fetch("attributes")
 external_state = detail_attributes.fetch("externalBuildState")
