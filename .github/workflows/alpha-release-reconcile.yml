@@ -50,63 +50,118 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]]
+          releases_json="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100")"
           if [[ "$EVENT_NAME" == repository_dispatch ]]; then
             release_id="$DISPATCH_RELEASE_ID"
-            source_run_id="$DISPATCH_SOURCE_RUN_ID"
-            candidate_sha="$DISPATCH_CANDIDATE_SHA"
           else
-            release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '[.[] | select(.draft == true and .prerelease == true and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-alpha\\.[1-9][0-9]*$")))] | sort_by(.created_at) | last | .tag_name // empty')"
+            release_id="$(jq -r '[.[] | select(.draft == true and .prerelease == true and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-alpha\\.[1-9][0-9]*$")))] | sort_by(.created_at) | last | .tag_name // empty' <<<"$releases_json")"
             if [[ -z "$release_id" ]]; then
               echo "found=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            mkdir -p build/reconcile/discovery
-            gh release download "$release_id" --repo "$GITHUB_REPOSITORY" \
-              --pattern candidate-manifest.json --dir build/reconcile/discovery
-            source_run_id="$(jq -er .runId build/reconcile/discovery/candidate-manifest.json)"
-            candidate_sha="$(jq -er .commitSha build/reconcile/discovery/candidate-manifest.json)"
           fi
           [[ "$release_id" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
-          [[ "$source_run_id" =~ ^[1-9][0-9]*$ ]]
+          release_json="$(jq -cer --arg release "$release_id" '[.[] | select(.draft == true and .prerelease == true and .tag_name == $release)] | if length == 1 then .[0] else error("expected exactly one immutable Draft release") end' <<<"$releases_json")"
+          mkdir -p build/reconcile/discovery build/reconcile/windows
+          manifest_asset_id="$(jq -er '[.assets[] | select(.name == "candidate-manifest.json" and .state == "uploaded")] | if length == 1 then .[0].id else error("expected exactly one candidate manifest asset") end' <<<"$release_json")"
+          gh api -H 'Accept: application/octet-stream' \
+            "repos/$GITHUB_REPOSITORY/releases/assets/$manifest_asset_id" \
+            > build/reconcile/discovery/candidate-manifest.json
+          release_manifest=build/reconcile/discovery/candidate-manifest.json
+          candidate_sha="$(jq -er .commitSha "$release_manifest")"
+          release_marketing_version="$(jq -er .marketingVersion "$release_manifest")"
+          release_build_number="$(jq -er .buildNumber "$release_manifest")"
           [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
-          release_json="$(gh release view "$release_id" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName)"
-          jq -e --arg release "$release_id" '.isDraft == true and .isPrerelease == true and .tagName == $release' <<<"$release_json" >/dev/null
+          [[ "$release_marketing_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$release_build_number" =~ ^[1-9][0-9]*$ ]]
+          jq -e --arg release "$release_id" --arg sha "$candidate_sha" --arg repository "$GITHUB_REPOSITORY" '
+            .schemaVersion == 2 and .platform == "android" and
+            .releaseId == $release and .commitSha == $sha and
+            .distribution.repository == $repository and
+            .distribution.releaseState == "draft" and
+            .distribution.publiclyInstallable == false
+          ' "$release_manifest" >/dev/null
+          if [[ "$EVENT_NAME" == repository_dispatch ]]; then
+            [[ "$DISPATCH_SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+            [[ "$DISPATCH_CANDIDATE_SHA" == "$candidate_sha" ]]
+            candidate_runs=("$DISPATCH_SOURCE_RUN_ID")
+          else
+            mapfile -t candidate_runs < <(
+              gh run list --repo "$GITHUB_REPOSITORY" \
+                --workflow alpha-release.yml --branch master --limit 100 \
+                --json databaseId,status,conclusion \
+                --jq '.[] | select(.status == "completed" and .conclusion == "success") | .databaseId'
+            )
+          fi
           git fetch --force origin "refs/tags/$release_id:refs/tags/$release_id"
           [[ "$(git cat-file -t "refs/tags/$release_id")" == tag ]]
           [[ "$(git rev-parse "refs/tags/$release_id^{}")" == "$candidate_sha" ]]
           git merge-base --is-ancestor "$candidate_sha" origin/master
 
-          source_run="$(gh run view "$source_run_id" --repo "$GITHUB_REPOSITORY" --json workflowName,event,headSha,jobs)"
-          jq -e --arg sha "$candidate_sha" '
-            .workflowName == "Alpha Release" and .event == "workflow_dispatch" and
-            .headSha == $sha and
-            ([.jobs[] | select(.name == "Build, sign, and stage Android Alpha" and .conclusion == "success")] | length == 1) and
-            ([.jobs[] | select(.name == "Build, sign, and upload iOS app" and .conclusion == "success")] | length == 1) and
-            ([.jobs[] | select(.name == "Build Microsoft Store Windows candidate" and .conclusion == "success")] | length == 1) and
-            ([.jobs[] | select(.name == "Submit Microsoft Store Package Flight" and .conclusion == "success")] | length == 1)
-          ' <<<"$source_run" >/dev/null
+          source_run_id=''
+          manifest=''
+          flight_evidence=''
+          for candidate_run_id in "${candidate_runs[@]}"; do
+            source_run="$(gh run view "$candidate_run_id" --repo "$GITHUB_REPOSITORY" --json workflowName,event,headBranch,headSha,jobs)"
+            if ! jq -e '
+              .workflowName == "Alpha Release" and .event == "workflow_dispatch" and
+              .headBranch == "master" and (.headSha | test("^[0-9a-f]{40}$")) and
+              ([.jobs[] | select(.name == "Build, sign, and stage Android Alpha" and .conclusion == "success")] | length == 1) and
+              ([.jobs[] | select(.name == "Build, sign, and upload iOS app" and .conclusion == "success")] | length == 1) and
+              ([.jobs[] | select(.name == "Build Microsoft Store Windows candidate" and .conclusion == "success")] | length == 1) and
+              ([.jobs[] | select(.name == "Submit Microsoft Store Package Flight" and .conclusion == "success")] | length == 1)
+            ' <<<"$source_run" >/dev/null; then
+              continue
+            fi
+            source_head_sha="$(jq -er .headSha <<<"$source_run")"
+            if ! git cat-file -e "$source_head_sha^{commit}" 2>/dev/null ||
+               ! git merge-base --is-ancestor "$candidate_sha" "$source_head_sha"; then
+              continue
+            fi
 
-          mkdir -p build/reconcile/windows
-          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$source_run_id/artifacts?per_page=100")"
-          windows_id="$(jq -er '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | sort_by(.created_at, .id) | last | .id' <<<"$artifacts")"
-          flight_id="$(jq -er --arg prefix "meettrace-windows-flight-request-$source_run_id-" '[.artifacts[] | select(.expired == false and (.name | startswith($prefix)))] | sort_by(.created_at, .id) | last | .id' <<<"$artifacts")"
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$windows_id/zip" > build/reconcile/windows.zip
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$flight_id/zip" > build/reconcile/flight.zip
-          unzip -qp build/reconcile/windows.zip candidate-manifest.json > build/reconcile/windows/candidate-manifest.json
-          unzip -qp build/reconcile/flight.zip submission-request.json > build/reconcile/windows/submission-request.json
-          manifest=build/reconcile/windows/candidate-manifest.json
-          jq -e --arg release "$release_id" --arg sha "$candidate_sha" --argjson run "$source_run_id" '
-            .releaseId == $release and .commitSha == $sha and (.runId | tostring) == ($run | tostring) and
-            .platform == "windows" and .distribution == "microsoftStore"
-          ' "$manifest" >/dev/null
-          flight_evidence=build/reconcile/windows/submission-request.json
-          jq -e --arg release "$release_id" --arg sha "$candidate_sha" --argjson run "$source_run_id" --arg package "$(jq -er .artifact.name "$manifest")" --arg version "$(jq -er .packageVersion "$manifest")" '
-            .schemaVersion == 1 and .distribution == "microsoftStoreFlight" and
-            .releaseId == $release and .candidateCommitSha == $sha and
-            (.sourceRunId | tostring) == ($run | tostring) and
-            .package.fileName == $package and .package.version == $version and
-            (.submissionId | type == "string" and test("^[1-9][0-9]*$"))
-          ' "$flight_evidence" >/dev/null
+            artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$candidate_run_id/artifacts?per_page=100")"
+            windows_id="$(jq -r '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | sort_by(.created_at, .id) | first | .id // empty' <<<"$artifacts")"
+            flight_id="$(jq -r --arg prefix "meettrace-windows-flight-request-$candidate_run_id-" '[.artifacts[] | select(.expired == false and (.name | startswith($prefix)))] | sort_by(.created_at, .id) | first | .id // empty' <<<"$artifacts")"
+            [[ "$windows_id" =~ ^[1-9][0-9]*$ && "$flight_id" =~ ^[1-9][0-9]*$ ]] || continue
+
+            candidate_dir="build/reconcile/candidate-$candidate_run_id"
+            mkdir -p "$candidate_dir"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$windows_id/zip" > "$candidate_dir/windows.zip"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$flight_id/zip" > "$candidate_dir/flight.zip"
+            unzip -qp "$candidate_dir/windows.zip" candidate-manifest.json > "$candidate_dir/candidate-manifest.json"
+            unzip -qp "$candidate_dir/flight.zip" submission-request.json > "$candidate_dir/submission-request.json"
+            candidate_manifest="$candidate_dir/candidate-manifest.json"
+            candidate_flight="$candidate_dir/submission-request.json"
+            if ! jq -e --arg release "$release_id" --arg sha "$candidate_sha" --argjson run "$candidate_run_id" --arg marketing "$release_marketing_version" --arg build "$release_build_number" '
+              .releaseId == $release and .commitSha == $sha and (.runId | tostring) == ($run | tostring) and
+              .marketingVersion == $marketing and (.buildNumber | tostring) == $build and
+              .platform == "windows" and .distribution == "microsoftStore" and
+              .artifact.storeSubmissionCandidate == true and
+              .artifact.publiclyInstallable == false and
+              (.artifact.sha256 | test("^[0-9a-f]{64}$"))
+            ' "$candidate_manifest" >/dev/null; then
+              continue
+            fi
+            if ! jq -e --arg release "$release_id" --arg sha "$candidate_sha" --argjson run "$candidate_run_id" --arg package "$(jq -er .artifact.name "$candidate_manifest")" --arg version "$(jq -er .packageVersion "$candidate_manifest")" --arg sha256 "$(jq -er .artifact.sha256 "$candidate_manifest")" '
+              .schemaVersion == 1 and .distribution == "microsoftStoreFlight" and
+              .releaseId == $release and .candidateCommitSha == $sha and
+              (.sourceRunId | tostring) == ($run | tostring) and
+              .package.fileName == $package and .package.version == $version and
+              .package.architecture == "x64" and
+              .package.candidateSha256 == $sha256 and
+              (.submissionId | type == "string" and test("^[1-9][0-9]*$"))
+            ' "$candidate_flight" >/dev/null; then
+              continue
+            fi
+            source_run_id="$candidate_run_id"
+            manifest="$candidate_manifest"
+            flight_evidence="$candidate_flight"
+            break
+          done
+          [[ "$source_run_id" =~ ^[1-9][0-9]*$ ]] || {
+            echo "No successful Alpha Release run carries exact candidate and Package Flight evidence" >&2
+            exit 1
+          }
           echo "found=true" >> "$GITHUB_OUTPUT"
           echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
           echo "source_run_id=$source_run_id" >> "$GITHUB_OUTPUT"
