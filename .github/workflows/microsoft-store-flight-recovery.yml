@@ -216,7 +216,11 @@ jobs:
             } elseif ($packages.Count -gt 0 -and $submissionStatus -ne 'published') {
               $unsafePendingPackages = @($packages | Where-Object {
                   $existingName = [string]$_.FileName
+                  $existingFileStatus = [string]$_.FileStatus
                   $existingVersionText = ([string]$_.Version).TrimStart('v')
+                  if ($existingFileStatus -ieq 'PendingDelete') {
+                    return $false
+                  }
                   if ($existingName -ceq $artifactName) {
                     if ([string]::IsNullOrWhiteSpace($existingVersionText)) {
                       return $false
@@ -236,7 +240,7 @@ jobs:
               if ($unsafePendingPackages.Count -gt 0) {
                 throw 'A different candidate-or-newer Package Flight submission is already pending.'
               }
-              Write-Host 'Replacing a stale Flight draft containing only lower versions or the exact pending candidate.'
+              Write-Host 'Replacing a stale Flight draft containing only deleted/lower packages or the exact pending candidate.'
             }
           }
 
