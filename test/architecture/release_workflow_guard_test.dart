@@ -634,22 +634,39 @@ void main() {
       expect(storeRecovery, isNot(contains('--inputFile')));
       expect(storeRecovery, contains('--uploadTimeout 900'));
       expect(storeRecovery, isNot(contains('--verbose')));
-      expect(
-        storeRecovery,
-        contains('candidate-or-newer Package Flight submission'),
-      );
+      expect(storeRecovery, contains(r"$submissionStatus -eq 'pendingcommit'"));
       expect(storeRecovery, contains(r"$submissionStatus -eq 'published'"));
-      expect(storeRecovery, contains(r'$existingName -ceq $artifactName'));
+      expect(storeRecovery, contains(r'$matchingCandidateNames.Count -ne 1'));
+      expect(storeRecovery, contains("'commitstarted'"));
+      expect(storeRecovery, contains("'certification'"));
       expect(
         storeRecovery,
-        contains(r"$existingFileStatus -ieq 'PendingDelete'"),
+        contains('does not match the immutable recovery candidate'),
       );
-      expect(storeRecovery, contains('IsNullOrWhiteSpace'));
-      expect(storeRecovery, contains('or the exact pending candidate'));
+      final recoveryDeleteIndex = storeRecovery.indexOf(
+        'msstore flights submission delete `',
+      );
+      final recoveryPublishIndex = storeRecovery.indexOf(
+        r'msstore publish $env:GITHUB_WORKSPACE `',
+      );
+      expect(recoveryDeleteIndex, greaterThanOrEqualTo(0));
+      expect(recoveryPublishIndex, greaterThan(recoveryDeleteIndex));
       expect(
         storeRecovery,
-        contains(r'actions/jobs/$($env:SOURCE_WINDOWS_JOB_ID)/rerun'),
+        contains(r'9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID --noConfirm'),
       );
+      expect(
+        windowsFlight,
+        isNot(contains('msstore flights submission delete')),
+      );
+      expect(
+        storeRecovery,
+        contains('Resume Alpha Release on current master workflow'),
+      );
+      expect(storeRecovery, contains('gh workflow run alpha-release.yml `'));
+      expect(storeRecovery, contains('--ref master `'));
+      expect(storeRecovery, contains(r'-f "release_id=$($env:RELEASE_ID)"'));
+      expect(storeRecovery, isNot(contains('/rerun')));
       for (final secret in <String>[
         'PARTNER_CENTER_TENANT_ID',
         'PARTNER_CENTER_SELLER_ID',

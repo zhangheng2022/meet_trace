@@ -65,16 +65,6 @@ jobs:
               throw "Source Alpha candidate job is not uniquely successful: $jobName"
             }
           }
-          $windowsJob = @($source.jobs | Where-Object {
-              $_.name -ceq 'Build Microsoft Store Windows candidate' -and
-              $_.conclusion -ceq 'success'
-            })[0]
-          if ([long]$windowsJob.databaseId -le 0) {
-            throw 'Source Windows candidate job ID is invalid.'
-          }
-          "SOURCE_WINDOWS_JOB_ID=$([long]$windowsJob.databaseId)" |
-            Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
-
           $releaseJson = gh release view $env:RELEASE_ID `
             --repo $env:GITHUB_REPOSITORY `
             --json isDraft,isPrerelease,tagName
@@ -193,15 +183,12 @@ jobs:
           $manifest = Get-Content -LiteralPath $env:WINDOWS_MANIFEST_PATH -Raw | ConvertFrom-Json
           $artifactName = [string]$manifest.artifact.name
           $packageVersion = [string]$manifest.packageVersion
-          $candidateVersion = $null
-          if (-not [version]::TryParse($packageVersion, [ref]$candidateVersion)) {
-            throw "Invalid candidate package version: $packageVersion"
-          }
           $existingPath = Join-Path $env:RUNNER_TEMP 'existing-flight-submission.json'
           $existingOutput = & msstore flights submission get `
             9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID 2>$null
           $existingExitCode = $LASTEXITCODE
           $reuse = $false
+          $deletePendingDraft = $false
           if ($existingExitCode -eq 0) {
             $existingOutput | Set-Content -LiteralPath $existingPath -Encoding utf8
             $submission = Get-Content -LiteralPath $existingPath -Raw | ConvertFrom-Json
@@ -209,42 +196,42 @@ jobs:
             $exact = @($packages | Where-Object {
                 $_.FileName -ceq $artifactName -and $_.Version -ceq $packageVersion
               })
+            $matchingCandidateNames = @($packages | Where-Object {
+                ([string]$_.FileName) -ceq $artifactName
+              })
             $submissionStatus = ([string]$submission.Status).ToLowerInvariant()
             if ($exact.Count -eq 1 -and $packages.Count -eq 1 -and
                 $submissionStatus -eq 'published') {
               $reuse = $true
-            } elseif ($packages.Count -gt 0 -and $submissionStatus -ne 'published') {
-              $unsafePendingPackages = @($packages | Where-Object {
-                  $existingName = [string]$_.FileName
-                  $existingFileStatus = [string]$_.FileStatus
-                  $existingVersionText = ([string]$_.Version).TrimStart('v')
-                  if ($existingFileStatus -ieq 'PendingDelete') {
-                    return $false
-                  }
-                  if ($existingName -ceq $artifactName) {
-                    if ([string]::IsNullOrWhiteSpace($existingVersionText)) {
-                      return $false
-                    }
-                    $pendingCandidateVersion = $null
-                    return -not [version]::TryParse(
-                      $existingVersionText,
-                      [ref]$pendingCandidateVersion) -or
-                      $pendingCandidateVersion -ne $candidateVersion
-                  }
-                  $existingVersion = $null
-                  -not [version]::TryParse(
-                    $existingVersionText,
-                    [ref]$existingVersion) -or
-                  $existingVersion -ge $candidateVersion
-                })
-              if ($unsafePendingPackages.Count -gt 0) {
-                throw 'A different candidate-or-newer Package Flight submission is already pending.'
+            } elseif ($submissionStatus -eq 'pendingcommit') {
+              # PendingCommit is the only editable draft state. A failed upload
+              # can leave package metadata incomplete, so recovery identifies
+              # the draft by its state after validating the immutable source run.
+              $deletePendingDraft = $true
+            } elseif (@(
+                'commitstarted',
+                'preprocessing',
+                'certification',
+                'release',
+                'pendingpublication',
+                'publishing'
+              ) -contains $submissionStatus) {
+              if ($matchingCandidateNames.Count -ne 1) {
+                throw 'An in-progress Package Flight submission does not match the immutable recovery candidate.'
               }
-              Write-Host 'Replacing a stale Flight draft containing only deleted/lower packages or the exact pending candidate.'
+              $reuse = $true
             }
           }
 
           if (-not $reuse) {
+            if ($deletePendingDraft) {
+              Write-Host 'Deleting the interrupted draft for the exact immutable recovery candidate.'
+              msstore flights submission delete `
+                9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID --noConfirm
+              if ($LASTEXITCODE -ne 0) {
+                throw 'Failed to delete the interrupted Package Flight draft.'
+              }
+            }
             $inputDirectory = Split-Path -Parent $env:WINDOWS_MSIX_PATH
             msstore publish $env:GITHUB_WORKSPACE `
               --inputDirectory $inputDirectory `
@@ -328,17 +315,16 @@ jobs:
           retention-days: 90
           compression-level: 0
 
-      - name: Retry original Alpha Windows path
+      - name: Resume Alpha Release on current master workflow
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          if ($env:SOURCE_WINDOWS_JOB_ID -notmatch '^[1-9][0-9]*$') {
-            throw 'Source Windows candidate job ID is invalid.'
-          }
-          gh api --method POST `
-            "repos/$($env:GITHUB_REPOSITORY)/actions/jobs/$($env:SOURCE_WINDOWS_JOB_ID)/rerun"
+          gh workflow run alpha-release.yml `
+            --repo $env:GITHUB_REPOSITORY `
+            --ref master `
+            -f "release_id=$($env:RELEASE_ID)"
           if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to queue the original Alpha Windows retry.'
+            throw 'Failed to resume Alpha Release on the current master workflow.'
           }
