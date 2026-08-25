@@ -560,6 +560,20 @@ void main() {
       expect(windowsFlight, contains('runs-on: windows-2025'));
       expect(
         windowsFlight,
+        contains(r'actions/runs/$($env:GITHUB_RUN_ID)/artifacts?per_page=100'),
+      );
+      expect(windowsFlight, contains(r'[regex]::Escape($env:GITHUB_RUN_ID)'));
+      expect(windowsFlight, contains('Sort-Object -Property id -Descending'));
+      expect(
+        windowsFlight,
+        isNot(
+          contains(
+            r'"meettrace-windows-store-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"',
+          ),
+        ),
+      );
+      expect(
+        windowsFlight,
         contains(r'--flightId $env:PARTNER_CENTER_FLIGHT_ID'),
       );
       final reconfigureIndex = windowsFlight.indexOf('msstore reconfigure `');
