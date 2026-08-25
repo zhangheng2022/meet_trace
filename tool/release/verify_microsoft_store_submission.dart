@@ -11,18 +11,40 @@ Future<void> main(List<String> arguments) async {
     if (await input.length() > microsoftStoreSubmissionMaximumResponseBytes) {
       throw const FormatException('Microsoft Store submission 响应超过 2 MiB 上限');
     }
-    final receipt = verifyMicrosoftStoreSubmission(
-      await input.readAsString(),
-      MicrosoftStoreSubmissionVerificationRequest(
-        productId: _required(options, 'product-id'),
-        expectedPackageVersion: _required(options, 'expected-version'),
-        expectedArtifactName: _required(options, 'expected-artifact-name'),
-        releaseId: _required(options, 'release-id'),
-        candidateCommitSha: _required(options, 'candidate-sha'),
-        sourceRunId: int.parse(_required(options, 'source-run-id')),
-        verifiedAt: DateTime.parse(_required(options, 'verified-at')),
-      ),
-    );
+    final source = await input.readAsString();
+    final flightId = options['flight-id'];
+    final receipt = flightId == null
+        ? verifyMicrosoftStoreSubmission(
+            source,
+            MicrosoftStoreSubmissionVerificationRequest(
+              productId: _required(options, 'product-id'),
+              expectedPackageVersion: _required(options, 'expected-version'),
+              expectedArtifactName: _required(
+                options,
+                'expected-artifact-name',
+              ),
+              releaseId: _required(options, 'release-id'),
+              candidateCommitSha: _required(options, 'candidate-sha'),
+              sourceRunId: int.parse(_required(options, 'source-run-id')),
+              verifiedAt: DateTime.parse(_required(options, 'verified-at')),
+            ),
+          )
+        : verifyMicrosoftStoreFlightSubmission(
+            source,
+            MicrosoftStoreFlightVerificationRequest(
+              productId: _required(options, 'product-id'),
+              flightId: flightId,
+              expectedPackageVersion: _required(options, 'expected-version'),
+              expectedArtifactName: _required(
+                options,
+                'expected-artifact-name',
+              ),
+              releaseId: _required(options, 'release-id'),
+              candidateCommitSha: _required(options, 'candidate-sha'),
+              sourceRunId: int.parse(_required(options, 'source-run-id')),
+              verifiedAt: DateTime.parse(_required(options, 'verified-at')),
+            ),
+          );
     await output.parent.create(recursive: true);
     await output.writeAsString(
       '${const JsonEncoder.withIndent('  ').convert(receipt)}\n',

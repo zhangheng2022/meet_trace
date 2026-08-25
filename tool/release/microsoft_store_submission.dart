@@ -22,6 +22,28 @@ final class MicrosoftStoreSubmissionVerificationRequest {
   final DateTime verifiedAt;
 }
 
+final class MicrosoftStoreFlightVerificationRequest {
+  const MicrosoftStoreFlightVerificationRequest({
+    required this.productId,
+    required this.flightId,
+    required this.expectedPackageVersion,
+    required this.expectedArtifactName,
+    required this.releaseId,
+    required this.candidateCommitSha,
+    required this.sourceRunId,
+    required this.verifiedAt,
+  });
+
+  final String productId;
+  final String flightId;
+  final String expectedPackageVersion;
+  final String expectedArtifactName;
+  final String releaseId;
+  final String candidateCommitSha;
+  final int sourceRunId;
+  final DateTime verifiedAt;
+}
+
 Map<String, Object?> verifyMicrosoftStoreSubmission(
   String source,
   MicrosoftStoreSubmissionVerificationRequest request,
@@ -74,6 +96,76 @@ Map<String, Object?> verifyMicrosoftStoreSubmission(
     'submissionId': submissionId,
     'status': 'Published',
     'visibility': 'Public',
+    'releaseId': request.releaseId,
+    'candidateCommitSha': request.candidateCommitSha,
+    'sourceRunId': request.sourceRunId,
+    'verifiedAtUtc': request.verifiedAt.toUtc().toIso8601String(),
+    'package': <String, Object?>{
+      'fileName': fileName,
+      'version': version,
+      'architecture': 'x64',
+      'fileStatus': 'Uploaded',
+    },
+  };
+}
+
+Map<String, Object?> verifyMicrosoftStoreFlightSubmission(
+  String source,
+  MicrosoftStoreFlightVerificationRequest request,
+) {
+  _validateRequest(
+    MicrosoftStoreSubmissionVerificationRequest(
+      productId: request.productId,
+      expectedPackageVersion: request.expectedPackageVersion,
+      expectedArtifactName: request.expectedArtifactName,
+      releaseId: request.releaseId,
+      candidateCommitSha: request.candidateCommitSha,
+      sourceRunId: request.sourceRunId,
+      verifiedAt: request.verifiedAt,
+    ),
+  );
+  if (!RegExp(r'^[A-Za-z0-9._-]{1,128}$').hasMatch(request.flightId)) {
+    throw const FormatException('Microsoft Store Flight ID 格式无效');
+  }
+  if (utf8.encode(source).length >
+      microsoftStoreSubmissionMaximumResponseBytes) {
+    throw const FormatException('Microsoft Store submission 响应超过 2 MiB 上限');
+  }
+  final submission = _object(jsonDecode(source), 'submission');
+  final submissionId = _requiredText(submission, 'Id');
+  if (!RegExp(r'^[A-Za-z0-9._-]{1,128}$').hasMatch(submissionId)) {
+    throw const FormatException('Microsoft Store Flight submission ID 格式无效');
+  }
+  final status = _requiredText(submission, 'Status');
+  if (status.toLowerCase() != 'published') {
+    throw FormatException('Microsoft Store Flight 尚未发布：$status');
+  }
+  final packagesValue = _field(submission, 'ApplicationPackages');
+  if (packagesValue is! List<Object?> || packagesValue.length != 1) {
+    throw const FormatException('Microsoft Store Flight 必须恰好包含一个 x64 包');
+  }
+  final package = _object(packagesValue.single, 'ApplicationPackages[0]');
+  final fileName = _requiredText(package, 'FileName');
+  final version = _requiredText(package, 'Version');
+  final architecture = _requiredText(package, 'Architecture');
+  final fileStatus = _requiredText(package, 'FileStatus');
+  if (fileName != request.expectedArtifactName ||
+      version != request.expectedPackageVersion) {
+    throw const FormatException('Microsoft Store Flight 包与候选不匹配');
+  }
+  if (architecture.toLowerCase() != 'x64' ||
+      fileStatus.toLowerCase() != 'uploaded') {
+    throw const FormatException('Microsoft Store Flight 包架构或上传状态无效');
+  }
+
+  return <String, Object?>{
+    'schemaVersion': 1,
+    'distribution': 'microsoftStoreFlight',
+    'verificationMode': 'partnerCenterApi',
+    'productId': request.productId,
+    'flightId': request.flightId,
+    'submissionId': submissionId,
+    'status': 'Published',
     'releaseId': request.releaseId,
     'candidateCommitSha': request.candidateCommitSha,
     'sourceRunId': request.sourceRunId,

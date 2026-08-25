@@ -14,14 +14,14 @@
 会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备构建和 TestFlight 上传链路；Windows 已使用固定 Microsoft Store 包身份完成限定受众、正式认证和首次三平台统一公开，公开更新指针也已前移。但 Store 安装、卸载和更新纵向自动化仍待闭环，因此 Windows 按产品门槛继续标记为“规划中/未就绪”，不视为受支持平台。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备固定 TestFlight 外测组的自动提交、审核轮询与 Testing 门禁；Windows 已具备固定 Microsoft Store 身份、Package Flight、正式 submission 和专用机验证自动化。首次成功跑通新统一门禁前，Windows 仍按产品门槛标记为“规划中/未就绪”，不视为受支持平台。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
 
 ## 安装测试版
 
 - APK 仅支持 Android 7.0+ 的 `arm64-v8a` 设备，需要允许当前来源安装未知应用。
 - 首次启动约下载 286.3 MB 运行资源，并要求应用所在卷至少有 1 GiB 可用空间。
 - 应用不提供登录或云同步；卸载会删除本机数据，Alpha 升级也可能清除旧数据并重新下载模型。
-- iOS 仅通过 TestFlight 分发；当前外部测试链接待提供。
+- iOS 仅通过 TestFlight 固定外测组和稳定 public link 分发；链接由发布 Environment 配置，不逐版本手工后补。
 - Windows Store 页面已公开并仅提供 Windows 10 22H2/11 x64 包；可在 [Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) 查看，但安装、卸载和 Store 更新纵向自动化闭环前仍为“规划中/未就绪”。
 
 全部公开版本见 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
@@ -93,7 +93,7 @@ PRD V1.2 的目标候选必须从统一 `Alpha Release` 入口生成：
 
 - Android、iOS 与 Windows 必须来自同一 SHA，三平台构建、自动化和分发门禁全部通过后才能公开。
 - GitHub Release 只发布 Android APK 和候选 Manifest；iOS 不上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。
-- 正式工作流已完成固定 Store 身份候选、受保护人工证明、公开 GitHub Pre-release 和签名更新指针的首次生产闭环；有 Entra 租户时仍可选择 Partner Center API 机器复核。
+- 正式工作流会自动提交固定 Store Flight、轮询 Partner Center、完成 Flight/production 两阶段真实安装验证，并在 TestFlight 与 Store 全部通过后自动公开 GitHub Pre-release 和签名更新指针；正常路径没有最终人工审批。
 - Windows 只有在 AT-21～AT-26 全部闭环后才能标记为受支持；当前 AT-21/AT-25 的 Store 安装、卸载和更新纵向自动化仍待完成，因此必须保持“规划中/未就绪”。
 
 维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。

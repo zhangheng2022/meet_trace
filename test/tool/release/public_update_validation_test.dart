@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/updates/ed25519_app_update_signature_verifier.dart';
@@ -162,38 +159,12 @@ void main() {
     expect(receipt.windowsArtifactSha256, 'd' * 64);
   });
 
-  test('拒绝与生产回执不一致的实际发布运行', () async {
-    final envelope = await createSignedAppUpdateManifest(
-      _request(seed: seed, publicKey: publicKey),
-    );
-
-    await expectLater(
-      validatePublicUpdateContract(
-        envelopeBytes: envelope,
-        androidCandidate: _androidCandidate(),
-        iosCandidate: _iosCandidate(),
-        windowsCandidate: _windowsCandidate(),
-        windowsProductionReceipt: _windowsProductionReceipt(),
-        expectedReleaseId: 'v1.1.0-alpha.1',
-        expectedRepository: 'example/meettrace',
-        expectedSourceRunId: 123,
-        expectedPublishRunId: 999,
-        signatureVerifier: Ed25519AppUpdateSignatureVerifier(
-          expectedKeyId: 'alpha-0123456789abcdef',
-          publicKeyBytes: publicKey,
-        ),
-      ),
-      throwsFormatException,
-    );
-  });
-
-  test('拒绝被改写的 Windows 人工批准评论', () async {
+  test('拒绝 Windows 人工 Environment 批准回执', () async {
     final envelope = await createSignedAppUpdateManifest(
       _request(seed: seed, publicKey: publicKey),
     );
     final productionReceipt = _windowsProductionReceipt();
-    final approval = productionReceipt['approval']! as Map<String, Object?>;
-    approval['comment'] = '${approval['comment']} ';
+    productionReceipt['verificationMode'] = 'manualEnvironmentApproval';
 
     await expectLater(
       validatePublicUpdateContract(
@@ -311,32 +282,22 @@ Map<String, Object?> _windowsCandidate() => <String, Object?>{
 };
 
 Map<String, Object?> _windowsProductionReceipt() {
-  final comment =
-      'STORE 9PHHSJMWK06G Published Public 1.0.11.0 x64 ${'d' * 64}';
   return <String, Object?>{
     'schemaVersion': 1,
     'distribution': 'microsoftStore',
-    'verificationMode': 'manualEnvironmentApproval',
-    'evidenceSource': 'github-release',
+    'verificationMode': 'partnerCenterApi',
     'productId': '9PHHSJMWK06G',
+    'submissionId': 'submission-456',
     'status': 'Published',
     'visibility': 'Public',
     'releaseId': 'v1.1.0-alpha.1',
     'candidateCommitSha': '0123456789abcdef0123456789abcdef01234567',
     'sourceRunId': 123,
-    'approval': <String, Object?>{
-      'runId': 456,
-      'environment': 'github-release',
-      'reviewer': 'reviewer',
-      'comment': comment,
-      'commentSha256': sha256.convert(utf8.encode(comment)).toString(),
-    },
     'package': <String, Object?>{
       'fileName': 'meettrace-v1.1.0-alpha.1-windows-store-x64.msix',
       'version': '1.0.11.0',
       'architecture': 'x64',
       'fileStatus': 'Uploaded',
-      'candidateSha256': 'd' * 64,
     },
   };
 }

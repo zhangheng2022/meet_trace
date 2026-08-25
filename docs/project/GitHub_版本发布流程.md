@@ -1,229 +1,142 @@
-# 会迹（MeetTrace）GitHub Alpha 版本发布流程
+# 会迹（MeetTrace）GitHub Alpha 自动发布流程
 
-> 状态：活动 Runbook；正式工作流已完成限定受众、首次 Store 正式认证、受保护人工证明、三平台统一公开和签名更新指针的首次生产闭环，并保留可选 Partner Center API 机器核验；Windows 安装、卸载和 Store 更新纵向自动化闭环前必须显示“规划中/未就绪”
->
-> 上游需求：[Android + iOS + Windows Alpha PRD V1.2](../product/Alpha_PRD_无登录版.md)
+> 适用范围：Android arm64 APK、iOS TestFlight、Windows x64 Microsoft Store MSIX 的统一 Alpha 候选与公开。
 
-## 1. 最简发布模型
+## 1. 操作模型
 
-Actions 页面只需要手动运行 `Alpha Release`。Android、iOS、Windows 和最终公开均为该 YML 内的 job，不再保留独立发布 workflow 文件：
+维护者正常发布时只在 Actions 手动运行一次 `Alpha Release`，必填项只有 `release_id`，例如 `v1.0.0-alpha.6`；`release_notes` 可选。不要填写内部的 `resume_run_id` 或 `orchestration_run_id`。
 
-1. 输入发布标识，例如 `v1.0.0-alpha.1`；发布说明和 TestFlight 外部链接可不填，Store 核验默认选择 `manual`。
-2. 自动执行格式、静态分析和测试。
-3. 自动构建正式签名的 Android arm64 APK，并暂存到不可见 Draft Release。
-4. 自动构建签名 iOS IPA 并上传 TestFlight；IPA 不进入 GitHub。
-5. 自动构建固定 Store 身份的 Windows x64 MSIX，完成内容审计和 provenance，将包体及证据上传 Actions Artifact；不上传 GitHub Release。
-6. 维护者下载确切 Windows Artifact 并逐字节核对 SHA-256。首次 Store 发布把同一包提交到 Private audience；已有公开版本的后续更新提交 Package Flight。等待认证并完成 Windows 分发验证。
-7. 将同一包用于正式 non-flighted submission：首次发布把 audience 改为 Public，后续版本从 Flight 拉取已验证包。完成正式认证和发布，并确认 Store 产品页可安装该版本。
-8. 工作流仍停在 `Approve and deploy public Alpha`。维护者在 Partner Center 核对正式 submission 为 `Published`、`Public`、同版本且唯一包为已上传的 x64 MSIX，再把 Windows job 摘要给出的 `STORE <Store ID> Published Public <版本> x64 <MSIX SHA-256>` 全文复制到 `github-release` 审批评论后点击批准。默认 `manual` 模式会通过 GitHub API 复核本次运行的环境、审批状态、审批人和精确评论，再记录人工证明；有 Entra 租户时可选择 `api`，由官方 Store CLI 在审批后再次机器核验。两种模式都只保留标明证据来源的脱敏回执，通过后原 Draft 才公开为 GitHub Pre-release 并前移更新 Manifest。
+此后自动化按顺序推进：
+
+1. 创建 annotated tag 和 GitHub Draft Pre-release，分配从 `2001` 开始连续递增的共享构建号。
+2. 构建、签名并审计同一 SHA 的 Android arm64 APK、iOS IPA 和 Windows x64 Store MSIX。
+3. Android APK 暂存 Draft；iOS 上传固定 TestFlight 外测组、自动通知并提交 Beta App Review；Windows MSIX 提交固定 Package Flight。
+4. `Alpha Release Reconciler` 立即查询一次，之后每 15 分钟查询 App Store Connect 和 Microsoft Store。等待外部审核是正常状态，不需要人工批准。
+5. TestFlight 同一 build 审核通过并进入 `Testing` 后，Windows Flight 必须为 `Published`。`Candidate Distribution Validation` 在 Firebase ARM 原样安装 Android APK，并在专用 Windows Store 机器安装、启动和卸载 Flight。
+6. Flight 验证通过后，协调器把同一 MSIX 提交 100% non-flighted production submission。正式 submission 达到 `Published/Public` 后，再次执行 Android 与正式 Store 安装验证。
+7. 全部不可变回执通过后，协调器生成发布门禁，并以内部输入恢复 `Alpha Release`。最终 job 自动公开原 Draft 为 Pre-release，再原子前移签名更新指针。
 
 ```mermaid
 flowchart LR
-  A[Alpha Release] --> B[技术检查]
-  B --> C[Android Draft]
-  C --> D[iOS TestFlight]
-  D --> E[Windows Actions Artifact]
-  E --> F[Private audience 或 Store Flight 分发验证]
-  F --> G[正式 Store submission 已公开]
-  G --> H[GitHub 一次批准并人工证明]
-  H --> I{核验模式}
-  I -->|manual| J[记录人工回执]
-  I -->|api| K[Store API 机器复核]
-  J --> L[公开 Pre-release 与更新指针]
-  K --> L
+  A[手动输入 release_id] --> B[同 SHA 三平台候选]
+  B --> C[TestFlight 外测审核]
+  B --> D[Windows Package Flight]
+  C --> E{每 15 分钟协调}
+  D --> E
+  E --> F[Android + Flight 真实分发验证]
+  F --> G[同一 MSIX production 100% 提交]
+  G --> H[Published / Public]
+  H --> I[Android + production 真实分发验证]
+  I --> J[自动公开 Draft]
+  J --> K[原子更新签名指针]
 ```
 
-`expected_sha`、`gate_input_path` 和候选 run ID 均不需要填写。发布流程只读取构建、自动化、包审计和分发状态。
+正常路径没有 `github-release` 或 `windows-store-validation` required reviewer，也没有最终审批评论。Environment 仍用于隔离 Secret 和限制来源分支。
 
-## 2. 版本与分发合同
+## 2. 不可变发布合同
 
-| 项目 | 规则 |
-|---|---|
-| Release ID/tag | `v<pubspec marketing version>-alpha.<正整数>` |
-| 三平台构建号 | 既有候选之后把下一共享构建号统一提升到 `2001`，此后从已有 Release 候选清单的最大构建号连续 `+1`；同一 Draft 重跑复用原号，Android 实际 `versionCode`、iOS `CFBundleVersion` 与 Windows Store 第三段始终一致 |
-| Android | 正式签名、仅 `arm64-v8a`，保留 `--split-per-abi`，公开附件名为 `meettrace-<release-id>-android-arm64.apk`；传给 Flutter 的包基础构建号等于共享构建号减 `2000`，由 Flutter 默认 ARM64 ABI 偏移还原为相同的实际 `versionCode`。首个新候选输入 `1`、产出 `2001`；候选清单保存基础构建号和实测 `versionCode`，客户端不自行计算偏移 |
-| iOS | 仅 TestFlight，不上传 IPA 到 Actions Artifact 或 GitHub Release |
-| Windows | Windows 10 22H2/11、仅 x64；固定 Store ID `9PHHSJMWK06G`，MSIX 只进入 Actions Artifact 与 Partner Center |
-| Windows Store 包版本 | `1.0.<共享发布构建号>.0`；共享构建号不超过 `65535`，营销版本另行记录，第一段不得为 `0`，Store 保留的第四段固定为 `0` |
-| 候选身份 | Android、iOS 与 Windows 必须来自同一 annotated tag、提交 SHA、release ID 和构建号 |
-| Release 资产 | GitHub Release 只保留 Android APK 与单一公开候选清单；IPA、Windows MSIX 和详细检查证据不进入 Release |
-| 自动更新 | 单一 Alpha 频道；`updates/alpha` 分支只保存当前 `alpha.json` 签名指针，三平台批准并公开 Release 后原子前移，不允许降级 |
-| 首次启动资源 | Release 说明明确约下载 286.3 MB |
+| 平台/环节 | 合同 |
+| --- | --- |
+| Android | 正式签名、仅 `arm64-v8a`，保留 `--split-per-abi`；公开文件固定为 `meettrace-<release-id>-android-arm64.apk` |
+| iOS | Bundle ID `com.meettrace.app`；只进入 TestFlight，不上传 GitHub Release；固定外测组、稳定 public link、Beta App Review `APPROVED`、build 进入 `Testing` |
+| Windows | Store ID `9PHHSJMWK06G`、Identity `zhangheng2026.MeetTrace`、Publisher `CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B`、x64 MSIX；不上传 GitHub Release |
+| 共享版本 | Android 实测 `versionCode`、iOS build number 和 Windows `1.0.<build>.0` 中的 build 必须相同；序列从 `2001` 连续递增 |
+| 候选来源 | 三平台必须来自同一 annotated tag、release ID、candidate SHA、source run 和共享构建号 |
+| 公开门禁 | TestFlight Testing、Flight Published、production Published/Public、Flight 与 production 两次真实分发验证全部匹配同一候选 |
 
-Draft 阶段同一发布标识可以重跑：工作流复用原 annotated tag、候选 SHA、已分配构建号和身份匹配的不可变 Android/iOS/Windows 候选，不覆盖已成功资产。新候选从所有已有 Draft/公开候选清单的最大构建号连续加一。Draft 一旦公开，标签、APK 和公开候选清单不可覆盖；Private audience、Flight 与正式 Store submission 必须复用同一候选包，代码或二进制修复必须使用新的 Alpha 序号向前发布。
+Draft 阶段可用相同发布标识恢复，但必须复用已经成功且身份匹配的候选，不能重建后冒充同一候选。Draft 公开后不得覆盖 APK、移动 tag、删除/撤回版本或回退构建号。
 
-共享构建号低于 `2001` 时，下一候选一次性从 `2001` 开始；随后按 `2002 → 2003` 连续递增。Android 的包基础构建号分别为 `1 → 2 → 3`，实际系统版本码与 iOS、Windows 的共享构建号一致。同一 Draft 重跑必须复用原号。仅当前公开 Alpha 受支持；任意旧 Alpha 到新 Alpha 的系统安装升级、数据读取和迁移均不作保证。自动更新仍用于安全分发已批准候选，但不构成兼容性承诺。
+## 3. 一次性 bootstrap
 
-## 3. GitHub 配置
+自动化 PR 合并到 `master` 后，由仓库管理员在本地执行一次：
 
-### Environments
-
-| Environment | 人工审批 | 用途 |
-|---|---|---|
-| `android-alpha` | 无 | 保存 Android keystore 与证书摘要 |
-| `testflight` | 无 | 保存 Apple distribution、profile、Team 与 API Key |
-| `windows-alpha` | 无 | 当前不保存凭据；Store 身份是仓库中的非敏感固定配置，包体由维护者手工上传 Partner Center |
-| `github-release` | 一名 required reviewer；允许 self review | 唯一公开批准、Store 正式 submission 人工证明、更新指针签名和可选 API 只读核验 |
-| `windows-store-validation` | 一名 required reviewer | 仅允许 `master` 在专用自托管 Windows 账号执行当前用户 Store 安装、更新和卸载；不保存 Secret |
-
-所有 Environment 仅允许 `master`。如果旧配置给 `android-alpha`、`testflight` 或 `windows-alpha` 设置了 reviewer，需要移除，否则流程会出现额外审批。`github-release` 的最终批准不得早于 Windows 限定受众/Flight 分发验证、正式 Store 认证与公开可安装检查。
-
-Android Secrets：
-
-- `ANDROID_KEYSTORE_BASE64`
-- `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
-- `ANDROID_SIGNING_CERT_SHA256`
-
-iOS Secrets：
-
-- `IOS_DISTRIBUTION_P12_BASE64`
-- `IOS_DISTRIBUTION_P12_PASSWORD`
-- `IOS_PROVISIONING_PROFILE_BASE64`
-- `APPLE_TEAM_ID`
-- `APP_STORE_CONNECT_KEY_ID`
-- `APP_STORE_CONNECT_ISSUER_ID`
-- `APP_STORE_CONNECT_API_KEY_P8_BASE64`
-
-最终公开 Secrets（仅 `github-release` Environment）：
-
-- `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`：32 字节 Ed25519 私钥 seed 的 Base64；客户端只内置对应公钥和 key ID，私钥不得出现在日志、Artifact、Release 或仓库历史中。
-- 以下四项仅在选择 `api` 模式时配置；默认 `manual` 模式不得读取，也不要求空占位：
-  - `PARTNER_CENTER_TENANT_ID`：Partner Center 关联的 Microsoft Entra tenant ID。
-  - `PARTNER_CENTER_SELLER_ID`：Partner Center seller ID。
-  - `PARTNER_CENTER_CLIENT_ID`：具备查询目标应用 submission 所需最小权限的 Microsoft Entra application/client ID。
-  - `PARTNER_CENTER_CLIENT_SECRET`：上述应用的 client secret；不得进入日志、Artifact、Release 或仓库历史。
-
-Windows 候选 job 不调用 Partner Center API，也不保存 Windows Secrets；维护者仍从 Actions Artifact 下载经校验的 Store MSIX，首次发布手工提交 Private audience，后续版本手工提交 Package Flight，并让正式 non-flighted submission 复用同一包。Windows job 摘要会根据候选清单生成唯一审批评论；默认 `manual` 模式下，最终公开 job 必须从本次运行的 GitHub 审批 API 找到该精确评论和 `github-release` 环境后，才生成绑定审批人和候选身份的人工回执，不能用普通批准或空评论替代。`api` 模式才读取四项 Partner Center Secrets，并且只查询、不创建、提交、修改或撤回 Store 状态；原始响应可能包含短期下载地址，核验后立即删除。两种模式都上传不含凭据和 URL 的 `windows-store-production-receipt.json`，且 `verificationMode` 必须准确。任何路线都不得重新打包或签名，也不得把自签名 PFX、USB Token 私钥或可导出的正式私钥放入 Secrets。
-
-### Rulesets 与权限
-
-- `master` 要求 PR、线性历史，并阻止 force push/deletion。
-- `v*` 标签禁止更新和删除；允许发布 Actions 身份创建。
-- 仓库必须公开，Workflow permissions 允许 `GITHUB_TOKEN` 写入当前仓库 Release。
-- `updates/alpha` 是自动生成分支，禁止人工改写、删除或 force push；`alpha.json` 的每次变化必须由 `Alpha Release` 生成且保留提交历史。
-- 当前 Windows 只通过 Store 发布，未认证的 Actions Artifact 不得作为公开安装包。SignPath 申请仍在审核，但不属于当前发布门禁。
-
-### SignPath Foundation 待审核材料（非当前发布路线）
-
-申请使用以下公开事实，不创建自签名或个人证书兜底：
-
-| 项目 | 值 |
-|---|---|
-| 仓库 | `https://github.com/zhangheng2022/meet_trace`（Public） |
-| 开源许可 | MIT，根目录 `LICENSE` |
-| 已发布版本 | `https://github.com/zhangheng2022/meet_trace/releases` |
-| Code signing policy | `https://github.com/zhangheng2022/meet_trace/blob/master/CODE_SIGNING_POLICY.md` |
-| 隐私政策 | `https://github.com/zhangheng2022/meet_trace/blob/master/PRIVACY.md` |
-| Committer / Reviewer / Approver | `https://github.com/zhangheng2022`；单维护者阶段角色重叠，但外部贡献仍须审查 |
-| 正式签名范围 | Windows 10 22H2/11 x64 MSIX；不签模型权重或上游独立二进制 |
-| 遥测 | SignPath Windows 候选固定 `SENTRY_ENABLED=false` |
-
-上述材料仅为已提交申请保留。收到审核结果时只记录，不把 Organization、Project、Signing Policy、Artifact Configuration 或证书 Subject 写入当前 `windows-alpha`。若未来考虑启用 GitHub MSIX，必须先证明证书 Subject 与 Store 包身份兼容，评估升级和本地数据连续性，更新 PRD，并明确停止 Store 路线；否则继续只使用 Microsoft Store。
-
-## 4. 运行与分发验证
-
-在 `master` 的 Actions 页面打开 `Alpha Release`，只填写：
-
-- `release_id`：必填，例如 `v1.0.0-alpha.1`；
-- `release_notes`：可选；
-- `ios_testflight_external_url`：可选，格式为 `https://testflight.apple.com/join/<code>`；
-- `resume_run_id`：仅在 Android、iOS、Windows 候选均成功而最终公开失败时填写原运行 ID；正常发布留空。
-- `withdraw_update`：仅撤回已公开版本时选择；正常发布和元数据修复保持关闭。
-- `repair_update_pointer`：仅 GitHub Release 已公开、但签名指针发布失败或需要幂等修复时选择；不能与 `withdraw_update` 同时选择。
-- `store_verification_mode`：默认 `manual`；只有已关联 Entra 应用并配置四项 Secrets 时才选择 `api`。
-
-Android job 成功后，仓库维护者可从 Draft Release 下载确切 APK；iOS job 成功后从 TestFlight 安装同一候选；Windows 从 `meettrace-windows-store-<run>-<attempt>` Artifact 取得确切 MSIX，并核对候选清单 SHA-256。首次发布使用 Private audience，后续版本使用 Package Flight；自动化、构建审计与分发门禁通过后，让正式 non-flighted submission 复用同一包并发布。确认 Store 产品页已可安装该版本后，审批人必须把 Partner Center 中的状态、可见性、文件名、版本、架构和上传状态与候选清单逐项比对，再从 Windows job 摘要复制唯一审批合同到等待中的 `Approve and deploy public Alpha` job 评论并批准；不要手工改写、缩短或留空。该步骤不要求目标设备人工证据。批准后、公开前，工作流始终校验：
-
-- annotated tag、release ID、marketing version 与 candidate SHA；
-- Android、iOS 与 Windows 候选证据属于指定运行和同一 SHA、版本与构建号；复用的不可变候选可来自更早的暂存运行；
-- Draft APK 与 Windows Store 候选的名称、包身份、字节数、SHA-256 和来源证据未变化；
-- Release 仍是 Draft prerelease。
-- Store 回执属于产品 `9PHHSJMWK06G`，绑定本次候选、来源运行和唯一 x64 MSIX；`manual` 回执标明 `manualEnvironmentApproval`，`api` 回执标明 `partnerCenterApi`；
-- `manual` 回执来自本次运行的 `github-release` 已批准记录，审批评论逐字匹配 `STORE 9PHHSJMWK06G Published Public <版本> x64 <MSIX SHA-256>`，并记录审批人和评论摘要；
-- `api` 模式的查询结果必须证明正式 submission 为 `Published` 和 `Public`，且唯一包的文件名、`1.0.<共享发布构建号>.0` 版本、x64 架构与 `Uploaded` 状态全部匹配候选；
-- 公开更新 Manifest 当前仍指向旧版本，且新指针只会在 Store 证明和本次批准后写入。
-- Android 候选清单包含包名和发布证书 SHA-256；签名更新 payload 固定记录三平台入口、同一构建号、数据代和候选 SHA。
-
-任一技术校验失败都不会公开 Draft。批准人依据构建、自动化、包审计和分发状态作出公开决定；流程不读取额外 JSON 质量输入。
-
-### 4.1 公开后的平台分发纵向验证
-
-`Alpha Release` 仍是 Actions 页面唯一手动入口。版本已经公开且签名 `updates/alpha` 指针完成前移后，由具备仓库操作权限的维护者发送 `repository_dispatch` 事件 `platform-distribution-validation`。以下 PowerShell 示例先触发首次 `InstallUninstall`；值必须替换为当前公开候选：
+先创建 `microsoft-store` Environment，并把现有四项 Partner Center Secret 重新录入该 Environment。GitHub 不允许读取 Secret 明文，因此脚本不能从旧 `github-release` Environment 自动复制；脚本确认新位置齐全后会删除旧位置的冗余副本。
 
 ```powershell
-$payload = @{
-  event_type = 'platform-distribution-validation'
-  client_payload = @{
-    release_id = 'v1.0.0-alpha.5'
-    previous_android_release_id = 'v1.0.0-alpha.2'
-    source_run_id = '32362248666'
-    publish_run_id = '32362248666'
-    windows_validation_mode = 'InstallUninstall'
-    windows_previous_version = ''
-    android_device_model = 'MediumPhone.arm'
-    android_version = '35'
-  }
-} | ConvertTo-Json -Depth 4
-$payload | gh api repos/zhangheng2022/meet_trace/dispatches `
-  --method POST --input -
+gh api repos/<owner>/<repo>/environments/microsoft-store --method PUT `
+  -F 'deployment_branch_policy[protected_branches]=true' `
+  -F 'deployment_branch_policy[custom_branch_policies]=false'
+gh secret set PARTNER_CENTER_TENANT_ID --repo <owner>/<repo> --env microsoft-store
+gh secret set PARTNER_CENTER_SELLER_ID --repo <owner>/<repo> --env microsoft-store
+gh secret set PARTNER_CENTER_CLIENT_ID --repo <owner>/<repo> --env microsoft-store
+gh secret set PARTNER_CENTER_CLIENT_SECRET --repo <owner>/<repo> --env microsoft-store
 ```
 
-事件 payload 字段：
+随后先执行不带 `-Apply` 的 dry-run，再执行一次正式 bootstrap：
 
-- `release_id`：当前公开版本；
-- `previous_android_release_id`：更低构建号、同签名身份的公开 Android 版本；
-- `source_run_id`：生成当前三平台候选且候选 job 成功的 `Alpha Release` 运行；
-- `publish_run_id`：生成 Store 生产回执并成功完成公开 job 的实际运行；恢复发布时它与 `source_run_id` 不同，普通发布通常相同；
-- `windows_validation_mode`：首次验证选 `InstallUninstall`；已为下一版本保留旧版专用机快照时选 `Update`；
-- `windows_previous_version`：仅 `Update` 填写专用机已安装的确切 `1.0.<build>.0`；
-- Android Firebase ARM 模型与版本通常保持默认 `MediumPhone.arm` / `35`。
+```powershell
+./tool/release/bootstrap_release_automation.ps1 `
+  -TestFlightExternalGroup '<固定外测组名>' `
+  -TestFlightPublicLink 'https://testflight.apple.com/join/<固定代码>' `
+  -PartnerCenterFlightId '<固定 Package Flight ID>' `
+  -Apply
+```
 
-工作流先使用客户端同一 Ed25519 公钥验签 `updates/alpha`，再把公开 APK、iOS/Windows 候选、来源运行和 Windows Published/Public 回执绑定到同一提交、版本和构建号。随后：
+脚本先校验关键 Secret/Variable 并设置固定 Variable，所有预检成功后才清除六个发布 Environment 的 wait timer 和 required reviewer，同时保留分支部署策略。脚本不读取、复制或输出 Secret；缺失 Secret 必须用 `gh secret set --env <environment> <name>` 单独配置。
 
-1. Android 从 GitHub Release 下载确切 arm64 APK，核对 SHA-256，在 Firebase Test Lab ARM 设备以 `--no-resign` 原样安装并启动。验证器对 schema 1 遗留包核对共享构建号与默认 ARM64 ABI 偏移，对 schema 2 新包核对清单记录的 Android 基础构建号和真实 `versionCode`。该步骤只证明当前公开包可安装启动并核对包名与发布证书世系；不得据此声明任何旧 Alpha 可升级、兼容或迁移。
-2. iOS 复核来源运行的签名 TestFlight 候选和成功上传 job，任何 IPA 出现在证据目录都会失败。当前不调用 App Store Connect 查询处理完成或终端安装状态。
-3. Windows 只调度 `[self-hosted, Windows, X64, meettrace-store]` 专用机和 `windows-store-validation` Environment。脚本只从 `msstore` 安装或更新产品 `9PHHSJMWK06G`，核对固定包身份、x64 和确切版本，连续启动两次验证单实例，最后只卸载当前运行器账号的包。
+环境配置如下：
 
-仓库已配置受保护 Environment 和该专用运行器，但基础设施就绪不等于纵向闭环。必须先完成 `InstallUninstall` 成功运行；真实 `Update` 还需要在下一版本公开前保留旧版 Store 安装或虚拟机快照。两个 Windows 模式及最终三平台 Gate 全部成功前，Windows 仍显示“规划中/未就绪”。详细合同见[平台分发纵向验证规格](../../spec/spec-process-cicd-platform-distribution-validation.md)。
+| Environment | Secret / Variable | 用途 |
+| --- | --- | --- |
+| `android-alpha` | Android keystore、alias/password、Sentry token、Firebase App ID | APK 正式签名、符号与候选分发 |
+| `testflight` | App Store Connect key ID、issuer ID、P8 Base64、iOS signing、Sentry；`TESTFLIGHT_EXTERNAL_GROUP`、`TESTFLIGHT_PUBLIC_LINK` | 上传、外测审核、状态查询 |
+| `windows-alpha` | Windows Store signing PFX、password | 构建固定身份 MSIX |
+| `microsoft-store` | Partner Center tenant/seller/client/secret；`PARTNER_CENTER_FLIGHT_ID` | Flight/production 提交与只读状态核验 |
+| `windows-store-validation` | 无发布 Secret | 专用自托管机隔离边界，不设 reviewer |
+| `github-release` | `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`；固定 TestFlight group/link 与 Store Flight ID | 最终重验协调门禁并签名指针；不设 reviewer |
 
-## 5. 后补 TestFlight 外部链接
+Partner Center 必须先人工完成一次产品、listing、年龄分级、定价/可用性、固定 Flight 和自动认证后发布配置。TestFlight 必须先创建固定外测组并启用稳定 public link。这些是一次性商店 bootstrap，不是逐版本审批。
 
-链接未获批时可先公开，Release 说明显示“iOS TestFlight 外部测试链接：待提供”。获批后：
+## 4. 自动协调与失败关闭
 
-1. 再次运行 `Alpha Release`；
-2. 使用完全相同的 `release_id`；
-3. 填写外部测试链接，可选填新的补充说明；
-4. 通过同一个 `github-release` 批准。
+`.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `*/15 * * * *` 定时轮询。它只处理仍为 Draft 的最新合法 Alpha 候选，并核对 tag、SHA、source run、候选清单和商店返回包身份。
 
-工作流会自动进入 `metadata` 模式，验证现有公开 APK、MSIX/Store 身份和候选清单后更新说明，并用同一 release/build 重签当前指针以修复 TestFlight 链接；不运行构建、不覆盖资产，也不能把已撤回版本重新公开。
+以下状态只等待，不公开，也不创建新候选：
 
-## 6. 撤回与恢复
+- TestFlight 正在处理、等待 Beta App Review 或审核中；
+- Microsoft Store 正在 commit、processing、certification 或 publishing；
+- 已调度的专用机验证仍在执行。
 
-- Draft 阶段构建失败：修复 Secrets、Apple 配置或工作流后，用同一发布标识重跑。
-- Android、iOS 与 Windows 均成功、仅最终公开失败：修复工作流后新建一次手动运行，填写同一 `release_id` 和原 `resume_run_id`。恢复模式只复核原候选并进入公开批准，不重新构建，也不重复上传 TestFlight 或 Store 限定受众/Flight。
-- GitHub Pre-release 已公开、但 `alpha.json` 写入失败：再次运行同一 `release_id`，只选择 `repair_update_pointer` 并完成审批；工作流复核公开 APK 和候选证据，以旧 blob SHA 幂等重签并写入，不重建或覆盖资产。
-- SignPath 审核结果到达：记录结果，当前 Store 路线不变；不得在同一版本或未更新 PRD时启用第二个 Windows 包身份。
-- 已公开严重问题：再次运行同一 `release_id`，选择 `withdraw_update` 并通过 `github-release` 审批。工作流保留 Release、tag、APK 和 MSIX/Store submission，在说明中标记“已撤回，不建议安装”，把签名指针状态改为 `withdrawn`；客户端停止发现该版本，既不自动降级也不退出已安装版本。
-- 修复版本：合并新提交，提高 Alpha 序号并重新运行。
-- 不删除、不移动、不覆盖已公开版本的身份或资产。
+以下情况失败关闭并创建或更新带 `release-blocked` 标签的 Issue：
 
-## 7. 发版前检查
+- TestFlight processing `FAILED/INVALID` 或 Beta App Review `REJECTED`；
+- Store 对同一包返回失败、拒绝或未知状态；
+- 外部 API 查询失败、字段缺失、状态歧义或回执身份不匹配；
+- 候选 tag/SHA/build、包名、版本、架构、摘要或来源运行不一致。
 
-- [ ] `android-alpha` 已配置全部 Secrets，且没有 required reviewer。
-- [ ] `testflight` 已配置全部 Secrets，且没有 required reviewer。
-- [ ] `windows-alpha` 没有 required reviewer、Windows Secrets 或可导出私钥。
-- [ ] `github-release` 已配置一名 required reviewer，并允许 self review。
-- [ ] `windows-store-validation` 已限制为 `master` 并配置一名 required reviewer；环境中没有 Store、Partner Center 或签名 Secret。
-- [ ] `github-release` 已配置 `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`，公钥与客户端固定 key ID 对应。
-- [ ] 默认 `manual` 模式不配置 Partner Center 空 Secrets；若选择 `api`，`github-release` 已配置四项 Partner Center Secrets，且 Entra 应用具备读取目标产品 submission 的最小权限。
-- [ ] `master` 与 `v*` Ruleset 已启用。
-- [ ] Workflow permissions 允许 Actions 写 Release。
-- [ ] Actions 页面只有 `Alpha Release` 作为手动正式发版入口。
-- [ ] Microsoft Store 产品已完成 Partner Center 初始配置，固定身份与当前候选完全一致；首次 Private audience 或后续 Package Flight 分发验证已完成，正式 Store submission 已认证、公开且可安装同一包。
-- [ ] `manual` 审批人已逐项核对 Store 状态/可见性/文件名/版本/x64/上传状态，并准备从 Windows job 摘要逐字复制审批评论；或 `api` 模式已准备好执行同一机器合同。
-- [ ] 当前候选已按[质量与验收](../quality/README.md)通过三平台构建、自动化和分发门禁，再批准公开。
-- [ ] 公开更新 Manifest 仍指向旧版 Store 候选，且更新动作位于最终批准之后；仓库和 Release 不存在 `.appinstaller` 或 MSIX。
-- [ ] `updates/alpha` 无人工提交，当前 `alpha.json` 可通过客户端内置 Ed25519 公钥验签，构建号未回退。
-- [ ] 需要评估 Windows 就绪状态时，专用自托管运行器已分别完成真实 `InstallUninstall` 和后续版本 `Update`，且 `Platform Distribution Validation` 最终 Gate 成功；未完成时继续标记“规划中/未就绪”。
+阻断时 Draft、公开 Release、tag 和旧 `updates/alpha/alpha.json` 均保持不变。外部状态恢复后，下一次协调会复用原候选继续；全部门禁通过时自动关闭对应 Issue。
+
+## 5. 真实分发验证
+
+`Candidate Distribution Validation` 只接受 `repository_dispatch`，且要求默认分支和不可变候选合同：
+
+1. Android 从 Draft Release 下载确切 APK，核对 SHA-256，在 Firebase Test Lab ARM 设备使用 `--no-resign` 原样安装并启动。
+2. Windows 只能在带 `self-hosted, Windows, X64, meettrace-store` 标签的专用机运行。Flight 阶段与 production 阶段分别从 Store 安装、验证版本、启动并卸载。
+3. 两阶段必须生成不同 validation run ID；production 不能复用 Flight 回执。
+4. 所有回执都绑定 release ID、candidate SHA、source run、reconcile run 和验证阶段。
+
+公开后仍可按 [平台分发纵向验证规格](../../spec/spec-process-cicd-platform-distribution-validation.md)运行 `Platform Distribution Validation`，验证签名更新指针、公开 APK 和 Store 生命周期。它是发布后的纵向审计，不替代公开前候选门禁。
+
+## 6. 恢复、修复与撤回
+
+- 候选构建失败：修复配置或工作流后，以相同 Draft `release_id` 重跑；只有身份匹配的成功候选可复用。
+- 外部审核等待：不要重跑。协调器每 15 分钟自动继续。
+- 外部拒审：按 `release-blocked` Issue 修复商店元数据；若二进制或代码改变，必须使用新的 release ID 和更高构建号。
+- 最终公开 job 失败：协调器保留的门禁可自动再次恢复；内部 `resume_run_id` 与 `orchestration_run_id` 不由维护者正常填写。
+- Release 已公开但指针写入失败：同一 `release_id` 运行元数据修复，选择 `repair_update_pointer`；不重建、不覆盖资产。
+- 严重问题撤回：同一公开 `release_id` 选择 `withdraw_update`。保留 Release、tag、APK 和 Store submission，仅把签名指针改为 `withdrawn`；修复使用新版本前进。
+
+元数据修复和撤回是已公开版本的维护操作，不经过候选商店重提交流程，也不要求最终人工审批。私钥只从 `github-release` Environment 读取，不进入命令行、日志、Artifact、Release 或生成分支。
+
+## 7. 发布前检查
+
+- [ ] 自动发布变更已合并到 `master`，一次性 bootstrap 已成功执行。
+- [ ] 默认分支保护和 required checks 正常；发布 Environment 没有 required reviewer 或 wait timer。
+- [ ] TestFlight 固定外测组、公测链接、Beta App Review 联系信息和出口合规信息已完成。
+- [ ] Partner Center 产品与固定 Flight 已初始化，production submission 配置为认证通过后自动发布，目标为 100% 而非渐进发布。
+- [ ] `microsoft-store` Entra 应用拥有该产品提交、查询所需的最小权限。
+- [ ] 专用 Windows Store runner 在线，标签为 `self-hosted, Windows, X64, meettrace-store`，其 Microsoft Store 登录账号属于固定 Flight 测试受众，且只接受默认分支的 repository dispatch。
+- [ ] Firebase WIF 与 ARM 设备矩阵可用。
+- [ ] 运行 `Alpha Release` 时只填写新的 `release_id` 和可选说明。
+
+任何门禁失败都不得手工公开 Draft 或手工前移更新指针。

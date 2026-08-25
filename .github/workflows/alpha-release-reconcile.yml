@@ -1,0 +1,784 @@
+name: Alpha Release Reconciler
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  repository_dispatch:
+    types: [alpha-release-reconcile]
+
+permissions: {}
+
+concurrency:
+  group: alpha-release-reconcile
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve active immutable Draft candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      found: ${{ steps.candidate.outputs.found }}
+      release_id: ${{ steps.candidate.outputs.release_id }}
+      source_run_id: ${{ steps.candidate.outputs.source_run_id }}
+      candidate_sha: ${{ steps.candidate.outputs.candidate_sha }}
+      marketing_version: ${{ steps.candidate.outputs.marketing_version }}
+      build_number: ${{ steps.candidate.outputs.build_number }}
+      windows_artifact_name: ${{ steps.candidate.outputs.windows_artifact_name }}
+      windows_artifact_sha256: ${{ steps.candidate.outputs.windows_artifact_sha256 }}
+      windows_package_version: ${{ steps.candidate.outputs.windows_package_version }}
+    steps:
+      - name: Checkout validated master workflow
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Resolve dispatch or scheduled candidate
+        id: candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_RELEASE_ID: ${{ github.event.client_payload.release_id }}
+          DISPATCH_SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
+          DISPATCH_CANDIDATE_SHA: ${{ github.event.client_payload.candidate_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/master" ]]
+          if [[ "$EVENT_NAME" == repository_dispatch ]]; then
+            release_id="$DISPATCH_RELEASE_ID"
+            source_run_id="$DISPATCH_SOURCE_RUN_ID"
+            candidate_sha="$DISPATCH_CANDIDATE_SHA"
+          else
+            release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --jq '[.[] | select(.draft == true and .prerelease == true and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-alpha\\.[1-9][0-9]*$")))] | sort_by(.created_at) | last | .tag_name // empty')"
+            if [[ -z "$release_id" ]]; then
+              echo "found=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            mkdir -p build/reconcile/discovery
+            gh release download "$release_id" --repo "$GITHUB_REPOSITORY" \
+              --pattern candidate-manifest.json --dir build/reconcile/discovery
+            source_run_id="$(jq -er .runId build/reconcile/discovery/candidate-manifest.json)"
+            candidate_sha="$(jq -er .commitSha build/reconcile/discovery/candidate-manifest.json)"
+          fi
+          [[ "$release_id" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          [[ "$source_run_id" =~ ^[1-9][0-9]*$ ]]
+          [[ "$candidate_sha" =~ ^[0-9a-f]{40}$ ]]
+          release_json="$(gh release view "$release_id" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName)"
+          jq -e --arg release "$release_id" '.isDraft == true and .isPrerelease == true and .tagName == $release' <<<"$release_json" >/dev/null
+          git fetch --force origin "refs/tags/$release_id:refs/tags/$release_id"
+          [[ "$(git cat-file -t "refs/tags/$release_id")" == tag ]]
+          [[ "$(git rev-parse "refs/tags/$release_id^{}")" == "$candidate_sha" ]]
+          git merge-base --is-ancestor "$candidate_sha" origin/master
+
+          source_run="$(gh run view "$source_run_id" --repo "$GITHUB_REPOSITORY" --json workflowName,event,headSha,jobs)"
+          jq -e --arg sha "$candidate_sha" '
+            .workflowName == "Alpha Release" and .event == "workflow_dispatch" and
+            .headSha == $sha and
+            ([.jobs[] | select(.name == "Build, sign, and stage Android Alpha" and .conclusion == "success")] | length == 1) and
+            ([.jobs[] | select(.name == "Build, sign, and upload iOS app" and .conclusion == "success")] | length == 1) and
+            ([.jobs[] | select(.name == "Build Microsoft Store Windows candidate" and .conclusion == "success")] | length == 1) and
+            ([.jobs[] | select(.name == "Submit Microsoft Store Package Flight" and .conclusion == "success")] | length == 1)
+          ' <<<"$source_run" >/dev/null
+
+          mkdir -p build/reconcile/windows
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$source_run_id/artifacts?per_page=100")"
+          windows_id="$(jq -er '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | sort_by(.created_at, .id) | last | .id' <<<"$artifacts")"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$windows_id/zip" > build/reconcile/windows.zip
+          unzip -qp build/reconcile/windows.zip candidate-manifest.json > build/reconcile/windows/candidate-manifest.json
+          manifest=build/reconcile/windows/candidate-manifest.json
+          jq -e --arg release "$release_id" --arg sha "$candidate_sha" --argjson run "$source_run_id" '
+            .releaseId == $release and .commitSha == $sha and (.runId | tostring) == ($run | tostring) and
+            .platform == "windows" and .distribution == "microsoftStore"
+          ' "$manifest" >/dev/null
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
+          echo "source_run_id=$source_run_id" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
+          echo "marketing_version=$(jq -er .marketingVersion "$manifest")" >> "$GITHUB_OUTPUT"
+          echo "build_number=$(jq -er .buildNumber "$manifest")" >> "$GITHUB_OUTPUT"
+          echo "windows_artifact_name=$(jq -er .artifact.name "$manifest")" >> "$GITHUB_OUTPUT"
+          echo "windows_artifact_sha256=$(jq -er .artifact.sha256 "$manifest")" >> "$GITHUB_OUTPUT"
+          echo "windows_package_version=$(jq -er .packageVersion "$manifest")" >> "$GITHUB_OUTPUT"
+
+  testflight_status:
+    name: Reconcile TestFlight external review and Testing
+    if: needs.resolve.outputs.found == 'true'
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: testflight
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      ready: ${{ steps.status.outputs.ready }}
+      blocked: ${{ steps.status.outputs.blocked }}
+      summary: ${{ steps.status.outputs.summary }}
+    env:
+      RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+      SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
+      CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+      MARKETING_VERSION: ${{ needs.resolve.outputs.marketing_version }}
+      BUILD_NUMBER: ${{ needs.resolve.outputs.build_number }}
+      TESTFLIGHT_EXTERNAL_GROUP: ${{ vars.TESTFLIGHT_EXTERNAL_GROUP }}
+      TESTFLIGHT_PUBLIC_LINK: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
+    steps:
+      - name: Checkout immutable candidate verifier
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.candidate_sha }}
+
+      - name: Set up Ruby 3.4.10
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: ".ruby-version"
+
+      - name: Validate App Store Connect status client
+        run: ruby -c tool/release/app_store_connect_status.rb
+
+      - name: Set up Flutter for receipt verification
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: ".fvmrc"
+          cache: true
+
+      - name: Resolve locked Dart dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Query App Store Connect and classify exact build
+        id: status
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_P8_BASE64 TESTFLIGHT_EXTERNAL_GROUP TESTFLIGHT_PUBLIC_LINK; do
+            value="${!name-}"
+            [[ -n "${value//[[:space:]]/}" ]] || { echo "Missing TestFlight automation value: $name" >&2; exit 1; }
+          done
+          key_file="$RUNNER_TEMP/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+          trap 'rm -f -- "$key_file" "$RUNNER_TEMP/testflight-status.json"' EXIT
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_P8_BASE64" | base64 --decode > "$key_file"
+          chmod 600 "$key_file"
+          ruby tool/release/app_store_connect_status.rb \
+            --key-id "$APP_STORE_CONNECT_KEY_ID" \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --private-key "$key_file" \
+            --bundle-id com.meettrace.app \
+            --marketing-version "$MARKETING_VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --external-group "$TESTFLIGHT_EXTERNAL_GROUP" \
+            --public-link "$TESTFLIGHT_PUBLIC_LINK" \
+            > "$RUNNER_TEMP/testflight-status.json"
+          processing="$(jq -er .processingState "$RUNNER_TEMP/testflight-status.json")"
+          review="$(jq -er .betaReviewState "$RUNNER_TEMP/testflight-status.json")"
+          external="$(jq -er .externalBuildState "$RUNNER_TEMP/testflight-status.json")"
+          testing="$(jq -er .testing "$RUNNER_TEMP/testflight-status.json")"
+          ready=false
+          blocked=false
+          if [[ ! "$processing" =~ ^[A-Z0-9_]{1,128}$ ||
+                ! "$review" =~ ^[A-Z0-9_]{1,128}$ ||
+                ! "$external" =~ ^[A-Z0-9_]{1,128}$ ||
+                ! "$testing" =~ ^(true|false)$ ]]; then
+            processing=INVALID_RESPONSE
+            review=INVALID_RESPONSE
+            external=INVALID_RESPONSE
+            testing=false
+            blocked=true
+          else
+            case "$processing/$review/$external/$testing" in
+              VALID/APPROVED/READY_FOR_EXTERNAL_TESTING/true|VALID/APPROVED/TESTING/true)
+                ready=true
+                ;;
+              FAILED/*|INVALID/*|*/REJECTED/*)
+                blocked=true
+                ;;
+              PROCESSING/*|VALID/WAITING_FOR_REVIEW/*|VALID/IN_REVIEW/*|VALID/APPROVED/READY_FOR_BETA_SUBMISSION/false|VALID/APPROVED/WAITING_FOR_BETA_REVIEW/false|VALID/APPROVED/IN_BETA_REVIEW/false)
+                ;;
+              *)
+                blocked=true
+                ;;
+            esac
+          fi
+          if [[ "$ready" == true ]]; then
+            dart run tool/release/verify_testflight_submission.dart \
+              --input "$RUNNER_TEMP/testflight-status.json" \
+              --output build/reconcile/testflight-production-receipt.json \
+              --bundle-id com.meettrace.app \
+              --marketing-version "$MARKETING_VERSION" \
+              --build-number "$BUILD_NUMBER" \
+              --external-group "$TESTFLIGHT_EXTERNAL_GROUP" \
+              --public-link "$TESTFLIGHT_PUBLIC_LINK" \
+              --release-id "$RELEASE_ID" \
+              --candidate-sha "$CANDIDATE_SHA" \
+              --source-run-id "$SOURCE_RUN_ID" \
+              --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          fi
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          echo "blocked=$blocked" >> "$GITHUB_OUTPUT"
+          echo "summary=processing=$processing review=$review external=$external testing=$testing" >> "$GITHUB_OUTPUT"
+
+      - name: Upload safe TestFlight receipt
+        if: steps.status.outputs.ready == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-reconcile-testflight-${{ needs.resolve.outputs.release_id }}
+          path: build/reconcile/testflight-production-receipt.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  microsoft_store_status:
+    name: Reconcile Microsoft Store Flight and production
+    if: needs.resolve.outputs.found == 'true'
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: microsoft-store
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      flight_ready: ${{ steps.status.outputs.flight_ready }}
+      flight_blocked: ${{ steps.status.outputs.flight_blocked }}
+      flight_summary: ${{ steps.status.outputs.flight_summary }}
+      production_ready: ${{ steps.status.outputs.production_ready }}
+      production_present: ${{ steps.status.outputs.production_present }}
+      production_blocked: ${{ steps.status.outputs.production_blocked }}
+      production_summary: ${{ steps.status.outputs.production_summary }}
+    env:
+      RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+      SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
+      CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+      WINDOWS_ARTIFACT_NAME: ${{ needs.resolve.outputs.windows_artifact_name }}
+      WINDOWS_PACKAGE_VERSION: ${{ needs.resolve.outputs.windows_package_version }}
+      PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}
+      PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+      PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+      PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+      PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+    steps:
+      - name: Checkout immutable candidate verifier
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.candidate_sha }}
+
+      - name: Set up Flutter for receipt verification
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version-file: ".fvmrc"
+          cache: true
+
+      - name: Resolve locked Dart dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Set up Microsoft Store CLI v0.4.0
+        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
+        with:
+          version: v0.4.0
+
+      - name: Query and classify exact Store submissions
+        id: status
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in PARTNER_CENTER_TENANT_ID PARTNER_CENTER_SELLER_ID PARTNER_CENTER_CLIENT_ID PARTNER_CENTER_CLIENT_SECRET PARTNER_CENTER_FLIGHT_ID; do
+            value="${!name-}"
+            [[ -n "${value//[[:space:]]/}" ]] || { echo "Missing Microsoft Store automation value: $name" >&2; exit 1; }
+          done
+          msstore settings --enableTelemetry false
+          msstore reconfigure --tenantId "$PARTNER_CENTER_TENANT_ID" --sellerId "$PARTNER_CENTER_SELLER_ID" --clientId "$PARTNER_CENTER_CLIENT_ID" --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
+          mkdir -p build/reconcile
+          flight_raw="$RUNNER_TEMP/store-flight.json"
+          production_raw="$RUNNER_TEMP/store-production.json"
+          trap 'rm -f -- "$flight_raw" "$production_raw"' EXIT
+          msstore flights submission get 9PHHSJMWK06G "$PARTNER_CENTER_FLIGHT_ID" > "$flight_raw"
+          msstore submission get 9PHHSJMWK06G > "$production_raw"
+          python3 - "$flight_raw" "$production_raw" "$GITHUB_OUTPUT" <<'PY'
+          import json, os, re, sys
+
+          def field(obj, name):
+              matches = [value for key, value in obj.items() if key.lower() == name.lower()]
+              if len(matches) != 1:
+                  raise SystemExit(f"ambiguous or missing Store field: {name}")
+              return matches[0]
+
+          def inspect(path, production):
+              data = json.load(open(path, encoding="utf-8-sig"))
+              status = str(field(data, "Status"))
+              if not re.fullmatch(r"[A-Za-z0-9_. -]{1,128}", status):
+                  raise SystemExit("Store Status contains unsafe characters")
+              normalized_status = status.lower()
+              packages = field(data, "ApplicationPackages")
+              if not isinstance(packages, list):
+                  raise SystemExit("ApplicationPackages must be an array")
+              expected_name = os.environ["WINDOWS_ARTIFACT_NAME"]
+              expected_version = os.environ["WINDOWS_PACKAGE_VERSION"]
+              matches = [package for package in packages if str(field(package, "FileName")) == expected_name and str(field(package, "Version")) == expected_version]
+              present = len(matches) == 1 and len(packages) == 1
+              ready = present and normalized_status == "published"
+              if production and ready:
+                  ready = str(field(data, "Visibility")).lower() == "public"
+              pending = {"pendingcommit", "committed", "processing", "preprocessing", "certification", "publishing", "inprogress"}
+              if ready:
+                  blocked = False
+              elif present:
+                  blocked = normalized_status not in pending
+              elif packages:
+                  blocked = normalized_status != "published"
+              elif normalized_status in pending:
+                  present = production
+                  blocked = False
+              elif normalized_status == "published":
+                  blocked = False
+              else:
+                  blocked = True
+              return ready, present, blocked, status
+
+          flight_ready, _, flight_blocked, flight_status = inspect(sys.argv[1], False)
+          production_ready, production_present, production_blocked, production_status = inspect(sys.argv[2], True)
+          with open(sys.argv[3], "a", encoding="utf-8") as output:
+              output.write(f"flight_ready={str(flight_ready).lower()}\n")
+              output.write(f"flight_blocked={str(flight_blocked).lower()}\n")
+              output.write(f"flight_summary=status={flight_status}\n")
+              output.write(f"production_ready={str(production_ready).lower()}\n")
+              output.write(f"production_present={str(production_present).lower()}\n")
+              output.write(f"production_blocked={str(production_blocked).lower()}\n")
+              output.write(f"production_summary=status={production_status} present={str(production_present).lower()}\n")
+          PY
+          if [[ "$(grep '^flight_ready=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)" == true ]]; then
+            dart run tool/release/verify_microsoft_store_submission.dart \
+              --flight-id "$PARTNER_CENTER_FLIGHT_ID" --input "$flight_raw" \
+              --output build/reconcile/windows-flight-receipt.json \
+              --product-id 9PHHSJMWK06G --expected-version "$WINDOWS_PACKAGE_VERSION" \
+              --expected-artifact-name "$WINDOWS_ARTIFACT_NAME" --release-id "$RELEASE_ID" \
+              --candidate-sha "$CANDIDATE_SHA" --source-run-id "$SOURCE_RUN_ID" \
+              --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          fi
+          if [[ "$(grep '^production_ready=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)" == true ]]; then
+            dart run tool/release/verify_microsoft_store_submission.dart \
+              --input "$production_raw" --output build/reconcile/windows-store-production-receipt.json \
+              --product-id 9PHHSJMWK06G --expected-version "$WINDOWS_PACKAGE_VERSION" \
+              --expected-artifact-name "$WINDOWS_ARTIFACT_NAME" --release-id "$RELEASE_ID" \
+              --candidate-sha "$CANDIDATE_SHA" --source-run-id "$SOURCE_RUN_ID" \
+              --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          fi
+
+      - name: Remove Microsoft Store CLI credentials
+        if: always()
+        shell: bash
+        run: msstore reconfigure --reset
+
+      - name: Upload safe Store receipts
+        if: steps.status.outputs.flight_ready == 'true' || steps.status.outputs.production_ready == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-reconcile-store-${{ needs.resolve.outputs.release_id }}
+          path: build/reconcile/*-receipt.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  validation_status:
+    name: Resolve immutable Flight and production validation receipts
+    if: needs.resolve.outputs.found == 'true'
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      flight_ready: ${{ steps.receipts.outputs.flight_ready }}
+      production_ready: ${{ steps.receipts.outputs.production_ready }}
+      flight_run_id: ${{ steps.receipts.outputs.flight_run_id }}
+      production_run_id: ${{ steps.receipts.outputs.production_run_id }}
+    env:
+      RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+      SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
+      CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+    steps:
+      - name: Find exact validation receipts
+        id: receipts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/reconcile/validations
+          find_receipt() {
+            local stage="$1"
+            local name="meettrace-candidate-distribution-$stage-$RELEASE_ID"
+            local response entries entry id run_id zip receipt run
+            response="$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=$name&per_page=100")"
+            mapfile -t entries < <(jq -r '.artifacts | map(select(.expired == false and .workflow_run.id != null)) | sort_by(.created_at, .id) | reverse | .[] | "\(.id) \(.workflow_run.id)"' <<<"$response")
+            for entry in "${entries[@]}"; do
+              read -r id run_id <<<"$entry"
+              [[ "$id" =~ ^[1-9][0-9]*$ && "$run_id" =~ ^[1-9][0-9]*$ ]] || continue
+              run="$(gh run view "$run_id" --repo "$GITHUB_REPOSITORY" --json workflowName,event,conclusion,headBranch)"
+              jq -e '
+                .workflowName == "Candidate Distribution Validation" and
+                .event == "repository_dispatch" and .conclusion == "success" and
+                .headBranch == "master"
+              ' <<<"$run" >/dev/null || continue
+              zip="$RUNNER_TEMP/$stage-$id.zip"
+              if gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > "$zip" 2>/dev/null; then
+                receipt="$(unzip -Z1 "$zip" | grep -E '(^|/)receipt\.json$' | head -1 || true)"
+                if [[ -n "$receipt" ]] && unzip -p "$zip" "$receipt" > "build/reconcile/validations/$stage.json" && jq -e --arg stage "$stage" --arg release "$RELEASE_ID" --arg sha "$CANDIDATE_SHA" --argjson run "$SOURCE_RUN_ID" --argjson validationRun "$run_id" '
+                  .schemaVersion == 1 and .validation == "candidateDistribution" and .stage == $stage and
+                  .releaseId == $release and .candidateCommitSha == $sha and .sourceRunId == $run and
+                  .androidFirebaseArm == "passed" and .windowsStoreLifecycle == "passed" and
+                  .validationRunId == $validationRun
+                ' "build/reconcile/validations/$stage.json" >/dev/null; then
+                  jq -er .validationRunId "build/reconcile/validations/$stage.json"
+                  return 0
+                fi
+              fi
+            done
+            return 1
+          }
+          for stage in flight production; do
+            if run_id="$(find_receipt "$stage")"; then
+              echo "${stage}_ready=true" >> "$GITHUB_OUTPUT"
+              echo "${stage}_run_id=$run_id" >> "$GITHUB_OUTPUT"
+            else
+              echo "${stage}_ready=false" >> "$GITHUB_OUTPUT"
+              echo "${stage}_run_id=0" >> "$GITHUB_OUTPUT"
+              rm -f "build/reconcile/validations/$stage.json"
+            fi
+          done
+          touch build/reconcile/validations/.keep
+
+      - name: Upload resolved validation receipts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-reconcile-validations-${{ needs.resolve.outputs.release_id }}
+          path: build/reconcile/validations/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 90
+          compression-level: 0
+
+  submit_production:
+    name: Submit validated MSIX to Microsoft Store production
+    if: >-
+      needs.resolve.outputs.found == 'true' &&
+      needs.microsoft_store_status.outputs.flight_ready == 'true' &&
+      needs.validation_status.outputs.flight_ready == 'true' &&
+      needs.microsoft_store_status.outputs.production_present != 'true' &&
+      needs.microsoft_store_status.outputs.production_blocked != 'true'
+    needs: [resolve, microsoft_store_status, validation_status]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: microsoft-store
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+    env:
+      RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+      SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
+      WINDOWS_ARTIFACT_NAME: ${{ needs.resolve.outputs.windows_artifact_name }}
+      WINDOWS_ARTIFACT_SHA256: ${{ needs.resolve.outputs.windows_artifact_sha256 }}
+      PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+      PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+      PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+      PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+    steps:
+      - name: Set up Microsoft Store CLI v0.4.0
+        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
+        with:
+          version: v0.4.0
+
+      - name: Download and verify exact Flight-tested MSIX
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/reconcile/production
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts?per_page=100")"
+          artifact_id="$(jq -er '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | sort_by(.created_at, .id) | last | .id' <<<"$artifacts")"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > build/reconcile/windows.zip
+          unzip -q build/reconcile/windows.zip -d build/reconcile/production
+          msix="build/reconcile/production/$WINDOWS_ARTIFACT_NAME"
+          [[ -f "$msix" ]]
+          echo "$WINDOWS_ARTIFACT_SHA256  $msix" | sha256sum --check --strict
+          echo "WINDOWS_MSIX_PATH=$GITHUB_WORKSPACE/$msix" >> "$GITHUB_ENV"
+
+      - name: Publish production submission at 100 percent
+        shell: bash
+        run: |
+          set -euo pipefail
+          msstore settings --enableTelemetry false
+          msstore reconfigure --tenantId "$PARTNER_CENTER_TENANT_ID" --sellerId "$PARTNER_CENTER_SELLER_ID" --clientId "$PARTNER_CENTER_CLIENT_ID" --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
+          msstore publish "$GITHUB_WORKSPACE" --inputFile "$WINDOWS_MSIX_PATH" --appId 9PHHSJMWK06G --packageRolloutPercentage 100
+
+      - name: Remove Microsoft Store CLI credentials
+        if: always()
+        shell: bash
+        run: msstore reconfigure --reset
+
+      - name: Reconcile submitted production state immediately
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/dispatches" --method POST \
+            -f event_type=alpha-release-reconcile \
+            -F "client_payload[release_id]=$RELEASE_ID" \
+            -F "client_payload[source_run_id]=$SOURCE_RUN_ID" \
+            -F "client_payload[candidate_sha]=$CANDIDATE_SHA"
+
+      - name: Report production submission failure
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          gh label create release-blocked --repo "$GITHUB_REPOSITORY" --color B60205 --description "External release state blocks automatic publication" --force
+          title="[release-blocked] $RELEASE_ID"
+          body="$(printf 'Microsoft Store production 自动提交失败。Draft Release 和旧更新指针保持不变。\n\n- Candidate: `%s`\n- Reconciler run: %s' "$CANDIDATE_SHA" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")"
+          number="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $title" --json number,title | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | head -1 || true)"
+          if [[ -n "$number" ]]; then
+            gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body "$body" --add-label release-blocked
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body" --label release-blocked
+          fi
+
+  dispatch_flight_validation:
+    name: Dispatch Flight candidate validation
+    if: >-
+      needs.resolve.outputs.found == 'true' &&
+      needs.testflight_status.outputs.ready == 'true' &&
+      needs.microsoft_store_status.outputs.flight_ready == 'true' &&
+      needs.validation_status.outputs.flight_ready != 'true'
+    needs: [resolve, testflight_status, microsoft_store_status, validation_status]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Collect immutable external distribution receipts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/reconcile/evidence
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100")"
+          for pair in "meettrace-reconcile-testflight-$RELEASE_ID:testflight-production-receipt.json" "meettrace-reconcile-store-$RELEASE_ID:windows-flight-receipt.json"; do
+            name="${pair%%:*}"; file="${pair#*:}"
+            id="$(jq -er --arg name "$name" '[.artifacts[] | select(.expired == false and .name == $name)] | last | .id' <<<"$artifacts")"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > "$RUNNER_TEMP/$id.zip"
+            unzip -qp "$RUNNER_TEMP/$id.zip" "$file" > "build/reconcile/evidence/$file"
+          done
+
+      - name: Upload reconciler evidence for validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-reconcile-evidence-${{ needs.resolve.outputs.release_id }}
+          path: build/reconcile/evidence/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+      - name: Dispatch dedicated candidate validation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+          SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
+          CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/dispatches" --method POST \
+            -f event_type=candidate-distribution-validation \
+            -F "client_payload[release_id]=$RELEASE_ID" \
+            -F "client_payload[source_run_id]=$SOURCE_RUN_ID" \
+            -F "client_payload[reconcile_run_id]=$GITHUB_RUN_ID" \
+            -F "client_payload[candidate_sha]=$CANDIDATE_SHA" \
+            -F "client_payload[stage]=flight"
+
+  dispatch_production_validation:
+    name: Dispatch production candidate validation
+    if: >-
+      needs.resolve.outputs.found == 'true' &&
+      needs.testflight_status.outputs.ready == 'true' &&
+      needs.microsoft_store_status.outputs.production_ready == 'true' &&
+      needs.validation_status.outputs.production_ready != 'true'
+    needs: [resolve, testflight_status, microsoft_store_status, validation_status]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Collect immutable production distribution receipts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/reconcile/evidence
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100")"
+          for pair in "meettrace-reconcile-testflight-$RELEASE_ID:testflight-production-receipt.json" "meettrace-reconcile-store-$RELEASE_ID:windows-store-production-receipt.json"; do
+            name="${pair%%:*}"; file="${pair#*:}"
+            id="$(jq -er --arg name "$name" '[.artifacts[] | select(.expired == false and .name == $name)] | last | .id' <<<"$artifacts")"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > "$RUNNER_TEMP/$id.zip"
+            unzip -qp "$RUNNER_TEMP/$id.zip" "$file" > "build/reconcile/evidence/$file"
+          done
+
+      - name: Upload reconciler evidence for validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-reconcile-evidence-${{ needs.resolve.outputs.release_id }}
+          path: build/reconcile/evidence/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+      - name: Dispatch dedicated candidate validation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+          SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
+          CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/dispatches" --method POST \
+            -f event_type=candidate-distribution-validation \
+            -F "client_payload[release_id]=$RELEASE_ID" \
+            -F "client_payload[source_run_id]=$SOURCE_RUN_ID" \
+            -F "client_payload[reconcile_run_id]=$GITHUB_RUN_ID" \
+            -F "client_payload[candidate_sha]=$CANDIDATE_SHA" \
+            -F "client_payload[stage]=production"
+
+  report_blocked:
+    name: Report rejected or unknown external state
+    if: always() && needs.resolve.outputs.found == 'true'
+    needs: [resolve, testflight_status, microsoft_store_status]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    steps:
+      - name: Create or update release-blocked issue
+        if: >-
+          needs.testflight_status.result != 'success' ||
+          needs.microsoft_store_status.result != 'success' ||
+          needs.testflight_status.outputs.blocked == 'true' ||
+          needs.microsoft_store_status.outputs.flight_blocked == 'true' ||
+          needs.microsoft_store_status.outputs.production_blocked == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+          TESTFLIGHT_SUMMARY: ${{ needs.testflight_status.outputs.summary }}
+          FLIGHT_SUMMARY: ${{ needs.microsoft_store_status.outputs.flight_summary }}
+          PRODUCTION_SUMMARY: ${{ needs.microsoft_store_status.outputs.production_summary }}
+        run: |
+          set -euo pipefail
+          gh label create release-blocked --repo "$GITHUB_REPOSITORY" --color B60205 --description "External release state blocks automatic publication" --force
+          title="[release-blocked] $RELEASE_ID"
+          body="$(printf '自动发布协调器检测到拒审、未知状态或查询失败。\n\n- TestFlight: %s\n- Microsoft Store Flight: %s\n- Microsoft Store production: %s\n- Reconciler run: %s\n\nDraft Release 和现有自动更新指针均保持不变。外部状态恢复后，协调器会复用原候选继续。' "${TESTFLIGHT_SUMMARY:-query failed}" "${FLIGHT_SUMMARY:-query failed}" "${PRODUCTION_SUMMARY:-query failed}" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")"
+          number="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $title" --json number,title | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | head -1 || true)"
+          if [[ -n "$number" ]]; then
+            gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body "$body" --add-label release-blocked
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body" --label release-blocked
+          fi
+
+  finalize:
+    name: Build automatic publication gate and resume Alpha Release
+    if: >-
+      needs.resolve.outputs.found == 'true' &&
+      needs.testflight_status.outputs.ready == 'true' &&
+      needs.microsoft_store_status.outputs.flight_ready == 'true' &&
+      needs.microsoft_store_status.outputs.production_ready == 'true' &&
+      needs.validation_status.outputs.flight_ready == 'true' &&
+      needs.validation_status.outputs.production_ready == 'true'
+    needs: [resolve, testflight_status, microsoft_store_status, validation_status]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      actions: write
+      contents: write
+      issues: write
+    env:
+      RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+      SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
+      CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
+      BUILD_NUMBER: ${{ needs.resolve.outputs.build_number }}
+    steps:
+      - name: Collect all immutable release receipts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/reconcile/gate
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100")"
+          extract() {
+            local artifact_name="$1" file="$2" destination="$3" id
+            id="$(jq -er --arg name "$artifact_name" '[.artifacts[] | select(.expired == false and .name == $name)] | last | .id' <<<"$artifacts")"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > "$RUNNER_TEMP/$id.zip"
+            unzip -qp "$RUNNER_TEMP/$id.zip" "$file" > "$destination"
+          }
+          extract "meettrace-reconcile-testflight-$RELEASE_ID" testflight-production-receipt.json build/reconcile/gate/testflight.json
+          extract "meettrace-reconcile-store-$RELEASE_ID" windows-flight-receipt.json build/reconcile/gate/windows-flight.json
+          extract "meettrace-reconcile-store-$RELEASE_ID" windows-store-production-receipt.json build/reconcile/gate/windows-production.json
+          extract "meettrace-reconcile-validations-$RELEASE_ID" flight.json build/reconcile/gate/validation-flight.json
+          extract "meettrace-reconcile-validations-$RELEASE_ID" production.json build/reconcile/gate/validation-production.json
+          jq -n \
+            --arg releaseId "$RELEASE_ID" --arg candidateCommitSha "$CANDIDATE_SHA" \
+            --argjson sourceRunId "$SOURCE_RUN_ID" --argjson orchestrationRunId "$GITHUB_RUN_ID" \
+            --argjson buildNumber "$BUILD_NUMBER" \
+            --slurpfile testFlight build/reconcile/gate/testflight.json \
+            --slurpfile windowsFlight build/reconcile/gate/windows-flight.json \
+            --slurpfile windowsProduction build/reconcile/gate/windows-production.json \
+            --slurpfile flightValidation build/reconcile/gate/validation-flight.json \
+            --slurpfile productionValidation build/reconcile/gate/validation-production.json \
+            '{schemaVersion: 1, releaseId: $releaseId, candidateCommitSha: $candidateCommitSha, sourceRunId: $sourceRunId, orchestrationRunId: $orchestrationRunId, buildNumber: $buildNumber, testFlight: $testFlight[0], windowsFlight: $windowsFlight[0], windowsProduction: $windowsProduction[0], validations: {flight: $flightValidation[0], production: $productionValidation[0]}}' \
+            > build/reconcile/gate/release-gate.json
+
+      - name: Upload automatic publication gate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-release-gate-${{ needs.resolve.outputs.release_id }}
+          path: build/reconcile/gate/release-gate.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+      - name: Close recovered release-blocked issue
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          title="[release-blocked] $RELEASE_ID"
+          gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $title" --json number,title | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | while read -r number; do
+            gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment "所有外部分发门禁已恢复并通过，自动发布继续。"
+          done
+
+      - name: Resume Alpha Release without final approval
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run alpha-release.yml --repo "$GITHUB_REPOSITORY" --ref master \
+            -f "release_id=$RELEASE_ID" \
+            -f "resume_run_id=$SOURCE_RUN_ID" \
+            -f "orchestration_run_id=$GITHUB_RUN_ID"
