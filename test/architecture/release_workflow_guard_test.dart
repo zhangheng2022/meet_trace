@@ -151,6 +151,7 @@ void main() {
 
     test('Android、iOS 与 Windows 共享连续递增的发布构建号', () async {
       final workflow = await _workflow('alpha-release.yml');
+      final prepare = _job(workflow, 'prepare', 'quality');
       final android = _job(workflow, 'android', 'ios');
       final ios = _job(workflow, 'ios', 'windows');
       final windows = _job(workflow, 'windows', 'windows_flight');
@@ -166,6 +167,8 @@ void main() {
       expect(workflow, contains('gh api --paginate'));
       expect(workflow, contains('max_build_number + 1'));
       expect(workflow, contains('Reusing build number'));
+      expect(prepare, contains('contents: write'));
+      expect(prepare, contains('Draft Releases hold reserved build numbers'));
       expect(
         RegExp(
           r'RELEASE_BUILD_NUMBER: \$\{\{ needs\.prepare\.outputs\.build_number \}\}',
@@ -548,7 +551,16 @@ void main() {
         windowsFlight,
         contains(r'--flightId "$PARTNER_CENTER_FLIGHT_ID"'),
       );
-      expect(windowsFlight, contains('msstore reconfigure --reset'));
+      final reconfigureIndex = windowsFlight.indexOf('msstore reconfigure \\');
+      final settingsIndex = windowsFlight.indexOf(
+        'msstore settings --enableTelemetry',
+      );
+      expect(reconfigureIndex, greaterThanOrEqualTo(0));
+      expect(settingsIndex, greaterThan(reconfigureIndex));
+      expect(
+        windowsFlight,
+        contains("printf 'y\\n' | msstore reconfigure --reset"),
+      );
       expect(
         windowsFlight,
         contains(
@@ -556,7 +568,7 @@ void main() {
           'cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0',
         ),
       );
-      expect(windowsFlight, contains('version: v0.4.0'));
+      expect(windowsFlight, contains('version: v0.4.1'));
       for (final secret in <String>[
         'PARTNER_CENTER_TENANT_ID',
         'PARTNER_CENTER_SELLER_ID',
