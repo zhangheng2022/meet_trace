@@ -589,6 +589,18 @@ void main() {
         contains('candidate-or-newer Package Flight submission'),
       );
       expect(windowsFlight, contains(r"$submissionStatus -eq 'published'"));
+      expect(windowsFlight, contains("'commitstarted'"));
+      expect(windowsFlight, contains("'certification'"));
+      expect(windowsFlight, contains("'publishing'"));
+      expect(windowsFlight, contains(r'$matchingCandidateNames.Count -ne 1'));
+      expect(
+        windowsFlight,
+        contains('Reusing the in-progress immutable Package Flight submission'),
+      );
+      expect(
+        windowsFlight,
+        contains('requires the dedicated recovery workflow'),
+      );
       expect(windowsFlight, contains(r'$existingName -ceq $artifactName'));
       expect(
         windowsFlight,

@@ -1579,10 +1579,28 @@ jobs:
             $exact = @($packages | Where-Object {
                 $_.FileName -ceq $artifactName -and $_.Version -ceq $packageVersion
               })
+            $matchingCandidateNames = @($packages | Where-Object {
+                ([string]$_.FileName) -ceq $artifactName
+              })
             $submissionStatus = ([string]$submission.Status).ToLowerInvariant()
             if ($exact.Count -eq 1 -and $packages.Count -eq 1 -and
                 $submissionStatus -eq 'published') {
               $reuse = $true
+            } elseif (@(
+                'commitstarted',
+                'preprocessing',
+                'certification',
+                'release',
+                'pendingpublication',
+                'publishing'
+              ) -contains $submissionStatus) {
+              if ($matchingCandidateNames.Count -ne 1) {
+                throw 'An in-progress Package Flight submission does not match the immutable candidate.'
+              }
+              Write-Host 'Reusing the in-progress immutable Package Flight submission.'
+              $reuse = $true
+            } elseif ($submissionStatus -eq 'pendingcommit') {
+              throw 'An interrupted Package Flight draft requires the dedicated recovery workflow.'
             } elseif ($packages.Count -gt 0 -and $submissionStatus -ne 'published') {
               $unsafePendingPackages = @($packages | Where-Object {
                   $existingName = [string]$_.FileName
