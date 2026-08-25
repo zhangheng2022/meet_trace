@@ -238,7 +238,7 @@ jobs:
     name: Reconcile Microsoft Store Flight and production
     if: needs.resolve.outputs.found == 'true'
     needs: resolve
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     timeout-minutes: 15
     environment: microsoft-store
     permissions:
@@ -278,102 +278,186 @@ jobs:
       - name: Resolve locked Dart dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Set up Microsoft Store CLI v0.4.0
+      - name: Set up Microsoft Store CLI v0.4.1
         uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
         with:
-          version: v0.4.0
+          version: v0.4.1
 
       - name: Query and classify exact Store submissions
         id: status
-        shell: bash
+        shell: pwsh
         run: |
-          set -euo pipefail
-          for name in PARTNER_CENTER_TENANT_ID PARTNER_CENTER_SELLER_ID PARTNER_CENTER_CLIENT_ID PARTNER_CENTER_CLIENT_SECRET PARTNER_CENTER_FLIGHT_ID; do
-            value="${!name-}"
-            [[ -n "${value//[[:space:]]/}" ]] || { echo "Missing Microsoft Store automation value: $name" >&2; exit 1; }
-          done
+          $ErrorActionPreference = 'Stop'
+          foreach ($name in @(
+              'PARTNER_CENTER_TENANT_ID',
+              'PARTNER_CENTER_SELLER_ID',
+              'PARTNER_CENTER_CLIENT_ID',
+              'PARTNER_CENTER_CLIENT_SECRET',
+              'PARTNER_CENTER_FLIGHT_ID')) {
+            if ([string]::IsNullOrWhiteSpace(
+                [Environment]::GetEnvironmentVariable($name))) {
+              throw "Missing Microsoft Store automation value: $name"
+            }
+          }
+
+          msstore reconfigure `
+            --tenantId $env:PARTNER_CENTER_TENANT_ID `
+            --sellerId $env:PARTNER_CENTER_SELLER_ID `
+            --clientId $env:PARTNER_CENTER_CLIENT_ID `
+            --clientSecret $env:PARTNER_CENTER_CLIENT_SECRET
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to configure Microsoft Store CLI credentials.'
+          }
           msstore settings --enableTelemetry false
-          msstore reconfigure --tenantId "$PARTNER_CENTER_TENANT_ID" --sellerId "$PARTNER_CENTER_SELLER_ID" --clientId "$PARTNER_CENTER_CLIENT_ID" --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
-          mkdir -p build/reconcile
-          flight_raw="$RUNNER_TEMP/store-flight.json"
-          production_raw="$RUNNER_TEMP/store-production.json"
-          trap 'rm -f -- "$flight_raw" "$production_raw"' EXIT
-          msstore flights submission get 9PHHSJMWK06G "$PARTNER_CENTER_FLIGHT_ID" > "$flight_raw"
-          msstore submission get 9PHHSJMWK06G > "$production_raw"
-          python3 - "$flight_raw" "$production_raw" "$GITHUB_OUTPUT" <<'PY'
-          import json, os, re, sys
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to disable Microsoft Store CLI telemetry.'
+          }
 
-          def field(obj, name):
-              matches = [value for key, value in obj.items() if key.lower() == name.lower()]
-              if len(matches) != 1:
-                  raise SystemExit(f"ambiguous or missing Store field: {name}")
-              return matches[0]
+          New-Item -ItemType Directory -Path build/reconcile -Force | Out-Null
+          $flightRaw = Join-Path $env:RUNNER_TEMP 'store-flight.json'
+          $productionRaw = Join-Path $env:RUNNER_TEMP 'store-production.json'
+          msstore flights submission get `
+            9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID > $flightRaw
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to query the fixed Package Flight submission.'
+          }
+          msstore submission get 9PHHSJMWK06G > $productionRaw
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to query the Microsoft Store production submission.'
+          }
 
-          def inspect(path, production):
-              data = json.load(open(path, encoding="utf-8-sig"))
-              status = str(field(data, "Status"))
-              if not re.fullmatch(r"[A-Za-z0-9_. -]{1,128}", status):
-                  raise SystemExit("Store Status contains unsafe characters")
-              normalized_status = status.lower()
-              packages = field(data, "ApplicationPackages")
-              if not isinstance(packages, list):
-                  raise SystemExit("ApplicationPackages must be an array")
-              expected_name = os.environ["WINDOWS_ARTIFACT_NAME"]
-              expected_version = os.environ["WINDOWS_PACKAGE_VERSION"]
-              matches = [package for package in packages if str(field(package, "FileName")) == expected_name and str(field(package, "Version")) == expected_version]
-              present = len(matches) == 1 and len(packages) == 1
-              ready = present and normalized_status == "published"
-              if production and ready:
-                  ready = str(field(data, "Visibility")).lower() == "public"
-              pending = {"pendingcommit", "committed", "processing", "preprocessing", "certification", "publishing", "inprogress"}
-              if ready:
-                  blocked = False
-              elif present:
-                  blocked = normalized_status not in pending
-              elif packages:
-                  blocked = normalized_status != "published"
-              elif normalized_status in pending:
-                  present = production
-                  blocked = False
-              elif normalized_status == "published":
-                  blocked = False
-              else:
-                  blocked = True
-              return ready, present, blocked, status
+          function Get-UniqueField($Value, [string]$Name) {
+            $matches = @($Value.PSObject.Properties | Where-Object {
+                $_.Name -ieq $Name
+              })
+            if ($matches.Count -ne 1) {
+              throw "Ambiguous or missing Store field: $Name"
+            }
+            Write-Output -NoEnumerate $matches[0].Value
+          }
 
-          flight_ready, _, flight_blocked, flight_status = inspect(sys.argv[1], False)
-          production_ready, production_present, production_blocked, production_status = inspect(sys.argv[2], True)
-          with open(sys.argv[3], "a", encoding="utf-8") as output:
-              output.write(f"flight_ready={str(flight_ready).lower()}\n")
-              output.write(f"flight_blocked={str(flight_blocked).lower()}\n")
-              output.write(f"flight_summary=status={flight_status}\n")
-              output.write(f"production_ready={str(production_ready).lower()}\n")
-              output.write(f"production_present={str(production_present).lower()}\n")
-              output.write(f"production_blocked={str(production_blocked).lower()}\n")
-              output.write(f"production_summary=status={production_status} present={str(production_present).lower()}\n")
-          PY
-          if [[ "$(grep '^flight_ready=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)" == true ]]; then
-            dart run tool/release/verify_microsoft_store_submission.dart \
-              --flight-id "$PARTNER_CENTER_FLIGHT_ID" --input "$flight_raw" \
-              --output build/reconcile/windows-flight-receipt.json \
-              --product-id 9PHHSJMWK06G --expected-version "$WINDOWS_PACKAGE_VERSION" \
-              --expected-artifact-name "$WINDOWS_ARTIFACT_NAME" --release-id "$RELEASE_ID" \
-              --candidate-sha "$CANDIDATE_SHA" --source-run-id "$SOURCE_RUN_ID" \
-              --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          fi
-          if [[ "$(grep '^production_ready=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)" == true ]]; then
-            dart run tool/release/verify_microsoft_store_submission.dart \
-              --input "$production_raw" --output build/reconcile/windows-store-production-receipt.json \
-              --product-id 9PHHSJMWK06G --expected-version "$WINDOWS_PACKAGE_VERSION" \
-              --expected-artifact-name "$WINDOWS_ARTIFACT_NAME" --release-id "$RELEASE_ID" \
-              --candidate-sha "$CANDIDATE_SHA" --source-run-id "$SOURCE_RUN_ID" \
-              --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          fi
+          function Inspect-Submission($Data, [bool]$Production) {
+            $status = [string](Get-UniqueField $Data 'Status')
+            if ($status -notmatch '^[A-Za-z0-9_. -]{1,128}$') {
+              throw 'Store Status contains unsafe characters.'
+            }
+            $normalizedStatus = $status.ToLowerInvariant()
+            $packagesValue = Get-UniqueField $Data 'ApplicationPackages'
+            if ($packagesValue -isnot [System.Array]) {
+              throw 'ApplicationPackages must be an array.'
+            }
+            $packages = @($packagesValue)
+            $matches = @($packages | Where-Object {
+                [string](Get-UniqueField $_ 'FileName') -ceq $env:WINDOWS_ARTIFACT_NAME -and
+                [string](Get-UniqueField $_ 'Version') -ceq $env:WINDOWS_PACKAGE_VERSION
+              })
+            $present = $matches.Count -eq 1 -and $packages.Count -eq 1
+            $ready = $present -and $normalizedStatus -eq 'published'
+            if ($Production -and $ready) {
+              $ready = [string](Get-UniqueField $Data 'Visibility') -ieq 'public'
+            }
+            $pending = @(
+              'pendingcommit', 'committed', 'processing', 'preprocessing',
+              'certification', 'publishing', 'inprogress'
+            )
+            if ($ready) {
+              $blocked = $false
+            } elseif ($present) {
+              $blocked = $pending -notcontains $normalizedStatus
+            } elseif ($packages.Count -gt 0) {
+              $blocked = $normalizedStatus -ne 'published'
+            } elseif ($pending -contains $normalizedStatus) {
+              $present = $Production
+              $blocked = $false
+            } elseif ($normalizedStatus -eq 'published') {
+              $blocked = $false
+            } else {
+              $blocked = $true
+            }
+            return [pscustomobject]@{
+              Ready = $ready
+              Present = $present
+              Blocked = $blocked
+              Status = $status
+            }
+          }
+
+          $flight = Inspect-Submission `
+            (Get-Content -LiteralPath $flightRaw -Raw | ConvertFrom-Json) $false
+          $production = Inspect-Submission `
+            (Get-Content -LiteralPath $productionRaw -Raw | ConvertFrom-Json) $true
+          @(
+            "flight_ready=$($flight.Ready.ToString().ToLowerInvariant())"
+            "flight_blocked=$($flight.Blocked.ToString().ToLowerInvariant())"
+            "flight_summary=status=$($flight.Status)"
+            "production_ready=$($production.Ready.ToString().ToLowerInvariant())"
+            "production_present=$($production.Present.ToString().ToLowerInvariant())"
+            "production_blocked=$($production.Blocked.ToString().ToLowerInvariant())"
+            "production_summary=status=$($production.Status) present=$($production.Present.ToString().ToLowerInvariant())"
+          ) | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
+
+          $verifiedAt = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+          if ($flight.Ready) {
+            dart run tool/release/verify_microsoft_store_submission.dart `
+              --flight-id $env:PARTNER_CENTER_FLIGHT_ID --input $flightRaw `
+              --output build/reconcile/windows-flight-receipt.json `
+              --product-id 9PHHSJMWK06G `
+              --expected-version $env:WINDOWS_PACKAGE_VERSION `
+              --expected-artifact-name $env:WINDOWS_ARTIFACT_NAME `
+              --release-id $env:RELEASE_ID --candidate-sha $env:CANDIDATE_SHA `
+              --source-run-id $env:SOURCE_RUN_ID --verified-at $verifiedAt
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Microsoft Store Flight receipt verification failed.'
+            }
+          }
+          if ($production.Ready) {
+            dart run tool/release/verify_microsoft_store_submission.dart `
+              --input $productionRaw `
+              --output build/reconcile/windows-store-production-receipt.json `
+              --product-id 9PHHSJMWK06G `
+              --expected-version $env:WINDOWS_PACKAGE_VERSION `
+              --expected-artifact-name $env:WINDOWS_ARTIFACT_NAME `
+              --release-id $env:RELEASE_ID --candidate-sha $env:CANDIDATE_SHA `
+              --source-run-id $env:SOURCE_RUN_ID --verified-at $verifiedAt
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Microsoft Store production receipt verification failed.'
+            }
+          }
 
       - name: Remove Microsoft Store CLI credentials
         if: always()
-        shell: bash
-        run: msstore reconfigure --reset
+        shell: pwsh
+        run: |
+          $source = @'
+          using System;
+          using System.ComponentModel;
+          using System.Runtime.InteropServices;
+
+          public static class MeetTraceCredentialCleanup
+          {
+              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
+                  CharSet = CharSet.Unicode, SetLastError = true)]
+              private static extern bool CredDelete(string target, int type, int flags);
+
+              public static void Delete(string target)
+              {
+                  if (!CredDelete(target, 1, 0))
+                  {
+                      int error = Marshal.GetLastWin32Error();
+                      if (error != 1168)
+                      {
+                          throw new Win32Exception(error);
+                      }
+                  }
+              }
+          }
+          '@
+          Add-Type -TypeDefinition $source
+          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
+            [MeetTraceCredentialCleanup]::Delete(
+              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
+            )
+          }
 
       - name: Upload safe Store receipts
         if: steps.status.outputs.flight_ready == 'true' || steps.status.outputs.production_ready == 'true'
@@ -474,7 +558,7 @@ jobs:
       needs.microsoft_store_status.outputs.production_present != 'true' &&
       needs.microsoft_store_status.outputs.production_blocked != 'true'
     needs: [resolve, microsoft_store_status, validation_status]
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     timeout-minutes: 30
     environment: microsoft-store
     permissions:
@@ -491,39 +575,111 @@ jobs:
       PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
       PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
     steps:
-      - name: Set up Microsoft Store CLI v0.4.0
+      - name: Set up Microsoft Store CLI v0.4.1
         uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
         with:
-          version: v0.4.0
+          version: v0.4.1
 
       - name: Download and verify exact Flight-tested MSIX
-        shell: bash
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          mkdir -p build/reconcile/production
-          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts?per_page=100")"
-          artifact_id="$(jq -er '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | sort_by(.created_at, .id) | last | .id' <<<"$artifacts")"
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > build/reconcile/windows.zip
-          unzip -q build/reconcile/windows.zip -d build/reconcile/production
-          msix="build/reconcile/production/$WINDOWS_ARTIFACT_NAME"
-          [[ -f "$msix" ]]
-          echo "$WINDOWS_ARTIFACT_SHA256  $msix" | sha256sum --check --strict
-          echo "WINDOWS_MSIX_PATH=$GITHUB_WORKSPACE/$msix" >> "$GITHUB_ENV"
+          $ErrorActionPreference = 'Stop'
+          $productionDir = Join-Path $env:GITHUB_WORKSPACE 'build/reconcile/production'
+          New-Item -ItemType Directory -Path $productionDir -Force | Out-Null
+          $response = gh api `
+            "repos/$($env:GITHUB_REPOSITORY)/actions/runs/$($env:SOURCE_RUN_ID)/artifacts?per_page=100"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to enumerate immutable source-run artifacts.'
+          }
+          $artifact = @(
+            ($response | ConvertFrom-Json).artifacts |
+            Where-Object {
+              -not $_.expired -and
+              ([string]$_.name).StartsWith('meettrace-windows-store-')
+            } |
+            Sort-Object created_at, id
+          ) | Select-Object -Last 1
+          if ($null -eq $artifact) {
+            throw 'Immutable Windows Store artifact is missing.'
+          }
+          gh run download $env:SOURCE_RUN_ID `
+            --repo $env:GITHUB_REPOSITORY `
+            --name ([string]$artifact.name) `
+            --dir $productionDir
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to download the immutable Windows Store artifact.'
+          }
+          $msixPath = Join-Path $productionDir $env:WINDOWS_ARTIFACT_NAME
+          if (-not (Test-Path -LiteralPath $msixPath -PathType Leaf)) {
+            throw 'Flight-tested MSIX is missing.'
+          }
+          $actualDigest = (Get-FileHash -LiteralPath $msixPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualDigest -cne $env:WINDOWS_ARTIFACT_SHA256) {
+            throw 'Flight-tested MSIX digest changed.'
+          }
+          "WINDOWS_MSIX_PATH=$msixPath" | Add-Content `
+            -LiteralPath $env:GITHUB_ENV -Encoding utf8
 
       - name: Publish production submission at 100 percent
-        shell: bash
+        shell: pwsh
         run: |
-          set -euo pipefail
+          $ErrorActionPreference = 'Stop'
+          msstore reconfigure `
+            --tenantId $env:PARTNER_CENTER_TENANT_ID `
+            --sellerId $env:PARTNER_CENTER_SELLER_ID `
+            --clientId $env:PARTNER_CENTER_CLIENT_ID `
+            --clientSecret $env:PARTNER_CENTER_CLIENT_SECRET
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to configure Microsoft Store CLI credentials.'
+          }
           msstore settings --enableTelemetry false
-          msstore reconfigure --tenantId "$PARTNER_CENTER_TENANT_ID" --sellerId "$PARTNER_CENTER_SELLER_ID" --clientId "$PARTNER_CENTER_CLIENT_ID" --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
-          msstore publish "$GITHUB_WORKSPACE" --inputFile "$WINDOWS_MSIX_PATH" --appId 9PHHSJMWK06G --packageRolloutPercentage 100
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to disable Microsoft Store CLI telemetry.'
+          }
+          msstore publish $env:GITHUB_WORKSPACE `
+            --inputFile $env:WINDOWS_MSIX_PATH `
+            --appId 9PHHSJMWK06G `
+            --packageRolloutPercentage 100
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Microsoft Store production submission failed.'
+          }
 
       - name: Remove Microsoft Store CLI credentials
         if: always()
-        shell: bash
-        run: msstore reconfigure --reset
+        shell: pwsh
+        run: |
+          $source = @'
+          using System;
+          using System.ComponentModel;
+          using System.Runtime.InteropServices;
+
+          public static class MeetTraceCredentialCleanup
+          {
+              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
+                  CharSet = CharSet.Unicode, SetLastError = true)]
+              private static extern bool CredDelete(string target, int type, int flags);
+
+              public static void Delete(string target)
+              {
+                  if (!CredDelete(target, 1, 0))
+                  {
+                      int error = Marshal.GetLastWin32Error();
+                      if (error != 1168)
+                      {
+                          throw new Win32Exception(error);
+                      }
+                  }
+              }
+          }
+          '@
+          Add-Type -TypeDefinition $source
+          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
+            [MeetTraceCredentialCleanup]::Delete(
+              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
+            )
+          }
 
       - name: Reconcile submitted production state immediately
         shell: bash

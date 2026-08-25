@@ -1448,7 +1448,7 @@ jobs:
       actions: read
       contents: read
     name: Submit Microsoft Store Package Flight
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     timeout-minutes: 30
     environment: microsoft-store
     env:
@@ -1472,103 +1472,165 @@ jobs:
           version: v0.4.1
 
       - name: Download exact Windows candidate
-        shell: bash
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          [[ "$PARTNER_CENTER_FLIGHT_ID" =~ ^[A-Za-z0-9._-]{1,128}$ ]]
-          for name in PARTNER_CENTER_TENANT_ID PARTNER_CENTER_SELLER_ID PARTNER_CENTER_CLIENT_ID PARTNER_CENTER_CLIENT_SECRET; do
-            value="${!name-}"
-            [[ -n "${value//[[:space:]]/}" ]] || {
-              echo "Missing protected microsoft-store secret: $name" >&2
-              exit 1
+          $ErrorActionPreference = 'Stop'
+          if ($env:PARTNER_CENTER_FLIGHT_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') {
+            throw 'Invalid protected Microsoft Store Flight ID.'
+          }
+          foreach ($name in @(
+              'PARTNER_CENTER_TENANT_ID',
+              'PARTNER_CENTER_SELLER_ID',
+              'PARTNER_CENTER_CLIENT_ID',
+              'PARTNER_CENTER_CLIENT_SECRET')) {
+            $value = [Environment]::GetEnvironmentVariable($name)
+            if ([string]::IsNullOrWhiteSpace($value)) {
+              throw "Missing protected microsoft-store secret: $name"
             }
-          done
-          mkdir -p build/store-flight
-          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100")"
-          artifact_id="$(jq -er '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | last | .id' <<<"$artifacts")"
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > build/store-flight/windows.zip
-          unzip -q build/store-flight/windows.zip -d build/store-flight/candidate
-          manifest=build/store-flight/candidate/candidate-manifest.json
-          msix="build/store-flight/candidate/$(jq -er .artifact.name "$manifest")"
-          [[ -f "$msix" ]]
-          expected_digest="$(jq -er .artifact.sha256 "$manifest")"
-          actual_digest="$(sha256sum "$msix" | cut -d' ' -f1)"
-          [[ "$actual_digest" == "$expected_digest" ]]
-          jq -e --arg release "$RELEASE_ID" --arg sha "$CANDIDATE_SHA" '
-            .releaseId == $release and .commitSha == $sha and
-            .distribution == "microsoftStore" and .artifact.storeSubmissionCandidate == true
-          ' "$manifest" >/dev/null
-          echo "WINDOWS_MSIX_PATH=$GITHUB_WORKSPACE/$msix" >> "$GITHUB_ENV"
-          echo "WINDOWS_MANIFEST_PATH=$GITHUB_WORKSPACE/$manifest" >> "$GITHUB_ENV"
+          }
+
+          $candidateDir = Join-Path $env:GITHUB_WORKSPACE 'build/store-flight/candidate'
+          New-Item -ItemType Directory -Path $candidateDir -Force | Out-Null
+          $artifactName = "meettrace-windows-store-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
+          gh run download $env:GITHUB_RUN_ID `
+            --repo $env:GITHUB_REPOSITORY `
+            --name $artifactName `
+            --dir $candidateDir
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to download the exact Windows Store candidate.'
+          }
+
+          $manifestPath = Join-Path $candidateDir 'candidate-manifest.json'
+          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+          $msixPath = Join-Path $candidateDir $manifest.artifact.name
+          if (-not (Test-Path -LiteralPath $msixPath -PathType Leaf)) {
+            throw 'Windows Store candidate is missing.'
+          }
+          $actualDigest = (Get-FileHash -LiteralPath $msixPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualDigest -cne $manifest.artifact.sha256) {
+            throw 'Windows Store candidate digest changed.'
+          }
+          if ($manifest.releaseId -cne $env:RELEASE_ID -or
+              $manifest.commitSha -cne $env:CANDIDATE_SHA -or
+              $manifest.distribution -cne 'microsoftStore' -or
+              $manifest.artifact.storeSubmissionCandidate -ne $true) {
+            throw 'Windows Store candidate identity changed.'
+          }
+          "WINDOWS_MSIX_PATH=$msixPath" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+          "WINDOWS_MANIFEST_PATH=$manifestPath" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
 
       - name: Submit immutable candidate to fixed Package Flight
-        shell: bash
+        shell: pwsh
         run: |
-          set -euo pipefail
-          msstore reconfigure \
-            --tenantId "$PARTNER_CENTER_TENANT_ID" \
-            --sellerId "$PARTNER_CENTER_SELLER_ID" \
-            --clientId "$PARTNER_CENTER_CLIENT_ID" \
-            --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
+          $ErrorActionPreference = 'Stop'
+          msstore reconfigure `
+            --tenantId $env:PARTNER_CENTER_TENANT_ID `
+            --sellerId $env:PARTNER_CENTER_SELLER_ID `
+            --clientId $env:PARTNER_CENTER_CLIENT_ID `
+            --clientSecret $env:PARTNER_CENTER_CLIENT_SECRET
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to configure Microsoft Store CLI credentials.'
+          }
           msstore settings --enableTelemetry false
-          artifact_name="$(jq -er .artifact.name "$WINDOWS_MANIFEST_PATH")"
-          package_version="$(jq -er .packageVersion "$WINDOWS_MANIFEST_PATH")"
-          existing="$RUNNER_TEMP/existing-flight-submission.json"
-          reuse=false
-          if msstore flights submission get 9PHHSJMWK06G "$PARTNER_CENTER_FLIGHT_ID" > "$existing" 2>/dev/null; then
-            reuse="$(python3 - "$existing" "$artifact_name" "$package_version" <<'PY'
-          import json, sys
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to disable Microsoft Store CLI telemetry.'
+          }
 
-          def field(value, name, default=None):
-              matches = [item for key, item in value.items() if key.lower() == name.lower()]
-              if len(matches) > 1:
-                  raise SystemExit(f"ambiguous Store field: {name}")
-              return matches[0] if matches else default
+          $manifest = Get-Content -LiteralPath $env:WINDOWS_MANIFEST_PATH -Raw | ConvertFrom-Json
+          $artifactName = [string]$manifest.artifact.name
+          $packageVersion = [string]$manifest.packageVersion
+          $existingPath = Join-Path $env:RUNNER_TEMP 'existing-flight-submission.json'
+          $existingOutput = & msstore flights submission get `
+            9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID 2>$null
+          $existingExitCode = $LASTEXITCODE
+          $reuse = $false
+          if ($existingExitCode -eq 0) {
+            $existingOutput | Set-Content -LiteralPath $existingPath -Encoding utf8
+            $submission = Get-Content -LiteralPath $existingPath -Raw | ConvertFrom-Json
+            $packages = @($submission.ApplicationPackages)
+            $exact = @($packages | Where-Object {
+                $_.FileName -ceq $artifactName -and $_.Version -ceq $packageVersion
+              })
+            if ($exact.Count -eq 1 -and $packages.Count -eq 1) {
+              $reuse = $true
+            } elseif ($packages.Count -gt 0 -and
+                ([string]$submission.Status).ToLowerInvariant() -ne 'published') {
+              throw 'A different Package Flight submission is already pending.'
+            }
+          }
 
-          submission = json.load(open(sys.argv[1], encoding="utf-8-sig"))
-          packages = field(submission, "ApplicationPackages", [])
-          exact = [package for package in packages if field(package, "FileName") == sys.argv[2] and field(package, "Version") == sys.argv[3]]
-          if len(exact) == 1 and len(packages) == 1:
-              print("true")
-          elif str(field(submission, "Status", "")).lower() != "published" and packages:
-              raise SystemExit("A different Package Flight submission is already pending")
-          else:
-              print("false")
-          PY
-            )"
-          fi
-          if [[ "$reuse" != true ]]; then
-            msstore publish "$GITHUB_WORKSPACE" \
-              --inputFile "$WINDOWS_MSIX_PATH" \
-              --appId 9PHHSJMWK06G \
-              --flightId "$PARTNER_CENTER_FLIGHT_ID"
-            request_state=submitted
-          else
-            request_state=reused
-          fi
-          mkdir -p build/store-flight/evidence
-          jq -n \
-            --arg releaseId "$RELEASE_ID" \
-            --arg candidateCommitSha "$CANDIDATE_SHA" \
-            --argjson sourceRunId "$SOURCE_RUN_ID" \
-            --arg flightId "$PARTNER_CENTER_FLIGHT_ID" \
-            --arg requestState "$request_state" \
-            --arg artifactName "$artifact_name" \
-            --arg artifactSha256 "$(jq -er .artifact.sha256 "$WINDOWS_MANIFEST_PATH")" \
-            --arg packageVersion "$package_version" \
-            --arg submittedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '{schemaVersion: 1, distribution: "microsoftStoreFlight", state: $requestState, productId: "9PHHSJMWK06G", flightId: $flightId, releaseId: $releaseId, candidateCommitSha: $candidateCommitSha, sourceRunId: $sourceRunId, submittedAtUtc: $submittedAtUtc, package: {fileName: $artifactName, version: $packageVersion, architecture: "x64", candidateSha256: $artifactSha256}}' \
-            > build/store-flight/evidence/submission-request.json
+          if (-not $reuse) {
+            msstore publish $env:GITHUB_WORKSPACE `
+              --inputFile $env:WINDOWS_MSIX_PATH `
+              --appId 9PHHSJMWK06G `
+              --flightId $env:PARTNER_CENTER_FLIGHT_ID
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Microsoft Store Package Flight submission failed.'
+            }
+            $requestState = 'submitted'
+          } else {
+            $requestState = 'reused'
+          }
+
+          $evidenceDir = Join-Path $env:GITHUB_WORKSPACE 'build/store-flight/evidence'
+          New-Item -ItemType Directory -Path $evidenceDir -Force | Out-Null
+          $evidence = [ordered]@{
+            schemaVersion = 1
+            distribution = 'microsoftStoreFlight'
+            state = $requestState
+            productId = '9PHHSJMWK06G'
+            flightId = $env:PARTNER_CENTER_FLIGHT_ID
+            releaseId = $env:RELEASE_ID
+            candidateCommitSha = $env:CANDIDATE_SHA
+            sourceRunId = [long]$env:SOURCE_RUN_ID
+            submittedAtUtc = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+            package = [ordered]@{
+              fileName = $artifactName
+              version = $packageVersion
+              architecture = 'x64'
+              candidateSha256 = [string]$manifest.artifact.sha256
+            }
+          }
+          $evidence | ConvertTo-Json -Depth 6 | Set-Content `
+            -LiteralPath (Join-Path $evidenceDir 'submission-request.json') `
+            -Encoding utf8
 
       - name: Remove Microsoft Store CLI credentials
         if: always()
-        shell: bash
+        shell: pwsh
         run: |
-          if command -v msstore >/dev/null 2>&1; then
-            printf 'y\n' | msstore reconfigure --reset
-          fi
+          $source = @'
+          using System;
+          using System.ComponentModel;
+          using System.Runtime.InteropServices;
+
+          public static class MeetTraceCredentialCleanup
+          {
+              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
+                  CharSet = CharSet.Unicode, SetLastError = true)]
+              private static extern bool CredDelete(string target, int type, int flags);
+
+              public static void Delete(string target)
+              {
+                  if (!CredDelete(target, 1, 0))
+                  {
+                      int error = Marshal.GetLastWin32Error();
+                      if (error != 1168)
+                      {
+                          throw new Win32Exception(error);
+                      }
+                  }
+              }
+          }
+          '@
+          Add-Type -TypeDefinition $source
+          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
+            [MeetTraceCredentialCleanup]::Delete(
+              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
+            )
+          }
 
       - name: Upload Package Flight submission evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
