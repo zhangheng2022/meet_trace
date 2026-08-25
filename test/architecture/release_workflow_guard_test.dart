@@ -590,6 +590,10 @@ void main() {
       );
       expect(windowsFlight, contains(r"$submissionStatus -eq 'published'"));
       expect(windowsFlight, contains(r'$existingName -ceq $artifactName'));
+      expect(
+        windowsFlight,
+        contains(r"$existingFileStatus -ieq 'PendingDelete'"),
+      );
       expect(windowsFlight, contains('IsNullOrWhiteSpace'));
       expect(windowsFlight, contains('or the exact pending candidate'));
       expect(
@@ -636,6 +640,10 @@ void main() {
       );
       expect(storeRecovery, contains(r"$submissionStatus -eq 'published'"));
       expect(storeRecovery, contains(r'$existingName -ceq $artifactName'));
+      expect(
+        storeRecovery,
+        contains(r"$existingFileStatus -ieq 'PendingDelete'"),
+      );
       expect(storeRecovery, contains('IsNullOrWhiteSpace'));
       expect(storeRecovery, contains('or the exact pending candidate'));
       expect(
