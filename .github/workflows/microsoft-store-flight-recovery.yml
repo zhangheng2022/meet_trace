@@ -209,21 +209,34 @@ jobs:
             $exact = @($packages | Where-Object {
                 $_.FileName -ceq $artifactName -and $_.Version -ceq $packageVersion
               })
-            if ($exact.Count -eq 1 -and $packages.Count -eq 1) {
+            $submissionStatus = ([string]$submission.Status).ToLowerInvariant()
+            if ($exact.Count -eq 1 -and $packages.Count -eq 1 -and
+                $submissionStatus -eq 'published') {
               $reuse = $true
-            } elseif ($packages.Count -gt 0 -and
-                ([string]$submission.Status).ToLowerInvariant() -ne 'published') {
-              $candidateOrNewer = @($packages | Where-Object {
+            } elseif ($packages.Count -gt 0 -and $submissionStatus -ne 'published') {
+              $unsafePendingPackages = @($packages | Where-Object {
+                  $existingName = [string]$_.FileName
+                  $existingVersionText = ([string]$_.Version).TrimStart('v')
+                  if ($existingName -ceq $artifactName) {
+                    if ([string]::IsNullOrWhiteSpace($existingVersionText)) {
+                      return $false
+                    }
+                    $pendingCandidateVersion = $null
+                    return -not [version]::TryParse(
+                      $existingVersionText,
+                      [ref]$pendingCandidateVersion) -or
+                      $pendingCandidateVersion -ne $candidateVersion
+                  }
                   $existingVersion = $null
                   -not [version]::TryParse(
-                    ([string]$_.Version).TrimStart('v'),
+                    $existingVersionText,
                     [ref]$existingVersion) -or
                   $existingVersion -ge $candidateVersion
                 })
-              if ($candidateOrNewer.Count -gt 0) {
+              if ($unsafePendingPackages.Count -gt 0) {
                 throw 'A different candidate-or-newer Package Flight submission is already pending.'
               }
-              Write-Host 'Replacing a stale pending Flight draft that contains only lower package versions.'
+              Write-Host 'Replacing a stale Flight draft containing only lower versions or the exact pending candidate.'
             }
           }
 
