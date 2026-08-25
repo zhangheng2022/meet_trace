@@ -638,10 +638,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Failed to disable Microsoft Store CLI telemetry.'
           }
+          $inputDirectory = Split-Path -Parent $env:WINDOWS_MSIX_PATH
           msstore publish $env:GITHUB_WORKSPACE `
-            --inputFile $env:WINDOWS_MSIX_PATH `
+            --inputDirectory $inputDirectory `
             --appId 9PHHSJMWK06G `
-            --packageRolloutPercentage 100
+            --packageRolloutPercentage 100 `
+            --uploadTimeout 900
           if ($LASTEXITCODE -ne 0) {
             throw 'Microsoft Store production submission failed.'
           }
