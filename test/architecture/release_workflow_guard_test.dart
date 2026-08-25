@@ -588,6 +588,11 @@ void main() {
         'queue_reconciliation',
       );
       final publish = _job(workflow, 'publish');
+      final testflightStatus = _job(
+        reconciler,
+        'testflight_status',
+        'microsoft_store_status',
+      );
       final storeStatus = _job(
         reconciler,
         'microsoft_store_status',
@@ -815,6 +820,17 @@ void main() {
       );
       expect(appStoreStatus, isNot(contains('"limit[builds]"')));
       expect(reconciler, contains('verify_testflight_submission.dart'));
+      for (final statusJob in [testflightStatus, storeStatus]) {
+        expect(
+          statusJob,
+          contains('Checkout reviewed reconciler implementation'),
+        );
+        expect(statusJob, contains(r'ref: ${{ github.workflow_sha }}'));
+        expect(
+          statusJob,
+          isNot(contains(r'ref: ${{ needs.resolve.outputs.candidate_sha }}')),
+        );
+      }
       expect(reconciler, contains('submission-request.json'));
       expect(reconciler, contains('windows_flight_submission_id'));
       expect(storeStatus, contains('runs-on: windows-2025'));

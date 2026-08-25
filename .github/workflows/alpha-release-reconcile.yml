@@ -200,10 +200,10 @@ jobs:
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
       APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8_BASE64 }}
     steps:
-      - name: Checkout immutable candidate verifier
+      - name: Checkout reviewed reconciler implementation
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.resolve.outputs.candidate_sha }}
+          ref: ${{ github.workflow_sha }}
 
       - name: Set up Ruby 3.4.10
         uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
@@ -333,10 +333,10 @@ jobs:
       PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
       PARTNER_CENTER_FLIGHT_SUBMISSION_ID: ${{ needs.resolve.outputs.windows_flight_submission_id }}
     steps:
-      - name: Checkout immutable candidate verifier
+      - name: Checkout reviewed reconciler implementation
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.resolve.outputs.candidate_sha }}
+          ref: ${{ github.workflow_sha }}
 
       - name: Set up Flutter for receipt verification
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
