@@ -25,6 +25,7 @@ jobs:
       CANDIDATE_SHA: ${{ github.event.client_payload.candidate_sha }}
       SOURCE_RUN_ID: ${{ github.event.client_payload.source_run_id }}
       PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}
+      PARTNER_CENTER_FLIGHT_SUBMISSION_ID: ${{ vars.PARTNER_CENTER_FLIGHT_SUBMISSION_ID }}
     steps:
       - name: Validate failed Alpha source run
         shell: pwsh
@@ -116,7 +117,7 @@ jobs:
             Where-Object {
               $_.expired -eq $false -and ([string]$_.name) -cmatch $artifactPattern
             } |
-            Sort-Object -Property id -Descending |
+            Sort-Object -Property id |
             Select-Object -First 1
           if ($null -eq $artifact) {
             throw 'No immutable Windows Store candidate is available for recovery.'
@@ -183,12 +184,51 @@ jobs:
           $manifest = Get-Content -LiteralPath $env:WINDOWS_MANIFEST_PATH -Raw | ConvertFrom-Json
           $artifactName = [string]$manifest.artifact.name
           $packageVersion = [string]$manifest.packageVersion
+          $token = Invoke-RestMethod -Method Post `
+            -Uri "https://login.microsoftonline.com/$($env:PARTNER_CENTER_TENANT_ID)/oauth2/token" `
+            -ContentType 'application/x-www-form-urlencoded' `
+            -Body @{
+              grant_type = 'client_credentials'
+              client_id = $env:PARTNER_CENTER_CLIENT_ID
+              client_secret = $env:PARTNER_CENTER_CLIENT_SECRET
+              resource = 'https://manage.devcenter.microsoft.com'
+            }
+          if ([string]::IsNullOrWhiteSpace([string]$token.access_token)) {
+            throw 'Microsoft Store submission API token is missing.'
+          }
+          $headers = @{ Authorization = "Bearer $($token.access_token)" }
+          $baseUri = 'https://manage.devcenter.microsoft.com/v1.0/my/' +
+            'applications/9PHHSJMWK06G/flights/' +
+            $env:PARTNER_CENTER_FLIGHT_ID
+          $flight = Invoke-RestMethod -Method Get -Uri $baseUri -Headers $headers
+          $pendingId = [string]$flight.pendingFlightSubmission.id
+          $deletableSubmissionId = $null
+          if (-not [string]::IsNullOrWhiteSpace($pendingId)) {
+            $pendingResource = Invoke-RestMethod -Method Get `
+              -Uri "$baseUri/submissions/$pendingId" -Headers $headers
+            $pendingStatus = Invoke-RestMethod -Method Get `
+              -Uri "$baseUri/submissions/$pendingId/status" -Headers $headers
+            if (@('pendingcommit', 'commitfailed') -contains
+                ([string]$pendingStatus.status).ToLowerInvariant()) {
+              if ($pendingId -ceq $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID) {
+                throw 'The tracked immutable Package Flight submission cannot be deleted.'
+              }
+              $pendingMatches = @($pendingResource.flightPackages | Where-Object {
+                  [string]$_.fileName -ceq $artifactName -and
+                  [string]$_.version -ceq $packageVersion
+                })
+              if ($pendingMatches.Count -lt 1) {
+                throw 'The failed Package Flight draft belongs to a different candidate.'
+              }
+              $deletableSubmissionId = $pendingId
+            }
+          }
           $existingPath = Join-Path $env:RUNNER_TEMP 'existing-flight-submission.json'
           $existingOutput = & msstore flights submission get `
             9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID 2>$null
           $existingExitCode = $LASTEXITCODE
           $reuse = $false
-          $deletePendingDraft = $false
+          $submissionId = $null
           if ($existingExitCode -eq 0) {
             $existingOutput | Set-Content -LiteralPath $existingPath -Encoding utf8
             $submission = Get-Content -LiteralPath $existingPath -Raw | ConvertFrom-Json
@@ -203,11 +243,28 @@ jobs:
             if ($exact.Count -eq 1 -and $packages.Count -eq 1 -and
                 $submissionStatus -eq 'published') {
               $reuse = $true
-            } elseif ($submissionStatus -eq 'pendingcommit') {
-              # PendingCommit is the only editable draft state. A failed upload
-              # can leave package metadata incomplete, so recovery identifies
-              # the draft by its state after validating the immutable source run.
-              $deletePendingDraft = $true
+              $submissionId = [string]$submission.Id
+            } elseif (@('pendingcommit', 'commitfailed') -contains
+                $submissionStatus) {
+              # Failed API submissions are recoverable drafts. The immutable
+              # source run is validated before this draft can be deleted.
+              if ([string]::IsNullOrWhiteSpace($deletableSubmissionId)) {
+                $reportedId = [string]$submission.Id
+                if ($reportedId -notmatch '^[1-9][0-9]*$' -or
+                    $reportedId -ceq $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID) {
+                  throw 'The failed Package Flight draft could not be bound to a safe submission ID.'
+                }
+                $reported = Invoke-RestMethod -Method Get `
+                  -Uri "$baseUri/submissions/$reportedId" -Headers $headers
+                $reportedMatches = @($reported.flightPackages | Where-Object {
+                    [string]$_.fileName -ceq $artifactName -and
+                    [string]$_.version -ceq $packageVersion
+                  })
+                if ($reportedMatches.Count -lt 1) {
+                  throw 'The failed Package Flight draft belongs to a different candidate.'
+                }
+                $deletableSubmissionId = $reportedId
+              }
             } elseif (@(
                 'commitstarted',
                 'preprocessing',
@@ -220,18 +277,79 @@ jobs:
                 throw 'An in-progress Package Flight submission does not match the immutable recovery candidate.'
               }
               $reuse = $true
+              $submissionId = [string]$submission.Id
             }
           }
 
           if (-not $reuse) {
-            if ($deletePendingDraft) {
-              Write-Host 'Deleting the interrupted draft for the exact immutable recovery candidate.'
-              msstore flights submission delete `
-                9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID --noConfirm
-              if ($LASTEXITCODE -ne 0) {
-                throw 'Failed to delete the interrupted Package Flight draft.'
+            if (-not [string]::IsNullOrWhiteSpace($deletableSubmissionId)) {
+              Write-Host 'Deleting the interrupted or failed Package Flight draft.'
+              Invoke-RestMethod -Method Delete `
+                -Uri "$baseUri/submissions/$deletableSubmissionId" -Headers $headers
+            }
+            if (-not [string]::IsNullOrWhiteSpace(
+                $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID)) {
+              if ($env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID -notmatch '^[1-9][0-9]*$') {
+                throw 'Tracked Package Flight submission ID is invalid.'
+              }
+              $submissionUri = "$baseUri/submissions/" +
+                $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID
+              $tracked = Invoke-RestMethod -Method Get `
+                -Uri $submissionUri -Headers $headers
+              $trackedStatus = Invoke-RestMethod -Method Get `
+                -Uri "$submissionUri/status" -Headers $headers
+              $matches = @($tracked.flightPackages | Where-Object {
+                  [string]$_.fileName -ceq $artifactName -and
+                  [string]$_.version -ceq $packageVersion
+                })
+              if ($matches.Count -eq 1 -and
+                  @($tracked.flightPackages).Count -eq 1 -and @(
+                    'commitstarted', 'preprocessing', 'certification', 'release',
+                    'pendingpublication', 'publishing', 'published'
+                  ) -contains ([string]$trackedStatus.status).ToLowerInvariant()) {
+                $reuse = $true
+                $submissionId = [string]$tracked.id
+                Write-Host 'Reusing the tracked immutable Package Flight submission after draft cleanup.'
+              } elseif (([string]$trackedStatus.status).ToLowerInvariant() -ne
+                  'published') {
+                throw 'The tracked Package Flight submission does not match the immutable recovery candidate.'
               }
             }
+          }
+
+          if (-not [string]::IsNullOrWhiteSpace($deletableSubmissionId)) {
+            # A stale CLI response can describe the original Publishing
+            # submission while the API exposes a separate failed draft.
+            $reuse = $false
+            $submissionId = $null
+          }
+
+          if (-not $reuse) {
+            $flightAfterCleanup = Invoke-RestMethod -Method Get `
+              -Uri $baseUri -Headers $headers
+            $publishedId = [string]$flightAfterCleanup.lastPublishedFlightSubmission.id
+            if (-not [string]::IsNullOrWhiteSpace($publishedId)) {
+              $publishedUri = "$baseUri/submissions/$publishedId"
+              $published = Invoke-RestMethod -Method Get `
+                -Uri $publishedUri -Headers $headers
+              $publishedStatus = Invoke-RestMethod -Method Get `
+                -Uri "$publishedUri/status" -Headers $headers
+              $publishedMatches = @($published.flightPackages | Where-Object {
+                  [string]$_.fileName -ceq $artifactName -and
+                  [string]$_.version -ceq $packageVersion
+                })
+              if ($publishedMatches.Count -eq 1 -and
+                  @($published.flightPackages).Count -eq 1 -and
+                  ([string]$publishedStatus.status).ToLowerInvariant() -eq
+                    'published') {
+                $reuse = $true
+                $submissionId = [string]$published.id
+                Write-Host 'Reusing the last published immutable Package Flight submission.'
+              }
+            }
+          }
+
+          if (-not $reuse) {
             $inputDirectory = Split-Path -Parent $env:WINDOWS_MSIX_PATH
             msstore publish $env:GITHUB_WORKSPACE `
               --inputDirectory $inputDirectory `
@@ -240,6 +358,30 @@ jobs:
               --uploadTimeout 900
             if ($LASTEXITCODE -ne 0) {
               throw 'Microsoft Store Package Flight recovery submission failed.'
+            }
+            $flightAfterSubmit = Invoke-RestMethod -Method Get `
+              -Uri $baseUri -Headers $headers
+            $submissionId = [string]$flightAfterSubmit.pendingFlightSubmission.id
+            if ([string]::IsNullOrWhiteSpace($submissionId)) {
+              $submissionId = [string]$flightAfterSubmit.lastPublishedFlightSubmission.id
+            }
+            if ($submissionId -notmatch '^[1-9][0-9]*$') {
+              throw 'Recovered Package Flight submission ID is missing.'
+            }
+            $submittedUri = "$baseUri/submissions/$submissionId"
+            $submitted = Invoke-RestMethod -Method Get `
+              -Uri $submittedUri -Headers $headers
+            $submittedStatus = Invoke-RestMethod -Method Get `
+              -Uri "$submittedUri/status" -Headers $headers
+            $submittedMatches = @($submitted.flightPackages | Where-Object {
+                [string]$_.fileName -ceq $artifactName -and
+                [string]$_.version -ceq $packageVersion
+              })
+            if ($submittedMatches.Count -ne 1 -or
+                @($submitted.flightPackages).Count -ne 1 -or
+                @('pendingcommit', 'commitfailed') -contains
+                  ([string]$submittedStatus.status).ToLowerInvariant()) {
+              throw 'Recovered Package Flight could not be bound to the immutable candidate.'
             }
             $requestState = 'submitted'
           } else {
@@ -265,6 +407,7 @@ jobs:
               architecture = 'x64'
               candidateSha256 = [string]$manifest.artifact.sha256
             }
+            submissionId = $submissionId
           } | ConvertTo-Json -Depth 6 | Set-Content `
             -LiteralPath (Join-Path $evidenceDir 'submission-request.json') `
             -Encoding utf8
