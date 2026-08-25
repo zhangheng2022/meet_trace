@@ -329,7 +329,6 @@ jobs:
       WINDOWS_PACKAGE_VERSION: ${{ needs.resolve.outputs.windows_package_version }}
       PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}
       PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
-      PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
       PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
       PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
       PARTNER_CENTER_FLIGHT_SUBMISSION_ID: ${{ needs.resolve.outputs.windows_flight_submission_id }}
@@ -348,11 +347,6 @@ jobs:
       - name: Resolve locked Dart dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Set up Microsoft Store CLI v0.4.1
-        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
-        with:
-          version: v0.4.1
-
       - name: Query and classify exact Store submissions
         id: status
         shell: pwsh
@@ -360,7 +354,6 @@ jobs:
           $ErrorActionPreference = 'Stop'
           foreach ($name in @(
               'PARTNER_CENTER_TENANT_ID',
-              'PARTNER_CENTER_SELLER_ID',
               'PARTNER_CENTER_CLIENT_ID',
               'PARTNER_CENTER_CLIENT_SECRET',
               'PARTNER_CENTER_FLIGHT_ID')) {
@@ -368,19 +361,6 @@ jobs:
                 [Environment]::GetEnvironmentVariable($name))) {
               throw "Missing Microsoft Store automation value: $name"
             }
-          }
-
-          msstore reconfigure `
-            --tenantId $env:PARTNER_CENTER_TENANT_ID `
-            --sellerId $env:PARTNER_CENTER_SELLER_ID `
-            --clientId $env:PARTNER_CENTER_CLIENT_ID `
-            --clientSecret $env:PARTNER_CENTER_CLIENT_SECRET
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to configure Microsoft Store CLI credentials.'
-          }
-          msstore settings --enableTelemetry false
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to disable Microsoft Store CLI telemetry.'
           }
 
           New-Item -ItemType Directory -Path build/reconcile -Force | Out-Null
@@ -407,6 +387,9 @@ jobs:
             -Uri $submissionUri -Headers $headers
           $flightStatus = Invoke-RestMethod -Method Get `
             -Uri "$submissionUri/status" -Headers $headers
+          if ([string]$flight.id -cne $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID) {
+            throw 'Microsoft Store Flight submission response ID changed.'
+          }
           [ordered]@{
             Id = [string]$flight.id
             Status = [string]$flightStatus.status
@@ -422,9 +405,58 @@ jobs:
               })
           } | ConvertTo-Json -Depth 8 | Set-Content `
             -LiteralPath $flightRaw -Encoding utf8
-          msstore submission get 9PHHSJMWK06G > $productionRaw
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to query the Microsoft Store production submission.'
+
+          $applicationUri = 'https://manage.devcenter.microsoft.com/v1.0/my/' +
+            'applications/9PHHSJMWK06G'
+          $application = Invoke-RestMethod -Method Get `
+            -Uri $applicationUri -Headers $headers
+          if ([string]$application.id -cne '9PHHSJMWK06G') {
+            throw 'Microsoft Store application response ID changed.'
+          }
+          $productionReference = $application.pendingApplicationSubmission
+          if ($null -eq $productionReference) {
+            $productionReference = $application.lastPublishedApplicationSubmission
+          }
+          if ($null -eq $productionReference) {
+            [ordered]@{
+              Id = ''
+              Status = 'NotSubmitted'
+              Visibility = ''
+              ApplicationPackages = @()
+            } | ConvertTo-Json -Depth 8 | Set-Content `
+              -LiteralPath $productionRaw -Encoding utf8
+          } else {
+            $productionId = [string]$productionReference.id
+            $resourceLocation = [string]$productionReference.resourceLocation
+            if ($productionId -notmatch '^[1-9][0-9]*$' -or
+                $resourceLocation -cne "applications/9PHHSJMWK06G/submissions/$productionId") {
+              throw 'Microsoft Store production submission reference is invalid.'
+            }
+            $productionUri = 'https://manage.devcenter.microsoft.com/v1.0/my/' +
+              $resourceLocation
+            $productionSubmission = Invoke-RestMethod -Method Get `
+              -Uri $productionUri -Headers $headers
+            $productionStatus = Invoke-RestMethod -Method Get `
+              -Uri "$productionUri/status" -Headers $headers
+            if ([string]$productionSubmission.id -cne $productionId) {
+              throw 'Microsoft Store production submission response ID changed.'
+            }
+            [ordered]@{
+              Id = [string]$productionSubmission.id
+              Status = [string]$productionStatus.status
+              Visibility = [string]$productionSubmission.visibility
+              ApplicationPackages = @(
+                $productionSubmission.applicationPackages | ForEach-Object {
+                  [ordered]@{
+                    FileName = [string]$_.fileName
+                    Version = [string]$_.version
+                    Architecture = [string]$_.architecture
+                    FileStatus = [string]$_.fileStatus
+                  }
+                }
+              )
+            } | ConvertTo-Json -Depth 8 | Set-Content `
+              -LiteralPath $productionRaw -Encoding utf8
           }
 
           function Get-UniqueField($Value, [string]$Name) {
@@ -458,8 +490,8 @@ jobs:
               $ready = [string](Get-UniqueField $Data 'Visibility') -ieq 'public'
             }
             $pending = @(
-              'pendingcommit', 'committed', 'processing', 'preprocessing',
-              'certification', 'publishing', 'inprogress'
+              'pendingcommit', 'commitstarted', 'pendingpublication',
+              'publishing', 'preprocessing', 'certification', 'release'
             )
             if ($ready) {
               $blocked = $false
@@ -523,41 +555,6 @@ jobs:
             if ($LASTEXITCODE -ne 0) {
               throw 'Microsoft Store production receipt verification failed.'
             }
-          }
-
-      - name: Remove Microsoft Store CLI credentials
-        if: always()
-        shell: pwsh
-        run: |
-          $source = @'
-          using System;
-          using System.ComponentModel;
-          using System.Runtime.InteropServices;
-
-          public static class MeetTraceCredentialCleanup
-          {
-              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
-                  CharSet = CharSet.Unicode, SetLastError = true)]
-              private static extern bool CredDelete(string target, int type, int flags);
-
-              public static void Delete(string target)
-              {
-                  if (!CredDelete(target, 1, 0))
-                  {
-                      int error = Marshal.GetLastWin32Error();
-                      if (error != 1168)
-                      {
-                          throw new Win32Exception(error);
-                      }
-                  }
-              }
-          }
-          '@
-          Add-Type -TypeDefinition $source
-          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
-            [MeetTraceCredentialCleanup]::Delete(
-              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
-            )
           }
 
       - name: Upload safe Store receipts
