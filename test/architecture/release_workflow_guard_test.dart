@@ -762,6 +762,13 @@ void main() {
       expect(reconciler, contains('cron: "*/15 * * * *"'));
       expect(reconciler, contains('types: [alpha-release-reconcile]'));
       expect(
+        _job(reconciler, 'resolve', 'testflight_status'),
+        contains(
+          '# GitHub only includes Draft releases for callers with repository push access.\n'
+          '      contents: write',
+        ),
+      );
+      expect(
         reconciler,
         contains(r'repos/$GITHUB_REPOSITORY/releases?per_page=100'),
       );

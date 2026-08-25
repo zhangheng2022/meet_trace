@@ -19,7 +19,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       actions: read
-      contents: read
+      # GitHub only includes Draft releases for callers with repository push access.
+      contents: write
     outputs:
       found: ${{ steps.candidate.outputs.found }}
       release_id: ${{ steps.candidate.outputs.release_id }}
