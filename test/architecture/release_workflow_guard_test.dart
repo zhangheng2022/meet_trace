@@ -761,6 +761,36 @@ void main() {
       expect(publish, contains('windows-store-production-receipt.json'));
       expect(reconciler, contains('cron: "*/15 * * * *"'));
       expect(reconciler, contains('types: [alpha-release-reconcile]'));
+      expect(
+        reconciler,
+        contains(r'repos/$GITHUB_REPOSITORY/releases?per_page=100'),
+      );
+      expect(
+        reconciler,
+        contains("-H 'Accept: application/octet-stream'"),
+      );
+      expect(reconciler, isNot(contains(r'gh release view "$release_id"')));
+      expect(reconciler, contains('--workflow alpha-release.yml --branch master'));
+      expect(reconciler, contains('.headBranch == "master"'));
+      expect(
+        reconciler,
+        contains(
+          r'git merge-base --is-ancestor "$candidate_sha" "$source_head_sha"',
+        ),
+      );
+      expect(reconciler, isNot(contains(r'.headSha == $sha')));
+      expect(
+        reconciler,
+        contains('No successful Alpha Release run carries exact candidate'),
+      );
+      expect(
+        reconciler,
+        contains('sort_by(.created_at, .id) | first | .id // empty'),
+      );
+      expect(reconciler, contains('.marketingVersion == \$marketing'));
+      expect(reconciler, contains('(.buildNumber | tostring) == \$build'));
+      expect(reconciler, contains('.package.architecture == "x64"'));
+      expect(reconciler, contains('.package.candidateSha256 == \$sha256'));
       expect(reconciler, contains('app_store_connect_status.rb'));
       expect(reconciler, contains('verify_testflight_submission.dart'));
       expect(reconciler, contains('submission-request.json'));

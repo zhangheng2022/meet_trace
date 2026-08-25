@@ -89,7 +89,7 @@ Partner Center 必须先人工完成一次产品、listing、年龄分级、定�
 
 ## 4. 自动协调与失败关闭
 
-`.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `*/15 * * * *` 定时轮询。它只处理仍为 Draft 的最新合法 Alpha 候选，并核对 tag、SHA、source run、候选清单和商店返回包身份。
+`.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `*/15 * * * *` 定时轮询。它通过 Releases API 读取仍为 Draft 的最新合法 Alpha 及其候选清单；即时调度校验触发它的 source run，定时调度则从最近成功运行中选择同时携带精确 Windows 候选与 Package Flight 回执的 source run。两条路径都核对 tag、SHA、共享构建号、source run 的默认分支祖先关系、MSIX SHA-256、架构、候选清单和商店返回包身份，不依赖无法按 tag 稳定读取 Draft 的发布命令。
 
 以下状态只等待，不公开，也不创建新候选：
 
