@@ -765,12 +765,12 @@ void main() {
         reconciler,
         contains(r'repos/$GITHUB_REPOSITORY/releases?per_page=100'),
       );
+      expect(reconciler, contains("-H 'Accept: application/octet-stream'"));
+      expect(reconciler, isNot(contains(r'gh release view "$release_id"')));
       expect(
         reconciler,
-        contains("-H 'Accept: application/octet-stream'"),
+        contains('--workflow alpha-release.yml --branch master'),
       );
-      expect(reconciler, isNot(contains(r'gh release view "$release_id"')));
-      expect(reconciler, contains('--workflow alpha-release.yml --branch master'));
       expect(reconciler, contains('.headBranch == "master"'));
       expect(
         reconciler,
