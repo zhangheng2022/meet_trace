@@ -1493,7 +1493,29 @@ jobs:
 
           $candidateDir = Join-Path $env:GITHUB_WORKSPACE 'build/store-flight/candidate'
           New-Item -ItemType Directory -Path $candidateDir -Force | Out-Null
-          $artifactName = "meettrace-windows-store-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
+
+          $artifactsJson = gh api `
+            "repos/$($env:GITHUB_REPOSITORY)/actions/runs/$($env:GITHUB_RUN_ID)/artifacts?per_page=100"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to list Windows Store candidate artifacts.'
+          }
+          $artifactResponse = $artifactsJson | ConvertFrom-Json
+          $availableArtifacts = @($artifactResponse.artifacts)
+          if ([int]$artifactResponse.total_count -gt $availableArtifacts.Count) {
+            throw 'Windows Store candidate artifact listing was truncated.'
+          }
+          $artifactPattern = '^meettrace-windows-store-' +
+            [regex]::Escape($env:GITHUB_RUN_ID) + '-[1-9][0-9]*$'
+          $artifact = $availableArtifacts |
+            Where-Object {
+              $_.expired -eq $false -and ([string]$_.name) -cmatch $artifactPattern
+            } |
+            Sort-Object -Property id -Descending |
+            Select-Object -First 1
+          if ($null -eq $artifact) {
+            throw 'No immutable Windows Store candidate artifact is available for this run.'
+          }
+          $artifactName = [string]$artifact.name
           gh run download $env:GITHUB_RUN_ID `
             --repo $env:GITHUB_REPOSITORY `
             --name $artifactName `
