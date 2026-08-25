@@ -351,6 +351,15 @@ void main() {
 
       expect(windows, contains('runs-on: windows-2025'));
       expect(windows, contains('environment: windows-alpha'));
+      expect(windows, contains('actions: read'));
+      expect(windows, contains('Reuse immutable Microsoft Store candidate'));
+      expect(windows, contains('--workflow alpha-release.yml'));
+      expect(windows, contains('Sort-Object -Property createdAt'));
+      expect(windows, contains('PREFERRED_STORE_SOURCE_RUN_ID'));
+      expect(windows, contains('Sort-Object -Property id'));
+      expect(windows, contains('Immutable Microsoft Store MSIX bytes changed'));
+      expect(windows, contains(r'sourceRunId = [long]$sourceRunId'));
+      expect(windows, contains("if: steps.staged.outputs.reuse != 'true'"));
       expect(windows, contains('Build Windows x64 Store Release'));
       expect(windows, contains('-MicrosoftStore'));
       expect(
@@ -609,30 +618,26 @@ void main() {
       expect(windowsFlight, isNot(contains('--inputFile')));
       expect(windowsFlight, contains('--uploadTimeout 900'));
       expect(windowsFlight, isNot(contains('--verbose')));
-      expect(
-        windowsFlight,
-        contains('candidate-or-newer Package Flight submission'),
-      );
-      expect(windowsFlight, contains(r"$submissionStatus -eq 'published'"));
+      expect(windowsFlight, contains('PARTNER_CENTER_FLIGHT_SUBMISSION_ID'));
+      expect(windowsFlight, contains(r'/submissions/$SubmissionId/status'));
       expect(windowsFlight, contains("'commitstarted'"));
       expect(windowsFlight, contains("'certification'"));
       expect(windowsFlight, contains("'publishing'"));
-      expect(windowsFlight, contains(r'$matchingCandidateNames.Count -ne 1'));
       expect(
         windowsFlight,
-        contains('Reusing the in-progress immutable Package Flight submission'),
+        contains('Reusing the tracked immutable Package Flight submission'),
       );
       expect(
         windowsFlight,
-        contains('requires the dedicated recovery workflow'),
+        contains('Tracked Package Flight submission requires recovery'),
       );
-      expect(windowsFlight, contains(r'$existingName -ceq $artifactName'));
-      expect(
-        windowsFlight,
-        contains(r"$existingFileStatus -ieq 'PendingDelete'"),
-      );
+      expect(windowsFlight, isNot(contains('gh variable set')));
       expect(windowsFlight, contains('IsNullOrWhiteSpace'));
-      expect(windowsFlight, contains('or the exact pending candidate'));
+      expect(windowsFlight, contains('pendingFlightSubmission.id'));
+      expect(
+        windowsFlight,
+        contains('Pending Package Flight submission requires recovery'),
+      );
       expect(
         windowsFlight,
         contains(r'--flightId $env:PARTNER_CENTER_FLIGHT_ID'),
@@ -671,7 +676,7 @@ void main() {
       expect(storeRecovery, isNot(contains('--inputFile')));
       expect(storeRecovery, contains('--uploadTimeout 900'));
       expect(storeRecovery, isNot(contains('--verbose')));
-      expect(storeRecovery, contains(r"$submissionStatus -eq 'pendingcommit'"));
+      expect(storeRecovery, contains("@('pendingcommit', 'commitfailed')"));
       expect(storeRecovery, contains(r"$submissionStatus -eq 'published'"));
       expect(storeRecovery, contains(r'$matchingCandidateNames.Count -ne 1'));
       expect(storeRecovery, contains("'commitstarted'"));
@@ -681,8 +686,9 @@ void main() {
         contains('does not match the immutable recovery candidate'),
       );
       final recoveryDeleteIndex = storeRecovery.indexOf(
-        'msstore flights submission delete `',
+        r'-Uri "$baseUri/submissions/$deletableSubmissionId"',
       );
+      expect(storeRecovery, contains('Sort-Object -Property id |'));
       final recoveryPublishIndex = storeRecovery.indexOf(
         r'msstore publish $env:GITHUB_WORKSPACE `',
       );
@@ -690,7 +696,23 @@ void main() {
       expect(recoveryPublishIndex, greaterThan(recoveryDeleteIndex));
       expect(
         storeRecovery,
-        contains(r'9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID --noConfirm'),
+        contains(
+          'The tracked immutable Package Flight submission cannot be deleted',
+        ),
+      );
+      expect(
+        storeRecovery,
+        contains(
+          'The failed Package Flight draft belongs to a different candidate',
+        ),
+      );
+      expect(
+        storeRecovery,
+        contains('A stale CLI response can describe the original Publishing'),
+      );
+      expect(
+        storeRecovery,
+        contains('Recovered Package Flight could not be bound'),
       );
       expect(
         windowsFlight,
@@ -739,9 +761,15 @@ void main() {
       expect(reconciler, contains('types: [alpha-release-reconcile]'));
       expect(reconciler, contains('app_store_connect_status.rb'));
       expect(reconciler, contains('verify_testflight_submission.dart'));
+      expect(reconciler, contains('submission-request.json'));
+      expect(reconciler, contains('windows_flight_submission_id'));
       expect(storeStatus, contains('runs-on: windows-2025'));
       expect(storeStatus, contains('version: v0.4.1'));
-      expect(storeStatus, contains('msstore flights submission get `'));
+      expect(storeStatus, contains('PARTNER_CENTER_FLIGHT_SUBMISSION_ID'));
+      expect(storeStatus, contains(r'-Uri "$submissionUri/status"'));
+      expect(storeStatus, contains('ApplicationPackages = @('));
+      expect(storeStatus, contains("Architecture = 'x64'"));
+      expect(storeStatus, isNot(contains('msstore flights submission get `')));
       expect(storeStatus, contains('9PHHSJMWK06G'));
       expect(storeStatus, contains('Write-Output -NoEnumerate'));
       expect(reconciler, contains('msstore submission get 9PHHSJMWK06G'));

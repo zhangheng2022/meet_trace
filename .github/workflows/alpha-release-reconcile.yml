@@ -30,6 +30,7 @@ jobs:
       windows_artifact_name: ${{ steps.candidate.outputs.windows_artifact_name }}
       windows_artifact_sha256: ${{ steps.candidate.outputs.windows_artifact_sha256 }}
       windows_package_version: ${{ steps.candidate.outputs.windows_package_version }}
+      windows_flight_submission_id: ${{ steps.candidate.outputs.windows_flight_submission_id }}
     steps:
       - name: Checkout validated master workflow
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -88,13 +89,24 @@ jobs:
           mkdir -p build/reconcile/windows
           artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$source_run_id/artifacts?per_page=100")"
           windows_id="$(jq -er '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | sort_by(.created_at, .id) | last | .id' <<<"$artifacts")"
+          flight_id="$(jq -er --arg prefix "meettrace-windows-flight-request-$source_run_id-" '[.artifacts[] | select(.expired == false and (.name | startswith($prefix)))] | sort_by(.created_at, .id) | last | .id' <<<"$artifacts")"
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$windows_id/zip" > build/reconcile/windows.zip
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$flight_id/zip" > build/reconcile/flight.zip
           unzip -qp build/reconcile/windows.zip candidate-manifest.json > build/reconcile/windows/candidate-manifest.json
+          unzip -qp build/reconcile/flight.zip submission-request.json > build/reconcile/windows/submission-request.json
           manifest=build/reconcile/windows/candidate-manifest.json
           jq -e --arg release "$release_id" --arg sha "$candidate_sha" --argjson run "$source_run_id" '
             .releaseId == $release and .commitSha == $sha and (.runId | tostring) == ($run | tostring) and
             .platform == "windows" and .distribution == "microsoftStore"
           ' "$manifest" >/dev/null
+          flight_evidence=build/reconcile/windows/submission-request.json
+          jq -e --arg release "$release_id" --arg sha "$candidate_sha" --argjson run "$source_run_id" --arg package "$(jq -er .artifact.name "$manifest")" --arg version "$(jq -er .packageVersion "$manifest")" '
+            .schemaVersion == 1 and .distribution == "microsoftStoreFlight" and
+            .releaseId == $release and .candidateCommitSha == $sha and
+            (.sourceRunId | tostring) == ($run | tostring) and
+            .package.fileName == $package and .package.version == $version and
+            (.submissionId | type == "string" and test("^[1-9][0-9]*$"))
+          ' "$flight_evidence" >/dev/null
           echo "found=true" >> "$GITHUB_OUTPUT"
           echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
           echo "source_run_id=$source_run_id" >> "$GITHUB_OUTPUT"
@@ -104,6 +116,7 @@ jobs:
           echo "windows_artifact_name=$(jq -er .artifact.name "$manifest")" >> "$GITHUB_OUTPUT"
           echo "windows_artifact_sha256=$(jq -er .artifact.sha256 "$manifest")" >> "$GITHUB_OUTPUT"
           echo "windows_package_version=$(jq -er .packageVersion "$manifest")" >> "$GITHUB_OUTPUT"
+          echo "windows_flight_submission_id=$(jq -er .submissionId "$flight_evidence")" >> "$GITHUB_OUTPUT"
 
   testflight_status:
     name: Reconcile TestFlight external review and Testing
@@ -263,6 +276,7 @@ jobs:
       PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
       PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
       PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+      PARTNER_CENTER_FLIGHT_SUBMISSION_ID: ${{ needs.resolve.outputs.windows_flight_submission_id }}
     steps:
       - name: Checkout immutable candidate verifier
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -316,11 +330,42 @@ jobs:
           New-Item -ItemType Directory -Path build/reconcile -Force | Out-Null
           $flightRaw = Join-Path $env:RUNNER_TEMP 'store-flight.json'
           $productionRaw = Join-Path $env:RUNNER_TEMP 'store-production.json'
-          msstore flights submission get `
-            9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID > $flightRaw
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to query the fixed Package Flight submission.'
+          if ($env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID -notmatch '^[1-9][0-9]*$') {
+            throw 'Tracked Microsoft Store Flight submission ID is invalid.'
           }
+          $token = Invoke-RestMethod -Method Post `
+            -Uri "https://login.microsoftonline.com/$($env:PARTNER_CENTER_TENANT_ID)/oauth2/token" `
+            -ContentType 'application/x-www-form-urlencoded' `
+            -Body @{
+              grant_type = 'client_credentials'
+              client_id = $env:PARTNER_CENTER_CLIENT_ID
+              client_secret = $env:PARTNER_CENTER_CLIENT_SECRET
+              resource = 'https://manage.devcenter.microsoft.com'
+            }
+          $headers = @{ Authorization = "Bearer $($token.access_token)" }
+          $submissionUri = 'https://manage.devcenter.microsoft.com/v1.0/my/' +
+            'applications/9PHHSJMWK06G/flights/' +
+            "$($env:PARTNER_CENTER_FLIGHT_ID)/submissions/" +
+            $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID
+          $flight = Invoke-RestMethod -Method Get `
+            -Uri $submissionUri -Headers $headers
+          $flightStatus = Invoke-RestMethod -Method Get `
+            -Uri "$submissionUri/status" -Headers $headers
+          [ordered]@{
+            Id = [string]$flight.id
+            Status = [string]$flightStatus.status
+            ApplicationPackages = @($flight.flightPackages | ForEach-Object {
+                [ordered]@{
+                  FileName = [string]$_.fileName
+                  Version = [string]$_.version
+                  # The Flight API omits architecture. The immutable candidate
+                  # manifest and filename contract have already fixed it to x64.
+                  Architecture = 'x64'
+                  FileStatus = [string]$_.fileStatus
+                }
+              })
+          } | ConvertTo-Json -Depth 8 | Set-Content `
+            -LiteralPath $flightRaw -Encoding utf8
           msstore submission get 9PHHSJMWK06G > $productionRaw
           if ($LASTEXITCODE -ne 0) {
             throw 'Failed to query the Microsoft Store production submission.'
