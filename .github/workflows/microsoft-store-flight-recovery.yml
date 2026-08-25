@@ -217,7 +217,13 @@ jobs:
                   [string]$_.fileName -ceq $artifactName -and
                   [string]$_.version -ceq $packageVersion
                 })
-              if ($pendingMatches.Count -lt 1) {
+              $pendingErrorMatches = @($pendingStatus.statusDetails.errors |
+                Where-Object {
+                  [string]$_.code -ceq 'InvalidParameterValue' -and
+                  [string]$_.details -match [regex]::Escape($packageVersion)
+                })
+              if ($pendingMatches.Count -lt 1 -and
+                  $pendingErrorMatches.Count -ne 1) {
                 throw 'The failed Package Flight draft belongs to a different candidate.'
               }
               $deletableSubmissionId = $pendingId
@@ -256,11 +262,19 @@ jobs:
                 }
                 $reported = Invoke-RestMethod -Method Get `
                   -Uri "$baseUri/submissions/$reportedId" -Headers $headers
+                $reportedStatus = Invoke-RestMethod -Method Get `
+                  -Uri "$baseUri/submissions/$reportedId/status" -Headers $headers
                 $reportedMatches = @($reported.flightPackages | Where-Object {
                     [string]$_.fileName -ceq $artifactName -and
                     [string]$_.version -ceq $packageVersion
                   })
-                if ($reportedMatches.Count -lt 1) {
+                $reportedErrorMatches = @($reportedStatus.statusDetails.errors |
+                  Where-Object {
+                    [string]$_.code -ceq 'InvalidParameterValue' -and
+                    [string]$_.details -match [regex]::Escape($packageVersion)
+                  })
+                if ($reportedMatches.Count -lt 1 -and
+                    $reportedErrorMatches.Count -ne 1) {
                   throw 'The failed Package Flight draft belongs to a different candidate.'
                 }
                 $deletableSubmissionId = $reportedId

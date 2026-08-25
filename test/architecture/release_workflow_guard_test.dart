@@ -677,6 +677,8 @@ void main() {
       expect(storeRecovery, contains('--uploadTimeout 900'));
       expect(storeRecovery, isNot(contains('--verbose')));
       expect(storeRecovery, contains("@('pendingcommit', 'commitfailed')"));
+      expect(storeRecovery, contains("'InvalidParameterValue'"));
+      expect(storeRecovery, contains(r'[regex]::Escape($packageVersion)'));
       expect(storeRecovery, contains(r"$submissionStatus -eq 'published'"));
       expect(storeRecovery, contains(r'$matchingCandidateNames.Count -ne 1'));
       expect(storeRecovery, contains("'commitstarted'"));
