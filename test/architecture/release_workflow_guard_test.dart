@@ -576,6 +576,9 @@ void main() {
     test('商店审核与发布由无人工审批的协调器幂等推进', () async {
       final workflow = await _workflow('alpha-release.yml');
       final reconciler = await _workflow('alpha-release-reconcile.yml');
+      final appStoreStatus = await File(
+        'tool/release/app_store_connect_status.rb',
+      ).readAsString();
       final candidateValidation = await _workflow(
         'candidate-distribution-validation.yml',
       );
@@ -799,19 +802,59 @@ void main() {
       expect(reconciler, contains('.package.architecture == "x64"'));
       expect(reconciler, contains('.package.candidateSha256 == \$sha256'));
       expect(reconciler, contains('app_store_connect_status.rb'));
+      expect(appStoreStatus, contains('"/betaGroups"'));
+      expect(appStoreStatus, contains('"filter[app]" => app.fetch("id")'));
+      expect(appStoreStatus, contains('"filter[builds]" => build.fetch("id")'));
+      expect(
+        appStoreStatus,
+        contains('group_attributes.fetch("publicLinkEnabled")'),
+      );
+      expect(
+        appStoreStatus,
+        isNot(contains(r"/builds/#{build.fetch('id')}/betaGroups")),
+      );
+      expect(appStoreStatus, isNot(contains('"limit[builds]"')));
       expect(reconciler, contains('verify_testflight_submission.dart'));
       expect(reconciler, contains('submission-request.json'));
       expect(reconciler, contains('windows_flight_submission_id'));
       expect(storeStatus, contains('runs-on: windows-2025'));
-      expect(storeStatus, contains('version: v0.4.1'));
       expect(storeStatus, contains('PARTNER_CENTER_FLIGHT_SUBMISSION_ID'));
       expect(storeStatus, contains(r'-Uri "$submissionUri/status"'));
+      expect(
+        storeStatus,
+        contains(
+          '[string]\$flight.id -cne '
+          '\$env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID',
+        ),
+      );
+      expect(storeStatus, contains('pendingApplicationSubmission'));
+      expect(storeStatus, contains('lastPublishedApplicationSubmission'));
+      expect(
+        storeStatus,
+        contains("[string]\$application.id -cne '9PHHSJMWK06G'"),
+      );
+      expect(
+        storeStatus,
+        contains(
+          r'$resourceLocation -cne "applications/9PHHSJMWK06G/submissions/$productionId"',
+        ),
+      );
+      expect(storeStatus, contains(r'-Uri "$productionUri/status"'));
+      expect(
+        storeStatus,
+        contains('[string]\$productionSubmission.id -cne \$productionId'),
+      );
+      expect(storeStatus, contains("'commitstarted'"));
+      expect(storeStatus, contains("'pendingpublication'"));
+      expect(storeStatus, contains("'release'"));
       expect(storeStatus, contains('ApplicationPackages = @('));
       expect(storeStatus, contains("Architecture = 'x64'"));
       expect(storeStatus, isNot(contains('msstore flights submission get `')));
+      expect(storeStatus, isNot(contains('msstore submission get')));
+      expect(storeStatus, isNot(contains('msstore reconfigure `')));
+      expect(storeStatus, isNot(contains('PARTNER_CENTER_SELLER_ID')));
       expect(storeStatus, contains('9PHHSJMWK06G'));
       expect(storeStatus, contains('Write-Output -NoEnumerate'));
-      expect(reconciler, contains('msstore submission get 9PHHSJMWK06G'));
       expect(submitProduction, contains('runs-on: windows-2025'));
       expect(submitProduction, contains('version: v0.4.1'));
       expect(submitProduction, contains(r'--inputDirectory $inputDirectory'));
@@ -819,7 +862,7 @@ void main() {
       expect(submitProduction, contains('--packageRolloutPercentage 100'));
       expect(submitProduction, contains('--uploadTimeout 900'));
       expect(submitProduction, isNot(contains('--verbose')));
-      for (final job in [windowsFlight, storeStatus, submitProduction]) {
+      for (final job in [windowsFlight, submitProduction]) {
         final configure = job.indexOf('msstore reconfigure `');
         final settings = job.indexOf('msstore settings --enableTelemetry');
         expect(configure, greaterThanOrEqualTo(0));

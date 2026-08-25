@@ -116,7 +116,16 @@ review_response = request(
   allow_not_found: true
 )
 review = review_response && only_resource(review_response, "beta review submission")
-groups_response = request("/builds/#{build.fetch('id')}/betaGroups", { "limit" => "200" })
+groups_response = request(
+  "/betaGroups",
+  {
+    "filter[app]" => app.fetch("id"),
+    "filter[name]" => external_group,
+    "filter[builds]" => build.fetch("id"),
+    "fields[betaGroups]" => "name,isInternalGroup,publicLinkEnabled,publicLink",
+    "limit" => "2"
+  }
+)
 groups = groups_response.fetch("data")
 raise "betaGroups data must be an array" unless groups.is_a?(Array)
 
@@ -125,13 +134,15 @@ matching_groups = groups.select do |group|
 end
 raise "Expected the fixed external group exactly once" unless matching_groups.length == 1
 
-group_attributes = matching_groups.first.fetch("attributes")
+matching_group = matching_groups.first
+group_attributes = matching_group.fetch("attributes")
+raise "Fixed TestFlight group must be external" unless group_attributes.fetch("isInternalGroup") == false
 build_attributes = build.fetch("attributes")
 detail_attributes = beta_detail.fetch("attributes")
 external_state = detail_attributes.fetch("externalBuildState")
 review_state = review&.fetch("attributes", {})&.fetch("betaReviewState", nil)
 public_link = group_attributes.fetch("publicLink", nil)
-public_link_enabled = group_attributes.fetch("isPublicLinkEnabled", !public_link.to_s.empty?)
+public_link_enabled = group_attributes.fetch("publicLinkEnabled")
 raise "Fixed TestFlight public link does not match App Store Connect" unless public_link == options.fetch(:public_link)
 testing = ["READY_FOR_EXTERNAL_TESTING", "TESTING"].include?(external_state) &&
           review_state == "APPROVED" && public_link_enabled
