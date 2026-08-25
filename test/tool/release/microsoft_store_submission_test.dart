@@ -142,6 +142,74 @@ void main() {
       }
     });
   });
+
+  group('verifyMicrosoftStoreFlightSubmission', () {
+    test('接受已发布且绑定同一 x64 候选的 Flight', () {
+      final receipt = verifyMicrosoftStoreFlightSubmission(
+        jsonEncode(_submission()..remove('Visibility')),
+        MicrosoftStoreFlightVerificationRequest(
+          productId: '9PHHSJMWK06G',
+          flightId: 'meettrace-alpha',
+          expectedPackageVersion: '1.0.11.0',
+          expectedArtifactName:
+              'meettrace-v1.0.0-alpha.1-windows-store-x64.msix',
+          releaseId: 'v1.0.0-alpha.1',
+          candidateCommitSha: 'a' * 40,
+          sourceRunId: 123,
+          verifiedAt: DateTime.utc(2026, 8, 25),
+        ),
+      );
+
+      expect(receipt['distribution'], 'microsoftStoreFlight');
+      expect(receipt['flightId'], 'meettrace-alpha');
+      expect(receipt['status'], 'Published');
+    });
+
+    test('拒绝尚未发布、错包或不安全 Flight ID', () {
+      final pending = _submission()
+        ..remove('Visibility')
+        ..['Status'] = 'Certification';
+      final wrongPackage = _submission()..remove('Visibility');
+      ((wrongPackage['ApplicationPackages']! as List).single
+              as Map<String, Object?>)['FileName'] =
+          'different.msix';
+
+      MicrosoftStoreFlightVerificationRequest request(String flightId) =>
+          MicrosoftStoreFlightVerificationRequest(
+            productId: '9PHHSJMWK06G',
+            flightId: flightId,
+            expectedPackageVersion: '1.0.11.0',
+            expectedArtifactName:
+                'meettrace-v1.0.0-alpha.1-windows-store-x64.msix',
+            releaseId: 'v1.0.0-alpha.1',
+            candidateCommitSha: 'a' * 40,
+            sourceRunId: 123,
+            verifiedAt: DateTime.utc(2026, 8, 25),
+          );
+
+      expect(
+        () => verifyMicrosoftStoreFlightSubmission(
+          jsonEncode(pending),
+          request('meettrace-alpha'),
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => verifyMicrosoftStoreFlightSubmission(
+          jsonEncode(wrongPackage),
+          request('meettrace-alpha'),
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => verifyMicrosoftStoreFlightSubmission(
+          jsonEncode(_submission()..remove('Visibility')),
+          request('flight\nspoof'),
+        ),
+        throwsFormatException,
+      );
+    });
+  });
 }
 
 Map<String, Object?> _submission() => <String, Object?>{

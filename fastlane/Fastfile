@@ -16,9 +16,12 @@ platform :ios do
       api_key: api_key,
       app_identifier: ENV.fetch("IOS_BUNDLE_ID"),
       ipa: ENV.fetch("IPA_PATH"),
-      skip_waiting_for_build_processing: true,
-      distribute_external: false,
-      notify_external_testers: false
+      skip_waiting_for_build_processing: false,
+      distribute_external: true,
+      groups: [ENV.fetch("TESTFLIGHT_EXTERNAL_GROUP")],
+      submit_beta_review: true,
+      notify_external_testers: true,
+      uses_non_exempt_encryption: false
     }
     changelog = ENV.fetch("TESTFLIGHT_CHANGELOG", "").strip
     options[:changelog] = changelog unless changelog.empty?

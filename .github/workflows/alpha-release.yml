@@ -11,12 +11,12 @@ on:
         description: Optional public release notes
         required: false
         type: string
-      ios_testflight_external_url:
-        description: Optional TestFlight external testing URL
-        required: false
-        type: string
       resume_run_id:
         description: Optional successful candidate run ID to finalize without rebuilding
+        required: false
+        type: string
+      orchestration_run_id:
+        description: Internal successful reconciler run that proved all distribution gates
         required: false
         type: string
       withdraw_update:
@@ -29,14 +29,6 @@ on:
         required: false
         default: false
         type: boolean
-      store_verification_mode:
-        description: Verify the public Store submission by protected manual approval or Partner Center API
-        required: false
-        default: manual
-        type: choice
-        options:
-          - manual
-          - api
 
 permissions: {}
 
@@ -69,21 +61,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ inputs.release_id }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
-          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
           RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+          ORCHESTRATION_RUN_ID: ${{ inputs.orchestration_run_id }}
           WITHDRAW_UPDATE: ${{ inputs.withdraw_update }}
           REPAIR_UPDATE_POINTER: ${{ inputs.repair_update_pointer }}
-          STORE_VERIFICATION_MODE: ${{ inputs.store_verification_mode }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]]
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
-          [[ "$STORE_VERIFICATION_MODE" == manual || "$STORE_VERIFICATION_MODE" == api ]]
-          if [[ -n "$TESTFLIGHT_URL" ]]; then
-            [[ "$TESTFLIGHT_URL" =~ ^https://testflight\.apple\.com/join/[A-Za-z0-9]+/?$ ]]
-          fi
           if [[ -n "$RESUME_RUN_ID" ]]; then
             [[ "$RESUME_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+            [[ "$ORCHESTRATION_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          elif [[ -n "$ORCHESTRATION_RUN_ID" ]]; then
+            echo "orchestration_run_id requires resume_run_id" >&2
+            exit 1
           fi
           visibility="$(gh repo view "$GITHUB_REPOSITORY" --json visibility --jq .visibility)"
           [[ "$visibility" == "PUBLIC" ]]
@@ -122,7 +113,7 @@ jobs:
                 exit 1
               fi
               mode=metadata
-              if [[ -z "$TESTFLIGHT_URL" && -z "$RELEASE_NOTES" && "$WITHDRAW_UPDATE" != true && "$REPAIR_UPDATE_POINTER" != true ]]; then
+              if [[ -z "$RELEASE_NOTES" && "$WITHDRAW_UPDATE" != true && "$REPAIR_UPDATE_POINTER" != true ]]; then
                 echo "A public release rerun must repair metadata or withdraw automatic discovery" >&2
                 exit 1
               fi
@@ -632,6 +623,8 @@ jobs:
     environment: testflight
     env:
       IOS_BUNDLE_ID: com.meettrace.app
+      TESTFLIGHT_EXTERNAL_GROUP: ${{ vars.TESTFLIGHT_EXTERNAL_GROUP }}
+      TESTFLIGHT_PUBLIC_LINK: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}
       FASTLANE_OPT_OUT_USAGE: "1"
       FASTLANE_SKIP_UPDATE_CHECK: "1"
 
@@ -645,6 +638,8 @@ jobs:
           set -euo pipefail
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ -n "${TESTFLIGHT_EXTERNAL_GROUP//[[:space:]]/}" ]]
+          [[ "$TESTFLIGHT_PUBLIC_LINK" =~ ^https://testflight\.apple\.com/join/[A-Za-z0-9]+/?$ ]]
 
       - name: Checkout candidate commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1117,6 +1112,8 @@ jobs:
               "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
               "buildNumber": os.environ["IOS_BUILD_NUMBER"],
               "bundleId": os.environ["IOS_BUNDLE_ID"],
+              "externalGroup": os.environ["TESTFLIGHT_EXTERNAL_GROUP"],
+              "publicLink": os.environ["TESTFLIGHT_PUBLIC_LINK"],
               "workflowFile": ".github/workflows/alpha-release.yml",
               "job": "ios",
               "runner": {
@@ -1184,7 +1181,8 @@ jobs:
             echo "- Bundle ID: \`$IOS_BUNDLE_ID\`"
             echo "- Build number: \`$IOS_BUILD_NUMBER\`"
             echo "- IPA: \`$(basename "$IPA_PATH")\`"
-            echo "- Processing and tester availability remain subject to App Store Connect validation."
+            echo "- External group: \`$TESTFLIGHT_EXTERNAL_GROUP\`"
+            echo "- Processing and Beta App Review are submitted automatically; public release waits for Testing."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload signed build evidence
@@ -1415,13 +1413,13 @@ jobs:
             -LiteralPath build/windows/msix/candidate-manifest.json `
             -Encoding utf8
 
-          $approvalComment = "STORE $($identity.storeId) Published Public $($metadata.packageVersion) x64 $($metadata.artifact.sha256)"
           @(
-            '### Microsoft Store production approval'
+            '### Microsoft Store automatic submission contract'
             ''
-            'After Partner Center shows this exact candidate as Published and Public, copy the following text into the `github-release` approval comment:'
-            ''
-            "``$approvalComment``"
+            "- Store ID: $($identity.storeId)"
+            "- Package version: $($metadata.packageVersion)"
+            "- Candidate SHA-256: $($metadata.artifact.sha256)"
+            '- The reconciler will verify Flight, dedicated-device validation, production certification, and Public visibility before publication.'
           ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8
 
       - name: Generate Windows candidate provenance attestation
@@ -1441,19 +1439,178 @@ jobs:
           retention-days: 90
           compression-level: 0
 
+  windows_flight:
+    if: needs.prepare.outputs.mode == 'candidate'
+    needs: [prepare, windows]
+    permissions:
+      actions: read
+      contents: read
+    name: Submit Microsoft Store Package Flight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: microsoft-store
+    env:
+      RELEASE_ID: ${{ inputs.release_id }}
+      CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+      SOURCE_RUN_ID: ${{ github.run_id }}
+      PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}
+      PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
+      PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
+      PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
+      PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
+    steps:
+      - name: Checkout immutable candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.candidate_sha }}
+
+      - name: Set up Microsoft Store CLI v0.4.0
+        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
+        with:
+          version: v0.4.0
+
+      - name: Download exact Windows candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$PARTNER_CENTER_FLIGHT_ID" =~ ^[A-Za-z0-9._-]{1,128}$ ]]
+          for name in PARTNER_CENTER_TENANT_ID PARTNER_CENTER_SELLER_ID PARTNER_CENTER_CLIENT_ID PARTNER_CENTER_CLIENT_SECRET; do
+            value="${!name-}"
+            [[ -n "${value//[[:space:]]/}" ]] || {
+              echo "Missing protected microsoft-store secret: $name" >&2
+              exit 1
+            }
+          done
+          mkdir -p build/store-flight
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100")"
+          artifact_id="$(jq -er '[.artifacts[] | select(.expired == false and (.name | startswith("meettrace-windows-store-")))] | last | .id' <<<"$artifacts")"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > build/store-flight/windows.zip
+          unzip -q build/store-flight/windows.zip -d build/store-flight/candidate
+          manifest=build/store-flight/candidate/candidate-manifest.json
+          msix="build/store-flight/candidate/$(jq -er .artifact.name "$manifest")"
+          [[ -f "$msix" ]]
+          expected_digest="$(jq -er .artifact.sha256 "$manifest")"
+          actual_digest="$(sha256sum "$msix" | cut -d' ' -f1)"
+          [[ "$actual_digest" == "$expected_digest" ]]
+          jq -e --arg release "$RELEASE_ID" --arg sha "$CANDIDATE_SHA" '
+            .releaseId == $release and .commitSha == $sha and
+            .distribution == "microsoftStore" and .artifact.storeSubmissionCandidate == true
+          ' "$manifest" >/dev/null
+          echo "WINDOWS_MSIX_PATH=$GITHUB_WORKSPACE/$msix" >> "$GITHUB_ENV"
+          echo "WINDOWS_MANIFEST_PATH=$GITHUB_WORKSPACE/$manifest" >> "$GITHUB_ENV"
+
+      - name: Submit immutable candidate to fixed Package Flight
+        shell: bash
+        run: |
+          set -euo pipefail
+          msstore settings --enableTelemetry false
+          msstore reconfigure \
+            --tenantId "$PARTNER_CENTER_TENANT_ID" \
+            --sellerId "$PARTNER_CENTER_SELLER_ID" \
+            --clientId "$PARTNER_CENTER_CLIENT_ID" \
+            --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
+          artifact_name="$(jq -er .artifact.name "$WINDOWS_MANIFEST_PATH")"
+          package_version="$(jq -er .packageVersion "$WINDOWS_MANIFEST_PATH")"
+          existing="$RUNNER_TEMP/existing-flight-submission.json"
+          reuse=false
+          if msstore flights submission get 9PHHSJMWK06G "$PARTNER_CENTER_FLIGHT_ID" > "$existing" 2>/dev/null; then
+            reuse="$(python3 - "$existing" "$artifact_name" "$package_version" <<'PY'
+          import json, sys
+
+          def field(value, name, default=None):
+              matches = [item for key, item in value.items() if key.lower() == name.lower()]
+              if len(matches) > 1:
+                  raise SystemExit(f"ambiguous Store field: {name}")
+              return matches[0] if matches else default
+
+          submission = json.load(open(sys.argv[1], encoding="utf-8-sig"))
+          packages = field(submission, "ApplicationPackages", [])
+          exact = [package for package in packages if field(package, "FileName") == sys.argv[2] and field(package, "Version") == sys.argv[3]]
+          if len(exact) == 1 and len(packages) == 1:
+              print("true")
+          elif str(field(submission, "Status", "")).lower() != "published" and packages:
+              raise SystemExit("A different Package Flight submission is already pending")
+          else:
+              print("false")
+          PY
+            )"
+          fi
+          if [[ "$reuse" != true ]]; then
+            msstore publish "$GITHUB_WORKSPACE" \
+              --inputFile "$WINDOWS_MSIX_PATH" \
+              --appId 9PHHSJMWK06G \
+              --flightId "$PARTNER_CENTER_FLIGHT_ID"
+            request_state=submitted
+          else
+            request_state=reused
+          fi
+          mkdir -p build/store-flight/evidence
+          jq -n \
+            --arg releaseId "$RELEASE_ID" \
+            --arg candidateCommitSha "$CANDIDATE_SHA" \
+            --argjson sourceRunId "$SOURCE_RUN_ID" \
+            --arg flightId "$PARTNER_CENTER_FLIGHT_ID" \
+            --arg requestState "$request_state" \
+            --arg artifactName "$artifact_name" \
+            --arg artifactSha256 "$(jq -er .artifact.sha256 "$WINDOWS_MANIFEST_PATH")" \
+            --arg packageVersion "$package_version" \
+            --arg submittedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{schemaVersion: 1, distribution: "microsoftStoreFlight", state: $requestState, productId: "9PHHSJMWK06G", flightId: $flightId, releaseId: $releaseId, candidateCommitSha: $candidateCommitSha, sourceRunId: $sourceRunId, submittedAtUtc: $submittedAtUtc, package: {fileName: $artifactName, version: $packageVersion, architecture: "x64", candidateSha256: $artifactSha256}}' \
+            > build/store-flight/evidence/submission-request.json
+
+      - name: Remove Microsoft Store CLI credentials
+        if: always()
+        shell: bash
+        run: |
+          if command -v msstore >/dev/null 2>&1; then
+            msstore reconfigure --reset
+          fi
+
+      - name: Upload Package Flight submission evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-windows-flight-request-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/store-flight/evidence/submission-request.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  queue_reconciliation:
+    if: needs.prepare.outputs.mode == 'candidate'
+    needs: [prepare, android, ios, windows, windows_flight]
+    permissions:
+      contents: write
+    name: Queue automatic release reconciliation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Dispatch immediate reconciliation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/dispatches" \
+            --method POST \
+            -f event_type=alpha-release-reconcile \
+            -F "client_payload[release_id]=$RELEASE_ID" \
+            -F "client_payload[source_run_id]=$GITHUB_RUN_ID" \
+            -F "client_payload[candidate_sha]=$CANDIDATE_SHA"
+
   publish:
     if: >-
       always() && needs.prepare.result == 'success' &&
       (needs.prepare.outputs.mode == 'metadata' ||
-      needs.prepare.outputs.mode == 'resume' ||
-      (needs.prepare.outputs.mode == 'candidate' &&
-      needs.android.result == 'success' && needs.ios.result == 'success' &&
-      needs.windows.result == 'success'))
-    needs: [prepare, android, ios, windows]
+      needs.prepare.outputs.mode == 'resume')
+    needs: [prepare, android, ios, windows, windows_flight]
     permissions:
       actions: read
       contents: write
-    name: Approve and deploy public Alpha
+    name: Automatically deploy verified public Alpha
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: github-release
@@ -1480,7 +1637,7 @@ jobs:
           RELEASE_ID: ${{ inputs.release_id }}
           CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
           RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
-          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+          TESTFLIGHT_URL: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}
         run: |
           set -euo pipefail
           [[ "$RELEASE_MODE" == candidate || "$RELEASE_MODE" == resume || "$RELEASE_MODE" == metadata ]]
@@ -1686,182 +1843,57 @@ jobs:
               raise SystemExit("Windows Store candidate digest changed")
           PY
 
-      - name: Set up Microsoft Store CLI v0.4.0
-        if: >-
-          (needs.prepare.outputs.mode == 'candidate' ||
-          needs.prepare.outputs.mode == 'resume') &&
-          inputs.store_verification_mode == 'api'
-        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
-        with:
-          version: v0.4.0
-
-      - name: Verify public Microsoft Store production submission
-        if: >-
-          (needs.prepare.outputs.mode == 'candidate' ||
-          needs.prepare.outputs.mode == 'resume') &&
-          inputs.store_verification_mode == 'api'
-        shell: bash
-        env:
-          PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
-          PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
-          PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
-          PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
-        run: |
-          set -euo pipefail
-          for name in \
-            PARTNER_CENTER_TENANT_ID \
-            PARTNER_CENTER_SELLER_ID \
-            PARTNER_CENTER_CLIENT_ID \
-            PARTNER_CENTER_CLIENT_SECRET; do
-            value="${!name-}"
-            [[ -n "${value//[[:space:]]/}" ]] || {
-              echo "Missing protected github-release secret: $name" >&2
-              exit 1
-            }
-          done
-
-          msstore settings --enableTelemetry false
-          msstore reconfigure \
-            --tenantId "$PARTNER_CENTER_TENANT_ID" \
-            --sellerId "$PARTNER_CENTER_SELLER_ID" \
-            --clientId "$PARTNER_CENTER_CLIENT_ID" \
-            --clientSecret "$PARTNER_CENTER_CLIENT_SECRET"
-
-          raw_submission="$RUNNER_TEMP/meettrace-store-submission.json"
-          trap 'rm -f -- "$raw_submission"' EXIT
-          msstore submission get 9PHHSJMWK06G > "$raw_submission"
-          expected_version="$(jq -er .packageVersion build/finalize/windows-candidate-manifest.json)"
-          expected_artifact="$(jq -er .artifact.name build/finalize/windows-candidate-manifest.json)"
-          dart run tool/release/verify_microsoft_store_submission.dart \
-            --input "$raw_submission" \
-            --output build/finalize/windows-store-production-receipt.json \
-            --product-id 9PHHSJMWK06G \
-            --expected-version "$expected_version" \
-            --expected-artifact-name "$expected_artifact" \
-            --release-id "$RELEASE_ID" \
-            --candidate-sha "$CANDIDATE_SHA" \
-            --source-run-id "$SOURCE_RUN_ID" \
-            --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          rm -f -- "$raw_submission"
-          trap - EXIT
-
-      - name: Record protected manual Microsoft Store production approval
-        if: >-
-          (needs.prepare.outputs.mode == 'candidate' ||
-          needs.prepare.outputs.mode == 'resume') &&
-          inputs.store_verification_mode == 'manual'
+      - name: Download and verify automatic publication gate
+        if: needs.prepare.outputs.mode == 'resume'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          ORCHESTRATION_RUN_ID: ${{ inputs.orchestration_run_id }}
+          TESTFLIGHT_URL: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}
+          TESTFLIGHT_EXTERNAL_GROUP: ${{ vars.TESTFLIGHT_EXTERNAL_GROUP }}
+          PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}
         run: |
           set -euo pipefail
-          manifest=build/finalize/windows-candidate-manifest.json
-          expected_version="$(jq -er '.packageVersion' "$manifest")"
-          expected_artifact="$(jq -er '.artifact.name' "$manifest")"
-          candidate_digest="$(jq -er '.artifact.sha256' "$manifest")"
-          [[ "$expected_version" =~ ^1\.0\.[1-9][0-9]*\.0$ ]]
-          [[ "$expected_artifact" =~ ^meettrace-v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*-windows-store-x64\.msix$ ]]
-          [[ "$candidate_digest" =~ ^[0-9a-f]{64}$ ]]
-          [[ "$SOURCE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
-
-          expected_approval_comment="STORE 9PHHSJMWK06G Published Public $expected_version x64 $candidate_digest"
-          approvals="$(
-            gh api \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals"
-          )"
-          approval="$(
-            jq -ce --arg expected "$expected_approval_comment" '
-              [.[] | select(
-                .state == "approved" and
-                .comment == $expected and
-                any(.environments[]?; .name == "github-release")
-              )] |
-              if length >= 1 then last
-              else error("matching github-release approval was not found")
-              end
-            ' <<<"$approvals"
-          )"
-          approval_reviewer="$(jq -er '.user.login' <<<"$approval")"
-          approval_comment="$(jq -er '.comment' <<<"$approval")"
-          [[ "$approval_reviewer" =~ ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$ ]]
-          [[ "$approval_comment" == "$expected_approval_comment" ]]
-          approval_comment_sha256="$(printf '%s' "$approval_comment" | sha256sum | cut -d' ' -f1)"
-          [[ "$approval_comment_sha256" =~ ^[0-9a-f]{64}$ ]]
-
-          jq -n \
-            --arg releaseId "$RELEASE_ID" \
-            --arg candidateCommitSha "$CANDIDATE_SHA" \
-            --argjson sourceRunId "$SOURCE_RUN_ID" \
-            --arg verifiedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --arg fileName "$expected_artifact" \
-            --arg version "$expected_version" \
-            --arg candidateSha256 "$candidate_digest" \
-            --arg approvalReviewer "$approval_reviewer" \
-            --arg approvalComment "$approval_comment" \
-            --arg approvalCommentSha256 "$approval_comment_sha256" \
-            --argjson approvalRunId "$GITHUB_RUN_ID" \
-            '{
-              schemaVersion: 1,
-              distribution: "microsoftStore",
-              verificationMode: "manualEnvironmentApproval",
-              evidenceSource: "github-release",
-              approvalPolicy: "Reviewer confirmed the production submission is Published, Public, and contains the exact x64 candidate before approving the protected environment.",
-              productId: "9PHHSJMWK06G",
-              submissionId: null,
-              status: "Published",
-              visibility: "Public",
-              releaseId: $releaseId,
-              candidateCommitSha: $candidateCommitSha,
-              sourceRunId: $sourceRunId,
-              verifiedAtUtc: $verifiedAtUtc,
-              approval: {
-                runId: $approvalRunId,
-                environment: "github-release",
-                reviewer: $approvalReviewer,
-                comment: $approvalComment,
-                commentSha256: $approvalCommentSha256
-              },
-              package: {
-                fileName: $fileName,
-                version: $version,
-                architecture: "x64",
-                fileStatus: "Uploaded",
-                candidateSha256: $candidateSha256
-              }
-            }' > build/finalize/windows-store-production-receipt.json
+          [[ "$ORCHESTRATION_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          orchestration_run="$(gh run view "$ORCHESTRATION_RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,event,headBranch,status)"
           jq -e '
-            .verificationMode == "manualEnvironmentApproval" and
-            .productId == "9PHHSJMWK06G" and
-            .status == "Published" and .visibility == "Public" and
-            .approval.environment == "github-release" and
-            (.approval.reviewer | type == "string" and length > 0) and
-            (.approval.commentSha256 | test("^[0-9a-f]{64}$")) and
-            .package.architecture == "x64" and
-            .package.fileStatus == "Uploaded"
-          ' build/finalize/windows-store-production-receipt.json >/dev/null
+            .workflowName == "Alpha Release Reconciler" and
+            (.event == "repository_dispatch" or .event == "schedule") and
+            .headBranch == "master" and
+            (.status == "in_progress" or .status == "completed")
+          ' <<<"$orchestration_run" >/dev/null
+          artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ORCHESTRATION_RUN_ID/artifacts?per_page=100")"
+          gate_name="meettrace-release-gate-$RELEASE_ID"
+          gate_id="$(jq -er --arg name "$gate_name" '[.artifacts[] | select(.expired == false and .name == $name)] | last | .id' <<<"$artifacts")"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$gate_id/zip" > build/finalize/release-gate.zip
+          unzip -qp build/finalize/release-gate.zip release-gate.json > build/finalize/release-gate.json
+          expected_version="$(jq -er .packageVersion build/finalize/windows-candidate-manifest.json)"
+          expected_artifact="$(jq -er .artifact.name build/finalize/windows-candidate-manifest.json)"
+          dart run tool/release/verify_release_orchestration_gate.dart \
+            --input build/finalize/release-gate.json \
+            --output build/finalize/release-gate-verification.json \
+            --release-id "$RELEASE_ID" \
+            --candidate-sha "$CANDIDATE_SHA" \
+            --source-run-id "$SOURCE_RUN_ID" \
+            --orchestration-run-id "$ORCHESTRATION_RUN_ID" \
+            --build-number "$(jq -er .buildNumber build/finalize/windows-candidate-manifest.json)" \
+            --marketing-version "$MARKETING_VERSION" \
+            --testflight-external-group "$TESTFLIGHT_EXTERNAL_GROUP" \
+            --windows-artifact-name "$expected_artifact" \
+            --windows-package-version "$expected_version" \
+            --windows-flight-id "$PARTNER_CENTER_FLIGHT_ID" \
+            --testflight-public-link "$TESTFLIGHT_URL"
+          jq -e .windowsProduction build/finalize/release-gate.json > build/finalize/windows-store-production-receipt.json
 
-      - name: Remove Microsoft Store CLI credentials
+      - name: Upload automatic publication receipts
         if: >-
-          always() &&
-          (needs.prepare.outputs.mode == 'candidate' ||
-          needs.prepare.outputs.mode == 'resume') &&
-          inputs.store_verification_mode == 'api'
-        shell: bash
-        run: |
-          if command -v msstore >/dev/null 2>&1; then
-            msstore reconfigure --reset
-          fi
-
-      - name: Upload Microsoft Store production receipt
-        if: >-
-          (needs.prepare.outputs.mode == 'candidate' ||
-          needs.prepare.outputs.mode == 'resume') && success()
+          needs.prepare.outputs.mode == 'resume' && success()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: meettrace-windows-store-production-${{ github.run_id }}-${{ github.run_attempt }}
-          path: build/finalize/windows-store-production-receipt.json
+          path: |
+            build/finalize/windows-store-production-receipt.json
+            build/finalize/release-gate-verification.json
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
@@ -1920,7 +1952,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
-          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+          TESTFLIGHT_URL: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}
           WITHDRAW_UPDATE: ${{ inputs.withdraw_update }}
           APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64: ${{ secrets.APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64 }}
         run: |
@@ -2016,7 +2048,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
           RELEASE_NOTES: ${{ inputs.release_notes }}
-          TESTFLIGHT_URL: ${{ inputs.ios_testflight_external_url }}
+          TESTFLIGHT_URL: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}
           WITHDRAW_UPDATE: ${{ inputs.withdraw_update }}
         run: |
           set -euo pipefail
@@ -2043,11 +2075,7 @@ jobs:
           path.write_text(body, encoding="utf-8")
           PY
           else
-            if [[ -n "$TESTFLIGHT_URL" ]]; then
-              testflight_line="- iOS TestFlight 外部测试链接：$TESTFLIGHT_URL"
-            else
-              testflight_line="- iOS TestFlight 外部测试链接：待提供"
-            fi
+            testflight_line="- iOS TestFlight 外部测试链接：$TESTFLIGHT_URL"
             {
               echo "MeetTrace \`$RELEASE_ID\` Alpha 已完成 Android、iOS 与 Windows 候选验收。"
               echo

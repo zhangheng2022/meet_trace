@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
 import 'package:meettrace/data/services/updates/app_update_signing_identity.dart';
 import 'package:meettrace/data/services/updates/ed25519_app_update_signature_verifier.dart';
 import 'package:meettrace/data/services/updates/signed_app_update_manifest_parser.dart';
@@ -345,9 +344,8 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
     windowsProductionReceipt,
     'verificationMode',
   );
-  if (windowsVerificationMode != 'manualEnvironmentApproval' &&
-      windowsVerificationMode != 'partnerCenterApi') {
-    throw const FormatException('Windows 生产回执验证模式未知');
+  if (windowsVerificationMode != 'partnerCenterApi') {
+    throw const FormatException('Windows 生产回执必须来自 Partner Center API');
   }
   final productionPackage = _object(
     windowsProductionReceipt['package'],
@@ -361,38 +359,6 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
   );
   _requireCandidateValue(productionPackage, 'architecture', 'x64');
   _requireCandidateValue(productionPackage, 'fileStatus', 'Uploaded');
-  if (windowsVerificationMode == 'manualEnvironmentApproval') {
-    _requireCandidateValue(
-      productionPackage,
-      'candidateSha256',
-      windowsArtifactSha256,
-    );
-    final approval = _object(
-      windowsProductionReceipt['approval'],
-      'Windows approval',
-    );
-    _requireCandidateValue(
-      windowsProductionReceipt,
-      'evidenceSource',
-      'github-release',
-    );
-    if (_positiveInt(approval, 'runId') != expectedPublishRunId) {
-      throw const FormatException('Windows 审批运行不匹配');
-    }
-    _requireCandidateValue(approval, 'environment', 'github-release');
-    final reviewer = _text(approval, 'reviewer');
-    if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9-]{0,38}$').hasMatch(reviewer)) {
-      throw const FormatException('Windows 审批人格式无效');
-    }
-    final expectedComment =
-        'STORE $_windowsStoreId Published Public '
-        '1.0.${candidate.buildNumber}.0 x64 $windowsArtifactSha256';
-    final comment = _text(approval, 'comment');
-    _requireCandidateValue(approval, 'comment', expectedComment);
-    final commentDigest = sha256.convert(utf8.encode(comment)).toString();
-    _requireCandidateValue(approval, 'commentSha256', commentDigest);
-  }
-
   return PublicUpdateValidationReceipt(
     releaseId: candidate.releaseId,
     versionName: candidate.versionName,

@@ -153,7 +153,7 @@ void main() {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');
       final ios = _job(workflow, 'ios', 'windows');
-      final windows = _job(workflow, 'windows', 'publish');
+      final windows = _job(workflow, 'windows', 'windows_flight');
 
       expect(
         workflow,
@@ -311,7 +311,7 @@ void main() {
 
     test('Windows 正式候选只进入 Microsoft Store Artifact', () async {
       final workflow = await _workflow('alpha-release.yml');
-      final windows = _job(workflow, 'windows', 'publish');
+      final windows = _job(workflow, 'windows', 'windows_flight');
 
       expect(windows, contains('runs-on: windows-2025'));
       expect(windows, contains('environment: windows-alpha'));
@@ -479,14 +479,25 @@ void main() {
       expect(nonReleaseWorkflows, isNot(contains('SENTRY_AUTH_TOKEN')));
     });
 
-    test('publish job 是唯一公开批准且支持不重建地后补链接', () async {
+    test('publish job 只接受协调器门禁并自动公开原 Draft', () async {
       final workflow = await _workflow('alpha-release.yml');
       final publish = _job(workflow, 'publish');
 
       expect(publish, contains('environment: github-release'));
-      expect(publish, contains("needs.prepare.outputs.mode == 'candidate'"));
       expect(publish, contains("needs.prepare.outputs.mode == 'resume'"));
       expect(publish, contains("needs.prepare.outputs.mode == 'metadata'"));
+      expect(
+        publish,
+        contains('Download and verify automatic publication gate'),
+      );
+      expect(
+        publish,
+        contains(
+          'dart run tool/release/verify_release_orchestration_gate.dart',
+        ),
+      );
+      expect(publish, contains(r'meettrace-release-gate-$RELEASE_ID'));
+      expect(publish, contains('Alpha Release Reconciler'));
       expect(publish, contains('android-candidate-manifest.json'));
       expect(publish, contains('ios-candidate-manifest.json'));
       expect(publish, contains('windows-candidate-manifest.json'));
@@ -498,7 +509,10 @@ void main() {
         contains('Windows Store package version mapping changed'),
       );
       expect(publish, contains('https://testflight\\.apple\\.com/join/'));
-      expect(publish, contains('iOS TestFlight 外部测试链接：待提供'));
+      expect(
+        publish,
+        contains(r'TESTFLIGHT_URL: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}'),
+      );
       expect(publish, contains('Staged Android APK digest changed'));
       expect(publish, contains('Existing public Android APK changed'));
       expect(publish, contains('endswith(".ipa")'));
@@ -514,77 +528,35 @@ void main() {
       );
     });
 
-    test('无 Entra 时使用受保护人工证明且保留可选 Store API 核验', () async {
+    test('商店审核与发布由无人工审批的协调器幂等推进', () async {
       final workflow = await _workflow('alpha-release.yml');
-      final windows = _job(workflow, 'windows', 'publish');
+      final reconciler = await _workflow('alpha-release-reconcile.yml');
+      final candidateValidation = await _workflow(
+        'candidate-distribution-validation.yml',
+      );
+      final windowsFlight = _job(
+        workflow,
+        'windows_flight',
+        'queue_reconciliation',
+      );
       final publish = _job(workflow, 'publish');
-      final apiSetup = _step(
-        publish,
-        'Set up Microsoft Store CLI v0.4.0',
-        'Verify public Microsoft Store production submission',
-      );
-      final apiVerificationStep = _step(
-        publish,
-        'Verify public Microsoft Store production submission',
-        'Record protected manual Microsoft Store production approval',
-      );
-      final manualVerificationStep = _step(
-        publish,
-        'Record protected manual Microsoft Store production approval',
-        'Remove Microsoft Store CLI credentials',
-      );
 
-      expect(workflow, contains('store_verification_mode:'));
-      expect(workflow, contains('default: manual'));
-      expect(workflow, contains('- manual\n          - api'));
+      expect(workflow, isNot(contains('store_verification_mode:')));
+      expect(workflow, contains('orchestration_run_id:'));
+      expect(windowsFlight, contains('environment: microsoft-store'));
       expect(
-        windows,
-        contains(
-          'STORE \$(\$identity.storeId) Published Public '
-          '\$(\$metadata.packageVersion) x64 \$(\$metadata.artifact.sha256)',
-        ),
+        windowsFlight,
+        contains(r'--flightId "$PARTNER_CENTER_FLIGHT_ID"'),
       );
-      expect(windows, contains('GITHUB_STEP_SUMMARY'));
+      expect(windowsFlight, contains('msstore reconfigure --reset'));
       expect(
-        publish,
-        contains('Record protected manual Microsoft Store production approval'),
-      );
-      expect(
-        publish,
-        contains('verificationMode: "manualEnvironmentApproval"'),
-      );
-      expect(publish, contains('evidenceSource: "github-release"'));
-      expect(
-        manualVerificationStep,
-        contains('actions/runs/\$GITHUB_RUN_ID/approvals'),
-      );
-      expect(manualVerificationStep, contains('.comment == \$expected'));
-      expect(
-        manualVerificationStep,
-        contains('any(.environments[]?; .name == "github-release")'),
-      );
-      expect(manualVerificationStep, contains('approvalReviewer'));
-      expect(manualVerificationStep, contains('approvalCommentSha256'));
-      expect(publish, contains("inputs.store_verification_mode == 'manual'"));
-      expect(publish, contains("inputs.store_verification_mode == 'api'"));
-      expect(apiSetup, contains("inputs.store_verification_mode == 'api'"));
-      expect(
-        apiVerificationStep,
-        contains("inputs.store_verification_mode == 'api'"),
-      );
-      expect(
-        manualVerificationStep,
-        contains("inputs.store_verification_mode == 'manual'"),
-      );
-      expect(manualVerificationStep, isNot(contains('PARTNER_CENTER_')));
-      expect(
-        publish,
+        windowsFlight,
         contains(
           'microsoft/microsoft-store-apppublisher@'
           'cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0',
         ),
       );
-      expect(publish, contains('version: v0.4.0'));
+      expect(windowsFlight, contains('version: v0.4.0'));
       for (final secret in <String>[
         'PARTNER_CENTER_TENANT_ID',
         'PARTNER_CENTER_SELLER_ID',
@@ -592,7 +564,7 @@ void main() {
         'PARTNER_CENTER_CLIENT_SECRET',
       ]) {
         expect(
-          publish,
+          windowsFlight,
           contains(
             r'${{ secrets.'
             '$secret'
@@ -600,26 +572,48 @@ void main() {
           ),
         );
       }
-      expect(publish, contains('msstore submission get 9PHHSJMWK06G'));
+      for (final secret in <String>[
+        'PARTNER_CENTER_TENANT_ID',
+        'PARTNER_CENTER_SELLER_ID',
+        'PARTNER_CENTER_CLIENT_ID',
+        'PARTNER_CENTER_CLIENT_SECRET',
+      ]) {
+        expect(publish, isNot(contains(secret)));
+      }
       expect(
         publish,
         contains(
-          'dart run tool/release/verify_microsoft_store_submission.dart',
+          r'PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}',
         ),
       );
-      expect(publish, contains('msstore reconfigure --reset'));
-      expect(publish, isNot(contains('msstore reconfigure --reset || true')));
+      expect(publish, isNot(contains('msstore submission get')));
       expect(publish, contains('windows-store-production-receipt.json'));
+      expect(reconciler, contains('cron: "*/15 * * * *"'));
+      expect(reconciler, contains('types: [alpha-release-reconcile]'));
+      expect(reconciler, contains('app_store_connect_status.rb'));
+      expect(reconciler, contains('verify_testflight_submission.dart'));
       expect(
-        publish,
-        isNot(contains('meettrace-store-submission.json\n          path:')),
+        reconciler,
+        contains('msstore flights submission get 9PHHSJMWK06G'),
+      );
+      expect(reconciler, contains('msstore submission get 9PHHSJMWK06G'));
+      expect(reconciler, contains('--packageRolloutPercentage 100'));
+      expect(reconciler, contains('release-blocked'));
+      expect(reconciler, contains('meettrace-release-gate-'));
+      expect(reconciler, contains('gh workflow run alpha-release.yml'));
+      expect(reconciler, isNot(contains('manualEnvironmentApproval')));
+      expect(
+        candidateValidation,
+        contains('types: [candidate-distribution-validation]'),
+      );
+      expect(candidateValidation, contains('--no-resign'));
+      expect(
+        candidateValidation,
+        contains('runs-on: [self-hosted, Windows, X64, meettrace-store]'),
       );
 
-      final manualVerification = publish.indexOf(
-        'Record protected manual Microsoft Store production approval',
-      );
-      final apiVerification = publish.indexOf(
-        'Verify public Microsoft Store production submission',
+      final gateVerification = publish.indexOf(
+        'Download and verify automatic publication gate',
       );
       final pointerPreparation = publish.indexOf(
         'Prepare signed automatic-update pointer',
@@ -630,10 +624,8 @@ void main() {
       final pointerPublication = publish.indexOf(
         'Atomically publish signed automatic-update pointer',
       );
-      expect(manualVerification, greaterThanOrEqualTo(0));
-      expect(apiVerification, greaterThanOrEqualTo(0));
-      expect(manualVerification, lessThan(pointerPreparation));
-      expect(apiVerification, lessThan(pointerPreparation));
+      expect(gateVerification, greaterThanOrEqualTo(0));
+      expect(gateVerification, lessThan(pointerPreparation));
       expect(pointerPreparation, lessThan(releasePublication));
       expect(releasePublication, lessThan(pointerPublication));
     });
@@ -645,7 +637,7 @@ void main() {
       ).readAsString();
       final android = _job(workflow, 'android', 'ios');
       final ios = _job(workflow, 'ios', 'windows');
-      final windows = _job(workflow, 'windows', 'publish');
+      final windows = _job(workflow, 'windows', 'windows_flight');
       final publish = _job(workflow, 'publish');
 
       for (final job in <String>[android, ios, windows]) {
@@ -737,7 +729,7 @@ void main() {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'ios');
       final ios = _job(workflow, 'ios', 'windows');
-      final windows = _job(workflow, 'windows', 'publish');
+      final windows = _job(workflow, 'windows', 'windows_flight');
       final publish = _job(workflow, 'publish');
 
       expect(workflow, contains('resume_run_id:'));

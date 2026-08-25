@@ -28,7 +28,7 @@ SenseVoice 与 Silero VAD 的运行时下载 URL 固定到 `https://mt.zhangheng
 
 Pyannote 与 3D-Speaker 的运行时下载 URL 固定到 `https://mt.zhangheng.eu.org/models/SpeakerDiarization/`。镜像内容必须分别与官方 sherpa-onnx `speaker-segmentation-models`、`speaker-recongition-models` 发布资产保持字节一致。Pyannote 归档内含 MIT 许可；3D-Speaker 按该精确模型的 ModelScope 元数据采用 Apache-2.0；两项许可与 NOTICE 均已入库。
 
-同一 Manifest 固定 Engine 输入与聚类配置：16 kHz 单声道、CPU provider、2 threads、`numClusters=-1`、`minDurationOn=0.2`、`minDurationOff=0.5`。工程接入暂用 threshold `0.5`；该值不是质量达标结论，应经过普通话 2/3/4 人标注语料校准并记录，结果由 Alpha 发布批准人评估。
+同一 Manifest 固定 Engine 输入与聚类配置：16 kHz 单声道、CPU provider、2 threads、`numClusters=-1`、`minDurationOn=0.2`、`minDurationOff=0.5`。工程接入暂用 threshold `0.5`；该值不是质量达标结论，应经过普通话 2/3/4 人标注语料校准并记录，结果由团队评估。
 
 SenseVoice 合计 `239,549,735` 字节；Silero VAD 固定 `212,860` 字节；说话人资产下载 `46,552,205` 字节；全部运行时下载合计 `286,314,800` 字节。所有 URL 必须为 HTTPS，许可文本随安装包分发，权重不分发。
 
@@ -150,7 +150,7 @@ Windows runner 在数据库初始化前使用同一用户会话内的命名互�
 
 自动更新由 `AppUpdatePort` 消费 `updates/alpha/alpha.json` 的单一 Alpha 频道签名 Manifest，Domain 校验候选构建号必须高于当前版本，并要求状态为公开批准。签名 envelope 直接覆盖 Base64 解码后的原始 payload 字节，避免 JSON 重排歧义；parser 先用内置 Ed25519 公钥验签，再限定 `alpha` 频道、公开批准/撤回状态、同 SHA 候选和各平台固定入口。Android adapter 把不超过 512 MiB 的 APK 下载到应用私有目录，下载前必须在包体之外保留 128 MiB 录音空间，并验证长度、SHA-256、包名、版本/构建号和签名证书，交接系统安装器前再次复核；iOS 只打开受限 TestFlight URL；Windows 只接受 `ms-windows-store://pdp/?productid=9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`，拒绝 `.appinstaller` 与其他 Store 产品。录音或最终处理运行时更新状态只能是 deferred，回到空闲后自动续检；提高数据代必须在平台安装交接前取得清理确认。检查、下载或交接失败均不阻断启动、事实写入或历史访问。
 
-发布工作流仅从 `github-release` Environment 读取 Ed25519 私钥 seed。它验证上一指针的签名和单调构建号，在 GitHub Pre-release 已公开后用 Contents API 的旧 blob SHA 原子更新 `updates/alpha`；修复允许同 release/build 重签，撤回只允许当前 `publicApproved` 变为 `withdrawn`，已撤回版本不能重新公开。密钥不进入命令行、日志、Artifact、Release 或生成分支。
+发布工作流仅从不设 reviewer 的 `github-release` Environment 读取 Ed25519 私钥 seed。协调器先验证 TestFlight、Store Flight/production 和两阶段真实分发门禁，再恢复最终 job；最终 job 验证协调器不可变回执、公开原 Draft，并用 Contents API 的旧 blob SHA 原子更新 `updates/alpha`。修复允许同 release/build 重签，撤回只允许当前 `publicApproved` 变为 `withdrawn`，已撤回版本不能重新公开。密钥不进入命令行、日志、Artifact、Release 或生成分支。
 
 App 不接入业务分析埋点或总结网关。Release 组合根通过 data/service 层初始化 Sentry，启用 PII、日志、指标、截图、View Hierarchy、交互、失败请求、原生崩溃、ANR、Tracing、Profiling 和 Replay；画面内容保持全量文本与图片遮罩。录音 ViewModel 通过 domain Port 驱动遥测 Gate，录音期间停止新 Tracing/Profiling、交互 Breadcrumb、错误截图和 View Hierarchy，崩溃与 ANR 保持开启。官方 SDK 9.26 无公开 Replay 暂停 API，录音期间继续遮罩采集，不增加私有原生桥接。Sentry 初始化失败时组合根降级为无监控启动；不得阻断事实录音。诊断导出仍只包含白名单状态、错误码和设备指标，不包含音频或完整转录。
 
@@ -185,7 +185,7 @@ App 不接入业务分析埋点或总结网关。Release 组合根通过 data/se
 - Manifest 与归档解析拒绝 HTTP、路径穿越、绝对路径、符号链接、重复文件、空哈希、错误总量和不兼容 schema。
 - Pyannote MIT 许可与 3D-Speaker 精确模型许可/NOTICE 均须进入安装包；精确权重许可未确认时不得发布。
 - 依赖只允许官方 `sherpa_onnx` 包，不新增 JNI、FFI/C API、自建 C/C++ 链或手工 `jniLibs`。
-- Windows 只构建 x64 MSIX，当前唯一正式路线为 Microsoft Store。Manifest 固定 Store 的 Name、Publisher、PublisherDisplayName，Store 包版本使用 `1.0.<共享发布构建号>.0` 传输映射并另行记录营销版本；候选从可验证 CI 进入 Actions Artifact。首次发布通过 Private audience 验收，已有公开版本的后续更新通过 Package Flight 验收，再把同一包用于正式 submission。Store 签名前的候选不得放入 GitHub Release 或引导用户旁加载。
+- Windows 只构建 x64 MSIX，当前唯一正式路线为 Microsoft Store。Manifest 固定 Store 的 Name、Publisher、PublisherDisplayName，Store 包版本使用 `1.0.<共享发布构建号>.0` 传输映射并另行记录营销版本；候选从可验证 CI 进入 Actions Artifact。一次性 bootstrap 完成 Partner Center 产品、固定 Flight 与自动认证后发布配置；每个候选自动进入 Package Flight，通过专用机验证后将同一包提交 100% production，等待 `Published/Public` 并再次验证。Store 签名前的候选不得放入 GitHub Release 或引导用户旁加载。
 - SignPath Code signing policy 仅作为仍在审核的未来直发方案保留，当前工作流不得引用 SignPath 凭据或生成第二个 Windows 包身份。若未来考虑启用，必须先验证证书 Subject、升级和数据连续性，更新 PRD，并停止 Store 路线。
 - APK、Store submission、三平台候选清单和公开更新 Manifest 都是不可变发布证据；iOS IPA 只进入 TestFlight，Windows MSIX 只进入 Actions Artifact/Partner Center。公开更新指针只能在三平台批准后改变，不得指向 Draft 或 Package Flight。
 

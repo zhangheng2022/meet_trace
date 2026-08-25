@@ -1,198 +1,143 @@
----
-title: CI/CD Workflow Specification - Alpha Release
-version: 1.3
-date_created: 2026-08-20
-last_updated: 2026-08-22
-owner: MeetTrace Maintainers
-tags: [process, cicd, github-actions, release, android, ios, windows, auto-update]
----
+# Alpha Release 端到端自动发布规格
 
-# Alpha Release 端到端工作流规格
+**Status**：Active
 
-## Workflow Overview
+**Version**：2.0
 
-**Purpose**：从 `master` 的单一不可变提交生成 Android、iOS、Windows Alpha 候选，在 Store 状态经受保护人工证明或可选 API 验证后公开 GitHub Pre-release 和签名自动更新指针。
+**Date**：2026-08-25
 
-**Trigger Events**：仅允许维护者手动启动；发布标识必填，发布说明、TestFlight 外部链接和恢复参数可选。
+**Product source**：`docs/product/Alpha_PRD_无登录版.md` 3.1、AT-21～AT-26
 
-**Target Environments**：`android-alpha`、`testflight`、`windows-alpha`、`github-release`。
+## 1. 目的与边界
 
-## Execution Flow Diagram
+从 `master` 的单一不可变提交生成 Android、iOS、Windows Alpha 候选，自动提交 TestFlight 外测审核和 Microsoft Store，等待商店事实状态与真实分发验证全部通过后，自动公开原 GitHub Draft Pre-release 并原子更新签名指针。
+
+维护者只手动启动一次 `Alpha Release` 并提供 `release_id`。逐版本流程不允许最终人工审批、人工 Store 状态证明、临时 TestFlight 链接、重建已批准候选或旁路公开。
+
+## 2. 工作流拓扑
+
+| Workflow | Trigger | 责任 |
+| --- | --- | --- |
+| `alpha-release.yml` | `workflow_dispatch` | 分配构建号，创建 Draft/tag，构建三平台候选，上传 TestFlight，提交 Store Flight；内部恢复时验证最终门禁并公开 |
+| `alpha-release-reconcile.yml` | `repository_dispatch` + `*/15 * * * *` | 查询 TestFlight/Store，分类等待/阻断/就绪，提交 production，调度真实分发验证，汇总最终门禁 |
+| `candidate-distribution-validation.yml` | `repository_dispatch` | Flight 与 production 两阶段分别验证 Android Draft APK 和 Windows Store 安装生命周期 |
+| `platform-distribution-validation.yml` | `repository_dispatch` | 公开后纵向审计，不替代公开前门禁 |
 
 ```mermaid
 flowchart TD
-  A[手动输入发布标识] --> B[解析不可变候选与模式]
-  B --> C[技术质量门禁]
-  C --> D[Android 签名候选]
-  C --> E[iOS TestFlight 候选]
-  C --> F[Windows Store 候选]
-  D --> G[三平台候选一致性校验]
-  E --> G
-  F --> G
-  G --> H{github-release 人工批准}
-  H --> I{Store 核验模式}
-  I -->|manual| J[记录受保护人工证明]
-  I -->|api| K[查询并验证 Store submission]
-  J --> L{公开、同版本、仅 x64?}
-  K --> L
-  L -->|否| O[失败关闭；保留 Draft 与候选]
-  L -->|是| M[公开原 Draft 为 Pre-release]
-  M --> N[原子前移签名更新指针]
-  N --> P[写入发布与 Store 审计摘要]
+  A[Alpha Release: release_id] --> B[Android / iOS / Windows 同 SHA 候选]
+  B --> C[TestFlight review + external group]
+  B --> D[Store Package Flight]
+  C --> E[Reconciler]
+  D --> E
+  E -->|等待| E
+  E -->|拒审/未知| X[release-blocked Issue]
+  E --> F[Flight candidate validation]
+  F --> G[同一 MSIX production 100%]
+  G --> H[Published/Public]
+  H --> I[Production candidate validation]
+  I --> J[Release orchestration gate]
+  J --> K[内部 resume Alpha Release]
+  K --> L[公开 Draft + 原子更新指针]
 ```
 
-## Jobs & Dependencies
+## 3. 输入
 
-| Job | Purpose | Dependencies | Execution Context |
-|---|---|---|---|
-| prepare | 解析 candidate、resume、metadata 模式和共享构建号 | 无 | Linux，只读仓库 |
-| quality | 运行统一 Flutter 技术门禁 | prepare | 可复用质量工作流 |
-| android | 构建、签名、审计并暂存唯一公开 APK | prepare, quality | `android-alpha` |
-| ios | 构建、签名、审计并上传 TestFlight | prepare, quality | `testflight` |
-| windows | 构建、审计并保存固定 Store 身份 MSIX 候选 | prepare, quality | `windows-alpha` |
-| publish | 复核三平台、证明 Store 生产状态、公开 Release 与更新指针 | prepare, android, ios, windows | `github-release`，需人工批准；API 核验可选 |
+| Input | 类型 | 调用者 | 规则 |
+| --- | --- | --- | --- |
+| `release_id` | string | 维护者 | 必填，`v<semver>-alpha.<n>` |
+| `release_notes` | string | 维护者 | 可选 |
+| `resume_run_id` | string | 协调器/维护 | 正常发布不填写；必须绑定已成功的候选 source run |
+| `orchestration_run_id` | string | 仅协调器 | resume 时必填，必须包含完整门禁 Artifact |
+| `withdraw_update` | boolean | 维护者 | 仅已公开版本撤回 |
+| `repair_update_pointer` | boolean | 维护者 | 仅已公开版本指针修复 |
 
-## Requirements Matrix
+TestFlight 链接不接受运行输入，只读取固定 Environment Variable。
 
-### Functional Requirements
+## 4. 核心需求
 
-| ID | Requirement | Priority | Acceptance Criteria |
-|---|---|---|---|
-| REL-001 | 单一入口绑定 `master` 不可变提交 | High | 候选 SHA 属于 `master`，tag 与 Draft Release 均绑定该 SHA |
-| REL-002 | 三平台使用同一发布标识、营销版本和共享构建号 | High | 三份候选清单逐字段一致 |
-| REL-003 | Android 仅公开签名 `arm64-v8a` split APK | High | Release 中恰有一个预期 APK；共享构建号从 `2001` 开始，Android 输入基础构建号 `1` 后由默认 ABI 偏移生成相同的真实 `versionCode=2001`，摘要和签名身份匹配候选证据 |
-| REL-004 | iOS 仅上传 TestFlight | High | GitHub Release 与 Artifact 均不公开 IPA |
-| REL-005 | Windows 仅通过固定 Microsoft Store 产品分发 | High | Store ID、包身份、Publisher、PFN、版本映射和 x64 架构匹配固定合同 |
-| REL-006 | Store 正式版本先于 GitHub 与更新指针公开 | High | `github-release` 审批人逐项确认并提交精确 Store/状态/版本/x64/SHA-256 评论，或 API 回执证明 submission 为 `Published`、`Public` 且包含同一 `1.0.<build>.0` x64 包，否则失败关闭 |
-| REL-007 | 公开需要一次 `github-release` 人工批准 | High | `manual` 模式必须从本次运行的审批 API 核验环境、状态、审批人和精确评论；未批准时不公开 Draft、不写更新指针 |
-| REL-008 | 更新指针签名且单调前移 | High | 私钥对应客户端公钥；新构建号递增；写入携带上一 blob 身份 |
-| REL-009 | 失败恢复不得重建成功候选 | Medium | resume 模式复核原运行和 Artifact 后继续，不重复 TestFlight/Store 上传 |
-| REL-010 | 撤回不删除或覆盖资产 | High | 原 Release/tag/APK/Store submission 保留，指针状态只从公开转为撤回 |
+| ID | Requirement | Priority | Verification |
+| --- | --- | --- | --- |
+| REL-001 | 三平台候选来自同一 annotated tag、SHA、release ID 和共享构建号 | Critical | 三份候选清单交叉核对 |
+| REL-002 | 共享构建号从 2001 连续递增，Android 实测 versionCode、iOS build、Windows `1.0.<build>.0` 一致 | Critical | 构建号分配与包审计 |
+| REL-003 | Android 仅正式签名 arm64 APK，Draft 公开前不进入更新指针 | High | APK 清单、签名与 Draft 状态 |
+| REL-004 | iOS 仅上传 TestFlight；固定外测组、稳定 public link、自动通知并提交 Beta App Review | High | Fastlane 参数与 App Store Connect API |
+| REL-005 | TestFlight 必须 processing `VALID`、review `APPROVED`、非过期且可外测/Testing | Critical | 脱敏 TestFlight 回执 |
+| REL-006 | Windows 同一 MSIX 先进入固定 Package Flight，Flight 必须 `Published` | Critical | Flight API 回执与包名/版本/x64 |
+| REL-007 | Flight 真实分发验证成功后才允许 production submission | Critical | candidate validation flight receipt |
+| REL-008 | production 使用同一 MSIX、rollout 100%，必须 `Published/Public` | Critical | production API 回执 |
+| REL-009 | production 真实分发验证必须是独立运行，不复用 Flight 回执 | Critical | 两个不同 validation run ID |
+| REL-010 | 完整门禁前不得公开 Draft 或更新指针 | Critical | final publish 只接受 orchestration gate |
+| REL-011 | 正常路径无 `github-release`/`windows-store-validation` reviewer | High | bootstrap 与守卫测试 |
+| REL-012 | 拒审、未知状态或查询失败创建/更新 `release-blocked` Issue，Draft 与旧指针不变 | High | reconciler failure path |
+| REL-013 | 外部状态恢复后复用原候选自动继续 | High | schedule/repository dispatch 幂等恢复 |
+| REL-014 | GitHub Release 不包含 IPA、MSIX 或 `.appinstaller` | Critical | Release asset allowlist |
 
-### Security Requirements
+## 5. 状态机
 
-| ID | Requirement | Implementation Constraint |
-|---|---|---|
-| SEC-001 | 发布凭据只在受保护 Environment 可见 | PR、常规 CI、候选 Artifact 和日志不得接收凭据 |
-| SEC-002 | 无 Entra 时不得伪造 API 凭据 | `manual` 模式不读取 Partner Center Secrets；`api` 模式仅在最终批准 job 中读取最小权限凭据 |
-| SEC-003 | Store 回执必须标明证据来源且不得包含凭据 | 人工回执标记 `manualEnvironmentApproval` 并记录审批人、精确合同评论及其摘要，API 回执标记 `partnerCenterApi`；均只保留候选与非敏感状态字段 |
-| SEC-004 | 第三方 Actions 不得漂移 | 所有 Action 固定不可变提交；工具版本固定并受守卫测试约束 |
-| SEC-005 | 自动更新私钥不得落盘到仓库或 Artifact | 仅通过进程环境传递，日志不得回显 |
+### 5.1 TestFlight
 
-## Input/Output Contracts
+- `PROCESSING`、`WAITING_FOR_REVIEW`、`IN_REVIEW` 及已知外测准备状态：`waiting`。
+- `VALID + APPROVED + READY_FOR_EXTERNAL_TESTING/TESTING + testing=true`：`ready`。
+- `FAILED`、`INVALID`、`REJECTED`、未知组合或字段歧义：`blocked`。
 
-### Inputs
+### 5.2 Microsoft Store
 
-| Input | Type | Required | Contract |
-|---|---|---:|---|
-| release_id | string | 是 | `v<semver>-alpha.<positive>`，营销版本与候选一致 |
-| release_notes | string | 否 | 公开说明附加内容，不改变候选身份 |
-| ios_testflight_external_url | string | 否 | 仅接受 TestFlight 官方 join URL |
-| resume_run_id | positive integer | 否 | 仅引用同工作流、同候选且三平台成功的运行 |
-| withdraw_update | boolean | 否 | 仅允许现有公开版本从自动发现中撤回 |
-| repair_update_pointer | boolean | 否 | 仅允许现有公开版本重签同一指针 |
-| store_verification_mode | choice | 否，默认 `manual` | `manual` 使用受保护审批证明；`api` 在审批后调用 Partner Center API |
+- 对同一包的 commit/processing/certification/publishing 等已知中间状态：`waiting`。
+- Flight 对同一唯一 x64 包返回 `Published`：`flight_ready`。
+- production 对同一唯一 x64 包返回 `Published/Public`：`production_ready`。
+- 同一包返回失败/未知状态、多个包、错误版本/文件名/架构：`blocked`。
+- production 查询尚未出现目标包且 Flight 验证已通过：提交一次 100% production；已出现目标包时不得重复提交。
 
-### Secrets & Variables
+## 6. 不可变回执
 
-| Scope | Name | Purpose |
-|---|---|---|
-| android-alpha | Android 签名与 Sentry Secrets | 签名、证书身份校验、符号上传 |
-| testflight | App Store Connect、iOS 签名与 Sentry Secrets | TestFlight 上传和符号上传 |
-| github-release | `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64` | 签名自动更新 envelope |
-| github-release（仅 `api`） | `PARTNER_CENTER_TENANT_ID` | Store API 租户身份 |
-| github-release（仅 `api`） | `PARTNER_CENTER_SELLER_ID` | Store Seller 身份 |
-| github-release（仅 `api`） | `PARTNER_CENTER_CLIENT_ID` | Store API 客户端身份 |
-| github-release（仅 `api`） | `PARTNER_CENTER_CLIENT_SECRET` | Store API 客户端凭据 |
+最终 `release-gate.json` 必须包含：
 
-### Outputs
+- release ID、candidate SHA、source run、orchestration run、共享构建号；
+- TestFlight build ID、版本/build、固定组/link、review/processing/external/testing 状态；
+- Windows Flight ID/submission ID 与目标包；
+- Windows production submission ID、`Published/Public` 与目标包；
+- Flight、production 两阶段 candidate distribution receipt。
 
-| Output | Retention/Visibility | Contract |
-|---|---|---|
-| Android APK + public candidate manifest | GitHub Pre-release，长期公开 | 不可覆盖、不可删除、与候选摘要一致 |
-| iOS signed evidence | Actions Artifact，受限保留 | 不含 IPA |
-| Windows Store candidate evidence | Actions Artifact，受限保留 | MSIX 不进入 GitHub Release |
-| Store production receipt | Actions summary/evidence，不含 Secret | 标明人工或 API 核验模式，并绑定同版本 production submission 合同与候选身份 |
-| signed `alpha.json` | `updates/alpha` 分支 | 原子写入、签名有效、构建号不回退 |
+最终发布端使用 Dart 校验器重新验证整个门禁；不能仅依赖上游 job conclusion。校验通过后复制脱敏 production receipt 供公开后纵向验证使用。原始 Apple/Store 响应和 P8、client secret、下载 URL 不进入 Artifact。
 
-## Execution Constraints
+## 7. 安全与环境
 
-- 同一时间最多运行一个 Alpha Release；已有运行不得被新运行取消。
-- Android 与 Windows 候选 job 最长 90 分钟，iOS 候选 job 最长 120 分钟，最终公开 job 最长 30 分钟。
-- 发布候选必须来自 `master` 历史；禁止移动既有 tag。
-- 既有共享构建号低于 `2001` 时，下一候选一次性从 `2001` 开始，随后连续递增。Android schema 2 候选的包基础构建号固定为共享构建号减 `2000`，保留 Flutter 默认 ARM64 `+2000` ABI 偏移，使 APK 实际 `versionCode`、iOS 构建号和 Windows Store 第三段一致。签名更新指针必须携带候选清单实测的 Android `versionCode`，客户端不得自行推导。
-- 仅当前公开 Alpha 受支持。工作流可安全分发更高构建号，但不得把版本递增、更新 Manifest 或平台商店入口解释为任意旧 Alpha 可系统升级、兼容旧数据或完成迁移；Alpha 不提供降级或迁移合同。破坏性版本必须在应用内安装前提示全部本地数据清除范围并取得确认，录音或最终处理期间不得强制安装、退出或清理。
-- Microsoft Store 首次产品提交、Private audience 和 Flight 的人员/组配置属于 Partner Center bootstrap；`manual` 模式由审批人核对正式 submission，并逐字复制 Windows job 生成的 `STORE <Store ID> Published Public <版本> x64 <MSIX SHA-256>` 评论；`api` 模式由工作流复核，不得把人工证据描述为自动化查询。
-- `manual` 模式未从本次运行找到匹配的 `github-release` 已批准记录，或 `api` 模式验证失败、超时、凭据缺失时，保持 Draft 和旧更新指针，不得降级放行。
+| Environment | 权限边界 |
+| --- | --- |
+| `android-alpha` | Android signing 与 Firebase/Sentry |
+| `testflight` | iOS signing、App Store Connect API、固定外测组/link |
+| `windows-alpha` | Store MSIX signing |
+| `microsoft-store` | Partner Center 最小权限凭据与固定 Flight ID |
+| `windows-store-validation` | 专用 runner 隔离；无 required reviewer |
+| `github-release` | 更新指针 Ed25519 seed，以及用于最终重验的固定 TestFlight group/link 和 Store Flight ID；无 required reviewer |
 
-## Error Handling Strategy
+所有第三方 Action 固定完整 40 位 commit SHA。Store CLI 固定版本。专用 Windows runner 只接受默认分支 `repository_dispatch`，并验证自身标签、操作系统、Store 源、包身份与目标版本。
 
-| Error Type | Response | Recovery Action |
-|---|---|---|
-| 技术或平台构建失败 | 阻断候选 | 修复后以同发布标识重试；只复用身份匹配的不可变资产 |
-| TestFlight/Store 候选失败 | 阻断统一公开 | 修复平台分发后重试，不公开部分候选 |
-| 人工核对发现 Store 状态或包不匹配 | 不批准 `github-release`，保持等待或取消 | 在 Partner Center 完成同一包的正式认证，再使用原候选恢复 |
-| Store API/认证失败 | `api` 模式阻断最终公开并输出非敏感诊断 | 修复 Environment/Entra 配置后恢复，或新运行显式选择 `manual` 并重新承担人工核对责任 |
-| GitHub Release 公开失败 | 保留 Draft 或已公开状态，禁止盲目覆盖 | resume/metadata 模式重新核对不可变资产 |
-| 更新指针写入冲突 | Release 状态保持可审计，旧指针不被覆盖 | 读取最新 blob 后按 repair 模式复核重试 |
+一次性 `bootstrap_release_automation.ps1` 清除 wait timer/reviewer、设置固定 Variable 并验证 Secret 名称。它必须在自动化变更合并后由仓库管理员执行，且不读取或打印 Secret 值。
 
-## Quality Gates
+## 8. 故障策略
 
-| Gate | Criteria | Bypass Conditions |
-|---|---|---|
-| Flutter quality | format、analyze、tests 全部成功 | 无 |
-| Platform identity | 三平台候选同 SHA/版本/构建号且身份固定 | 无 |
-| Distribution | TestFlight 上传成功；Store production 人工或 API 回执绑定同一 x64 版本 | 无 |
-| Human approval | `github-release` reviewer 批准；`manual` 评论逐字匹配候选合同 | 无普通批准、空评论或自动旁路 |
-| Public integrity | Release 资产、签名指针、上一指针状态全部有效 | 无 |
+| Failure | Result | Recovery |
+| --- | --- | --- |
+| 候选构建/签名/审计失败 | 工作流失败，Draft 不公开 | 修复后复用合法 Draft；二进制变化用新版本 |
+| 外部审核等待 | 协调运行成功但不推进 | 15 分钟后自动查询 |
+| TestFlight/Store 拒审或未知 | `release-blocked` Issue，Draft/旧指针不变 | 修复商店元数据；状态恢复后自动继续 |
+| Flight 真实安装失败 | 不提交 production | 修复环境或新候选，保留证据 |
+| production 真实安装失败 | 不公开 GitHub | 修复 Store 可用性或新候选 |
+| final publish 失败 | 门禁 Artifact 保留，Draft 仍不公开或指针不前移 | 协调器重新恢复；已公开但指针失败用 repair |
+| 严重版本撤回 | 不删除 Release/tag/Store submission | 指针置 `withdrawn`，修复版本向前发布 |
 
-## Monitoring & Observability
+## 9. 验证
 
-- Job summary 记录候选 SHA、发布标识、共享构建号、三平台结果、Store 核验模式、可用的 submission ID、状态、版本和更新指针状态。
-- Store API 错误仅记录状态码与去敏错误信息；令牌、Client Secret 和 SAS URL 不得输出。
-- 构建证据默认按工作流保留期自动过期；公开 Release 和 `updates/alpha` 历史长期保留。
+- Dart 单元测试覆盖 TestFlight、Store Flight/production 和 orchestration gate 的成功与篡改路径。
+- workflow guard 覆盖唯一公开入口、固定 Action SHA、Flight/production CLI、15 分钟协调、无人工回执、真实分发阶段和 final gate 顺序。
+- `ruby -c tool/release/app_store_connect_status.rb` 在 macOS 发布 runner 执行或本地 Ruby 环境验证。
+- 发布工作流变更必须通过格式化、`flutter analyze`、完整 `flutter test`、YAML/actionlint 和 OCR 100% 审查。
+- 首次生产运行前，执行 bootstrap dry-run 与 `-Apply`，并确认专用 Windows runner 的 Store 账号属于固定 Flight 测试受众、Firebase WIF、TestFlight 固定组/link 和 Partner Center auto-publish 配置。
 
-## Edge Cases & Exceptions
+## 10. 变更记录
 
-| Scenario | Expected Behavior | Validation Method |
-|---|---|---|
-| Store 仍为 Private audience 或 Flight | 不公开 GitHub，不前移指针 | `manual` 审批人拒绝批准；`api` 检查可见性和状态 |
-| Store 已公开但版本不同 | 不公开 | `manual` 逐项核对；`api` 精确比较 `1.0.<shared build>.0` |
-| Store submission 同时含非 x64 包 | 不公开 | `manual` 核对包列表；`api` 检查架构集合 |
-| TestFlight 外部链接缺失 | 允许公开，但说明标记待提供 | Release notes 检查 |
-| 同版本已撤回 | 禁止重新公开 | 签名指针状态迁移检查 |
-| 首个 schema 2 统一候选 | 共享构建号为 `2001`；Android 基础构建号为 `1`、实际 `versionCode` 为 `2001`；iOS 与 Windows 同为 `2001`；不声明兼容任何旧 Alpha 安装或数据 | 三平台候选清单、APK badging 和客户端安装前验包测试 |
-| API 返回未知状态或关键字段类型错误 | `api` 模式失败关闭 | 严格枚举状态并校验关键 schema；无关新增字段可忽略 |
-
-## Validation Criteria
-
-- VLD-001：规格、workflow、守卫测试对 Job 依赖和单一批准顺序描述一致。
-- VLD-002：守卫测试证明 `manual` 为无 Secret 默认路径、查询本次运行审批记录、严格匹配环境与候选合同评论且回执诚实标记证据来源；API 解析覆盖有效、非公开、版本错、架构错、字段缺失和未知状态。
-- VLD-003：YAML/Actions 语法有效，第三方 Actions 固定完整提交。
-- VLD-004：发布守卫证明 Store 验证发生在 Release 公开和更新指针写入之前。
-- VLD-005：完整 Flutter 测试、静态分析和 OCR 审查通过。
-- VLD-006：守卫测试证明保留 `--split-per-abi`，共享构建号从 `2001` 连续递增，Android 基础构建号等于共享构建号减 `2000`，APK 实测 `versionCode` 与共享构建号相同并写入候选和签名更新指针；客户端按该实测值验包。
-
-## Change Management
-
-1. 先更新本规格与 PRD 发布合同。
-2. 通过 PR 审查工作流、工具和守卫测试。
-3. 在 `github-release` 保持 reviewer 保护；仅启用 `api` 模式时配置 Partner Center Secrets。
-4. 以非公开候选验证人工拒绝路径；有 Entra 时再验证 API 查询和失败关闭。
-5. 全部门禁通过且用户明确授权后合并；正式发版仍从单一 `Alpha Release` 入口启动。
-
-## Version History
-
-| Version | Date | Changes | Author |
-|---|---|---|---|
-| 1.0 | 2026-08-20 | 定义三平台候选、Store 生产验证、统一公开与签名更新指针的纵向合同 | Codex |
-| 1.1 | 2026-08-20 | 增加无 Entra 的受保护人工证明默认路径，并保留可选 Partner Center API 核验 | Codex |
-| 1.2 | 2026-08-21 | 保留 Android ABI split，将三平台实际构建号统一到 `2001` 起连续递增，并明确不兼容旧 Android Alpha 安装 | Codex |
-| 1.3 | 2026-08-22 | 明确仅支持当前公开 Alpha，更新与统一发布不构成任意 Alpha 间安装或数据兼容承诺 | Codex |
-
-## Related Specifications
-
-- [Flutter CI/CD 工作流规格](./spec-process-cicd-flutter-ci.md)
-- [Alpha PRD](../docs/product/Alpha_PRD_无登录版.md)
-- [GitHub Alpha 发布流程](../docs/project/GitHub_版本发布流程.md)
-- [代码签名策略](../CODE_SIGNING_POLICY.md)
+| Version | Date | Change |
+| --- | --- | --- |
+| 2.0 | 2026-08-25 | 移除最终审批；增加 TestFlight 审核轮询、Store Flight/production 自动提交、两阶段真实分发门禁和认证通过后自动公开 |
