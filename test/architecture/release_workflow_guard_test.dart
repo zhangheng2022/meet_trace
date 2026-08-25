@@ -543,15 +543,26 @@ void main() {
         'queue_reconciliation',
       );
       final publish = _job(workflow, 'publish');
+      final storeStatus = _job(
+        reconciler,
+        'microsoft_store_status',
+        'validation_status',
+      );
+      final submitProduction = _job(
+        reconciler,
+        'submit_production',
+        'dispatch_flight_validation',
+      );
 
       expect(workflow, isNot(contains('store_verification_mode:')));
       expect(workflow, contains('orchestration_run_id:'));
       expect(windowsFlight, contains('environment: microsoft-store'));
+      expect(windowsFlight, contains('runs-on: windows-2025'));
       expect(
         windowsFlight,
-        contains(r'--flightId "$PARTNER_CENTER_FLIGHT_ID"'),
+        contains(r'--flightId $env:PARTNER_CENTER_FLIGHT_ID'),
       );
-      final reconfigureIndex = windowsFlight.indexOf('msstore reconfigure \\');
+      final reconfigureIndex = windowsFlight.indexOf('msstore reconfigure `');
       final settingsIndex = windowsFlight.indexOf(
         'msstore settings --enableTelemetry',
       );
@@ -559,8 +570,11 @@ void main() {
       expect(settingsIndex, greaterThan(reconfigureIndex));
       expect(
         windowsFlight,
-        contains("printf 'y\\n' | msstore reconfigure --reset"),
+        contains(r'MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)'),
       );
+      expect(windowsFlight, contains('EntryPoint = "CredDeleteW"'));
+      expect(windowsFlight, isNot(contains('libsecret-1-0')));
+      expect(windowsFlight, isNot(contains('msstore reconfigure --reset')));
       expect(
         windowsFlight,
         contains(
@@ -604,12 +618,27 @@ void main() {
       expect(reconciler, contains('types: [alpha-release-reconcile]'));
       expect(reconciler, contains('app_store_connect_status.rb'));
       expect(reconciler, contains('verify_testflight_submission.dart'));
-      expect(
-        reconciler,
-        contains('msstore flights submission get 9PHHSJMWK06G'),
-      );
+      expect(storeStatus, contains('runs-on: windows-2025'));
+      expect(storeStatus, contains('version: v0.4.1'));
+      expect(storeStatus, contains('msstore flights submission get `'));
+      expect(storeStatus, contains('9PHHSJMWK06G'));
+      expect(storeStatus, contains('Write-Output -NoEnumerate'));
       expect(reconciler, contains('msstore submission get 9PHHSJMWK06G'));
-      expect(reconciler, contains('--packageRolloutPercentage 100'));
+      expect(submitProduction, contains('runs-on: windows-2025'));
+      expect(submitProduction, contains('version: v0.4.1'));
+      expect(submitProduction, contains('--packageRolloutPercentage 100'));
+      for (final job in [windowsFlight, storeStatus, submitProduction]) {
+        final configure = job.indexOf('msstore reconfigure `');
+        final settings = job.indexOf('msstore settings --enableTelemetry');
+        expect(configure, greaterThanOrEqualTo(0));
+        expect(settings, greaterThan(configure));
+        expect(job, contains('EntryPoint = "CredDeleteW"'));
+        expect(
+          job,
+          contains(r'MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)'),
+        );
+        expect(job, isNot(contains('msstore reconfigure --reset')));
+      }
       expect(reconciler, contains('release-blocked'));
       expect(reconciler, contains('meettrace-release-gate-'));
       expect(reconciler, contains('gh workflow run alpha-release.yml'));
