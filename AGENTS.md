@@ -16,6 +16,8 @@
 - 新会议按本地开始时间生成确定性标题。Alpha 不提供 AI 总结或总结网关；文本分享只包含最终转录，音频分享必须使用独立入口、二次确认和临时 WAV，且不得改写事实 PCM。
 - 扩展 P0 前必须先更新 PRD。
 - Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX；Android、iOS、Windows 同一 SHA 的构建、自动化和分发门禁通过后才公开原 Draft 为 GitHub Pre-release。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 当前只通过 Microsoft Store 分发和更新，Store 包不得上传 GitHub Release。SignPath 申请仅作为未来可能替换 Store 的待审核路线，不接入当前发布工作流；启用前必须验证包身份兼容性并更新 PRD，禁止两个 Windows 包身份并存。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。
+- 新统一版本序列从共享构建号 `2001` 开始连续递增。Android 必须保留 `--split-per-abi`，传入的包基础构建号为共享构建号减 `2000`，Flutter 默认 ARM64 ABI 偏移后的实测 `versionCode` 必须与 iOS、Windows 构建号一致并写入候选清单和签名更新 Manifest；客户端按实测值验包，不自行推导。
+- Alpha 仅支持当前公开版本，不承诺任意 Alpha 版本之间的安装升级、本地数据格式、数据库、会议音频与转录、模型缓存、检查点或设置兼容性，也不提供降级或数据迁移。自动更新和统一发布只保证已批准候选的安全分发，不构成兼容性承诺；破坏性版本允许在用户安装前明确确认后清除全部本地数据并重新初始化，但录音或最终处理期间不得强制安装、退出或清理。发布资产不可覆盖、版本必须向前递增、包身份和签名校验等安全门禁不受影响。
 
 ## 架构与项目结构
 

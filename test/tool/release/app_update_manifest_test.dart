@@ -38,7 +38,8 @@ void main() {
     );
 
     expect(android.candidate.releaseId, 'v1.1.0-alpha.1');
-    expect(android.candidate.buildNumber, 11);
+    expect(android.candidate.buildNumber, 2001);
+    expect(android.artifact.versionCode, 2001);
     expect(android.artifact.bytes, 1024);
     expect(
       android.artifact.installUri.toString(),
@@ -60,11 +61,22 @@ void main() {
 
   test('仅允许构建号递增、当前版本修复或撤回当前公开版本', () async {
     final previous = await createSignedAppUpdateManifest(
-      _request(seed: seed, publicKey: publicKey),
+      _request(
+        seed: seed,
+        publicKey: publicKey,
+        releaseId: 'v1.1.0-alpha.2',
+        buildNumber: 2002,
+      ),
     );
 
     final repaired = await createSignedAppUpdateManifest(
-      _request(seed: seed, publicKey: publicKey, previous: previous),
+      _request(
+        seed: seed,
+        publicKey: publicKey,
+        previous: previous,
+        releaseId: 'v1.1.0-alpha.2',
+        buildNumber: 2002,
+      ),
     );
     expect(repaired, isNotEmpty);
     final withdrawn = await createSignedAppUpdateManifest(
@@ -72,6 +84,8 @@ void main() {
         seed: seed,
         publicKey: publicKey,
         previous: previous,
+        releaseId: 'v1.1.0-alpha.2',
+        buildNumber: 2002,
         status: 'withdrawn',
       ),
     );
@@ -92,9 +106,7 @@ void main() {
           seed: seed,
           publicKey: publicKey,
           previous: previous,
-          releaseId: 'v1.0.0-alpha.9',
-          versionName: '1.0.0',
-          buildNumber: 10,
+          buildNumber: 2001,
         ),
       ),
       throwsStateError,
@@ -130,6 +142,34 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('拒绝 Android arm64 split versionCode 与基础构建号不匹配', () async {
+    final request = _request(seed: seed, publicKey: publicKey);
+    request.androidCandidate['versionCode'] = 2002;
+
+    await expectLater(
+      createSignedAppUpdateManifest(request),
+      throwsFormatException,
+    );
+  });
+
+  test('schema 1 遗留候选仍可修复指针但不伪造真实 versionCode', () async {
+    final request = _request(seed: seed, publicKey: publicKey);
+    request.androidCandidate
+      ..['schemaVersion'] = 1
+      ..remove('androidBaseBuildNumber')
+      ..remove('versionCode');
+
+    final envelope = await createSignedAppUpdateManifest(request);
+    final parsed = await SignedAppUpdateManifestParser(
+      signatureVerifier: Ed25519AppUpdateSignatureVerifier(
+        expectedKeyId: 'alpha-0123456789abcdef',
+        publicKeyBytes: publicKey,
+      ),
+    ).parse(envelope, platform: AppUpdatePlatform.android);
+
+    expect(parsed.artifact.versionCode, isNull);
+  });
 }
 
 AppUpdateManifestSigningRequest _request({
@@ -139,7 +179,7 @@ AppUpdateManifestSigningRequest _request({
   String status = 'publicApproved',
   String releaseId = 'v1.1.0-alpha.1',
   String versionName = '1.1.0',
-  int buildNumber = 11,
+  int buildNumber = 2001,
   Uri? testFlightUri,
 }) => AppUpdateManifestSigningRequest(
   privateSeed: seed,
@@ -154,9 +194,12 @@ AppUpdateManifestSigningRequest _request({
   approvedAt: DateTime.utc(2026, 8, 20),
   repository: 'example/meettrace',
   androidCandidate: <String, Object?>{
+    'schemaVersion': 2,
     'releaseId': releaseId,
     'marketingVersion': versionName,
     'buildNumber': buildNumber,
+    'androidBaseBuildNumber': buildNumber - 2000,
+    'versionCode': buildNumber,
     'commitSha': '0123456789abcdef0123456789abcdef01234567',
     'packageIdentity': 'com.meettrace.app',
     'signingIdentitySha256': 'a' * 64,

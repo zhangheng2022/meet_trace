@@ -58,6 +58,61 @@ void main() {
     expect(await obsolete.exists(), isFalse);
   });
 
+  test('使用候选清单记录的 split APK 实际 versionCode 校验安装包', () async {
+    final apk = <int>[2, 0, 0, 1];
+    server.listen((request) async {
+      request.response
+        ..contentLength = apk.length
+        ..add(apk);
+      await request.response.close();
+    });
+    installer.versionCode = 2001;
+    final update = _update(
+      uri: _uri(server),
+      bytes: apk.length,
+      digest: sha256.convert(apk).toString(),
+      buildNumber: 2001,
+      versionCode: 2001,
+    );
+    final handler = AndroidAppUpdateHandler(
+      http: http,
+      installer: installer,
+      storageRoot: storage.path,
+      getFreeBytes: () async => 1024 * 1024 * 1024,
+    );
+
+    await handler.stage(update);
+    await handler.requestInstall(update);
+
+    expect(installer.installedPath, endsWith('.apk'));
+  });
+
+  test('拒绝与候选清单实际 versionCode 不一致的 split APK', () async {
+    final apk = <int>[2, 0, 0, 2];
+    server.listen((request) async {
+      request.response
+        ..contentLength = apk.length
+        ..add(apk);
+      await request.response.close();
+    });
+    installer.versionCode = 2002;
+    final update = _update(
+      uri: _uri(server),
+      bytes: apk.length,
+      digest: sha256.convert(apk).toString(),
+      buildNumber: 2001,
+      versionCode: 2001,
+    );
+    final handler = AndroidAppUpdateHandler(
+      http: http,
+      installer: installer,
+      storageRoot: storage.path,
+      getFreeBytes: () async => 1024 * 1024 * 1024,
+    );
+
+    await expectLater(handler.stage(update), throwsFormatException);
+  });
+
   test('拒绝哈希或 APK 元数据不匹配并清理 part 文件', () async {
     final apk = <int>[1, 2, 3];
     server.listen((request) async {
@@ -118,11 +173,13 @@ VerifiedPlatformAppUpdate _update({
   required Uri uri,
   required int bytes,
   required String digest,
+  int buildNumber = 11,
+  int? versionCode,
 }) => VerifiedPlatformAppUpdate(
   candidate: AppUpdateCandidate(
     releaseId: 'v1.1.0-alpha.1',
     versionName: '1.1.0',
-    buildNumber: 11,
+    buildNumber: buildNumber,
     dataGeneration: 3,
     status: AppUpdateCandidateStatus.publicApproved,
     sourceCommitSha: '0123456789abcdef0123456789abcdef01234567',
@@ -132,6 +189,7 @@ VerifiedPlatformAppUpdate _update({
   artifact: VerifiedPlatformUpdateArtifact(
     platform: AppUpdatePlatform.android,
     installUri: uri,
+    versionCode: versionCode,
     bytes: bytes,
     sha256: digest,
     packageIdentity: 'com.meettrace.app',
@@ -144,6 +202,7 @@ Uri _uri(HttpServer server) =>
 
 final class _Installer implements AndroidApkInstaller {
   String packageName = 'com.meettrace.app';
+  int versionCode = 11;
   int inspectCount = 0;
   String? installedPath;
 
@@ -153,7 +212,7 @@ final class _Installer implements AndroidApkInstaller {
     return AndroidApkMetadata(
       packageName: packageName,
       versionName: '1.1.0',
-      versionCode: 11,
+      versionCode: versionCode,
       signingCertificateSha256: <String>['a' * 64],
     );
   }

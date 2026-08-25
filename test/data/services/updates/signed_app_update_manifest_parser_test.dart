@@ -16,10 +16,11 @@ void main() {
     );
 
     expect(update.candidate.status, AppUpdateCandidateStatus.publicApproved);
-    expect(update.candidate.buildNumber, 11);
-    expect(update.candidate.artifactId, 'android-11');
+    expect(update.candidate.buildNumber, 2001);
+    expect(update.candidate.artifactId, 'android-2001');
     expect(update.artifact.platform, AppUpdatePlatform.android);
     expect(update.artifact.packageIdentity, 'com.meettrace.app');
+    expect(update.artifact.versionCode, 2001);
     expect(update.artifact.bytes, 1024);
     expect(verifier.payload, isNotEmpty);
     expect(verifier.algorithm, 'Ed25519');
@@ -50,6 +51,16 @@ void main() {
         final artifacts = payload['artifacts']! as Map<String, Object?>;
         final android = artifacts['android']! as Map<String, Object?>;
         android['bytes'] = 512 * 1024 * 1024 + 1;
+      },
+      (payload) {
+        final artifacts = payload['artifacts']! as Map<String, Object?>;
+        final android = artifacts['android']! as Map<String, Object?>;
+        android['versionCode'] = 0;
+      },
+      (payload) {
+        final artifacts = payload['artifacts']! as Map<String, Object?>;
+        final android = artifacts['android']! as Map<String, Object?>;
+        android['versionCode'] = 2002;
       },
     ]) {
       final parser = SignedAppUpdateManifestParser(
@@ -128,18 +139,19 @@ List<int> _envelopeBytes({void Function(Map<String, Object?>)? mutate}) {
     'status': 'publicApproved',
     'releaseId': 'v1.1.0-alpha.1',
     'versionName': '1.1.0',
-    'buildNumber': 11,
+    'buildNumber': 2001,
     'dataGeneration': 3,
     'sourceCommitSha': '0123456789abcdef0123456789abcdef01234567',
     'approvedAt': '2026-08-15T10:00:00Z',
     'artifacts': <String, Object?>{
       'android': <String, Object?>{
-        'artifactId': 'android-11',
+        'artifactId': 'android-2001',
         'installUri': 'https://updates.example.test/meettrace.apk',
         'bytes': 1024,
         'sha256': hash,
         'packageIdentity': 'com.meettrace.app',
         'signingIdentitySha256': hash,
+        'versionCode': 2001,
       },
       'ios': <String, Object?>{
         'artifactId': 'ios-11',

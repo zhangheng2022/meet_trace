@@ -208,19 +208,15 @@ jobs:
               fi
             done <<<"$release_assets"
 
-            if (( max_build_number > 0 )); then
+            if (( max_build_number >= 2001 )); then
               build_number=$((max_build_number + 1))
             else
-              build_number="$(
-                git show "$CANDIDATE_SHA:pubspec.yaml" |
-                  sed -nE 's/^version:[[:space:]]*[^+[:space:]]+\+([1-9][0-9]*).*/\1/p'
-              )"
-              [[ -n "$build_number" ]]
+              build_number=2001
             fi
             echo "Allocated next build number: $build_number"
           fi
 
-          (( build_number > 0 && build_number <= 2100000000 ))
+          (( build_number >= 2001 && build_number <= 2100000000 ))
           echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
 
   quality:
@@ -284,10 +280,14 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          (( RELEASE_BUILD_NUMBER >= 2001 ))
+          ANDROID_PACKAGE_BUILD_NUMBER=$((RELEASE_BUILD_NUMBER - 2000))
           echo "ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "ANDROID_PACKAGE_BUILD_NUMBER=$ANDROID_PACKAGE_BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "SENTRY_RELEASE=com.meettrace.app@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "Android versionCode: $RELEASE_BUILD_NUMBER"
+          echo "Android shared build: $RELEASE_BUILD_NUMBER"
+          echo "Android package base build: $ANDROID_PACKAGE_BUILD_NUMBER"
 
       - name: Reuse immutable staged Android candidate
         id: staged
@@ -337,7 +337,10 @@ jobs:
             '.platform == "android" and
              .releaseId == $release_id and
              .commitSha == $candidate_sha and
+             .schemaVersion == 2 and
              (.buildNumber | tostring) == $build_number and
+             (.androidBaseBuildNumber | tonumber) == (($build_number | tonumber) - 2000) and
+             (.versionCode | tostring) == $build_number and
              .artifact.name == $apk_name and
              (.artifact.sha256 | test("^[0-9a-f]{64}$"))' \
             "$manifest" >/dev/null
@@ -401,7 +404,7 @@ jobs:
             --target-platform android-arm64 \
             --split-per-abi \
             --build-name="$MARKETING_VERSION" \
-            --build-number="$ANDROID_BUILD_NUMBER" \
+            --build-number="$ANDROID_PACKAGE_BUILD_NUMBER" \
             --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true \
             --dart-define="MEETTRACE_VERSION_NAME=$MARKETING_VERSION" \
             --dart-define="MEETTRACE_BUILD_NUMBER=$ANDROID_BUILD_NUMBER" \
@@ -467,6 +470,16 @@ jobs:
           printf '%s\n' "$actual" > build/android/alpha/signing-certificate.sha256
           sha256sum "$APK_PATH" | tee build/android/alpha/android-release-apk.sha256
 
+          aapt="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name aapt | sort -V | tail -1)"
+          [[ -x "$aapt" ]]
+          "$aapt" dump badging "$APK_PATH" | tee build/android/alpha/android-apk-badging.txt
+          version_code="$(sed -nE "s/^package:.*versionCode='([0-9]+)'.*$/\1/p" build/android/alpha/android-apk-badging.txt | head -1)"
+          version_name="$(sed -nE "s/^package:.*versionName='([^']+)'.*$/\1/p" build/android/alpha/android-apk-badging.txt | head -1)"
+          expected_version_code="$ANDROID_BUILD_NUMBER"
+          [[ "$version_code" == "$expected_version_code" ]]
+          [[ "$version_name" == "$MARKETING_VERSION" ]]
+          printf '%s\n' "$version_code" > build/android/alpha/android-version-code.txt
+
       - name: Write Android candidate manifest
         if: steps.staged.outputs.reuse != 'true'
         shell: bash
@@ -475,6 +488,7 @@ jobs:
           RELEASE_ID="$RELEASE_ID" \
           MARKETING_VERSION="$MARKETING_VERSION" \
           ANDROID_BUILD_NUMBER="$ANDROID_BUILD_NUMBER" \
+          ANDROID_PACKAGE_BUILD_NUMBER="$ANDROID_PACKAGE_BUILD_NUMBER" \
           APK_PATH="$APK_PATH" \
           python3 - <<'PY'
           import hashlib
@@ -489,12 +503,23 @@ jobs:
           ).read_text().strip().replace(":", "").lower()
           if len(signing_identity) != 64:
               raise SystemExit("Android signing identity digest is invalid")
+          version_code = int(
+              Path("build/android/alpha/android-version-code.txt").read_text().strip()
+          )
+          android_base_build_number = int(os.environ["ANDROID_PACKAGE_BUILD_NUMBER"])
+          if (
+              version_code != android_base_build_number + 2000
+              or version_code != int(os.environ["ANDROID_BUILD_NUMBER"])
+          ):
+              raise SystemExit("Android arm64 split versionCode mapping is invalid")
           manifest = {
-              "schemaVersion": 1,
+              "schemaVersion": 2,
               "platform": "android",
               "releaseId": os.environ["RELEASE_ID"],
               "marketingVersion": os.environ["MARKETING_VERSION"],
               "buildNumber": os.environ["ANDROID_BUILD_NUMBER"],
+              "androidBaseBuildNumber": android_base_build_number,
+              "versionCode": version_code,
               "commitSha": os.environ["CANDIDATE_SHA"],
               "workflowFile": ".github/workflows/alpha-release.yml",
               "job": "android",
@@ -1608,6 +1633,12 @@ jobs:
                   raise SystemExit(f"{name} candidate origin is invalid")
           if (
               android.get("packageIdentity") != "com.meettrace.app"
+              or android.get("schemaVersion") != 2
+              or int(android.get("androidBaseBuildNumber", 0)) <= 0
+              or int(android.get("versionCode", 0))
+              != int(android.get("androidBaseBuildNumber", 0)) + 2000
+              or int(android.get("versionCode", 0))
+              != int(android.get("buildNumber", 0))
               or not re.fullmatch(
                   r"[0-9a-f]{64}",
                   str(android.get("signingIdentitySha256", "")),

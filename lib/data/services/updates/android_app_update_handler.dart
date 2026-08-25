@@ -172,7 +172,8 @@ final class AndroidAppUpdateHandler implements PlatformAppUpdateHandler {
       final metadata = await installer.inspect(file.path);
       return metadata.packageName == artifact.packageIdentity &&
           metadata.versionName == update.candidate.versionName &&
-          metadata.versionCode == update.candidate.buildNumber &&
+          metadata.versionCode ==
+              (update.artifact.versionCode ?? update.candidate.buildNumber) &&
           metadata.signingCertificateSha256.contains(
             _normalizeSha256(artifact.signingIdentitySha256!),
           );
