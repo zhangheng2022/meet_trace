@@ -582,6 +582,13 @@ void main() {
       );
       expect(windowsFlight, contains(r'--inputDirectory $inputDirectory'));
       expect(windowsFlight, isNot(contains('--inputFile')));
+      expect(windowsFlight, contains('--uploadTimeout 900'));
+      expect(windowsFlight, isNot(contains('--verbose')));
+      expect(
+        windowsFlight,
+        contains('candidate-or-newer Package Flight submission'),
+      );
+      expect(windowsFlight, contains('contains only lower package versions'));
       expect(
         windowsFlight,
         contains(r'--flightId $env:PARTNER_CENTER_FLIGHT_ID'),
@@ -618,6 +625,13 @@ void main() {
       expect(storeRecovery, contains(r'[regex]::Escape($env:SOURCE_RUN_ID)'));
       expect(storeRecovery, contains(r'--inputDirectory $inputDirectory'));
       expect(storeRecovery, isNot(contains('--inputFile')));
+      expect(storeRecovery, contains('--uploadTimeout 900'));
+      expect(storeRecovery, isNot(contains('--verbose')));
+      expect(
+        storeRecovery,
+        contains('candidate-or-newer Package Flight submission'),
+      );
+      expect(storeRecovery, contains('contains only lower package versions'));
       expect(
         storeRecovery,
         contains(r'actions/jobs/$($env:SOURCE_WINDOWS_JOB_ID)/rerun'),
@@ -665,7 +679,11 @@ void main() {
       expect(reconciler, contains('msstore submission get 9PHHSJMWK06G'));
       expect(submitProduction, contains('runs-on: windows-2025'));
       expect(submitProduction, contains('version: v0.4.1'));
+      expect(submitProduction, contains(r'--inputDirectory $inputDirectory'));
+      expect(submitProduction, isNot(contains('--inputFile')));
       expect(submitProduction, contains('--packageRolloutPercentage 100'));
+      expect(submitProduction, contains('--uploadTimeout 900'));
+      expect(submitProduction, isNot(contains('--verbose')));
       for (final job in [windowsFlight, storeStatus, submitProduction]) {
         final configure = job.indexOf('msstore reconfigure `');
         final settings = job.indexOf('msstore settings --enableTelemetry');

@@ -1563,6 +1563,10 @@ jobs:
           $manifest = Get-Content -LiteralPath $env:WINDOWS_MANIFEST_PATH -Raw | ConvertFrom-Json
           $artifactName = [string]$manifest.artifact.name
           $packageVersion = [string]$manifest.packageVersion
+          $candidateVersion = $null
+          if (-not [version]::TryParse($packageVersion, [ref]$candidateVersion)) {
+            throw "Invalid candidate package version: $packageVersion"
+          }
           $existingPath = Join-Path $env:RUNNER_TEMP 'existing-flight-submission.json'
           $existingOutput = & msstore flights submission get `
             9PHHSJMWK06G $env:PARTNER_CENTER_FLIGHT_ID 2>$null
@@ -1579,7 +1583,17 @@ jobs:
               $reuse = $true
             } elseif ($packages.Count -gt 0 -and
                 ([string]$submission.Status).ToLowerInvariant() -ne 'published') {
-              throw 'A different Package Flight submission is already pending.'
+              $candidateOrNewer = @($packages | Where-Object {
+                  $existingVersion = $null
+                  -not [version]::TryParse(
+                    ([string]$_.Version).TrimStart('v'),
+                    [ref]$existingVersion) -or
+                  $existingVersion -ge $candidateVersion
+                })
+              if ($candidateOrNewer.Count -gt 0) {
+                throw 'A different candidate-or-newer Package Flight submission is already pending.'
+              }
+              Write-Host 'Replacing a stale pending Flight draft that contains only lower package versions.'
             }
           }
 
@@ -1588,7 +1602,8 @@ jobs:
             msstore publish $env:GITHUB_WORKSPACE `
               --inputDirectory $inputDirectory `
               --appId 9PHHSJMWK06G `
-              --flightId $env:PARTNER_CENTER_FLIGHT_ID
+              --flightId $env:PARTNER_CENTER_FLIGHT_ID `
+              --uploadTimeout 900
             if ($LASTEXITCODE -ne 0) {
               throw 'Microsoft Store Package Flight submission failed.'
             }
