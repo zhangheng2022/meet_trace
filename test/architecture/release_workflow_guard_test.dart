@@ -809,7 +809,16 @@ void main() {
       expect(reconciler, contains('app_store_connect_status.rb'));
       expect(appStoreStatus, contains('"/betaGroups"'));
       expect(appStoreStatus, contains('"filter[app]" => app.fetch("id")'));
-      expect(appStoreStatus, contains('"filter[builds]" => build.fetch("id")'));
+      expect(
+        appStoreStatus,
+        contains('group_id.match?(/\\A[A-Za-z0-9-]{1,128}\\z/)'),
+      );
+      expect(appStoreStatus, contains('"/betaGroups/#{group_id}/builds"'));
+      expect(appStoreStatus, contains('"limit" => "200"'));
+      expect(
+        appStoreStatus,
+        contains('item.fetch("id", nil) == build.fetch("id")'),
+      );
       expect(
         appStoreStatus,
         contains('group_attributes.fetch("publicLinkEnabled")'),
@@ -819,6 +828,7 @@ void main() {
         isNot(contains(r"/builds/#{build.fetch('id')}/betaGroups")),
       );
       expect(appStoreStatus, isNot(contains('"limit[builds]"')));
+      expect(appStoreStatus, isNot(contains('"filter[builds]"')));
       expect(reconciler, contains('verify_testflight_submission.dart'));
       for (final statusJob in [testflightStatus, storeStatus]) {
         expect(
