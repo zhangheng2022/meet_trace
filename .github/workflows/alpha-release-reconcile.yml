@@ -149,17 +149,19 @@ jobs:
             echo "No successful Alpha Release run carries the exact immutable candidate" >&2
             exit 1
           }
-          echo "found=true" >> "$GITHUB_OUTPUT"
-          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
-          echo "source_run_id=$source_run_id" >> "$GITHUB_OUTPUT"
-          echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
-          echo "marketing_version=$(jq -er .marketingVersion "$manifest")" >> "$GITHUB_OUTPUT"
-          echo "build_number=$(jq -er .buildNumber "$manifest")" >> "$GITHUB_OUTPUT"
-          echo "android_artifact_sha256=$(jq -er .artifact.sha256 "$release_manifest")" >> "$GITHUB_OUTPUT"
-          echo "windows_bundle_name=$windows_bundle_name" >> "$GITHUB_OUTPUT"
-          echo "windows_artifact_name=$(jq -er .artifact.name "$manifest")" >> "$GITHUB_OUTPUT"
-          echo "windows_artifact_sha256=$(jq -er .artifact.sha256 "$manifest")" >> "$GITHUB_OUTPUT"
-          echo "windows_package_version=$(jq -er .packageVersion "$manifest")" >> "$GITHUB_OUTPUT"
+          {
+            echo "found=true"
+            echo "release_id=$release_id"
+            echo "source_run_id=$source_run_id"
+            echo "candidate_sha=$candidate_sha"
+            echo "marketing_version=$(jq -er .marketingVersion "$manifest")"
+            echo "build_number=$(jq -er .buildNumber "$manifest")"
+            echo "android_artifact_sha256=$(jq -er .artifact.sha256 "$release_manifest")"
+            echo "windows_bundle_name=$windows_bundle_name"
+            echo "windows_artifact_name=$(jq -er .artifact.name "$manifest")"
+            echo "windows_artifact_sha256=$(jq -er .artifact.sha256 "$manifest")"
+            echo "windows_package_version=$(jq -er .packageVersion "$manifest")"
+          } >> "$GITHUB_OUTPUT"
 
   testflight_status:
     name: Reconcile TestFlight external review and Testing
@@ -277,9 +279,11 @@ jobs:
               --source-run-id "$SOURCE_RUN_ID" \
               --verified-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           fi
-          echo "ready=$ready" >> "$GITHUB_OUTPUT"
-          echo "blocked=$blocked" >> "$GITHUB_OUTPUT"
-          echo "summary=processing=$processing review=$review external=$external testing=$testing" >> "$GITHUB_OUTPUT"
+          {
+            echo "ready=$ready"
+            echo "blocked=$blocked"
+            echo "summary=processing=$processing review=$review external=$external testing=$testing"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Upload safe TestFlight query diagnostic
         if: failure()
@@ -953,6 +957,7 @@ jobs:
           set -euo pipefail
           gh label create release-blocked --repo "$GITHUB_REPOSITORY" --color B60205 --description "External release state blocks automatic publication" --force
           title="[release-blocked] $RELEASE_ID"
+          # shellcheck disable=SC2016 # Markdown backticks are intentionally literal.
           body="$(printf 'Microsoft Store production 自动提交失败。Draft Release 和旧更新指针保持不变。\n\n- Candidate: `%s`\n- Reconciler run: %s' "$CANDIDATE_SHA" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")"
           number="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $title" --json number,title | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | head -1 || true)"
           if [[ -n "$number" ]]; then

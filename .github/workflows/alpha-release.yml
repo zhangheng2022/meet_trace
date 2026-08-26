@@ -262,9 +262,11 @@ jobs:
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$RELEASE_ID" == "$expected_prefix"* ]]
 
-          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
-          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
-          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
+          {
+            echo "MARKETING_VERSION=$marketing_version"
+            echo "RELEASE_ID=$RELEASE_ID"
+            echo "CANDIDATE_SHA=$candidate_sha"
+          } >> "$GITHUB_ENV"
 
       - name: Prepare release build number
         shell: bash
@@ -275,10 +277,12 @@ jobs:
           [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
           (( RELEASE_BUILD_NUMBER >= 2001 ))
           ANDROID_PACKAGE_BUILD_NUMBER=$((RELEASE_BUILD_NUMBER - 2000))
-          echo "ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "ANDROID_PACKAGE_BUILD_NUMBER=$ANDROID_PACKAGE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "SENTRY_RELEASE=com.meettrace.app@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          {
+            echo "ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER"
+            echo "ANDROID_PACKAGE_BUILD_NUMBER=$ANDROID_PACKAGE_BUILD_NUMBER"
+            echo "SENTRY_RELEASE=com.meettrace.app@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER"
+            echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER"
+          } >> "$GITHUB_ENV"
           echo "Android shared build: $RELEASE_BUILD_NUMBER"
           echo "Android package base build: $ANDROID_PACKAGE_BUILD_NUMBER"
 
@@ -771,10 +775,12 @@ jobs:
           git fetch --no-tags origin master
           git merge-base --is-ancestor "$candidate_sha" origin/master
 
-          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
-          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
-          echo "CANDIDATE_SHA=$candidate_sha" >> "$GITHUB_ENV"
-          echo "CANDIDATE_REF=refs/tags/$RELEASE_ID" >> "$GITHUB_ENV"
+          {
+            echo "MARKETING_VERSION=$marketing_version"
+            echo "RELEASE_ID=$RELEASE_ID"
+            echo "CANDIDATE_SHA=$candidate_sha"
+            echo "CANDIDATE_REF=refs/tags/$RELEASE_ID"
+          } >> "$GITHUB_ENV"
 
       - name: Prepare release build number
         shell: bash
@@ -783,9 +789,11 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
-          echo "IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "SENTRY_RELEASE=$IOS_BUNDLE_ID@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER" >> "$GITHUB_ENV"
+          {
+            echo "IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER"
+            echo "SENTRY_RELEASE=$IOS_BUNDLE_ID@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER"
+            echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER"
+          } >> "$GITHUB_ENV"
           echo "TestFlight build number: $RELEASE_BUILD_NUMBER"
 
       - name: Reuse immutable uploaded TestFlight candidate
@@ -881,9 +889,11 @@ jobs:
                 }
               ' "$candidate_manifest" > build/ios/testflight/candidate-manifest.json
 
-            echo "reuse=true" >> "$GITHUB_OUTPUT"
-            echo "source_run_id=$source_run_id" >> "$GITHUB_OUTPUT"
-            echo "source_artifact_name=$source_artifact_name" >> "$GITHUB_OUTPUT"
+            {
+              echo "reuse=true"
+              echo "source_run_id=$source_run_id"
+              echo "source_artifact_name=$source_artifact_name"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           done < <(
             jq -r \
@@ -1886,9 +1896,11 @@ jobs:
           else
             [[ "$(jq -r .isDraft <<<"$release_json")" == false ]]
           fi
-          echo "RELEASE_ID=$RELEASE_ID" >> "$GITHUB_ENV"
-          echo "CANDIDATE_SHA=$CANDIDATE_SHA" >> "$GITHUB_ENV"
-          echo "MARKETING_VERSION=$marketing_version" >> "$GITHUB_ENV"
+          {
+            echo "RELEASE_ID=$RELEASE_ID"
+            echo "CANDIDATE_SHA=$CANDIDATE_SHA"
+            echo "MARKETING_VERSION=$marketing_version"
+          } >> "$GITHUB_ENV"
 
       - name: Download candidate evidence from the verified run
         if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
@@ -2218,9 +2230,11 @@ jobs:
               > build/finalize/update/previous-alpha.json
             previous_args=(--previous build/finalize/update/previous-alpha.json)
           fi
-          echo "UPDATE_POINTER_PREVIOUS_SHA=$previous_sha" >> "$GITHUB_ENV"
-          echo "UPDATE_POINTER_STATUS=$status" >> "$GITHUB_ENV"
-          echo "UPDATE_POINTER_BUILD_NUMBER=$build_number" >> "$GITHUB_ENV"
+          {
+            echo "UPDATE_POINTER_PREVIOUS_SHA=$previous_sha"
+            echo "UPDATE_POINTER_STATUS=$status"
+            echo "UPDATE_POINTER_BUILD_NUMBER=$build_number"
+          } >> "$GITHUB_ENV"
 
           command=(
             dart run tool/release/create_signed_app_update_manifest.dart
@@ -2315,9 +2329,9 @@ jobs:
               echo
               echo "## Android 安装提示"
               echo
-              echo "需要在系统设置中允许当前来源“安装未知应用”。应用无登录和云同步，数据只保存在本机；卸载应用会删除本机数据。Alpha 升级可能清除旧数据并重新下载模型，首次启动约下载 286.3 MB 运行资源。"
+              echo '需要在系统设置中允许当前来源“安装未知应用”。应用无登录和云同步，数据只保存在本机；卸载应用会删除本机数据。Alpha 升级可能清除旧数据并重新下载模型，首次启动约下载 286.3 MB 运行资源。'
               echo
-              echo "如版本被撤回，发布说明会标记“已撤回，不建议安装”，已有资产和标签仍保留。"
+              echo '如版本被撤回，发布说明会标记“已撤回，不建议安装”，已有资产和标签仍保留。'
               if [[ -n "$RELEASE_NOTES" ]]; then
                 echo
                 echo "## 补充说明"
