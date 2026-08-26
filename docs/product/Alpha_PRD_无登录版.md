@@ -1,6 +1,6 @@
 # 会迹（MeetTrace）Android + iOS + Windows Alpha 产品需求文档（无登录版）
 
-> 版本：V1.4
+> 版本：V1.5
 > 日期：2026-08-26
 > 状态：活动；产品范围与验收标准的唯一事实源
 > 技术方案：[端侧 SenseVoice 转录技术方案](../technical/端侧_SenseVoice_转录技术方案.md)
@@ -15,8 +15,8 @@
 - 不提供登录、跨设备同步、云端实时 ASR 或 AI 总结；App 不配置任何总结网关。
 - 音频、转录和说话人结果默认只保存在设备上；只有用户主动执行独立的“分享音频”操作并二次确认后，临时 WAV 副本才进入系统分享面板。Release 默认启用 Sentry 远程诊断，但不得把事实 PCM、WAV、转录快照或说话人结果作为 Attachment 或自定义 Payload 主动上传。
 - 当前 ASR 只支持 SenseVoice；其他模型待定，不承诺等级、发布时间或自动切换。
-- Android、iOS 与 Windows 必须基于同一候选提交完成构建、商店审核、自动化门禁和真实分发完整性检查后，才允许对外发布该 Alpha；不要求提交目标设备人工验收证据。任一平台的构建、审核、自动化或分发门禁失败均阻断统一发布。
-- Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX。公开前 Android APK 暂存在 GitHub Draft Release；Windows Store MSIX 只进入候选 Actions Artifact，由自动化把该确切文件先提交固定 Package Flight，完成专用机安装、启动和卸载验证后，再提交 100% 正式 non-flighted submission。同一包通过正式 Store 认证、进入 `Published/Public` 且通过正式 Store 安装验证后，才发布同一 Draft 为 GitHub Pre-release；MSIX 不进入 GitHub Release，不得重建、覆盖资产或移动已有标签。
+- Android、iOS 与 Windows 必须基于同一候选提交完成构建、商店审核、自动化门禁和各平台定义的分发检查后，才允许对外发布该 Alpha；不要求提交目标设备人工验收证据。任一平台的构建、审核、自动化或分发门禁失败均阻断统一发布。
+- Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX。公开前 Android APK 暂存在 GitHub Draft Release；Windows Store MSIX 只进入候选 Actions Artifact，由自动化核对 SHA-256、包身份、版本与架构后，把该确切文件先提交固定 Package Flight。Flight 取得 `Published` 精确包回执后，才把同一 MSIX 提交为 100% 正式 non-flighted submission；正式 submission 取得 `Published/Public` 精确包回执后，才发布同一 Draft 为 GitHub Pre-release。Windows 发布门禁不证明 Store 客户端安装、启动、更新或卸载行为，不依赖专用机或自托管 runner；MSIX 不进入 GitHub Release，不得重建、覆盖资产或移动已有标签。
 - iOS Alpha 的编译与分发最低版本为 iOS 15；从当前候选起不再支持 iOS 13/14，也不为已安装旧 TestFlight 构建提供专门迁移版。iOS 候选只通过 TestFlight 分发，不在 GitHub Release 上传 IPA。候选必须被自动加入固定外部测试组、提交 Beta App Review，并在审核通过后进入 `Testing`、启用自动通知和稳定 public link；不得伪造链接或绕过 Beta App Review。
 - iOS 15 最低版本通过工程配置、构建产物审计和 TestFlight 分发门禁验证；Alpha 不要求额外的目标设备人工证据。
 - Windows 最低支持 Windows 10 22H2 与 Windows 11，仅支持 x64；8 GB RAM、普通四核 CPU、无独立显卡作为非阻断性能观测基线。低于 8 GB 允许安装和事实录音，但必须明确提示推理性能可能受限。
@@ -77,12 +77,12 @@
 - Android 公开安装入口为当前公开源码仓库的 GitHub Pre-release 附件，文件名固定为 `meettrace-<release-id>-android-arm64.apk`；不使用私有分发仓库。
 - Windows 当前唯一公开入口为 Microsoft Store 产品 `9PHHSJMWK06G`。MSIX 必须使用固定 `Identity Name=zhangheng2026.MeetTrace`、`Publisher=CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B`、`PublisherDisplayName=zhangheng2026` 和 PFN `zhangheng2026.MeetTrace_vaaj3dqegb9y0`；Store 包版本固定映射为 `1.0.<共享发布构建号>.0`，营销版本另行记录。首次公开前使用 Private audience 验收；应用已有公开 non-flighted submission 后，后续候选使用 Package Flight 并把同一包拉入正式 submission。更新由 Store 管理，GitHub Release 不上传 MSIX 或 `.appinstaller`。
 - SignPath 申请仅保留为未来可能替换 Store 的待审核路线，不接入当前工作流。只有证书 Subject 与升级/数据连续性影响验证完成、PRD 再次更新并明确停止 Store 路线后，才可启用 GitHub MSIX；任何时刻不得并存两个 Windows 包身份。
-- GitHub Actions 只公开一个手动发布入口 `Alpha Release`，必填项仅为发布标识，发布说明可选。发布链只由 `Alpha Release` 与 `Alpha Release Reconciler` 两个工作流组成：前者执行技术检查、构建三平台候选、上传 TestFlight 并提交 Beta App Review；后者在候选完成后立即查询一次，随后每 15 分钟以 Apple App Store Connect API 和 Microsoft Store CLI/API 为事实源，幂等提交或复用 Windows Package Flight、推进正式 submission、执行分发验证并完成公开。正常路径不设 `github-release` 或 `windows-store-validation` 人工审批；商店拒审、未知状态或合同不匹配时失败关闭，自动创建或更新 `release-blocked` Issue，保持 Draft 和旧更新指针不变；外部状态恢复后复用原候选继续，不重建或重复上传。不得新增候选验证、Store 恢复或公开后审计的独立工作流入口。
+- GitHub Actions 只公开一个手动发布入口 `Alpha Release`，必填项仅为发布标识，发布说明可选。发布链只由 `Alpha Release` 与 `Alpha Release Reconciler` 两个工作流组成：前者执行技术检查、构建三平台候选、上传 TestFlight 并提交 Beta App Review；后者在候选完成后立即查询一次，随后于每小时第 7、22、37、52 分钟以 Apple App Store Connect API 和 Microsoft Store CLI/API 为事实源，幂等提交或复用 Windows Package Flight、推进正式 submission、核验精确商店回执并完成公开。正常路径不设 `github-release` 人工审批；商店拒审、未知状态、合同不匹配或执行失败时创建、更新或重新打开 `release-blocked` Issue，保持 Draft 和旧更新指针不变；外部状态恢复或进入正常等待时自动关闭对应 Issue，并复用原候选继续，不重建或重复上传。不得新增候选验证、Store 恢复或公开后审计的独立工作流入口。
 - 候选阶段创建或更新 Draft Release，只上传签名 APK 与 Android 公开候选清单；iOS 和 Windows 的二进制及三平台详细证据只进入各自平台或 Actions Artifact。相同发布标识可在 Draft 阶段重试，但已成功且身份匹配的不可变候选必须复用；Draft 一旦公开，标签、APK 和公开候选清单不得覆盖。
-- 最终发布必须核对 Android、iOS 与 Windows 候选构建均成功，候选提交 SHA、发布标识和共用构建号一致，并逐字节验证 Android Draft APK 与提交给 Store 的 Windows 候选。Android Draft APK 只执行一次 Firebase ARM 原样安装启动验证，不随 Windows 阶段重复；iOS 必须取得同一 build 在固定外测组的 `Testing` 回执；Windows 必须先取得 Flight `Published` 及专用机安装、启动、卸载回执，再以同一 MSIX 完成正式 `Published/Public` 并取得独立的正式 Store 生命周期回执。协调器验证全部不可变回执后自动公开原 Draft，从公开地址重新下载 Android APK 并验证摘要，再原子前移签名指针；不依赖人工审批、独立公开后审计工作流或目标设备人工证据。
+- 最终发布必须核对 Android、iOS 与 Windows 候选构建均成功，候选提交 SHA、发布标识和共用构建号一致，并逐字节验证 Android Draft APK 与提交给 Store 的 Windows 候选。Android Draft APK 只执行一次 Firebase ARM 原样安装启动验证；iOS 必须取得同一 build 在固定外测组的 `Testing` 回执；Windows 必须先取得固定 Flight `Published` 且包文件名、版本、x64 架构与候选精确一致的 API 回执，再以同一 MSIX 完成正式 `Published/Public` 并取得同样精确的 production API 回执。协调器生成 schema 3 不可变门禁并自动公开原 Draft，从公开地址重新下载 Android APK 并验证摘要，再原子前移签名指针；不依赖人工审批、专用机、独立公开后审计工作流或目标设备人工证据。
 - TestFlight public link 在首次自动发布前必须已为固定外部测试组 bootstrap，由受保护的环境 Variable 固定供发布说明和签名更新指针使用；不接受逐次手工后补或临时替换链接。
 - GitHub Pre-release 的安装说明必须分别说明 Android、iOS 与 Windows 的系统/架构、安装入口、自动更新方式，以及仅支持当前公开 Alpha、不保证旧 Alpha 可升级或迁移、无登录和云同步、数据仅保存在本机、安装破坏性 Alpha 或卸载可能删除包括历史会议与录音在内的全部本地数据、首次启动约下载 286.3 MB 运行资源等风险。
-- 自动更新只使用单一 Alpha 频道。Store 正式 submission 必须先公开并确认可安装，GitHub Pre-release 与公开更新 Manifest 才能随后批准；不得让 Manifest 暴露 Draft、Private audience、Package Flight 或部分通过候选，不得降级，修复必须使用更高版本号向前发布。
+- 自动更新只使用单一 Alpha 频道。Store 正式 submission 必须先达到 `Published/Public` 且精确包身份匹配，GitHub Pre-release 与公开更新 Manifest 才能随后批准；不得让 Manifest 暴露 Draft、Private audience、Package Flight 或部分通过候选，不得降级，修复必须使用更高版本号向前发布。
 - 新统一版本序列从跨平台共享构建号 `2001` 开始并连续递增。Android 继续使用 `--split-per-abi`：传给 Flutter 的基础构建号为共享构建号减 `2000`，默认 ARM64 ABI 偏移后的实际 `versionCode` 与 iOS、Windows 构建号一致。版本号向前递增只用于分发、防降级和审计，不表示任意相邻 Alpha 之间保持兼容。
 - 严重问题版本不删除 Release、标签、APK 或 Store submission，也不覆盖原资产；将发布说明和更新 Manifest 醒目标记为“已撤回，不建议安装”，修复使用新的版本标识、构建号和候选提交向前发布。
 
@@ -231,14 +231,14 @@
 | AT-23 | Windows 输入设备契约 | 自动化覆盖会议输入锁定、设备断开后一次回退或真实中断，不伪造持续录音 |
 | AT-24 | Windows 构建与包审计 | x64 Release 与固定 Store 身份 MSIX 构建通过，运行资产、包身份和禁止内容审计通过 |
 | AT-25 | 三平台更新分发 | 只发现已公开批准的当前 Alpha；校验失败不安装；录音/最终处理期间不强制安装、退出或清理；破坏性版本清理前明确警告并确认；不允许降级，但不验收旧 Alpha 的可升级性或数据迁移 |
-| AT-26 | 三平台统一发布 | APK、TestFlight 构建与 MSIX/Store 包来自同一 SHA 和版本；Android 原包验证一次，Windows Flight/production 分别验证；任一平台失败均阻断更新指针，更新 Manifest 不暴露未批准候选 |
+| AT-26 | 三平台统一发布 | APK、TestFlight 构建与 MSIX/Store 包来自同一 SHA 和版本；Android 原包验证一次，Windows Flight/production 分别取得精确 API 回执；任一平台失败均阻断更新指针，更新 Manifest 不暴露未批准候选 |
 
 ## 9. Alpha 完成定义
 
 - 自动化覆盖全部 Manifest、归档解包、下载上限、1 GiB 空间预检、移动网络同意、Windows 自动下载、续传、校验、快速启动、锁定配置、联合快照、分离降级、WAV 分享清理、数据代门全清、Windows 单实例/托盘/设备中断和更新 Manifest 校验。
 - `flutter analyze`、`flutter test`、Android Debug 构建、Windows x64 Debug/Release 构建及 APK/MSIX 权重审计通过；Android Alpha 使用 `com.meettrace.app` 的正式签名 `arm64-v8a` APK，Windows 使用上述固定 Microsoft Store 身份的 x64 MSIX。
 - AT-01～AT-26 由自动化、构建审计和分发门禁覆盖；不要求目标设备人工验收记录。iOS Alpha 通过 TestFlight 分发。
-- 最终发布核对同一候选提交的三平台成功结果、TestFlight `Testing`、Windows Flight 及正式 `Published/Public`、单次 Android Firebase ARM 安装和 Windows 专用机 Flight/正式 Store 生命周期回执。全部机器合同匹配后，协调器驱动原 Draft Release 发布为 GitHub Pre-release，重新下载公开 APK 验证摘要，再原子更新单一 Alpha 频道；不需要最终人工审批或独立公开后审计工作流。Release 不包含 IPA 或 MSIX，TestFlight public link 必须来自固定外测组配置。
+- 最终发布核对同一候选提交的三平台成功结果、TestFlight `Testing`、Windows Flight `Published` 与正式 `Published/Public` 精确包回执，以及单次 Android Firebase ARM 安装回执。全部机器合同匹配后，协调器驱动原 Draft Release 发布为 GitHub Pre-release，重新下载公开 APK 验证摘要，再原子更新单一 Alpha 频道；不需要最终人工审批、专用 Windows 验证机或独立公开后审计工作流。Release 不包含 IPA 或 MSIX，TestFlight public link 必须来自固定外测组配置。
 - 未解决的 OCR Critical/High 缺陷为零。
 - 官方 `sherpa_onnx` Dart 完整波形缓冲区风险继续作为非阻断工程观测；可按需要记录重复任务内存、DER、人数误差与 RTF，但不要求形成候选证据，也不阻断自动分离、Alpha 构建或发布。
 - Web、Linux 与 macOS 工程壳不属于 Alpha 支持面，不进入发布结论。Windows 只有在 AT-21～AT-26 和三平台统一发布门禁闭环后才能标记为受支持；在此之前 README 和 Release 必须显示“规划中/未就绪”。

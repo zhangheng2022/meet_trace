@@ -67,7 +67,7 @@ void main() {
       expect(release, contains('release_id:'));
       expect(reconciler, isNot(contains('  workflow_dispatch:')));
       expect(reconciler, contains('types: [alpha-release-reconcile]'));
-      expect(reconciler, contains('cron: "*/15 * * * *"'));
+      expect(reconciler, contains('cron: "7,22,37,52 * * * *"'));
     });
 
     test('常规 CI 将 Actions Lint 纳入稳定 CI Gate', () async {
@@ -156,7 +156,7 @@ void main() {
   });
 
   group('发布协调器守卫', () {
-    test('协调器直接执行 Windows Flight 与 production 生命周期', () async {
+    test('协调器直接执行 Windows Flight 与 production 商店生命周期', () async {
       final workflow = await _workflow('alpha-release-reconcile.yml');
       final flightScript = await File(
         'tool/release/submit_microsoft_store_flight.ps1',
@@ -166,10 +166,10 @@ void main() {
         'microsoft_store_flight',
         'microsoft_store_status',
       );
-      final flight = _job(
+      final status = _job(
         workflow,
-        'windows_flight_validation',
-        'windows_production_validation',
+        'microsoft_store_status',
+        'android_validation',
       );
 
       expect(submission, contains('Submit or recover Microsoft Store'));
@@ -187,28 +187,19 @@ void main() {
       expect(flightScript, contains('Test-RecoverableCandidate'));
       expect(flightScript, contains('Invoke-RestMethod -Method Delete'));
       expect(flightScript, contains('belongs to a different candidate'));
-      final production = _job(
-        workflow,
-        'windows_production_validation',
-        'report_blocked',
-      );
-
-      for (final entry in <MapEntry<String, String>>[
-        MapEntry('flight', flight),
-        MapEntry('production', production),
-      ]) {
-        expect(
-          entry.value,
-          contains('runs-on: [self-hosted, Windows, X64, meettrace-store]'),
-        );
-        expect(entry.value, contains('environment: windows-store-validation'));
-        expect(entry.value, contains('MEETTRACE_DEDICATED_STORE_VALIDATION'));
-        expect(entry.value, contains('validate_store_distribution.ps1'));
-        expect(entry.value, contains("stage = '${entry.key}'"));
-        expect(entry.value, contains('windowsStoreDistribution'));
-        expect(entry.value, contains("windowsStoreLifecycle = 'passed'"));
-        expect(entry.value, contains('event_type=alpha-release-reconcile'));
-      }
+      final production = _job(workflow, 'submit_production', 'report_blocked');
+      expect(status, contains('verify_microsoft_store_submission.dart'));
+      expect(status, contains('classify_microsoft_store_submission.dart'));
+      expect(status, isNot(contains('function Inspect-Submission')));
+      expect(status, contains('windows-flight-receipt.json'));
+      expect(status, contains('windows-store-production-receipt.json'));
+      expect(production, contains('WINDOWS_ARTIFACT_SHA256'));
+      expect(production, contains('--packageRolloutPercentage 100'));
+      expect(production, contains('event_type=alpha-release-reconcile'));
+      expect(workflow, isNot(contains('runs-on: [self-hosted')));
+      expect(workflow, isNot(contains('meettrace-store')));
+      expect(workflow, isNot(contains('windows-store-validation')));
+      expect(workflow, isNot(contains('validate_store_distribution.ps1')));
       expect(workflow, isNot(contains('candidate-distribution-validation')));
       expect(
         workflow,
@@ -216,23 +207,20 @@ void main() {
       );
     });
 
-    test('协调门禁绑定单次 Android 与两次独立 Windows 验证', () async {
+    test('协调门禁绑定 Android 回执与两阶段 Store 精确回执', () async {
       final workflow = await _workflow('alpha-release-reconcile.yml');
-      final status = _job(workflow, 'validation_status', 'submit_production');
+      final status = _job(workflow, 'android_validation', 'submit_production');
       final finalize = _job(workflow, 'finalize');
 
       expect(status, contains('androidCandidateDistribution'));
-      expect(status, contains('windowsStoreDistribution'));
       expect(status, contains('android_ready'));
-      expect(status, contains(r'windows-$stage.json'));
-      expect(
-        status,
-        contains(r'meettrace-reconcile-windows-$stage-$RELEASE_ID'),
-      );
-      expect(finalize, contains('schemaVersion: 2'));
+      expect(status, isNot(contains('windowsStoreDistribution')));
+      expect(finalize, contains('schemaVersion: 3'));
       expect(finalize, contains('validations: {android:'));
       expect(finalize, contains('windowsFlight:'));
       expect(finalize, contains('windowsProduction:'));
+      expect(finalize, isNot(contains('windowsFlightValidation')));
+      expect(finalize, isNot(contains('windowsProductionValidation')));
       expect(finalize, contains('gh workflow run alpha-release.yml'));
     });
 
@@ -241,7 +229,7 @@ void main() {
       final resolve = _job(workflow, 'resolve', 'testflight_status');
       final validation = _job(
         workflow,
-        'validation_status',
+        'android_validation',
         'submit_production',
       );
 
@@ -274,12 +262,15 @@ void main() {
       );
       expect(report, contains("needs.resolve.result == 'failure'"));
       expect(report, contains("needs.resolve.result != 'success'"));
-      expect(report, contains('validation_status'));
-      expect(report, contains("needs.validation_status.result != 'success'"));
+      expect(report, contains('android_validation'));
+      expect(report, contains("needs.android_validation.result != 'success'"));
+      expect(report, contains('needs.submit_production.result'));
+      expect(report, contains('needs.finalize.result'));
+      expect(report, contains('Close recovered or normally pending'));
+      expect(report, contains('gh issue reopen'));
       expect(report, contains('release_key=reconciler-discovery'));
+      expect(report, contains('[release-blocked] reconciler-discovery'));
       expect(report, contains('Candidate resolution: %s'));
-      final finalize = _job(workflow, 'finalize');
-      expect(finalize, contains('[release-blocked] reconciler-discovery'));
     });
 
     test('公开后重新下载 Android APK，成功后才更新指针', () async {
@@ -309,11 +300,12 @@ void main() {
       ).readAsString();
 
       expect(workflow, contains('release-blocked'));
-      expect(workflow, contains('cron: "*/15 * * * *"'));
+      expect(workflow, contains('cron: "7,22,37,52 * * * *"'));
       expect(workflow, contains('--packageRolloutPercentage 100'));
       expect(workflow, isNot(contains('manualEnvironmentApproval')));
       expect(bootstrap, contains('wait_timer'));
       expect(bootstrap, contains('reviewers'));
+      expect(bootstrap, isNot(contains('windows-store-validation')));
     });
   });
 }
