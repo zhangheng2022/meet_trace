@@ -6,7 +6,7 @@ import '../../../tool/release/release_orchestration_gate.dart';
 
 void main() {
   group('verifyReleaseOrchestrationGate', () {
-    test('接受同一候选的 TestFlight、Store 和两阶段真实分发证据', () {
+    test('接受单次 Android 与两阶段 Windows 真实分发证据', () {
       final receipt = verifyReleaseOrchestrationGate(
         jsonEncode(_gate()),
         _request(),
@@ -14,6 +14,7 @@ void main() {
 
       expect(receipt['releaseId'], 'v1.2.3-alpha.4');
       expect(receipt['testFlightBuildId'], 'build-2001');
+      expect(receipt['androidValidationRunId'], 101);
       expect(receipt['flightValidationRunId'], 301);
       expect(receipt['productionValidationRunId'], 302);
     });
@@ -50,8 +51,46 @@ void main() {
     test('拒绝 Flight 与 production 复用同一次专用机验证', () {
       final gate = _gate();
       final validations = gate['validations']! as Map<String, Object?>;
-      (validations['production']! as Map<String, Object?>)['validationRunId'] =
+      (validations['windowsProduction']!
+              as Map<String, Object?>)['validationRunId'] =
           301;
+
+      expect(
+        () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
+        throwsFormatException,
+      );
+    });
+
+    test('拒绝把 Android 验证复制成独立于来源运行的回执', () {
+      final gate = _gate();
+      final validations = gate['validations']! as Map<String, Object?>;
+      (validations['android']! as Map<String, Object?>)['validationRunId'] =
+          303;
+
+      expect(
+        () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
+        throwsFormatException,
+      );
+    });
+
+    test('拒绝 Android 验证回执绑定其他 APK 摘要', () {
+      final gate = _gate();
+      final validations = gate['validations']! as Map<String, Object?>;
+      (validations['android']! as Map<String, Object?>)['artifactSha256'] =
+          'c' * 64;
+
+      expect(
+        () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
+        throwsFormatException,
+      );
+    });
+
+    test('拒绝 Windows 回执伪造其他协调运行', () {
+      final gate = _gate();
+      final validations = gate['validations']! as Map<String, Object?>;
+      (validations['windowsFlight']!
+              as Map<String, Object?>)['reconcileRunId'] =
+          999;
 
       expect(
         () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
@@ -99,6 +138,7 @@ ReleaseOrchestrationGateRequest _request({int sourceRunId = 101}) =>
       buildNumber: 2001,
       marketingVersion: '1.2.3',
       testFlightExternalGroup: 'MeetTrace External',
+      androidArtifactSha256: 'b' * 64,
       windowsArtifactName: 'meettrace-v1.2.3-alpha.4-windows-store-x64.msix',
       windowsPackageVersion: '1.0.2001.0',
       windowsFlightId: 'flight-fixed',
@@ -108,7 +148,7 @@ ReleaseOrchestrationGateRequest _request({int sourceRunId = 101}) =>
     );
 
 Map<String, Object?> _gate() => <String, Object?>{
-  'schemaVersion': 1,
+  'schemaVersion': 2,
   'releaseId': 'v1.2.3-alpha.4',
   'candidateCommitSha': 'a' * 40,
   'sourceRunId': 101,
@@ -142,8 +182,18 @@ Map<String, Object?> _gate() => <String, Object?>{
     'visibility': 'Public',
   },
   'validations': <String, Object?>{
-    'flight': _validation('flight', 301),
-    'production': _validation('production', 302),
+    'android': <String, Object?>{
+      'schemaVersion': 1,
+      'validation': 'androidCandidateDistribution',
+      'releaseId': 'v1.2.3-alpha.4',
+      'candidateCommitSha': 'a' * 40,
+      'sourceRunId': 101,
+      'validationRunId': 101,
+      'androidFirebaseArm': 'passed',
+      'artifactSha256': 'b' * 64,
+    },
+    'windowsFlight': _windowsValidation('flight', 301),
+    'windowsProduction': _windowsValidation('production', 302),
   },
 };
 
@@ -166,16 +216,15 @@ Map<String, Object?> _storeReceipt(String distribution, String submissionId) =>
       },
     };
 
-Map<String, Object?> _validation(String stage, int validationRunId) =>
+Map<String, Object?> _windowsValidation(String stage, int validationRunId) =>
     <String, Object?>{
       'schemaVersion': 1,
-      'validation': 'candidateDistribution',
+      'validation': 'windowsStoreDistribution',
       'stage': stage,
       'releaseId': 'v1.2.3-alpha.4',
       'candidateCommitSha': 'a' * 40,
       'sourceRunId': 101,
-      'reconcileRunId': 202,
+      'reconcileRunId': validationRunId,
       'validationRunId': validationRunId,
-      'androidFirebaseArm': 'passed',
       'windowsStoreLifecycle': 'passed',
     };

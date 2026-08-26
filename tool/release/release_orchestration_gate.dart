@@ -11,6 +11,7 @@ final class ReleaseOrchestrationGateRequest {
     required this.buildNumber,
     required this.marketingVersion,
     required this.testFlightExternalGroup,
+    required this.androidArtifactSha256,
     required this.windowsArtifactName,
     required this.windowsPackageVersion,
     required this.windowsFlightId,
@@ -24,6 +25,7 @@ final class ReleaseOrchestrationGateRequest {
   final int buildNumber;
   final String marketingVersion;
   final String testFlightExternalGroup;
+  final String androidArtifactSha256;
   final String windowsArtifactName;
   final String windowsPackageVersion;
   final String windowsFlightId;
@@ -39,7 +41,7 @@ Map<String, Object?> verifyReleaseOrchestrationGate(
     throw const FormatException('发布协调门禁超过 1 MiB 上限');
   }
   final gate = _object(jsonDecode(source), 'gate');
-  _require(gate, 'schemaVersion', 1);
+  _require(gate, 'schemaVersion', 2);
   _require(gate, 'releaseId', request.releaseId);
   _require(gate, 'candidateCommitSha', request.candidateCommitSha);
   _requirePositiveInt(gate, 'sourceRunId', request.sourceRunId);
@@ -84,13 +86,22 @@ Map<String, Object?> verifyReleaseOrchestrationGate(
   );
 
   final validations = _object(gate['validations'], 'validations');
-  final flightValidation = _object(validations['flight'], 'validations.flight');
-  final productionValidation = _object(
-    validations['production'],
-    'validations.production',
+  final androidValidation = _object(
+    validations['android'],
+    'validations.android',
   );
-  _verifyDistributionValidation(flightValidation, request, 'flight');
-  _verifyDistributionValidation(productionValidation, request, 'production');
+  final flightValidation = _object(
+    validations['windowsFlight'],
+    'validations.windowsFlight',
+  );
+  final productionValidation = _object(
+    validations['windowsProduction'],
+    'validations.windowsProduction',
+  );
+  _verifyAndroidValidation(androidValidation, request);
+  _verifyWindowsValidation(flightValidation, request, 'flight');
+  _verifyWindowsValidation(productionValidation, request, 'production');
+  final androidRunId = _positiveInt(androidValidation, 'validationRunId');
   final flightRunId = _positiveInt(flightValidation, 'validationRunId');
   final productionRunId = _positiveInt(productionValidation, 'validationRunId');
   if (flightRunId == productionRunId) {
@@ -110,6 +121,7 @@ Map<String, Object?> verifyReleaseOrchestrationGate(
       production,
       'submissionId',
     ),
+    'androidValidationRunId': androidRunId,
     'flightValidationRunId': flightRunId,
     'productionValidationRunId': productionRunId,
     'verifiedAtUtc': DateTime.now().toUtc().toIso8601String(),
@@ -140,20 +152,36 @@ void _verifyStoreReceipt(
   _require(package, 'fileStatus', 'Uploaded');
 }
 
-void _verifyDistributionValidation(
+void _verifyAndroidValidation(
+  Map<String, Object?> receipt,
+  ReleaseOrchestrationGateRequest request,
+) {
+  _require(receipt, 'schemaVersion', 1);
+  _require(receipt, 'validation', 'androidCandidateDistribution');
+  _require(receipt, 'releaseId', request.releaseId);
+  _require(receipt, 'candidateCommitSha', request.candidateCommitSha);
+  _requirePositiveInt(receipt, 'sourceRunId', request.sourceRunId);
+  _requirePositiveInt(receipt, 'validationRunId', request.sourceRunId);
+  _require(receipt, 'androidFirebaseArm', 'passed');
+  _require(receipt, 'artifactSha256', request.androidArtifactSha256);
+}
+
+void _verifyWindowsValidation(
   Map<String, Object?> receipt,
   ReleaseOrchestrationGateRequest request,
   String stage,
 ) {
   _require(receipt, 'schemaVersion', 1);
-  _require(receipt, 'validation', 'candidateDistribution');
+  _require(receipt, 'validation', 'windowsStoreDistribution');
   _require(receipt, 'stage', stage);
   _require(receipt, 'releaseId', request.releaseId);
   _require(receipt, 'candidateCommitSha', request.candidateCommitSha);
   _requirePositiveInt(receipt, 'sourceRunId', request.sourceRunId);
-  _positiveInt(receipt, 'reconcileRunId');
-  _positiveInt(receipt, 'validationRunId');
-  _require(receipt, 'androidFirebaseArm', 'passed');
+  final reconcileRunId = _positiveInt(receipt, 'reconcileRunId');
+  final validationRunId = _positiveInt(receipt, 'validationRunId');
+  if (reconcileRunId != validationRunId) {
+    throw const FormatException('Windows 分发回执的协调运行与验证运行不一致');
+  }
   _require(receipt, 'windowsStoreLifecycle', 'passed');
 }
 
@@ -164,6 +192,9 @@ void _validateRequest(ReleaseOrchestrationGateRequest request) {
   }
   if (!RegExp(r'^[0-9a-f]{40}$').hasMatch(request.candidateCommitSha)) {
     throw const FormatException('候选提交必须是小写 40 位 SHA');
+  }
+  if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(request.androidArtifactSha256)) {
+    throw const FormatException('Android 候选摘要格式无效');
   }
   if (request.sourceRunId <= 0 ||
       request.orchestrationRunId <= 0 ||

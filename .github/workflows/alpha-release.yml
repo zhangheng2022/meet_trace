@@ -612,6 +612,105 @@ jobs:
             rm -f -- "$MEETTRACE_ANDROID_KEYSTORE_PATH"
           fi
 
+  android_distribution:
+    if: needs.prepare.outputs.mode == 'candidate'
+    needs: [prepare, android]
+    name: Validate signed Android candidate once on Firebase ARM64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      FIREBASE_PROJECT_ID: meet-trace
+      RELEASE_ID: ${{ inputs.release_id }}
+      CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+      DEVICE_MODEL: MediumPhone.arm
+      ANDROID_VERSION: "35"
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+        with:
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+          version: "580.0.0"
+
+      - name: Download immutable Draft APK and manifest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/android/distribution
+          gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --pattern candidate-manifest.json \
+            --dir build/android/distribution
+          apk="build/android/distribution/meettrace-${RELEASE_ID}-android-arm64.apk"
+          manifest=build/android/distribution/candidate-manifest.json
+          [[ -s "$apk" && -s "$manifest" ]]
+          expected_sha="$(jq -er .artifact.sha256 "$manifest")"
+          actual_sha="$(sha256sum "$apk" | cut -d ' ' -f 1)"
+          [[ "$actual_sha" == "$expected_sha" ]]
+          jq -e --arg release "$RELEASE_ID" --arg sha "$CANDIDATE_SHA" \
+            --arg actual "$actual_sha" \
+            '.schemaVersion == 2 and .platform == "android" and
+             .releaseId == $release and .commitSha == $sha and
+             .artifact.sha256 == $actual' \
+            "$manifest" >/dev/null
+
+      - name: Install and launch exact APK on Firebase ARM64
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="build/android/distribution/meettrace-${RELEASE_ID}-android-arm64.apk"
+          gcloud firebase test android run \
+            --project "$FIREBASE_PROJECT_ID" \
+            --type robo \
+            --app "$apk" \
+            --device "model=$DEVICE_MODEL,version=$ANDROID_VERSION,locale=zh_CN,orientation=portrait" \
+            --no-resign \
+            --timeout 10m \
+            --client-details "matrixLabel=meettrace-android-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            2>&1 | tee build/android/distribution/firebase-output.txt
+
+      - name: Record immutable Android distribution receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=build/android/distribution/candidate-manifest.json
+          jq -n \
+            --arg releaseId "$RELEASE_ID" \
+            --arg candidateCommitSha "$CANDIDATE_SHA" \
+            --argjson sourceRunId "$GITHUB_RUN_ID" \
+            --argjson validationRunId "$GITHUB_RUN_ID" \
+            --arg artifactSha256 "$(jq -er .artifact.sha256 "$manifest")" \
+            --arg validatedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{schemaVersion: 1, validation: "androidCandidateDistribution",
+              releaseId: $releaseId, candidateCommitSha: $candidateCommitSha,
+              sourceRunId: $sourceRunId, validationRunId: $validationRunId,
+              androidFirebaseArm: "passed", artifactSha256: $artifactSha256,
+              validatedAtUtc: $validatedAtUtc}' \
+            > build/android/distribution/receipt.json
+
+      - name: Upload Android distribution evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-android-distribution-${{ inputs.release_id }}
+          path: |
+            build/android/distribution/receipt.json
+            build/android/distribution/firebase-output.txt
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
   ios:
     if: needs.prepare.outputs.mode == 'candidate'
     needs: [prepare, android]
@@ -1374,7 +1473,6 @@ jobs:
     environment: windows-alpha
     env:
       RELEASE_BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
-      PREFERRED_STORE_SOURCE_RUN_ID: ${{ vars.PARTNER_CENTER_FLIGHT_SOURCE_RUN_ID }}
 
     steps:
       - name: Checkout candidate commit
@@ -1451,20 +1549,6 @@ jobs:
               $_.status -ceq 'completed' -and
               [string]$_.databaseId -cne $env:GITHUB_RUN_ID
             } | Sort-Object -Property createdAt)
-          if (-not [string]::IsNullOrWhiteSpace(
-              $env:PREFERRED_STORE_SOURCE_RUN_ID)) {
-            if ($env:PREFERRED_STORE_SOURCE_RUN_ID -notmatch '^[1-9][0-9]*$') {
-              throw 'Preferred Microsoft Store source run ID is invalid.'
-            }
-            $preferred = @($priorRuns | Where-Object {
-                [string]$_.databaseId -ceq $env:PREFERRED_STORE_SOURCE_RUN_ID
-              })
-            if ($preferred.Count -eq 1) {
-              $priorRuns = @($preferred[0]) + @($priorRuns | Where-Object {
-                  [string]$_.databaseId -cne $env:PREFERRED_STORE_SOURCE_RUN_ID
-                })
-            }
-          }
 
           foreach ($run in $priorRuns) {
             $sourceRunId = [string]$run.databaseId
@@ -1718,322 +1802,9 @@ jobs:
           retention-days: 90
           compression-level: 0
 
-  windows_flight:
-    if: needs.prepare.outputs.mode == 'candidate'
-    needs: [prepare, windows]
-    permissions:
-      actions: read
-      contents: read
-    name: Submit Microsoft Store Package Flight
-    runs-on: windows-2025
-    timeout-minutes: 30
-    environment: microsoft-store
-    env:
-      RELEASE_ID: ${{ inputs.release_id }}
-      CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
-      SOURCE_RUN_ID: ${{ github.run_id }}
-      PARTNER_CENTER_FLIGHT_ID: ${{ vars.PARTNER_CENTER_FLIGHT_ID }}
-      PARTNER_CENTER_TENANT_ID: ${{ secrets.PARTNER_CENTER_TENANT_ID }}
-      PARTNER_CENTER_SELLER_ID: ${{ secrets.PARTNER_CENTER_SELLER_ID }}
-      PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
-      PARTNER_CENTER_CLIENT_SECRET: ${{ secrets.PARTNER_CENTER_CLIENT_SECRET }}
-      PARTNER_CENTER_FLIGHT_SUBMISSION_ID: ${{ vars.PARTNER_CENTER_FLIGHT_SUBMISSION_ID }}
-    steps:
-      - name: Checkout immutable candidate
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ needs.prepare.outputs.candidate_sha }}
-
-      - name: Set up Microsoft Store CLI v0.4.1
-        uses: microsoft/microsoft-store-apppublisher@cc9910a8d59f2eb55cbb83df0a3800cf3b5300e0 # v1.4
-        with:
-          version: v0.4.1
-
-      - name: Download exact Windows candidate
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          if ($env:PARTNER_CENTER_FLIGHT_ID -notmatch '^[A-Za-z0-9._-]{1,128}$') {
-            throw 'Invalid protected Microsoft Store Flight ID.'
-          }
-          foreach ($name in @(
-              'PARTNER_CENTER_TENANT_ID',
-              'PARTNER_CENTER_SELLER_ID',
-              'PARTNER_CENTER_CLIENT_ID',
-              'PARTNER_CENTER_CLIENT_SECRET')) {
-            $value = [Environment]::GetEnvironmentVariable($name)
-            if ([string]::IsNullOrWhiteSpace($value)) {
-              throw "Missing protected microsoft-store secret: $name"
-            }
-          }
-
-          $candidateDir = Join-Path $env:GITHUB_WORKSPACE 'build/store-flight/candidate'
-          New-Item -ItemType Directory -Path $candidateDir -Force | Out-Null
-
-          $artifactsJson = gh api `
-            "repos/$($env:GITHUB_REPOSITORY)/actions/runs/$($env:GITHUB_RUN_ID)/artifacts?per_page=100"
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to list Windows Store candidate artifacts.'
-          }
-          $artifactResponse = $artifactsJson | ConvertFrom-Json
-          $availableArtifacts = @($artifactResponse.artifacts)
-          if ([int]$artifactResponse.total_count -gt $availableArtifacts.Count) {
-            throw 'Windows Store candidate artifact listing was truncated.'
-          }
-          $artifactPattern = '^meettrace-windows-store-' +
-            [regex]::Escape($env:GITHUB_RUN_ID) + '-[1-9][0-9]*$'
-          $artifact = $availableArtifacts |
-            Where-Object {
-              $_.expired -eq $false -and ([string]$_.name) -cmatch $artifactPattern
-            } |
-            Sort-Object -Property id -Descending |
-            Select-Object -First 1
-          if ($null -eq $artifact) {
-            throw 'No immutable Windows Store candidate artifact is available for this run.'
-          }
-          $artifactName = [string]$artifact.name
-          gh run download $env:GITHUB_RUN_ID `
-            --repo $env:GITHUB_REPOSITORY `
-            --name $artifactName `
-            --dir $candidateDir
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to download the exact Windows Store candidate.'
-          }
-
-          $manifestPath = Join-Path $candidateDir 'candidate-manifest.json'
-          $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-          $msixPath = Join-Path $candidateDir $manifest.artifact.name
-          if (-not (Test-Path -LiteralPath $msixPath -PathType Leaf)) {
-            throw 'Windows Store candidate is missing.'
-          }
-          $actualDigest = (Get-FileHash -LiteralPath $msixPath -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actualDigest -cne $manifest.artifact.sha256) {
-            throw 'Windows Store candidate digest changed.'
-          }
-          if ($manifest.releaseId -cne $env:RELEASE_ID -or
-              $manifest.commitSha -cne $env:CANDIDATE_SHA -or
-              $manifest.distribution -cne 'microsoftStore' -or
-              $manifest.artifact.storeSubmissionCandidate -ne $true) {
-            throw 'Windows Store candidate identity changed.'
-          }
-          "WINDOWS_MSIX_PATH=$msixPath" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
-          "WINDOWS_MANIFEST_PATH=$manifestPath" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
-
-      - name: Submit immutable candidate to fixed Package Flight
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          msstore reconfigure `
-            --tenantId $env:PARTNER_CENTER_TENANT_ID `
-            --sellerId $env:PARTNER_CENTER_SELLER_ID `
-            --clientId $env:PARTNER_CENTER_CLIENT_ID `
-            --clientSecret $env:PARTNER_CENTER_CLIENT_SECRET
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to configure Microsoft Store CLI credentials.'
-          }
-          msstore settings --enableTelemetry false
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Failed to disable Microsoft Store CLI telemetry.'
-          }
-
-          $manifest = Get-Content -LiteralPath $env:WINDOWS_MANIFEST_PATH -Raw | ConvertFrom-Json
-          $artifactName = [string]$manifest.artifact.name
-          $packageVersion = [string]$manifest.packageVersion
-          $validatedPackageVersion = $null
-          if (-not [version]::TryParse($packageVersion, [ref]$validatedPackageVersion)) {
-            throw "Invalid candidate package version: $packageVersion"
-          }
-
-          $token = Invoke-RestMethod -Method Post `
-            -Uri "https://login.microsoftonline.com/$($env:PARTNER_CENTER_TENANT_ID)/oauth2/token" `
-            -ContentType 'application/x-www-form-urlencoded' `
-            -Body @{
-              grant_type = 'client_credentials'
-              client_id = $env:PARTNER_CENTER_CLIENT_ID
-              client_secret = $env:PARTNER_CENTER_CLIENT_SECRET
-              resource = 'https://manage.devcenter.microsoft.com'
-            }
-          if ([string]::IsNullOrWhiteSpace([string]$token.access_token)) {
-            throw 'Microsoft Store submission API token is missing.'
-          }
-          $headers = @{ Authorization = "Bearer $($token.access_token)" }
-          $baseUri = 'https://manage.devcenter.microsoft.com/v1.0/my/applications/9PHHSJMWK06G' +
-            "/flights/$($env:PARTNER_CENTER_FLIGHT_ID)"
-
-          function Get-TrackedFlightSubmission([string]$SubmissionId) {
-            if ($SubmissionId -notmatch '^[1-9][0-9]*$') {
-              throw 'Microsoft Store Flight submission ID is invalid.'
-            }
-            $resource = Invoke-RestMethod -Method Get `
-              -Uri "$baseUri/submissions/$SubmissionId" -Headers $headers
-            $status = Invoke-RestMethod -Method Get `
-              -Uri "$baseUri/submissions/$SubmissionId/status" -Headers $headers
-            [pscustomobject]@{
-              Id = [string]$resource.id
-              Status = [string]$status.status
-              Packages = @($resource.flightPackages)
-            }
-          }
-
-          function Test-ExactFlightCandidate($Submission) {
-            $matches = @($Submission.Packages | Where-Object {
-                [string]$_.fileName -ceq $artifactName -and
-                [string]$_.version -ceq $packageVersion
-              })
-            $matches.Count -eq 1 -and $Submission.Packages.Count -eq 1
-          }
-
-          $reuse = $false
-          $submissionId = $null
-          if (-not [string]::IsNullOrWhiteSpace(
-              $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID)) {
-            $tracked = Get-TrackedFlightSubmission `
-              $env:PARTNER_CENTER_FLIGHT_SUBMISSION_ID
-            $trackedStatus = $tracked.Status.ToLowerInvariant()
-            $activeStatuses = @(
-              'commitstarted', 'preprocessing', 'certification', 'release',
-              'pendingpublication', 'publishing', 'published'
-            )
-            if (Test-ExactFlightCandidate $tracked) {
-              if ($activeStatuses -contains $trackedStatus) {
-                $reuse = $true
-                $submissionId = $tracked.Id
-                Write-Host 'Reusing the tracked immutable Package Flight submission.'
-              } else {
-                throw "Tracked Package Flight submission requires recovery: $($tracked.Status)"
-              }
-            } elseif ($trackedStatus -ne 'published') {
-              throw 'Tracked in-progress Package Flight submission belongs to a different candidate.'
-            }
-          }
-
-          if (-not $reuse) {
-            $flight = Invoke-RestMethod -Method Get -Uri $baseUri -Headers $headers
-            $pendingId = [string]$flight.pendingFlightSubmission.id
-            if (-not [string]::IsNullOrWhiteSpace($pendingId)) {
-              $pending = Get-TrackedFlightSubmission $pendingId
-              $pendingStatus = $pending.Status.ToLowerInvariant()
-              if ((Test-ExactFlightCandidate $pending) -and @(
-                  'commitstarted', 'preprocessing', 'certification', 'release',
-                  'pendingpublication', 'publishing', 'published'
-                ) -contains $pendingStatus) {
-                $reuse = $true
-                $submissionId = $pending.Id
-              } else {
-                throw "Pending Package Flight submission requires recovery: $($pending.Status)"
-              }
-            } else {
-              $publishedId = [string]$flight.lastPublishedFlightSubmission.id
-              if (-not [string]::IsNullOrWhiteSpace($publishedId)) {
-                $published = Get-TrackedFlightSubmission $publishedId
-                if ((Test-ExactFlightCandidate $published) -and
-                    $published.Status.ToLowerInvariant() -eq 'published') {
-                  $reuse = $true
-                  $submissionId = $published.Id
-                }
-              }
-            }
-          }
-
-          if (-not $reuse) {
-            $inputDirectory = Split-Path -Parent $env:WINDOWS_MSIX_PATH
-            msstore publish $env:GITHUB_WORKSPACE `
-              --inputDirectory $inputDirectory `
-              --appId 9PHHSJMWK06G `
-              --flightId $env:PARTNER_CENTER_FLIGHT_ID `
-              --uploadTimeout 900
-            if ($LASTEXITCODE -ne 0) {
-              throw 'Microsoft Store Package Flight submission failed.'
-            }
-            $flight = Invoke-RestMethod -Method Get -Uri $baseUri -Headers $headers
-            $submissionId = [string]$flight.pendingFlightSubmission.id
-            if ([string]::IsNullOrWhiteSpace($submissionId)) {
-              $submissionId = [string]$flight.lastPublishedFlightSubmission.id
-            }
-            $submitted = Get-TrackedFlightSubmission $submissionId
-            if (-not (Test-ExactFlightCandidate $submitted) -or
-                @('commitfailed', 'pendingcommit') -contains
-                  $submitted.Status.ToLowerInvariant()) {
-              throw 'Submitted Package Flight could not be bound to the immutable candidate.'
-            }
-            $requestState = 'submitted'
-          } else {
-            $requestState = 'reused'
-          }
-
-          $evidenceDir = Join-Path $env:GITHUB_WORKSPACE 'build/store-flight/evidence'
-          New-Item -ItemType Directory -Path $evidenceDir -Force | Out-Null
-          $evidence = [ordered]@{
-            schemaVersion = 1
-            distribution = 'microsoftStoreFlight'
-            state = $requestState
-            productId = '9PHHSJMWK06G'
-            flightId = $env:PARTNER_CENTER_FLIGHT_ID
-            releaseId = $env:RELEASE_ID
-            candidateCommitSha = $env:CANDIDATE_SHA
-            sourceRunId = [long]$env:SOURCE_RUN_ID
-            submissionId = $submissionId
-            submittedAtUtc = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
-            package = [ordered]@{
-              fileName = $artifactName
-              version = $packageVersion
-              architecture = 'x64'
-              candidateSha256 = [string]$manifest.artifact.sha256
-            }
-          }
-          $evidence | ConvertTo-Json -Depth 6 | Set-Content `
-            -LiteralPath (Join-Path $evidenceDir 'submission-request.json') `
-            -Encoding utf8
-
-      - name: Remove Microsoft Store CLI credentials
-        if: always()
-        shell: pwsh
-        run: |
-          $source = @'
-          using System;
-          using System.ComponentModel;
-          using System.Runtime.InteropServices;
-
-          public static class MeetTraceCredentialCleanup
-          {
-              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
-                  CharSet = CharSet.Unicode, SetLastError = true)]
-              private static extern bool CredDelete(string target, int type, int flags);
-
-              public static void Delete(string target)
-              {
-                  if (!CredDelete(target, 1, 0))
-                  {
-                      int error = Marshal.GetLastWin32Error();
-                      if (error != 1168)
-                      {
-                          throw new Win32Exception(error);
-                      }
-                  }
-              }
-          }
-          '@
-          Add-Type -TypeDefinition $source
-          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
-            [MeetTraceCredentialCleanup]::Delete(
-              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
-            )
-          }
-
-      - name: Upload Package Flight submission evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: meettrace-windows-flight-request-${{ github.run_id }}-${{ github.run_attempt }}
-          path: build/store-flight/evidence/submission-request.json
-          if-no-files-found: error
-          retention-days: 90
-          compression-level: 0
-
   queue_reconciliation:
     if: needs.prepare.outputs.mode == 'candidate'
-    needs: [prepare, android, ios, windows, windows_flight]
+    needs: [prepare, android, android_distribution, ios, windows]
     permissions:
       contents: write
     name: Queue automatic release reconciliation
@@ -2060,7 +1831,7 @@ jobs:
       always() && needs.prepare.result == 'success' &&
       (needs.prepare.outputs.mode == 'metadata' ||
       needs.prepare.outputs.mode == 'resume')
-    needs: [prepare, android, ios, windows, windows_flight]
+    needs: [prepare, android, ios, windows]
     permissions:
       actions: read
       contents: write
@@ -2323,6 +2094,7 @@ jobs:
           unzip -qp build/finalize/release-gate.zip release-gate.json > build/finalize/release-gate.json
           expected_version="$(jq -er .packageVersion build/finalize/windows-candidate-manifest.json)"
           expected_artifact="$(jq -er .artifact.name build/finalize/windows-candidate-manifest.json)"
+          expected_android_sha="$(jq -er .artifact.sha256 build/finalize/android-candidate-manifest.json)"
           dart run tool/release/verify_release_orchestration_gate.dart \
             --input build/finalize/release-gate.json \
             --output build/finalize/release-gate-verification.json \
@@ -2333,6 +2105,7 @@ jobs:
             --build-number "$(jq -er .buildNumber build/finalize/windows-candidate-manifest.json)" \
             --marketing-version "$MARKETING_VERSION" \
             --testflight-external-group "$TESTFLIGHT_EXTERNAL_GROUP" \
+            --android-artifact-sha256 "$expected_android_sha" \
             --windows-artifact-name "$expected_artifact" \
             --windows-package-version "$expected_version" \
             --windows-flight-id "$PARTNER_CENTER_FLIGHT_ID" \
@@ -2581,6 +2354,28 @@ jobs:
             gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
               --notes-file "$PUBLIC_NOTES_PATH" --prerelease
           fi
+
+      - name: Re-download and verify public Android APK
+        if: needs.prepare.outputs.mode == 'resume'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft,isPrerelease,tagName)"
+          jq -e --arg release "$RELEASE_ID" \
+            '.isDraft == false and .isPrerelease == true and
+             .tagName == $release' <<<"$release" >/dev/null
+          mkdir -p build/finalize/public
+          gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --dir build/finalize/public
+          apk="build/finalize/public/meettrace-${RELEASE_ID}-android-arm64.apk"
+          expected_sha="$(jq -er .artifact.sha256 \
+            build/finalize/android-candidate-manifest.json)"
+          actual_sha="$(sha256sum "$apk" | cut -d ' ' -f 1)"
+          [[ "$actual_sha" == "$expected_sha" ]]
 
       - name: Atomically publish signed automatic-update pointer
         shell: bash

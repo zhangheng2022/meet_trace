@@ -15,7 +15,7 @@
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
 - 新会议按本地开始时间生成确定性标题。Alpha 不提供 AI 总结或总结网关；文本分享只包含最终转录，音频分享必须使用独立入口、二次确认和临时 WAV，且不得改写事实 PCM。
 - 扩展 P0 前必须先更新 PRD。
-- Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX。维护者只手动启动一次 `Alpha Release` 并提供 `release_id`；此后 TestFlight 处理与外测审核、Microsoft Store Package Flight、专用机验证、正式 submission、审核状态轮询、GitHub Pre-release 公开和签名更新指针均由幂等自动化推进，不设 `github-release` 或 `windows-store-validation` 人工审批。Android、iOS、Windows 同一 SHA 的构建、商店审核和真实分发门禁全部通过后才公开原 Draft；iOS 必须已在固定 TestFlight 外测组进入 `Testing`，Windows 必须先通过 Flight 安装验证，再以同一 MSIX 完成正式 `Published/Public` 及 Store 安装验证。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 只通过 Microsoft Store 分发和更新，Store 包不得上传 GitHub Release。SignPath 申请仅作为未来可能替换 Store 的待审核路线，不接入当前发布工作流；启用前必须验证包身份兼容性并更新 PRD，禁止两个 Windows 包身份并存。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。
+- Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX。维护者只手动启动一次 `Alpha Release` 并提供 `release_id`；发布链只保留 `Alpha Release` 与 `Alpha Release Reconciler` 两个工作流，此后 TestFlight 处理与外测审核、Microsoft Store Package Flight、专用机验证、正式 submission、审核状态轮询、GitHub Pre-release 公开和签名更新指针均由幂等自动化推进，不设 `github-release` 或 `windows-store-validation` 人工审批。Android、iOS、Windows 同一 SHA 的构建、商店审核和真实分发门禁全部通过后才公开原 Draft；Android 签名 APK 只在 Firebase ARM 原样验证一次，iOS 必须已在固定 TestFlight 外测组进入 `Testing`，Windows 必须先通过 Flight 安装验证，再以同一 MSIX 完成正式 `Published/Public` 及独立 Store 安装验证。公开 Draft 后必须从公开地址重新下载 Android APK 并核对摘要，成功后才能前移更新指针。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 只通过 Microsoft Store 分发和更新，Store 包不得上传 GitHub Release。SignPath 申请仅作为未来可能替换 Store 的待审核路线，不接入当前发布工作流；启用前必须验证包身份兼容性并更新 PRD，禁止两个 Windows 包身份并存。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。
 - 新统一版本序列从共享构建号 `2001` 开始连续递增。Android 必须保留 `--split-per-abi`，传入的包基础构建号为共享构建号减 `2000`，Flutter 默认 ARM64 ABI 偏移后的实测 `versionCode` 必须与 iOS、Windows 构建号一致并写入候选清单和签名更新 Manifest；客户端按实测值验包，不自行推导。
 - Alpha 仅支持当前公开版本，不承诺任意 Alpha 版本之间的安装升级、本地数据格式、数据库、会议音频与转录、模型缓存、检查点或设置兼容性，也不提供降级或数据迁移。自动更新和统一发布只保证已批准候选的安全分发，不构成兼容性承诺；破坏性版本允许在用户安装前明确确认后清除全部本地数据并重新初始化，但录音或最终处理期间不得强制安装、退出或清理。发布资产不可覆盖、版本必须向前递增、包身份和签名校验等安全门禁不受影响。
 
@@ -40,6 +40,7 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 - sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入。禁止自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工 `jniLibs`；ASR 模型仅在 data/service 层通过统一 `AsrEngine` 适配。
 - 官方包缺少目标能力时，先调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。
 - 活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留副本，历史由 Git 保存。
+- GitHub Actions YAML 只保留触发器、权限、Environment、job 依赖和短胶水步骤；可独立测试的状态分类、合同解析、Artifact 选择与回执生成必须下沉到 `tool/`。常规 CI 的稳定 `CI Gate` 必须依赖 Actions 静态检查。
 
 ## 常用命令与质量门槛
 
