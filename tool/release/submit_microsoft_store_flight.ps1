@@ -157,8 +157,7 @@ if (-not [string]::IsNullOrWhiteSpace($pendingId)) {
 
 if ([string]::IsNullOrWhiteSpace($submissionId)) {
   $inputDirectory = Split-Path -Parent $CandidatePath
-  $workspacePath = (Get-Location).Path
-  msstore publish $workspacePath `
+  msstore publish $CandidatePath `
     --inputDirectory $inputDirectory `
     --appId $ProductId `
     --flightId $FlightId `
