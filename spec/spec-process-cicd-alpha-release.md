@@ -2,7 +2,7 @@
 
 **Status**：Active
 
-**Version**：3.5
+**Version**：3.6
 
 **Date**：2026-08-26
 
@@ -53,7 +53,7 @@ flowchart TD
 | REL-002 | 构建号从 `2001` 连续递增；Android 实测 `versionCode`、iOS build、Windows `1.0.<build>.0` 一致 | 包审计与清单 |
 | REL-003 | Android 仅正式签名 arm64 APK，保留 `--split-per-abi`，只在 Firebase ARM 使用 `--no-resign` 验证一次；恢复运行必须校验并复用原始成功回执，不得再次调度 Firebase | `androidCandidateDistribution` schema 2 回执与原始 Artifact 摘要 |
 | REL-004 | iOS 仅经固定 TestFlight 外测组分发；未提供可选发布说明时生成绑定 release ID 的确定性 changelog；Beta App Review `APPROVED` 且进入 `Testing` | Fastlane 守卫；脱敏 TestFlight 回执 |
-| REL-005 | 同一 Windows x64 MSIX 先进入固定 Flight；失败草稿仅在绑定同候选时由协调器清理并重提 | Flight request + API 回执 |
+| REL-005 | 同一 Windows x64 MSIX 先进入固定 Flight；失败草稿仅在绑定同候选时由协调器清理并重提；`msstore` v0.4.1 必须以精确 MSIX 路径作为发布位置参数 | Flight request + API 回执；工作流结构守卫 |
 | REL-006 | Flight 必须为同一 MSIX、`Published`，精确核对文件名、版本、x64 架构与上传状态后才提交 100% production | Partner Center API Flight 回执 |
 | REL-007 | production 必须为同一 MSIX、100% non-flighted、`Published/Public`，并精确核对包身份 | Partner Center API production 回执；提交前候选 SHA-256 复核 |
 | REL-008 | 完整门禁前不得公开 Draft 或更新指针；Windows 门禁不宣称验证 Store 客户端生命周期 | `release-gate.json` schema 3 |
@@ -108,6 +108,7 @@ schema 3 不包含 Windows 客户端生命周期回执。Windows 的发布结论
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 3.6 | 2026-08-26 | 修正 `msstore` v0.4.1 的既有 MSIX 发布调用，Flight 与 production 均以精确候选文件作为位置参数 |
 | 3.5 | 2026-08-26 | 移除 Windows 专用机门禁，改用 schema 3 精确 Store API 回执；错峰轮询并自动维护阻塞 Issue 生命周期 |
 | 3.4 | 2026-08-26 | Android 候选恢复复用原始 Firebase ARM 成功回执，禁止同一 APK 重复验证 |
 | 3.3 | 2026-08-26 | TestFlight 外部分发在可选 release notes 为空时生成确定性 changelog，避免上传前失败 |

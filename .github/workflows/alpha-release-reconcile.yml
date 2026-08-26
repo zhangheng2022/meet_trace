@@ -813,7 +813,7 @@ jobs:
             throw 'Failed to disable Microsoft Store CLI telemetry.'
           }
           $inputDirectory = Split-Path -Parent $env:WINDOWS_MSIX_PATH
-          msstore publish $env:GITHUB_WORKSPACE `
+          msstore publish $env:WINDOWS_MSIX_PATH `
             --inputDirectory $inputDirectory `
             --appId 9PHHSJMWK06G `
             --packageRolloutPercentage 100 `

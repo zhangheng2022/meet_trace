@@ -187,6 +187,8 @@ void main() {
       expect(flightScript, contains('Test-RecoverableCandidate'));
       expect(flightScript, contains('Invoke-RestMethod -Method Delete'));
       expect(flightScript, contains('belongs to a different candidate'));
+      expect(flightScript, contains(r'msstore publish $CandidatePath'));
+      expect(flightScript, isNot(contains(r'msstore publish $workspacePath')));
       final production = _job(workflow, 'submit_production', 'report_blocked');
       expect(status, contains('verify_microsoft_store_submission.dart'));
       expect(status, contains('classify_microsoft_store_submission.dart'));
@@ -194,6 +196,11 @@ void main() {
       expect(status, contains('windows-flight-receipt.json'));
       expect(status, contains('windows-store-production-receipt.json'));
       expect(production, contains('WINDOWS_ARTIFACT_SHA256'));
+      expect(production, contains(r'msstore publish $env:WINDOWS_MSIX_PATH'));
+      expect(
+        production,
+        isNot(contains(r'msstore publish $env:GITHUB_WORKSPACE')),
+      );
       expect(production, contains('--packageRolloutPercentage 100'));
       expect(production, contains('event_type=alpha-release-reconcile'));
       expect(workflow, isNot(contains('runs-on: [self-hosted')));
