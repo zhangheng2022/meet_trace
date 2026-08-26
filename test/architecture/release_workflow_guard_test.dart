@@ -188,10 +188,7 @@ void main() {
       expect(flightScript, contains('Invoke-RestMethod -Method Delete'));
       expect(flightScript, contains('belongs to a different candidate'));
       expect(flightScript, contains(r'msstore publish $CandidatePath'));
-      expect(
-        flightScript,
-        isNot(contains(r'msstore publish $workspacePath')),
-      );
+      expect(flightScript, isNot(contains(r'msstore publish $workspacePath')));
       final production = _job(workflow, 'submit_production', 'report_blocked');
       expect(status, contains('verify_microsoft_store_submission.dart'));
       expect(status, contains('classify_microsoft_store_submission.dart'));
