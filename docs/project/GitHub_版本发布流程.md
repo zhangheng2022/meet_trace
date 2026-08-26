@@ -16,6 +16,8 @@
 6. Flight 验证通过后，协调器把同一 MSIX 提交 100% non-flighted production submission。正式 submission 达到 `Published/Public` 后，再执行一次独立的正式 Store 安装验证；Android 不重复验证。
 7. 全部不可变回执通过后，协调器生成 schema 2 发布门禁，并以内部输入恢复 `Alpha Release`。最终 job 自动公开原 Draft，从公开地址重新下载 Android APK 并核对 SHA-256，成功后才原子前移签名更新指针。
 
+候选恢复时，如果同一 release ID、候选 SHA 和 APK 摘要已经存在成功的 Firebase ARM 回执，工作流必须校验原始发布运行、Artifact 身份和回执摘要后复用该验证来源，不得再次调度 Firebase。
+
 ```mermaid
 flowchart LR
   A[手动输入 release_id] --> B[同 SHA 三平台候选]

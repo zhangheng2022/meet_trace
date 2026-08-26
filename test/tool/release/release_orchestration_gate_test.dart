@@ -61,11 +61,31 @@ void main() {
       );
     });
 
-    test('拒绝把 Android 验证复制成独立于来源运行的回执', () {
+    test('接受带原始 Artifact 证明的 Android 单次验证复用', () {
       final gate = _gate();
       final validations = gate['validations']! as Map<String, Object?>;
-      (validations['android']! as Map<String, Object?>)['validationRunId'] =
-          303;
+      final android = validations['android']! as Map<String, Object?>;
+      android
+        ..['validationRunId'] = 99
+        ..['reused'] = true
+        ..['reusedFromRunId'] = 99
+        ..['reusedFromArtifactId'] = 1234
+        ..['reusedFromArtifactName'] =
+            'meettrace-android-distribution-v1.2.3-alpha.4'
+        ..['originalReceiptSha256'] = 'c' * 64;
+
+      final receipt = verifyReleaseOrchestrationGate(
+        jsonEncode(gate),
+        _request(),
+      );
+
+      expect(receipt['androidValidationRunId'], 99);
+    });
+
+    test('拒绝缺少原始 Artifact 证明的 Android 回执复制', () {
+      final gate = _gate();
+      final validations = gate['validations']! as Map<String, Object?>;
+      (validations['android']! as Map<String, Object?>)['validationRunId'] = 99;
 
       expect(
         () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
@@ -183,7 +203,7 @@ Map<String, Object?> _gate() => <String, Object?>{
   },
   'validations': <String, Object?>{
     'android': <String, Object?>{
-      'schemaVersion': 1,
+      'schemaVersion': 2,
       'validation': 'androidCandidateDistribution',
       'releaseId': 'v1.2.3-alpha.4',
       'candidateCommitSha': 'a' * 40,
@@ -191,6 +211,7 @@ Map<String, Object?> _gate() => <String, Object?>{
       'validationRunId': 101,
       'androidFirebaseArm': 'passed',
       'artifactSha256': 'b' * 64,
+      'reused': false,
     },
     'windowsFlight': _windowsValidation('flight', 301),
     'windowsProduction': _windowsValidation('production', 302),
