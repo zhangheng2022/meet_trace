@@ -9,7 +9,7 @@
 此后自动化按顺序推进：
 
 1. 创建 annotated tag 和 GitHub Draft Pre-release，分配从 `2001` 开始连续递增的共享构建号。
-2. 构建、签名并审计同一 SHA 的 Android arm64 APK、iOS IPA 和 Windows x64 Store MSIX。
+2. 构建并审计同一 SHA 的 Android 正式签名 arm64 APK、iOS 签名 IPA 和未签名 Windows x64 Store MSIX 候选。
 3. Android APK 暂存 Draft 并在 Firebase ARM 使用 `--no-resign` 原样验证一次；iOS 上传固定 TestFlight 外测组、自动通知并提交 Beta App Review；Windows MSIX 只上传不可变 Actions Artifact。
 4. `Alpha Release Reconciler` 立即运行一次，之后每 15 分钟查询 App Store Connect 和 Microsoft Store，并幂等提交、复用或恢复同一候选的固定 Package Flight。
 5. TestFlight 同一 build 审核通过并进入 `Testing`，且 Windows Flight 达到 `Published` 后，Reconciler 在专用 Windows Store 机器安装、启动和卸载 Flight。
@@ -79,12 +79,13 @@ gh secret set PARTNER_CENTER_CLIENT_SECRET --repo <owner>/<repo> --env microsoft
 
 | Environment | Secret / Variable | 用途 |
 | --- | --- | --- |
-| `android-alpha` | Android keystore、alias/password、Sentry token、Firebase App ID | APK 正式签名、符号与候选分发 |
+| `android-alpha` | Android keystore、alias/password、签名证书 SHA-256、Sentry token | APK 正式签名、符号与候选分发 |
 | `testflight` | App Store Connect key ID、issuer ID、P8 Base64、iOS signing、Sentry；`TESTFLIGHT_EXTERNAL_GROUP`、`TESTFLIGHT_PUBLIC_LINK` | 上传、外测审核、状态查询 |
-| `windows-alpha` | Windows Store signing PFX、password | 构建固定身份 MSIX |
+| `windows-alpha` | 无发布 Secret | 构建并审计固定 Store 身份的未签名 MSIX 候选；提交后由 Store 签名 |
 | `microsoft-store` | Partner Center tenant/seller/client/secret；`PARTNER_CENTER_FLIGHT_ID` | Flight/production 提交与只读状态核验 |
 | `windows-store-validation` | 无发布 Secret | 专用自托管机隔离边界，不设 reviewer |
 | `github-release` | `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`；固定 TestFlight group/link 与 Store Flight ID | 最终重验协调门禁并签名指针；不设 reviewer |
+| Repository Variables | `GCP_SERVICE_ACCOUNT`、`GCP_WORKLOAD_IDENTITY_PROVIDER` | Firebase Test Lab OIDC；Firebase project ID 固定在工作流中 |
 
 Partner Center 必须先人工完成一次产品、listing、年龄分级、定价/可用性、固定 Flight 和自动认证后发布配置。TestFlight 必须先创建固定外测组并启用稳定 public link，App Store Connect API Key 必须具备 `App Manager` 权限。这些是一次性商店 bootstrap，不是逐版本审批；Apple 不支持修改既有 Team Key 的访问级别，权限不符时须重新生成 Key 并替换 GitHub Environment Secret。
 
