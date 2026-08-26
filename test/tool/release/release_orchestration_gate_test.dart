@@ -29,6 +29,24 @@ void main() {
       );
     });
 
+    test('拒绝非 Apple 官方 IN_BETA_TESTING 的外测状态', () {
+      for (final state in <String>[
+        'TESTING',
+        'READY_FOR_EXTERNAL_TESTING',
+        'READY_FOR_BETA_TESTING',
+        'BETA_APPROVED',
+      ]) {
+        final gate = _gate();
+        (gate['testFlight']! as Map<String, Object?>)['externalBuildState'] =
+            state;
+
+        expect(
+          () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
+          throwsFormatException,
+        );
+      }
+    });
+
     test('拒绝 Flight 与 production 复用同一次专用机验证', () {
       final gate = _gate();
       final validations = gate['validations']! as Map<String, Object?>;
@@ -109,7 +127,7 @@ Map<String, Object?> _gate() => <String, Object?>{
     'buildId': 'build-2001',
     'processingState': 'VALID',
     'betaReviewState': 'APPROVED',
-    'externalBuildState': 'TESTING',
+    'externalBuildState': 'IN_BETA_TESTING',
     'testing': true,
     'expired': false,
     'externalGroup': 'MeetTrace External',

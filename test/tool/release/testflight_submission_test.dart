@@ -13,6 +13,7 @@ void main() {
       expect(receipt['verificationMode'], 'appStoreConnectApi');
       expect(receipt['buildId'], 'build-123');
       expect(receipt['betaReviewState'], 'APPROVED');
+      expect(receipt['externalBuildState'], 'IN_BETA_TESTING');
       expect(receipt['testing'], isTrue);
       expect(receipt['sourceRunId'], 123);
     });
@@ -22,6 +23,10 @@ void main() {
         _status()..['processingState'] = 'PROCESSING',
         _status()..['betaReviewState'] = 'IN_REVIEW',
         _status()..['externalBuildState'] = 'WAITING_FOR_BETA_REVIEW',
+        _status()..['externalBuildState'] = 'BETA_APPROVED',
+        _status()..['externalBuildState'] = 'READY_FOR_BETA_TESTING',
+        _status()..['externalBuildState'] = 'READY_FOR_EXTERNAL_TESTING',
+        _status()..['externalBuildState'] = 'TESTING',
         _status()..['testing'] = false,
       ]) {
         expect(
@@ -92,7 +97,7 @@ Map<String, Object?> _status() => <String, Object?>{
   'processingState': 'VALID',
   'expired': false,
   'betaReviewState': 'APPROVED',
-  'externalBuildState': 'READY_FOR_EXTERNAL_TESTING',
+  'externalBuildState': 'IN_BETA_TESTING',
   'testing': true,
   'externalGroups': <Object?>['MeetTrace Alpha'],
   'publicLink': 'https://testflight.apple.com/join/ABC123',
