@@ -140,10 +140,18 @@ void main() {
       final fastfile = await File('fastlane/Fastfile').readAsString();
 
       expect(ios, contains('environment: testflight'));
-      expect(ios, contains('run: bundle exec fastlane ios upload_testflight'));
+      expect(ios, contains('bundle exec fastlane ios upload_testflight'));
       expect(
         ios,
         contains(r'TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}'),
+      );
+      expect(
+        ios,
+        contains(r'if [[ -z "${TESTFLIGHT_CHANGELOG//[[:space:]]/}" ]]'),
+      );
+      expect(
+        ios,
+        contains(r'export TESTFLIGHT_CHANGELOG="MeetTrace $RELEASE_ID"'),
       );
       expect(ios, contains('Reuse immutable uploaded TestFlight candidate'));
       expect(ios, contains(r'meettrace-ios-testflight-$source_run_id-'));

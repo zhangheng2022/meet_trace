@@ -1405,7 +1405,12 @@ jobs:
         shell: bash
         env:
           TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}
-        run: bundle exec fastlane ios upload_testflight
+        run: |
+          set -euo pipefail
+          if [[ -z "${TESTFLIGHT_CHANGELOG//[[:space:]]/}" ]]; then
+            export TESTFLIGHT_CHANGELOG="MeetTrace $RELEASE_ID"
+          fi
+          bundle exec fastlane ios upload_testflight
 
       - name: Write release summary
         if: steps.staged.outputs.reuse != 'true'
