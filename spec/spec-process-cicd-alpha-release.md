@@ -2,7 +2,7 @@
 
 **Status**：Active
 
-**Version**：3.2
+**Version**：3.3
 
 **Date**：2026-08-26
 
@@ -52,7 +52,7 @@ flowchart TD
 | REL-001 | 三平台共享 annotated tag、SHA、release ID 和构建号 | 三份候选清单交叉核对 |
 | REL-002 | 构建号从 `2001` 连续递增；Android 实测 `versionCode`、iOS build、Windows `1.0.<build>.0` 一致 | 包审计与清单 |
 | REL-003 | Android 仅正式签名 arm64 APK，保留 `--split-per-abi`，只在 Firebase ARM 使用 `--no-resign` 验证一次 | `androidCandidateDistribution` 回执 |
-| REL-004 | iOS 仅经固定 TestFlight 外测组分发，Beta App Review `APPROVED` 且进入 `Testing` | 脱敏 TestFlight 回执 |
+| REL-004 | iOS 仅经固定 TestFlight 外测组分发；未提供可选发布说明时生成绑定 release ID 的确定性 changelog；Beta App Review `APPROVED` 且进入 `Testing` | Fastlane 守卫；脱敏 TestFlight 回执 |
 | REL-005 | 同一 Windows x64 MSIX 先进入固定 Flight；失败草稿仅在绑定同候选时由协调器清理并重提 | Flight request + API 回执 |
 | REL-006 | Flight `Published` 后执行专用机安装/启动/卸载，成功后才提交 100% production | Flight 验证回执 |
 | REL-007 | production 必须为同一 MSIX、`Published/Public`，并执行独立专用机验证 | production 回执；不同 validation run ID |
@@ -108,6 +108,7 @@ flowchart TD
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 3.3 | 2026-08-26 | TestFlight 外部分发在可选 release notes 为空时生成确定性 changelog，避免上传前失败 |
 | 3.2 | 2026-08-26 | 明确 Windows 候选在 CI 中不自签名，提交后由 Microsoft Store 签名；同步实际 Environment 与 OIDC 配置 |
 | 3.1 | 2026-08-26 | 最终发布固定使用已审查工具；候选发现失败进入统一阻断上报；明确候选版本与数据代际仍不可变 |
 | 3.0 | 2026-08-26 | 收敛为两个发布工作流；Android 仅验证一次；Flight 恢复和两阶段 Windows 验证归入协调器；公开 APK 复核并入最终发布 |

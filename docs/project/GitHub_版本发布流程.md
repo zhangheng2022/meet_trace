@@ -4,7 +4,7 @@
 
 ## 1. 操作模型
 
-维护者正常发布时只在 Actions 手动运行一次 `Alpha Release`，必填项只有 `release_id`，例如 `v1.0.0-alpha.6`；`release_notes` 可选。不要填写内部的 `resume_run_id` 或 `orchestration_run_id`。
+维护者正常发布时只在 Actions 手动运行一次 `Alpha Release`，必填项只有 `release_id`，例如 `v1.0.0-alpha.6`；`release_notes` 可选，留空时 TestFlight 自动使用包含 `release_id` 的确定性变更说明。不要填写内部的 `resume_run_id` 或 `orchestration_run_id`。
 
 此后自动化按顺序推进：
 
