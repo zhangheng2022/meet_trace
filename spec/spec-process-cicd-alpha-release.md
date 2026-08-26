@@ -2,7 +2,7 @@
 
 **Status**：Active
 
-**Version**：3.1
+**Version**：3.2
 
 **Date**：2026-08-26
 
@@ -88,7 +88,7 @@ flowchart TD
 | --- | --- |
 | `android-alpha` | Android 签名、Firebase 与 Sentry |
 | `testflight` | iOS 签名、App Store Connect、固定组/link |
-| `windows-alpha` | Store MSIX 签名 |
+| `windows-alpha` | 未签名 Store MSIX 候选构建与身份审计；无发布 Secret |
 | `microsoft-store` | Partner Center 最小权限凭据与固定 Flight ID |
 | `windows-store-validation` | 专用 runner 隔离，无 reviewer |
 | `github-release` | 更新指针签名与最终门禁重验，无 reviewer |
@@ -108,6 +108,7 @@ flowchart TD
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 3.2 | 2026-08-26 | 明确 Windows 候选在 CI 中不自签名，提交后由 Microsoft Store 签名；同步实际 Environment 与 OIDC 配置 |
 | 3.1 | 2026-08-26 | 最终发布固定使用已审查工具；候选发现失败进入统一阻断上报；明确候选版本与数据代际仍不可变 |
 | 3.0 | 2026-08-26 | 收敛为两个发布工作流；Android 仅验证一次；Flight 恢复和两阶段 Windows 验证归入协调器；公开 APK 复核并入最终发布 |
 | 2.0 | 2026-08-25 | 引入 TestFlight/Store 自动轮询、两阶段真实分发和自动公开 |
