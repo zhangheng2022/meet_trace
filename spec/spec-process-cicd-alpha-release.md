@@ -2,7 +2,7 @@
 
 **Status**：Active
 
-**Version**：3.0
+**Version**：3.1
 
 **Date**：2026-08-26
 
@@ -59,6 +59,7 @@ flowchart TD
 | REL-008 | 完整门禁前不得公开 Draft 或更新指针 | `release-gate.json` schema 2 |
 | REL-009 | 公开后必须重新下载 Android APK 并核对候选 SHA-256，之后才能更新指针 | final publish 步骤顺序守卫 |
 | REL-010 | 拒审、未知状态、身份歧义或查询失败时失败关闭 | `release-blocked` Issue；Draft/旧指针不变 |
+| REL-011 | 协调与最终发布使用当前已审查工具，候选提交仅提供不可变产品代码、身份与证据 | checkout workflow SHA；从 candidate SHA 读取版本和数据代际 |
 
 ## 5. 门禁回执
 
@@ -75,7 +76,7 @@ flowchart TD
 ## 6. 状态与恢复
 
 - 已知 processing/review/certification/publishing 状态：等待，下次协调继续。
-- TestFlight `FAILED/INVALID/REJECTED`、Store 失败或未知状态、字段歧义、候选身份不一致：阻断并维护 `release-blocked` Issue。
+- TestFlight `FAILED/INVALID/REJECTED`、Store 失败或未知状态、字段歧义、候选身份不一致或候选发现失败：阻断并维护 `release-blocked` Issue；无法确定版本时归入统一 discovery Issue。
 - Flight 同候选 `pendingcommit/commitfailed` 草稿：协调器删除该失败草稿并重新提交同一 MSIX；不同候选的 pending submission 一律阻断。
 - 候选构建失败：修复后复用合法 Draft；二进制变化必须使用新版本。
 - 最终公开失败：保留门禁并自动恢复；已公开但指针失败仅允许指针修复。
@@ -107,5 +108,6 @@ flowchart TD
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 3.1 | 2026-08-26 | 最终发布固定使用已审查工具；候选发现失败进入统一阻断上报；明确候选版本与数据代际仍不可变 |
 | 3.0 | 2026-08-26 | 收敛为两个发布工作流；Android 仅验证一次；Flight 恢复和两阶段 Windows 验证归入协调器；公开 APK 复核并入最终发布 |
 | 2.0 | 2026-08-25 | 引入 TestFlight/Store 自动轮询、两阶段真实分发和自动公开 |

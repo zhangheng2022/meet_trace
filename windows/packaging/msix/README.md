@@ -35,17 +35,17 @@ pwsh tool/benchmarks/inspect_msix.ps1 `
   -ExpectedVersion '1.0.2.0'
 ```
 
-Store 候选由 CI 创建并上传 Actions Artifact。维护者核对候选清单 SHA-256 后，首次发布把同一字节提交到 Private audience 验收；已有公开版本时通过 Package Flight 验收，再把 Flight 中的同一包拉入 non-flighted submission。候选在 Store 认证签名前不可公开安装，也不得上传 GitHub Release、自签名或引导用户旁加载。正式用户安装和更新只使用 Store 产品 `9PHHSJMWK06G`。
+Store 候选由 `Alpha Release` 创建并上传 Actions Artifact。`Alpha Release Reconciler` 核对候选清单和 SHA-256 后，把同一字节提交到固定 Package Flight；Flight 认证、真实安装验证通过后，再提交 100% production。候选不得上传 GitHub Release、自签名或引导用户旁加载。正式用户安装和更新只使用 Store 产品 `9PHHSJMWK06G`。
 
 ## 专用机 Store 生命周期验证
 
-公开后的 `Platform Distribution Validation` 只在带 `Windows`、`X64`、`meettrace-store` 标签的仓库级自托管运行器执行 `tool/windows/validate_store_distribution.ps1`。运行器必须是隔离的 Windows 10 22H2/11 x64 交互式账号，已安装 GitHub CLI、WinGet，且 `winget source list` 能看到 `msstore`。`windows-store-validation` Environment 应只允许 `master`，配置 required reviewer，但不保存 Partner Center、签名或 Store Secret。
+`Alpha Release Reconciler` 在 Flight `Published` 和 production `Published/Public` 后，分别在带 `Windows`、`X64`、`meettrace-store` 标签的仓库级自托管运行器执行 `tool/windows/validate_store_distribution.ps1`。运行器必须是隔离的 Windows 10 22H2/11 x64 交互式账号，已安装 GitHub CLI、WinGet，且 `winget source list` 能看到 `msstore`。`windows-store-validation` Environment 只允许 `master`，不配置 required reviewer，也不保存 Partner Center、签名或 Store Secret。
 
 - `InstallUninstall` 要求当前运行器账号没有安装 MeetTrace；脚本从 `msstore` 安装公开版本、逐字段核对 Name/Publisher/PFN/Version/x64、连续启动两次验证单实例，然后卸载当前用户包。
-- `Update` 要求当前运行器账号已预装输入的确切旧版 Store 包；脚本只允许目标版本高于旧版，经 `winget upgrade --source msstore` 更新后执行相同身份、启动和卸载检查。Store 不提供任意历史版本回装，因此旧版状态必须在新版公开前通过专用机快照保留。
+- `Update` 是脚本保留的非发布诊断模式：要求当前运行器账号已预装输入的确切旧版 Store 包，只允许目标版本高于旧版，再经 `winget upgrade --source msstore` 检查更新。当前统一发布门禁不调用此模式。
 - 脚本同时要求 `MEETTRACE_DEDICATED_STORE_VALIDATION=1`、`repository_dispatch` 和 `master`。任一条件不满足时在首次包变更前失败；禁止 `-AllUsers`，也不删除不符合预期的既有安装。
 
-普通 GitHub 托管 Windows Server、旁加载 Actions Artifact 或开发探针都不能替代真实 Store 生命周期结果。首次 `InstallUninstall` 与后续 `Update` 均成功前，Windows 继续标记为“规划中/未就绪”。
+普通 GitHub 托管 Windows Server、旁加载 Actions Artifact 或开发探针都不能替代真实 Store 生命周期结果。Flight 与 production 两次独立 `InstallUninstall` 均成功前，Windows 继续标记为“规划中/未就绪”。
 
 ## CI 开发探针
 

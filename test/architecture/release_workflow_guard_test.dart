@@ -222,6 +222,50 @@ void main() {
       expect(finalize, contains('gh workflow run alpha-release.yml'));
     });
 
+    test('候选发现只接受带 Firebase ARM 回执的新发布运行', () async {
+      final workflow = await _workflow('alpha-release-reconcile.yml');
+      final resolve = _job(workflow, 'resolve', 'testflight_status');
+      final validation = _job(
+        workflow,
+        'validation_status',
+        'submit_production',
+      );
+
+      expect(
+        resolve,
+        contains('Validate signed Android candidate once on Firebase ARM64'),
+      );
+      expect(
+        validation,
+        contains(r'android_name="meettrace-android-distribution-$RELEASE_ID"'),
+      );
+      expect(
+        validation,
+        contains('.validation == "androidCandidateDistribution"'),
+      );
+      expect(validation, contains(r'.artifactSha256 == $digest'));
+    });
+
+    test('候选发现失败也会维护 release-blocked Issue', () async {
+      final workflow = await _workflow('alpha-release-reconcile.yml');
+      final resolve = _job(workflow, 'resolve', 'testflight_status');
+      final report = _job(workflow, 'report_blocked', 'finalize');
+
+      expect(resolve, contains(r'echo "release_id=$release_id"'));
+      expect(
+        resolve.indexOf(r'echo "release_id=$release_id"'),
+        lessThan(resolve.indexOf(r'release_json="$(jq')),
+      );
+      expect(report, contains("needs.resolve.result == 'failure'"));
+      expect(report, contains("needs.resolve.result != 'success'"));
+      expect(report, contains('validation_status'));
+      expect(report, contains("needs.validation_status.result != 'success'"));
+      expect(report, contains('release_key=reconciler-discovery'));
+      expect(report, contains('Candidate resolution: %s'));
+      final finalize = _job(workflow, 'finalize');
+      expect(finalize, contains('[release-blocked] reconciler-discovery'));
+    });
+
     test('公开后重新下载 Android APK，成功后才更新指针', () async {
       final workflow = await _workflow('alpha-release.yml');
       final publish = _job(workflow, 'publish');

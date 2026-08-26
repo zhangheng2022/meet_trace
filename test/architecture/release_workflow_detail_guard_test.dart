@@ -261,5 +261,22 @@ void main() {
         ),
       );
     });
+
+    test('旧候选恢复使用已审查发布工具且候选事实保持不可变', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final publish = _job(workflow, 'publish');
+
+      expect(publish, contains('Checkout reviewed release implementation'));
+      expect(publish, contains(r'ref: ${{ github.workflow_sha }}'));
+      expect(publish, contains(r'WORKFLOW_SHA: ${{ github.workflow_sha }}'));
+      expect(publish, contains(r'git show "$CANDIDATE_SHA:pubspec.yaml"'));
+      expect(
+        publish,
+        contains(
+          r'$CANDIDATE_SHA:lib/data/services/storage/local_data_generation_gate.dart',
+        ),
+      );
+      expect(publish, isNot(contains('Checkout immutable candidate')));
+    });
   });
 }
