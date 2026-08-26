@@ -244,6 +244,7 @@ jobs:
             --build-number "$BUILD_NUMBER" \
             --external-group "$TESTFLIGHT_EXTERNAL_GROUP" \
             --public-link "$TESTFLIGHT_PUBLIC_LINK" \
+            --diagnostic "$RUNNER_TEMP/testflight-query-diagnostic.json" \
             > "$RUNNER_TEMP/testflight-status.json"
           processing="$(jq -er .processingState "$RUNNER_TEMP/testflight-status.json")"
           review="$(jq -er .betaReviewState "$RUNNER_TEMP/testflight-status.json")"
@@ -262,13 +263,13 @@ jobs:
             blocked=true
           else
             case "$processing/$review/$external/$testing" in
-              VALID/APPROVED/READY_FOR_EXTERNAL_TESTING/true|VALID/APPROVED/TESTING/true)
+              VALID/APPROVED/IN_BETA_TESTING/true)
                 ready=true
                 ;;
-              FAILED/*|INVALID/*|*/REJECTED/*)
+              FAILED/*|INVALID/*|*/REJECTED/*|*/*/PROCESSING_EXCEPTION/*|*/*/MISSING_EXPORT_COMPLIANCE/*|*/*/EXPIRED/*|*/*/BETA_REJECTED/*|*/*/NOT_APPLICABLE/*)
                 blocked=true
                 ;;
-              PROCESSING/*|VALID/WAITING_FOR_REVIEW/*|VALID/IN_REVIEW/*|VALID/APPROVED/READY_FOR_BETA_SUBMISSION/false|VALID/APPROVED/WAITING_FOR_BETA_REVIEW/false|VALID/APPROVED/IN_BETA_REVIEW/false)
+              PROCESSING/*|VALID/NOT_SUBMITTED/READY_FOR_BETA_SUBMISSION/false|VALID/WAITING_FOR_REVIEW/*|VALID/IN_REVIEW/*|VALID/APPROVED/READY_FOR_BETA_SUBMISSION/false|VALID/APPROVED/IN_EXPORT_COMPLIANCE_REVIEW/false|VALID/APPROVED/WAITING_FOR_BETA_REVIEW/false|VALID/APPROVED/IN_BETA_REVIEW/false|VALID/APPROVED/BETA_APPROVED/false|VALID/APPROVED/READY_FOR_BETA_TESTING/false)
                 ;;
               *)
                 blocked=true
@@ -292,6 +293,16 @@ jobs:
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
           echo "blocked=$blocked" >> "$GITHUB_OUTPUT"
           echo "summary=processing=$processing review=$review external=$external testing=$testing" >> "$GITHUB_OUTPUT"
+
+      - name: Upload safe TestFlight query diagnostic
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: meettrace-testflight-query-diagnostic-${{ needs.resolve.outputs.release_id }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/testflight-query-diagnostic.json
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0
 
       - name: Upload safe TestFlight receipt
         if: steps.status.outputs.ready == 'true'

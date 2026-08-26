@@ -85,25 +85,25 @@ gh secret set PARTNER_CENTER_CLIENT_SECRET --repo <owner>/<repo> --env microsoft
 | `windows-store-validation` | 无发布 Secret | 专用自托管机隔离边界，不设 reviewer |
 | `github-release` | `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`；固定 TestFlight group/link 与 Store Flight ID | 最终重验协调门禁并签名指针；不设 reviewer |
 
-Partner Center 必须先人工完成一次产品、listing、年龄分级、定价/可用性、固定 Flight 和自动认证后发布配置。TestFlight 必须先创建固定外测组并启用稳定 public link。这些是一次性商店 bootstrap，不是逐版本审批。
+Partner Center 必须先人工完成一次产品、listing、年龄分级、定价/可用性、固定 Flight 和自动认证后发布配置。TestFlight 必须先创建固定外测组并启用稳定 public link，App Store Connect API Key 必须具备 `App Manager` 权限。这些是一次性商店 bootstrap，不是逐版本审批；Apple 不支持修改既有 Team Key 的访问级别，权限不符时须重新生成 Key 并替换 GitHub Environment Secret。
 
 ## 4. 自动协调与失败关闭
 
 `.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `*/15 * * * *` 定时轮询。GitHub 只向具备 push access 的调用者列出 Draft Release，因此仅 `resolve` job 获得 `contents: write`，用于通过 Releases API 读取仍为 Draft 的最新合法 Alpha 及其候选清单；该 job 不持有商店 Secret，也不修改 Release。即时调度校验触发它的 source run，定时调度则从最近成功运行中选择同时携带精确 Windows 候选与 Package Flight 回执的 source run。两条路径都核对 tag、SHA、共享构建号、source run 的默认分支祖先关系、MSIX SHA-256、架构、候选清单和商店返回包身份，不依赖无法按 tag 稳定读取 Draft 的发布命令。
 
-外部状态读取使用服务方的结构化 REST：TestFlight 从 app 维度按固定名称取得唯一外测组，再通过官方 betaGroup→builds 端点核对精确 build ID，避免受限的 build→betaGroups 关系端点和不受支持的组合筛选；Microsoft Store 分别读取 app、pending/last published submission 及 status，只投影状态、可见性和包字段，不解析 Store CLI 输出中的 listing 文本。Store CLI 仅保留在确实提交 Flight 或 production 的 job 中。
+外部状态读取使用服务方的结构化 REST：TestFlight 从 app 维度按固定名称取得唯一外测组，再分页读取官方 betaGroup→builds 关系并核对精确 build ID，避免受限的 build→betaGroups 关系端点和不受支持的组合筛选；只有 Apple 官方 `IN_BETA_TESTING` 才表示指定 build 已实际进入外测。查询失败时仅上传请求阶段、HTTP 状态、Apple error code/title 与本地原因码组成的脱敏诊断 Artifact，不记录 JWT、P8、测试者信息、资源 ID 或完整响应。Microsoft Store 分别读取 app、pending/last published submission 及 status，只投影状态、可见性和包字段，不解析 Store CLI 输出中的 listing 文本。Store CLI 仅保留在确实提交 Flight 或 production 的 job 中。
 
 协调器的状态客户端与回执验证器固定从触发该次运行的 `github.workflow_sha` 检出，确保旧候选恢复时仍使用当前已审查实现；候选包、候选清单、tag、候选 SHA、构建号和摘要继续绑定原不可变 candidate，不因协调器升级而改变。
 
 以下状态只等待，不公开，也不创建新候选：
 
-- TestFlight 正在处理、等待 Beta App Review 或审核中；
+- TestFlight 正在处理，或处于 `READY_FOR_BETA_SUBMISSION`、`WAITING_FOR_BETA_REVIEW`、`IN_BETA_REVIEW`、`BETA_APPROVED`、`READY_FOR_BETA_TESTING` 等尚未进入 `IN_BETA_TESTING` 的正常推进状态；
 - Microsoft Store 正在 commit、processing、certification 或 publishing；
 - 已调度的专用机验证仍在执行。
 
 以下情况失败关闭并创建或更新带 `release-blocked` 标签的 Issue：
 
-- TestFlight processing `FAILED/INVALID` 或 Beta App Review `REJECTED`；
+- TestFlight processing `FAILED/INVALID`，Beta App Review `REJECTED`，或外测状态为 `PROCESSING_EXCEPTION/MISSING_EXPORT_COMPLIANCE/EXPIRED/BETA_REJECTED/NOT_APPLICABLE`；
 - Store 对同一包返回失败、拒绝或未知状态；
 - 外部 API 查询失败、字段缺失、状态歧义或回执身份不匹配；
 - 候选 tag/SHA/build、包名、版本、架构、摘要或来源运行不一致。

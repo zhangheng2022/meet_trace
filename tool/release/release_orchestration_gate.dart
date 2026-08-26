@@ -58,8 +58,7 @@ Map<String, Object?> verifyReleaseOrchestrationGate(
   _require(testFlight, 'marketingVersion', request.marketingVersion);
   _require(testFlight, 'processingState', 'VALID');
   _require(testFlight, 'betaReviewState', 'APPROVED');
-  if (testFlight['externalBuildState'] != 'READY_FOR_EXTERNAL_TESTING' &&
-      testFlight['externalBuildState'] != 'TESTING') {
+  if (testFlight['externalBuildState'] != 'IN_BETA_TESTING') {
     throw const FormatException('TestFlight 外测状态未通过门禁');
   }
   _require(testFlight, 'testing', true);

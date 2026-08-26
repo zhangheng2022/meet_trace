@@ -62,8 +62,7 @@ Map<String, Object?> verifyTestFlightStatus(
   if (betaReviewState != 'APPROVED') {
     throw FormatException('TestFlight Beta App Review 尚未通过：$betaReviewState');
   }
-  if (externalBuildState != 'READY_FOR_EXTERNAL_TESTING' &&
-      externalBuildState != 'TESTING') {
+  if (externalBuildState != 'IN_BETA_TESTING') {
     throw FormatException('TestFlight 外测状态不可用：$externalBuildState');
   }
   if (testing is! bool || !testing) {
