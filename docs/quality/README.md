@@ -2,9 +2,9 @@
 
 > 状态：活动；固定 TestFlight 外测审核、Windows Package Flight/production 提交、两阶段真实分发验证和统一自动公开门禁已实现；新门禁首次成功运行前，Windows 继续标记为“规划中/未就绪”
 >
-> 更新日期：2026-08-21
+> 更新日期：2026-08-26
 >
-> 上游：[Alpha PRD V1.2](../product/Alpha_PRD_无登录版.md)
+> 上游：[Alpha PRD V1.4](../product/Alpha_PRD_无登录版.md)
 
 本文只保留当前自动化、构建和分发门槛。旧 Step 报告、旧测试数量、旧 APK 体积和旧工作流运行结果均从 Git 历史追溯，不能替代当前候选检查。
 
@@ -15,19 +15,17 @@
 - Patrol/Firebase Test Lab、Widget、Domain、Data 与平台守卫继续承担自动化回归，但不要求提交目标设备人工证据，也不将性能或准确率记录作为发布阻断条件。
 - 官方 `sherpa_onnx 1.13.6` 继承了完整波形输入缓冲区释放修复。重复长会议内存、RTF、DER、能耗和温控可作为非阻断工程观测；运行失败时继续降级为单一说话人。
 - Windows x64 Debug/Release 工程、SQLite FFI、输入设备锁定/一次回退、连续性事件、单实例激活、录音 close 转托盘、“停止并退出”安全封存及睡眠/恢复缺口记录链已实现并有自动化/本机构建冒烟。常规 CI 保留不可分发开发探针；正式 `Alpha Release` 生成固定 Partner Center 身份的 Store MSIX，只把包体上传 Actions Artifact 和 Partner Center。协调器以 Store CLI/API 核验 Flight 与 production，同一 MSIX 必须分别通过专用 Windows 机安装、启动、卸载；自动更新解析器只接受 Store ID `9PHHSJMWK06G` 和包身份 `zhangheng2026.MeetTrace`。新门禁尚无成功生产运行，因此 Windows 当前必须继续标记为“规划中/未就绪”。
-- PRD V1.2 要求 Android/iOS/Windows 同 SHA 的构建、自动化、分发与统一公开门禁；不再要求目标设备人工验收记录。
+- PRD V1.4 要求 Android/iOS/Windows 同 SHA 的构建、自动化、分发与统一公开门禁；发布链只保留两个工作流，不再要求目标设备人工验收记录。
 
 ## 自动化门禁
 
 | 范围 | 当前入口 | 当前证据与缺口 |
 |---|---|---|
-| 跨平台 CI | `.github/workflows/quality.yml` | 按变更路径执行格式、分析、测试、Android Debug APK 与 iOS 无签名构建审计，并始终汇总 `CI Gate` |
+| 跨平台 CI | `.github/workflows/quality.yml` | Actions Lint 与按路径执行的格式、分析、测试、Android Debug APK、iOS/Windows 构建审计，并始终汇总 `CI Gate` |
 | 可复用质量核心 | `.github/workflows/_flutter-core.yml` | 为 PR CI 与 Alpha Release 提供同一套格式、分析和测试门禁 |
-| 正式候选 | `.github/workflows/alpha-release.yml` | 同一 SHA、Android 签名 arm64 APK、iOS TestFlight 外测审核、Windows Store MSIX/Flight 与三平台候选清单 |
-| 候选协调 | `.github/workflows/alpha-release-reconcile.yml` | 每 15 分钟轮询 TestFlight/Store，Flight 验证后提交 100% production，全部回执通过后自动公开 |
-| 公开前真实分发 | `.github/workflows/candidate-distribution-validation.yml` | Android Firebase ARM 原样安装；Windows Flight 与 production 分别在专用机安装、启动、卸载 |
-| 公开分发纵向验证 | `.github/workflows/platform-distribution-validation.yml` | 验签公开指针并绑定三平台候选；Android 在 Firebase ARM 原样安装启动，iOS 复核 TestFlight 上传证据，Windows 在专用自托管机执行 Store 安装/更新/启动/卸载；实现已就绪但真实 Windows 运行尚未完成 |
-| Windows 发布门禁 | `quality.yml` 开发探针；`alpha-release.yml` Store 候选与公开状态核验；`platform-distribution-validation.yml` 真实生命周期 | 固定 Store 身份、三平台同 SHA/版本、Published/Public 回执和候选摘要已形成机器合同；专用运行器已配置，仍需分别成功执行 `InstallUninstall` 与后续版本 `Update`，完成前不得宣称闭环 |
+| 正式候选 | `.github/workflows/alpha-release.yml` | 同一 SHA 三平台候选；Android 签名 arm64 APK 在 Firebase ARM 原样验证一次；最终公开后重下 APK 并复核摘要 |
+| 候选协调 | `.github/workflows/alpha-release-reconcile.yml` | Flight 提交/恢复、TestFlight/Store 轮询、Windows Flight/production 两阶段专用机验证、100% production 与最终门禁 |
+| Windows 发布门禁 | `quality.yml` 开发探针；两个发布工作流的 Store 生命周期 | 固定 Store 身份、三平台同 SHA/版本、Published/Public 回执和两次独立专用机验证形成机器合同；首次完整生产运行前不得宣称闭环 |
 | 本地交付 | `dart format lib test`、`flutter analyze`、`flutter test` | 当前工作树通过；代码变更按 AGENTS 完成 OCR 和目标平台构建 |
 
 自动化失败时不得发布。性能、准确率、能耗、温控和设备实验室结果均为非阻断工程观测，不要求形成候选证据。

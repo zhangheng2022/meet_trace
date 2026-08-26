@@ -28,6 +28,7 @@ Future<void> main(List<String> arguments) async {
           options,
           'testflight-external-group',
         ),
+        androidArtifactSha256: _required(options, 'android-artifact-sha256'),
         windowsArtifactName: _required(options, 'windows-artifact-name'),
         windowsPackageVersion: _required(options, 'windows-package-version'),
         windowsFlightId: _required(options, 'windows-flight-id'),

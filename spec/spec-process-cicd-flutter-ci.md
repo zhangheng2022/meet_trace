@@ -1,6 +1,6 @@
 # Flutter CI/CD 工作流规格
 
-> 当前状态：常规 CI 已加入 Windows x64 Release 与未签名 MSIX 开发探针；正式 `Alpha Release` 已以固定 Microsoft Store 身份完成限定受众、首次正式认证、三平台统一公开和签名更新指针首次生产运行。发布后平台分发纵向验证工作流、受保护 Environment 与专用 Windows 自托管运行器已配置，但真实 Store 安装、更新、卸载尚未全部成功，不得据此公开 Windows 支持。
+> 当前状态：常规 CI 通过稳定 `CI Gate` 汇总 Actions 静态检查与按路径选择的平台检查；发布链只保留 `Alpha Release` 和 `Alpha Release Reconciler`。新统一门禁首次成功运行前，Windows 继续标记为规划中。
 
 ## 1. 目标与边界
 
@@ -20,12 +20,10 @@
 
 | 文件 | 触发方式 | 职责 |
 |---|---|---|
-| `.github/workflows/quality.yml` | PR、`master` push、手动 | 分类变更、执行所需平台检查、汇总稳定 Gate |
+| `.github/workflows/quality.yml` | PR、`master` push、手动 | Actions Lint、路径分类、所需平台检查、稳定 `CI Gate` |
 | `.github/workflows/_flutter-core.yml` | `workflow_call` | 锁定依赖、格式化、分析、测试及可选 Android APK 审计 |
-| `.github/workflows/alpha-release.yml` | 手动一次 + 协调器内部恢复 | 同一 SHA 的 Android、TestFlight 与 Store 候选；仅接受完整自动化门禁后公开 |
-| `.github/workflows/alpha-release-reconcile.yml` | 即时调度 + 每 15 分钟 | 轮询 TestFlight/Store、提交 production、汇总回执并恢复最终公开 |
-| `.github/workflows/candidate-distribution-validation.yml` | 协调器调度 | 公开前 Android ARM 与 Windows Flight/production 真实分发验证 |
-| `.github/workflows/platform-distribution-validation.yml` | `repository_dispatch` | 公开合同复核、Android ARM 安装启动、TestFlight 证据和专用 Windows Store 生命周期；不新增 Actions 手动入口 |
+| `.github/workflows/alpha-release.yml` | 手动一次 + 协调器内部恢复 | 同一 SHA 三平台候选、一次 Android ARM 验证、最终公开 APK 复核与签名指针更新 |
+| `.github/workflows/alpha-release-reconcile.yml` | 即时调度 + 每 15 分钟 | Flight 提交/恢复、TestFlight/Store 轮询、两阶段 Windows 验证、production 提交与最终门禁 |
 | `.github/workflows/firebase-test-lab.yml` | 手动/被调用 | Android 设备实验室自动化回归，不作为发布证据门禁 |
 | `.github/workflows/codeql.yml` | PR、`master` push、每周、手动 | 使用高级配置扫描 Actions、C/C++ 与 Python，排除代理技能目录 |
 
@@ -33,12 +31,14 @@
 
 ```mermaid
 flowchart LR
-  A["PR / master push / 手动"] --> B["Classify changed paths"]
+  A["PR / master push / 手动"] --> L["Actions Lint"]
+  A --> B["Classify changed paths"]
   B -->|"core=true"| C["Reusable Flutter Core"]
   B -->|"android=true"| C
   B -->|"ios=true"| D["Unsigned iOS app audit"]
   B -->|"windows=true"| W["Unsigned Windows MSIX probe"]
   B -->|"文档或 Graphify 输出"| E["CI Gate"]
+  L --> E
   C --> E
   D --> E
   W --> E
@@ -59,13 +59,13 @@ flowchart LR
 
 ### 3.2 稳定 Gate 契约
 
-`CI Gate` 必须使用 `if: always()` 并依赖分类、Flutter Core、iOS 和 Windows 检查。分类必须成功；按条件执行的任务必须为 `success`，未选中的任务只能为 `skipped`。工作流触发器不得使用顶层 `paths` 或 `paths-ignore`，以免 required check 消失。
+`CI Gate` 必须使用 `if: always()` 并依赖 `Actions Lint`、分类、Flutter Core、iOS 和 Windows 检查。Actions YAML 静态检查和分类必须成功；按条件执行的任务必须为 `success`，未选中的任务只能为 `skipped`。工作流触发器不得使用顶层 `paths` 或 `paths-ignore`，以免 required check 消失。
 
 ### 3.3 Windows MSIX 开发探针
 
 常规 Windows job 固定使用 `windows-2025`、Java 17 与仓库锁定的 Flutter。它以 `SENTRY_ENABLED=false` 构建 x64 Release，使用 `CN=MeetTrace Development` 生成未签名探针，只验证 manifest、运行资产、模型权重/用户数据/凭据禁入和 SHA-256；上传证据前删除包体。
 
-正式 `Alpha Release` 的 Windows job 使用 Partner Center 固定 Name、Publisher、PublisherDisplayName、PFN 和 Store ID 构建 Store MSIX，生成候选清单与 provenance，并把 MSIX 只上传 Actions Artifact。随后自动提交固定 Package Flight；协调器通过官方 Store CLI/API 轮询同一包，Flight `Published` 且专用机安装验证通过后，才将同一 MSIX 以 100% rollout 提交 production。production 达到 `Published/Public` 并再次通过专用机验证后，才生成最终门禁。TestFlight 同一 build 也必须已通过 Beta App Review、位于固定外测组并进入 Testing。GitHub Release 明确拒绝 IPA 与 MSIX，正常路径不使用人工审批或人工状态证明。
+正式 `Alpha Release` 的 Windows job 使用 Partner Center 固定 Name、Publisher、PublisherDisplayName、PFN 和 Store ID 构建 Store MSIX，生成候选清单与 provenance，并把 MSIX 只上传 Actions Artifact。Reconciler 幂等提交或恢复固定 Package Flight，并通过官方 Store CLI/API 轮询同一包；Flight `Published` 且专用机安装验证通过后，才将同一 MSIX 以 100% rollout 提交 production。production 达到 `Published/Public` 并再次通过独立专用机验证后，才生成最终门禁。Android 签名 APK 只在来源运行执行一次 Firebase ARM 原包验证；TestFlight 同一 build 必须已通过 Beta App Review、位于固定外测组并进入 Testing。GitHub Release 明确拒绝 IPA 与 MSIX，正常路径不使用人工审批或人工状态证明。
 
 ## 4. 可复用 Flutter Core
 
@@ -93,14 +93,14 @@ flowchart LR
 
 完整 Alpha 发布编排、商店 API 门禁、两阶段真实分发验证、输入输出与故障策略以 [Alpha Release 端到端规格](spec-process-cicd-alpha-release.md)为准。本节只描述与常规 CI 共用的构建和 Sentry 契约。
 
-`alpha-release.yml` 对选定 SHA 先调用 Flutter Core，再分配 Android/iOS 共用构建号。运行时通过 `--dart-define` 注入：
+`alpha-release.yml` 对选定 SHA 先调用 Flutter Core，再向三平台传递统一构建号。运行时通过 `--dart-define` 注入：
 
 - `SENTRY_RELEASE=com.meettrace.app@<version>+<build>`
 - `SENTRY_DIST=<build>`
 
 Android 符号上传在 `android-alpha` Environment 中执行；iOS dSYM 上传在 `testflight` Environment 中执行。两者只读取对应 Environment 的 `SENTRY_AUTH_TOKEN`，失败最多重试三次，最终失败阻断该平台候选。
 
-Android APK 与 `candidate-manifest.json` 是 Release 中仅有的自定义资产；APK 检查、签名输出、证书摘要和 iOS 候选清单保存在 Actions Artifact，不上传 IPA。若三平台 job 已成功、仅最终公开 job 失败，可通过可选的 `resume_run_id` 复核原运行证据并继续批准，不得再次构建或重复上传同一 TestFlight/Store build。
+Android APK 与 `candidate-manifest.json` 是 Release 中仅有的自定义资产；APK 检查、签名输出、证书摘要和 iOS/Windows 候选清单保存在 Actions Artifact，不上传 IPA 或 MSIX。若最终公开失败，协调器使用内部 `resume_run_id` 和门禁 Artifact 恢复，不得再次构建或重复上传同一 TestFlight/Store build。
 
 `github-release` Environment 只保存 `APP_UPDATE_SIGNING_PRIVATE_KEY_BASE64`，以及最终重验所需的固定 TestFlight group/link 和 Store Flight ID，且不设 required reviewer；Store 凭据只保存在 `microsoft-store`，Apple 查询凭据只保存在 `testflight`。协调器删除含短期 URL 的原始响应，只上传脱敏回执。状态、可见性、文件名、包版本、x64 架构、上传状态、TestFlight 审核/Testing 或真实分发合同任一不匹配时，不得公开 Release 或生成新指针。元数据修复、指针修复和撤回复用原发布时的核验结果，不重新提交商店候选。
 

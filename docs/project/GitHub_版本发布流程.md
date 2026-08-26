@@ -10,11 +10,11 @@
 
 1. 创建 annotated tag 和 GitHub Draft Pre-release，分配从 `2001` 开始连续递增的共享构建号。
 2. 构建、签名并审计同一 SHA 的 Android arm64 APK、iOS IPA 和 Windows x64 Store MSIX。
-3. Android APK 暂存 Draft；iOS 上传固定 TestFlight 外测组、自动通知并提交 Beta App Review；Windows MSIX 提交固定 Package Flight。
-4. `Alpha Release Reconciler` 立即查询一次，之后每 15 分钟查询 App Store Connect 和 Microsoft Store。等待外部审核是正常状态，不需要人工批准。
-5. TestFlight 同一 build 审核通过并进入 `Testing` 后，Windows Flight 必须为 `Published`。`Candidate Distribution Validation` 在 Firebase ARM 原样安装 Android APK，并在专用 Windows Store 机器安装、启动和卸载 Flight。
-6. Flight 验证通过后，协调器把同一 MSIX 提交 100% non-flighted production submission。正式 submission 达到 `Published/Public` 后，再次执行 Android 与正式 Store 安装验证。
-7. 全部不可变回执通过后，协调器生成发布门禁，并以内部输入恢复 `Alpha Release`。最终 job 自动公开原 Draft 为 Pre-release，再原子前移签名更新指针。
+3. Android APK 暂存 Draft 并在 Firebase ARM 使用 `--no-resign` 原样验证一次；iOS 上传固定 TestFlight 外测组、自动通知并提交 Beta App Review；Windows MSIX 只上传不可变 Actions Artifact。
+4. `Alpha Release Reconciler` 立即运行一次，之后每 15 分钟查询 App Store Connect 和 Microsoft Store，并幂等提交、复用或恢复同一候选的固定 Package Flight。
+5. TestFlight 同一 build 审核通过并进入 `Testing`，且 Windows Flight 达到 `Published` 后，Reconciler 在专用 Windows Store 机器安装、启动和卸载 Flight。
+6. Flight 验证通过后，协调器把同一 MSIX 提交 100% non-flighted production submission。正式 submission 达到 `Published/Public` 后，再执行一次独立的正式 Store 安装验证；Android 不重复验证。
+7. 全部不可变回执通过后，协调器生成 schema 2 发布门禁，并以内部输入恢复 `Alpha Release`。最终 job 自动公开原 Draft，从公开地址重新下载 Android APK 并核对 SHA-256，成功后才原子前移签名更新指针。
 
 ```mermaid
 flowchart LR
@@ -23,12 +23,13 @@ flowchart LR
   B --> D[Windows Package Flight]
   C --> E{每 15 分钟协调}
   D --> E
-  E --> F[Android + Flight 真实分发验证]
+  E --> F[Android 已验证 + Flight 真实分发验证]
   F --> G[同一 MSIX production 100% 提交]
   G --> H[Published / Public]
-  H --> I[Android + production 真实分发验证]
+  H --> I[production 独立真实分发验证]
   I --> J[自动公开 Draft]
-  J --> K[原子更新签名指针]
+  J --> K[公开 APK 摘要复核]
+  K --> L[原子更新签名指针]
 ```
 
 正常路径没有 `github-release` 或 `windows-store-validation` required reviewer，也没有最终审批评论。Environment 仍用于隔离 Secret 和限制来源分支。
@@ -42,7 +43,7 @@ flowchart LR
 | Windows | Store ID `9PHHSJMWK06G`、Identity `zhangheng2026.MeetTrace`、Publisher `CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B`、x64 MSIX；不上传 GitHub Release |
 | 共享版本 | Android 实测 `versionCode`、iOS build number 和 Windows `1.0.<build>.0` 中的 build 必须相同；序列从 `2001` 连续递增 |
 | 候选来源 | 三平台必须来自同一 annotated tag、release ID、candidate SHA、source run 和共享构建号 |
-| 公开门禁 | TestFlight Testing、Flight Published、production Published/Public、Flight 与 production 两次真实分发验证全部匹配同一候选 |
+| 公开门禁 | 单次 Android Firebase ARM、TestFlight Testing、Flight Published、production Published/Public、Flight 与 production 两次独立 Windows 验证全部匹配同一候选 |
 
 Draft 阶段可用相同发布标识恢复，但必须复用已经成功且身份匹配的候选，不能重建后冒充同一候选。Draft 公开后不得覆盖 APK、移动 tag、删除/撤回版本或回退构建号。
 
@@ -89,7 +90,7 @@ Partner Center 必须先人工完成一次产品、listing、年龄分级、定�
 
 ## 4. 自动协调与失败关闭
 
-`.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `*/15 * * * *` 定时轮询。GitHub 只向具备 push access 的调用者列出 Draft Release，因此仅 `resolve` job 获得 `contents: write`，用于通过 Releases API 读取仍为 Draft 的最新合法 Alpha 及其候选清单；该 job 不持有商店 Secret，也不修改 Release。即时调度校验触发它的 source run，定时调度则从最近成功运行中选择同时携带精确 Windows 候选与 Package Flight 回执的 source run。两条路径都核对 tag、SHA、共享构建号、source run 的默认分支祖先关系、MSIX SHA-256、架构、候选清单和商店返回包身份，不依赖无法按 tag 稳定读取 Draft 的发布命令。
+`.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `*/15 * * * *` 定时轮询。GitHub 只向具备 push access 的调用者列出 Draft Release，因此仅 `resolve` job 获得 `contents: write`，用于通过 Releases API 读取仍为 Draft 的最新合法 Alpha 及其候选清单；该 job 不持有商店 Secret，也不修改 Release。即时调度校验触发它的 source run，定时调度则从最近成功运行中选择同时携带精确三平台候选和单次 Android 验证回执的 source run。两条路径都核对 tag、SHA、共享构建号、source run 的默认分支祖先关系、MSIX SHA-256、架构和候选清单；Flight submission ID 由协调器创建或从同候选状态中恢复。
 
 外部状态读取使用服务方的结构化 REST：TestFlight 从 app 维度按固定名称取得唯一外测组，再分页读取官方 betaGroup→builds 关系并核对精确 build ID，避免受限的 build→betaGroups 关系端点和不受支持的组合筛选；只有 Apple 官方 `IN_BETA_TESTING` 才表示指定 build 已实际进入外测。查询失败时仅上传请求阶段、HTTP 状态、Apple error code/title 与本地原因码组成的脱敏诊断 Artifact，不记录 JWT、P8、测试者信息、资源 ID 或完整响应。Microsoft Store 分别读取 app、pending/last published submission 及 status，只投影状态、可见性和包字段，不解析 Store CLI 输出中的 listing 文本。Store CLI 仅保留在确实提交 Flight 或 production 的 job 中。
 
@@ -112,14 +113,12 @@ Partner Center 必须先人工完成一次产品、listing、年龄分级、定�
 
 ## 5. 真实分发验证
 
-`Candidate Distribution Validation` 只接受 `repository_dispatch`，且要求默认分支和不可变候选合同：
+真实分发验证全部内置于两个发布工作流：
 
-1. Android 从 Draft Release 下载确切 APK，核对 SHA-256，在 Firebase Test Lab ARM 设备使用 `--no-resign` 原样安装并启动。
-2. Windows 只能在带 `self-hosted, Windows, X64, meettrace-store` 标签的专用机运行。Flight 阶段与 production 阶段分别从 Store 安装、验证版本、启动并卸载。
-3. 两阶段必须生成不同 validation run ID；production 不能复用 Flight 回执。
-4. 所有回执都绑定 release ID、candidate SHA、source run、reconcile run 和验证阶段。
-
-公开后仍可按 [平台分发纵向验证规格](../../spec/spec-process-cicd-platform-distribution-validation.md)运行 `Platform Distribution Validation`，验证签名更新指针、公开 APK 和 Store 生命周期。它是发布后的纵向审计，不替代公开前候选门禁。
+1. `Alpha Release` 从 Draft Release 下载确切 Android APK，核对 SHA-256，并在 Firebase Test Lab ARM 设备使用 `--no-resign` 原样安装启动；每个候选只生成一次回执。
+2. Reconciler 的 Windows 验证只能在带 `self-hosted, Windows, X64, meettrace-store` 标签的专用机运行。Flight 与 production 阶段分别从 Store 安装、验证版本、启动并卸载。
+3. 两个 Windows 阶段必须生成不同 validation run ID；production 不能复用 Flight 回执。
+4. 所有回执绑定 release ID、candidate SHA、source run、reconcile run 和验证阶段。公开 Draft 后不再启动独立审计工作流；最终发布 job 直接从公开地址重下 Android APK 并复核摘要。
 
 ## 6. 恢复、修复与撤回
 

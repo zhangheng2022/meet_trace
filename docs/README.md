@@ -2,7 +2,7 @@
 
 > 状态：活动；项目文档唯一导航入口
 >
-> 更新日期：2026-08-25
+> 更新日期：2026-08-26
 >
 > 原则：仓库只保留当前仍需维护的文档，阶段记录和旧方案由 Git 历史追溯。
 
@@ -28,7 +28,6 @@
 | [隐私政策](../PRIVACY.md) | 本机数据、网络访问、平台诊断差异和删除方式 | 对外隐私披露 |
 | [Flutter CI/CD 工作流规格](../spec/spec-process-cicd-flutter-ci.md) | 常规 CI、平台选择、稳定 Gate 与发布工作流契约 | 工作流维护规格 |
 | [Alpha Release 自动发布规格](../spec/spec-process-cicd-alpha-release.md) | TestFlight/Store 状态机、Flight/production 真实分发与最终自动公开门禁 | 发布编排权威规格 |
-| [平台分发纵向验证规格](../spec/spec-process-cicd-platform-distribution-validation.md) | 公开合同、Android ARM 安装、TestFlight 证据与专用 Windows Store 生命周期 | 发布后纵向自动化规格；真实 Windows 运行成功前不改变平台状态 |
 | [AGENTS](../AGENTS.md) | 架构、实现、测试、审查和安全约束 | 仓库协作规则 |
 
 根目录 README 只介绍项目；PRODUCT 只提供产品上下文；两者不得扩展 PRD。工作流的真实行为以 `.github/workflows/` 和相应守卫测试为准，Runbook 只解释维护者操作。

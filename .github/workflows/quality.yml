@@ -17,6 +17,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  actions-lint:
+    name: Actions Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install actionlint 1.7.12
+        shell: bash
+        run: |
+          set -euo pipefail
+          GOBIN="$RUNNER_TEMP/actionlint-bin" \
+            go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          echo "$RUNNER_TEMP/actionlint-bin" >> "$GITHUB_PATH"
+
+      - name: Validate GitHub Actions workflows
+        shell: bash
+        run: actionlint -config-file .github/actionlint.yaml -color
+
   classify:
     name: Classify changed paths
     runs-on: ubuntu-24.04
@@ -373,11 +393,13 @@ jobs:
   ci-gate:
     name: CI Gate
     if: always()
-    needs: [classify, flutter-quality, ios-unsigned, windows-msix-probe]
+    needs:
+      [actions-lint, classify, flutter-quality, ios-unsigned, windows-msix-probe]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       CLASSIFY_RESULT: ${{ needs.classify.result }}
+      ACTIONS_LINT_RESULT: ${{ needs.actions-lint.result }}
       FLUTTER_RESULT: ${{ needs.flutter-quality.result }}
       IOS_RESULT: ${{ needs.ios-unsigned.result }}
       WINDOWS_RESULT: ${{ needs.windows-msix-probe.result }}
@@ -386,6 +408,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$ACTIONS_LINT_RESULT" == "success" ]]
           [[ "$CLASSIFY_RESULT" == "success" ]]
           for result in "$FLUTTER_RESULT" "$IOS_RESULT" "$WINDOWS_RESULT"; do
             [[ "$result" == "success" || "$result" == "skipped" ]]
