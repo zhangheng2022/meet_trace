@@ -14,7 +14,7 @@
 会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备固定 TestFlight 外测组的自动提交、审核轮询与 Testing 门禁；Windows 已具备固定 Microsoft Store 身份、Package Flight、正式 submission 和专用机验证自动化。首次成功跑通新统一门禁前，Windows 仍按产品门槛标记为“规划中/未就绪”，不视为受支持平台。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备固定 TestFlight 外测组的自动提交、审核轮询与 Testing 门禁；Windows 已具备固定 Microsoft Store 身份、Package Flight、正式 submission 和精确 API 回执门禁，但该门禁不证明 Store 客户端生命周期。首次成功跑通 schema 3 统一门禁前，Windows 仍按产品门槛标记为“规划中/未就绪”，不视为受支持平台。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
 
 ## 安装测试版
 

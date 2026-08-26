@@ -25,8 +25,7 @@ $environments = @(
     'testflight',
     'windows-alpha',
     'microsoft-store',
-    'github-release',
-    'windows-store-validation'
+    'github-release'
 )
 
 Write-Host "Repository: $Repository"

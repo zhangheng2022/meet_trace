@@ -1823,7 +1823,7 @@ jobs:
             "- Store ID: $($identity.storeId)"
             "- Package version: $($metadata.packageVersion)"
             "- Candidate SHA-256: $($metadata.artifact.sha256)"
-            '- The reconciler will verify Flight, dedicated-device validation, production certification, and Public visibility before publication.'
+            '- The reconciler will verify exact Flight and production package identity, certification status, and Public visibility before publication.'
           ) | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8
 
       - name: Generate Windows candidate provenance attestation

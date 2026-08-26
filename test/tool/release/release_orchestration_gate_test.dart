@@ -6,7 +6,7 @@ import '../../../tool/release/release_orchestration_gate.dart';
 
 void main() {
   group('verifyReleaseOrchestrationGate', () {
-    test('接受单次 Android 与两阶段 Windows 真实分发证据', () {
+    test('接受单次 Android 与两阶段 Windows Store 精确回执', () {
       final receipt = verifyReleaseOrchestrationGate(
         jsonEncode(_gate()),
         _request(),
@@ -15,8 +15,8 @@ void main() {
       expect(receipt['releaseId'], 'v1.2.3-alpha.4');
       expect(receipt['testFlightBuildId'], 'build-2001');
       expect(receipt['androidValidationRunId'], 101);
-      expect(receipt['flightValidationRunId'], 301);
-      expect(receipt['productionValidationRunId'], 302);
+      expect(receipt['windowsFlightSubmissionId'], 'flight-1');
+      expect(receipt['windowsProductionSubmissionId'], 'production-1');
     });
 
     test('拒绝未通过 Beta App Review 的 TestFlight 证据', () {
@@ -48,12 +48,9 @@ void main() {
       }
     });
 
-    test('拒绝 Flight 与 production 复用同一次专用机验证', () {
+    test('拒绝旧版 schema 2 门禁', () {
       final gate = _gate();
-      final validations = gate['validations']! as Map<String, Object?>;
-      (validations['windowsProduction']!
-              as Map<String, Object?>)['validationRunId'] =
-          301;
+      gate['schemaVersion'] = 2;
 
       expect(
         () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
@@ -105,12 +102,10 @@ void main() {
       );
     });
 
-    test('拒绝 Windows 回执伪造其他协调运行', () {
+    test('拒绝 Flight 回执绑定其他候选', () {
       final gate = _gate();
-      final validations = gate['validations']! as Map<String, Object?>;
-      (validations['windowsFlight']!
-              as Map<String, Object?>)['reconcileRunId'] =
-          999;
+      final flight = gate['windowsFlight']! as Map<String, Object?>;
+      flight['candidateCommitSha'] = 'c' * 40;
 
       expect(
         () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
@@ -168,7 +163,7 @@ ReleaseOrchestrationGateRequest _request({int sourceRunId = 101}) =>
     );
 
 Map<String, Object?> _gate() => <String, Object?>{
-  'schemaVersion': 2,
+  'schemaVersion': 3,
   'releaseId': 'v1.2.3-alpha.4',
   'candidateCommitSha': 'a' * 40,
   'sourceRunId': 101,
@@ -213,8 +208,6 @@ Map<String, Object?> _gate() => <String, Object?>{
       'artifactSha256': 'b' * 64,
       'reused': false,
     },
-    'windowsFlight': _windowsValidation('flight', 301),
-    'windowsProduction': _windowsValidation('production', 302),
   },
 };
 
@@ -235,17 +228,4 @@ Map<String, Object?> _storeReceipt(String distribution, String submissionId) =>
         'architecture': 'x64',
         'fileStatus': 'Uploaded',
       },
-    };
-
-Map<String, Object?> _windowsValidation(String stage, int validationRunId) =>
-    <String, Object?>{
-      'schemaVersion': 1,
-      'validation': 'windowsStoreDistribution',
-      'stage': stage,
-      'releaseId': 'v1.2.3-alpha.4',
-      'candidateCommitSha': 'a' * 40,
-      'sourceRunId': 101,
-      'reconcileRunId': validationRunId,
-      'validationRunId': validationRunId,
-      'windowsStoreLifecycle': 'passed',
     };

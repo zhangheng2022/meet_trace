@@ -35,17 +35,13 @@ pwsh tool/benchmarks/inspect_msix.ps1 `
   -ExpectedVersion '1.0.2.0'
 ```
 
-Store 候选由 `Alpha Release` 创建并上传 Actions Artifact。`Alpha Release Reconciler` 核对候选清单和 SHA-256 后，把同一字节提交到固定 Package Flight；Flight 认证、真实安装验证通过后，再提交 100% production。候选不得上传 GitHub Release、自签名或引导用户旁加载。正式用户安装和更新只使用 Store 产品 `9PHHSJMWK06G`。
+Store 候选由 `Alpha Release` 创建并上传 Actions Artifact。`Alpha Release Reconciler` 核对候选清单和 SHA-256 后，把同一字节提交到固定 Package Flight；Flight 达到 `Published` 且精确包身份匹配后，再提交 100% non-flighted production。候选不得上传 GitHub Release、自签名或引导用户旁加载。正式用户安装和更新只使用 Store 产品 `9PHHSJMWK06G`。
 
-## 专用机 Store 生命周期验证
+## Store 发布门禁
 
-`Alpha Release Reconciler` 在 Flight `Published` 和 production `Published/Public` 后，分别在带 `Windows`、`X64`、`meettrace-store` 标签的仓库级自托管运行器执行 `tool/windows/validate_store_distribution.ps1`。运行器必须是隔离的 Windows 10 22H2/11 x64 交互式账号，已安装 GitHub CLI、WinGet，且 `winget source list` 能看到 `msstore`。`windows-store-validation` Environment 只允许 `master`，不配置 required reviewer，也不保存 Partner Center、签名或 Store Secret。
+Reconciler 通过 Partner Center API 取得脱敏 Flight 与 production 回执。两份回执都绑定 release ID、candidate SHA、source run、product ID、submission ID、文件名、`1.0.<build>.0`、x64 和上传状态；Flight 还绑定固定 Flight ID，production 还必须为 `Published/Public`。提交 production 前重新下载来源运行的不可变 MSIX 并核对 SHA-256，只以 100% non-flighted 方式提交该文件。
 
-- `InstallUninstall` 要求当前运行器账号没有安装 MeetTrace；脚本从 `msstore` 安装公开版本、逐字段核对 Name/Publisher/PFN/Version/x64、连续启动两次验证单实例，然后卸载当前用户包。
-- `Update` 是脚本保留的非发布诊断模式：要求当前运行器账号已预装输入的确切旧版 Store 包，只允许目标版本高于旧版，再经 `winget upgrade --source msstore` 检查更新。当前统一发布门禁不调用此模式。
-- 脚本同时要求 `MEETTRACE_DEDICATED_STORE_VALIDATION=1`、`repository_dispatch` 和 `master`。任一条件不满足时在首次包变更前失败；禁止 `-AllUsers`，也不删除不符合预期的既有安装。
-
-普通 GitHub 托管 Windows Server、旁加载 Actions Artifact 或开发探针都不能替代真实 Store 生命周期结果。Flight 与 production 两次独立 `InstallUninstall` 均成功前，Windows 继续标记为“规划中/未就绪”。
+此门禁不依赖专用机或自托管 runner。GitHub 托管 Windows Server 的静态包审计、Store 认证与 API 状态不能证明 Store 客户端安装、启动、更新或卸载，因此发布说明和验收结论不得声称已验证这些行为。Windows 在 schema 3 统一门禁首次成功运行前继续标记为“规划中/未就绪”。
 
 ## CI 开发探针
 

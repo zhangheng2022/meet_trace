@@ -23,7 +23,7 @@
 | `.github/workflows/quality.yml` | PR、`master` push、手动 | Actions Lint、路径分类、所需平台检查、稳定 `CI Gate` |
 | `.github/workflows/_flutter-core.yml` | `workflow_call` | 锁定依赖、格式化、分析、测试及可选 Android APK 审计 |
 | `.github/workflows/alpha-release.yml` | 手动一次 + 协调器内部恢复 | 同一 SHA 三平台候选、一次 Android ARM 验证、最终公开 APK 复核与签名指针更新 |
-| `.github/workflows/alpha-release-reconcile.yml` | 即时调度 + 每 15 分钟 | Flight 提交/恢复、TestFlight/Store 轮询、两阶段 Windows 验证、production 提交与最终门禁 |
+| `.github/workflows/alpha-release-reconcile.yml` | 即时调度 + 每小时第 7/22/37/52 分钟 | Flight 提交/恢复、TestFlight/Store 轮询、两阶段精确 Store 回执、production 提交与最终门禁 |
 | `.github/workflows/firebase-test-lab.yml` | 手动/被调用 | Android 设备实验室自动化回归，不作为发布证据门禁 |
 | `.github/workflows/codeql.yml` | PR、`master` push、每周、手动 | 使用高级配置扫描 Actions、C/C++ 与 Python，排除代理技能目录 |
 
@@ -65,7 +65,7 @@ flowchart LR
 
 常规 Windows job 固定使用 `windows-2025`、Java 17 与仓库锁定的 Flutter。它以 `SENTRY_ENABLED=false` 构建 x64 Release，使用 `CN=MeetTrace Development` 生成未签名探针，只验证 manifest、运行资产、模型权重/用户数据/凭据禁入和 SHA-256；上传证据前删除包体。
 
-正式 `Alpha Release` 的 Windows job 使用 Partner Center 固定 Name、Publisher、PublisherDisplayName、PFN 和 Store ID 构建 Store MSIX，生成候选清单与 provenance，并把 MSIX 只上传 Actions Artifact。Reconciler 幂等提交或恢复固定 Package Flight，并通过官方 Store CLI/API 轮询同一包；Flight `Published` 且专用机安装验证通过后，才将同一 MSIX 以 100% rollout 提交 production。production 达到 `Published/Public` 并再次通过独立专用机验证后，才生成最终门禁。Android 签名 APK 只在来源运行执行一次 Firebase ARM 原包验证；TestFlight 同一 build 必须已通过 Beta App Review、位于固定外测组并进入 Testing。GitHub Release 明确拒绝 IPA 与 MSIX，正常路径不使用人工审批或人工状态证明。
+正式 `Alpha Release` 的 Windows job 使用 Partner Center 固定 Name、Publisher、PublisherDisplayName、PFN 和 Store ID 构建 Store MSIX，生成候选清单与 provenance，并把 MSIX 只上传 Actions Artifact。Reconciler 幂等提交或恢复固定 Package Flight，并通过官方 Store CLI/API 轮询同一包；Flight `Published` 且精确包身份匹配后，才将同一 MSIX 以 100% rollout 提交 production。production 达到 `Published/Public` 且精确包身份匹配后，才生成 schema 3 最终门禁。Windows 门禁不依赖专用机，也不证明 Store 客户端生命周期。Android 签名 APK 只在来源运行执行一次 Firebase ARM 原包验证；TestFlight 同一 build 必须已通过 Beta App Review、位于固定外测组并进入 Testing。GitHub Release 明确拒绝 IPA 与 MSIX，正常路径不使用人工审批或人工状态证明。
 
 ## 4. 可复用 Flutter Core
 
@@ -91,7 +91,7 @@ flowchart LR
 
 ## 6. Alpha 发布与 Sentry
 
-完整 Alpha 发布编排、商店 API 门禁、两阶段真实分发验证、输入输出与故障策略以 [Alpha Release 端到端规格](spec-process-cicd-alpha-release.md)为准。本节只描述与常规 CI 共用的构建和 Sentry 契约。
+完整 Alpha 发布编排、商店 API 门禁、两阶段精确 Store 回执、输入输出与故障策略以 [Alpha Release 端到端规格](spec-process-cicd-alpha-release.md)为准。本节只描述与常规 CI 共用的构建和 Sentry 契约。
 
 `alpha-release.yml` 对选定 SHA 先调用 Flutter Core，再向三平台传递统一构建号。运行时通过 `--dart-define` 注入：
 

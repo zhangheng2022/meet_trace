@@ -41,7 +41,7 @@ Map<String, Object?> verifyReleaseOrchestrationGate(
     throw const FormatException('发布协调门禁超过 1 MiB 上限');
   }
   final gate = _object(jsonDecode(source), 'gate');
-  _require(gate, 'schemaVersion', 2);
+  _require(gate, 'schemaVersion', 3);
   _require(gate, 'releaseId', request.releaseId);
   _require(gate, 'candidateCommitSha', request.candidateCommitSha);
   _requirePositiveInt(gate, 'sourceRunId', request.sourceRunId);
@@ -90,23 +90,8 @@ Map<String, Object?> verifyReleaseOrchestrationGate(
     validations['android'],
     'validations.android',
   );
-  final flightValidation = _object(
-    validations['windowsFlight'],
-    'validations.windowsFlight',
-  );
-  final productionValidation = _object(
-    validations['windowsProduction'],
-    'validations.windowsProduction',
-  );
   _verifyAndroidValidation(androidValidation, request);
-  _verifyWindowsValidation(flightValidation, request, 'flight');
-  _verifyWindowsValidation(productionValidation, request, 'production');
   final androidRunId = _positiveInt(androidValidation, 'validationRunId');
-  final flightRunId = _positiveInt(flightValidation, 'validationRunId');
-  final productionRunId = _positiveInt(productionValidation, 'validationRunId');
-  if (flightRunId == productionRunId) {
-    throw const FormatException('Flight 与 production 必须由不同验证运行证明');
-  }
 
   return <String, Object?>{
     'schemaVersion': 1,
@@ -122,8 +107,6 @@ Map<String, Object?> verifyReleaseOrchestrationGate(
       'submissionId',
     ),
     'androidValidationRunId': androidRunId,
-    'flightValidationRunId': flightRunId,
-    'productionValidationRunId': productionRunId,
     'verifiedAtUtc': DateTime.now().toUtc().toIso8601String(),
   };
 }
@@ -184,25 +167,6 @@ void _verifyAndroidValidation(
   }
   _require(receipt, 'androidFirebaseArm', 'passed');
   _require(receipt, 'artifactSha256', request.androidArtifactSha256);
-}
-
-void _verifyWindowsValidation(
-  Map<String, Object?> receipt,
-  ReleaseOrchestrationGateRequest request,
-  String stage,
-) {
-  _require(receipt, 'schemaVersion', 1);
-  _require(receipt, 'validation', 'windowsStoreDistribution');
-  _require(receipt, 'stage', stage);
-  _require(receipt, 'releaseId', request.releaseId);
-  _require(receipt, 'candidateCommitSha', request.candidateCommitSha);
-  _requirePositiveInt(receipt, 'sourceRunId', request.sourceRunId);
-  final reconcileRunId = _positiveInt(receipt, 'reconcileRunId');
-  final validationRunId = _positiveInt(receipt, 'validationRunId');
-  if (reconcileRunId != validationRunId) {
-    throw const FormatException('Windows 分发回执的协调运行与验证运行不一致');
-  }
-  _require(receipt, 'windowsStoreLifecycle', 'passed');
 }
 
 void _validateRequest(ReleaseOrchestrationGateRequest request) {
