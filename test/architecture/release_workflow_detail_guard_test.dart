@@ -137,15 +137,43 @@ void main() {
     test('iOS 仅上传 TestFlight 并支持复用不可变候选', () async {
       final workflow = await _workflow('alpha-release.yml');
       final ios = _job(workflow, 'ios', 'windows');
+      final fastfile = await File('fastlane/Fastfile').readAsString();
 
       expect(ios, contains('environment: testflight'));
-      expect(ios, contains('run: bundle exec fastlane ios upload_testflight'));
+      expect(ios, contains('bundle exec fastlane ios upload_testflight'));
+      expect(
+        ios,
+        contains(r'TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}'),
+      );
+      expect(
+        ios,
+        contains(r'if [[ -z "${TESTFLIGHT_CHANGELOG//[[:space:]]/}" ]]'),
+      );
+      expect(
+        ios,
+        contains(r'export TESTFLIGHT_CHANGELOG="MeetTrace $RELEASE_ID"'),
+      );
       expect(ios, contains('Reuse immutable uploaded TestFlight candidate'));
       expect(ios, contains(r'meettrace-ios-testflight-$source_run_id-'));
       expect(ios, contains("if: steps.staged.outputs.reuse != 'true'"));
       expect(ios, contains("if: steps.staged.outputs.reuse == 'true'"));
       expect(ios, isNot(contains('gh release upload')));
       expect(ios, isNot(contains('build/ios/testflight/*.ipa')));
+      expect(fastfile, contains('ENV.fetch("TESTFLIGHT_CHANGELOG", "").strip'));
+      expect(
+        fastfile,
+        contains(
+          'changelog = "MeetTrace #{ENV.fetch("RELEASE_ID")}" '
+          'if changelog.empty?',
+        ),
+      );
+      expect(fastfile, contains('options[:changelog] = changelog'));
+      expect(
+        fastfile,
+        isNot(
+          contains('options[:changelog] = changelog unless changelog.empty?'),
+        ),
+      );
     });
 
     test('Windows 固定 Store 身份且 MSIX 只进入不可变 Artifact', () async {

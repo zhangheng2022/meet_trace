@@ -24,7 +24,8 @@ platform :ios do
       uses_non_exempt_encryption: false
     }
     changelog = ENV.fetch("TESTFLIGHT_CHANGELOG", "").strip
-    options[:changelog] = changelog unless changelog.empty?
+    changelog = "MeetTrace #{ENV.fetch("RELEASE_ID")}" if changelog.empty?
+    options[:changelog] = changelog
 
     upload_to_testflight(**options)
   end
