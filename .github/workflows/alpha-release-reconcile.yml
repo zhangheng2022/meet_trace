@@ -63,6 +63,7 @@ jobs:
             fi
           fi
           [[ "$release_id" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
           release_json="$(jq -cer --arg release "$release_id" '[.[] | select(.draft == true and .prerelease == true and .tag_name == $release)] | if length == 1 then .[0] else error("expected exactly one immutable Draft release") end' <<<"$releases_json")"
           mkdir -p build/reconcile/discovery build/reconcile/windows
           manifest_asset_id="$(jq -er '[.assets[] | select(.name == "candidate-manifest.json" and .state == "uploaded")] | if length == 1 then .[0].id else error("expected exactly one candidate manifest asset") end' <<<"$release_json")"
@@ -151,7 +152,6 @@ jobs:
           }
           {
             echo "found=true"
-            echo "release_id=$release_id"
             echo "source_run_id=$source_run_id"
             echo "candidate_sha=$candidate_sha"
             echo "marketing_version=$(jq -er .marketingVersion "$manifest")"
@@ -1130,8 +1130,10 @@ jobs:
 
   report_blocked:
     name: Report rejected or unknown external state
-    if: always() && needs.resolve.outputs.found == 'true'
-    needs: [resolve, testflight_status, microsoft_store_status]
+    if: >-
+      always() &&
+      (needs.resolve.result == 'failure' || needs.resolve.outputs.found == 'true')
+    needs: [resolve, testflight_status, microsoft_store_status, validation_status]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -1139,8 +1141,10 @@ jobs:
     steps:
       - name: Create or update release-blocked issue
         if: >-
+          needs.resolve.result != 'success' ||
           needs.testflight_status.result != 'success' ||
           needs.microsoft_store_status.result != 'success' ||
+          needs.validation_status.result != 'success' ||
           needs.testflight_status.outputs.blocked == 'true' ||
           needs.microsoft_store_status.outputs.flight_blocked == 'true' ||
           needs.microsoft_store_status.outputs.production_blocked == 'true'
@@ -1148,14 +1152,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
+          DISPATCH_RELEASE_ID: ${{ github.event.client_payload.release_id }}
+          RESOLVE_RESULT: ${{ needs.resolve.result }}
+          VALIDATION_RESULT: ${{ needs.validation_status.result }}
           TESTFLIGHT_SUMMARY: ${{ needs.testflight_status.outputs.summary }}
           FLIGHT_SUMMARY: ${{ needs.microsoft_store_status.outputs.flight_summary }}
           PRODUCTION_SUMMARY: ${{ needs.microsoft_store_status.outputs.production_summary }}
         run: |
           set -euo pipefail
           gh label create release-blocked --repo "$GITHUB_REPOSITORY" --color B60205 --description "External release state blocks automatic publication" --force
-          title="[release-blocked] $RELEASE_ID"
-          body="$(printf '自动发布协调器检测到拒审、未知状态或查询失败。\n\n- TestFlight: %s\n- Microsoft Store Flight: %s\n- Microsoft Store production: %s\n- Reconciler run: %s\n\nDraft Release 和现有自动更新指针均保持不变。外部状态恢复后，协调器会复用原候选继续。' "${TESTFLIGHT_SUMMARY:-query failed}" "${FLIGHT_SUMMARY:-query failed}" "${PRODUCTION_SUMMARY:-query failed}" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")"
+          release_key="${RELEASE_ID:-$DISPATCH_RELEASE_ID}"
+          if [[ ! "$release_key" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]; then
+            release_key=reconciler-discovery
+          fi
+          title="[release-blocked] $release_key"
+          body="$(printf '自动发布协调器检测到候选发现失败、拒审、未知状态或查询失败。\n\n- Candidate resolution: %s\n- Validation receipts: %s\n- TestFlight: %s\n- Microsoft Store Flight: %s\n- Microsoft Store production: %s\n- Reconciler run: %s\n\nDraft Release 和现有自动更新指针均保持不变。外部状态恢复后，协调器会复用原候选继续。' "${RESOLVE_RESULT:-unknown}" "${VALIDATION_RESULT:-not reached}" "${TESTFLIGHT_SUMMARY:-not reached or query failed}" "${FLIGHT_SUMMARY:-not reached or query failed}" "${PRODUCTION_SUMMARY:-not reached or query failed}" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")"
           number="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $title" --json number,title | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | head -1 || true)"
           if [[ -n "$number" ]]; then
             gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body "$body" --add-label release-blocked
@@ -1234,9 +1245,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          title="[release-blocked] $RELEASE_ID"
-          gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $title" --json number,title | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | while read -r number; do
-            gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment "所有外部分发门禁已恢复并通过，自动发布继续。"
+          printf '%s\n' \
+            "[release-blocked] $RELEASE_ID" \
+            '[release-blocked] reconciler-discovery' | while read -r title; do
+            gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title $title" --json number,title | jq -r --arg title "$title" '.[] | select(.title == $title) | .number' | while read -r number; do
+              gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment "所有外部分发门禁已恢复并通过，自动发布继续。"
+            done
           done
 
       - name: Resume Alpha Release without final approval

@@ -94,7 +94,7 @@ Partner Center 必须先人工完成一次产品、listing、年龄分级、定�
 
 外部状态读取使用服务方的结构化 REST：TestFlight 从 app 维度按固定名称取得唯一外测组，再分页读取官方 betaGroup→builds 关系并核对精确 build ID，避免受限的 build→betaGroups 关系端点和不受支持的组合筛选；只有 Apple 官方 `IN_BETA_TESTING` 才表示指定 build 已实际进入外测。查询失败时仅上传请求阶段、HTTP 状态、Apple error code/title 与本地原因码组成的脱敏诊断 Artifact，不记录 JWT、P8、测试者信息、资源 ID 或完整响应。Microsoft Store 分别读取 app、pending/last published submission 及 status，只投影状态、可见性和包字段，不解析 Store CLI 输出中的 listing 文本。Store CLI 仅保留在确实提交 Flight 或 production 的 job 中。
 
-协调器的状态客户端与回执验证器固定从触发该次运行的 `github.workflow_sha` 检出，确保旧候选恢复时仍使用当前已审查实现；候选包、候选清单、tag、候选 SHA、构建号和摘要继续绑定原不可变 candidate，不因协调器升级而改变。
+协调器的状态客户端、回执验证器以及最终发布工具固定从触发对应运行的 `github.workflow_sha` 检出，确保旧候选恢复时仍使用当前已审查实现；候选包、候选清单、tag、候选 SHA、构建号、数据代际和摘要继续从原不可变 candidate 读取，不因自动化升级而改变。候选发现自身失败时也必须维护 `release-blocked` Issue；无法安全确定 release ID 时使用统一 discovery Issue，并链接失败运行。
 
 以下状态只等待，不公开，也不创建新候选：
 

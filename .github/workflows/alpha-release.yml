@@ -1850,10 +1850,10 @@ jobs:
     timeout-minutes: 30
     environment: github-release
     steps:
-      - name: Checkout immutable candidate
+      - name: Checkout reviewed release implementation
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.prepare.outputs.candidate_sha }}
+          ref: ${{ github.workflow_sha }}
           fetch-depth: 0
 
       - name: Set up Flutter for update-manifest signing
@@ -1871,6 +1871,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ inputs.release_id }}
           CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
           RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
           TESTFLIGHT_URL: ${{ vars.TESTFLIGHT_PUBLIC_LINK }}
         run: |
@@ -1878,11 +1879,15 @@ jobs:
           [[ "$RELEASE_MODE" == candidate || "$RELEASE_MODE" == resume || "$RELEASE_MODE" == metadata ]]
           [[ "$RELEASE_ID" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[1-9][0-9]*$ ]]
           [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$(git rev-parse HEAD)" == "$CANDIDATE_SHA" ]]
+          [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$WORKFLOW_SHA" ]]
+          git fetch --no-tags origin master
+          git merge-base --is-ancestor "$WORKFLOW_SHA" origin/master
+          git merge-base --is-ancestor "$CANDIDATE_SHA" origin/master
           git fetch --force origin "refs/tags/$RELEASE_ID:refs/tags/$RELEASE_ID"
           [[ "$(git cat-file -t "refs/tags/$RELEASE_ID")" == tag ]]
           [[ "$(git rev-parse "refs/tags/$RELEASE_ID^{}")" == "$CANDIDATE_SHA" ]]
-          marketing_version="$(sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p' pubspec.yaml)"
+          marketing_version="$(git show "$CANDIDATE_SHA:pubspec.yaml" | sed -nE 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/p')"
           [[ "$RELEASE_ID" == "v${marketing_version}-alpha."* ]]
           if [[ -n "$TESTFLIGHT_URL" ]]; then
             [[ "$TESTFLIGHT_URL" =~ ^https://testflight\.apple\.com/join/[A-Za-z0-9]+/?$ ]]
@@ -2204,10 +2209,9 @@ jobs:
           [[ -s "$android_manifest" ]]
           build_number="$(jq -r '.buildNumber | tostring' "$android_manifest")"
           [[ "$build_number" =~ ^[1-9][0-9]*$ ]]
-          data_generation="$({
-            sed -nE 's/^[[:space:]]*static const currentGeneration = ([1-9][0-9]*);/\1/p' \
-              lib/data/services/storage/local_data_generation_gate.dart
-          })"
+          data_generation="$(git show \
+            "$CANDIDATE_SHA:lib/data/services/storage/local_data_generation_gate.dart" | \
+            sed -nE 's/^[[:space:]]*static const currentGeneration = ([1-9][0-9]*);/\1/p')"
           [[ "$data_generation" =~ ^[1-9][0-9]*$ ]]
           status=publicApproved
           if [[ "$WITHDRAW_UPDATE" == true ]]; then
