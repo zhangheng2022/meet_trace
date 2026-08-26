@@ -118,6 +118,7 @@ void main() {
       expect(validation, contains('--no-resign'));
       expect(validation, contains('androidCandidateDistribution'));
       expect(validation, contains('artifactSha256'));
+      expect(validation, contains('contents: write'));
       expect(
         validation,
         contains('Reuse prior immutable Android distribution receipt'),
