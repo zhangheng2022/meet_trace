@@ -119,6 +119,19 @@ void main() {
       expect(validation, contains('androidCandidateDistribution'));
       expect(validation, contains('artifactSha256'));
       expect(
+        validation,
+        contains('Reuse prior immutable Android distribution receipt'),
+      );
+      expect(
+        validation,
+        contains('tool/release/reuse_android_distribution_receipt.py'),
+      );
+      expect(validation, contains(r'ref: ${{ github.workflow_sha }}'));
+      expect(validation, contains("if: steps.prior.outputs.reuse != 'true'"));
+      expect(validation, contains('{schemaVersion: 2'));
+      expect(validation, isNot(contains('gh run list')));
+      expect(validation, isNot(contains('reusedFromArtifactId')));
+      expect(
         RegExp(r'gcloud firebase test android run').allMatches(workflow).length,
         1,
       );
@@ -243,6 +256,8 @@ void main() {
         validation,
         contains('.validation == "androidCandidateDistribution"'),
       );
+      expect(validation, contains('.schemaVersion == 2'));
+      expect(validation, contains('.reusedFromRunId == .validationRunId'));
       expect(validation, contains(r'.artifactSha256 == $digest'));
     });
 

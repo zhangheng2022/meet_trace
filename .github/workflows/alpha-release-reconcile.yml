@@ -735,10 +735,17 @@ jobs:
           jq -e --arg release "$RELEASE_ID" --arg sha "$CANDIDATE_SHA" \
             --arg digest "$ANDROID_ARTIFACT_SHA256" \
             --argjson run "$SOURCE_RUN_ID" '
-            .schemaVersion == 1 and
+            .schemaVersion == 2 and
             .validation == "androidCandidateDistribution" and
             .releaseId == $release and .candidateCommitSha == $sha and
-            .sourceRunId == $run and .validationRunId == $run and
+            .sourceRunId == $run and
+            (.validationRunId | type == "number" and . > 0 and . <= $run) and
+            ((.validationRunId == $run and .reused == false) or
+              (.validationRunId < $run and .reused == true and
+               .reusedFromRunId == .validationRunId and
+               (.reusedFromArtifactId | type == "number" and . > 0) and
+               .reusedFromArtifactName == ("meettrace-android-distribution-" + $release) and
+               (.originalReceiptSha256 | type == "string" and test("^[0-9a-f]{64}$")))) and
             .androidFirebaseArm == "passed" and
             .artifactSha256 == $digest and
             (.artifactSha256 | test("^[0-9a-f]{64}$"))

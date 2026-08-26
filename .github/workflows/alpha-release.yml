@@ -623,7 +623,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
-      contents: write
+      actions: read
+      contents: read
       id-token: write
     env:
       FIREBASE_PROJECT_ID: meet-trace
@@ -632,18 +633,11 @@ jobs:
       DEVICE_MODEL: MediumPhone.arm
       ANDROID_VERSION: "35"
     steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+      - name: Checkout reviewed receipt tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          project_id: ${{ env.FIREBASE_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
-        with:
-          project_id: ${{ env.FIREBASE_PROJECT_ID }}
-          version: "580.0.0"
+          persist-credentials: false
+          ref: ${{ github.workflow_sha }}
 
       - name: Download immutable Draft APK and manifest
         shell: bash
@@ -669,7 +663,39 @@ jobs:
              .artifact.sha256 == $actual' \
             "$manifest" >/dev/null
 
+      - name: Reuse prior immutable Android distribution receipt
+        id: prior
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 tool/release/reuse_android_distribution_receipt.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --release-id "$RELEASE_ID" \
+            --candidate-sha "$CANDIDATE_SHA" \
+            --source-run-id "$GITHUB_RUN_ID" \
+            --manifest build/android/distribution/candidate-manifest.json \
+            --output-directory build/android/distribution \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Authenticate to Google Cloud
+        if: steps.prior.outputs.reuse != 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        if: steps.prior.outputs.reuse != 'true'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+        with:
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+          version: "580.0.0"
+
       - name: Install and launch exact APK on Firebase ARM64
+        if: steps.prior.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -685,6 +711,7 @@ jobs:
             2>&1 | tee build/android/distribution/firebase-output.txt
 
       - name: Record immutable Android distribution receipt
+        if: steps.prior.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -696,11 +723,11 @@ jobs:
             --argjson validationRunId "$GITHUB_RUN_ID" \
             --arg artifactSha256 "$(jq -er .artifact.sha256 "$manifest")" \
             --arg validatedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '{schemaVersion: 1, validation: "androidCandidateDistribution",
+            '{schemaVersion: 2, validation: "androidCandidateDistribution",
               releaseId: $releaseId, candidateCommitSha: $candidateCommitSha,
               sourceRunId: $sourceRunId, validationRunId: $validationRunId,
               androidFirebaseArm: "passed", artifactSha256: $artifactSha256,
-              validatedAtUtc: $validatedAtUtc}' \
+              validatedAtUtc: $validatedAtUtc, reused: false}' \
             > build/android/distribution/receipt.json
 
       - name: Upload Android distribution evidence

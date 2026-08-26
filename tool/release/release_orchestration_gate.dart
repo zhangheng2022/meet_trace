@@ -156,12 +156,32 @@ void _verifyAndroidValidation(
   Map<String, Object?> receipt,
   ReleaseOrchestrationGateRequest request,
 ) {
-  _require(receipt, 'schemaVersion', 1);
+  _require(receipt, 'schemaVersion', 2);
   _require(receipt, 'validation', 'androidCandidateDistribution');
   _require(receipt, 'releaseId', request.releaseId);
   _require(receipt, 'candidateCommitSha', request.candidateCommitSha);
   _requirePositiveInt(receipt, 'sourceRunId', request.sourceRunId);
-  _requirePositiveInt(receipt, 'validationRunId', request.sourceRunId);
+  final validationRunId = _positiveInt(receipt, 'validationRunId');
+  if (validationRunId == request.sourceRunId) {
+    _require(receipt, 'reused', false);
+  } else {
+    if (validationRunId >= request.sourceRunId) {
+      throw const FormatException('Android 复用验证运行必须早于来源运行');
+    }
+    _require(receipt, 'reused', true);
+    _requirePositiveInt(receipt, 'reusedFromRunId', validationRunId);
+    _positiveInt(receipt, 'reusedFromArtifactId');
+    _require(
+      receipt,
+      'reusedFromArtifactName',
+      'meettrace-android-distribution-${request.releaseId}',
+    );
+    final originalReceiptSha256 = receipt['originalReceiptSha256'];
+    if (originalReceiptSha256 is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(originalReceiptSha256)) {
+      throw const FormatException('Android 原始验证回执摘要无效');
+    }
+  }
   _require(receipt, 'androidFirebaseArm', 'passed');
   _require(receipt, 'artifactSha256', request.androidArtifactSha256);
 }
