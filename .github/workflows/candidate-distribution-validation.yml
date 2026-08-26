@@ -57,13 +57,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          source_run="$(gh run view "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,event,headSha,jobs)"
-          jq -e --arg sha "$CANDIDATE_SHA" '
-            .workflowName == "Alpha Release" and .event == "workflow_dispatch" and .headSha == $sha and
+          source_run="$(gh run view "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,event,headBranch,headSha,jobs)"
+          jq -e '
+            .workflowName == "Alpha Release" and .event == "workflow_dispatch" and .headBranch == "master" and
             ([.jobs[] | select(.name == "Build, sign, and stage Android Alpha" and .conclusion == "success")] | length == 1) and
             ([.jobs[] | select(.name == "Build, sign, and upload iOS app" and .conclusion == "success")] | length == 1) and
             ([.jobs[] | select(.name == "Build Microsoft Store Windows candidate" and .conclusion == "success")] | length == 1)
           ' <<<"$source_run" >/dev/null
+          source_head_sha="$(jq -er '.headSha | select(test("^[0-9a-f]{40}$"))' <<<"$source_run")"
+          git fetch --no-tags origin "$source_head_sha"
+          git merge-base --is-ancestor "$CANDIDATE_SHA" "$source_head_sha"
           reconcile_run="$(gh run view "$RECONCILE_RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,event,headBranch,status)"
           jq -e '
             .workflowName == "Alpha Release Reconciler" and
