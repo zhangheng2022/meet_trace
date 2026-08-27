@@ -28,7 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  archive: ^4.1.0
+  archive: ^4.2.0
   audioplayers: 6.8.1
   characters: 1.4.1
   flutter:
