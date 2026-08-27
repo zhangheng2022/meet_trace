@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
-import 'package:meettrace/data/services/asr/sense_voice_asr_engine.dart';
 import 'package:meettrace/data/services/asr/sherpa_onnx_asr_engine_factory.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_adapter.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_asr_engine.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
@@ -25,16 +27,48 @@ void main() {
       senseVoiceDefaultModelId,
     );
     installations.install(_installed(descriptor));
-    final factory = _factory(installations, leases);
+    final workers = _WorkerFactory();
+    final factory = _factory(installations, leases, workerFactory: workers);
 
     final engine = await factory.create(
       modelId: descriptor.modelId,
       modelVersion: descriptor.version,
     );
 
-    expect(engine, isA<SenseVoiceAsrEngine>());
+    expect(engine, isA<SherpaOnnxAsrEngine>());
     expect(engine.descriptor, same(descriptor));
+    await engine.initialize();
+    expect(workers.configs.single.kind, SherpaOnnxRecognizerKind.senseVoice);
+    expect(workers.configs.single.language, 'auto');
+    expect(workers.configs.single.useInverseTextNormalization, isTrue);
     await engine.dispose();
+  });
+
+  test('拒绝状态或字节数不匹配的安装记录', () async {
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(
+      ModelInstallation(
+        modelId: descriptor.modelId,
+        version: descriptor.version,
+        installationType: descriptor.installationType,
+        state: ModelInstallationState.failed,
+        bytes: 0,
+      ),
+    );
+
+    await expectLater(
+      _factory(
+        installations,
+        leases,
+      ).create(modelId: descriptor.modelId, modelVersion: descriptor.version),
+      throwsA(
+        isA<AsrEngineException>().having(
+          (error) => error.failure.code,
+          'code',
+          'asr.senseVoice.model_not_verified',
+        ),
+      ),
+    );
   });
 
   test('Registry 版本不匹配时在读取安装记录前拒绝创建', () async {
@@ -92,13 +126,16 @@ void main() {
 
 SherpaOnnxAsrEngineFactory _factory(
   _MemoryInstallations installations,
-  _MemoryLeases leases,
-) {
+  _MemoryLeases leases, {
+  SherpaOnnxWorkerFactory workerFactory =
+      const OfficialSherpaOnnxWorkerFactory(),
+}) {
   return SherpaOnnxAsrEngineFactory(
     installations: installations,
     leases: leases,
     riskMonitor: const _SupportedRiskMonitor(),
     ownerId: 'meeting-11',
+    workerFactory: workerFactory,
   );
 }
 
@@ -213,4 +250,31 @@ final class _SupportedRiskMonitor implements AsrDeviceRiskMonitor {
   Future<AsrDeviceRiskState> inspect() async {
     return const AsrDeviceRiskState.supported();
   }
+}
+
+final class _WorkerFactory implements SherpaOnnxWorkerFactory {
+  final List<SherpaOnnxRecognizerConfig> configs = [];
+
+  @override
+  Future<SherpaOnnxWorker> create(SherpaOnnxRecognizerConfig config) async {
+    configs.add(config);
+    return const _Worker();
+  }
+}
+
+final class _Worker implements SherpaOnnxWorker {
+  const _Worker();
+
+  @override
+  Future<SherpaOnnxRecognition> recognize(
+    Float32List samples, {
+    required int sampleRate,
+  }) async => SherpaOnnxRecognition(
+    text: '测试',
+    sampleCount: samples.length,
+    elapsed: Duration.zero,
+  );
+
+  @override
+  Future<void> dispose() async {}
 }
