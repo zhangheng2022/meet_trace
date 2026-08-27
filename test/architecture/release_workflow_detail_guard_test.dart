@@ -28,9 +28,10 @@ void main() {
       final workflows = (await Future.wait(
         files.map((file) => file.readAsString()),
       )).join('\n');
-      final setupCount = RegExp(r'uses: subosito/flutter-action@[^\s]+')
-          .allMatches(workflows)
-          .length;
+      const flutterAction =
+          'uses: axi92/flutter-action@'
+          '72633a794ba0b23276fa4fc465a6cacb758a90c5';
+      final setupCount = flutterAction.allMatches(workflows).length;
       final versionFileCount = RegExp(r'flutter-version-file: "\.fvmrc"')
           .allMatches(workflows)
           .length;
@@ -38,6 +39,7 @@ void main() {
 
       expect(setupCount, greaterThan(0));
       expect(versionFileCount, setupCount);
+      expect(workflows, isNot(contains('subosito/flutter-action@')));
       expect(fvm['flutter'], '3.47.1');
       expect(workflows, isNot(contains('channel: stable')));
       expect(workflows, isNot(contains('runs-on: ubuntu-latest')));

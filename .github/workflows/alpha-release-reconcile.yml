@@ -211,7 +211,7 @@ jobs:
         run: ruby -c tool/release/app_store_connect_status.rb
 
       - name: Set up Flutter for receipt verification
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        uses: axi92/flutter-action@72633a794ba0b23276fa4fc465a6cacb758a90c5 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
           cache: true
@@ -467,7 +467,7 @@ jobs:
           ref: ${{ github.workflow_sha }}
 
       - name: Set up Flutter for receipt verification
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        uses: axi92/flutter-action@72633a794ba0b23276fa4fc465a6cacb758a90c5 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
           cache: true
