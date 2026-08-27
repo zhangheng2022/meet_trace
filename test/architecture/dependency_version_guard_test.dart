@@ -44,7 +44,7 @@ void main() {
       final iosInspector = await File('tool/benchmarks/inspect_ios_app.sh')
           .readAsString();
 
-      expect(fvmConfig['flutter'], '3.47.0');
+      expect(fvmConfig['flutter'], '3.47.1');
       expect(pubspec, contains('sdk: ^3.13.0'));
       _expectPatchLine(
         _versionFrom(
