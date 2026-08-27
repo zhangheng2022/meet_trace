@@ -70,6 +70,18 @@ void main() {
       expect(reconciler, contains('cron: "7,22,37,52 * * * *"'));
     });
 
+    test('只推进最新公开 Alpha 之后的唯一活动 Draft', () async {
+      final release = await _workflow('alpha-release.yml');
+      final reconciler = await _workflow('alpha-release-reconcile.yml');
+
+      expect(release, contains('active_alpha_candidate.py'));
+      expect(release, contains('--ensure-empty'));
+      expect(release, contains('--require-selected'));
+      expect(reconciler, contains('active_alpha_candidate.py'));
+      expect(reconciler, contains('--require-selected'));
+      expect(reconciler, contains('--select'));
+    });
+
     test('常规 CI 将 Actions Lint 纳入稳定 CI Gate', () async {
       final workflow = await _workflow('quality.yml');
       final lint = _job(workflow, 'actions-lint', 'classify');

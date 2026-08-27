@@ -60,6 +60,7 @@ flowchart TD
 | REL-009 | 公开后必须重新下载 Android APK 并核对候选 SHA-256，之后才能更新指针 | final publish 步骤顺序守卫 |
 | REL-010 | 拒审、未知状态、身份歧义、合同或执行失败时创建/更新/重开阻塞 Issue；恢复或正常等待时关闭 | `release-blocked` Issue；Draft/旧指针不变 |
 | REL-011 | 协调与最终发布使用当前已审查工具，候选提交仅提供不可变产品代码、身份与证据 | checkout workflow SHA；从 candidate SHA 读取版本和数据代际 |
+| REL-012 | 同一时刻只推进一个活动 Draft；活动候选是最新公开 Alpha 发布后创建的最新合法 Draft，新建候选时若活动 Draft 存在则失败关闭 | `active_alpha_candidate.py` 与 CLI 测试 |
 
 ## 5. 门禁回执
 
@@ -76,6 +77,7 @@ schema 3 不包含 Windows 客户端生命周期回执。Windows 的发布结论
 
 ## 6. 状态与恢复
 
+- 协调器只发现最新公开 Alpha 发布后创建的最新合法 Draft。该 Draft 公开后，更早的遗留 Draft 自动退出活动集合，不能被后续定时协调重新选中。
 - 已知 processing/review/certification/publishing 状态：等待，下次协调继续。
 - TestFlight `FAILED/INVALID/REJECTED`、Store 失败或未知状态、字段歧义、候选身份不一致、合同/执行失败或候选发现失败：阻断并创建、更新或重新打开 `release-blocked` Issue；无法确定版本时归入统一 discovery Issue。外部状态恢复或进入已知正常等待后自动关闭对应 Issue。
 - Flight 同候选 `pendingcommit/commitfailed` 草稿：协调器删除该失败草稿并重新提交同一 MSIX；不同候选的 pending submission 一律阻断。
@@ -108,6 +110,7 @@ schema 3 不包含 Windows 客户端生命周期回执。Windows 的发布结论
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 3.7 | 2026-08-27 | 将活动候选定义为最新公开 Alpha 之后的最新合法 Draft；拒绝并行创建第二个活动候选，避免遗留 Draft 在新版公开后被重新选中 |
 | 3.6 | 2026-08-26 | 修正 `msstore` v0.4.1 的既有 MSIX 发布调用，Flight 与 production 均以精确候选文件作为位置参数 |
 | 3.5 | 2026-08-26 | 移除 Windows 专用机门禁，改用 schema 3 精确 Store API 回执；错峰轮询并自动维护阻塞 Issue 生命周期 |
 | 3.4 | 2026-08-26 | Android 候选恢复复用原始 Firebase ARM 成功回执，禁止同一 APK 重复验证 |

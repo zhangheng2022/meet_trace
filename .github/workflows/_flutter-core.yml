@@ -12,12 +12,6 @@ on:
         required: false
         default: false
         type: boolean
-      upload_evidence:
-        description: Upload non-sensitive quality evidence
-        required: false
-        default: false
-        type: boolean
-
 permissions:
   contents: read
 
@@ -45,19 +39,6 @@ jobs:
           flutter-version-file: ".fvmrc"
           cache: true
 
-      - name: Capture toolchain snapshot
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p build/quality
-          {
-            echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "commit_sha=$(git rev-parse HEAD)"
-            flutter --version
-            dart --version 2>&1
-            java -version 2>&1
-          } | tee build/quality/toolchain.txt
-
       - name: Resolve locked dependencies
         run: flutter pub get --enforce-lockfile
 
@@ -83,22 +64,3 @@ jobs:
           ./tool/benchmarks/inspect_debug_apk.ps1
           -ApkPath build/app/outputs/flutter-apk/app-debug.apk
           -ReportPath build/quality/android-apk-inspection.json
-
-      - name: Write APK checksum
-        if: inputs.build_android
-        shell: bash
-        run: >-
-          sha256sum build/app/outputs/flutter-apk/app-debug.apk
-          > build/quality/android-debug-apk.sha256
-
-      - name: Upload quality evidence
-        if: always() && inputs.upload_evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: meettrace-quality-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            build/quality/*.json
-            build/quality/*.sha256
-            build/quality/*.txt
-          if-no-files-found: warn
-          retention-days: 7

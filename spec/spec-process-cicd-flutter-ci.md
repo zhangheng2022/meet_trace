@@ -9,7 +9,7 @@
 - 分支保护始终可以依赖名称稳定的 `CI Gate`，不因路径过滤而缺失。
 - Flutter 格式化、静态分析和测试只定义一次，由常规 CI 与正式发布复用。
 - Android、iOS、Windows 原生变更仅触发对应平台检查；未知路径保守执行完整 CI。
-- iOS 无签名构建只上传 JSON/TXT 审计证据，不生成或上传 IPA。
+- iOS 无签名构建只做 Release `Runner.app` 检查，不上传未签名包或 IPA。
 - 正式 Android 候选进入 GitHub Draft Release；正式 iOS 只进入 TestFlight。
 - 正式三平台构建均注入同一营销版本和共享构建号；客户端只由正式发布工作流显式启用生产更新入口。
 - GitHub Release 只保留 Android APK 与单一候选清单，详细签名和包检查证据进入短期 Actions Artifact。
@@ -20,18 +20,18 @@
 
 | 文件 | 触发方式 | 职责 |
 |---|---|---|
-| `.github/workflows/quality.yml` | PR、`master` push、手动 | Actions Lint、路径分类、所需平台检查、稳定 `CI Gate` |
+| `.github/workflows/quality.yml` | PR、手动 | Actions Lint、路径分类、所需平台检查、稳定 `CI Gate` |
 | `.github/workflows/_flutter-core.yml` | `workflow_call` | 锁定依赖、格式化、分析、测试及可选 Android APK 审计 |
 | `.github/workflows/alpha-release.yml` | 手动一次 + 协调器内部恢复 | 同一 SHA 三平台候选、一次 Android ARM 验证、最终公开 APK 复核与签名指针更新 |
 | `.github/workflows/alpha-release-reconcile.yml` | 即时调度 + 每小时第 7/22/37/52 分钟 | Flight 提交/恢复、TestFlight/Store 轮询、两阶段精确 Store 回执、production 提交与最终门禁 |
 | `.github/workflows/firebase-test-lab.yml` | 手动/被调用 | Android 设备实验室自动化回归，不作为发布证据门禁 |
-| `.github/workflows/codeql.yml` | PR、`master` push、每周、手动 | 使用高级配置扫描 Actions、C/C++ 与 Python，排除代理技能目录 |
+| `.github/workflows/codeql.yml` | PR、每周、手动 | 使用高级配置扫描 Actions、C/C++、Python 与 Ruby，并汇总稳定 `CodeQL Gate` |
 
 ## 3. 常规 CI 流程
 
 ```mermaid
 flowchart LR
-  A["PR / master push / 手动"] --> L["Actions Lint"]
+  A["PR / 手动"] --> L["Actions Lint"]
   A --> B["Classify changed paths"]
   B -->|"core=true"| C["Reusable Flutter Core"]
   B -->|"android=true"| C
@@ -75,17 +75,12 @@ flowchart LR
 |---|---|---|
 | `checkout_ref` | string | 必填，待验证的不可变提交或引用 |
 | `build_android` | boolean | 是否构建并检查 Debug APK |
-| `upload_evidence` | boolean | 是否上传非敏感 Android/工具链证据 |
 
-执行顺序固定为：检出 → Java/Flutter 工具链 → 工具链快照 → `flutter pub get --enforce-lockfile` → format → analyze → test → 可选 Android 构建与审计。任一步失败即失败关闭。
+执行顺序固定为：检出 → Java/Flutter 工具链 → `flutter pub get --enforce-lockfile` → format → analyze → test → 可选 Android 构建与审计。任一步失败即失败关闭。常规 CI 不上传可从日志或后续构建重复得到的工具链与 Debug 包证据。
 
 ## 5. iOS 无签名审计
 
-常规 CI 在 macOS/Xcode 固定版本上构建 Debug 和 Release `Runner.app`。允许上传的内容仅为：
-
-- 工具链文本快照；
-- App 检查 JSON；
-- 包含目录树 SHA-256、体积和不可分发标志的元数据 JSON。
+常规 CI 在 macOS/Xcode 固定版本上只构建并检查 Release `Runner.app`，检查结果留在 job 日志中，不上传可重复生成的未签名包或证据 Artifact。
 
 禁止创建 `Payload`、压缩 `.ipa`、上传 `.ipa` 或把无签名产物描述为可安装发行包。
 

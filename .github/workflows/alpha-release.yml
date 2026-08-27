@@ -98,11 +98,18 @@ jobs:
           [[ -n "$marketing_version" ]]
           [[ "$RELEASE_ID" == "v${marketing_version}-alpha."* ]]
 
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            > "$RUNNER_TEMP/alpha-releases.json"
+
           if release_json="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName 2>/dev/null)"; then
             [[ "$tag_exists" == true ]]
             [[ "$(jq -r .tagName <<<"$release_json")" == "$RELEASE_ID" ]]
             if [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]; then
               [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
+              python3 tool/release/active_alpha_candidate.py \
+                --releases "$RUNNER_TEMP/alpha-releases.json" \
+                --require-selected "$RELEASE_ID"
               if [[ -n "$RESUME_RUN_ID" ]]; then
                 mode=resume
               else
@@ -125,6 +132,9 @@ jobs:
               echo "A resume run requires an existing Draft Release" >&2
               exit 1
             fi
+            python3 tool/release/active_alpha_candidate.py \
+              --releases "$RUNNER_TEMP/alpha-releases.json" \
+              --ensure-empty
             mode=candidate
           fi
 
@@ -222,7 +232,6 @@ jobs:
     with:
       checkout_ref: ${{ needs.prepare.outputs.candidate_sha }}
       build_android: false
-      upload_evidence: false
 
   android:
     if: needs.prepare.outputs.mode == 'candidate'

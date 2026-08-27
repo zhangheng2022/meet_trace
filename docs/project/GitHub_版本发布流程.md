@@ -92,7 +92,7 @@ Partner Center 必须先人工完成一次产品、listing、年龄分级、定�
 
 ## 4. 自动协调与失败关闭
 
-`.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `7,22,37,52 * * * *` 错峰定时轮询。GitHub 只向具备 push access 的调用者列出 Draft Release，因此仅 `resolve` job 获得 `contents: write`，用于通过 Releases API 读取仍为 Draft 的最新合法 Alpha 及其候选清单；该 job 不持有商店 Secret，也不修改 Release。即时调度校验触发它的 source run，定时调度则从最近成功运行中选择同时携带精确三平台候选和单次 Android 验证回执的 source run。两条路径都核对 tag、SHA、共享构建号、source run 的默认分支祖先关系、MSIX SHA-256、架构和候选清单；Flight submission ID 由协调器创建或从同候选状态中恢复。
+`.github/workflows/alpha-release-reconcile.yml` 支持候选完成后的即时 `repository_dispatch` 和 `7,22,37,52 * * * *` 错峰定时轮询。GitHub 只向具备 push access 的调用者列出 Draft Release，因此仅 `resolve` job 获得 `contents: write`，用于通过 Releases API 读取活动 Alpha Draft 及其候选清单；该 job 不持有商店 Secret，也不修改 Release。活动候选固定为最新公开 Alpha 发布后创建的最新合法 Draft；新候选创建前若仍有活动 Draft 则失败关闭，当前候选公开后更早的遗留 Draft 不再被定时协调选中。即时调度校验触发它的 source run，定时调度则从最近成功运行中选择同时携带精确三平台候选和单次 Android 验证回执的 source run。两条路径都核对 tag、SHA、共享构建号、source run 的默认分支祖先关系、MSIX SHA-256、架构和候选清单；Flight submission ID 由协调器创建或从同候选状态中恢复。
 
 外部状态读取使用服务方的结构化 REST：TestFlight 从 app 维度按固定名称取得唯一外测组，再分页读取官方 betaGroup→builds 关系并核对精确 build ID，避免受限的 build→betaGroups 关系端点和不受支持的组合筛选；只有 Apple 官方 `IN_BETA_TESTING` 才表示指定 build 已实际进入外测。查询失败时仅上传请求阶段、HTTP 状态、Apple error code/title 与本地原因码组成的脱敏诊断 Artifact，不记录 JWT、P8、测试者信息、资源 ID 或完整响应。Microsoft Store 分别读取 app、pending/last published submission 及 status，只投影状态、可见性和包字段，不解析 Store CLI 输出中的 listing 文本。Store CLI 仅保留在确实提交 Flight 或 production 的 job 中。
 
