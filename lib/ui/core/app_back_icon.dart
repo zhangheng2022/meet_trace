@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 使用 Flutter 的平台自适应返回图形：
 /// Android 显示带箭杆返回箭头，iOS 显示系统习惯的返回尖括号。

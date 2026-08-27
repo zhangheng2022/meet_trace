@@ -46,6 +46,9 @@ void main() {
 
       expect(fvmConfig['flutter'], '3.47.1');
       expect(pubspec, contains('sdk: ^3.13.0'));
+      expect(pubspec, contains('forui: ^0.26.0'));
+      expect(pubspec, contains('forui_cli: ^0.26.0'));
+      expect(pubspec, contains('material_ui: ^1.1.0'));
       _expectPatchLine(
         _versionFrom(
           androidSettings,

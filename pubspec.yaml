@@ -37,7 +37,7 @@ dependencies:
   connectivity_plus: 7.3.1
   crypto: 3.0.7
   disk_space_2: 1.0.13
-  forui: ^0.25.0
+  forui: ^0.26.0
   flutter_foreground_task: ^11.0.0
   path: 1.9.1
   path_provider: 2.1.6
@@ -50,6 +50,7 @@ dependencies:
   cryptography: 2.9.0
   url_launcher: 6.3.2
 
+  material_ui: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -65,7 +66,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  forui_cli: ^0.25.0
+  forui_cli: ^0.26.0
   flutter_launcher_icons: ^0.14.4
 
 patrol:
