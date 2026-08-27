@@ -326,5 +326,21 @@ void main() {
       expect(bootstrap, contains('reviewers'));
       expect(bootstrap, isNot(contains('windows-store-validation')));
     });
+
+    test('Microsoft Store CLI 凭据统一使用系统命令清理', () async {
+      final workflow = await _workflow('alpha-release-reconcile.yml');
+      final cleanup = await File(
+        'tool/release/remove_microsoft_store_cli_credential.ps1',
+      ).readAsString();
+
+      expect(
+        'remove_microsoft_store_cli_credential.ps1'.allMatches(workflow),
+        hasLength(2),
+      );
+      expect(workflow, isNot(contains('CredDeleteW')));
+      expect(workflow, isNot(contains('Add-Type')));
+      expect(cleanup, contains(r'cmdkey.exe "/delete:$target"'));
+      expect(cleanup, contains(r'cmdkey.exe "/list:$target"'));
+    });
   });
 }
