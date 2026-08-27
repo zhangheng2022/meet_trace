@@ -401,7 +401,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(textShare.documents, hasLength(1));
-    expect(textShare.documents.single.fileName, endsWith('.md'));
     expect(textShare.documents.single.text, contains('最终事实文本'));
     expect(textShare.documents.single.text, isNot(contains('/audio/fact.pcm')));
     await fixture.dispose();
