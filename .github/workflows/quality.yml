@@ -2,9 +2,6 @@ name: Flutter CI
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -99,7 +96,6 @@ jobs:
     with:
       checkout_ref: ${{ github.sha }}
       build_android: ${{ needs.classify.outputs.android == 'true' }}
-      upload_evidence: ${{ needs.classify.outputs.android == 'true' }}
 
   ios-unsigned:
     name: Build and inspect unsigned iOS app
@@ -121,38 +117,8 @@ jobs:
           flutter-version-file: ".fvmrc"
           cache: true
 
-      - name: Capture toolchain snapshot
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p build/ios/unsigned
-          {
-            echo "captured_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "runner_arch=$(uname -m)"
-            echo "runner_os=${RUNNER_OS}"
-            echo "runner_name=${RUNNER_NAME}"
-            echo "--- macOS ---"
-            sw_vers
-            echo "--- Xcode ---"
-            xcode-select -p
-            xcodebuild -version
-            echo "--- Flutter ---"
-            flutter --version
-            echo "--- Dart ---"
-            dart --version 2>&1
-            echo "--- CocoaPods ---"
-            pod --version
-            echo "--- Memory ---"
-            sysctl -n hw.memsize
-            echo "--- Disk ---"
-            df -h
-          } | tee build/ios/unsigned/toolchain.txt
-
       - name: Resolve dependencies
         run: flutter pub get --enforce-lockfile
-
-      - name: Build Debug app without code signing
-        run: flutter build ios --debug --no-codesign
 
       - name: Build Release app without code signing
         run: flutter build ios --release --no-codesign
@@ -163,103 +129,6 @@ jobs:
           bash tool/benchmarks/inspect_ios_app.sh \
             build/ios/iphoneos/Runner.app \
             build/ios/unsigned/ios-app-inspection.json
-
-      - name: Write unsigned app bundle metadata
-        shell: bash
-        env:
-          BUILD_APP_PATH: build/ios/iphoneos/Runner.app
-        run: |
-          set -euo pipefail
-          mkdir -p "$GITHUB_WORKSPACE/build/ios/unsigned"
-
-          python3 - <<'PY'
-          import datetime
-          import hashlib
-          import json
-          import os
-          import platform
-          import subprocess
-          from pathlib import Path
-
-          def output(*command: str) -> str:
-              return subprocess.check_output(command, text=True, stderr=subprocess.STDOUT).strip()
-
-          app_path = Path(os.environ["BUILD_APP_PATH"])
-          if not app_path.is_dir():
-              raise SystemExit(f"Missing app bundle: {app_path}")
-
-          tree_digest = hashlib.sha256()
-          total_bytes = 0
-          for entry in sorted(app_path.rglob("*"), key=lambda path: path.as_posix()):
-              relative = entry.relative_to(app_path).as_posix()
-              tree_digest.update(relative.encode("utf-8"))
-              tree_digest.update(b"\0")
-              if entry.is_symlink():
-                  tree_digest.update(os.readlink(entry).encode("utf-8"))
-                  continue
-              if not entry.is_file():
-                  continue
-              total_bytes += entry.stat().st_size
-              with entry.open("rb") as stream:
-                  for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-                      tree_digest.update(chunk)
-
-          metadata = {
-              "capturedAtUtc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-              "repository": os.environ["GITHUB_REPOSITORY"],
-              "commitSha": os.environ["GITHUB_SHA"],
-              "ref": os.environ["GITHUB_REF"],
-              "runId": os.environ["GITHUB_RUN_ID"],
-              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
-              "runner": {
-                  "os": os.environ["RUNNER_OS"],
-                  "architecture": platform.machine(),
-                  "macos": output("sw_vers", "-productVersion"),
-              },
-              "xcode": output("xcodebuild", "-version"),
-              "flutter": json.loads(output("flutter", "--version", "--machine")),
-              "cocoapods": output("pod", "--version"),
-              "artifact": {
-                  "name": app_path.name,
-                  "bytes": total_bytes,
-                  "treeSha256": tree_digest.hexdigest(),
-                  "kind": "unsigned-app-bundle",
-                  "distributionSigned": False,
-                  "directlyInstallable": False,
-                  "packagedForDistribution": False,
-              },
-          }
-          report_path = Path("build/ios/unsigned/build-metadata.json")
-          report_path.write_text(
-              json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8",
-          )
-          print(f"Build metadata: {report_path}")
-          PY
-
-      - name: Capture final disk usage
-        if: always()
-        shell: bash
-        run: |
-          mkdir -p build/ios/unsigned
-          {
-            echo "--- Final disk usage ---"
-            df -h
-            echo "--- Unsigned outputs ---"
-            find build/ios/unsigned -maxdepth 1 -type f -print 2>/dev/null || true
-          } | tee -a build/ios/unsigned/toolchain.txt
-
-      - name: Upload unsigned build evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: meettrace-ios-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            build/ios/unsigned/*.json
-            build/ios/unsigned/*.txt
-          if-no-files-found: warn
-          retention-days: 7
-          compression-level: 0
 
   windows-msix-probe:
     name: Build and inspect unsigned Windows MSIX probe
@@ -273,7 +142,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Java 17 for JNI headers
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.2.0
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "17"
@@ -283,45 +152,6 @@ jobs:
         with:
           flutter-version-file: ".fvmrc"
           cache: true
-
-      - name: Capture Windows toolchain snapshot
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path build/windows/msix | Out-Null
-          $os = Get-CimInstance Win32_OperatingSystem
-          $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
-          $installedRoots = Get-ItemProperty `
-            'HKLM:\SOFTWARE\Microsoft\Windows Kits\Installed Roots' `
-            -ErrorAction Stop
-          $sdkRoot = $installedRoots.KitsRoot10
-          if ([string]::IsNullOrWhiteSpace($sdkRoot)) {
-            throw 'Windows SDK KitsRoot10 is missing from Installed Roots.'
-          }
-          $makeAppx = Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'bin') `
-            -Recurse -Filter makeappx.exe |
-            Where-Object { $_.FullName -match '\\x64\\makeappx\.exe$' } |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-          if ($null -eq $makeAppx) {
-            throw 'Windows SDK does not provide x64 MakeAppx.exe.'
-          }
-          @(
-            "captured_at_utc=$([DateTimeOffset]::UtcNow.ToString('O'))"
-            "runner_os=$env:RUNNER_OS"
-            "runner_arch=$env:RUNNER_ARCH"
-            "windows_caption=$($os.Caption)"
-            "windows_version=$($os.Version)"
-            "cpu=$($cpu.Name)"
-            "logical_processors=$($cpu.NumberOfLogicalProcessors)"
-            "memory_bytes=$($os.TotalVisibleMemorySize * 1KB)"
-            "java_home=$env:JAVA_HOME"
-            "makeappx=$($makeAppx.FullName)"
-            '--- Flutter ---'
-            (flutter --version)
-            '--- Dart ---'
-            (dart --version 2>&1)
-          ) | Set-Content -LiteralPath build/windows/msix/toolchain.txt -Encoding utf8
 
       - name: Resolve locked dependencies
         run: flutter pub get --enforce-lockfile
@@ -377,18 +207,6 @@ jobs:
           if (Test-Path -LiteralPath $probe -PathType Leaf) {
             Remove-Item -LiteralPath $probe -Force
           }
-
-      - name: Upload Windows package evidence only
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: meettrace-windows-msix-probe-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            build/windows/msix/*.json
-            build/windows/msix/*.txt
-          if-no-files-found: error
-          retention-days: 7
-          compression-level: 0
 
   ci-gate:
     name: CI Gate

@@ -1,9 +1,6 @@
 name: CodeQL
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -34,6 +31,7 @@ jobs:
           - actions
           - c-cpp
           - python
+          - ruby
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,3 +47,15 @@ jobs:
         uses: github/codeql-action/analyze@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28 # v4.37.8
         with:
           category: "/language:${{ matrix.language }}"
+
+  codeql-gate:
+    name: CodeQL Gate
+    if: always()
+    needs: analyze
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require successful analysis
+        env:
+          ANALYZE_RESULT: ${{ needs.analyze.result }}
+        run: '[[ "$ANALYZE_RESULT" == "success" ]]'

@@ -52,11 +52,19 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$GITHUB_REF" == "refs/heads/master" ]]
-          releases_json="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100")"
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            > "$RUNNER_TEMP/alpha-releases.json"
+          releases_json="$(jq -c 'add' "$RUNNER_TEMP/alpha-releases.json")"
           if [[ "$EVENT_NAME" == repository_dispatch ]]; then
             release_id="$DISPATCH_RELEASE_ID"
+            python3 tool/release/active_alpha_candidate.py \
+              --releases "$RUNNER_TEMP/alpha-releases.json" \
+              --require-selected "$release_id"
           else
-            release_id="$(jq -r '[.[] | select(.draft == true and .prerelease == true and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-alpha\\.[1-9][0-9]*$")))] | sort_by(.created_at) | last | .tag_name // empty' <<<"$releases_json")"
+            release_id="$(python3 tool/release/active_alpha_candidate.py \
+              --releases "$RUNNER_TEMP/alpha-releases.json" \
+              --select)"
             if [[ -z "$release_id" ]]; then
               echo "found=false" >> "$GITHUB_OUTPUT"
               exit 0

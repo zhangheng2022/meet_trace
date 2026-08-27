@@ -50,7 +50,9 @@ void main() {
       final windows = _job(workflow, 'windows-msix-probe', 'ci-gate');
 
       expect(ios, contains('Build Release app without code signing'));
-      expect(ios, contains('unsigned-app-bundle'));
+      expect(ios, contains('tool/benchmarks/inspect_ios_app.sh'));
+      expect(ios, isNot(contains('Build Debug app without code signing')));
+      expect(ios, isNot(contains('actions/upload-artifact')));
       expect(ios, isNot(contains('build/ios/unsigned/*.ipa')));
       expect(windows, contains('runs-on: windows-2025'));
       expect(windows, contains('flutter build windows --release'));
@@ -77,6 +79,9 @@ void main() {
         contains('config-file: ./.github/codeql/codeql-config.yml'),
       );
       expect(codeql, contains('fail-fast: false'));
+      expect(codeql, contains('- ruby'));
+      expect(codeql, contains('name: CodeQL Gate'));
+      expect(codeql, contains('needs: analyze'));
       expect(config, contains('- ".agents/**"'));
       expect(config, contains('- ".claude/**"'));
     });
