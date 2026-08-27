@@ -136,16 +136,10 @@ final class SentryRuntimeConfiguration {
       ..environment = environment
       ..sampleRate = 1
       ..sendDefaultPii = true
-      ..attachStacktrace = true
       ..attachThreads = true
-      ..reportPackages = true
-      ..enablePrintBreadcrumbs = true
       ..captureFailedRequests = true
       ..captureNativeFailedRequests = true
       ..recordHttpBreadcrumbs = true
-      ..enableDeduplication = true
-      ..sendClientReports = true
-      ..enableScopeSync = true
       ..enableDartSymbolication = true
       ..propagateTraceparent = true
       ..strictTraceContinuation = true
@@ -168,7 +162,6 @@ final class SentryRuntimeConfiguration {
       ..enableMemoryPressureBreadcrumbs = true
       ..reportSilentFlutterErrors = true
       ..enableWatchdogTerminationTracking = true
-      ..enableNdkScopeSync = true
       ..enableAutoPerformanceTracing = true
       ..enableStandaloneAppStartTracing = true
       ..attachScreenshot = true
@@ -177,10 +170,8 @@ final class SentryRuntimeConfiguration {
       ..enableUserInteractionTracing = true
       ..enableTimeToFullDisplayTracing = true
       ..attachViewHierarchy = true
-      ..reportViewHierarchyIdentifiers = true
       ..enableAppHangTracking = true
-      ..enableFramesTracking = true
-      ..enableNativeTraceSync = true;
+      ..enableFramesTracking = true;
 
     if (release case final release?) {
       options.release = release;
