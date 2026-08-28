@@ -196,7 +196,6 @@ final class RuntimeArtifactInstallTransaction {
     await _replaceInstallation(
       installationPath: effectiveInstallationPath,
       finalPath: finalPath,
-      tempRoot: tempRoot,
       finalRoot: finalRoot,
     );
     if (!p.equals(tempPath, effectiveInstallationPath)) {
@@ -212,7 +211,6 @@ final class RuntimeArtifactInstallTransaction {
 Future<void> _replaceInstallation({
   required String installationPath,
   required String finalPath,
-  required String tempRoot,
   required String finalRoot,
 }) async {
   final normalizedFinalRoot = p.normalize(p.absolute(finalRoot));
@@ -224,8 +222,8 @@ Future<void> _replaceInstallation({
     );
   }
   final relativeFinalPath = p.relative(finalPath, from: finalRoot);
-  final backupPath = p.join(tempRoot, '.rollback', relativeFinalPath);
-  _requireWithinOrEqual(tempRoot, backupPath);
+  final backupPath = p.join(finalRoot, '.rollback', relativeFinalPath);
+  _requireWithinOrEqual(finalRoot, backupPath);
   final current = Directory(finalPath);
   final backup = Directory(backupPath);
 
@@ -255,7 +253,7 @@ Future<void> _replaceInstallation({
       await backup.delete(recursive: true);
     }
   } on Object {
-    // 新版本已完成原子切换；残留备份由下一次安装或启动临时目录清理收敛。
+    // 新版本已完成原子切换；保留备份供下一次安装收敛。
   }
 }
 

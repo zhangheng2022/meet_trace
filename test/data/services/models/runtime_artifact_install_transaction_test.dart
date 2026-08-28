@@ -75,4 +75,61 @@ void main() {
     );
     expect(await File(p.join(finalPath, 'model.bin')).exists(), isFalse);
   });
+
+  test('崩溃后的旧安装备份不会被临时目录清理且可恢复', () async {
+    final tempRoot = p.join(root.path, 'models', '.tmp');
+    final finalRoot = p.join(root.path, 'models');
+    final tempPath = p.join(tempRoot, 'model', '1');
+    final finalPath = p.join(finalRoot, 'model', '1');
+    final backupPath = p.join(finalRoot, '.rollback', 'model', '1');
+    final newBytes = utf8.encode('new-model');
+    await Directory(tempPath).create(recursive: true);
+    await File(p.join(tempPath, 'model.bin')).writeAsBytes(newBytes);
+    await Directory(backupPath).create(recursive: true);
+    await File(p.join(backupPath, 'old.bin')).writeAsString('old-model');
+    final manifest = ModelManifestEntry(
+      modelId: 'model',
+      version: '1',
+      installationType: 'downloadable',
+      requiredBytes: newBytes.length,
+      files: [
+        ModelManifestFile(
+          path: 'model.bin',
+          bytes: newBytes.length,
+          sha256: sha256.convert(newBytes).toString(),
+          url: 'https://example.invalid/model.bin',
+        ),
+      ],
+      license: const ModelLicense(name: 'test', noticePath: 'NOTICE'),
+    );
+
+    await expectLater(
+      const RuntimeArtifactInstallTransaction().install(
+        manifest: manifest,
+        tempPath: tempPath,
+        finalPath: finalPath,
+        tempRoot: tempRoot,
+        finalRoot: finalRoot,
+        throwIfCanceled: () {},
+        download:
+            ({
+              required file,
+              required destinationPath,
+              required resumeFrom,
+              required onProgress,
+            }) async => RuntimeArtifactDownloadOutcome(
+              finalBytes: file.bytes,
+              resumed: resumeFrom > 0,
+            ),
+        onCommitting: (_) => Directory(tempPath).delete(recursive: true),
+      ),
+      throwsA(isA<FileSystemException>()),
+    );
+
+    expect(
+      await File(p.join(finalPath, 'old.bin')).readAsString(),
+      'old-model',
+    );
+    expect(await Directory(backupPath).exists(), isFalse);
+  });
 }

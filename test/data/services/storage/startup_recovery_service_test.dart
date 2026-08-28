@@ -223,6 +223,40 @@ void main() {
       MeetingState.processing,
     );
   });
+
+  test('数据库仍有会议时恢复已暂存的删除目录', () async {
+    final now = DateTime.utc(2026, 7, 24, 11);
+    const meetingId = 'meeting-survives-crash';
+    await meetings.save(
+      Meeting(
+        id: meetingId,
+        title: meetingId,
+        createdAt: now,
+        status: MeetingState.created,
+        audioDurationMs: 0,
+        recordingModelId: 'paraformer',
+        recordingModelVersion: '1',
+      ),
+    );
+    final original = Directory(layout.meetingDirectory(meetingId));
+    await original.create(recursive: true);
+    await File('${original.path}${Platform.pathSeparator}fact.pcm')
+        .writeAsBytes([1]);
+    final staged = await original.rename(
+      '${layout.meetingsRoot}${Platform.pathSeparator}'
+      '.deleting-$meetingId-${now.microsecondsSinceEpoch}',
+    );
+
+    final report = await recovery.recover(now: now);
+
+    expect(report.removedStagedMeetingDirectories, 0);
+    expect(await staged.exists(), isFalse);
+    expect(
+      await File('${original.path}${Platform.pathSeparator}fact.pcm').exists(),
+      isTrue,
+    );
+    expect(await meetings.getById(meetingId), isNotNull);
+  });
 }
 
 final class _SelectiveFailingCheckpointStore

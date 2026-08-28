@@ -292,11 +292,16 @@ final class StartupRecoveryService {
     if (!await meetingsRoot.exists()) {
       return 0;
     }
+    final db = await database.open();
     final normalizedRoot = p.normalize(p.absolute(meetingsRoot.path));
     var removed = 0;
     await for (final entity in meetingsRoot.list(followLinks: false)) {
-      if (entity is! Directory ||
-          !p.basename(entity.path).startsWith('.deleting-')) {
+      if (entity is! Directory) {
+        continue;
+      }
+      final match = RegExp(r'^\.deleting-(.+)-(\d+)$')
+          .firstMatch(p.basename(entity.path));
+      if (match == null) {
         continue;
       }
       final target = p.normalize(p.absolute(entity.path));
@@ -304,6 +309,18 @@ final class StartupRecoveryService {
         continue;
       }
       try {
+        final meetingId = match.group(1)!;
+        final meetingExists = (await db.rawQuery(
+          'SELECT 1 FROM meetings WHERE id = ? LIMIT 1',
+          [meetingId],
+        )).isNotEmpty;
+        if (meetingExists) {
+          final original = Directory(layout.meetingDirectory(meetingId));
+          if (!await original.exists()) {
+            await entity.rename(original.path);
+          }
+          continue;
+        }
         await entity.delete(recursive: true);
         removed++;
       } on Object {
