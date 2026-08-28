@@ -6,25 +6,28 @@
 </div>
 
 <div align="center">
-  <strong><a href="https://github.com/zhangheng2022/meet_trace/releases/download/v1.0.0-alpha.5/meettrace-v1.0.0-alpha.5-android-arm64.apk">下载 Android 测试 APK（v1.0.0-alpha.5）</a></strong>
-  · <a href="https://github.com/zhangheng2022/meet_trace/releases/tag/v1.0.0-alpha.5">发布说明</a>
+  <strong><a href="https://github.com/zhangheng2022/meet_trace/releases/download/v1.0.0-alpha.10/meettrace-v1.0.0-alpha.10-android-arm64.apk">Android APK</a></strong>
+  · <strong><a href="https://testflight.apple.com/join/awDT2K6Q">iOS TestFlight</a></strong>
+  · <strong><a href="https://apps.microsoft.com/detail/9PHHSJMWK06G">Windows Microsoft Store</a></strong>
+  <br>
+  <a href="https://github.com/zhangheng2022/meet_trace/releases/tag/v1.0.0-alpha.10">v1.0.0-alpha.10 发布说明</a>
   · <a href="docs/README.md">项目文档</a>
 </div>
 
 会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备固定 TestFlight 外测组的自动提交、审核轮询与 Testing 门禁；Windows 已具备固定 Microsoft Store 身份、Package Flight、正式 submission 和精确 API 回执门禁，但该门禁不证明 Store 客户端生命周期。首次成功跑通 schema 3 统一门禁前，Windows 仍按产品门槛标记为“规划中/未就绪”，不视为受支持平台。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备固定 TestFlight 外测组的自动提交、审核轮询与 Testing 门禁；Windows 已具备固定 Microsoft Store 身份和精确 API 回执门禁，但尚未覆盖 Store 客户端安装、卸载与更新闭环，因此仍为“规划中/未就绪”。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
 
-## 安装测试版
+## 下载与安装
 
-- APK 仅支持 Android 7.0+ 的 `arm64-v8a` 设备，需要允许当前来源安装未知应用。
-- 首次启动约下载 286.3 MB 运行资源，并要求应用所在卷至少有 1 GiB 可用空间。
-- 应用不提供登录或云同步；卸载会删除本机数据，Alpha 升级也可能清除旧数据并重新下载模型。
-- iOS 仅通过 TestFlight 固定外测组和稳定 public link 分发；链接由发布 Environment 配置，不逐版本手工后补。
-- Windows Store 页面已公开并仅提供 Windows 10 22H2/11 x64 包；可在 [Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) 查看，但安装、卸载和 Store 更新纵向自动化闭环前仍为“规划中/未就绪”。
+| 平台 | 下载入口 | 系统要求 |
+|---|---|---|
+| Android | [下载 v1.0.0-alpha.10 APK](https://github.com/zhangheng2022/meet_trace/releases/download/v1.0.0-alpha.10/meettrace-v1.0.0-alpha.10-android-arm64.apk) | Android 7.0+，仅 `arm64-v8a`；安装时需允许当前来源安装未知应用 |
+| iOS | [加入 TestFlight 测试](https://testflight.apple.com/join/awDT2K6Q) | iOS 15.0+；仅通过 TestFlight 分发 |
+| Windows | [前往 Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) | Windows 10 22H2/11，仅 x64；当前仍为规划中/未就绪 |
 
-全部公开版本见 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
+首次启动约下载 286.3 MB 运行资源，并要求应用所在卷至少有 1 GiB 可用空间。应用不提供登录或云同步；卸载会删除本机数据，Alpha 升级也可能清除旧数据并重新下载模型。历史版本与完整变更见 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
 
 Windows 当前由 Microsoft Store 完成签名和分发；[Code signing policy](CODE_SIGNING_POLICY.md) 仅保留给尚未接入的未来 SignPath 路线。各平台的数据与网络边界见[隐私政策](PRIVACY.md)。
 
@@ -93,7 +96,7 @@ PRD V1.2 的目标候选必须从统一 `Alpha Release` 入口生成：
 
 - Android、iOS 与 Windows 必须来自同一 SHA，三平台构建、自动化和分发门禁全部通过后才能公开。
 - GitHub Release 只发布 Android APK 和候选 Manifest；iOS 不上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。
-- 正式工作流会自动提交固定 Store Flight、轮询 Partner Center、完成 Flight/production 两阶段真实安装验证，并在 TestFlight 与 Store 全部通过后自动公开 GitHub Pre-release 和签名更新指针；正常路径没有最终人工审批。
+- 正式工作流会自动提交固定 Store Flight、轮询 Partner Center、完成 Flight/production 两阶段精确包回执验证，并在 TestFlight 与 Store 全部通过后自动公开 GitHub Pre-release 和签名更新指针；正常路径没有最终人工审批。
 - Windows 只有在 AT-21～AT-26 全部闭环后才能标记为受支持；当前 AT-21/AT-25 的 Store 安装、卸载和更新纵向自动化仍待完成，因此必须保持“规划中/未就绪”。
 
 维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
