@@ -391,36 +391,8 @@ jobs:
         env:
           PARTNER_CENTER_CLIENT_ID: ${{ secrets.PARTNER_CENTER_CLIENT_ID }}
         run: |
-          $source = @'
-          using System;
-          using System.ComponentModel;
-          using System.Runtime.InteropServices;
-
-          public static class MeetTraceCredentialCleanup
-          {
-              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
-                  CharSet = CharSet.Unicode, SetLastError = true)]
-              private static extern bool CredDelete(string target, int type, int flags);
-
-              public static void Delete(string target)
-              {
-                  if (!CredDelete(target, 1, 0))
-                  {
-                      int error = Marshal.GetLastWin32Error();
-                      if (error != 1168)
-                      {
-                          throw new Win32Exception(error);
-                      }
-                  }
-              }
-          }
-          '@
-          Add-Type -TypeDefinition $source
-          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
-            [MeetTraceCredentialCleanup]::Delete(
-              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
-            )
-          }
+          ./tool/release/remove_microsoft_store_cli_credential.ps1 `
+            -ClientId $env:PARTNER_CENTER_CLIENT_ID
 
       - name: Upload Package Flight request evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -834,36 +806,8 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $source = @'
-          using System;
-          using System.ComponentModel;
-          using System.Runtime.InteropServices;
-
-          public static class MeetTraceCredentialCleanup
-          {
-              [DllImport("advapi32.dll", EntryPoint = "CredDeleteW",
-                  CharSet = CharSet.Unicode, SetLastError = true)]
-              private static extern bool CredDelete(string target, int type, int flags);
-
-              public static void Delete(string target)
-              {
-                  if (!CredDelete(target, 1, 0))
-                  {
-                      int error = Marshal.GetLastWin32Error();
-                      if (error != 1168)
-                      {
-                          throw new Win32Exception(error);
-                      }
-                  }
-              }
-          }
-          '@
-          Add-Type -TypeDefinition $source
-          if (-not [string]::IsNullOrWhiteSpace($env:PARTNER_CENTER_CLIENT_ID)) {
-            [MeetTraceCredentialCleanup]::Delete(
-              "MicrosoftStoreCli:user=$($env:PARTNER_CENTER_CLIENT_ID)"
-            )
-          }
+          ./tool/release/remove_microsoft_store_cli_credential.ps1 `
+            -ClientId $env:PARTNER_CENTER_CLIENT_ID
 
       - name: Reconcile submitted production state immediately
         shell: bash
