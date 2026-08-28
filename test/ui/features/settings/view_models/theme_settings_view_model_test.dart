@@ -41,6 +41,22 @@ void main() {
     viewModel.dispose();
     themeMode.dispose();
   });
+
+  test('销毁后忽略新的主题选择', () async {
+    final preferences = _ThemePreferences();
+    final themeMode = ValueNotifier(AppThemeMode.system);
+    final viewModel = ThemeSettingsViewModel(
+      preferences: preferences,
+      themeMode: themeMode,
+    );
+    viewModel.dispose();
+
+    await viewModel.select(AppThemeMode.dark);
+
+    expect(themeMode.value, AppThemeMode.system);
+    expect(preferences.savedMode, isNull);
+    themeMode.dispose();
+  });
 }
 
 final class _ThemePreferences implements ThemePreferenceRepository {

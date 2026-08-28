@@ -18,7 +18,7 @@ final class ThemeSettingsViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Future<void> select(AppThemeMode mode) async {
-    if (_isBusy || mode == selectedMode) {
+    if (_disposed || _isBusy || mode == selectedMode) {
       return;
     }
     final previous = selectedMode;

@@ -53,13 +53,22 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
   }
 
   Future<MeetTraceDependencies> _createDependencies() async {
+    final themeMode = widget.themeMode;
     await widget.preflight();
     final dependencies = await widget.loadDependencies();
+    if (!mounted || themeMode == null) {
+      return dependencies;
+    }
     try {
-      widget.themeMode?.value = await dependencies.storage.themePreferences
+      final savedMode = await dependencies.storage.themePreferences
           .getThemeMode();
+      if (mounted) {
+        themeMode.value = savedMode;
+      }
     } on Object {
-      widget.themeMode?.value = AppThemeMode.system;
+      if (mounted) {
+        themeMode.value = AppThemeMode.system;
+      }
     }
     return dependencies;
   }
