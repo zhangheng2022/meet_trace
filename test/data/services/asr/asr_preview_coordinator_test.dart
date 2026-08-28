@@ -86,6 +86,33 @@ void main() {
     await coordinator.dispose();
   });
 
+  test('非毫秒对齐窗口仍按 Engine 时间戳归入原分组', () async {
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      results: const ['偏移窗口'],
+    );
+    final coordinator = _coordinator(
+      engine: engine,
+      vad: _ScriptedVad([
+        const [VadSpeechSegment(startSample: 1, endSample: 16001)],
+      ]),
+    );
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events
+        .where((event) => event is TranscriptSegmentEvent)
+        .cast<TranscriptSegmentEvent>()
+        .listen(events.add);
+    await coordinator.initialize();
+
+    await coordinator.add(_chunk(startSample: 0, sampleCount: 16001));
+    await coordinator.flush();
+
+    expect(events.single.segmentId, startsWith('vad-'));
+    expect(events.single.text, '偏移窗口');
+    await subscription.cancel();
+    await coordinator.dispose();
+  });
+
   test('空识别窗口仍完成分组并让最后结果成为最终修订', () async {
     final engine = _FakeAsrEngine(
       AsrModelRegistry.alpha.defaultModel,

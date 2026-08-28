@@ -388,6 +388,11 @@ Float32List _readPcm16Mono(String path) {
   if (length <= 0 || length.isOdd) {
     throw const FormatException('事实 PCM 必须是非空的 16-bit 样本');
   }
+  if (!speakerDiarizationPcmFitsMemory(length)) {
+    throw const SpeakerDiarizationWorkerException(
+      'speaker_diarization.memory_limit',
+    );
+  }
   final samples = Float32List(length ~/ 2);
   final handle = file.openSync();
   final buffer = Uint8List(64 * 1024);

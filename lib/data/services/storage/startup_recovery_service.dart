@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:sqflite/sqflite.dart' show Database;
 
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/workflow_states.dart';
@@ -16,6 +17,7 @@ final class RecoveryReport {
     required this.resetExpiredTasks,
     required this.removedModelTempDirectories,
     required this.removedShareTempDirectories,
+    required this.removedStagedMeetingDirectories,
     required this.activatedSnapshots,
   });
 
@@ -24,6 +26,7 @@ final class RecoveryReport {
   final int resetExpiredTasks;
   final int removedModelTempDirectories;
   final int removedShareTempDirectories;
+  final int removedStagedMeetingDirectories;
   final int activatedSnapshots;
 
   int get totalChanges =>
@@ -32,6 +35,7 @@ final class RecoveryReport {
       resetExpiredTasks +
       removedModelTempDirectories +
       removedShareTempDirectories +
+      removedStagedMeetingDirectories +
       activatedSnapshots;
 }
 
@@ -50,12 +54,30 @@ final class StartupRecoveryService {
   final RecordingCheckpointStore recordingCheckpoints;
 
   Future<RecoveryReport> recover({required DateTime now}) async {
-    final recoveredRecordings = await _recoverRecordings(now);
-    final resetExpiredTasks = await _resetExpiredTasks(now);
-    final removedModelTempDirectories =
-        await _removeIncompleteModelDirectories();
-    final removedShareTempDirectories = await _removeShareTempDirectories();
-    final activatedSnapshots = await _activateCompletedSnapshots();
+    final recoveredRecordings = await _bestEffort(
+      () => _recoverRecordings(now),
+      (successes: 0, failures: 0),
+    );
+    final resetExpiredTasks = await _bestEffort(
+      () => _resetExpiredTasks(now),
+      0,
+    );
+    final removedModelTempDirectories = await _bestEffort(
+      _removeIncompleteModelDirectories,
+      0,
+    );
+    final removedShareTempDirectories = await _bestEffort(
+      _removeShareTempDirectories,
+      0,
+    );
+    final removedStagedMeetingDirectories = await _bestEffort(
+      _removeStagedMeetingDirectories,
+      0,
+    );
+    final activatedSnapshots = await _bestEffort(
+      _activateCompletedSnapshots,
+      0,
+    );
 
     return RecoveryReport(
       recoveredRecordings: recoveredRecordings.successes,
@@ -63,6 +85,7 @@ final class StartupRecoveryService {
       resetExpiredTasks: resetExpiredTasks,
       removedModelTempDirectories: removedModelTempDirectories,
       removedShareTempDirectories: removedShareTempDirectories,
+      removedStagedMeetingDirectories: removedStagedMeetingDirectories,
       activatedSnapshots: activatedSnapshots,
     );
   }
@@ -118,19 +141,41 @@ final class StartupRecoveryService {
         );
         successes++;
       } on DurableFileCommitException {
-        await db.update(
-          'meetings',
-          {
-            'status': MeetingState.failed.name,
-            'last_error_code': 'recovery.audio_missing_or_empty',
-          },
-          where: 'id = ? AND status = ?',
-          whereArgs: [meetingId, MeetingState.recording.name],
+        await _bestEffort(
+          () => _markRecordingRecoveryFailed(
+            db,
+            meetingId,
+            'recovery.audio_missing_or_empty',
+          ),
+          null,
+        );
+        failures++;
+      } on Object {
+        await _bestEffort(
+          () => _markRecordingRecoveryFailed(
+            db,
+            meetingId,
+            'recovery.unexpected',
+          ),
+          null,
         );
         failures++;
       }
     }
     return (successes: successes, failures: failures);
+  }
+
+  Future<void> _markRecordingRecoveryFailed(
+    Database db,
+    String meetingId,
+    String errorCode,
+  ) async {
+    await db.update(
+      'meetings',
+      {'status': MeetingState.failed.name, 'last_error_code': errorCode},
+      where: 'id = ? AND status = ?',
+      whereArgs: [meetingId, MeetingState.recording.name],
+    );
   }
 
   Future<void> _alignRecoverablePcm(String meetingId) async {
@@ -242,6 +287,32 @@ final class StartupRecoveryService {
     return removed;
   }
 
+  Future<int> _removeStagedMeetingDirectories() async {
+    final meetingsRoot = Directory(layout.meetingsRoot);
+    if (!await meetingsRoot.exists()) {
+      return 0;
+    }
+    final normalizedRoot = p.normalize(p.absolute(meetingsRoot.path));
+    var removed = 0;
+    await for (final entity in meetingsRoot.list(followLinks: false)) {
+      if (entity is! Directory ||
+          !p.basename(entity.path).startsWith('.deleting-')) {
+        continue;
+      }
+      final target = p.normalize(p.absolute(entity.path));
+      if (!p.isWithin(normalizedRoot, target)) {
+        continue;
+      }
+      try {
+        await entity.delete(recursive: true);
+        removed++;
+      } on Object {
+        // 单个残留清理失败不阻断其他会议恢复或应用启动。
+      }
+    }
+    return removed;
+  }
+
   Future<int> _activateCompletedSnapshots() async {
     final db = await database.open();
     final rows = await db.rawQuery(
@@ -278,5 +349,13 @@ final class StartupRecoveryService {
       );
     }
     return activated;
+  }
+}
+
+Future<T> _bestEffort<T>(Future<T> Function() operation, T fallback) async {
+  try {
+    return await operation();
+  } on Object {
+    return fallback;
   }
 }

@@ -381,14 +381,14 @@ final class AsrPreviewCoordinator
   }
 
   void _registerWindow(AsrPreviewWindow window) {
-    final key = _windowKey(window.startMs, window.endMs);
+    final key = _windowKey(window.startMs, _engineWindowEndMs(window));
     (_windowReferences[key] ??= Queue<_WindowReference>()).addLast(
       _WindowReference(window),
     );
   }
 
   bool _removeWindowReference(AsrPreviewWindow window) {
-    final key = _windowKey(window.startMs, window.endMs);
+    final key = _windowKey(window.startMs, _engineWindowEndMs(window));
     final references = _windowReferences[key];
     if (references == null) {
       return false;
@@ -603,6 +603,13 @@ Float32List _decodePcm16(Uint8List bytes) {
 }
 
 String _windowKey(int startMs, int endMs) => '$startMs:$endMs';
+
+int _engineWindowEndMs(AsrPreviewWindow window) =>
+    window.startMs +
+    (window.samples.length * Duration.millisecondsPerSecond +
+            window.sampleRate -
+            1) ~/
+        window.sampleRate;
 
 int _max(int left, int right) => left > right ? left : right;
 int _min(int left, int right) => left < right ? left : right;

@@ -29,18 +29,33 @@ void main() {
     expect(status.failure?.userAction, FailureUserAction.retry);
     expect(status.failure?.diagnosticContext['errorType'], 'StateError');
   });
+
+  test('bindings 初始化失败后允许显式重试且成功后只初始化一次', () {
+    final bindings = _FakeBindings(failuresRemaining: 1);
+    final initializer = SherpaOnnxRuntimeInitializer(bindings: bindings);
+
+    expect(initializer.initialize().isReady, isFalse);
+    expect(initializer.initialize().isReady, isTrue);
+    expect(initializer.initialize().isReady, isTrue);
+    expect(bindings.initializeCalls, 2);
+  });
 }
 
 final class _FakeBindings implements SherpaOnnxBindings {
-  _FakeBindings({this.error});
+  _FakeBindings({this.error, this.failuresRemaining = 0});
 
   final Object? error;
+  int failuresRemaining;
   int initializeCalls = 0;
 
   @override
   void initialize() {
     initializeCalls++;
-    final failure = error;
+    Object? failure = error;
+    if (failuresRemaining > 0) {
+      failuresRemaining--;
+      failure = StateError('native failed');
+    }
     if (failure != null) {
       throw failure;
     }

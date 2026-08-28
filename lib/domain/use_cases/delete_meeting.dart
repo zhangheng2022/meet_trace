@@ -33,6 +33,10 @@ final class DeleteMeetingUseCase {
       await staged.rollback();
       rethrow;
     }
-    await staged.commit();
+    try {
+      await staged.commit();
+    } on Object {
+      // 数据库删除已提交，暂存目录由启动恢复继续清理。
+    }
   }
 }

@@ -44,6 +44,23 @@ void main() {
     await engine.dispose();
   });
 
+  test('Factory 将设备风险监控传给 Engine', () async {
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(_installed(descriptor));
+    final riskMonitor = _TrackingRiskMonitor();
+    final engine = await _factory(
+      installations,
+      leases,
+      workerFactory: _WorkerFactory(),
+      riskMonitor: riskMonitor,
+    ).create(modelId: descriptor.modelId, modelVersion: descriptor.version);
+
+    await engine.initialize();
+
+    expect(riskMonitor.inspectCalls, 1);
+    await engine.dispose();
+  });
+
   test('拒绝状态或字节数不匹配的安装记录', () async {
     final descriptor = AsrModelRegistry.alpha.defaultModel;
     installations.install(
@@ -129,14 +146,28 @@ SherpaOnnxAsrEngineFactory _factory(
   _MemoryLeases leases, {
   SherpaOnnxWorkerFactory workerFactory =
       const OfficialSherpaOnnxWorkerFactory(),
+  AsrDeviceRiskMonitor riskMonitor = const _SupportedRiskMonitor(),
 }) {
   return SherpaOnnxAsrEngineFactory(
     installations: installations,
     leases: leases,
-    riskMonitor: const _SupportedRiskMonitor(),
+    riskMonitor: riskMonitor,
     ownerId: 'meeting-11',
     workerFactory: workerFactory,
   );
+}
+
+final class _TrackingRiskMonitor implements AsrDeviceRiskMonitor {
+  int inspectCalls = 0;
+
+  @override
+  Stream<AsrDeviceRiskState> get changes => const Stream.empty();
+
+  @override
+  Future<AsrDeviceRiskState> inspect() async {
+    inspectCalls++;
+    return const AsrDeviceRiskState.supported();
+  }
 }
 
 ModelInstallation _installed(AsrModelDescriptor descriptor) {

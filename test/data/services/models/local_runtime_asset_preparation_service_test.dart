@@ -8,6 +8,8 @@ import 'package:meettrace/data/services/models/local_runtime_asset_preparation_s
 import 'package:meettrace/data/services/models/model_download_types.dart';
 import 'package:meettrace/data/services/models/model_manifest_parser.dart';
 import 'package:meettrace/data/services/models/runtime_asset_installers.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
+import 'package:meettrace/domain/models/app_failure.dart';
 import 'package:meettrace/domain/models/asr_model.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/model_manifest.dart';
@@ -23,6 +25,7 @@ void main() {
   late _Network network;
   late _Consents consents;
   late LocalRuntimeAssetPreparationService service;
+  var bindingsStatus = const SherpaOnnxRuntimeStatus.ready();
 
   setUp(() {
     models = _ModelInstaller();
@@ -31,6 +34,7 @@ void main() {
     capacity = _Capacity(minimumRuntimeInitializationFreeBytes);
     network = _Network(DownloadNetworkKind.unmetered);
     consents = _Consents();
+    bindingsStatus = const SherpaOnnxRuntimeStatus.ready();
     final root = Directory.current.path;
     final modelManifest =
         ModelManifestParser(
@@ -60,7 +64,36 @@ void main() {
       capacity: capacity,
       network: network,
       consents: consents,
+      initializeBindings: () => bindingsStatus,
     );
+  });
+
+  test('bindings 失败阻断就绪并在下一次 prepare 重试', () async {
+    models.ready = true;
+    vad.ready = true;
+    speaker.ready = true;
+    bindingsStatus = SherpaOnnxRuntimeStatus.failed(
+      AppFailure(
+        code: 'asr.official.bindings_initialization_failed',
+        stage: FailureStage.asrInitialization,
+        recoverability: FailureRecoverability.retryable,
+        userAction: FailureUserAction.retry,
+      ),
+    );
+
+    await expectLater(
+      service.prepare(onProgress: (_) {}),
+      throwsA(
+        isA<RuntimeInitializationException>().having(
+          (error) => error.code,
+          'code',
+          'asr.official.bindings_initialization_failed',
+        ),
+      ),
+    );
+
+    bindingsStatus = const SherpaOnnxRuntimeStatus.ready();
+    await service.prepare(onProgress: (_) {});
   });
 
   test('本地资源完整时完全离线快速放行且不重新校验哈希', () async {

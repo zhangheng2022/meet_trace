@@ -441,12 +441,22 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
     _adapter.cancel();
     Object? failure;
     StackTrace? failureStack;
+    Future<void> preserveFirstFailure(Future<void>? operation) async {
+      try {
+        await operation;
+      } on Object catch (error, stackTrace) {
+        failure ??= error;
+        failureStack ??= stackTrace;
+      }
+    }
+
+    await preserveFirstFailure(_initializing);
+    await preserveFirstFailure(_operationTail);
     try {
-      await _operationTail;
       await _adapter.dispose();
     } on Object catch (error, stackTrace) {
-      failure = error;
-      failureStack = stackTrace;
+      failure ??= error;
+      failureStack ??= stackTrace;
     }
     try {
       await _riskSubscription?.cancel();
@@ -459,8 +469,8 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
       await _progress.close();
       await _risks.close();
     }
-    if (failure != null) {
-      Error.throwWithStackTrace(failure, failureStack!);
+    if (failure case final preservedFailure?) {
+      Error.throwWithStackTrace(preservedFailure, failureStack!);
     }
   }
 

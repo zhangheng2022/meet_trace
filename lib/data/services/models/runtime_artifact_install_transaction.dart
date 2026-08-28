@@ -193,8 +193,12 @@ final class RuntimeArtifactInstallTransaction {
 
     await onCommitting?.call(verification.verifiedBytes);
     await Directory(p.dirname(finalPath)).create(recursive: true);
-    await deleteDirectoryWithin(path: finalPath, allowedRoot: finalRoot);
-    await Directory(effectiveInstallationPath).rename(finalPath);
+    await _replaceInstallation(
+      installationPath: effectiveInstallationPath,
+      finalPath: finalPath,
+      tempRoot: tempRoot,
+      finalRoot: finalRoot,
+    );
     if (!p.equals(tempPath, effectiveInstallationPath)) {
       await deleteDirectoryWithin(path: tempPath, allowedRoot: tempRoot);
     }
@@ -202,6 +206,56 @@ final class RuntimeArtifactInstallTransaction {
       verifiedBytes: verification.verifiedBytes,
       resumed: resumed,
     );
+  }
+}
+
+Future<void> _replaceInstallation({
+  required String installationPath,
+  required String finalPath,
+  required String tempRoot,
+  required String finalRoot,
+}) async {
+  final normalizedFinalRoot = p.normalize(p.absolute(finalRoot));
+  final normalizedFinalPath = p.normalize(p.absolute(finalPath));
+  if (!p.isWithin(normalizedFinalRoot, normalizedFinalPath)) {
+    throw const RuntimeArtifactInstallException(
+      RuntimeArtifactInstallFailure.invalidPath,
+      '运行资源最终路径越界',
+    );
+  }
+  final relativeFinalPath = p.relative(finalPath, from: finalRoot);
+  final backupPath = p.join(tempRoot, '.rollback', relativeFinalPath);
+  _requireWithinOrEqual(tempRoot, backupPath);
+  final current = Directory(finalPath);
+  final backup = Directory(backupPath);
+
+  if (await backup.exists()) {
+    if (await current.exists()) {
+      await backup.delete(recursive: true);
+    } else {
+      await Directory(p.dirname(finalPath)).create(recursive: true);
+      await backup.rename(finalPath);
+    }
+  }
+
+  if (await current.exists()) {
+    await Directory(p.dirname(backupPath)).create(recursive: true);
+    await current.rename(backupPath);
+  }
+  try {
+    await Directory(installationPath).rename(finalPath);
+  } on Object {
+    if (await backup.exists() && !await current.exists()) {
+      await backup.rename(finalPath);
+    }
+    rethrow;
+  }
+  try {
+    if (await backup.exists()) {
+      await backup.delete(recursive: true);
+    }
+  } on Object {
+    // 新版本已完成原子切换；残留备份由下一次安装或启动临时目录清理收敛。
   }
 }
 

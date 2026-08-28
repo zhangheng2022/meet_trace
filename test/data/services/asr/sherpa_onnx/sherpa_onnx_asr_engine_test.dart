@@ -418,6 +418,23 @@ void main() {
     expect(worker.disposeCalls, 1);
     expect(disposeHookCalls, 1);
   });
+
+  test('初始化尚未返回时 dispose 等待并释放随后创建的 worker', () async {
+    final createGate = Completer<void>();
+    workerFactory.createGate = createGate;
+
+    final initializing = engine.initialize();
+    await Future<void>.delayed(Duration.zero);
+    final disposing = engine.dispose();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(worker.disposeCalls, 0);
+    createGate.complete();
+    await initializing;
+    await disposing;
+
+    expect(worker.disposeCalls, 1);
+  });
 }
 
 final _descriptor = AsrModelDescriptor(

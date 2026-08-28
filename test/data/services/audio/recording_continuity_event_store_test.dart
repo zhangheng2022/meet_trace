@@ -68,4 +68,19 @@ void main() {
 
     expect(await store.read('meeting-2'), [started]);
   });
+
+  test('文件系统读取失败向上传播而不伪装成空事件', () async {
+    final path = layout.meetingContinuityPath('meeting-3');
+    await File(path).parent.create(recursive: true);
+    await File(path).writeAsString('{}');
+    final failingStore = JsonRecordingContinuityEventStore(
+      layout,
+      readFile: (_) => Future.error(const FileSystemException('read failed')),
+    );
+
+    await expectLater(
+      failingStore.read('meeting-3'),
+      throwsA(isA<FileSystemException>()),
+    );
+  });
 }

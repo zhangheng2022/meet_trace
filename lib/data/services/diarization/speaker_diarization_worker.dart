@@ -1,5 +1,10 @@
 import '../../../domain/models/audio_source.dart';
 
+const maximumSpeakerDiarizationFloatBytes = 128 * 1024 * 1024;
+
+bool speakerDiarizationPcmFitsMemory(int pcmBytes) =>
+    pcmBytes > 0 && pcmBytes <= maximumSpeakerDiarizationFloatBytes ~/ 2;
+
 final class SherpaOnnxSpeakerDiarizationConfig {
   SherpaOnnxSpeakerDiarizationConfig({
     required this.segmentationModelPath,
