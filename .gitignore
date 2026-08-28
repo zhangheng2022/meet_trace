@@ -54,3 +54,6 @@ app.*.map.json
 
 /sentry.properties
 /sentry-wizard.exe
+
+# FVM Version Cache
+.fvm/
