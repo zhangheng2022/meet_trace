@@ -4,15 +4,10 @@ import '../models/transcript.dart';
 enum MeetingShareFormat { plainText, markdown }
 
 final class MeetingShareDocument {
-  const MeetingShareDocument({
-    required this.subject,
-    required this.text,
-    required this.fileName,
-  });
+  const MeetingShareDocument({required this.subject, required this.text});
 
   final String subject;
   final String text;
-  final String fileName;
 }
 
 final class BuildMeetingShareUseCase {
@@ -34,13 +29,7 @@ final class BuildMeetingShareUseCase {
       MeetingShareFormat.plainText => _plainText(title, startedAt, snapshot),
       MeetingShareFormat.markdown => _markdown(title, startedAt, snapshot),
     };
-    return MeetingShareDocument(
-      subject: title,
-      text: text,
-      fileName:
-          '${_safeFileName(title)}.'
-          '${format == MeetingShareFormat.markdown ? 'md' : 'txt'}',
-    );
+    return MeetingShareDocument(subject: title, text: text);
   }
 }
 
@@ -93,9 +82,4 @@ String _timestamp(int milliseconds) {
   final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
   final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
   return '$minutes:$seconds';
-}
-
-String _safeFileName(String value) {
-  final sanitized = value.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
-  return sanitized.isEmpty ? '会议记录' : sanitized;
 }

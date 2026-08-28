@@ -5,13 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/audio/recording_ports.dart';
 import 'package:meettrace/domain/models/recording.dart';
 
+import '../../../support/recording_fakes.dart';
+
 void main() {
   test('预览队列满时淘汰最旧待处理块并保留最新音频', () async {
     final firstStarted = Completer<void>();
     final releaseFirst = Completer<void>();
     final receivedOffsets = <int>[];
     final dispatcher = RecordingPreviewDispatcher(
-      CallbackRecordingPreviewSink((chunk) async {
+      TestRecordingPreviewSink((chunk) async {
         receivedOffsets.add(chunk.startByteOffset);
         if (receivedOffsets.length == 1) {
           firstStarted.complete();
@@ -41,7 +43,7 @@ void main() {
     final releaseFirst = Completer<void>();
     final receivedOffsets = <int>[];
     final dispatcher = RecordingPreviewDispatcher(
-      CallbackRecordingPreviewSink((chunk) async {
+      TestRecordingPreviewSink((chunk) async {
         receivedOffsets.add(chunk.startByteOffset);
         firstStarted.complete();
         await releaseFirst.future;

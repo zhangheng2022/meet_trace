@@ -94,8 +94,6 @@ final class RuntimeAssetDependencies {
       speakerEmbeddingModelPath: speakerPaths.embeddingModelPath,
     );
   }
-
-  Future<void> dispose() async {}
 }
 
 /// Manifest 很小且是启动硬依赖。绕过 [CachingAssetBundle] 的字符串缓存，

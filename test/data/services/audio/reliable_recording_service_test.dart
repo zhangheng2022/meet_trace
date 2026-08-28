@@ -15,6 +15,8 @@ import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
 import 'package:meettrace/domain/use_cases/lock_recording_input.dart';
 
+import '../../../support/recording_fakes.dart';
+
 void main() {
   late Directory root;
   late AppFileLayout layout;
@@ -74,7 +76,7 @@ void main() {
 
   test('每个 PCM 块完成文件 flush 后才投递预览', () async {
     final observed = <RecordingPcmChunk>[];
-    final preview = CallbackRecordingPreviewSink((chunk) async {
+    final preview = TestRecordingPreviewSink((chunk) async {
       final file = File(layout.meetingAudioTempPath('meeting-1'));
       expect(await file.length(), chunk.endByteOffset);
       observed.add(chunk);
@@ -122,7 +124,7 @@ void main() {
     late final ReliableRecordingService service;
     service = createService(
       factCommitInterval: defaultRecordingFactCommitInterval,
-      preview: CallbackRecordingPreviewSink((chunk) async {
+      preview: TestRecordingPreviewSink((chunk) async {
         previewChunks.add(chunk);
         if (!persistedAtFirstPreview.isCompleted) {
           persistedAtFirstPreview.complete(service.persistedBytes);
@@ -149,7 +151,7 @@ void main() {
     final firstPreview = Completer<void>();
     var previewCalls = 0;
     final service = createService(
-      preview: CallbackRecordingPreviewSink((_) {
+      preview: TestRecordingPreviewSink((_) {
         previewCalls++;
         return firstPreview.future;
       }),
@@ -177,7 +179,7 @@ void main() {
   test('preview sink 阻塞或抛错都不阻塞后续事实音频写入', () async {
     final firstPreview = Completer<void>();
     var previewCalls = 0;
-    final preview = CallbackRecordingPreviewSink((_) {
+    final preview = TestRecordingPreviewSink((_) {
       previewCalls++;
       if (previewCalls == 1) {
         return firstPreview.future;
@@ -204,7 +206,7 @@ void main() {
   test('暂停和恢复只按已持久化样本累计连续时间轴', () async {
     final chunks = <RecordingPcmChunk>[];
     final service = createService(
-      preview: CallbackRecordingPreviewSink((chunk) async {
+      preview: TestRecordingPreviewSink((chunk) async {
         chunks.add(chunk);
       }),
     );

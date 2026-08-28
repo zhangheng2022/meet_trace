@@ -15,6 +15,7 @@ import '../../../../domain/ports/final_transcription.dart';
 import '../../../../domain/ports/repositories.dart';
 import '../view_models/detail/meeting_detail_view_model.dart';
 import '../views/detail/meeting_detail_view.dart';
+import 'support/preview_meeting_repository.dart';
 
 part 'support/meeting_detail_preview_fixture.dart';
 
@@ -31,7 +32,7 @@ Widget meetingProcessingPreview() {
     home: MeetingDetailView(
       viewModel: MeetingDetailViewModel(
         meeting: meeting,
-        meetings: _PreviewMeetingRepository(meeting),
+        meetings: PreviewMeetingRepository([meeting]),
         transcripts: _PreviewTranscriptRepository(),
         transcription: const _PendingTranscriptionRunner(),
       ),
@@ -50,7 +51,7 @@ Widget _resultPreview() {
     home: MeetingDetailView(
       viewModel: MeetingDetailViewModel(
         meeting: meeting,
-        meetings: _PreviewMeetingRepository(meeting),
+        meetings: PreviewMeetingRepository([meeting]),
         transcripts: _PreviewTranscriptRepository(snapshot),
         transcription: const _UnavailableTranscriptionRunner(),
       ),
