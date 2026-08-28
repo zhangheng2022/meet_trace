@@ -18,6 +18,7 @@ import '../data/services/storage/local_data_control_service.dart';
 import '../data/services/storage/meeting_directory_deletion_service.dart';
 import '../data/services/vad/silero_vad_segmenter.dart';
 import '../domain/models/meeting.dart';
+import '../domain/models/app_theme.dart';
 import '../domain/use_cases/delete_meeting.dart';
 import '../domain/use_cases/initialize_runtime_assets.dart';
 import '../domain/use_cases/manage_recording_session.dart';
@@ -32,6 +33,7 @@ import '../ui/features/meetings/view_models/recording/recording_session_view_mod
 import '../ui/features/meetings/view_models/start/start_meeting_view_model.dart';
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
+import '../ui/features/settings/view_models/theme_settings_view_model.dart';
 import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
 import '../ui/features/updates/view_models/app_update_view_model.dart';
 import 'meettrace_dependencies.dart';
@@ -137,6 +139,15 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         installations: storage.installations,
       ),
       sharing: const SharePlusTextShareService(),
+    );
+  }
+
+  ThemeSettingsViewModel createThemeSettingsViewModel(
+    ValueNotifier<AppThemeMode> themeMode,
+  ) {
+    return ThemeSettingsViewModel(
+      preferences: storage.themePreferences,
+      themeMode: themeMode,
     );
   }
 

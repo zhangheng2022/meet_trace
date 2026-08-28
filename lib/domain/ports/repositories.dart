@@ -1,3 +1,4 @@
+import '../models/app_theme.dart';
 import '../models/meeting.dart';
 import '../models/model_installation.dart';
 import '../models/model_usage_lease.dart';
@@ -91,6 +92,12 @@ abstract interface class DiarizationPreferenceRepository {
   Future<bool> getEnabled();
 
   Future<void> setEnabled(bool enabled);
+}
+
+abstract interface class ThemePreferenceRepository {
+  Future<AppThemeMode> getThemeMode();
+
+  Future<void> setThemeMode(AppThemeMode mode);
 }
 
 abstract interface class ProcessingTaskRepository {

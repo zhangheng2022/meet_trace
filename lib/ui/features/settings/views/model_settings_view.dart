@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
+import '../../../../domain/models/app_theme.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/recording_input.dart';
 import '../../../../theme/theme.dart';
@@ -19,17 +20,20 @@ import '../../../core/app_page_body.dart';
 import '../../../core/app_responsive.dart';
 import '../view_models/data_controls_view_model.dart';
 import '../view_models/model_settings_view_model.dart';
+import '../view_models/theme_settings_view_model.dart';
 
 final class ModelSettingsView extends StatefulWidget {
   const ModelSettingsView({
     required this.viewModel,
     this.dataControls,
+    this.themeSettings,
     this.onBack,
     super.key,
   });
 
   final ModelSettingsViewModel viewModel;
   final DataControlsViewModel? dataControls;
+  final ThemeSettingsViewModel? themeSettings;
   final VoidCallback? onBack;
 
   @override
@@ -74,6 +78,14 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
     final modelLedger = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.themeSettings case final themeSettings?) ...[
+          ListenableBuilder(
+            listenable: themeSettings,
+            builder: (context, _) =>
+                _AppearanceSection(viewModel: themeSettings),
+          ),
+          SizedBox(height: appStyle.spaceXl),
+        ],
         if (viewModel.errorMessage case final message?) ...[
           FAlert(
             variant: FAlertVariant.destructive,
@@ -85,6 +97,7 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
         _MeetingDefaultsSection(
           descriptor: descriptor,
           loading: viewModel.isLoading,
+          topRule: widget.themeSettings != null,
         ),
         if (viewModel.supportsRecordingInputSelection) ...[
           SizedBox(height: appStyle.spaceXl),
@@ -152,20 +165,78 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
   }
 }
 
+final class _AppearanceSection extends StatelessWidget {
+  const _AppearanceSection({required this.viewModel});
+
+  final ThemeSettingsViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final appStyle = context.theme.style.app;
+    return _SettingsSection(
+      key: const ValueKey('appearance-section'),
+      title: '外观',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (viewModel.errorMessage case final message?) ...[
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: const Text('主题设置未保存'),
+              subtitle: Text(message),
+            ),
+            SizedBox(height: appStyle.spaceMd),
+          ],
+          FTileGroup(
+            semanticsLabel: '外观主题',
+            children: [
+              for (final mode in AppThemeMode.values)
+                _PreferenceTile(
+                  key: ValueKey('theme-mode-${mode.name}'),
+                  label: switch (mode) {
+                    AppThemeMode.system => '跟随系统',
+                    AppThemeMode.light => '浅色',
+                    AppThemeMode.dark => '深色',
+                  },
+                  detail: switch (mode) {
+                    AppThemeMode.system => '自动匹配设备外观',
+                    AppThemeMode.light => '始终使用浅色外观',
+                    AppThemeMode.dark => '始终使用深色外观',
+                  },
+                  icon: switch (mode) {
+                    AppThemeMode.system => FLucideIcons.monitor,
+                    AppThemeMode.light => FLucideIcons.sun,
+                    AppThemeMode.dark => FLucideIcons.moon,
+                  },
+                  selected: viewModel.selectedMode == mode,
+                  enabled: !viewModel.isBusy,
+                  onPress: () => unawaited(viewModel.select(mode)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 final class _MeetingDefaultsSection extends StatelessWidget {
   const _MeetingDefaultsSection({
     required this.descriptor,
     required this.loading,
+    this.topRule = false,
   });
 
   final AsrModelDescriptor descriptor;
   final bool loading;
+  final bool topRule;
 
   @override
   Widget build(BuildContext context) {
     return _SettingsSection(
       key: const ValueKey('meeting-defaults-section'),
       title: '会议默认',
+      topRule: topRule,
       child: _SettingsValueRow(
         key: const ValueKey('default-transcription-model'),
         label: '新会议转录模型',
@@ -217,7 +288,7 @@ final class _RecordingInputSection extends StatelessWidget {
             FTileGroup(
               semanticsLabel: 'Windows 录音输入设备',
               children: [
-                _RecordingInputTile(
+                _PreferenceTile(
                   key: const ValueKey('recording-input-system-default'),
                   label: '系统默认麦克风',
                   detail: '由 Windows 在每场会议开始时解析',
@@ -230,18 +301,20 @@ final class _RecordingInputSection extends StatelessWidget {
                       const RecordingInputPreference.systemDefault(),
                     ),
                   ),
+                  icon: FLucideIcons.mic,
                 ),
                 if (missingSelectedDevice)
-                  _RecordingInputTile(
+                  _PreferenceTile(
                     key: const ValueKey('recording-input-unavailable'),
                     label: preference.lastKnownLabel!,
                     detail: '当前不可用，请连接设备或选择其他麦克风',
                     selected: true,
                     enabled: false,
                     onPress: null,
+                    icon: FLucideIcons.mic,
                   ),
                 for (final device in devices)
-                  _RecordingInputTile(
+                  _PreferenceTile(
                     key: ValueKey('recording-input-${device.id}'),
                     label: device.label,
                     detail: 'Windows 输入设备',
@@ -257,6 +330,7 @@ final class _RecordingInputSection extends StatelessWidget {
                         ),
                       ),
                     ),
+                    icon: FLucideIcons.mic,
                   ),
               ],
             ),
@@ -307,10 +381,11 @@ final class _RecordingInputSection extends StatelessWidget {
   }
 }
 
-final class _RecordingInputTile extends StatelessWidget with FTileMixin {
-  const _RecordingInputTile({
+final class _PreferenceTile extends StatelessWidget with FTileMixin {
+  const _PreferenceTile({
     required this.label,
     required this.detail,
+    required this.icon,
     required this.selected,
     required this.enabled,
     required this.onPress,
@@ -319,6 +394,7 @@ final class _RecordingInputTile extends StatelessWidget with FTileMixin {
 
   final String label;
   final String detail;
+  final IconData icon;
   final bool selected;
   final bool enabled;
   final VoidCallback? onPress;
@@ -331,7 +407,7 @@ final class _RecordingInputTile extends StatelessWidget with FTileMixin {
       child: FTile(
         selected: selected,
         semanticsLabel: '$label，$detail',
-        prefix: const Icon(FLucideIcons.mic),
+        prefix: Icon(icon),
         title: Text(label),
         subtitle: Text(detail),
         suffix: selected
