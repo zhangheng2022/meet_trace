@@ -32,7 +32,6 @@ void main() {
     expect(document.text, contains('**会议时间**：2026-07-25 09:30'));
     expect(document.text, contains('00:00–00:01 · 张三'));
     expect(document.text, contains('不包含原始音频'));
-    expect(document.fileName, endsWith('.md'));
   });
 }
 
