@@ -14,19 +14,32 @@ final class SqfliteModelPreferenceRepository
   @override
   Future<String> getDefaultModelId() async {
     final db = await _appDatabase.open();
-    final rows = await db.query(
-      'app_settings',
-      columns: const ['value'],
-      where: 'key = ?',
-      whereArgs: const [_defaultModelKey],
-      limit: 1,
-    );
-    if (rows.isEmpty) {
+    return db.transaction((txn) async {
+      final rows = await txn.query(
+        'app_settings',
+        columns: const ['value'],
+        where: 'key = ?',
+        whereArgs: const [_defaultModelKey],
+        limit: 1,
+      );
+      if (rows.isEmpty) {
+        return registry.defaultModelId;
+      }
+      final modelId = rows.single['value']! as String;
+      if (registry.findById(modelId) != null) {
+        return modelId;
+      }
+      await txn.update(
+        'app_settings',
+        {
+          'value': registry.defaultModelId,
+          'updated_at': DateTime.now().toUtc().millisecondsSinceEpoch,
+        },
+        where: 'key = ?',
+        whereArgs: const [_defaultModelKey],
+      );
       return registry.defaultModelId;
-    }
-    final modelId = rows.single['value']! as String;
-    registry.requireById(modelId);
-    return modelId;
+    });
   }
 
   @override

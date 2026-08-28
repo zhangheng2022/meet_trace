@@ -155,6 +155,16 @@ void main() {
     expect(installations.current?.state, ModelInstallationState.installed);
   });
 
+  test('启动校验拒绝同大小但摘要已变化的模型文件', () async {
+    final installedPath = await _install(service);
+    await File(p.join(installedPath, 'a.bin')).writeAsString('HELLO');
+
+    expect(
+      await service.isReadyFast(descriptor: _descriptor, manifest: _manifest),
+      isFalse,
+    );
+  });
+
   test('暂停下载保留临时文件和 paused 状态且不产生最终目录', () async {
     final cancellation = ModelDownloadCancellationToken();
     downloader.cancelAfterBytes = 2;
@@ -290,6 +300,11 @@ void main() {
 
   test('删除可下载模型只移除版本目录、安装记录和活动指针', () async {
     final installedPath = await _install(service);
+    final rollback = Directory(
+      layout.modelRollbackDirectory(_descriptor.modelId, _descriptor.version),
+    );
+    await rollback.create(recursive: true);
+    await File(p.join(rollback.path, 'old.bin')).writeAsString('old');
     final unrelated = File(p.join(root.path, 'meetings', 'history.json'));
     await unrelated.create(recursive: true);
     await unrelated.writeAsString('keep');
@@ -298,10 +313,34 @@ void main() {
 
     expect(result.deleted, isTrue);
     expect(Directory(installedPath).existsSync(), isFalse);
+    expect(rollback.existsSync(), isFalse);
     expect(installations.current, isNull);
     expect(await installations.getActiveVersion(_descriptor.modelId), isNull);
     expect(unrelated.readAsStringSync(), 'keep');
   });
+
+  for (final state in [
+    ModelInstallationState.paused,
+    ModelInstallationState.failed,
+  ]) {
+    test('$state 状态允许删除残留', () async {
+      installations.current = ModelInstallation(
+        modelId: _descriptor.modelId,
+        version: _descriptor.version,
+        installationType: AsrInstallationType.downloadable,
+        state: state,
+        bytes: 0,
+      );
+      final temp = Directory(
+        layout.modelTempDirectory(_descriptor.modelId, _descriptor.version),
+      );
+      await temp.create(recursive: true);
+
+      expect((await service.delete(descriptor: _descriptor)).deleted, isTrue);
+      expect(temp.existsSync(), isFalse);
+      expect(installations.current, isNull);
+    });
+  }
 
   test('拒绝删除 required-runtime 唯一模型', () async {
     final required = AsrModelDescriptor(

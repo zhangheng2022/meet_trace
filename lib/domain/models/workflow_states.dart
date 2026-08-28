@@ -176,6 +176,7 @@ extension ModelInstallationStateTransition on ModelInstallationState {
       }.contains(next),
       ModelInstallationState.paused => {
         ModelInstallationState.downloading,
+        ModelInstallationState.deleting,
         ModelInstallationState.failed,
       }.contains(next),
       ModelInstallationState.verifying => {
@@ -198,6 +199,7 @@ extension ModelInstallationStateTransition on ModelInstallationState {
       }.contains(next),
       ModelInstallationState.failed => {
         ModelInstallationState.checking,
+        ModelInstallationState.deleting,
         ModelInstallationState.notInstalled,
       }.contains(next),
     };

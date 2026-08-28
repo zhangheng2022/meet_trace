@@ -435,6 +435,28 @@ void main() {
 
     expect(worker.disposeCalls, 1);
   });
+
+  test('初始化失败与 dispose 竞态保留初始化错误且完成释放', () async {
+    final createGate = Completer<void>();
+    workerFactory
+      ..createGate = createGate
+      ..createError = StateError('create failed');
+
+    final initializing = engine.initialize();
+    await Future<void>.delayed(Duration.zero);
+    final disposing = engine.dispose();
+    createGate.complete();
+
+    await expectLater(
+      initializing,
+      throwsA(_failure('asr.official.recognizer_initialization_failed')),
+    );
+    await expectLater(
+      disposing,
+      throwsA(_failure('asr.official.recognizer_initialization_failed')),
+    );
+    expect(worker.disposeCalls, 0);
+  });
 }
 
 final _descriptor = AsrModelDescriptor(
@@ -543,6 +565,7 @@ final class _FakeWorkerFactory implements SherpaOnnxWorkerFactory {
 
   final _FakeWorker worker;
   Completer<void>? createGate;
+  Object? createError;
   int createCalls = 0;
 
   @override
@@ -551,6 +574,9 @@ final class _FakeWorkerFactory implements SherpaOnnxWorkerFactory {
     final gate = createGate;
     if (gate != null) {
       await gate.future;
+    }
+    if (createError case final error?) {
+      throw error;
     }
     return worker;
   }

@@ -286,8 +286,7 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
     }
   }
 
-  /// 启动快速路径：只读取安装记录、活动版本、固定文件集合和字节数。
-  /// 首次安装、显式修复和 Engine 初始化失败时仍执行完整 SHA-256 校验。
+  /// 启动路径同时校验固定文件集合、字节数和 SHA-256。
   @override
   Future<bool> isReadyFast({
     required AsrModelDescriptor descriptor,
@@ -305,20 +304,10 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
             descriptor.version) {
       return false;
     }
-    final root = Directory(installation!.installedPath!);
-    if (!await root.exists()) {
-      return false;
-    }
-    final expected = {for (final file in manifest.files) file.path: file.bytes};
-    final actual = <String, int>{};
-    await for (final entity in root.list(recursive: true, followLinks: false)) {
-      if (entity is File) {
-        actual[p.relative(entity.path, from: root.path).replaceAll(r'\', '/')] =
-            await entity.length();
-      }
-    }
-    return actual.length == expected.length &&
-        expected.entries.every((entry) => actual[entry.key] == entry.value);
+    return (await verifier.verifyDirectory(
+      directoryPath: installation!.installedPath!,
+      manifest: manifest,
+    )).isValid;
   }
 
   Future<DownloadableModelDeleteResult> delete({
@@ -365,9 +354,14 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
       descriptor.modelId,
       descriptor.version,
     );
+    final rollbackPath = fileLayout.modelRollbackDirectory(
+      descriptor.modelId,
+      descriptor.version,
+    );
     if (current == null &&
         !await Directory(finalPath).exists() &&
-        !await Directory(tempPath).exists()) {
+        !await Directory(tempPath).exists() &&
+        !await Directory(rollbackPath).exists()) {
       return const DownloadableModelDeleteResult(deleted: false);
     }
 
@@ -392,6 +386,10 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
       await _deleteDirectoryWithin(
         path: finalPath,
         allowedRoot: fileLayout.modelsRoot,
+      );
+      await _deleteDirectoryWithin(
+        path: rollbackPath,
+        allowedRoot: fileLayout.modelRollbackRoot,
       );
       await installations.deleteAndDeactivate(
         modelId: descriptor.modelId,

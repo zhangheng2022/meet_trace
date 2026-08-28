@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -26,6 +27,7 @@ void main() {
       output: output,
       temporaryDirectory: root.path,
     );
+    addTearDown(service.dispose);
 
     await service.play(audioPath: source.path, startMs: 250, endMs: 750);
 
@@ -42,6 +44,7 @@ void main() {
       output: output,
       temporaryDirectory: root.path,
     );
+    addTearDown(service.dispose);
 
     await expectLater(
       service.play(
@@ -53,11 +56,44 @@ void main() {
     );
     expect(output.playedPaths, isEmpty);
   });
+
+  test('dispose 等待进行中的播放后再释放播放器和临时文件', () async {
+    final source = File('${root.path}/fact.pcm');
+    await source.writeAsBytes(Uint8List(32000));
+    final output = _PlaybackOutput()..playGate = Completer<void>();
+    final service = PcmAudioPlaybackService(
+      output: output,
+      temporaryDirectory: root.path,
+    );
+
+    final playing = service.play(
+      audioPath: source.path,
+      startMs: 0,
+      endMs: 1000,
+    );
+    await output.playStarted.future;
+    final disposing = service.dispose();
+    await Future<void>.delayed(Duration.zero);
+    expect(output.disposeCalls, 0);
+
+    output.playGate!.complete();
+    await playing;
+    await disposing;
+
+    expect(output.disposeCalls, 1);
+    expect(
+      File('${root.path}/meettrace-audio-preview.wav').existsSync(),
+      false,
+    );
+  });
 }
 
 final class _PlaybackOutput implements DeviceAudioOutput {
   final List<String> playedPaths = [];
   final Stream<void> completed = const Stream.empty();
+  final Completer<void> playStarted = Completer<void>();
+  Completer<void>? playGate;
+  int disposeCalls = 0;
 
   @override
   Stream<void> get onCompleted => completed;
@@ -65,11 +101,17 @@ final class _PlaybackOutput implements DeviceAudioOutput {
   @override
   Future<void> playDeviceFile(String path) async {
     playedPaths.add(path);
+    if (!playStarted.isCompleted) {
+      playStarted.complete();
+    }
+    await playGate?.future;
   }
 
   @override
   Future<void> stop() async {}
 
   @override
-  Future<void> dispose() async {}
+  Future<void> dispose() async {
+    disposeCalls++;
+  }
 }

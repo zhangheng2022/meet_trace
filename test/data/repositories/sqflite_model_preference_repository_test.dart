@@ -33,6 +33,21 @@ void main() {
     expect(await repository.getDefaultModelId(), senseVoiceDefaultModelId);
   });
 
+  test('持久化模型 ID 已失效时回退并修复设置', () async {
+    final db = await database.open();
+    await db.insert('app_settings', {
+      'key': 'default_asr_model_id',
+      'value': 'removed-model',
+      'updated_at': 0,
+    });
+
+    expect(await repository.getDefaultModelId(), senseVoiceDefaultModelId);
+    expect(
+      (await db.query('app_settings')).single['value'],
+      senseVoiceDefaultModelId,
+    );
+  });
+
   test('拒绝 Registry 外的模型 ID', () async {
     expect(
       () => repository.setDefaultModelId('unknown-model'),

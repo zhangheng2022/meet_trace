@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart' show Database;
@@ -10,12 +11,19 @@ import 'app_database.dart';
 import 'app_file_layout.dart';
 import 'durable_file_committer.dart';
 
+typedef StartupRecoveryErrorReporter = void Function(
+  String step,
+  Object error,
+  StackTrace stackTrace,
+);
+
 final class RecoveryReport {
   const RecoveryReport({
     required this.recoveredRecordings,
     required this.failedRecordings,
     required this.resetExpiredTasks,
     required this.removedModelTempDirectories,
+    required this.reconciledModelRollbackDirectories,
     required this.removedShareTempDirectories,
     required this.removedStagedMeetingDirectories,
     required this.activatedSnapshots,
@@ -25,6 +33,7 @@ final class RecoveryReport {
   final int failedRecordings;
   final int resetExpiredTasks;
   final int removedModelTempDirectories;
+  final int reconciledModelRollbackDirectories;
   final int removedShareTempDirectories;
   final int removedStagedMeetingDirectories;
   final int activatedSnapshots;
@@ -34,6 +43,7 @@ final class RecoveryReport {
       failedRecordings +
       resetExpiredTasks +
       removedModelTempDirectories +
+      reconciledModelRollbackDirectories +
       removedShareTempDirectories +
       removedStagedMeetingDirectories +
       activatedSnapshots;
@@ -45,36 +55,50 @@ final class StartupRecoveryService {
     required this.layout,
     this.fileCommitter = const DurableFileCommitter(),
     RecordingCheckpointStore? recordingCheckpoints,
+    StartupRecoveryErrorReporter? reportError,
   }) : recordingCheckpoints =
-           recordingCheckpoints ?? JsonRecordingCheckpointStore(layout);
+           recordingCheckpoints ?? JsonRecordingCheckpointStore(layout),
+       reportError = reportError ?? _logRecoveryError;
 
   final AppDatabase database;
   final AppFileLayout layout;
   final DurableFileCommitter fileCommitter;
   final RecordingCheckpointStore recordingCheckpoints;
+  final StartupRecoveryErrorReporter reportError;
 
   Future<RecoveryReport> recover({required DateTime now}) async {
-    final recoveredRecordings = await _bestEffort(
+    final recoveredRecordings = await _attempt(
+      'recoverRecordings',
       () => _recoverRecordings(now),
       (successes: 0, failures: 0),
     );
-    final resetExpiredTasks = await _bestEffort(
+    final resetExpiredTasks = await _attempt(
+      'resetExpiredTasks',
       () => _resetExpiredTasks(now),
       0,
     );
-    final removedModelTempDirectories = await _bestEffort(
+    final removedModelTempDirectories = await _attempt(
+      'removeIncompleteModelDirectories',
       _removeIncompleteModelDirectories,
       0,
     );
-    final removedShareTempDirectories = await _bestEffort(
+    final reconciledModelRollbackDirectories = await _attempt(
+      'reconcileModelRollbackDirectories',
+      _reconcileModelRollbackDirectories,
+      0,
+    );
+    final removedShareTempDirectories = await _attempt(
+      'removeShareTempDirectories',
       _removeShareTempDirectories,
       0,
     );
-    final removedStagedMeetingDirectories = await _bestEffort(
+    final removedStagedMeetingDirectories = await _attempt(
+      'removeStagedMeetingDirectories',
       _removeStagedMeetingDirectories,
       0,
     );
-    final activatedSnapshots = await _bestEffort(
+    final activatedSnapshots = await _attempt(
+      'activateCompletedSnapshots',
       _activateCompletedSnapshots,
       0,
     );
@@ -84,6 +108,7 @@ final class StartupRecoveryService {
       failedRecordings: recoveredRecordings.failures,
       resetExpiredTasks: resetExpiredTasks,
       removedModelTempDirectories: removedModelTempDirectories,
+      reconciledModelRollbackDirectories: reconciledModelRollbackDirectories,
       removedShareTempDirectories: removedShareTempDirectories,
       removedStagedMeetingDirectories: removedStagedMeetingDirectories,
       activatedSnapshots: activatedSnapshots,
@@ -141,7 +166,8 @@ final class StartupRecoveryService {
         );
         successes++;
       } on DurableFileCommitException {
-        await _bestEffort(
+        await _attempt(
+          'markRecordingRecoveryFailed:$meetingId',
           () => _markRecordingRecoveryFailed(
             db,
             meetingId,
@@ -151,7 +177,8 @@ final class StartupRecoveryService {
         );
         failures++;
       } on Object {
-        await _bestEffort(
+        await _attempt(
+          'markRecordingRecoveryFailed:$meetingId',
           () => _markRecordingRecoveryFailed(
             db,
             meetingId,
@@ -249,6 +276,52 @@ final class StartupRecoveryService {
     return removed;
   }
 
+  Future<int> _reconcileModelRollbackDirectories() async {
+    final rollbackRoot = Directory(layout.modelRollbackRoot);
+    if (!await rollbackRoot.exists()) {
+      return 0;
+    }
+    var reconciled = 0;
+    await for (final model in rollbackRoot.list(followLinks: false)) {
+      if (model is! Directory) {
+        continue;
+      }
+      await for (final backup in model.list(followLinks: false)) {
+        if (backup is! Directory) {
+          continue;
+        }
+        try {
+          final finalDirectory = Directory(
+            layout.modelVersionDirectory(
+              p.basename(model.path),
+              p.basename(backup.path),
+            ),
+          );
+          if (await finalDirectory.exists()) {
+            await backup.delete(recursive: true);
+          } else {
+            await finalDirectory.parent.create(recursive: true);
+            await backup.rename(finalDirectory.path);
+          }
+          reconciled++;
+        } on Object catch (error, stackTrace) {
+          reportError(
+            'reconcileModelRollback:${backup.path}',
+            error,
+            stackTrace,
+          );
+        }
+      }
+      if (await model.list(followLinks: false).isEmpty) {
+        await model.delete();
+      }
+    }
+    if (await rollbackRoot.list(followLinks: false).isEmpty) {
+      await rollbackRoot.delete();
+    }
+    return reconciled;
+  }
+
   Future<int> _removeShareTempDirectories() async {
     final meetingsRoot = Directory(layout.meetingsRoot);
     if (!await meetingsRoot.exists()) {
@@ -318,12 +391,19 @@ final class StartupRecoveryService {
           final original = Directory(layout.meetingDirectory(meetingId));
           if (!await original.exists()) {
             await entity.rename(original.path);
+          } else {
+            reportError(
+              'reconcileStagedMeeting:$meetingId',
+              StateError('原目录与暂存删除目录同时存在：${entity.path}'),
+              StackTrace.current,
+            );
           }
           continue;
         }
         await entity.delete(recursive: true);
         removed++;
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        reportError('removeStagedMeeting:${entity.path}', error, stackTrace);
         // 单个残留清理失败不阻断其他会议恢复或应用启动。
       }
     }
@@ -367,12 +447,26 @@ final class StartupRecoveryService {
     }
     return activated;
   }
+
+  Future<T> _attempt<T>(
+    String step,
+    Future<T> Function() operation,
+    T fallback,
+  ) async {
+    try {
+      return await operation();
+    } on Object catch (error, stackTrace) {
+      reportError(step, error, stackTrace);
+      return fallback;
+    }
+  }
 }
 
-Future<T> _bestEffort<T>(Future<T> Function() operation, T fallback) async {
-  try {
-    return await operation();
-  } on Object {
-    return fallback;
-  }
+void _logRecoveryError(String step, Object error, StackTrace stackTrace) {
+  developer.log(
+    '启动恢复步骤失败：$step',
+    name: 'meettrace.recovery',
+    error: error,
+    stackTrace: stackTrace,
+  );
 }

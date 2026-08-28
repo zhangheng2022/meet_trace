@@ -19,6 +19,7 @@ final class AppFileLayout {
   String get meetingsRoot => p.join(rootPath, 'meetings');
   String get modelsRoot => p.join(rootPath, 'models');
   String get modelTempRoot => p.join(modelsRoot, '.tmp');
+  String get modelRollbackRoot => p.join(modelsRoot, '.rollback');
 
   String meetingDirectory(String meetingId) {
     return p.join(meetingsRoot, _safeSegment(meetingId, 'meetingId'));
@@ -75,6 +76,14 @@ final class AppFileLayout {
   String modelVersionDirectory(String modelId, String version) {
     return p.join(
       modelsRoot,
+      _safeSegment(modelId, 'modelId'),
+      _safeSegment(version, 'version'),
+    );
+  }
+
+  String modelRollbackDirectory(String modelId, String version) {
+    return p.join(
+      modelRollbackRoot,
       _safeSegment(modelId, 'modelId'),
       _safeSegment(version, 'version'),
     );

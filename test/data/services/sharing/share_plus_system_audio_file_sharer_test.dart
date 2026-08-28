@@ -81,6 +81,20 @@ void main() {
     );
     expect(cleaner.calls, 1);
   });
+
+  test('系统分享与缓存清理同时失败时保留分享异常', () async {
+    final shareError = StateError('share failed');
+    final sharer = SharePlusSystemAudioFileSharer(
+      client: _ShareClient(error: shareError),
+      cacheCleaner: _CountingCleaner(error: StateError('cleanup failed')),
+      returnGateFactory: () => _ReturnGate(),
+    );
+
+    await expectLater(
+      sharer.share(path: audio.path, fileName: '会议.wav', title: '分享会议录音'),
+      throwsA(same(shareError)),
+    );
+  });
 }
 
 final class _ShareClient implements SharePlusClient {
@@ -99,11 +113,17 @@ final class _ShareClient implements SharePlusClient {
 }
 
 final class _CountingCleaner implements ShareCacheCleaner {
+  _CountingCleaner({this.error});
+
+  final Object? error;
   int calls = 0;
 
   @override
   Future<bool> clear() async {
     calls++;
+    if (error case final error?) {
+      throw error;
+    }
     return true;
   }
 }
