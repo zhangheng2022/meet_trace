@@ -22,6 +22,8 @@ abstract interface class SharePlusClient {
   Future<ShareResult> share(ShareParams params);
 }
 
+typedef ShareTempDirectoryRemover = Future<void> Function(Directory directory);
+
 final class OfficialSharePlusClient implements SharePlusClient {
   const OfficialSharePlusClient();
 
@@ -74,8 +76,8 @@ final class SharePlusSystemAudioFileSharer implements SystemAudioFileSharer {
       if (!cleanupAttempted) {
         try {
           await cacheCleaner.clear();
-        } on Object catch (cleanupError, cleanupStackTrace) {
-          Error.throwWithStackTrace(cleanupError, cleanupStackTrace);
+        } on Object {
+          // 分享错误优先；缓存清理由下次启动继续收敛。
         }
       }
       Error.throwWithStackTrace(error, stackTrace);
@@ -91,12 +93,16 @@ final class PcmWavAudioShareService implements AudioShareService {
     this.freeSpace = const DeviceFreeSpaceService(),
     this.wavWriter = const PcmWavFileWriter(),
     this.systemShare = const SharePlusSystemAudioFileSharer(),
+    this.removeSession = _removeSession,
+    this.removeEmptyShareRoot = _removeEmptyShareRoot,
   });
 
   final AppFileLayout layout;
   final DeviceFreeSpaceService freeSpace;
   final PcmWavFileWriter wavWriter;
   final SystemAudioFileSharer systemShare;
+  final ShareTempDirectoryRemover removeSession;
+  final ShareTempDirectoryRemover removeEmptyShareRoot;
 
   @override
   Future<AudioShareStorageSnapshot> inspect({required String audioPath}) async {
@@ -148,25 +154,46 @@ final class PcmWavAudioShareService implements AudioShareService {
     }
 
     final target = File(normalizedTarget);
+    AudioShareOutcome? outcome;
+    Object? failure;
+    StackTrace? failureStackTrace;
     try {
       await wavWriter.write(sourcePath: audioPath, targetPath: target.path);
-      return await systemShare.share(
+      outcome = await systemShare.share(
         path: target.path,
         fileName: _safeFileName(meetingTitle),
         title: '分享会议录音：$meetingTitle',
       );
-    } on AudioShareException {
-      rethrow;
-    } on ShareCacheCleanupException {
-      throw const AudioShareException('audio_share.cleanup_failed');
-    } on PcmWavWriteException catch (error) {
-      throw AudioShareException('audio_share.${error.code}');
-    } on Object {
-      throw const AudioShareException('audio_share.failed');
+    } on AudioShareException catch (error, stackTrace) {
+      failure = error;
+      failureStackTrace = stackTrace;
+    } on ShareCacheCleanupException catch (_, stackTrace) {
+      failure = const AudioShareException('audio_share.cleanup_failed');
+      failureStackTrace = stackTrace;
+    } on PcmWavWriteException catch (error, stackTrace) {
+      failure = AudioShareException('audio_share.${error.code}');
+      failureStackTrace = stackTrace;
+    } on Object catch (_, stackTrace) {
+      failure = const AudioShareException('audio_share.failed');
+      failureStackTrace = stackTrace;
     } finally {
-      await _removeSession(session);
-      await _removeEmptyShareRoot(shareRoot);
+      try {
+        await removeSession(session);
+      } on Object catch (error, stackTrace) {
+        failure ??= error;
+        failureStackTrace ??= stackTrace;
+      }
+      try {
+        await removeEmptyShareRoot(shareRoot);
+      } on Object catch (error, stackTrace) {
+        failure ??= error;
+        failureStackTrace ??= stackTrace;
+      }
     }
+    if (failure != null) {
+      Error.throwWithStackTrace(failure, failureStackTrace!);
+    }
+    return outcome!;
   }
 }
 

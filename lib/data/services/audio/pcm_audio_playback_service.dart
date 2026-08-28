@@ -45,13 +45,15 @@ final class PcmAudioPlaybackService implements AudioPlaybackService {
     this.wavWriter = const PcmWavFileWriter(),
   }) : temporaryDirectory = p.normalize(p.absolute(temporaryDirectory)) {
     _completionSubscription = output.onCompleted.listen((_) {
-      _states.add(
-        AudioPlaybackState(
-          status: AudioPlaybackStatus.completed,
-          startMs: _startMs,
-          endMs: _endMs,
-        ),
-      );
+      if (!_disposeRequested && !_states.isClosed) {
+        _states.add(
+          AudioPlaybackState(
+            status: AudioPlaybackStatus.completed,
+            startMs: _startMs,
+            endMs: _endMs,
+          ),
+        );
+      }
     });
   }
 
@@ -65,6 +67,8 @@ final class PcmAudioPlaybackService implements AudioPlaybackService {
   int? _startMs;
   int? _endMs;
   bool _disposed = false;
+  bool _disposeRequested = false;
+  Future<void> _operationTail = Future.value();
 
   String get _previewPath =>
       p.join(temporaryDirectory, 'meettrace-audio-preview.wav');
@@ -77,10 +81,22 @@ final class PcmAudioPlaybackService implements AudioPlaybackService {
     required String audioPath,
     required int startMs,
     required int endMs,
-  }) async {
-    if (_disposed || startMs < 0 || endMs <= startMs) {
-      throw const AudioPlaybackException('playback.invalid_range');
+  }) {
+    if (_disposeRequested || startMs < 0 || endMs <= startMs) {
+      return Future.error(
+        const AudioPlaybackException('playback.invalid_range'),
+      );
     }
+    return _enqueue(
+      () => _play(audioPath: audioPath, startMs: startMs, endMs: endMs),
+    );
+  }
+
+  Future<void> _play({
+    required String audioPath,
+    required int startMs,
+    required int endMs,
+  }) async {
     final source = File(audioPath);
     if (!await source.exists()) {
       throw const AudioPlaybackException('playback.audio_missing');
@@ -133,26 +149,47 @@ final class PcmAudioPlaybackService implements AudioPlaybackService {
   }
 
   @override
-  Future<void> stop() async {
-    if (_disposed) {
-      return;
+  Future<void> stop() {
+    if (_disposeRequested) {
+      return _operationTail;
     }
-    await output.stop();
-    _states.add(const AudioPlaybackState(status: AudioPlaybackStatus.idle));
+    return _enqueue(() async {
+      await output.stop();
+      _states.add(const AudioPlaybackState(status: AudioPlaybackStatus.idle));
+    });
   }
 
   @override
-  Future<void> dispose() async {
-    if (_disposed) {
-      return;
+  Future<void> dispose() {
+    if (_disposeRequested) {
+      return _operationTail;
     }
-    _disposed = true;
-    await _completionSubscription.cancel();
-    await output.dispose();
-    final preview = File(_previewPath);
-    if (await preview.exists()) {
-      await preview.delete();
-    }
-    await _states.close();
+    _disposeRequested = true;
+    return _enqueue(() async {
+      if (_disposed) {
+        return;
+      }
+      _disposed = true;
+      await _completionSubscription.cancel();
+      await output.dispose();
+      final preview = File(_previewPath);
+      if (await preview.exists()) {
+        await preview.delete();
+      }
+      await _states.close();
+    });
+  }
+
+  Future<void> _enqueue(Future<void> Function() operation) {
+    final result = Completer<void>();
+    _operationTail = _operationTail.then((_) async {
+      try {
+        await operation();
+        result.complete();
+      } on Object catch (error, stackTrace) {
+        result.completeError(error, stackTrace);
+      }
+    });
+    return result.future;
   }
 }

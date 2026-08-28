@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -9,10 +10,20 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
   HttpModelFileDownloader({
     HttpClient Function()? clientFactory,
     this.requireHttps = true,
-  }) : _clientFactory = clientFactory ?? HttpClient.new;
+    this.responseBodyTimeout = const Duration(seconds: 60),
+  }) : _clientFactory = clientFactory ?? HttpClient.new {
+    if (responseBodyTimeout <= Duration.zero) {
+      throw ArgumentError.value(
+        responseBodyTimeout,
+        'responseBodyTimeout',
+        '必须大于零',
+      );
+    }
+  }
 
   final HttpClient Function() _clientFactory;
   final bool requireHttps;
+  final Duration responseBodyTimeout;
 
   @override
   Future<ModelFileDownloadResult> download({
@@ -80,7 +91,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
           .open(mode: acceptedResume ? FileMode.append : FileMode.write);
       var written = effectiveStart;
       onProgress(written);
-      await for (final chunk in response) {
+      await for (final chunk in response.timeout(responseBodyTimeout)) {
         cancellation.throwIfCanceled();
         await output.writeFrom(chunk);
         written += chunk.length;
@@ -96,6 +107,15 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
       return ModelFileDownloadResult(
         finalBytes: written,
         resumed: acceptedResume,
+      );
+    } on TimeoutException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        DownloadableModelException(
+          code: 'model.download.timeout',
+          message: '模型文件下载超时，请重试',
+          cause: error,
+        ),
+        stackTrace,
       );
     } catch (error, stackTrace) {
       if (cancellation.isCanceled && error is! ModelDownloadCanceledException) {

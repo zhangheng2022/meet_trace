@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import '../../../domain/ports/asr_engine.dart';
 
 const _supportedMemoryBytes = 6 * 1024 * 1024 * 1024;
@@ -17,9 +19,11 @@ final class AndroidProcAsrDeviceRiskMonitor implements AsrDeviceRiskMonitor {
   AndroidProcAsrDeviceRiskMonitor({
     AsrRiskTextReader? readText,
     AsrThermalPathLister? listThermalPaths,
+    String thermalRootPath = '/sys/class/thermal',
     this.pollInterval = const Duration(seconds: 5),
   }) : _readText = readText ?? _readFile,
-       _listThermalPaths = listThermalPaths ?? _thermalPaths {
+       _listThermalPaths =
+           listThermalPaths ?? (() => _thermalPaths(thermalRootPath)) {
     if (pollInterval <= Duration.zero) {
       throw ArgumentError.value(pollInterval, 'pollInterval', '必须大于零');
     }
@@ -130,18 +134,16 @@ AsrMemoryPressure _memoryPressure(int? availableBytes) {
 
 Future<String> _readFile(String path) => File(path).readAsString();
 
-Future<List<String>> _thermalPaths() async {
-  final root = Directory('/sys/class/thermal');
+Future<List<String>> _thermalPaths(String rootPath) async {
+  final root = Directory(rootPath);
   if (!await root.exists()) {
     return const [];
   }
   final paths = <String>[];
   await for (final entity in root.list(followLinks: false)) {
-    if (entity is Directory &&
-        entity.path
-            .split(Platform.pathSeparator)
-            .last
-            .startsWith('thermal_zone')) {
+    if (p.basename(entity.path).startsWith('thermal_zone') &&
+        await FileSystemEntity.type(entity.path, followLinks: true) ==
+            FileSystemEntityType.directory) {
       paths.add('${entity.path}${Platform.pathSeparator}temp');
     }
   }

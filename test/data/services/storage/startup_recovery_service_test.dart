@@ -257,6 +257,93 @@ void main() {
     );
     expect(await meetings.getById(meetingId), isNotNull);
   });
+
+  test('启动时恢复缺失的模型目录并删除已有版本的旧备份', () async {
+    final restoreBackup = Directory(
+      layout.modelRollbackDirectory('model-a', '1'),
+    );
+    await restoreBackup.create(recursive: true);
+    await File('${restoreBackup.path}${Platform.pathSeparator}model.bin')
+        .writeAsString('restore');
+    final staleBackup = Directory(
+      layout.modelRollbackDirectory('model-b', '1'),
+    );
+    await staleBackup.create(recursive: true);
+    await File('${staleBackup.path}${Platform.pathSeparator}model.bin')
+        .writeAsString('old');
+    final installed = Directory(layout.modelVersionDirectory('model-b', '1'));
+    await installed.create(recursive: true);
+    await File('${installed.path}${Platform.pathSeparator}model.bin')
+        .writeAsString('current');
+
+    final report = await recovery.recover(now: DateTime.utc(2026, 7, 24));
+
+    expect(report.reconciledModelRollbackDirectories, 2);
+    expect(
+      await File(
+        '${layout.modelVersionDirectory('model-a', '1')}'
+        '${Platform.pathSeparator}model.bin',
+      ).readAsString(),
+      'restore',
+    );
+    expect(await staleBackup.exists(), isFalse);
+    expect(
+      await File('${installed.path}${Platform.pathSeparator}model.bin')
+          .readAsString(),
+      'current',
+    );
+  });
+
+  test('原目录与删除暂存目录冲突时保留两者并报告', () async {
+    const meetingId = 'meeting-conflict';
+    final now = DateTime.utc(2026, 7, 24, 12);
+    await meetings.save(
+      Meeting(
+        id: meetingId,
+        title: meetingId,
+        createdAt: now,
+        status: MeetingState.created,
+        audioDurationMs: 0,
+        recordingModelId: 'paraformer',
+        recordingModelVersion: '1',
+      ),
+    );
+    final original = Directory(layout.meetingDirectory(meetingId));
+    await original.create(recursive: true);
+    final staged = Directory(
+      '${layout.meetingsRoot}${Platform.pathSeparator}'
+      '.deleting-$meetingId-1',
+    );
+    await staged.create(recursive: true);
+    final errors = <String>[];
+    recovery = StartupRecoveryService(
+      database: database,
+      layout: layout,
+      reportError: (step, _, _) => errors.add(step),
+    );
+
+    await recovery.recover(now: now);
+
+    expect(await original.exists(), isTrue);
+    expect(await staged.exists(), isTrue);
+    expect(errors, contains('reconcileStagedMeeting:$meetingId'));
+  });
+
+  test('系统恢复步骤失败时记录步骤而不是静默归零', () async {
+    final db = await database.open();
+    await db.execute('DROP TABLE processing_tasks');
+    final errors = <String>[];
+    recovery = StartupRecoveryService(
+      database: database,
+      layout: layout,
+      reportError: (step, _, _) => errors.add(step),
+    );
+
+    final report = await recovery.recover(now: DateTime.utc(2026, 7, 24));
+
+    expect(report.resetExpiredTasks, 0);
+    expect(errors, contains('resetExpiredTasks'));
+  });
 }
 
 final class _SelectiveFailingCheckpointStore

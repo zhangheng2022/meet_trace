@@ -166,6 +166,36 @@ void main() {
     );
   });
 
+  test('清理失败不覆盖原始分享错误且仍尝试清理根目录', () async {
+    var rootCleanupCalls = 0;
+    final service = PcmWavAudioShareService(
+      layout: layout,
+      systemShare: _SystemShare(error: StateError('share failed')),
+      freeSpace: DeviceFreeSpaceService(reader: () async => 1),
+      removeSession: (_) async =>
+          throw const AudioShareException('audio_share.cleanup_failed'),
+      removeEmptyShareRoot: (_) async => rootCleanupCalls++,
+    );
+    final preview = await service.inspect(audioPath: source.path);
+
+    await expectLater(
+      service.share(
+        meetingId: 'meeting-1',
+        meetingTitle: '周会',
+        audioPath: source.path,
+        expectedPcmBytes: preview.pcmBytes,
+      ),
+      throwsA(
+        isA<AudioShareException>().having(
+          (error) => error.code,
+          'code',
+          'audio_share.failed',
+        ),
+      ),
+    );
+    expect(rootCleanupCalls, 1);
+  });
+
   test('同一会议并发分享使用独立临时目录且都能完成清理', () async {
     final systemShare = _SystemShare(delay: const Duration(milliseconds: 10));
     final service = _service(

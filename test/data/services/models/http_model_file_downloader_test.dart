@@ -72,4 +72,40 @@ void main() {
       ),
     );
   });
+
+  test('响应体停止传输时超时失败', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final requestHandled = server.first.then((request) async {
+      request.response
+        ..statusCode = HttpStatus.ok
+        ..contentLength = 5
+        ..add('he'.codeUnits);
+      await request.response.flush();
+    });
+
+    await expectLater(
+      HttpModelFileDownloader(
+        requireHttps: false,
+        responseBodyTimeout: const Duration(milliseconds: 20),
+      ).download(
+        source: Uri.parse(
+          'http://${server.address.address}:${server.port}/model.bin',
+        ),
+        destinationPath: p.join(root.path, 'model.bin'),
+        resumeFrom: 0,
+        expectedBytes: 5,
+        cancellation: ModelDownloadCancellationToken(),
+        onProgress: (_) {},
+      ),
+      throwsA(
+        isA<DownloadableModelException>().having(
+          (error) => error.code,
+          'code',
+          'model.download.timeout',
+        ),
+      ),
+    );
+    await requestHandled;
+  });
 }

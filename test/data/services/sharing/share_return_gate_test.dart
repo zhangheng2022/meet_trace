@@ -26,4 +26,14 @@ void main() {
 
     await gate.waitUntilReturned();
   });
+
+  test('生命周期回调丢失时超时放行清理', () async {
+    final gate = FlutterShareReturnGate(
+      waitForLifecycle: true,
+      returnTimeout: const Duration(milliseconds: 10),
+    )..start();
+    addTearDown(gate.dispose);
+
+    await gate.waitUntilReturned();
+  });
 }

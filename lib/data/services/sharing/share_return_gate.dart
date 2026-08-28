@@ -20,9 +20,17 @@ ShareReturnGate createPlatformShareReturnGate() {
 final class FlutterShareReturnGate
     with WidgetsBindingObserver
     implements ShareReturnGate {
-  FlutterShareReturnGate({required this.waitForLifecycle});
+  FlutterShareReturnGate({
+    required this.waitForLifecycle,
+    this.returnTimeout = const Duration(minutes: 2),
+  }) {
+    if (returnTimeout <= Duration.zero) {
+      throw ArgumentError.value(returnTimeout, 'returnTimeout', '必须大于零');
+    }
+  }
 
   final bool waitForLifecycle;
+  final Duration returnTimeout;
   final Completer<void> _returned = Completer<void>();
   bool _leftForeground = false;
   bool _observing = false;
@@ -52,7 +60,7 @@ final class FlutterShareReturnGate
     if (!waitForLifecycle) {
       return Future.value();
     }
-    return _returned.future;
+    return _returned.future.timeout(returnTimeout, onTimeout: () {});
   }
 
   @override

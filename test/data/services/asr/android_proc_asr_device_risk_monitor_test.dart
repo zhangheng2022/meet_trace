@@ -5,6 +5,26 @@ import 'package:meettrace/data/services/asr/android_proc_asr_device_risk_monitor
 import 'package:meettrace/domain/ports/asr_engine.dart';
 
 void main() {
+  test('默认枚举跟随 thermal zone 符号链接', () async {
+    final root = await Directory.systemTemp.createTemp('thermal-root-');
+    addTearDown(() => root.delete(recursive: true));
+    final target = await Directory(
+      '${root.path}${Platform.pathSeparator}actual-zone',
+    ).create();
+    await File('${target.path}${Platform.pathSeparator}temp')
+        .writeAsString('70000');
+    await Link('${root.path}${Platform.pathSeparator}thermal_zone0')
+        .create(target.path);
+    final monitor = AndroidProcAsrDeviceRiskMonitor(
+      thermalRootPath: root.path,
+      readText: (path) async => path == '/proc/meminfo'
+          ? 'MemTotal:        8388608 kB\nMemAvailable:    2097152 kB\n'
+          : File(path).readAsString(),
+    );
+
+    expect((await monitor.inspect()).thermalState, AsrThermalState.serious);
+  }, skip: Platform.isWindows ? 'Windows 测试环境不保证符号链接权限' : false);
+
   test('从 procfs 内存和 thermal zone 生成支持设备快照', () async {
     final monitor = AndroidProcAsrDeviceRiskMonitor(
       readText: (path) async => switch (path) {
