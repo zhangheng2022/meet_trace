@@ -46,7 +46,6 @@ final class MeetTraceDependencies {
       await _disposeAll([
         if (meeting != null) meeting.dispose,
         if (updates != null) updates.dispose,
-        if (runtime != null) runtime.dispose,
         if (storage != null) storage.dispose,
       ], preserveError: true);
       Error.throwWithStackTrace(error, stackTrace);
@@ -57,7 +56,6 @@ final class MeetTraceDependencies {
     await _disposeAll([
       meeting.dispose,
       if (updates != null) updates!.dispose,
-      runtime.dispose,
       storage.dispose,
     ]);
   }

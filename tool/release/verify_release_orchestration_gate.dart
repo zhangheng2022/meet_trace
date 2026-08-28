@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'cli_options.dart';
 import 'release_orchestration_gate.dart';
 
 Future<void> main(List<String> arguments) async {
   try {
-    final options = _parse(arguments);
-    final input = File(_required(options, 'input'));
+    final options = parseCliOptions(arguments);
+    final input = File(requireCliOption(options, 'input'));
     if (!await input.exists()) {
       throw FormatException('发布协调门禁不存在：${input.path}');
     }
@@ -16,28 +17,34 @@ Future<void> main(List<String> arguments) async {
     final receipt = verifyReleaseOrchestrationGate(
       await input.readAsString(),
       ReleaseOrchestrationGateRequest(
-        releaseId: _required(options, 'release-id'),
-        candidateCommitSha: _required(options, 'candidate-sha'),
-        sourceRunId: int.parse(_required(options, 'source-run-id')),
+        releaseId: requireCliOption(options, 'release-id'),
+        candidateCommitSha: requireCliOption(options, 'candidate-sha'),
+        sourceRunId: int.parse(requireCliOption(options, 'source-run-id')),
         orchestrationRunId: int.parse(
-          _required(options, 'orchestration-run-id'),
+          requireCliOption(options, 'orchestration-run-id'),
         ),
-        buildNumber: int.parse(_required(options, 'build-number')),
-        marketingVersion: _required(options, 'marketing-version'),
-        testFlightExternalGroup: _required(
+        buildNumber: int.parse(requireCliOption(options, 'build-number')),
+        marketingVersion: requireCliOption(options, 'marketing-version'),
+        testFlightExternalGroup: requireCliOption(
           options,
           'testflight-external-group',
         ),
-        androidArtifactSha256: _required(options, 'android-artifact-sha256'),
-        windowsArtifactName: _required(options, 'windows-artifact-name'),
-        windowsPackageVersion: _required(options, 'windows-package-version'),
-        windowsFlightId: _required(options, 'windows-flight-id'),
+        androidArtifactSha256: requireCliOption(
+          options,
+          'android-artifact-sha256',
+        ),
+        windowsArtifactName: requireCliOption(options, 'windows-artifact-name'),
+        windowsPackageVersion: requireCliOption(
+          options,
+          'windows-package-version',
+        ),
+        windowsFlightId: requireCliOption(options, 'windows-flight-id'),
         testFlightPublicLink: Uri.parse(
-          _required(options, 'testflight-public-link'),
+          requireCliOption(options, 'testflight-public-link'),
         ),
       ),
     );
-    final output = File(_required(options, 'output'));
+    final output = File(requireCliOption(options, 'output'));
     await output.parent.create(recursive: true);
     await output.writeAsString(
       '${const JsonEncoder.withIndent('  ').convert(receipt)}\n',
@@ -47,29 +54,4 @@ Future<void> main(List<String> arguments) async {
     stderr.writeln('Release orchestration gate verification failed: $error');
     exitCode = 1;
   }
-}
-
-Map<String, String> _parse(List<String> arguments) {
-  final result = <String, String>{};
-  for (var index = 0; index < arguments.length; index += 2) {
-    if (index + 1 >= arguments.length ||
-        !arguments[index].startsWith('--') ||
-        arguments[index + 1].startsWith('--')) {
-      throw const FormatException('参数必须使用 --name value 格式');
-    }
-    final key = arguments[index].substring(2);
-    if (result.containsKey(key)) {
-      throw FormatException('参数重复：--$key');
-    }
-    result[key] = arguments[index + 1];
-  }
-  return result;
-}
-
-String _required(Map<String, String> options, String key) {
-  final value = options[key];
-  if (value == null || value.trim().isEmpty) {
-    throw FormatException('缺少参数：--$key');
-  }
-  return value;
 }

@@ -18,11 +18,11 @@ import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/ports/asr_engine.dart';
 import '../../../../domain/ports/asr_preview_session.dart';
 import '../../../../domain/ports/recording_session.dart';
-import '../../../../domain/ports/repositories.dart';
 import '../../../../domain/use_cases/manage_recording_session.dart';
 import '../../../../domain/use_cases/start_meeting.dart';
 import '../view_models/recording/recording_session_view_model.dart';
 import '../views/recording/recording_session_view.dart';
+import 'support/preview_meeting_repository.dart';
 
 part 'support/recording_preview_fixture.dart';
 
@@ -63,7 +63,7 @@ Widget _recordingPreview(AsrPreviewState state) {
         recording: recording,
         preview: preview,
         sessionLifecycle: ManageRecordingSessionUseCase(
-          meetings: const _PreviewMeetingRepository(),
+          meetings: PreviewMeetingRepository(),
           recording: recording,
           preview: preview,
           now: () => DateTime(2026, 7, 25, 9, 44, 28),
