@@ -1,40 +1,5 @@
 part of '../meeting_detail_previews.dart';
 
-final class _PreviewMeetingRepository implements MeetingRepository {
-  _PreviewMeetingRepository(this.meeting);
-
-  Meeting? meeting;
-
-  @override
-  Future<void> delete(String meetingId) async {
-    if (meeting?.id == meetingId) {
-      meeting = null;
-    }
-  }
-
-  @override
-  Future<Meeting?> getById(String meetingId) async =>
-      meeting?.id == meetingId ? meeting : null;
-
-  @override
-  Future<void> save(Meeting meeting) async {
-    this.meeting = meeting;
-  }
-
-  @override
-  Future<Meeting> updateTitle({
-    required String meetingId,
-    required String title,
-  }) async {
-    final updated = meeting!.rename(title);
-    meeting = updated;
-    return updated;
-  }
-
-  @override
-  Stream<List<Meeting>> watchAll() => Stream.value([?meeting]);
-}
-
 final class _PreviewTranscriptRepository implements TranscriptRepository {
   _PreviewTranscriptRepository([TranscriptSnapshot? snapshot])
     : _snapshot = snapshot;

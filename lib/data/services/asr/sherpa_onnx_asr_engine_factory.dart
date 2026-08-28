@@ -1,10 +1,13 @@
+import 'package:path/path.dart' as p;
+
 import '../../../domain/models/app_failure.dart';
 import '../../../domain/models/asr_model.dart';
 import '../../../domain/models/asr_model_registry.dart';
+import '../../../domain/models/workflow_states.dart';
 import '../../../domain/ports/asr_engine.dart';
 import '../../../domain/ports/repositories.dart';
-import 'sense_voice_asr_engine.dart';
 import 'sherpa_onnx/sherpa_onnx_adapter.dart';
+import 'sherpa_onnx/sherpa_onnx_asr_engine.dart';
 import '../vad/silero_vad_segmenter.dart';
 
 /// 只根据会议已经确认并锁定的模型 ID/版本组装具体 Engine。
@@ -85,7 +88,19 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
       modelId: descriptor.modelId,
       version: descriptor.version,
     );
-    if (installation == null) {
+    final valid =
+        descriptor.modelId == senseVoiceDefaultModelId &&
+        descriptor.installationType == AsrInstallationType.downloadable &&
+        descriptor.language == 'auto' &&
+        descriptor.useInverseTextNormalization &&
+        installation?.modelId == descriptor.modelId &&
+        installation?.version == descriptor.version &&
+        installation?.installationType == descriptor.installationType &&
+        installation?.state == ModelInstallationState.installed &&
+        installation?.verifiedAt != null &&
+        installation?.installedPath?.trim().isNotEmpty == true &&
+        installation?.bytes == descriptor.requiredBytes;
+    if (!valid) {
       throw _failure(
         code: 'asr.senseVoice.model_not_verified',
         modelId: descriptor.modelId,
@@ -93,8 +108,18 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
         action: FailureUserAction.downloadModel,
       );
     }
-    return SenseVoiceAsrEngine(
-      installation: installation,
+    final root = installation!.installedPath!;
+    return SherpaOnnxAsrEngine(
+      descriptor: descriptor,
+      config: SherpaOnnxRecognizerConfig.senseVoice(
+        modelId: descriptor.modelId,
+        modelVersion: descriptor.version,
+        modelPath: p.join(root, 'model.int8.onnx'),
+        tokensPath: p.join(root, 'tokens.txt'),
+        language: descriptor.language,
+        useInverseTextNormalization: descriptor.useInverseTextNormalization,
+      ),
+      errorPrefix: 'asr.senseVoice',
       workerFactory: workerFactory,
       finalVadFactory: vadModelPath == null
           ? null

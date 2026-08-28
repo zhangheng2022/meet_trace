@@ -1,37 +1,5 @@
 part of '../meeting_list_previews.dart';
 
-final class _PreviewMeetingRepository implements MeetingRepository {
-  const _PreviewMeetingRepository(this.meetings);
-
-  final List<Meeting> meetings;
-
-  @override
-  Future<void> delete(String meetingId) async {}
-
-  @override
-  Future<Meeting?> getById(String meetingId) async {
-    for (final meeting in meetings) {
-      if (meeting.id == meetingId) {
-        return meeting;
-      }
-    }
-    return null;
-  }
-
-  @override
-  Future<void> save(Meeting meeting) async {}
-
-  @override
-  Future<Meeting> updateTitle({
-    required String meetingId,
-    required String title,
-  }) async =>
-      meetings.singleWhere((meeting) => meeting.id == meetingId).rename(title);
-
-  @override
-  Stream<List<Meeting>> watchAll() => Stream.value(meetings);
-}
-
 final class _PreviewMeetingReadinessChecker implements MeetingReadinessChecker {
   const _PreviewMeetingReadinessChecker();
 
