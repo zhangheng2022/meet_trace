@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meettrace/data/services/diarization/speaker_diarization_worker.dart';
 
 void main() {
   test('说话人分离不得使用 isolateLocal 进度回调', () async {
@@ -16,6 +17,19 @@ void main() {
         multiLine: true,
       ).hasMatch(source),
       isTrue,
+    );
+  });
+
+  test('整段 PCM 转换超过内存上限时在分配前拒绝', () {
+    expect(
+      speakerDiarizationPcmFitsMemory(maximumSpeakerDiarizationFloatBytes ~/ 2),
+      isTrue,
+    );
+    expect(
+      speakerDiarizationPcmFitsMemory(
+        maximumSpeakerDiarizationFloatBytes ~/ 2 + 2,
+      ),
+      isFalse,
     );
   });
 }

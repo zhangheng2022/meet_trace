@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/models/domain_exception.dart';
@@ -28,6 +30,17 @@ void main() {
     );
 
     expect(files.events, ['stage', 'rollback']);
+  });
+
+  test('数据库已删除后文件清理失败交给启动恢复且删除仍成功', () async {
+    final meetings = _MeetingRepository();
+    final files = _FileDeletionService(failCommit: true);
+    final useCase = DeleteMeetingUseCase(meetings: meetings, files: files);
+
+    await useCase.execute(meetingId: 'meeting-1');
+
+    expect(meetings.deleted, ['meeting-1']);
+    expect(files.events, ['stage', 'commit']);
   });
 
   for (final state in [MeetingState.recording, MeetingState.processing]) {
@@ -91,23 +104,30 @@ final class _MeetingRepository implements MeetingRepository {
 }
 
 final class _FileDeletionService implements MeetingFileDeletionService {
+  _FileDeletionService({this.failCommit = false});
+
+  final bool failCommit;
   final List<String> events = [];
 
   @override
   Future<StagedMeetingDeletion> stage(String meetingId) async {
     events.add('stage');
-    return _StagedDeletion(events);
+    return _StagedDeletion(events, failCommit: failCommit);
   }
 }
 
 final class _StagedDeletion implements StagedMeetingDeletion {
-  _StagedDeletion(this.events);
+  _StagedDeletion(this.events, {required this.failCommit});
 
   final List<String> events;
+  final bool failCommit;
 
   @override
   Future<void> commit() async {
     events.add('commit');
+    if (failCommit) {
+      throw FileSystemException('delete failed');
+    }
   }
 
   @override

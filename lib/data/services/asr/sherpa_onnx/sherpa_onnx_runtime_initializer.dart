@@ -39,7 +39,7 @@ final class SherpaOnnxRuntimeInitializer {
 
   SherpaOnnxRuntimeStatus initialize() {
     final existing = _status;
-    if (existing != null) {
+    if (existing != null && existing.isReady) {
       return existing;
     }
 
@@ -47,7 +47,7 @@ final class SherpaOnnxRuntimeInitializer {
       _bindings.initialize();
       return _status = const SherpaOnnxRuntimeStatus.ready();
     } on Object catch (error) {
-      return _status = SherpaOnnxRuntimeStatus.failed(
+      return SherpaOnnxRuntimeStatus.failed(
         AppFailure(
           code: 'asr.official.bindings_initialization_failed',
           stage: FailureStage.asrInitialization,

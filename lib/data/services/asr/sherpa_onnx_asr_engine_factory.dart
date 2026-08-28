@@ -121,6 +121,7 @@ final class SherpaOnnxAsrEngineFactory implements AsrEngineFactory {
       ),
       errorPrefix: 'asr.senseVoice',
       workerFactory: workerFactory,
+      riskMonitor: riskMonitor,
       finalVadFactory: vadModelPath == null
           ? null
           : () => SileroVadSegmenter.official(modelPath: vadModelPath!),

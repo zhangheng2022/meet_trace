@@ -104,6 +104,13 @@ void main() {
     await shareTemp.create(recursive: true);
     await File('${shareTemp.path}${Platform.pathSeparator}stale.wav')
         .writeAsBytes([1]);
+    final stagedDeletion = Directory(
+      '${layout.meetingsRoot}${Platform.pathSeparator}'
+      '.deleting-old-meeting-1',
+    );
+    await stagedDeletion.create(recursive: true);
+    await File('${stagedDeletion.path}${Platform.pathSeparator}fact.pcm')
+        .writeAsBytes([1]);
 
     final first = await recovery.recover(now: now);
     final second = await recovery.recover(now: now);
@@ -112,6 +119,7 @@ void main() {
     expect(first.resetExpiredTasks, 1);
     expect(first.removedModelTempDirectories, 1);
     expect(first.removedShareTempDirectories, 1);
+    expect(first.removedStagedMeetingDirectories, 1);
     expect(first.activatedSnapshots, 1);
     expect(second.totalChanges, 0);
 
@@ -133,5 +141,141 @@ void main() {
     expect((await tasks.getById('task-1'))!.state, ProcessingState.queued);
     expect(await modelTemp.exists(), false);
     expect(await shareTemp.exists(), false);
+    expect(await stagedDeletion.exists(), false);
   });
+
+  test('单条录音恢复异常不会阻断后续会议恢复或应用启动', () async {
+    final now = DateTime.utc(2026, 7, 24, 9);
+    for (final id in ['meeting-bad', 'meeting-good']) {
+      await meetings.save(
+        Meeting(
+          id: id,
+          title: id,
+          createdAt: now,
+          status: MeetingState.created,
+          audioDurationMs: 0,
+          recordingModelId: 'paraformer',
+          recordingModelVersion: '1',
+        ).startRecording(startedAt: now),
+      );
+      final audio = File(layout.meetingAudioTempPath(id));
+      await audio.parent.create(recursive: true);
+      await audio.writeAsBytes(List<int>.filled(32000, 1));
+    }
+    recovery = StartupRecoveryService(
+      database: database,
+      layout: layout,
+      recordingCheckpoints: _SelectiveFailingCheckpointStore(layout),
+    );
+
+    final report = await recovery.recover(now: now);
+
+    expect(report.failedRecordings, 1);
+    expect(report.recoveredRecordings, 1);
+    expect(
+      (await meetings.getById('meeting-bad'))?.status,
+      MeetingState.failed,
+    );
+    expect(
+      (await meetings.getById('meeting-good'))?.status,
+      MeetingState.processing,
+    );
+  });
+
+  test('标记缺失录音失败时仍继续恢复后续会议', () async {
+    final now = DateTime.utc(2026, 7, 24, 10);
+    for (final id in ['meeting-bad', 'meeting-good']) {
+      await meetings.save(
+        Meeting(
+          id: id,
+          title: id,
+          createdAt: now,
+          status: MeetingState.created,
+          audioDurationMs: 0,
+          recordingModelId: 'paraformer',
+          recordingModelVersion: '1',
+        ).startRecording(startedAt: now),
+      );
+    }
+    final goodAudio = File(layout.meetingAudioTempPath('meeting-good'));
+    await goodAudio.parent.create(recursive: true);
+    await goodAudio.writeAsBytes(List<int>.filled(32000, 1));
+    final db = await database.open();
+    await db.execute('''
+      CREATE TRIGGER reject_bad_recovery_update
+      BEFORE UPDATE ON meetings
+      WHEN OLD.id = 'meeting-bad'
+      BEGIN
+        SELECT RAISE(FAIL, 'forced update failure');
+      END
+    ''');
+
+    final report = await recovery.recover(now: now);
+
+    expect(report.failedRecordings, 1);
+    expect(report.recoveredRecordings, 1);
+    expect(
+      (await meetings.getById('meeting-bad'))?.status,
+      MeetingState.recording,
+    );
+    expect(
+      (await meetings.getById('meeting-good'))?.status,
+      MeetingState.processing,
+    );
+  });
+
+  test('数据库仍有会议时恢复已暂存的删除目录', () async {
+    final now = DateTime.utc(2026, 7, 24, 11);
+    const meetingId = 'meeting-survives-crash';
+    await meetings.save(
+      Meeting(
+        id: meetingId,
+        title: meetingId,
+        createdAt: now,
+        status: MeetingState.created,
+        audioDurationMs: 0,
+        recordingModelId: 'paraformer',
+        recordingModelVersion: '1',
+      ),
+    );
+    final original = Directory(layout.meetingDirectory(meetingId));
+    await original.create(recursive: true);
+    await File('${original.path}${Platform.pathSeparator}fact.pcm')
+        .writeAsBytes([1]);
+    final staged = await original.rename(
+      '${layout.meetingsRoot}${Platform.pathSeparator}'
+      '.deleting-$meetingId-${now.microsecondsSinceEpoch}',
+    );
+
+    final report = await recovery.recover(now: now);
+
+    expect(report.removedStagedMeetingDirectories, 0);
+    expect(await staged.exists(), isFalse);
+    expect(
+      await File('${original.path}${Platform.pathSeparator}fact.pcm').exists(),
+      isTrue,
+    );
+    expect(await meetings.getById(meetingId), isNotNull);
+  });
+}
+
+final class _SelectiveFailingCheckpointStore
+    implements RecordingCheckpointStore {
+  _SelectiveFailingCheckpointStore(this.layout);
+
+  final AppFileLayout layout;
+
+  @override
+  Future<void> delete(String meetingId) async {}
+
+  @override
+  Future<RecordingCheckpoint?> load(String meetingId) async => null;
+
+  @override
+  Future<void> save(RecordingCheckpoint checkpoint) {
+    if (checkpoint.meetingId == 'meeting-bad') {
+      throw FileSystemException('checkpoint failed');
+    }
+    return JsonRecordingCheckpointStore(layout).save(checkpoint);
+  }
 }

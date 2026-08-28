@@ -7,10 +7,14 @@ import '../storage/app_file_layout.dart';
 
 final class JsonRecordingContinuityEventStore
     implements RecordingContinuityEventStore {
-  const JsonRecordingContinuityEventStore(this.layout);
+  const JsonRecordingContinuityEventStore(
+    this.layout, {
+    this.readFile = _readFileAsString,
+  });
 
   static const schemaVersion = 1;
   final AppFileLayout layout;
+  final Future<String> Function(File file) readFile;
 
   @override
   Future<void> append(RecordingContinuityEvent event) async {
@@ -37,8 +41,9 @@ final class JsonRecordingContinuityEventStore
       if (!await file.exists()) {
         continue;
       }
+      final contents = await readFile(file);
       try {
-        final decoded = jsonDecode(await file.readAsString());
+        final decoded = jsonDecode(contents);
         if (decoded is! Map<String, Object?> ||
             decoded['schemaVersion'] != schemaVersion ||
             decoded['meetingId'] != meetingId ||
@@ -52,7 +57,13 @@ final class JsonRecordingContinuityEventStore
         if (events.every((event) => event.meetingId == meetingId)) {
           valid.add(events);
         }
-      } on Object {
+      } on FormatException {
+        // 原子替换保留的另一代完整文件仍可恢复。
+      } on TypeError {
+        // 原子替换保留的另一代完整文件仍可恢复。
+      } on ArgumentError {
+        // 原子替换保留的另一代完整文件仍可恢复。
+      } on StateError {
         // 原子替换保留的另一代完整文件仍可恢复。
       }
     }
@@ -100,3 +111,5 @@ final class JsonRecordingContinuityEventStore
     }
   }
 }
+
+Future<String> _readFileAsString(File file) => file.readAsString();

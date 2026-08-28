@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('官方包版本固定且应用启动执行 bindings 初始化', () async {
+  test('官方包版本固定且运行资源门执行 bindings 初始化', () async {
     final pubspec = await File('pubspec.yaml').readAsString();
-    final main = await File('lib/main.dart').readAsString();
+    final runtimeGate = await File(
+      'lib/data/services/models/local_runtime_asset_preparation_service.dart',
+    ).readAsString();
 
     expect(pubspec, contains('sherpa_onnx: 1.13.6'));
-    expect(main, contains('sherpaOnnxRuntimeInitializer.initialize()'));
+    expect(runtimeGate, contains('initializeBindings()'));
   });
 
   test('仓库不包含自建 sherpa 原生桥接或手工 jniLibs', () async {

@@ -240,12 +240,12 @@ final class ReliableRecordingService
     }
     await _saveCheckpoint(RecordingCheckpointState.recording);
     await foreground.setPaused(false);
+    await capture.resume();
+    _state = RecordingState.recording;
     final subscription = _audioSubscription;
     if (subscription != null && subscription.isPaused) {
       subscription.resume();
     }
-    await capture.resume();
-    _state = RecordingState.recording;
   }
 
   @override
@@ -620,6 +620,7 @@ final class ReliableRecordingService
     }
     _writeDrainActive = true;
     _writeTail = _drainFactChunks();
+    _writeTail.ignore();
   }
 
   Future<void> _drainFactChunks() async {
@@ -641,6 +642,7 @@ final class ReliableRecordingService
       } else if (_pendingFactChunks.isNotEmpty) {
         _writeDrainActive = true;
         _writeTail = _drainFactChunks();
+        _writeTail.ignore();
       }
     }
   }
@@ -654,6 +656,7 @@ final class ReliableRecordingService
         );
         _writeError = error;
         _writeStackTrace = StackTrace.current;
+        _state = RecordingState.failed;
         throw error;
       }
     }

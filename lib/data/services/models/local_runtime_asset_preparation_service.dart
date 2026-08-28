@@ -4,6 +4,7 @@ import '../../../domain/models/runtime_initialization.dart';
 import '../../../domain/ports/runtime_asset_preparation.dart';
 import '../../models/runtime/silero_vad_manifest.dart';
 import '../../models/runtime/speaker_diarization_manifest.dart';
+import '../asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
 import 'downloadable_model_service.dart';
 import 'model_download_types.dart';
 import 'runtime_asset_installers.dart';
@@ -21,6 +22,7 @@ final class LocalRuntimeAssetPreparationService
     required this.capacity,
     required this.network,
     required this.consents,
+    this.initializeBindings = _initializeSherpaOnnxBindings,
   });
 
   final AsrModelRegistry registry;
@@ -33,6 +35,7 @@ final class LocalRuntimeAssetPreparationService
   final ModelStorageCapacityProvider capacity;
   final DownloadNetworkStatusProvider network;
   final RuntimeDownloadConsentRepository consents;
+  final SherpaOnnxRuntimeStatus Function() initializeBindings;
 
   ModelDownloadCancellationToken? _activeCancellation;
 
@@ -67,6 +70,16 @@ final class LocalRuntimeAssetPreparationService
     required void Function(RuntimeInitializationProgress progress) onProgress,
     bool forceRepair = false,
   }) async {
+    final bindings = initializeBindings();
+    if (!bindings.isReady) {
+      throw RuntimeInitializationException(
+        code:
+            bindings.failure?.code ??
+            'asr.official.bindings_initialization_failed',
+        message: '离线语音运行时初始化失败，请重试',
+        cause: bindings.failure,
+      );
+    }
     if (totalBytes > maximumRuntimeDownloadBytes) {
       throw const RuntimeInitializationException(
         code: 'runtime.assets.overLimit',
@@ -223,6 +236,9 @@ final class LocalRuntimeAssetPreparationService
   @override
   void pause() => _activeCancellation?.cancel();
 }
+
+SherpaOnnxRuntimeStatus _initializeSherpaOnnxBindings() =>
+    sherpaOnnxRuntimeInitializer.initialize();
 
 RuntimeInitializationPhase _mapPhase(
   DownloadableModelPhase phase,

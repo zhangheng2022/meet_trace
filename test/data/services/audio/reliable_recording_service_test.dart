@@ -300,6 +300,57 @@ void main() {
     await service.stop();
   });
 
+  test('后台写入失败不会产生未处理异步异常且封存返回稳定失败', () async {
+    final uncaught = <Object>[];
+    final bodyDone = Completer<void>();
+    Object? stopError;
+
+    runZonedGuarded(() async {
+      try {
+        final service = createService();
+        await service.start(meetingId: 'meeting-write-failure');
+        capture.add(Uint8List(1));
+        await _waitFor(() => service.state == RecordingState.failed);
+        await service.stop();
+      } on Object catch (error) {
+        stopError = error;
+      } finally {
+        bodyDone.complete();
+      }
+    }, (error, _) => uncaught.add(error));
+    await bodyDone.future;
+    await Future<void>.delayed(Duration.zero);
+
+    expect(uncaught, isEmpty);
+    expect(
+      stopError,
+      isA<ReliableRecordingException>().having(
+        (error) => error.code,
+        'code',
+        'recording.pcm_alignment_invalid',
+      ),
+    );
+  });
+
+  test('恢复订阅前先进入 recording 以处理暂停期间缓存的流错误', () async {
+    final service = createService(enableInputRecovery: true);
+    await service.start(meetingId: 'meeting-buffered-error');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
+    await service.pause();
+    capture.addError(StateError('buffered microphone error'));
+
+    await service.resume();
+
+    await _waitFor(
+      () =>
+          capture.startInputs.length == 2 &&
+          service.state == RecordingState.recording,
+    );
+    expect(service.state, RecordingState.recording);
+    await service.stop();
+  });
+
   test('落盘和 checkpoint 节流参数非法时拒绝创建录音服务', () {
     expect(
       () => createService(factCommitInterval: const Duration(milliseconds: -1)),
