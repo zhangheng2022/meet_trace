@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../data/services/storage/local_data_generation_gate.dart';
 import '../data/services/sharing/share_plus_cache_cleaner.dart';
 import '../domain/models/meeting.dart';
+import '../domain/models/app_theme.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../ui/core/app_dialog.dart';
 import '../ui/features/meetings/view_models/list/meeting_list_view_model.dart';
@@ -29,10 +30,12 @@ final class MeetTraceBootstrap extends StatefulWidget {
     super.key,
     this.loadDependencies = MeetTraceDependencies.create,
     this.preflight = clearMeetTraceBootstrapCache,
+    this.themeMode,
   });
 
   final MeetTraceDependenciesLoader loadDependencies;
   final MeetTraceBootstrapPreflight preflight;
+  final ValueNotifier<AppThemeMode>? themeMode;
 
   @override
   State<MeetTraceBootstrap> createState() => _MeetTraceBootstrapState();
@@ -51,7 +54,14 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
 
   Future<MeetTraceDependencies> _createDependencies() async {
     await widget.preflight();
-    return widget.loadDependencies();
+    final dependencies = await widget.loadDependencies();
+    try {
+      widget.themeMode?.value = await dependencies.storage.themePreferences
+          .getThemeMode();
+    } on Object {
+      widget.themeMode?.value = AppThemeMode.system;
+    }
+    return dependencies;
   }
 
   Future<MeetTraceDependencies> _beginLoading() {
@@ -98,7 +108,10 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
         final dependencies = snapshot.data;
         assert(dependencies != null, '依赖初始化完成时必须返回依赖实例');
         _dependencies ??= dependencies;
-        return _RuntimeInitializationGate(dependencies: dependencies!);
+        return _RuntimeInitializationGate(
+          dependencies: dependencies!,
+          themeMode: widget.themeMode,
+        );
       },
     );
   }
@@ -111,9 +124,13 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
 }
 
 final class _RuntimeInitializationGate extends StatefulWidget {
-  const _RuntimeInitializationGate({required this.dependencies});
+  const _RuntimeInitializationGate({
+    required this.dependencies,
+    required this.themeMode,
+  });
 
   final MeetTraceDependencies dependencies;
+  final ValueNotifier<AppThemeMode>? themeMode;
 
   @override
   State<_RuntimeInitializationGate> createState() =>
@@ -137,6 +154,7 @@ final class _RuntimeInitializationGateState
         viewModel: _viewModel,
         ready: MeetTraceFlow(
           dependencies: widget.dependencies,
+          themeMode: widget.themeMode,
           onRuntimeRepairRequired: _restartForRepair,
         ),
       );
@@ -160,11 +178,13 @@ final class _RuntimeInitializationGateState
 final class MeetTraceFlow extends StatefulWidget {
   const MeetTraceFlow({
     required this.dependencies,
+    required this.themeMode,
     required this.onRuntimeRepairRequired,
     super.key,
   });
 
   final MeetTraceDependencies dependencies;
+  final ValueNotifier<AppThemeMode>? themeMode;
   final VoidCallback onRuntimeRepairRequired;
 
   @override
@@ -287,6 +307,9 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   void _openSettings() {
     final modelSettings = widget.dependencies.createModelSettingsViewModel();
     final dataControls = widget.dependencies.createDataControlsViewModel();
+    final themeSettings = widget.themeMode == null
+        ? null
+        : widget.dependencies.createThemeSettingsViewModel(widget.themeMode!);
     unawaited(
       Navigator.of(context)
           .push<void>(
@@ -294,6 +317,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
               builder: (_) => ModelSettingsView(
                 viewModel: modelSettings,
                 dataControls: dataControls,
+                themeSettings: themeSettings,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
             ),
@@ -301,6 +325,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
           .whenComplete(() {
             modelSettings.dispose();
             dataControls.dispose();
+            themeSettings?.dispose();
             unawaited(_meetingList.refreshReadiness());
           }),
     );

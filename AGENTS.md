@@ -13,6 +13,7 @@
 - 端侧 ASR 当前仅使用官方 sherpa-onnx `sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17`；其他模型待定，不得以占位项或隐藏入口提前暴露。
 - SenseVoice、Silero VAD、Pyannote 与 3D-Speaker 权重均不得进入 APK、IPA 构建产物或 MSIX；首次初始化时按固定 Manifest 下载并严格校验，完整资源集合未就绪前首页保持阻断。
 - 设置保存全局默认模型，首页开始会议时直接使用且不提供本场覆盖；录音开始后模型锁定，同时负责会中和最终转录，不得自动切换或混合输出。
+- 外观主题默认跟随系统，设置可切换浅色、深色或跟随系统并仅在本机持久化；选择必须即时作用于整个应用，偏好异常回退跟随系统且不得阻断初始化、历史访问、录音或最终处理。
 - 新会议按本地开始时间生成确定性标题。Alpha 不提供 AI 总结或总结网关；文本分享只包含最终转录，音频分享必须使用独立入口、二次确认和临时 WAV，且不得改写事实 PCM。
 - 扩展 P0 前必须先更新 PRD。
 - Android Alpha 只构建 `arm64-v8a` 签名 APK，Windows 只构建 Windows 10 22H2/11 x64 MSIX。维护者只手动启动一次 `Alpha Release` 并提供 `release_id`；发布链只保留 `Alpha Release` 与 `Alpha Release Reconciler` 两个工作流，此后 TestFlight 处理与外测审核、Microsoft Store Package Flight、正式 submission、审核状态轮询、GitHub Pre-release 公开和签名更新指针均由幂等自动化推进，不设 `github-release` 人工审批。Android、iOS、Windows 同一 SHA 的构建、商店审核和平台分发门禁全部通过后才公开原 Draft；Android 签名 APK 只在 Firebase ARM 原样验证一次，iOS 必须已在固定 TestFlight 外测组进入 `Testing`，Windows 必须先取得固定 Flight 的 `Published` 精确包回执，再以同一 MSIX 完成正式 `Published/Public` 精确包回执。Windows 发布门禁不宣称证明 Store 客户端安装、启动、更新或卸载行为，也不依赖专用机或自托管 runner。公开 Draft 后必须从公开地址重新下载 Android APK 并核对摘要，成功后才能前移更新指针。iOS 只通过 TestFlight 分发，GitHub 不上传 IPA；Windows 只通过 Microsoft Store 分发和更新，Store 包不得上传 GitHub Release。SignPath 申请仅作为未来可能替换 Store 的待审核路线，不接入当前发布工作流；启用前必须验证包身份兼容性并更新 PRD，禁止两个 Windows 包身份并存。禁止覆盖 APK/MSIX、移动 tag、删除撤回版本或让自动更新发现未批准候选。

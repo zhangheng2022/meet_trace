@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
+import 'package:meettrace/domain/models/app_theme.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/data_control.dart';
 import 'package:meettrace/domain/models/model_installation.dart';
@@ -12,16 +13,65 @@ import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/local_data_control.dart';
 import 'package:meettrace/domain/ports/recording_input.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/ports/text_share.dart';
 import 'package:meettrace/domain/use_cases/build_meeting_share.dart';
 import 'package:meettrace/ui/core/asr_model_option.dart';
 import 'package:meettrace/ui/features/settings/view_models/data_controls_view_model.dart';
 import 'package:meettrace/ui/features/settings/view_models/model_settings_view_model.dart';
+import 'package:meettrace/ui/features/settings/view_models/theme_settings_view_model.dart';
 import 'package:meettrace/ui/features/settings/views/model_settings_view.dart';
 
 import '../../../../support/model_selection_fakes.dart';
 
 void main() {
+  testWidgets('设置页切换深色主题并保存全局选择', (tester) async {
+    final installations = TestActiveInstallations();
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(installations.installed(descriptor), active: true);
+    final modelViewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
+      installations: installations,
+      actions: const ModelMaintenanceActions(),
+    );
+    final themeMode = ValueNotifier(AppThemeMode.system);
+    final themePreferences = _FakeThemePreferences();
+    final themeViewModel = ThemeSettingsViewModel(
+      preferences: themePreferences,
+      themeMode: themeMode,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        themeMode: themeMode,
+        home: ModelSettingsView(
+          viewModel: modelViewModel,
+          themeSettings: themeViewModel,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('appearance-section')), findsOneWidget);
+    expect(find.text('跟随系统'), findsOneWidget);
+    expect(find.text('浅色'), findsOneWidget);
+    expect(find.text('深色'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('theme-mode-dark')));
+    await tester.pumpAndSettle();
+
+    expect(themeMode.value, AppThemeMode.dark);
+    expect(themePreferences.savedMode, AppThemeMode.dark);
+    expect(
+      tester.widget<FTheme>(find.byType(FTheme)).data.colors.brightness,
+      Brightness.dark,
+    );
+    themeViewModel.dispose();
+    themeMode.dispose();
+    modelViewModel.dispose();
+    await installations.dispose();
+  });
+
   testWidgets('设置页只显示真实 SenseVoice 且没有删除或占位模型', (tester) async {
     final installations = TestActiveInstallations();
     final descriptor = AsrModelRegistry.alpha.defaultModel;
@@ -526,6 +576,18 @@ final class _FakeRecordingInputPreferences
   @override
   Future<void> setPreference(RecordingInputPreference preference) async {
     this.preference = preference;
+  }
+}
+
+final class _FakeThemePreferences implements ThemePreferenceRepository {
+  AppThemeMode? savedMode;
+
+  @override
+  Future<AppThemeMode> getThemeMode() async => AppThemeMode.system;
+
+  @override
+  Future<void> setThemeMode(AppThemeMode mode) async {
+    savedMode = mode;
   }
 }
 
