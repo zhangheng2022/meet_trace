@@ -157,12 +157,6 @@
       "skillPath": "skills/msstore-cli/SKILL.md",
       "computedHash": "abaef9913fe8c0d039ed3a6966d513656882c538cc3088d9c709ad78c00c3c7e"
     },
-    "open-code-review-delegate": {
-      "source": "alibaba/open-code-review",
-      "sourceType": "github",
-      "skillPath": "skills/open-code-review-delegate/SKILL.md",
-      "computedHash": "38b79588cd6530a4e71ad8b7ca323b184ea252b22c179df8fbe13d24d0b533c6"
-    },
     "patrol-setup": {
       "source": "leancodepl/patrol",
       "sourceType": "github",
