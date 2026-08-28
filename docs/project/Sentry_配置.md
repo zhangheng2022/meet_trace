@@ -2,11 +2,11 @@
 
 > 状态：活动
 >
-> 更新日期：2026-08-14；Windows 原生符号与托盘录音期 Gate 待实现
+> 更新日期：2026-08-28；Android/iOS 已接入，Windows Store 候选固定关闭
 
 ## 1. 产品决策
 
-- Release 构建默认启用 Sentry；Debug/Profile 默认关闭，可用编译期参数手动启用。
+- Android/iOS Release 构建默认启用 Sentry；Windows Store 候选固定关闭；Debug/Profile 默认关闭，可用编译期参数手动启用。
 - 不增加首次启动遥测同意。
 - 错误事件 100% 采集；Tracing 20%、Profiling 10%、普通 Session Replay 10%、错误 Replay 100%。
 - 启用默认 PII、日志、指标、截图、View Hierarchy、用户交互、HTTP Breadcrumb/失败请求、原生崩溃、ANR、App Hang、Watchdog、Tombstone、Session、Tracing、Profiling、Replay、Frame 和路由监控。
@@ -19,7 +19,7 @@
 
 | 名称 | 默认值 | 说明 |
 |---|---:|---|
-| `SENTRY_ENABLED` | Release 为 `true`，其他模式为 `false` | 总开关；DSN 为空时强制关闭 |
+| `SENTRY_ENABLED` | Android/iOS Release 为 `true`，其他模式为 `false` | 总开关；Windows Store 工作流显式设为 `false`，DSN 为空时强制关闭 |
 | `SENTRY_DSN` | 当前 MeetTrace Sentry 项目的公开 DSN | 可切换项目；不是上传权限凭据 |
 | `SENTRY_ENVIRONMENT` | Release 为 `production`，其他模式为 `development` | Sentry 环境名 |
 | `SENTRY_RELEASE` | 空，由 SDK 自动识别 | 正式候选显式使用 `com.meettrace.app@<version>+<build>` |
@@ -71,7 +71,7 @@ Auth Token 具备上传权限，严禁写入 `pubspec.yaml`、Dart 源码、构�
 首次验证在 `development` 环境手动触发受控异常，确认：
 
 - Sentry 收到错误、性能、日志、指标和遮罩后的 Replay/截图/View Hierarchy；
-- Release/Dist 与安装包版本一致，Dart 与 Android/iOS/Windows 原生栈可符号化；
+- Release/Dist 与安装包版本一致，Dart 与 Android/iOS 原生栈可符号化；
 - 遮罩画面不显示会议转录、说话人标签或普通图片；
 - 录音期间不产生新 Tracing/Profiling、交互 Breadcrumb、错误截图或 View Hierarchy；
 - Sentry 初始化失败、离线或上传超时时，应用仍启动且事实录音连续写入。

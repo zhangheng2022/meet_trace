@@ -59,7 +59,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - Alpha 不提供登录、账号、跨设备同步、团队协作、日历机器人、自动入会或多人在线编辑。
 - 本地完整音频是唯一事实源，录音写入与 ASR 推理必须独立运行。
 - App 私有目录保存会议录音、转录、模型与派生数据；卸载应用可能永久删除这些数据。
-- 不使用云端 ASR 或 AI 总结，不把事实音频、转录快照或说话人结果作为 Sentry Attachment/自定义 Payload 主动上传，也不在业务服务端保存会议数据；Release 默认启用包含 PII、遮罩画面和交互/请求上下文的 Sentry 诊断。
+- 不使用云端 ASR 或 AI 总结，不把事实音频、转录快照或说话人结果作为 Sentry Attachment/自定义 Payload 主动上传，也不在业务服务端保存会议数据；Android/iOS Release 默认启用包含 PII、遮罩画面和交互/请求上下文的 Sentry 诊断，Windows Store 候选固定关闭。
 - 只有用户主动点击“分享音频”并二次确认后，临时 WAV 副本才进入系统分享面板。
 - 会中转录是可降级、可重建的临时结果，不得冒充最终转录。
 - 说话人分离在普通话 2～4 人会议上提供质量承诺；其他语言可运行但不承诺准确率。
@@ -71,7 +71,7 @@ ASR 实现细节，也不应承担系统静默切换模型带来的结果混淆�
 - SenseVoice 或 Silero VAD 未就绪时保持初始化阻断，只提供继续下载、暂停或修复，不创建会议。
 - 会后重新转录生成独立快照；新快照完整写入并校验成功后，才能替换当前结果。
 - 录音、转录、说话人标签、分享临时文件和模型状态必须支持明确的失败说明与可恢复操作。
-- Alpha 不接入业务分析埋点；Release 默认启用 Sentry 崩溃、性能、日志、指标、遮罩 Replay/截图/View Hierarchy、交互和请求诊断，不增加首次同意。用户主动导出的诊断包不包含音频或完整转录。
+- Alpha 不接入业务分析埋点；Android/iOS Release 默认启用 Sentry 崩溃、性能、日志、指标、遮罩 Replay/截图/View Hierarchy、交互和请求诊断且不增加首次同意，Windows Store 候选固定关闭。用户主动导出的诊断包不包含音频或完整转录。
 - Android Alpha 候选只构建 `arm64-v8a` APK，Windows 只构建 x64 MSIX；Android、iOS 与 Windows 同一提交的构建、自动化和分发门禁通过后才统一公开，禁止重建、覆盖或移动版本标签。
 - iOS Alpha 只经 TestFlight 分发，GitHub 不上传 IPA；外部测试链接可在最终 Pre-release 中提供，尚未就绪时明确标记待提供。
 - Windows 当前固定使用 Microsoft Store 身份与 Store 内置更新；首次发布使用 Private audience 验收，已有公开版本的后续更新使用 Package Flight，GitHub Pre-release 不附带 MSIX。SignPath 申请仅保留为未来可能替换 Store 的待审核方案，未验证包身份兼容性并更新 PRD 前不得接线，两个 Windows 包身份不得并存；三平台只提供单一 Alpha 自动更新频道。

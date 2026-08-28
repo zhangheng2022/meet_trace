@@ -1,7 +1,7 @@
 # 会迹（MeetTrace）Android + iOS + Windows Alpha 产品需求文档（无登录版）
 
 > 版本：V1.5
-> 日期：2026-08-26
+> 日期：2026-08-28
 > 状态：活动；产品范围与验收标准的唯一事实源
 > 技术方案：[端侧 SenseVoice 转录技术方案](../technical/端侧_SenseVoice_转录技术方案.md)
 
@@ -13,7 +13,7 @@
 
 - 本地音频是唯一事实源；ASR 变慢、积压、损坏或失败时录音必须继续。
 - 不提供登录、跨设备同步、云端实时 ASR 或 AI 总结；App 不配置任何总结网关。
-- 音频、转录和说话人结果默认只保存在设备上；只有用户主动执行独立的“分享音频”操作并二次确认后，临时 WAV 副本才进入系统分享面板。Release 默认启用 Sentry 远程诊断，但不得把事实 PCM、WAV、转录快照或说话人结果作为 Attachment 或自定义 Payload 主动上传。
+- 音频、转录和说话人结果默认只保存在设备上；只有用户主动执行独立的“分享音频”操作并二次确认后，临时 WAV 副本才进入系统分享面板。Android/iOS Release 默认启用 Sentry 远程诊断，Windows Microsoft Store 候选固定关闭；任何平台均不得把事实 PCM、WAV、转录快照或说话人结果作为 Attachment 或自定义 Payload 主动上传。
 - 当前 ASR 只支持 SenseVoice；其他模型待定，不承诺等级、发布时间或自动切换。
 - Android、iOS 与 Windows 必须基于同一候选提交完成构建、商店审核、自动化门禁和各平台定义的分发检查后，才允许对外发布该 Alpha；不要求提交目标设备人工验收证据。任一平台的构建、审核、自动化或分发门禁失败均阻断统一发布。
 - Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX。公开前 Android APK 暂存在 GitHub Draft Release；Windows Store MSIX 只进入候选 Actions Artifact，由自动化核对 SHA-256、包身份、版本与架构后，把该确切文件先提交固定 Package Flight。Flight 取得 `Published` 精确包回执后，才把同一 MSIX 提交为 100% 正式 non-flighted submission；正式 submission 取得 `Published/Public` 精确包回执后，才发布同一 Draft 为 GitHub Pre-release。Windows 发布门禁不证明 Store 客户端安装、启动、更新或卸载行为，不依赖专用机或自托管 runner；MSIX 不进入 GitHub Release，不得重建、覆盖资产或移动已有标签。
@@ -141,7 +141,7 @@
 ### FR-004 数据与隐私
 
 - 音频、ASR、转录和说话人结果默认留在设备。
-- Release 默认启用 Sentry 且不增加首次启动同意；Debug/Profile 默认关闭。启用错误、PII、日志、指标、截图、View Hierarchy、交互、HTTP 失败请求、原生崩溃、ANR、App Hang、Watchdog、Tombstone、Tracing、Profiling 和 Session Replay。
+- Android/iOS Release 默认启用 Sentry 且不增加首次启动同意；Windows Microsoft Store 候选固定使用 `SENTRY_ENABLED=false`，不启动 Sentry 远程诊断；Debug/Profile 默认关闭。启用 Sentry 时采集错误、PII、日志、指标、截图、View Hierarchy、交互、HTTP 失败请求、原生崩溃、ANR、App Hang、Watchdog、Tombstone、Tracing、Profiling 和 Session Replay。
 - 错误事件采样率为 100%，Tracing 为 20%，Profiling 为 10%，普通 Replay 为 10%，错误 Replay 为 100%。Replay、错误截图和 View Hierarchy 必须遮罩全部文本、普通图片和 Asset 图片。
 - 录音期间停止新 Tracing/Profiling、交互 Breadcrumb、错误截图和 View Hierarchy；崩溃与 ANR 继续运行。官方 SDK 9.26 无公开 Replay 暂停 API，录音期间 Replay 继续运行但保持全量遮罩，不得为此增加私有原生桥接。
 - Sentry 不得主动附加事实 PCM、WAV、转录快照或说话人结果。用户主动导出的诊断包仍不得包含音频或完整转录文本。
@@ -224,7 +224,7 @@
 | AT-16 | 自适应与无障碍契约 | Widget/integration 测试覆盖关键页面布局、返回语义、字体缩放、键盘焦点和可访问标签 |
 | AT-17 | 文本分享 | 只分享标题、时间和带说话人/时间戳的最终转录，不附带音频 |
 | AT-18 | 音频分享 | 每次二次确认；临时 WAV 可播放且与源 PCM 时长一致，完成/取消/失败后无残留副本 |
-| AT-19 | Sentry 遥测 | Release 默认启用且 Debug/Profile 默认关闭；采样率、PII、遮罩与录音期暂停规则符合 FR-004；SDK 初始化失败不阻断启动或事实录音 |
+| AT-19 | Sentry 遥测 | Android/iOS Release 默认启用、Windows Store 候选固定关闭且 Debug/Profile 默认关闭；启用时采样率、PII、遮罩与录音期暂停规则符合 FR-004；SDK 初始化失败不阻断启动或事实录音 |
 | AT-20 | 会议重命名 | 全部未删除状态均可改为单行 1～60 字符标题；列表、详情及后续分享使用新标题，后台处理不回退标题，事实 PCM、时间、转录和快照不变 |
 | AT-21 | Windows 安装与单实例 | Windows 10 22H2/11 x64 可安装、启动和卸载；签名链、Publisher、包版本和架构正确；重复启动只激活现有实例 |
 | AT-22 | Windows 托盘录音契约 | 自动化覆盖录音中 close 转托盘、停止并退出安全封存和空闲正常退出 |

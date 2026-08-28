@@ -14,25 +14,30 @@ Partner Center 身份固定在 `store_identity.json`：
 
 Store 包版本是独立的传输版本，固定映射为 `1.0.<共享发布构建号>.0`，共享构建号不得超过 `65535`。应用营销版本仍取 `pubspec.yaml` 并在三平台候选清单中保持一致。这样既保留同一发布的共享构建号，又满足 Microsoft Store 对第一段大于 `0`、第四段保留为 `0` 的要求。
 
-这些值必须逐字匹配 Partner Center，不得猜测、缩写或重排。正式工作流使用：
+这些值必须逐字匹配 Partner Center，不得猜测、缩写或重排。以下以首个统一构建号 `2001` 为例；正式工作流从发布标识和候选清单注入这些值：
 
 ```powershell
+$env:MARKETING_VERSION = '1.0.0'
+$env:RELEASE_BUILD_NUMBER = '2001'
+$env:MEETTRACE_MSIX_VERSION = "1.0.$($env:RELEASE_BUILD_NUMBER).0"
+$env:WINDOWS_MSIX_PATH = 'build/windows/msix/meettrace-v1.0.0-alpha.6-windows-store-x64.msix'
+
 flutter build windows --release `
-  --build-name 1.0.0 `
-  --build-number 2 `
+  --build-name $env:MARKETING_VERSION `
+  --build-number $env:RELEASE_BUILD_NUMBER `
   --dart-define SENTRY_ENABLED=false
 
 pwsh tool/windows/package_msix.ps1 `
   -MicrosoftStore `
-  -PackageVersion '1.0.2.0' `
-  -OutputPath 'build/windows/msix/meettrace-v1.0.0-alpha.3-windows-store-x64.msix'
+  -PackageVersion $env:MEETTRACE_MSIX_VERSION `
+  -OutputPath $env:WINDOWS_MSIX_PATH
 
 pwsh tool/benchmarks/inspect_msix.ps1 `
-  -MsixPath 'build/windows/msix/meettrace-v1.0.0-alpha.3-windows-store-x64.msix' `
+  -MsixPath $env:WINDOWS_MSIX_PATH `
   -ExpectedIdentityName 'zhangheng2026.MeetTrace' `
   -ExpectedPublisher 'CN=E5BC0A60-65F7-46C4-9A30-653FFCF9619B' `
   -ExpectedPublisherDisplayName 'zhangheng2026' `
-  -ExpectedVersion '1.0.2.0'
+  -ExpectedVersion $env:MEETTRACE_MSIX_VERSION
 ```
 
 Store 候选由 `Alpha Release` 创建并上传 Actions Artifact。`Alpha Release Reconciler` 核对候选清单和 SHA-256 后，把同一字节提交到固定 Package Flight；Flight 达到 `Published` 且精确包身份匹配后，再提交 100% non-flighted production。候选不得上传 GitHub Release、自签名或引导用户旁加载。正式用户安装和更新只使用 Store 产品 `9PHHSJMWK06G`。
