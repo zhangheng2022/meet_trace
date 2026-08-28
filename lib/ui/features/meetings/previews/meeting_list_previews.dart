@@ -9,11 +9,11 @@ import '../../../../domain/models/asr_model_registry.dart';
 import '../../../../domain/models/meeting.dart';
 import '../../../../domain/models/meeting_readiness.dart';
 import '../../../../domain/models/workflow_states.dart';
-import '../../../../domain/ports/repositories.dart';
 import '../../../../domain/use_cases/check_meeting_readiness.dart';
 import '../../../../domain/use_cases/delete_meeting.dart';
 import '../view_models/list/meeting_list_view_model.dart';
 import '../views/list/meeting_list_view.dart';
+import 'support/preview_meeting_repository.dart';
 
 part 'support/meeting_list_preview_fixture.dart';
 
@@ -21,10 +21,10 @@ part 'support/meeting_list_preview_fixture.dart';
 Widget meetingListCompactPreview() => Application(
   home: MeetingListView(
     viewModel: MeetingListViewModel(
-      meetings: _PreviewMeetingRepository(_previewMeetings),
+      meetings: PreviewMeetingRepository(_previewMeetings),
       readinessChecker: const _PreviewMeetingReadinessChecker(),
       deletion: DeleteMeetingUseCase(
-        meetings: _PreviewMeetingRepository(_previewMeetings),
+        meetings: PreviewMeetingRepository(_previewMeetings),
         files: const _PreviewMeetingFileDeletionService(),
       ),
     ),

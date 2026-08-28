@@ -70,15 +70,6 @@ final class DiscardingRecordingPreviewSink implements RecordingPreviewSink {
   Future<void> add(RecordingPcmChunk chunk) async {}
 }
 
-final class CallbackRecordingPreviewSink implements RecordingPreviewSink {
-  const CallbackRecordingPreviewSink(this.callback);
-
-  final Future<void> Function(RecordingPcmChunk chunk) callback;
-
-  @override
-  Future<void> add(RecordingPcmChunk chunk) => callback(chunk);
-}
-
 final class RecordingPreviewDispatcher {
   RecordingPreviewDispatcher(this._sink, {this.maxPendingChunks = 4}) {
     if (maxPendingChunks < 0) {

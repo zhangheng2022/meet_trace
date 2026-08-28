@@ -1,27 +1,5 @@
 part of '../recording_previews.dart';
 
-final class _PreviewMeetingRepository implements MeetingRepository {
-  const _PreviewMeetingRepository();
-
-  @override
-  Future<void> delete(String meetingId) async {}
-
-  @override
-  Future<Meeting?> getById(String meetingId) async => null;
-
-  @override
-  Future<void> save(Meeting meeting) async {}
-
-  @override
-  Future<Meeting> updateTitle({
-    required String meetingId,
-    required String title,
-  }) async => throw UnsupportedError('not used in recording preview');
-
-  @override
-  Stream<List<Meeting>> watchAll() => const Stream.empty();
-}
-
 final class _PreviewRecordingService implements RecordingSessionService {
   RecordingState _state = RecordingState.idle;
 
