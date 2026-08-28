@@ -1,4 +1,4 @@
-# 会迹（MeetTrace）Android + iOS + Windows Alpha 产品需求文档（无登录版）
+# 会迹（MeetTrace）Alpha PRD（无登录版）
 
 > 版本：V1.5
 > 日期：2026-08-28
@@ -9,8 +9,6 @@
 
 会迹是一款 Android、iOS 与 Windows 自适应的本地会议记录 Alpha。用户无需登录即可录音、查看会中临时转录，并在会议结束后基于完整事实音频生成带时间戳和说话人标签的最终转录。
 
-产品边界：
-
 - 本地音频是唯一事实源；ASR 变慢、积压、损坏或失败时录音必须继续。
 - 不提供登录、跨设备同步、云端实时 ASR 或 AI 总结；App 不配置任何总结网关。
 - 音频、转录和说话人结果默认只保存在设备上；只有用户主动执行独立的“分享音频”操作并二次确认后，临时 WAV 副本才进入系统分享面板。Android/iOS Release 默认启用 Sentry 远程诊断，Windows Microsoft Store 候选固定关闭；任何平台均不得把事实 PCM、WAV、转录快照或说话人结果作为 Attachment 或自定义 Payload 主动上传。
@@ -18,7 +16,6 @@
 - Android、iOS 与 Windows 必须基于同一候选提交完成构建、商店审核、自动化门禁和各平台定义的分发检查后，才允许对外发布该 Alpha；不要求提交目标设备人工验收证据。任一平台的构建、审核、自动化或分发门禁失败均阻断统一发布。
 - Android 候选 APK 只构建 `arm64-v8a`，Windows 候选只构建 x64 MSIX。公开前 Android APK 暂存在 GitHub Draft Release；Windows Store MSIX 只进入候选 Actions Artifact，由自动化核对 SHA-256、包身份、版本与架构后，把该确切文件先提交固定 Package Flight。Flight 取得 `Published` 精确包回执后，才把同一 MSIX 提交为 100% 正式 non-flighted submission；正式 submission 取得 `Published/Public` 精确包回执后，才发布同一 Draft 为 GitHub Pre-release。Windows 发布门禁不证明 Store 客户端安装、启动、更新或卸载行为，不依赖专用机或自托管 runner；MSIX 不进入 GitHub Release，不得重建、覆盖资产或移动已有标签。
 - iOS Alpha 的编译与分发最低版本为 iOS 15；从当前候选起不再支持 iOS 13/14，也不为已安装旧 TestFlight 构建提供专门迁移版。iOS 候选只通过 TestFlight 分发，不在 GitHub Release 上传 IPA。候选必须被自动加入固定外部测试组、提交 Beta App Review，并在审核通过后进入 `Testing`、启用自动通知和稳定 public link；不得伪造链接或绕过 Beta App Review。
-- iOS 15 最低版本通过工程配置、构建产物审计和 TestFlight 分发门禁验证；Alpha 不要求额外的目标设备人工证据。
 - Windows 最低支持 Windows 10 22H2 与 Windows 11，仅支持 x64；8 GB RAM、普通四核 CPU、无独立显卡作为非阻断性能观测基线。低于 8 GB 允许安装和事实录音，但必须明确提示推理性能可能受限。
 - Windows 首版只采集麦克风，不采集或混合系统播放音频；不得以“支持 Windows”暗示可以直接捕获同机线上会议的系统声音。
 - Alpha 仅支持当前公开版本，不承诺任意 Alpha 版本之间的安装升级、本地数据格式、数据库、历史会议、事实录音、转录、模型缓存、录音检查点或设置兼容性，也不支持降级或数据迁移。更新和统一发布链路是已批准候选的安全分发能力，不构成兼容性承诺。
@@ -54,7 +51,7 @@
 
 说话人分离是首次初始化阻断能力，但不是事实音频来源。录音期间不运行分离；会议结束后，最终 ASR 与离线说话人分离并行处理。两条任务结束后只发布一次最终快照；分离失败时写入明确的单一说话人降级结果，不得阻止最终文本落地或损坏事实音频。
 
-当前固定使用官方 `sherpa_onnx 1.13.6`。该版本继承 1.13.5 在 Dart `OfflineSpeakerDiarization.process*` 的 `finally` 块中释放完整波形原生 `Float` 输入缓冲区的修复，因此 1.13.4 的单次 30 分钟音频至少遗留 `115,200,000` B 的已知风险不再适用于当前依赖。重复长会议内存可作为非阻断工程观测，但不要求形成候选设备证据。Debug 与 Release 组合根继续启用官方公开 API 的真实分离服务，所有会议默认开启，不设置会议时长上限；设置中保留全局关闭开关，关闭后后续最终转录不启动分离。仍禁止通过私有包 API、自建 FFI 或原生桥接规避；运行失败、超时或资源不足时继续按单一说话人降级，事实录音和最终文本不得受损。
+固定依赖为官方 `sherpa_onnx 1.13.6`。Debug 与 Release 均使用公开 API；禁止私有包 API、自建 FFI 或原生桥。重复长会议内存只作非阻断观测，运行失败、超时或资源不足时降级为单一说话人，事实录音和最终文本不得受损。
 
 ## 3. P0 范围
 
@@ -62,8 +59,7 @@
 - 可靠事实录音、检查点、封存和崩溃恢复。
 - SenseVoice、Silero VAD、Pyannote 分段模型与 3D-Speaker 嵌入模型的首次初始化下载、续传、校验和修复。
 - 会中临时转录、有界积压和仅录音降级。
-- 完整事实音频的最终转录、离线说话人分离、单次快照原子激活和重试。
-- 自动说话人分离失败时的单一说话人降级，以及最终快照上的手工说话人标签修订。
+- 完整事实音频的最终转录、离线说话人分离、单次快照原子激活、重试、失败降级和标签修订。
 - 创建会议时按本地开始时间生成稳定标题，例如 `2026-08-03 14:30 会议`；用户可在会议列表重命名任意未删除会议。
 - 文本分享与音频分享分开；音频经二次确认后临时封装为 WAV，分享完成后清理临时副本。
 - Android/iOS 后台录音、Windows 托盘持续录音、三平台系统中断、可访问性和安装包审计。
@@ -244,12 +240,12 @@
 
 ## 9. Alpha 完成定义
 
-- 自动化覆盖全部 Manifest、归档解包、下载上限、1 GiB 空间预检、移动网络同意、Windows 自动下载、续传、校验、快速启动、锁定配置、联合快照、分离降级、WAV 分享清理、数据代门全清、Windows 单实例/托盘/设备中断和更新 Manifest 校验。
+- 自动化覆盖资源准备、模型锁定、录音连续性、联合快照、分离降级、分享清理、数据代、Windows 生命周期和更新 Manifest。
 - `flutter analyze`、`flutter test`、Android Debug 构建、Windows x64 Debug/Release 构建及 APK/MSIX 权重审计通过；Android Alpha 使用 `com.meettrace.app` 的正式签名 `arm64-v8a` APK，Windows 使用上述固定 Microsoft Store 身份的 x64 MSIX。
 - AT-01～AT-26 由自动化、构建审计和分发门禁覆盖；不要求目标设备人工验收记录。iOS Alpha 通过 TestFlight 分发。
 - 最终发布核对同一候选提交的三平台成功结果、TestFlight `Testing`、Windows Flight `Published` 与正式 `Published/Public` 精确包回执，以及单次 Android Firebase ARM 安装回执。全部机器合同匹配后，协调器驱动原 Draft Release 发布为 GitHub Pre-release，重新下载公开 APK 验证摘要，再原子更新单一 Alpha 频道；不需要最终人工审批、专用 Windows 验证机或独立公开后审计工作流。Release 不包含 IPA 或 MSIX，TestFlight public link 必须来自固定外测组配置。
 - 未解决的 OCR Critical/High 缺陷为零。
-- 官方 `sherpa_onnx` Dart 完整波形缓冲区风险继续作为非阻断工程观测；可按需要记录重复任务内存、DER、人数误差与 RTF，但不要求形成候选证据，也不阻断自动分离、Alpha 构建或发布。
+- `sherpa_onnx` 重复任务内存、DER、人数误差与 RTF 只作非阻断观测，不要求候选证据。
 - Web、Linux 与 macOS 工程壳不属于 Alpha 支持面，不进入发布结论。Windows 只有在 AT-21～AT-26 和三平台统一发布门禁闭环后才能标记为受支持；在此之前 README 和 Release 必须显示“规划中/未就绪”。
 
 ## 10. 变更规则
