@@ -37,7 +37,7 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 
 ## 技能与实现流程
 
-- 新增功能或重构使用 `flutter-apply-architecture-best-practices`；行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`；交付前使用 `dart-run-static-analysis`；代码审查使用 `$open-code-review` 的 delegate 流程。
+- 新增功能或重构使用 `flutter-apply-architecture-best-practices`；行为变更使用 `flutter-add-widget-test` 或 `dart-add-unit-test`；交付前使用 `dart-run-static-analysis`；代码审查使用 `$open-code-review`。
 - sherpa-onnx 只通过官方 `sherpa_onnx` Flutter/Dart 包接入。禁止自建 JNI、FFI/C API 绑定、C/C++ 构建链或手工 `jniLibs`；ASR 模型仅在 data/service 层通过统一 `AsrEngine` 适配。
 - 官方包缺少目标能力时，先调整依赖版本或模型并更新 PRD，不得以私有原生桥接绕过。
 - 活动文档入口为 `docs/README.md`；旧方案不在 `docs/` 保留副本，历史由 Git 保存。
@@ -66,11 +66,11 @@ Domain 不得反向导入 data；UI 只依赖 domain 的 Port、Use Case 和模�
 
 ## OCR 代码审查
 
-所有 PR 都必须使用 `$open-code-review` 的 delegate 流程完成审查。OCR 只确定审查范围、排除项和适用规则；审查代理负责读取真实变更、补充人工检查、判断缺陷并过滤误报。
+所有 PR 都必须使用 `$open-code-review` Agent Skill 完成审查，由技能直接运行 `ocr review`；不使用 `ocr delegate`。执行 Agent 负责核对审查结果、补审排除文件并过滤误报。
 
-- 明确且全程复用同一审查范围：workspace 使用 `ocr delegate preview`，range 使用 `--from <ref> --to <ref>`，commit 使用 `--commit <ref>`。先运行 preview，再将相同范围参数传给 `ocr delegate rule <path...>`。
+- 明确且全程复用同一审查范围：workspace 不传范围参数，range 使用 `--from <ref> --to <ref>`，commit 使用 `--commit <ref>`。先以相同参数加 `--preview` 预览，再以 `--audience agent` 正式审查。
 - 使用 `--background` 或 `--background-file` 注入 PRD、技术方案和用户影响；涉及录音、模型锁定、联合最终快照、说话人分离、音频分享或数据删除时，必须包含对应产品边界。
-- 以 Git 的完整变更清单为覆盖基线。对 reviewable 文件检查真实 diff 或未跟踪文件全文；对 preview 排除的 Markdown、生成文件和不支持文件人工检查，并逐项记录审查方式或跳过原因。不得用构建产物或依赖噪声掩盖源码改动。
+- 以 Git 的完整变更清单为覆盖基线。OCR 审查全部 reviewable 文件；对 preview 排除的 Markdown、生成文件和不支持文件人工检查，并逐项记录审查方式或跳过原因。不得用构建产物或依赖噪声掩盖源码改动。
 - 审查总结必须覆盖每个变更文件，报告变更总数、OCR 审查数、人工审查数、跳过数及原因，覆盖率必须为 100%。
 - 按 Critical、High、Medium、Low 报告精确路径、行号、触发条件、用户影响和修复建议。始终报告 Critical/High；只保留有实际影响的 Medium 和明确有价值的 Low；疑似误报静默丢弃。无有效发现时也须明确说明。
 - 用户只要求审查时保持只读；要求审查并修复时直接修复 Critical/High、补充测试并以同一范围重新审查。PR 转为 Ready 或合并前必须完成审查；未解决的 Critical/High 阻断交付，保留的 Medium 必须说明风险与后续动作。
