@@ -61,6 +61,15 @@ void main() {
       expect('alibaba/open-code-review@main'.allMatches(source), hasLength(1));
     });
 
+    test('OpenCodeReview 关闭百炼思考模式', () async {
+      final workflow = await _workflow('open-code-review.yml');
+
+      expect(
+        workflow,
+        contains('llm_extra_body: \'{"enable_thinking": false}\''),
+      );
+    });
+
     test('只有 Alpha Release 是人工发布入口', () async {
       final release = await _workflow('alpha-release.yml');
       final reconciler = await _workflow('alpha-release-reconcile.yml');
