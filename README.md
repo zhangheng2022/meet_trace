@@ -14,67 +14,37 @@
   · <a href="docs/README.md">项目文档</a>
 </div>
 
-会迹是一款采用 MIT License、面向个人会议记录的开源 Flutter 应用。它持续保存设备上的事实音频，并使用端侧模型生成会中预览和最终转录；网络或推理异常不能中断录音。
+会迹是一款面向个人会议记录的开源 Flutter 应用。事实音频保存在本机；会中预览、最终转录和说话人标签均可降级或重建，推理与网络异常不得中断录音。
 
 > [!WARNING]
-> **项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。** Android 是当前主要开发基线；iOS 已具备固定 TestFlight 外测组的自动提交、审核轮询与 Testing 门禁；Windows 已具备固定 Microsoft Store 身份和精确 API 回执门禁，但尚未覆盖 Store 客户端安装、卸载与更新闭环，因此仍为“规划中/未就绪”。说话人分离失败时会降级为单一说话人结果，不影响事实录音和最终文本。
+> 项目仍处于 Alpha 阶段，不适合不可恢复的重要录音。Windows 虽已进入 Microsoft Store，仍缺 AT-21～AT-26 的完整客户端生命周期闭环，因此标记为“规划中/未就绪”。
 
-## 下载与安装
+## 下载与边界
 
-| 平台 | 下载入口 | 系统要求 |
-|---|---|---|
-| Android | [下载 v1.0.0-alpha.10 APK](https://github.com/zhangheng2022/meet_trace/releases/download/v1.0.0-alpha.10/meettrace-v1.0.0-alpha.10-android-arm64.apk) | Android 7.0+，仅 `arm64-v8a`；安装时需允许当前来源安装未知应用 |
-| iOS | [加入 TestFlight 测试](https://testflight.apple.com/join/awDT2K6Q) | iOS 15.0+；仅通过 TestFlight 分发 |
-| Windows | [前往 Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) | Windows 10 22H2/11，仅 x64；当前仍为规划中/未就绪 |
+| 平台 | 入口 | 要求与状态 |
+| --- | --- | --- |
+| Android | [APK](https://github.com/zhangheng2022/meet_trace/releases/download/v1.0.0-alpha.10/meettrace-v1.0.0-alpha.10-android-arm64.apk) | Android 7.0+，仅 `arm64-v8a` |
+| iOS | [TestFlight](https://testflight.apple.com/join/awDT2K6Q) | iOS 15.0+ |
+| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) | Windows 10 22H2/11 x64；规划中/未就绪 |
 
-首次启动约下载 286.3 MB 运行资源，并要求应用所在卷至少有 1 GiB 可用空间。应用不提供登录或云同步；卸载会删除本机数据，Alpha 升级也可能清除旧数据并重新下载模型。历史版本与完整变更见 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
+首次启动约下载 286.3 MB 运行资源，并要求应用所在卷至少有 1 GiB 可用空间。Alpha 仅支持当前公开版本；升级或卸载可能清除本机会议、录音、模型和设置。
 
-Windows 当前由 Microsoft Store 完成签名和分发；[Code signing policy](CODE_SIGNING_POLICY.md) 仅保留给尚未接入的未来 SignPath 路线。各平台的数据与网络边界见[隐私政策](PRIVACY.md)。
+- 不提供登录、跨设备同步、云端 ASR、AI 总结或会中切换模型。
+- 文本分享只使用最终转录；音频分享需独立入口和二次确认，临时 WAV 不改写事实 PCM。
+- Android/iOS Release 默认启用 Sentry；Windows Store 候选固定关闭。完整披露见[隐私政策](PRIVACY.md)。
+- 当前 Windows 由 Microsoft Store 签名和分发；[Code signing policy](CODE_SIGNING_POLICY.md) 仅用于未接入的 SignPath 申请路线。
 
-## 核心能力
+产品范围和验收只以 [Alpha PRD](docs/product/Alpha_PRD_无登录版.md) 为准。
 
-- 可靠的本地会议录音、检查点与异常恢复，音频写入和推理解耦。
-- SenseVoice 端侧会中预览与完整音频最终转录，使用 Silero VAD 控制预览任务。
-- Pyannote + 3D-Speaker 离线说话人分离；失败时发布可用的单一说话人结果。
-- 最终结果播放、重试、说话人标签修订，以及相互独立的文本和音频分享。
-- 首次初始化下载、断点续传、严格哈希校验和资源修复。
+## 开发
 
-登录、跨设备同步、云端 ASR、AI 总结、日历机器人和会议中切换模型不在当前 Alpha 范围。完整范围以 [Alpha PRD](docs/product/Alpha_PRD_无登录版.md) 为准。
-
-## 隐私与数据边界
-
-- 音频、转录、模型和派生数据默认保存在应用私有目录。
-- 只有用户主动分享文本或二次确认分享音频时，数据才进入系统分享面板。
-- 音频分享从事实 PCM 生成临时 WAV，完成、取消或失败后清理，不改写源录音。
-- Android/iOS Release 默认启用 Sentry 远程诊断，Windows Store 候选固定关闭；任何平台均不主动附加事实音频、WAV、转录快照或说话人结果。
-- 删除会议会级联删除该会议的音频、转录、标签和处理记录。
-
-完整披露、平台差异和联系入口见[隐私政策](PRIVACY.md)。
-
-## 平台状态
-
-| 平台 | 最低目标 | 状态 |
-|---|---:|---|
-| Android | API 24 / Android 7.0 | 当前开发与验证基线 |
-| iOS | iOS 15.0 | 构建与 TestFlight 最低基线 |
-| Windows | Windows 10 22H2、x64 | 规划中/未就绪；Store 已公开，AT-21/AT-25 安装、卸载与更新纵向自动化仍待闭环 |
-| 其他平台 | — | Web、Linux 与 macOS 不属于 Alpha 支持范围 |
-
-## 技术概览
-
-项目遵循 `View → ViewModel → Use Case / Port → Repository / Service`。Domain 保持纯 Dart，UI 不直接访问 SQLite、HTTP、录音插件或 ONNX；ASR 仅通过官方 `sherpa_onnx` Flutter/Dart 包接入。
-
-运行时固定使用 SenseVoice INT8、Silero VAD、Pyannote INT8 和 3D-Speaker。模型权重不进入 APK、IPA 构建产物或 MSIX，而是在首次初始化时按固定 Manifest 下载并校验。详细设计见[技术方案](docs/technical/端侧_SenseVoice_转录技术方案.md)，自动化与发布门槛见[质量与验收](docs/quality/README.md)。
-
-## 开始开发
-
-环境要求：Flutter stable、Dart 3.12+；Android 使用 JDK 17，iOS 需要 macOS、Xcode 和 CocoaPods。
+环境：Flutter stable、Dart 3.12+；Android 使用 JDK 17，iOS 需要 macOS、Xcode 和 CocoaPods。
 
 ```bash
 git clone https://github.com/zhangheng2022/meet_trace.git
 cd meet_trace
 flutter pub get
-flutter run -d <device-id>
+flutter run -d '<device-id>'
 ```
 
 提交前至少运行：
@@ -85,33 +55,18 @@ flutter analyze
 flutter test
 ```
 
-调试构建命令：
+项目采用 `View → ViewModel → Use Case / Port → Repository / Service`；Domain 为纯 Dart，UI 不直连存储、网络、录音插件或 ONNX。ASR 仅通过官方 `sherpa_onnx` 包接入，模型权重不进入 APK、IPA 或 MSIX。
 
-```bash
-flutter build apk --debug
-flutter build ios --debug --no-codesign
-```
+## 文档
 
-PRD V1.2 的目标候选必须从统一 `Alpha Release` 入口生成：
-
-- Android、iOS 与 Windows 必须来自同一 SHA，三平台构建、自动化和分发门禁全部通过后才能公开。
-- GitHub Release 只发布 Android APK 和候选 Manifest；iOS 不上传 IPA，Windows Store MSIX 只进入 Actions Artifact 和 Partner Center。
-- 正式工作流会自动提交固定 Store Flight、轮询 Partner Center、完成 Flight/production 两阶段精确包回执验证，并在 TestFlight 与 Store 全部通过后自动公开 GitHub Pre-release 和签名更新指针；正常路径没有最终人工审批。
-- Windows 只有在 AT-21～AT-26 全部闭环后才能标记为受支持；当前 AT-21/AT-25 的 Store 安装、卸载和更新纵向自动化仍待完成，因此必须保持“规划中/未就绪”。
-
-维护者操作见 [GitHub Alpha 版本发布流程](docs/project/GitHub_版本发布流程.md)。
-
-## 参与贡献
-
-开始修改前请阅读：
-
-- [项目文档中心](docs/README.md)：活动文档、权威关系和阅读路径。
-- [Alpha PRD](docs/product/Alpha_PRD_无登录版.md)：产品范围与验收标准。
-- [交互与视觉规范](DESIGN.md)：Forui、主题和三平台自适应 UI 规则。
-- [仓库协作指南](AGENTS.md)：架构、测试、审查和安全约束。
-
-产品范围或 P0 验收变化必须先更新 PRD。不要提交录音、模型权重、密钥、`build/` 或 `coverage/`。当前质量状态和剩余门槛见[质量与验收](docs/quality/README.md)。
+- [文档入口](docs/README.md)
+- [Alpha PRD](docs/product/Alpha_PRD_无登录版.md)
+- [设计系统](DESIGN.md)
+- [技术方案](docs/technical/端侧_SenseVoice_转录技术方案.md)
+- [质量与验收](docs/quality/README.md)
+- [发布 Runbook](docs/project/GitHub_版本发布流程.md)
+- [仓库协作指南](AGENTS.md)
 
 ## 许可证
 
-项目代码基于 [MIT License](LICENSE) 开源。第三方依赖与模型适用各自许可证，来源、固定哈希和许可文本见 [assets/licenses](assets/licenses/)。
+代码采用 [MIT License](LICENSE)。第三方依赖与模型遵循各自许可证，固定来源与许可文本见 [assets/licenses](assets/licenses/)。
