@@ -45,7 +45,7 @@ Domain 不导入 data；UI 只依赖 domain，不直连 ONNX、存储或 HTTP。
 
 ## OCR 代码审查
 
-所有 PR 使用 `$open-code-review` Agent Skill 直接运行 `ocr review`；不使用 `ocr delegate`。执行 Agent 核对结果、补审排除文件并过滤误报。
+所有 PR 使用 `$open-code-review`。执行 Agent 核对结果、补审排除文件并过滤误报。
 
 - 全程复用 workspace（无范围参数）、range（`--from <ref> --to <ref>`）或 commit（`--commit <ref>`）范围；先加 `--preview`，再以 `--audience agent` 正式审查，并用 `--background` 或 `--background-file` 注入需求、方案和用户影响。涉及录音、模型锁定、最终快照、说话人分离、音频分享或数据删除时必须包含对应产品边界。
 - 以 Git 完整变更清单为基线：OCR 覆盖全部 reviewable 文件，人工补审 Markdown、生成文件和不支持文件。总结报告变更总数、OCR/人工审查数、跳过数和原因，覆盖率必须为 100%。
