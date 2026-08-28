@@ -28,4 +28,3 @@ jobs:
           llm_model: ${{ vars.OCR_LLM_MODEL }}
           llm_use_anthropic: ${{ vars.OCR_LLM_USE_ANTHROPIC }}
           language: Chinese
-          ocr_version: 1.9.10
