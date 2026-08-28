@@ -18,7 +18,7 @@ String _job(String workflow, String job, [String? nextJob]) {
 
 void main() {
   group('GitHub Actions 结构守卫', () {
-    test('仓库只保留六个职责明确的工作流', () async {
+    test('仓库只保留七个职责明确的工作流', () async {
       final names = await Directory('.github/workflows')
           .list()
           .where((entry) => entry is File && entry.path.endsWith('.yml'))
@@ -31,11 +31,12 @@ void main() {
         'alpha-release.yml',
         'codeql.yml',
         'firebase-test-lab.yml',
+        'open-code-review.yml',
         'quality.yml',
       });
     });
 
-    test('所有第三方 Action 固定完整提交 SHA', () async {
+    test('除 OpenCodeReview 外的第三方 Action 固定完整提交 SHA', () async {
       final files = await Directory('.github/workflows')
           .list()
           .where((entry) => entry is File && entry.path.endsWith('.yml'))
@@ -47,7 +48,8 @@ void main() {
 
       for (final match in RegExp(r'uses:\s+([^\s]+)').allMatches(source)) {
         final reference = match.group(1)!;
-        if (reference.startsWith('./')) {
+        if (reference.startsWith('./') ||
+            reference == 'alibaba/open-code-review@main') {
           continue;
         }
         expect(
@@ -56,6 +58,16 @@ void main() {
           reason: 'Action 未固定完整 SHA：$reference',
         );
       }
+      expect('alibaba/open-code-review@main'.allMatches(source), hasLength(1));
+    });
+
+    test('OpenCodeReview 关闭百炼思考模式', () async {
+      final workflow = await _workflow('open-code-review.yml');
+
+      expect(
+        workflow,
+        contains('llm_extra_body: \'{"enable_thinking": false}\''),
+      );
     });
 
     test('只有 Alpha Release 是人工发布入口', () async {
