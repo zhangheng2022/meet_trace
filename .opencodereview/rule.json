@@ -1,0 +1,21 @@
+{
+  "exclude": [
+    ".agents/skills/**",
+    ".claude/skills/**",
+    ".dart_tool/**",
+    "build/**",
+    "coverage/**",
+    "graphify-out/**",
+    "**/ephemeral/**",
+    "**/generated/**",
+    "**/*.g.dart",
+    "**/*.freezed.dart",
+    "**/*.mocks.dart",
+    "**/*.gen.dart",
+    "**/generated_plugin_registrant.*",
+    "**/generatedpluginregistrant.*",
+    "**/generated_plugins.cmake",
+    "pubspec.lock",
+    "skills-lock.json"
+  ]
+}
