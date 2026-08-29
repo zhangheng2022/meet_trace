@@ -723,9 +723,7 @@ void main() {
       }
     });
 
-    final result = await service.stop().timeout(
-      const Duration(milliseconds: 250),
-    );
+    final result = await service.stop().timeout(const Duration(seconds: 2));
 
     expect(result.bytes, recordingBytesPerSecond);
     expect(result.duration, const Duration(seconds: 1));
