@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../domain/models/meeting.dart';
+import '../../../../../l10n/l10n.dart';
 import '../../../../core/app_state_panel.dart';
 import '../../view_models/recording/recording_session_view_model.dart';
 import 'recording_session_view.dart';
@@ -74,12 +75,12 @@ final class _RecordingBootstrapViewState extends State<RecordingBootstrapView> {
         onFinished: widget.onFinished,
       );
     }
-    return const PopScope(
+    return PopScope(
       canPop: false,
       child: FScaffold(
         childPad: false,
-        header: FHeader.nested(title: Text('会迹')),
-        child: AppStatePanel.loading(label: '正在启动录音'),
+        header: FHeader.nested(title: Text(context.l10n.appName)),
+        child: AppStatePanel.loading(label: context.l10n.startingRecording),
       ),
     );
   }

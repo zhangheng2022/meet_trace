@@ -11,6 +11,7 @@ import 'package:forui/forui.dart';
 import '../../../../../domain/models/meeting.dart';
 import '../../../../../domain/models/workflow_states.dart';
 import '../../../../../keys.dart';
+import '../../../../../l10n/l10n.dart';
 import '../../../../../theme/theme.dart';
 import '../../../../core/app_back_icon.dart';
 import '../../../../core/app_dialog.dart';
@@ -69,7 +70,9 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
               ),
               prefixes: [
                 FHeaderAction(
-                  icon: const AppBackIcon(semanticsLabel: '结束会议并返回'),
+                  icon: AppBackIcon(
+                    semanticsLabel: context.l10n.endMeetingAndReturn,
+                  ),
                   onPress: active ? () => unawaited(_requestEnd()) : null,
                 ),
               ],
@@ -142,11 +145,11 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
     _endDialogOpen = true;
     final confirmed = await showAppConfirmDialog(
       context: context,
-      semanticsLabel: '结束并保存会议',
-      title: '结束并保存会议？',
-      message: '结束后会先封存本机事实音频，再进入最终转录。当前实时转录仅供预览。',
-      cancelLabel: '继续录音',
-      confirmLabel: '结束并保存',
+      semanticsLabel: context.l10n.endSaveMeetingSemantics,
+      title: context.l10n.endSaveMeetingQuestion,
+      message: context.l10n.endSaveMeetingMessage,
+      cancelLabel: context.l10n.continueRecording,
+      confirmLabel: context.l10n.endAndSave,
       barrierDismissible: false,
       confirmAutofocus: true,
       confirmKey: keys.meetings.recordingEndConfirm,

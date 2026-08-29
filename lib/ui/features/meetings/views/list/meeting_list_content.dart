@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../domain/models/meeting.dart';
+import '../../../../../l10n/l10n.dart';
 import '../../../../../theme/theme.dart';
 import '../../../../core/app_ledger.dart';
 import '../../../../core/app_responsive.dart';
@@ -89,7 +90,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
         final meetings = _meetingsFrom(widget.state);
         final selected = _selectedMeeting(meetings);
         final referenceTime = widget.now?.call() ?? DateTime.now();
-        final listBody = _listBody(meetings, sizeClass, referenceTime);
+        final listBody = _listBody(context, meetings, sizeClass, referenceTime);
         final homePane = MeetingHomePane(
           total: widget.state is ViewData<List<Meeting>>
               ? meetings.length
@@ -169,22 +170,24 @@ final class _MeetingListContentState extends State<MeetingListContent> {
   }
 
   Widget _listBody(
+    BuildContext context,
     List<Meeting> meetings,
     AppWindowSizeClass sizeClass,
     DateTime referenceTime,
   ) {
+    final l10n = context.l10n;
     return switch (widget.state) {
-      ViewLoading() => const AppStatePanel.loading(label: '正在加载会议'),
+      ViewLoading() => AppStatePanel.loading(label: l10n.loadingMeetings),
       ViewError(:final retry) => AppStatePanel.error(
-        title: '会议加载失败',
-        message: '本地数据仍保留在设备上，请重试。',
-        actionLabel: retry == null ? null : '重试加载',
+        title: l10n.meetingLoadFailed,
+        message: l10n.localDataPreservedRetry,
+        actionLabel: retry == null ? null : l10n.retryLoading,
         onAction: retry,
       ),
-      ViewData(:final value) when value.isEmpty => const AppStatePanel.empty(
+      ViewData(:final value) when value.isEmpty => AppStatePanel.empty(
         icon: FLucideIcons.calendar,
-        title: '还没有会议',
-        message: '开始录音后，会议会安全地保存在这台设备上。',
+        title: l10n.noMeetings,
+        message: l10n.noMeetingsDescription,
       ),
       ViewData() => NotificationListener<ScrollStartNotification>(
         onNotification: (_) {
@@ -216,6 +219,7 @@ final class _MeetingListContentState extends State<MeetingListContent> {
     AppWindowSizeClass sizeClass,
     DateTime referenceTime,
   ) {
+    final l10n = context.l10n;
     final meeting = meetings[index];
     final deleting = widget.deletingMeetingIds.contains(meeting.id);
     final renaming = widget.renamingMeetingIds.contains(meeting.id);
@@ -237,18 +241,18 @@ final class _MeetingListContentState extends State<MeetingListContent> {
       if (canRename)
         AppSwipeAction(
           key: ValueKey('rename-meeting-${meeting.id}'),
-          label: '重命名',
+          label: l10n.rename,
           icon: FLucideIcons.pencil,
-          semanticsHint: '打开会议标题编辑面板',
+          semanticsHint: l10n.renameMeetingHint,
           onPress: requestRename,
         ),
       if (canDelete)
         AppSwipeAction(
           key: ValueKey('delete-meeting-${meeting.id}'),
-          label: '删除',
+          label: l10n.delete,
           icon: FLucideIcons.trash2,
           tone: AppSwipeActionTone.destructive,
-          semanticsHint: '打开永久删除确认',
+          semanticsHint: l10n.deleteMeetingHint,
           onPress: requestDelete,
         ),
     ];

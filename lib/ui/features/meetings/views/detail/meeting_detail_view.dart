@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../keys.dart';
+import '../../../../../l10n/l10n.dart';
 import '../../../../core/app_back_icon.dart';
 import '../../../../core/app_state_panel.dart';
 import '../../view_models/detail/meeting_detail_view_model.dart';
@@ -53,10 +54,13 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
         return FScaffold(
           childPad: false,
           header: FHeader.nested(
-            title: Text('会议详情', key: keys.meetings.detailTitle),
+            title: Text(
+              context.l10n.meetingDetailsTitle,
+              key: keys.meetings.detailTitle,
+            ),
             prefixes: [
               FHeaderAction(
-                icon: const AppBackIcon(semanticsLabel: '返回会议列表'),
+                icon: AppBackIcon(semanticsLabel: context.l10n.backToMeetings),
                 onPress: widget.onBack,
               ),
             ],
@@ -95,7 +99,7 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
 
   Widget _body(BuildContext context, MeetingDetailViewModel viewModel) {
     if (viewModel.isLoading && !viewModel.isTranscribing) {
-      return const AppStatePanel.loading(label: '加载会议结果');
+      return AppStatePanel.loading(label: context.l10n.loadingMeetingResult);
     }
 
     if (viewModel.isTranscribing) {
@@ -107,10 +111,10 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
       if (message != null) {
         return MeetingFailureView(message: message, viewModel: viewModel);
       }
-      return const AppStatePanel.empty(
+      return AppStatePanel.empty(
         icon: FLucideIcons.fileAudio,
-        title: '暂无最终转录',
-        message: '事实录音仍保存在本机，可稍后返回继续处理。',
+        title: context.l10n.noFinalTranscript,
+        message: context.l10n.sourceAudioReturnLater,
       );
     }
 

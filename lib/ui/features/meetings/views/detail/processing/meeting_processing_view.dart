@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_page_body.dart';
 import '../../../view_models/detail/meeting_detail_view_model.dart';
@@ -44,16 +45,15 @@ final class _ProcessingLedger extends StatelessWidget {
     final theme = context.theme;
     final appStyle = theme.style.app;
     final modelName = viewModel.sourceModel.displayName;
+    final l10n = context.l10n;
     final outcome = viewModel.diarizationAvailable
-        ? '完成后将一次显示最终转录和说话人标签。'
-        : '说话人区分当前不可用；完成后将按单一说话人显示。';
+        ? l10n.finalShowsSpeakers
+        : l10n.speakerSeparationUnavailableOutcome;
     return Semantics(
       key: const ValueKey('meeting-processing-ledger'),
       container: true,
       liveRegion: true,
-      label:
-          '正在生成最终结果。$modelName 正在处理完整录音。'
-          '$outcome事实录音已保存在本机，处理不会改写原始音频。',
+      label: l10n.processingSemanticsLabel(modelName, outcome),
       child: ExcludeSemantics(
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -73,11 +73,17 @@ final class _ProcessingLedger extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const FProgress(semanticsLabel: '正在生成最终结果'),
+                FProgress(semanticsLabel: l10n.generatingFinalResult),
                 SizedBox(height: appStyle.spaceLg),
-                Text('正在生成最终结果', style: theme.typography.display.lg),
+                Text(
+                  l10n.generatingFinalResult,
+                  style: theme.typography.display.lg,
+                ),
                 SizedBox(height: appStyle.spaceXs),
-                Text('$modelName 正在处理完整录音。', style: theme.typography.body.md),
+                Text(
+                  l10n.modelProcessingFullRecording(modelName),
+                  style: theme.typography.body.md,
+                ),
                 SizedBox(height: appStyle.spaceSm),
                 Text(
                   outcome,
@@ -109,7 +115,7 @@ final class _ProcessingLedger extends StatelessWidget {
                         SizedBox(width: appStyle.spaceSm),
                         Expanded(
                           child: Text(
-                            '事实录音已保存在本机，处理不会改写原始音频。',
+                            l10n.sourceAudioNotRewritten,
                             key: const ValueKey(
                               'meeting-processing-audio-safety',
                             ),

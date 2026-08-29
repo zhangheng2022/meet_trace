@@ -5,6 +5,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/workflow_states.dart';
 import '../../../../../../keys.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../view_models/recording/recording_session_view_model.dart';
 
@@ -95,7 +96,10 @@ final class _RecordingActions extends StatelessWidget {
         key: paused
             ? (viewModel.canResume ? keys.meetings.recordingResumeReady : null)
             : (viewModel.canPause ? keys.meetings.recordingPauseReady : null),
-        child: Text(paused ? '继续' : '暂停', maxLines: 1),
+        child: Text(
+          paused ? context.l10n.resume : context.l10n.pause,
+          maxLines: 1,
+        ),
       ),
     );
     final endButton = _RecordingEndButton(
@@ -193,7 +197,10 @@ final class _RecordingEndButtonContent extends StatelessWidget {
           else
             const Icon(FLucideIcons.square),
           SizedBox(width: appStyle.spaceSm),
-          Text(finalizing ? '正在封存音频' : '结束会议', maxLines: 1),
+          Text(
+            finalizing ? context.l10n.sealingAudio : context.l10n.endMeeting,
+            maxLines: 1,
+          ),
         ],
       ),
     );

@@ -4,6 +4,7 @@ import 'package:forui/forui.dart';
 import '../../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../../domain/models/meeting.dart';
 import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_state_panel.dart';
 import '../../../../../core/semantic_date_time.dart';
@@ -14,10 +15,10 @@ final class MeetingPreviewPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppStatePanel.empty(
+    return AppStatePanel.empty(
       icon: FLucideIcons.fileAudio,
-      title: '选择一场会议',
-      message: '会议事实、录音状态和模型来源会显示在这里。',
+      title: context.l10n.selectMeeting,
+      message: context.l10n.selectMeetingDescription,
     );
   }
 }
@@ -36,6 +37,7 @@ final class MeetingPreviewPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     return ColoredBox(
@@ -60,34 +62,35 @@ final class MeetingPreviewPane extends StatelessWidget {
                   SizedBox(height: appStyle.spaceLg),
                   _MeetingFactRow(
                     icon: FLucideIcons.calendar,
-                    label: '开始时间',
+                    label: l10n.startTime,
                     value: semanticDateTimeLabel(
                       meeting.createdAt,
                       reference: referenceTime,
+                      l10n: l10n,
                     ),
                   ),
                   _MeetingFactRow(
                     icon: FLucideIcons.clock4,
-                    label: '录音时长',
+                    label: l10n.recordingDuration,
                     value: meetingDurationLabel(
                       Duration(milliseconds: meeting.audioDurationMs),
                     ),
                   ),
                   _MeetingFactRow(
                     icon: FLucideIcons.fileAudio,
-                    label: '事实音频',
-                    value: _audioFactLabel(meeting),
+                    label: l10n.sourceAudio,
+                    value: _audioFactLabel(l10n, meeting),
                   ),
                   _MeetingFactRow(
                     icon: FLucideIcons.settings,
-                    label: '本场模型',
-                    value: _modelDisplayLabel(meeting),
+                    label: l10n.meetingModel,
+                    value: _modelDisplayLabel(l10n, meeting),
                   ),
                   SizedBox(height: appStyle.spaceLg),
-                  Text('会议事实', style: theme.typography.display.lg),
+                  Text(l10n.meetingFacts, style: theme.typography.display.lg),
                   SizedBox(height: appStyle.spaceSm),
                   Text(
-                    _meetingFactDescription(meeting),
+                    _meetingFactDescription(l10n, meeting),
                     style: theme.typography.body.md.copyWith(
                       color: theme.colors.mutedForeground,
                     ),
@@ -119,6 +122,7 @@ final class _MeetingPreviewStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     return DecoratedBox(
@@ -148,7 +152,7 @@ final class _MeetingPreviewStatus extends StatelessWidget {
               Icon(meetingStatusIcon(meeting.status), size: 16),
             SizedBox(width: appStyle.spaceXs),
             Text(
-              meetingStatusLabel(meeting.status),
+              meetingStatusLabel(context.l10n, meeting.status),
               style: theme.typography.body.sm.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -173,8 +177,8 @@ final class _MeetingPreviewStatus extends StatelessWidget {
             Flexible(
               child: Text(
                 meeting.status == MeetingState.recording
-                    ? '实时转录仅供参考'
-                    : '事实音频本地优先',
+                    ? l10n.liveTranscriptReferenceOnly
+                    : l10n.sourceAudioLocalFirst,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
@@ -264,7 +268,7 @@ final class _OpenMeetingRow extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '打开完整记录',
+                context.l10n.openFullRecord,
                 style: theme.typography.body.md.copyWith(
                   color: enabled
                       ? theme.colors.foreground
@@ -287,7 +291,7 @@ final class _OpenMeetingRow extends StatelessWidget {
     }
     return FTappable(
       key: const ValueKey('open-selected-meeting'),
-      semanticsLabel: '打开完整会议记录',
+      semanticsLabel: context.l10n.openFullMeetingRecord,
       onPress: onPress,
       child: content,
     );
@@ -323,10 +327,10 @@ final class _PreviewBottomStatus extends StatelessWidget {
             children: [
               const Icon(FLucideIcons.shieldCheck, size: 17),
               SizedBox(width: appStyle.spaceXs),
-              const Expanded(child: Text('事实音频本地优先')),
+              Expanded(child: Text(context.l10n.sourceAudioLocalFirst)),
               if (recording)
                 Text(
-                  '录音不中断',
+                  context.l10n.recordingContinues,
                   style: theme.typography.body.xs.copyWith(
                     color: theme.colors.mutedForeground,
                   ),
@@ -339,29 +343,31 @@ final class _PreviewBottomStatus extends StatelessWidget {
   }
 }
 
-String _audioFactLabel(Meeting meeting) => switch (meeting.status) {
-  MeetingState.created => '录音尚未开始',
-  MeetingState.recording => '正在本机持续写入',
-  _ when meeting.audioPath?.isNotEmpty == true => '已保存在本机',
-  MeetingState.processing => '正在封存',
-  MeetingState.completed => '会议处理已完成',
-  MeetingState.failed => '打开会议查看保存状态',
-};
+String _audioFactLabel(AppLocalizations l10n, Meeting meeting) =>
+    switch (meeting.status) {
+      MeetingState.created => l10n.audioNotStarted,
+      MeetingState.recording => l10n.audioWritingLocally,
+      _ when meeting.audioPath?.isNotEmpty == true => l10n.audioSavedLocally,
+      MeetingState.processing => l10n.audioSealing,
+      MeetingState.completed => l10n.meetingProcessingCompleted,
+      MeetingState.failed => l10n.openMeetingForSaveStatus,
+    };
 
-String _meetingFactDescription(Meeting meeting) => switch (meeting.status) {
-  MeetingState.created => '录音尚未开始。本场模型会在开始后锁定。',
-  MeetingState.recording => '事实音频正在本机持续写入。推理变慢或失败不会中断录音。',
-  MeetingState.processing => '事实音频已经封存，当前正在使用本场锁定模型生成最终转录。',
-  MeetingState.completed when meeting.activeTranscriptSnapshotId != null =>
-    '最终转录已经就绪。打开完整记录可查看带说话人标签和时间戳的转录。',
-  MeetingState.completed => '会议处理已经完成。打开完整记录可查看当前可用结果。',
-  MeetingState.failed when meeting.audioPath?.isNotEmpty == true =>
-    '派生处理失败，但事实音频仍保存在本机。打开完整记录可查看原因并重试。',
-  MeetingState.failed => '会议处理失败。打开完整记录可核对原因和事实音频状态。',
-};
+String _meetingFactDescription(AppLocalizations l10n, Meeting meeting) =>
+    switch (meeting.status) {
+      MeetingState.created => l10n.factCreatedDescription,
+      MeetingState.recording => l10n.factRecordingDescription,
+      MeetingState.processing => l10n.factProcessingDescription,
+      MeetingState.completed when meeting.activeTranscriptSnapshotId != null =>
+        l10n.factFinalReadyDescription,
+      MeetingState.completed => l10n.factCompletedDescription,
+      MeetingState.failed when meeting.audioPath?.isNotEmpty == true =>
+        l10n.factDerivedFailedDescription,
+      MeetingState.failed => l10n.factMeetingFailedDescription,
+    };
 
-String _modelDisplayLabel(Meeting meeting) {
+String _modelDisplayLabel(AppLocalizations l10n, Meeting meeting) {
   final descriptor = AsrModelRegistry.alpha.findById(meeting.recordingModelId);
-  final displayName = descriptor?.displayName ?? '本地模型';
+  final displayName = descriptor?.displayName ?? l10n.localModel;
   return '$displayName · ${meeting.recordingModelVersion}';
 }

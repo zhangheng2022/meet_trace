@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
+import 'package:meettrace/domain/models/app_language.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/speaker_diarization.dart';
@@ -699,6 +700,47 @@ void main() {
     await fixture.dispose();
   });
 
+  testWidgets('切换语言仅更新自动说话人标签并保留用户编辑', (tester) async {
+    final language = ValueNotifier(AppLanguageMode.simplifiedChinese);
+    addTearDown(language.dispose);
+    final active = _snapshot(id: 'active', speakerId: 'speaker-1');
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      speakerLabelBuilder: (number) => switch (language.value) {
+        AppLanguageMode.english => 'Speaker $number',
+        _ => '说话人 $number',
+      },
+    );
+
+    await tester.pumpWidget(
+      Application(
+        languageMode: language,
+        home: MeetingDetailView(viewModel: fixture.viewModel, onBack: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('edit-transcript')));
+    await tester.pumpAndSettle();
+
+    final field = find.byKey(const ValueKey('segment-speaker-active-segment'));
+    expect(find.text('说话人 1'), findsWidgets);
+
+    language.value = AppLanguageMode.english;
+    await tester.pumpAndSettle();
+    expect(find.text('Speaker 1'), findsWidgets);
+
+    await tester.enterText(field, 'Alice');
+    language.value = AppLanguageMode.simplifiedChinese;
+    await tester.pumpAndSettle();
+    expect(find.text('Alice'), findsOneWidget);
+
+    await fixture.dispose();
+  });
+
   testWidgets('长会议时长和时间戳使用小时格式', (tester) async {
     final active = _snapshot(id: 'active', startMs: 3723000);
     final fixture = _fixture(
@@ -818,6 +860,7 @@ _Fixture _fixture(
   AudioPlaybackService? playback,
   AudioShareService? audioShare,
   TextShareService? textShare,
+  String Function(int number)? speakerLabelBuilder,
 }) {
   final meetings = DetailMeetingRepository(meeting);
   final transcripts = DetailTranscriptRepository();
@@ -855,6 +898,8 @@ _Fixture _fixture(
         meetings: meetings,
         files: const _MeetingFileDeletionService(),
       ),
+      shareBuilderProvider: () => const BuildMeetingShareUseCase(),
+      speakerLabelBuilder: speakerLabelBuilder ?? (number) => '说话人 $number',
     ),
   );
 }

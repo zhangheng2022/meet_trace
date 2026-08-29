@@ -8,6 +8,8 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../domain/models/runtime_initialization.dart';
+import '../../../../l10n/l10n.dart';
+import '../../../../l10n/ui_message_localizations.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/app_responsive.dart';
 import '../../../core/branding/meettrace_brand_mark.dart';
@@ -130,9 +132,9 @@ final class MeetTraceDataReadBlockedView extends StatelessWidget {
   Widget build(BuildContext context) => _StartupFrame(
     body: _StartupBlockedContent(
       onRetry: onRetry,
-      lead: '为保护本地数据，启动已停止。',
-      title: '无法读取本地数据',
-      message: '自动清理未执行。请检查设备存储状态后重试。',
+      lead: context.l10n.startupStoppedForData,
+      title: context.l10n.cannotReadLocalData,
+      message: context.l10n.cleanupNotRun,
     ),
   );
 }
@@ -147,9 +149,9 @@ final class MeetTraceInitializationBlockedView extends StatelessWidget {
   Widget build(BuildContext context) => _StartupFrame(
     body: _StartupBlockedContent(
       onRetry: onRetry,
-      lead: '本地能力未完成初始化。',
-      title: '本地能力准备未完成',
-      message: '请确认设备空间充足后重试。',
+      lead: context.l10n.localInitializationIncomplete,
+      title: context.l10n.localCapabilitiesNotReady,
+      message: context.l10n.ensureStorageRetry,
     ),
   );
 }
@@ -225,16 +227,19 @@ final class _StartupProgressContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     final model = viewModel;
     final state = model?.state;
-    final stage = _stageForProgress(state);
+    final stage = _stageForProgress(l10n, state);
     final percentage = state == null ? 0 : _progressPercentage(state);
-    final description = state?.message ?? stage.description;
+    final description = state?.message == null
+        ? stage.description
+        : l10n.localizeRuntimeMessage(state!.messageCode, state.message!);
     return Semantics(
       container: true,
-      label: '正在准备会迹，${stage.title}',
+      label: l10n.preparingMeetTraceStage(stage.title),
       child: Column(
         key: const ValueKey('meettrace-startup-progress-content'),
         mainAxisSize: MainAxisSize.min,
@@ -242,7 +247,7 @@ final class _StartupProgressContent extends StatelessWidget {
         children: [
           MeetTraceAnimatedWordmark(onCompleted: onBrandMotionCompleted),
           SizedBox(height: appStyle.spaceXl),
-          Text('正在准备会迹', style: theme.typography.display.md),
+          Text(l10n.preparingMeetTrace, style: theme.typography.display.md),
           SizedBox(height: appStyle.spaceLg),
           DecoratedBox(
             decoration: BoxDecoration(
@@ -274,7 +279,7 @@ final class _StartupProgressContent extends StatelessWidget {
                             ),
                             SizedBox(height: appStyle.space2Xs),
                             Text(
-                              '步骤 ${stage.step} / 4',
+                              l10n.stepOfFour(stage.step),
                               key: const ValueKey('runtime-stage-step'),
                               style: theme.typography.body.xs.copyWith(
                                 color: theme.colors.app.inkSecondary,
@@ -300,7 +305,9 @@ final class _StartupProgressContent extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            state.resourceName ?? 'SenseVoice + Silero VAD',
+                            l10n.localizeRuntimeResourceName(
+                              state.resourceName,
+                            ),
                             key: const ValueKey('runtime-resource-name'),
                             style: theme.typography.body.sm,
                           ),
@@ -317,7 +324,7 @@ final class _StartupProgressContent extends StatelessWidget {
                     FDeterminateProgress(
                       key: const ValueKey('runtime-download-progress-bar'),
                       value: state.fraction,
-                      semanticsLabel: '离线转录资源准备进度',
+                      semanticsLabel: l10n.offlineResourcePreparationProgress,
                     ),
                     SizedBox(height: appStyle.spaceSm),
                     Text(
@@ -334,7 +341,7 @@ final class _StartupProgressContent extends StatelessWidget {
           ),
           SizedBox(height: appStyle.spaceSm),
           Text(
-            '会议记录与事实音频仍保存在本机',
+            l10n.localEvidencePreserved,
             key: const ValueKey('meettrace-startup-local-evidence'),
             style: theme.typography.body.xs.copyWith(
               color: theme.colors.app.inkSecondary,
@@ -350,7 +357,7 @@ final class _StartupProgressContent extends StatelessWidget {
                   key: const ValueKey('confirm-mobile-download'),
                   size: FButtonSizeVariant.lg,
                   onPress: () => model?.confirmMobileDownload(),
-                  child: const Text('同意并下载'),
+                  child: Text(l10n.agreeAndDownload),
                 ),
                 SizedBox(height: appStyle.spaceSm),
                 FButton(
@@ -358,7 +365,7 @@ final class _StartupProgressContent extends StatelessWidget {
                   variant: FButtonVariant.outline,
                   size: FButtonSizeVariant.lg,
                   onPress: model?.declineMobileDownload,
-                  child: const Text('暂不使用移动网络'),
+                  child: Text(l10n.avoidMobileNetwork),
                 ),
               ],
             )
@@ -370,7 +377,7 @@ final class _StartupProgressContent extends StatelessWidget {
                 variant: FButtonVariant.outline,
                 size: FButtonSizeVariant.lg,
                 onPress: model?.pause,
-                child: const Text('暂停下载'),
+                child: Text(l10n.pauseDownload),
               ),
             )
           else if (state?.phase == RuntimeInitializationPhase.paused ||
@@ -384,8 +391,8 @@ final class _StartupProgressContent extends StatelessWidget {
                 onPress: () => model?.resume(),
                 child: Text(
                   state?.phase == RuntimeInitializationPhase.paused
-                      ? '继续下载'
-                      : '重试',
+                      ? l10n.continueDownload
+                      : l10n.retry,
                 ),
               ),
             ),
@@ -412,82 +419,86 @@ int _progressPercentage(RuntimeInitializationProgress state) {
 }
 
 ({String title, String description, int step, IconData icon, bool active})
-_stageForProgress(RuntimeInitializationProgress? state) => state == null
+_stageForProgress(
+  AppLocalizations l10n,
+  RuntimeInitializationProgress? state,
+) => state == null
     ? (
-        title: '打开本地工作区',
-        description: '正在恢复会议记录并确认本地数据可用。',
+        title: l10n.openLocalWorkspace,
+        description: l10n.openLocalWorkspaceDescription,
         step: 1,
         icon: FLucideIcons.fileAudio,
         active: true,
       )
-    : _stageFor(state.phase);
+    : _stageFor(l10n, state.phase);
 
 ({String title, String description, int step, IconData icon, bool active})
-_stageFor(RuntimeInitializationPhase phase) => switch (phase) {
-  RuntimeInitializationPhase.checking => (
-    title: '检查离线资源',
-    description: '正在核对本地文件与固定资源清单。',
-    step: 2,
-    icon: FLucideIcons.fileAudio,
-    active: true,
-  ),
-  RuntimeInitializationPhase.awaitingMobileConsent => (
-    title: '等待网络确认',
-    description: '确认网络后即可开始下载。',
-    step: 2,
-    icon: FLucideIcons.triangleAlert,
-    active: false,
-  ),
-  RuntimeInitializationPhase.insufficientSpace => (
-    title: '需要释放设备空间',
-    description: '释放足够空间后可以重新检查。',
-    step: 2,
-    icon: FLucideIcons.circleAlert,
-    active: false,
-  ),
-  RuntimeInitializationPhase.downloading => (
-    title: '下载离线资源',
-    description: '下载可暂停，已完成的部分会保留。',
-    step: 2,
-    icon: FLucideIcons.fileAudio,
-    active: false,
-  ),
-  RuntimeInitializationPhase.paused => (
-    title: '下载已暂停',
-    description: '继续后将从当前进度恢复。',
-    step: 2,
-    icon: FLucideIcons.pause,
-    active: false,
-  ),
-  RuntimeInitializationPhase.verifying => (
-    title: '校验资源完整性',
-    description: '正在确认文件大小与完整性。',
-    step: 3,
-    icon: FLucideIcons.shieldCheck,
-    active: true,
-  ),
-  RuntimeInitializationPhase.activating => (
-    title: '启用离线转录',
-    description: '正在加载本地推理能力。',
-    step: 4,
-    icon: FLucideIcons.fileAudio,
-    active: true,
-  ),
-  RuntimeInitializationPhase.failed => (
-    title: '资源准备未完成',
-    description: '请检查提示后重试。',
-    step: 2,
-    icon: FLucideIcons.circleAlert,
-    active: false,
-  ),
-  RuntimeInitializationPhase.ready => (
-    title: '离线转录已就绪',
-    description: '正在进入会迹。',
-    step: 4,
-    icon: FLucideIcons.circleCheck,
-    active: false,
-  ),
-};
+_stageFor(AppLocalizations l10n, RuntimeInitializationPhase phase) =>
+    switch (phase) {
+      RuntimeInitializationPhase.checking => (
+        title: l10n.checkOfflineResources,
+        description: l10n.checkOfflineResourcesDescription,
+        step: 2,
+        icon: FLucideIcons.fileAudio,
+        active: true,
+      ),
+      RuntimeInitializationPhase.awaitingMobileConsent => (
+        title: l10n.awaitNetworkConfirmation,
+        description: l10n.awaitNetworkConfirmationDescription,
+        step: 2,
+        icon: FLucideIcons.triangleAlert,
+        active: false,
+      ),
+      RuntimeInitializationPhase.insufficientSpace => (
+        title: l10n.freeDeviceSpace,
+        description: l10n.freeDeviceSpaceDescription,
+        step: 2,
+        icon: FLucideIcons.circleAlert,
+        active: false,
+      ),
+      RuntimeInitializationPhase.downloading => (
+        title: l10n.downloadOfflineResources,
+        description: l10n.downloadOfflineResourcesDescription,
+        step: 2,
+        icon: FLucideIcons.fileAudio,
+        active: false,
+      ),
+      RuntimeInitializationPhase.paused => (
+        title: l10n.downloadPaused,
+        description: l10n.downloadPausedDescription,
+        step: 2,
+        icon: FLucideIcons.pause,
+        active: false,
+      ),
+      RuntimeInitializationPhase.verifying => (
+        title: l10n.verifyResourceIntegrity,
+        description: l10n.verifyResourceIntegrityDescription,
+        step: 3,
+        icon: FLucideIcons.shieldCheck,
+        active: true,
+      ),
+      RuntimeInitializationPhase.activating => (
+        title: l10n.enableOfflineTranscription,
+        description: l10n.enableOfflineTranscriptionDescription,
+        step: 4,
+        icon: FLucideIcons.fileAudio,
+        active: true,
+      ),
+      RuntimeInitializationPhase.failed => (
+        title: l10n.resourcePreparationIncomplete,
+        description: l10n.resourcePreparationIncompleteDescription,
+        step: 2,
+        icon: FLucideIcons.circleAlert,
+        active: false,
+      ),
+      RuntimeInitializationPhase.ready => (
+        title: l10n.offlineTranscriptionReady,
+        description: l10n.offlineTranscriptionReadyDescription,
+        step: 4,
+        icon: FLucideIcons.circleCheck,
+        active: false,
+      ),
+    };
 
 final class _StartupStageMark extends StatelessWidget {
   const _StartupStageMark({required this.stage});
@@ -542,7 +553,7 @@ final class _StartupBlockedContent extends StatelessWidget {
     final appStyle = theme.style.app;
     return Semantics(
       container: true,
-      label: '会迹本地能力准备未完成',
+      label: context.l10n.startupLocalCapabilitiesIncomplete,
       child: Column(
         key: const ValueKey('meettrace-startup-error'),
         mainAxisSize: MainAxisSize.min,
@@ -550,7 +561,10 @@ final class _StartupBlockedContent extends StatelessWidget {
         children: [
           const MeetTraceAnimatedWordmark(),
           SizedBox(height: appStyle.spaceXl),
-          Text('启动需要你的处理', style: theme.typography.display.md),
+          Text(
+            context.l10n.startupNeedsAttention,
+            style: theme.typography.display.md,
+          ),
           SizedBox(height: appStyle.spaceXs),
           Text(
             lead,
@@ -609,7 +623,7 @@ final class _StartupBlockedContent extends StatelessWidget {
             child: FButton(
               size: FButtonSizeVariant.lg,
               onPress: onRetry,
-              child: const Text('重试'),
+              child: Text(context.l10n.retry),
             ),
           ),
         ],

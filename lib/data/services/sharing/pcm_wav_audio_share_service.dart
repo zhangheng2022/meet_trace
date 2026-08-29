@@ -95,6 +95,8 @@ final class PcmWavAudioShareService implements AudioShareService {
     this.systemShare = const SharePlusSystemAudioFileSharer(),
     this.removeSession = _removeSession,
     this.removeEmptyShareRoot = _removeEmptyShareRoot,
+    this.shareTitleBuilder = _defaultShareTitle,
+    this.fileNameFallbackBuilder = _defaultFileNameFallback,
   });
 
   final AppFileLayout layout;
@@ -103,6 +105,8 @@ final class PcmWavAudioShareService implements AudioShareService {
   final SystemAudioFileSharer systemShare;
   final ShareTempDirectoryRemover removeSession;
   final ShareTempDirectoryRemover removeEmptyShareRoot;
+  final String Function(String meetingTitle) shareTitleBuilder;
+  final String Function() fileNameFallbackBuilder;
 
   @override
   Future<AudioShareStorageSnapshot> inspect({required String audioPath}) async {
@@ -161,8 +165,8 @@ final class PcmWavAudioShareService implements AudioShareService {
       await wavWriter.write(sourcePath: audioPath, targetPath: target.path);
       outcome = await systemShare.share(
         path: target.path,
-        fileName: _safeFileName(meetingTitle),
-        title: '分享会议录音：$meetingTitle',
+        fileName: _safeFileName(meetingTitle, fileNameFallbackBuilder()),
+        title: shareTitleBuilder(meetingTitle),
       );
     } on AudioShareException catch (error, stackTrace) {
       failure = error;
@@ -197,6 +201,8 @@ final class PcmWavAudioShareService implements AudioShareService {
   }
 }
 
+String _defaultShareTitle(String meetingTitle) => '分享会议录音：$meetingTitle';
+
 Future<void> _removeSession(Directory session) async {
   try {
     if (await session.exists()) {
@@ -218,12 +224,20 @@ Future<void> _removeEmptyShareRoot(Directory shareRoot) async {
   }
 }
 
-String _safeFileName(String meetingTitle) {
-  final sanitized = meetingTitle
+String _safeFileName(String meetingTitle, String fallback) {
+  String sanitize(String value) => value
       .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1F]'), '_')
       .trim()
       .replaceAll(RegExp(r'[. ]+$'), '');
-  final base = sanitized.isEmpty ? '会议录音' : sanitized;
+  final sanitized = sanitize(meetingTitle);
+  final sanitizedFallback = sanitize(fallback);
+  final base = sanitized.isNotEmpty
+      ? sanitized
+      : sanitizedFallback.isNotEmpty
+      ? sanitizedFallback
+      : 'recording';
   final shortened = base.length > 80 ? base.substring(0, 80) : base;
   return '$shortened.wav';
 }
+
+String _defaultFileNameFallback() => '会议录音';

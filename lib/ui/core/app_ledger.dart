@@ -116,6 +116,7 @@ final class AppLedgerRow extends StatelessWidget {
                     Text(
                       date,
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: theme.typography.body.xs.copyWith(
                         color: theme.colors.mutedForeground,
                         fontFeatures: const [FontFeature.tabularFigures()],

@@ -6,10 +6,15 @@ import '../../../../domain/ports/text_share.dart';
 import '../../../../domain/use_cases/build_meeting_share.dart';
 
 final class DataControlsViewModel extends ChangeNotifier {
-  DataControlsViewModel({required this.dataControl, required this.sharing});
+  DataControlsViewModel({
+    required this.dataControl,
+    required this.sharing,
+    required this.diagnosticsSubjectBuilder,
+  });
 
   final LocalDataControlPort dataControl;
   final TextShareService sharing;
+  final String Function() diagnosticsSubjectBuilder;
 
   LocalStorageUsage? _usage;
   bool _isLoading = true;
@@ -46,7 +51,10 @@ final class DataControlsViewModel extends ChangeNotifier {
     try {
       final report = await dataControl.buildDiagnostics();
       await sharing.share(
-        MeetingShareDocument(subject: '会迹诊断信息', text: report.toJsonText()),
+        MeetingShareDocument(
+          subject: diagnosticsSubjectBuilder(),
+          text: report.toJsonText(),
+        ),
       );
       _message = '已打开系统分享面板；诊断信息不含标题、转录、音频或本地路径';
     } on Object {

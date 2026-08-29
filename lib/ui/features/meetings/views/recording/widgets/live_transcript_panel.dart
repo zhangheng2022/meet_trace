@@ -4,6 +4,7 @@ import 'package:forui/forui.dart';
 import '../../../../../../domain/models/asr_preview.dart';
 import '../../../../../../domain/models/transcript.dart';
 import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_status_notice.dart';
 import '../../../../../core/app_value_formatters.dart';
@@ -28,6 +29,7 @@ final class LiveTranscriptPanel extends StatelessWidget {
   }
 
   Widget _buildPanel(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     final segments = viewModel.segments;
@@ -65,14 +67,17 @@ final class LiveTranscriptPanel extends StatelessWidget {
                 container: true,
                 header: true,
                 label: [
-                  '实时转录',
-                  _previewLabel(viewModel),
-                  if (segments.isNotEmpty) '${segments.length} 段',
-                ].join('，'),
+                  l10n.liveTranscript,
+                  _previewLabel(l10n, viewModel),
+                  if (segments.isNotEmpty) l10n.segmentCount(segments.length),
+                ].join(l10n.semanticListSeparator),
                 child: ExcludeSemantics(
                   child: Row(
                     children: [
-                      Text('实时转录', style: theme.typography.display.md),
+                      Text(
+                        l10n.liveTranscript,
+                        style: theme.typography.display.md,
+                      ),
                       SizedBox(width: appStyle.spaceSm),
                       Expanded(
                         child: _PreviewStatusOverview(viewModel: viewModel),
@@ -80,7 +85,7 @@ final class LiveTranscriptPanel extends StatelessWidget {
                       if (segments.isNotEmpty) ...[
                         SizedBox(width: appStyle.spaceSm),
                         Text(
-                          '${segments.length} 段',
+                          l10n.segmentCount(segments.length),
                           key: const ValueKey('live-transcript-count'),
                           style: theme.typography.body.sm.copyWith(
                             color: theme.colors.mutedForeground,
@@ -138,7 +143,7 @@ final class LiveTranscriptPanel extends StatelessWidget {
                   SizedBox(width: appStyle.spaceXs),
                   Expanded(
                     child: Text(
-                      '仅供参考，结束后生成最终转录。',
+                      l10n.liveTranscriptReferenceFooter,
                       style: theme.typography.body.xs.copyWith(
                         color: theme.colors.mutedForeground,
                       ),
@@ -174,7 +179,9 @@ final class _LiveTranscriptEmptyState extends StatelessWidget {
         vertical: compact ? appStyle.spaceXs : appStyle.spaceMd,
       ),
       child: Text(
-        stopped ? '结束后仍会基于完整音频生成最终转录。' : '检测到语音后在这里显示文字。',
+        stopped
+            ? context.l10n.finalFromFullAudio
+            : context.l10n.speechAppearsHere,
         textAlign: TextAlign.center,
         style: theme.typography.body.sm.copyWith(
           color: theme.colors.mutedForeground,
@@ -204,7 +211,7 @@ final class _PreviewStatusOverview extends StatelessWidget {
         SizedBox(width: appStyle.spaceXs),
         Expanded(
           child: Text(
-            _previewLabel(viewModel),
+            _previewLabel(context.l10n, viewModel),
             style: theme.typography.body.sm.copyWith(
               color: warning ? null : theme.colors.mutedForeground,
               fontWeight: warning ? FontWeight.w600 : null,
@@ -296,15 +303,18 @@ AppStatusTone _previewTone(RecordingSessionViewModel viewModel) {
   };
 }
 
-String _previewLabel(RecordingSessionViewModel viewModel) {
+String _previewLabel(
+  AppLocalizations l10n,
+  RecordingSessionViewModel viewModel,
+) {
   if (viewModel.recordingState == RecordingState.paused) {
-    return '已随录音暂停';
+    return l10n.previewPausedWithRecording;
   }
   return switch (viewModel.previewMetrics.state) {
-    AsrPreviewState.ready => '正常',
-    AsrPreviewState.backlogged => '积压，录音仍在继续',
-    AsrPreviewState.recordingOnly => '已停止，录音仍在继续',
-    AsrPreviewState.disposed => '已结束',
+    AsrPreviewState.ready => l10n.previewNormal,
+    AsrPreviewState.backlogged => l10n.previewBacklogged,
+    AsrPreviewState.recordingOnly => l10n.previewStoppedRecordingContinues,
+    AsrPreviewState.disposed => l10n.previewEnded,
   };
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../../keys.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../view_models/list/meeting_list_view_model.dart';
 
@@ -67,7 +68,8 @@ final class _RecordingSetupStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.theme;
     final appStyle = theme.style.app;
-    final presentation = _readinessPresentation(readiness);
+    final l10n = context.l10n;
+    final presentation = _readinessPresentation(l10n, readiness);
     final retry = readiness.status == MeetingReadinessStatus.failed
         ? onRetry
         : null;
@@ -154,7 +156,9 @@ final class _RecordingSetupStrip extends StatelessWidget {
     }
     return FTappable(
       key: keys.meetings.listRecordingConditions,
-      semanticsLabel: retry == null ? '查看录音条件' : '重新检查录音条件',
+      semanticsLabel: retry == null
+          ? l10n.viewRecordingConditions
+          : l10n.recheckRecordingConditions,
       onPress: onPress,
       child: content,
     );
@@ -162,47 +166,59 @@ final class _RecordingSetupStrip extends StatelessWidget {
 }
 
 ({IconData icon, String title, String detail}) _readinessPresentation(
+  AppLocalizations l10n,
   MeetingReadinessViewState readiness,
 ) => switch (readiness.status) {
   MeetingReadinessStatus.unchecked => (
     icon: FLucideIcons.fileAudio,
-    title: '本地录音',
-    detail: '使用默认模型',
+    title: l10n.localRecording,
+    detail: l10n.usesDefaultModel,
   ),
   MeetingReadinessStatus.checking => (
     icon: FLucideIcons.fileAudio,
-    title: '正在检查录音条件',
-    detail: '麦克风、存储与默认模型',
+    title: l10n.checkingRecordingConditions,
+    detail: l10n.microphoneStorageDefaultModel,
   ),
   MeetingReadinessStatus.ready => (
     icon: FLucideIcons.circleCheck,
-    title: '录音条件已就绪',
-    detail: '音频仅保存在本机 · ${readiness.defaultModelName ?? '默认模型'}可用',
+    title: l10n.recordingConditionsReady,
+    detail: l10n.audioLocalModelAvailable(
+      readiness.defaultModelName ?? l10n.defaultModel,
+    ),
   ),
   MeetingReadinessStatus.microphonePermissionRequired => (
     icon: FLucideIcons.circleAlert,
-    title: '需要麦克风权限',
-    detail: _readinessDetail('开始会议时授权', readiness.issueCount),
+    title: l10n.microphonePermissionRequired,
+    detail: _readinessDetail(
+      l10n,
+      l10n.authorizeWhenStarting,
+      readiness.issueCount,
+    ),
   ),
   MeetingReadinessStatus.storageInsufficient => (
     icon: FLucideIcons.circleAlert,
-    title: '存储空间不足',
-    detail: _readinessDetail('至少保留 128 MB', readiness.issueCount),
+    title: l10n.storageInsufficient,
+    detail: _readinessDetail(l10n, l10n.keepAtLeast128Mb, readiness.issueCount),
   ),
   MeetingReadinessStatus.defaultModelUnavailable => (
     icon: FLucideIcons.circleAlert,
-    title: '默认模型不可用',
-    detail: '${readiness.defaultModelName ?? '当前模型'}需要处理',
+    title: l10n.defaultModelUnavailable,
+    detail: l10n.modelNeedsAttention(
+      readiness.defaultModelName ?? l10n.currentModel,
+    ),
   ),
   MeetingReadinessStatus.failed => (
     icon: FLucideIcons.circleAlert,
-    title: '无法检查录音条件',
-    detail: '点按重新检查',
+    title: l10n.cannotCheckRecordingConditions,
+    detail: l10n.tapToRecheck,
   ),
 };
 
-String _readinessDetail(String primary, int issueCount) =>
-    issueCount > 1 ? '$primary，另有 ${issueCount - 1} 项' : primary;
+String _readinessDetail(
+  AppLocalizations l10n,
+  String primary,
+  int issueCount,
+) => issueCount > 1 ? l10n.additionalIssues(primary, issueCount - 1) : primary;
 
 final class _MeetingSectionHeader extends StatelessWidget {
   const _MeetingSectionHeader({required this.total});
@@ -211,6 +227,7 @@ final class _MeetingSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     return DecoratedBox(
@@ -229,10 +246,15 @@ final class _MeetingSectionHeader extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Expanded(child: Text('会议', style: theme.typography.display.lg)),
+            Expanded(
+              child: Text(
+                l10n.meetingsTitle,
+                style: theme.typography.display.lg,
+              ),
+            ),
             if (total case final count?)
               Text(
-                '共 $count 场',
+                l10n.meetingCount(count),
                 style: theme.typography.body.xs.copyWith(
                   color: theme.colors.mutedForeground,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -293,6 +315,7 @@ final class _StartMeetingControlState extends State<_StartMeetingControl>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     return FTappable(
@@ -302,7 +325,9 @@ final class _StartMeetingControlState extends State<_StartMeetingControl>
         pressedExitDuration: Duration.zero,
         motion: FTappableMotion.none,
       ),
-      semanticsLabel: widget.isStarting ? '正在准备录音' : '开始会议',
+      semanticsLabel: widget.isStarting
+          ? l10n.preparingRecording
+          : l10n.startMeeting,
       onPress: widget.isStarting ? null : widget.onPress,
       builder: (context, variants, child) {
         final pressed = variants.contains(FTappableVariant.pressed);
@@ -341,7 +366,9 @@ final class _StartMeetingControlState extends State<_StartMeetingControl>
                   Icon(FLucideIcons.mic, color: theme.colors.primaryForeground),
                 SizedBox(width: appStyle.spaceSm),
                 Text(
-                  widget.isStarting ? '正在准备录音…' : '开始会议',
+                  widget.isStarting
+                      ? l10n.preparingRecordingEllipsis
+                      : l10n.startMeeting,
                   style: theme.typography.body.lg.copyWith(
                     color: theme.colors.primaryForeground,
                     fontWeight: FontWeight.w600,

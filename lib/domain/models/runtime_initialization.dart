@@ -17,6 +17,7 @@ final class RuntimeInitializationProgress {
     required this.totalBytes,
     this.resourceName,
     this.message,
+    this.messageCode,
     this.shortageBytes,
   });
 
@@ -25,6 +26,7 @@ final class RuntimeInitializationProgress {
   final int totalBytes;
   final String? resourceName;
   final String? message;
+  final String? messageCode;
   final int? shortageBytes;
 
   double get fraction => totalBytes <= 0

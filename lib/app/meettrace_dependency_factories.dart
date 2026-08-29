@@ -19,6 +19,7 @@ import '../data/services/storage/meeting_directory_deletion_service.dart';
 import '../data/services/vad/silero_vad_segmenter.dart';
 import '../domain/models/meeting.dart';
 import '../domain/models/app_theme.dart';
+import '../domain/models/app_language.dart';
 import '../domain/use_cases/delete_meeting.dart';
 import '../domain/use_cases/initialize_runtime_assets.dart';
 import '../domain/use_cases/manage_recording_session.dart';
@@ -26,6 +27,7 @@ import '../domain/use_cases/revise_final_transcript.dart';
 import '../domain/use_cases/rename_meeting.dart';
 import '../domain/use_cases/share_meeting_audio.dart';
 import '../domain/use_cases/start_meeting.dart';
+import '../domain/use_cases/build_meeting_share.dart';
 import '../ui/core/asr_model_option.dart';
 import '../ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
 import '../ui/features/meetings/view_models/list/meeting_list_view_model.dart';
@@ -34,6 +36,7 @@ import '../ui/features/meetings/view_models/start/start_meeting_view_model.dart'
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
 import '../ui/features/settings/view_models/theme_settings_view_model.dart';
+import '../ui/features/settings/view_models/language_settings_view_model.dart';
 import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
 import '../ui/features/updates/view_models/app_update_view_model.dart';
 import 'meettrace_dependencies.dart';
@@ -63,7 +66,13 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
     );
   }
 
-  MeetingDetailViewModel createMeetingDetailViewModel(Meeting selectedMeeting) {
+  MeetingDetailViewModel createMeetingDetailViewModel(
+    Meeting selectedMeeting, {
+    required BuildMeetingShareUseCase Function() shareBuilderProvider,
+    required String Function(String meetingTitle) audioShareTitleBuilder,
+    required String Function() audioFileNameFallbackBuilder,
+    required String Function(int number) speakerLabelBuilder,
+  }) {
     final sharing = const SharePlusTextShareService();
     return MeetingDetailViewModel(
       meeting: selectedMeeting,
@@ -80,7 +89,11 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       ),
       sharing: sharing,
       audioSharing: ShareMeetingAudioUseCase(
-        PcmWavAudioShareService(layout: storage.fileLayout),
+        PcmWavAudioShareService(
+          layout: storage.fileLayout,
+          shareTitleBuilder: audioShareTitleBuilder,
+          fileNameFallbackBuilder: audioFileNameFallbackBuilder,
+        ),
       ),
       deletion: DeleteMeetingUseCase(
         meetings: storage.meetings,
@@ -90,6 +103,8 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         output: AudioplayersDeviceAudioOutput(),
         temporaryDirectory: storage.fileLayout.rootPath,
       ),
+      shareBuilderProvider: shareBuilderProvider,
+      speakerLabelBuilder: speakerLabelBuilder,
     );
   }
 
@@ -131,7 +146,9 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
     );
   }
 
-  DataControlsViewModel createDataControlsViewModel() {
+  DataControlsViewModel createDataControlsViewModel({
+    required String Function() diagnosticsSubjectBuilder,
+  }) {
     return DataControlsViewModel(
       dataControl: LocalDataControlService(
         layout: storage.fileLayout,
@@ -139,6 +156,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
         installations: storage.installations,
       ),
       sharing: const SharePlusTextShareService(),
+      diagnosticsSubjectBuilder: diagnosticsSubjectBuilder,
     );
   }
 
@@ -151,7 +169,18 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
     );
   }
 
-  StartMeetingViewModel createStartMeetingViewModel() {
+  LanguageSettingsViewModel createLanguageSettingsViewModel(
+    ValueNotifier<AppLanguageMode> languageMode,
+  ) {
+    return LanguageSettingsViewModel(
+      preferences: storage.languagePreferences,
+      languageMode: languageMode,
+    );
+  }
+
+  StartMeetingViewModel createStartMeetingViewModel({
+    required String Function(DateTime) meetingTitleFactory,
+  }) {
     return StartMeetingViewModel(
       startMeeting: StartMeetingUseCase(
         meetings: storage.meetings,
@@ -161,6 +190,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
             'meeting-${DateTime.now().microsecondsSinceEpoch}',
         now: DateTime.now,
         recordingInputLock: meeting.recordingInputLock,
+        meetingTitleFactory: meetingTitleFactory,
       ),
     );
   }

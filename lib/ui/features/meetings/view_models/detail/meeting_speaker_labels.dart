@@ -10,13 +10,17 @@ final class SpeakerLabelGroup {
   final int segmentCount;
 }
 
-String displaySpeakerLabel(String? speakerId) {
+String displaySpeakerLabel(
+  String? speakerId, {
+  required String Function(int number) speakerLabelBuilder,
+}) {
   if (speakerId == null || speakerId == 'speaker-1') {
-    return '说话人 1';
+    return speakerLabelBuilder(1);
   }
   final numeric = RegExp(r'^speaker-(\d+)$').firstMatch(speakerId);
-  if (numeric != null) {
-    return '说话人 ${numeric.group(1)}';
+  final number = numeric == null ? null : int.tryParse(numeric.group(1)!);
+  if (number != null) {
+    return speakerLabelBuilder(number);
   }
   return speakerId;
 }

@@ -1,4 +1,5 @@
 import '../models/app_theme.dart';
+import '../models/app_language.dart';
 import '../models/meeting.dart';
 import '../models/model_installation.dart';
 import '../models/model_usage_lease.dart';
@@ -98,6 +99,12 @@ abstract interface class ThemePreferenceRepository {
   Future<AppThemeMode> getThemeMode();
 
   Future<void> setThemeMode(AppThemeMode mode);
+}
+
+abstract interface class LanguagePreferenceRepository {
+  Future<AppLanguageMode> getLanguageMode();
+
+  Future<void> setLanguageMode(AppLanguageMode mode);
 }
 
 abstract interface class ProcessingTaskRepository {
