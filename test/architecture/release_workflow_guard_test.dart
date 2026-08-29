@@ -342,5 +342,17 @@ void main() {
       expect(cleanup, contains(r'cmdkey.exe "/delete:$target"'));
       expect(cleanup, contains(r'cmdkey.exe "/list:$target"'));
     });
+
+    test('生产提交在调用仓库清理脚本前检出受审工作流', () async {
+      final workflow = await _workflow('alpha-release-reconcile.yml');
+      final production = _job(workflow, 'submit_production', 'report_blocked');
+      final checkout = production.indexOf(r'ref: ${{ github.workflow_sha }}');
+      final cleanup = production.indexOf(
+        'tool/release/remove_microsoft_store_cli_credential.ps1',
+      );
+
+      expect(checkout, greaterThanOrEqualTo(0));
+      expect(cleanup, greaterThan(checkout));
+    });
   });
 }
