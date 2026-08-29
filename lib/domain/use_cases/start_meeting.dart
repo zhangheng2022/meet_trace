@@ -43,6 +43,7 @@ final class StartMeetingUseCase {
     required this.meetingIdFactory,
     required this.now,
     required this.recordingInputLock,
+    this.meetingTitleFactory = meetingTitleForStartTime,
     AsrModelRegistry? registry,
   }) : registry = registry ?? AsrModelRegistry.alpha;
 
@@ -52,6 +53,7 @@ final class StartMeetingUseCase {
   final String Function() meetingIdFactory;
   final DateTime Function() now;
   final LockRecordingInputUseCase recordingInputLock;
+  final String Function(DateTime) meetingTitleFactory;
   final AsrModelRegistry registry;
 
   Future<StartedMeetingSession> execute() async {
@@ -83,7 +85,7 @@ final class StartMeetingUseCase {
       final timestamp = now();
       final created = Meeting(
         id: meetingIdFactory(),
-        title: meetingTitleForStartTime(timestamp),
+        title: meetingTitleFactory(timestamp),
         createdAt: timestamp,
         status: MeetingState.created,
         audioDurationMs: 0,

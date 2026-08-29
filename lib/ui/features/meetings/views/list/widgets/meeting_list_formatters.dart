@@ -3,6 +3,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/meeting.dart';
 import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../core/app_value_formatters.dart';
 
 IconData meetingStatusIcon(MeetingState state) => switch (state) {
@@ -13,22 +14,25 @@ IconData meetingStatusIcon(MeetingState state) => switch (state) {
   MeetingState.failed => FLucideIcons.circleAlert,
 };
 
-String meetingStatusLabel(MeetingState state) => switch (state) {
-  MeetingState.created => '准备中',
-  MeetingState.recording => '录音中',
-  MeetingState.processing => '处理中',
-  MeetingState.completed => '已完成',
-  MeetingState.failed => '失败',
-};
+String meetingStatusLabel(AppLocalizations l10n, MeetingState state) =>
+    switch (state) {
+      MeetingState.created => l10n.meetingStatusPreparing,
+      MeetingState.recording => l10n.meetingStatusRecording,
+      MeetingState.processing => l10n.meetingStatusProcessing,
+      MeetingState.completed => l10n.meetingStatusCompleted,
+      MeetingState.failed => l10n.meetingStatusFailed,
+    };
 
-String meetingLedgerStatus(Meeting meeting) => switch (meeting.status) {
-  MeetingState.created => '准备中',
-  MeetingState.recording => '录音中',
-  MeetingState.processing => '正在生成最终转录',
-  MeetingState.completed => '已完成',
-  MeetingState.failed when meeting.audioPath?.isNotEmpty == true => '处理失败',
-  MeetingState.failed => '失败 · 打开查看事实音频状态',
-};
+String meetingLedgerStatus(AppLocalizations l10n, Meeting meeting) =>
+    switch (meeting.status) {
+      MeetingState.created => l10n.meetingStatusPreparing,
+      MeetingState.recording => l10n.meetingStatusRecording,
+      MeetingState.processing => l10n.meetingStatusGeneratingFinal,
+      MeetingState.completed => l10n.meetingStatusCompleted,
+      MeetingState.failed when meeting.audioPath?.isNotEmpty == true =>
+        l10n.meetingStatusProcessingFailed,
+      MeetingState.failed => l10n.meetingStatusFailedAudioHint,
+    };
 
 String meetingDurationLabel(Duration value) =>
     formatClockDuration(value, alwaysShowHours: true);

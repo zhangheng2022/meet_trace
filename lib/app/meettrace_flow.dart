@@ -1,12 +1,17 @@
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
+import 'package:intl/intl.dart';
 
 import '../data/services/storage/local_data_generation_gate.dart';
 import '../data/services/sharing/share_plus_cache_cleaner.dart';
 import '../domain/models/meeting.dart';
 import '../domain/models/app_theme.dart';
+import '../domain/models/app_language.dart';
 import '../domain/use_cases/start_meeting.dart';
+import '../domain/use_cases/build_meeting_share.dart';
+import '../l10n/l10n.dart';
+import '../l10n/ui_message_localizations.dart';
 import '../ui/core/app_dialog.dart';
 import '../ui/features/meetings/view_models/list/meeting_list_view_model.dart';
 import '../ui/features/meetings/views/detail/meeting_detail_view.dart';
@@ -31,11 +36,13 @@ final class MeetTraceBootstrap extends StatefulWidget {
     this.loadDependencies = MeetTraceDependencies.create,
     this.preflight = clearMeetTraceBootstrapCache,
     this.themeMode,
+    this.languageMode,
   });
 
   final MeetTraceDependenciesLoader loadDependencies;
   final MeetTraceBootstrapPreflight preflight;
   final ValueNotifier<AppThemeMode>? themeMode;
+  final ValueNotifier<AppLanguageMode>? languageMode;
 
   @override
   State<MeetTraceBootstrap> createState() => _MeetTraceBootstrapState();
@@ -54,20 +61,36 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
 
   Future<MeetTraceDependencies> _createDependencies() async {
     final themeMode = widget.themeMode;
+    final languageMode = widget.languageMode;
     await widget.preflight();
     final dependencies = await widget.loadDependencies();
-    if (!mounted || themeMode == null) {
+    if (!mounted) {
       return dependencies;
     }
-    try {
-      final savedMode = await dependencies.storage.themePreferences
-          .getThemeMode();
-      if (mounted) {
-        themeMode.value = savedMode;
+    if (themeMode != null) {
+      try {
+        final savedMode = await dependencies.storage.themePreferences
+            .getThemeMode();
+        if (mounted) {
+          themeMode.value = savedMode;
+        }
+      } on Object {
+        if (mounted) {
+          themeMode.value = AppThemeMode.system;
+        }
       }
-    } on Object {
-      if (mounted) {
-        themeMode.value = AppThemeMode.system;
+    }
+    if (languageMode != null) {
+      try {
+        final savedMode = await dependencies.storage.languagePreferences
+            .getLanguageMode();
+        if (mounted) {
+          languageMode.value = savedMode;
+        }
+      } on Object {
+        if (mounted) {
+          languageMode.value = AppLanguageMode.system;
+        }
       }
     }
     return dependencies;
@@ -120,6 +143,7 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
         return _RuntimeInitializationGate(
           dependencies: dependencies!,
           themeMode: widget.themeMode,
+          languageMode: widget.languageMode,
         );
       },
     );
@@ -136,10 +160,12 @@ final class _RuntimeInitializationGate extends StatefulWidget {
   const _RuntimeInitializationGate({
     required this.dependencies,
     required this.themeMode,
+    required this.languageMode,
   });
 
   final MeetTraceDependencies dependencies;
   final ValueNotifier<AppThemeMode>? themeMode;
+  final ValueNotifier<AppLanguageMode>? languageMode;
 
   @override
   State<_RuntimeInitializationGate> createState() =>
@@ -164,6 +190,7 @@ final class _RuntimeInitializationGateState
         ready: MeetTraceFlow(
           dependencies: widget.dependencies,
           themeMode: widget.themeMode,
+          languageMode: widget.languageMode,
           onRuntimeRepairRequired: _restartForRepair,
         ),
       );
@@ -188,12 +215,14 @@ final class MeetTraceFlow extends StatefulWidget {
   const MeetTraceFlow({
     required this.dependencies,
     required this.themeMode,
+    required this.languageMode,
     required this.onRuntimeRepairRequired,
     super.key,
   });
 
   final MeetTraceDependencies dependencies;
   final ValueNotifier<AppThemeMode>? themeMode;
+  final ValueNotifier<AppLanguageMode>? languageMode;
   final VoidCallback onRuntimeRepairRequired;
 
   @override
@@ -254,7 +283,12 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   }
 
   Future<void> _performStartMeeting() async {
-    final viewModel = widget.dependencies.createStartMeetingViewModel();
+    final l10n = context.l10n;
+    final viewModel = widget.dependencies.createStartMeetingViewModel(
+      meetingTitleFactory: (startedAt) => l10n.defaultMeetingTitle(
+        _localizedMeetingDateTime(startedAt, l10n.localeName),
+      ),
+    );
     try {
       final session = await viewModel.start();
       if (!mounted) {
@@ -265,7 +299,12 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
           widget.onRuntimeRepairRequired();
           return;
         }
-        await _showStartFailure(viewModel.errorMessage ?? '默认模型暂时不可用，请前往设置检查');
+        final message = viewModel.errorMessage;
+        await _showStartFailure(
+          message == null
+              ? l10n.defaultModelTemporarilyUnavailable
+              : l10n.localizeUiMessage(message),
+        );
         return;
       }
       _openRecording(session);
@@ -275,10 +314,11 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   }
 
   Future<void> _showStartFailure(String message) {
+    final l10n = context.l10n;
     return showAppAlertDialog(
       context: context,
-      semanticsLabel: '无法开始会议',
-      title: '无法开始会议',
+      semanticsLabel: l10n.cannotStartMeeting,
+      title: l10n.cannotStartMeeting,
       message: message,
     );
   }
@@ -299,7 +339,31 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   }
 
   void _openMeeting(Meeting meeting, {bool replaceCurrent = false}) {
-    final viewModel = widget.dependencies.createMeetingDetailViewModel(meeting);
+    final languageMode = widget.languageMode;
+    AppLocalizations currentL10n() => _currentLocalizations(languageMode);
+    final viewModel = widget.dependencies.createMeetingDetailViewModel(
+      meeting,
+      shareBuilderProvider: () {
+        final l10n = currentL10n();
+        return BuildMeetingShareUseCase(
+          copy: MeetingShareCopy(
+            untitledMeeting: l10n.untitledMeeting,
+            meetingTimeLabel: l10n.meetingTimeLabel,
+            finalTranscriptTitle: l10n.finalTranscriptTitle,
+            speakerFallback: l10n.speakerOne,
+            exportFooter: l10n.shareExportFooter,
+            labelSeparator: l10n.shareLabelSeparator,
+          ),
+          dateTimeFormatter: (startedAt) =>
+              _localizedMeetingDateTime(startedAt, l10n.localeName),
+          speakerLabelBuilder: l10n.speakerNumber,
+        );
+      },
+      audioShareTitleBuilder: (title) =>
+          currentL10n().audioShareSystemTitle(title),
+      audioFileNameFallbackBuilder: () => currentL10n().audioFileNameFallback,
+      speakerLabelBuilder: (number) => currentL10n().speakerNumber(number),
+    );
     final route = MaterialPageRoute<void>(
       builder: (_) => MeetingDetailView(
         viewModel: viewModel,
@@ -314,11 +378,20 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   }
 
   void _openSettings() {
+    final languageMode = widget.languageMode;
     final modelSettings = widget.dependencies.createModelSettingsViewModel();
-    final dataControls = widget.dependencies.createDataControlsViewModel();
+    final dataControls = widget.dependencies.createDataControlsViewModel(
+      diagnosticsSubjectBuilder: () =>
+          _currentLocalizations(languageMode).diagnosticsShareSubject,
+    );
     final themeSettings = widget.themeMode == null
         ? null
         : widget.dependencies.createThemeSettingsViewModel(widget.themeMode!);
+    final languageSettings = widget.languageMode == null
+        ? null
+        : widget.dependencies.createLanguageSettingsViewModel(
+            widget.languageMode!,
+          );
     unawaited(
       Navigator.of(context)
           .push<void>(
@@ -327,6 +400,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
                 viewModel: modelSettings,
                 dataControls: dataControls,
                 themeSettings: themeSettings,
+                languageSettings: languageSettings,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
             ),
@@ -335,6 +409,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
             modelSettings.dispose();
             dataControls.dispose();
             themeSettings?.dispose();
+            languageSettings?.dispose();
             unawaited(_meetingList.refreshReadiness());
           }),
     );
@@ -347,4 +422,20 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
     _updates?.dispose();
     super.dispose();
   }
+}
+
+AppLocalizations _currentLocalizations(
+  ValueNotifier<AppLanguageMode>? languageMode,
+) {
+  final locale = languageMode == null
+      ? const Locale('zh')
+      : languageMode.value.locale ??
+            resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locale);
+  return lookupAppLocalizations(locale);
+}
+
+String _localizedMeetingDateTime(DateTime value, String locale) {
+  final local = value.toLocal();
+  return '${DateFormat.yMd(locale).format(local)} '
+      '${DateFormat.jm(locale).format(local)}';
 }

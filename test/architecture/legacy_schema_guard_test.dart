@@ -72,10 +72,15 @@ List<String> _legacyColumnViolations(
   List<String> legacyColumns,
 ) {
   final violations = <String>[];
+  final generatedLocalizations = p.absolute('lib/l10n/generated');
   final files = Directory(rootPath)
       .listSync(recursive: true, followLinks: false)
       .whereType<File>()
-      .where((file) => file.path.endsWith('.dart'));
+      .where(
+        (file) =>
+            file.path.endsWith('.dart') &&
+            !p.isWithin(generatedLocalizations, p.absolute(file.path)),
+      );
   for (final file in files) {
     final content = file.readAsStringSync().toLowerCase();
     for (final column in legacyColumns) {

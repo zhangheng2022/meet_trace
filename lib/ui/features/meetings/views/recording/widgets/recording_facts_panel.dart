@@ -4,6 +4,8 @@ import 'package:forui/forui.dart';
 import '../../../../../../domain/models/asr_model_registry.dart';
 import '../../../../../../domain/models/workflow_states.dart';
 import '../../../../../../keys.dart';
+import '../../../../../../l10n/l10n.dart';
+import '../../../../../../l10n/ui_message_localizations.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_status_notice.dart';
 import '../../../../../core/app_value_formatters.dart';
@@ -22,6 +24,7 @@ final class RecordingFactsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     final recordingState = viewModel.isFinalizing
@@ -96,15 +99,16 @@ final class RecordingFactsPanel extends StatelessWidget {
                 SizedBox(height: wide ? appStyle.spaceLg : appStyle.spaceMd),
                 _RecordingFactLedger(
                   state: recordingState,
-                  modelName: model?.displayName ?? '本场模型',
+                  modelName:
+                      model?.displayName ?? l10n.meetingLockedModelFallback,
                   spacing: wide ? appStyle.spaceSm : appStyle.spaceXs,
                 ),
                 if (viewModel.errorMessage case final message?) ...[
                   SizedBox(height: appStyle.spaceMd),
                   AppStatusNotice(
                     tone: AppStatusTone.error,
-                    title: message,
-                    message: '请保留应用数据，并按当前可用操作继续。事实音频状态以上方提示为准。',
+                    title: l10n.localizeUiMessage(message),
+                    message: l10n.recordingErrorGuidance,
                   ),
                 ],
               ],
@@ -136,7 +140,7 @@ final class _RecordingStateLabel extends StatelessWidget {
         ),
         SizedBox(width: appStyle.spaceXs),
         Text(
-          _recordingShortLabel(state),
+          _recordingShortLabel(context.l10n, state),
           style: theme.typography.body.md.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
@@ -163,13 +167,13 @@ final class _RecordingFactLedger extends StatelessWidget {
         children: [
           _RecordingFactRow(
             icon: FLucideIcons.archive,
-            label: _recordingLabel(state),
+            label: _recordingLabel(context.l10n, state),
             emphasized: true,
           ),
           SizedBox(height: spacing),
           _RecordingFactRow(
             icon: FLucideIcons.lockKeyhole,
-            label: '$modelName · 本场锁定',
+            label: context.l10n.meetingModelLocked(modelName),
           ),
         ],
       ),
@@ -215,24 +219,28 @@ final class _RecordingFactRow extends StatelessWidget {
   }
 }
 
-String _recordingShortLabel(RecordingState state) => switch (state) {
-  RecordingState.idle || RecordingState.starting => '准备录音',
-  RecordingState.recording => '录音中',
-  RecordingState.recovering => '正在恢复',
-  RecordingState.interrupted => '录音已中断',
-  RecordingState.paused => '已暂停',
-  RecordingState.finalizing => '正在保存',
-  RecordingState.completed => '已保存',
-  RecordingState.failed => '录音异常',
-};
+String _recordingShortLabel(AppLocalizations l10n, RecordingState state) =>
+    switch (state) {
+      RecordingState.idle ||
+      RecordingState.starting => l10n.recordingStatePreparing,
+      RecordingState.recording => l10n.meetingStatusRecording,
+      RecordingState.recovering => l10n.recordingStateRecovering,
+      RecordingState.interrupted => l10n.recordingStateInterrupted,
+      RecordingState.paused => l10n.recordingStatePaused,
+      RecordingState.finalizing => l10n.recordingStateSaving,
+      RecordingState.completed => l10n.recordingStateSaved,
+      RecordingState.failed => l10n.recordingStateError,
+    };
 
-String _recordingLabel(RecordingState state) => switch (state) {
-  RecordingState.idle || RecordingState.starting => '正在启动事实录音',
-  RecordingState.recording => '事实音频正在安全写入',
-  RecordingState.recovering => '输入中断，正在切换系统默认麦克风',
-  RecordingState.interrupted => '事实录音已中断，可结束会议以保存已有音频',
-  RecordingState.paused => '事实录音已暂停',
-  RecordingState.finalizing => '正在封存事实音频',
-  RecordingState.completed => '事实音频已保存',
-  RecordingState.failed => '事实录音发生错误',
-};
+String _recordingLabel(AppLocalizations l10n, RecordingState state) =>
+    switch (state) {
+      RecordingState.idle ||
+      RecordingState.starting => l10n.recordingFactStarting,
+      RecordingState.recording => l10n.recordingFactWriting,
+      RecordingState.recovering => l10n.recordingFactRecovering,
+      RecordingState.interrupted => l10n.recordingFactInterrupted,
+      RecordingState.paused => l10n.recordingFactPaused,
+      RecordingState.finalizing => l10n.recordingFactSealing,
+      RecordingState.completed => l10n.recordingFactSaved,
+      RecordingState.failed => l10n.recordingFactError,
+    };

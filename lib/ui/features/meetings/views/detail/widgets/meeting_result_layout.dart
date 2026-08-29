@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../../keys.dart';
+import '../../../../../../l10n/l10n.dart';
+import '../../../../../../l10n/ui_message_localizations.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_page_body.dart';
 import '../../../../../core/app_responsive.dart';
@@ -38,8 +40,8 @@ final class MeetingResultView extends StatelessWidget {
         if (viewModel.errorMessage case final message?) ...[
           AppStatusNotice(
             tone: AppStatusTone.error,
-            title: '最近一次处理未完成',
-            message: message,
+            title: context.l10n.lastProcessingIncomplete,
+            message: context.l10n.localizeUiMessage(message),
           ),
           SizedBox(height: appStyle.spaceMd),
         ],
@@ -54,8 +56,8 @@ final class MeetingResultView extends StatelessWidget {
           SizedBox(height: appStyle.spaceLg),
           AppStatusNotice(
             tone: AppStatusTone.info,
-            title: '操作状态',
-            message: message,
+            title: context.l10n.operationStatus,
+            message: context.l10n.localizeUiMessage(message),
           ),
         ],
         SizedBox(height: appStyle.spaceXl),
@@ -150,16 +152,16 @@ final class _MeetingFactRail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('事实记录', style: theme.typography.body.xs),
+        Text(context.l10n.factRecord, style: theme.typography.body.xs),
         SizedBox(height: appStyle.spaceLg),
         MeetingIdentity(viewModel: viewModel),
         SizedBox(height: appStyle.spaceLg),
         AudioEvidenceStrip(viewModel: viewModel, compact: true),
         SizedBox(height: appStyle.spaceLg),
-        const AppStatusNotice(
+        AppStatusNotice(
           tone: AppStatusTone.success,
-          title: '事实音频已保存',
-          message: '最终转录带有时间戳，可回到本机原音频核对。',
+          title: context.l10n.sourceAudioSaved,
+          message: context.l10n.sourceAudioTimestampVerification,
         ),
       ],
     );
@@ -215,16 +217,16 @@ final class _FailureCard extends StatelessWidget {
     final appStyle = context.theme.style.app;
     return FAlert(
       variant: FAlertVariant.destructive,
-      title: const Text('最终转录未完成'),
+      title: Text(context.l10n.finalTranscriptIncomplete),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(message),
+          Text(context.l10n.localizeUiMessage(message)),
           if (viewModel.canRetry) ...[
             SizedBox(height: appStyle.spaceMd),
             FButton(
               onPress: () => unawaited(viewModel.retry()),
-              child: const Text('重试最终转录'),
+              child: Text(context.l10n.retryFinalTranscript),
             ),
           ],
         ],

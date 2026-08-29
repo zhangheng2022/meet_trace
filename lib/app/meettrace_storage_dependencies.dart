@@ -1,4 +1,5 @@
 import '../data/repositories/sqflite_diarization_preference_repository.dart';
+import '../data/repositories/sqflite_language_preference_repository.dart';
 import '../data/repositories/sqflite_meeting_repository.dart';
 import '../data/repositories/sqflite_model_installation_repository.dart';
 import '../data/repositories/sqflite_model_preference_repository.dart';
@@ -25,6 +26,7 @@ final class StorageDependencies {
     required this.recordingInputPreferences,
     required this.diarizationPreferences,
     required this.themePreferences,
+    required this.languagePreferences,
     required this.processingTasks,
     required this.leases,
   });
@@ -38,6 +40,7 @@ final class StorageDependencies {
   final SqfliteRecordingInputPreferenceRepository recordingInputPreferences;
   final SqfliteDiarizationPreferenceRepository diarizationPreferences;
   final SqfliteThemePreferenceRepository themePreferences;
+  final SqfliteLanguagePreferenceRepository languagePreferences;
   final SqfliteProcessingTaskRepository processingTasks;
   final SqfliteModelUsageLeaseRepository leases;
 
@@ -82,6 +85,7 @@ final class StorageDependencies {
           database,
         ),
         themePreferences: SqfliteThemePreferenceRepository(database),
+        languagePreferences: SqfliteLanguagePreferenceRepository(database),
         processingTasks: SqfliteProcessingTaskRepository(database),
         leases: SqfliteModelUsageLeaseRepository(database),
       );

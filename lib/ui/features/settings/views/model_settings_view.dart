@@ -10,8 +10,11 @@ import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../domain/models/app_theme.dart';
+import '../../../../domain/models/app_language.dart';
 import '../../../../domain/models/asr_model.dart';
 import '../../../../domain/models/recording_input.dart';
+import '../../../../l10n/l10n.dart';
+import '../../../../l10n/ui_message_localizations.dart';
 import '../../../../theme/theme.dart';
 import '../../../core/asr_model_option.dart';
 import '../../../core/app_back_icon.dart';
@@ -21,12 +24,14 @@ import '../../../core/app_responsive.dart';
 import '../view_models/data_controls_view_model.dart';
 import '../view_models/model_settings_view_model.dart';
 import '../view_models/theme_settings_view_model.dart';
+import '../view_models/language_settings_view_model.dart';
 
 final class ModelSettingsView extends StatefulWidget {
   const ModelSettingsView({
     required this.viewModel,
     this.dataControls,
     this.themeSettings,
+    this.languageSettings,
     this.onBack,
     super.key,
   });
@@ -34,6 +39,7 @@ final class ModelSettingsView extends StatefulWidget {
   final ModelSettingsViewModel viewModel;
   final DataControlsViewModel? dataControls;
   final ThemeSettingsViewModel? themeSettings;
+  final LanguageSettingsViewModel? languageSettings;
   final VoidCallback? onBack;
 
   @override
@@ -55,12 +61,14 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
       builder: (context, _) => FScaffold(
         childPad: false,
         header: widget.onBack == null
-            ? const FHeader(title: Text('设置'))
+            ? FHeader(title: Text(context.l10n.settingsTitle))
             : FHeader.nested(
-                title: const Text('设置'),
+                title: Text(context.l10n.settingsTitle),
                 prefixes: [
                   FHeaderAction(
-                    icon: const AppBackIcon(semanticsLabel: '返回会议列表'),
+                    icon: AppBackIcon(
+                      semanticsLabel: context.l10n.backToMeetings,
+                    ),
                     onPress: widget.onBack,
                   ),
                 ],
@@ -71,6 +79,7 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
   }
 
   Widget _body(BuildContext context) {
+    final l10n = context.l10n;
     final viewModel = widget.viewModel;
     final appStyle = context.theme.style.app;
     final descriptor = viewModel.registry.requireById(viewModel.defaultModelId);
@@ -86,18 +95,29 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
           ),
           SizedBox(height: appStyle.spaceXl),
         ],
+        if (widget.languageSettings case final languageSettings?) ...[
+          ListenableBuilder(
+            listenable: languageSettings,
+            builder: (context, _) => _LanguageSection(
+              viewModel: languageSettings,
+              topRule: widget.themeSettings != null,
+            ),
+          ),
+          SizedBox(height: appStyle.spaceXl),
+        ],
         if (viewModel.errorMessage case final message?) ...[
           FAlert(
             variant: FAlertVariant.destructive,
-            title: const Text('模型设置未完成'),
-            subtitle: Text(message),
+            title: Text(l10n.modelSettingsIncomplete),
+            subtitle: Text(l10n.localizeUiMessage(message)),
           ),
           SizedBox(height: appStyle.spaceLg),
         ],
         _MeetingDefaultsSection(
           descriptor: descriptor,
           loading: viewModel.isLoading,
-          topRule: widget.themeSettings != null,
+          topRule:
+              widget.themeSettings != null || widget.languageSettings != null,
         ),
         if (viewModel.supportsRecordingInputSelection) ...[
           SizedBox(height: appStyle.spaceXl),
@@ -165,6 +185,66 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
   }
 }
 
+final class _LanguageSection extends StatelessWidget {
+  const _LanguageSection({required this.viewModel, required this.topRule});
+
+  final LanguageSettingsViewModel viewModel;
+  final bool topRule;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final appStyle = context.theme.style.app;
+    return _SettingsSection(
+      key: const ValueKey('language-section'),
+      title: l10n.languageSectionTitle,
+      topRule: topRule,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (viewModel.saveFailed) ...[
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: Text(l10n.languageSaveFailedTitle),
+              subtitle: Text(l10n.languageSaveFailedMessage),
+            ),
+            SizedBox(height: appStyle.spaceMd),
+          ],
+          FTileGroup(
+            semanticsLabel: l10n.languageOptionsSemantics,
+            children: [
+              for (final mode in AppLanguageMode.values)
+                _PreferenceTile(
+                  key: ValueKey('language-mode-${mode.name}'),
+                  label: switch (mode) {
+                    AppLanguageMode.system => l10n.languageSystem,
+                    AppLanguageMode.simplifiedChinese =>
+                      l10n.languageSimplifiedChinese,
+                    AppLanguageMode.english => l10n.languageEnglish,
+                  },
+                  detail: switch (mode) {
+                    AppLanguageMode.system => l10n.languageSystemDescription,
+                    AppLanguageMode.simplifiedChinese =>
+                      l10n.languageSimplifiedChineseDescription,
+                    AppLanguageMode.english => l10n.languageEnglishDescription,
+                  },
+                  icon: switch (mode) {
+                    AppLanguageMode.system => FLucideIcons.languages,
+                    AppLanguageMode.simplifiedChinese ||
+                    AppLanguageMode.english => FLucideIcons.text,
+                  },
+                  selected: viewModel.selectedMode == mode,
+                  enabled: !viewModel.isBusy,
+                  onPress: () => unawaited(viewModel.select(mode)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 final class _AppearanceSection extends StatelessWidget {
   const _AppearanceSection({required this.viewModel});
 
@@ -172,36 +252,37 @@ final class _AppearanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final appStyle = context.theme.style.app;
     return _SettingsSection(
       key: const ValueKey('appearance-section'),
-      title: '外观',
+      title: l10n.appearanceSectionTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (viewModel.errorMessage case final message?) ...[
             FAlert(
               variant: FAlertVariant.destructive,
-              title: const Text('主题设置未保存'),
-              subtitle: Text(message),
+              title: Text(l10n.themeSaveFailedTitle),
+              subtitle: Text(l10n.localizeUiMessage(message)),
             ),
             SizedBox(height: appStyle.spaceMd),
           ],
           FTileGroup(
-            semanticsLabel: '外观主题',
+            semanticsLabel: l10n.themeOptionsSemantics,
             children: [
               for (final mode in AppThemeMode.values)
                 _PreferenceTile(
                   key: ValueKey('theme-mode-${mode.name}'),
                   label: switch (mode) {
-                    AppThemeMode.system => '跟随系统',
-                    AppThemeMode.light => '浅色',
-                    AppThemeMode.dark => '深色',
+                    AppThemeMode.system => l10n.themeSystem,
+                    AppThemeMode.light => l10n.themeLight,
+                    AppThemeMode.dark => l10n.themeDark,
                   },
                   detail: switch (mode) {
-                    AppThemeMode.system => '自动匹配设备外观',
-                    AppThemeMode.light => '始终使用浅色外观',
-                    AppThemeMode.dark => '始终使用深色外观',
+                    AppThemeMode.system => l10n.themeSystemDescription,
+                    AppThemeMode.light => l10n.themeLightDescription,
+                    AppThemeMode.dark => l10n.themeDarkDescription,
                   },
                   icon: switch (mode) {
                     AppThemeMode.system => FLucideIcons.monitor,
@@ -233,15 +314,16 @@ final class _MeetingDefaultsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return _SettingsSection(
       key: const ValueKey('meeting-defaults-section'),
-      title: '会议默认',
+      title: l10n.meetingDefaultsTitle,
       topRule: topRule,
       child: _SettingsValueRow(
         key: const ValueKey('default-transcription-model'),
-        label: '新会议转录模型',
-        value: loading ? '正在读取' : descriptor.displayName,
-        description: '只影响后续新会议；录音开始后模型锁定，不会自动切换。',
+        label: l10n.newMeetingTranscriptionModel,
+        value: loading ? l10n.reading : descriptor.displayName,
+        description: l10n.modelLockDescription,
       ),
     );
   }
@@ -254,6 +336,7 @@ final class _RecordingInputSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final appStyle = context.theme.style.app;
     final preference = viewModel.recordingInputPreference;
     final missingSelectedDevice =
@@ -261,13 +344,13 @@ final class _RecordingInputSection extends StatelessWidget {
     final devices = viewModel.recordingInputOptions;
     return _SettingsSection(
       key: const ValueKey('recording-input-section'),
-      title: '录音输入',
+      title: l10n.recordingInputTitle,
       topRule: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '新会议开始时锁定这里的选择；会议中设备断开时仅回退一次系统默认麦克风。',
+            l10n.recordingInputDescription,
             style: context.theme.typography.body.sm.copyWith(
               color: context.theme.colors.mutedForeground,
             ),
@@ -276,22 +359,22 @@ final class _RecordingInputSection extends StatelessWidget {
           if (viewModel.recordingInputErrorMessage case final message?) ...[
             FAlert(
               variant: FAlertVariant.destructive,
-              title: const Text('麦克风设置未完成'),
-              subtitle: Text(message),
+              title: Text(l10n.microphoneSettingsIncomplete),
+              subtitle: Text(l10n.localizeUiMessage(message)),
             ),
             SizedBox(height: appStyle.spaceMd),
           ],
           if (preference == null) ...[
             if (viewModel.recordingInputsLoading)
-              const FProgress(semanticsLabel: '正在读取 Windows 麦克风列表'),
+              FProgress(semanticsLabel: l10n.readingWindowsMicrophones),
           ] else ...[
             FTileGroup(
-              semanticsLabel: 'Windows 录音输入设备',
+              semanticsLabel: l10n.windowsRecordingDevices,
               children: [
                 _PreferenceTile(
                   key: const ValueKey('recording-input-system-default'),
-                  label: '系统默认麦克风',
-                  detail: '由 Windows 在每场会议开始时解析',
+                  label: l10n.systemDefaultMicrophone,
+                  detail: l10n.systemDefaultMicrophoneDescription,
                   selected: preference.usesSystemDefault,
                   enabled:
                       !viewModel.recordingInputBusy &&
@@ -307,7 +390,7 @@ final class _RecordingInputSection extends StatelessWidget {
                   _PreferenceTile(
                     key: const ValueKey('recording-input-unavailable'),
                     label: preference.lastKnownLabel!,
-                    detail: '当前不可用，请连接设备或选择其他麦克风',
+                    detail: l10n.microphoneUnavailable,
                     selected: true,
                     enabled: false,
                     onPress: null,
@@ -317,7 +400,7 @@ final class _RecordingInputSection extends StatelessWidget {
                   _PreferenceTile(
                     key: ValueKey('recording-input-${device.id}'),
                     label: device.label,
-                    detail: 'Windows 输入设备',
+                    detail: l10n.windowsInputDevice,
                     selected: preference.deviceId == device.id,
                     enabled:
                         !viewModel.recordingInputBusy &&
@@ -337,7 +420,7 @@ final class _RecordingInputSection extends StatelessWidget {
             if (devices.isEmpty) ...[
               SizedBox(height: appStyle.spaceSm),
               Text(
-                '未发现其他麦克风，仍可使用系统默认麦克风。',
+                l10n.noOtherMicrophones,
                 style: context.theme.typography.body.sm.copyWith(
                   color: context.theme.colors.mutedForeground,
                 ),
@@ -345,7 +428,7 @@ final class _RecordingInputSection extends StatelessWidget {
             ],
             if (viewModel.recordingInputsLoading) ...[
               SizedBox(height: appStyle.spaceSm),
-              const FProgress(semanticsLabel: '正在重新扫描 Windows 麦克风列表'),
+              FProgress(semanticsLabel: l10n.rescanningWindowsMicrophones),
             ],
           ],
           if (viewModel.recordingInputStatusMessage case final status?) ...[
@@ -353,7 +436,7 @@ final class _RecordingInputSection extends StatelessWidget {
             Semantics(
               liveRegion: true,
               child: Text(
-                status,
+                l10n.localizeUiMessage(status),
                 style: context.theme.typography.body.sm.copyWith(
                   color: context.theme.colors.mutedForeground,
                 ),
@@ -372,7 +455,7 @@ final class _RecordingInputSection extends StatelessWidget {
                   ? null
                   : () => unawaited(viewModel.refreshRecordingInputs()),
               prefix: const Icon(FLucideIcons.refreshCcw),
-              child: const Text('重新扫描麦克风'),
+              child: Text(l10n.rescanMicrophones),
             ),
           ),
         ],
@@ -406,7 +489,7 @@ final class _PreferenceTile extends StatelessWidget with FTileMixin {
       selected: selected,
       child: FTile(
         selected: selected,
-        semanticsLabel: '$label，$detail',
+        semanticsLabel: '$label${context.l10n.semanticListSeparator}$detail',
         prefix: Icon(icon),
         title: Text(label),
         subtitle: Text(detail),
@@ -437,17 +520,18 @@ final class _OfflineResourcesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final appStyle = context.theme.style.app;
     return _SettingsSection(
       key: const ValueKey('offline-resources-section'),
-      title: '离线转录资源',
+      title: l10n.offlineResourcesTitle,
       topRule: true,
       child: option == null
           ? Padding(
               padding: EdgeInsets.symmetric(vertical: appStyle.spaceSm),
               child: loading
-                  ? const FProgress(semanticsLabel: '正在读取离线转录资源')
-                  : const Text('没有可用的离线转录资源。'),
+                  ? FProgress(semanticsLabel: l10n.readingOfflineResources)
+                  : Text(l10n.noOfflineResources),
             )
           : _ModelResourceLedger(
               option: option!,
@@ -474,10 +558,11 @@ final class _ModelResourceLedger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     final descriptor = option.descriptor;
-    final action = _prominentAction();
+    final action = _prominentAction(context);
     final processing = switch (option.status) {
       AsrModelUiStatus.checking ||
       AsrModelUiStatus.verifying ||
@@ -491,7 +576,7 @@ final class _ModelResourceLedger extends StatelessWidget {
         _ModelResourceHeader(option: option),
         SizedBox(height: appStyle.spaceXs),
         Text(
-          '${_languageLabel(descriptor.supportedLanguages)} · '
+          '${_languageLabel(l10n, descriptor.supportedLanguages)} · '
           '${_decimalMegabytes(descriptor.requiredBytes)}',
           style: theme.typography.body.sm.copyWith(
             color: theme.colors.mutedForeground,
@@ -499,8 +584,10 @@ final class _ModelResourceLedger extends StatelessWidget {
         ),
         SizedBox(height: appStyle.spaceSm),
         Text(
-          '版本 ${descriptor.version} · 自动识别语言'
-          '${descriptor.useInverseTextNormalization ? ' · ITN 已开启' : ''}',
+          l10n.modelVersionAutoLanguage(
+            descriptor.version,
+            descriptor.useInverseTextNormalization ? l10n.itnEnabledSuffix : '',
+          ),
           style: theme.typography.body.sm.copyWith(
             color: theme.colors.mutedForeground,
           ),
@@ -513,7 +600,11 @@ final class _ModelResourceLedger extends StatelessWidget {
         if (processing || action != null) ...[
           SizedBox(height: appStyle.spaceMd),
           if (processing)
-            FProgress(semanticsLabel: '${option.statusLabel}离线转录资源')
+            FProgress(
+              semanticsLabel: l10n.offlineResourceProgress(
+                _statusLabel(l10n, option.status),
+              ),
+            )
           else
             Align(alignment: Alignment.centerLeft, child: action!),
         ],
@@ -521,47 +612,50 @@ final class _ModelResourceLedger extends StatelessWidget {
     );
   }
 
-  Widget? _prominentAction() => switch (option.status) {
-    AsrModelUiStatus.notInstalled =>
-      onRepair == null
-          ? null
-          : FButton(
-              key: const ValueKey('repair-model-resource'),
-              onPress: busy ? null : onRepair,
-              child: const Text('下载并修复'),
-            ),
-    AsrModelUiStatus.downloading =>
-      onPause == null
-          ? null
-          : FButton(
-              key: const ValueKey('pause-model-download'),
-              variant: FButtonVariant.outline,
-              onPress: onPause,
-              child: const Text('暂停下载'),
-            ),
-    AsrModelUiStatus.paused ||
-    AsrModelUiStatus.failed ||
-    AsrModelUiStatus.insufficientStorage =>
-      onRepair == null
-          ? null
-          : FButton(
-              key: const ValueKey('repair-model-resource'),
-              onPress: busy ? null : onRepair,
-              child: const Text('继续或重试'),
-            ),
-    AsrModelUiStatus.updateAvailable =>
-      onRepair == null
-          ? null
-          : FButton(
-              key: const ValueKey('repair-model-resource'),
-              onPress: busy ? null : onRepair,
-              child: const Text('校验并更新'),
-            ),
-    AsrModelUiStatus.installed ||
-    AsrModelUiStatus.checking ||
-    AsrModelUiStatus.verifying ||
-    AsrModelUiStatus.deleting => null,
-  };
+  Widget? _prominentAction(BuildContext context) {
+    final l10n = context.l10n;
+    return switch (option.status) {
+      AsrModelUiStatus.notInstalled =>
+        onRepair == null
+            ? null
+            : FButton(
+                key: const ValueKey('repair-model-resource'),
+                onPress: busy ? null : onRepair,
+                child: Text(l10n.downloadAndRepair),
+              ),
+      AsrModelUiStatus.downloading =>
+        onPause == null
+            ? null
+            : FButton(
+                key: const ValueKey('pause-model-download'),
+                variant: FButtonVariant.outline,
+                onPress: onPause,
+                child: Text(l10n.pauseDownload),
+              ),
+      AsrModelUiStatus.paused ||
+      AsrModelUiStatus.failed ||
+      AsrModelUiStatus.insufficientStorage =>
+        onRepair == null
+            ? null
+            : FButton(
+                key: const ValueKey('repair-model-resource'),
+                onPress: busy ? null : onRepair,
+                child: Text(l10n.continueOrRetry),
+              ),
+      AsrModelUiStatus.updateAvailable =>
+        onRepair == null
+            ? null
+            : FButton(
+                key: const ValueKey('repair-model-resource'),
+                onPress: busy ? null : onRepair,
+                child: Text(l10n.verifyAndUpdate),
+              ),
+      AsrModelUiStatus.installed ||
+      AsrModelUiStatus.checking ||
+      AsrModelUiStatus.verifying ||
+      AsrModelUiStatus.deleting => null,
+    };
+  }
 }
 
 final class _ModelResourceHeader extends StatelessWidget {
@@ -608,6 +702,7 @@ final class _ModelResourceStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final failed =
         option.status == AsrModelUiStatus.failed ||
@@ -618,7 +713,7 @@ final class _ModelResourceStatus extends StatelessWidget {
     return Semantics(
       key: const ValueKey('model-resource-status'),
       container: true,
-      label: '${option.statusLabel}，离线转录资源状态',
+      label: l10n.offlineResourceStatus(_statusLabel(l10n, option.status)),
       child: ExcludeSemantics(
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -630,7 +725,7 @@ final class _ModelResourceStatus extends StatelessWidget {
             ),
             SizedBox(width: theme.style.app.space2Xs),
             Text(
-              option.statusLabel,
+              _statusLabel(l10n, option.status),
               style: theme.typography.body.sm.copyWith(color: color),
             ),
           ],
@@ -661,6 +756,7 @@ final class _ModelMaintenanceMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     return DecoratedBox(
@@ -672,15 +768,15 @@ final class _ModelMaintenanceMenu extends StatelessWidget {
         child: FPopoverMenu.tiles(
           menuAnchor: Alignment.topRight,
           childAnchor: Alignment.bottomRight,
-          semanticsLabel: '模型维护操作',
+          semanticsLabel: l10n.modelMaintenanceActions,
           menuBuilder: (context, controller, _) => [
             FTileGroup(
               children: [
                 FTile(
                   key: const ValueKey('verify-and-repair-model'),
                   prefix: const Icon(FLucideIcons.refreshCcw),
-                  title: const Text('校验并修复'),
-                  subtitle: const Text('核对本地文件完整性，必要时重新下载'),
+                  title: Text(l10n.verifyAndRepair),
+                  subtitle: Text(l10n.verifyAndRepairDescription),
                   onPress: () async {
                     await controller.hide();
                     onRepair();
@@ -693,7 +789,7 @@ final class _ModelMaintenanceMenu extends StatelessWidget {
             key: const ValueKey('model-maintenance-menu'),
             variant: FButtonVariant.ghost,
             size: FButtonSizeVariant.lg,
-            semanticsLabel: '维护离线转录资源',
+            semanticsLabel: l10n.maintainOfflineResources,
             onPress: busy ? null : () => unawaited(controller.toggle()),
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -705,7 +801,7 @@ final class _ModelMaintenanceMenu extends StatelessWidget {
                   children: [
                     const Icon(FLucideIcons.refreshCcw),
                     SizedBox(width: appStyle.spaceSm),
-                    const Expanded(child: Text('维护资源')),
+                    Expanded(child: Text(l10n.maintainResources)),
                     SizedBox(width: appStyle.spaceSm),
                     const Icon(FLucideIcons.chevronRight),
                   ],
@@ -745,59 +841,60 @@ final class _StoragePrivacySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final appStyle = context.theme.style.app;
     final usage = viewModel.usage;
     return _SettingsSection(
       key: const ValueKey('storage-privacy-section'),
-      title: '存储与隐私',
+      title: l10n.storagePrivacyTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (viewModel.isLoading)
             Padding(
               padding: EdgeInsets.symmetric(vertical: appStyle.spaceSm),
-              child: const FProgress(semanticsLabel: '正在读取本地存储用量'),
+              child: FProgress(semanticsLabel: l10n.readingLocalStorage),
             )
           else if (usage == null) ...[
             FAlert(
               variant: FAlertVariant.destructive,
-              title: const Text('存储用量读取失败'),
-              subtitle: const Text('本地数据没有被修改，可以重新读取。'),
+              title: Text(l10n.storageReadFailed),
+              subtitle: Text(l10n.storageUnchangedRetry),
             ),
             SizedBox(height: appStyle.spaceMd),
             FButton(
               key: const ValueKey('retry-storage-usage'),
               variant: FButtonVariant.outline,
               onPress: () => unawaited(viewModel.load()),
-              child: const Text('重新读取'),
+              child: Text(l10n.readAgain),
             ),
           ] else ...[
             _StorageMetricRow(
               key: const ValueKey('storage-total'),
-              label: '应用总计',
+              label: l10n.storageAppTotal,
               value: _byteLabel(usage.totalBytes),
               emphasis: true,
             ),
             _StorageMetricRow(
-              label: '会议数据',
+              label: l10n.storageMeetings,
               value: _byteLabel(usage.meetingBytes),
             ),
             _StorageMetricRow(
-              label: '模型数据',
+              label: l10n.storageModels,
               value: _byteLabel(usage.modelBytes),
             ),
             _StorageMetricRow(
-              label: '数据库',
+              label: l10n.storageDatabase,
               value: _byteLabel(usage.databaseBytes),
             ),
             _StorageMetricRow(
-              label: '设备可用',
+              label: l10n.storageDeviceAvailable,
               value: _byteLabel(usage.freeBytes),
             ),
           ],
           SizedBox(height: appStyle.spaceMd),
           Text(
-            '会议录音、最终转录与运行资源只保存在本机；卸载应用可能永久删除这些数据。',
+            l10n.localStoragePrivacyDescription,
             style: context.theme.typography.body.sm.copyWith(
               color: context.theme.colors.mutedForeground,
             ),
@@ -815,11 +912,12 @@ final class _DiagnosticsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final appStyle = context.theme.style.app;
     final message = viewModel.usage == null ? null : viewModel.message;
     return _SettingsSection(
       key: const ValueKey('diagnostics-section'),
-      title: '诊断',
+      title: l10n.diagnosticsTitle,
       topRule: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -829,8 +927,8 @@ final class _DiagnosticsSection extends StatelessWidget {
               FTile(
                 key: const ValueKey('export-diagnostics'),
                 prefix: const Icon(FLucideIcons.fileJson2),
-                title: const Text('查看并分享诊断信息'),
-                subtitle: const Text('仅含状态、用量、模型版本和错误码'),
+                title: Text(l10n.viewShareDiagnostics),
+                subtitle: Text(l10n.diagnosticsContents),
                 suffix: const Icon(FLucideIcons.chevronRight),
                 enabled: !viewModel.isBusy,
                 onPress: () => unawaited(_confirmExport(context)),
@@ -843,7 +941,7 @@ final class _DiagnosticsSection extends StatelessWidget {
               variant: message.contains('失败')
                   ? FAlertVariant.destructive
                   : FAlertVariant.primary,
-              title: Text(message),
+              title: Text(l10n.localizeUiMessage(message)),
             ),
           ],
         ],
@@ -854,11 +952,11 @@ final class _DiagnosticsSection extends StatelessWidget {
   Future<void> _confirmExport(BuildContext context) async {
     final confirmed = await showAppConfirmDialog(
       context: context,
-      semanticsLabel: '确认分享诊断信息',
-      title: '分享诊断信息？',
-      message: '诊断信息不包含会议标题、最终转录、事实音频或本地路径。',
-      cancelLabel: '取消',
-      confirmLabel: '查看并分享',
+      semanticsLabel: context.l10n.confirmShareDiagnostics,
+      title: context.l10n.shareDiagnosticsQuestion,
+      message: context.l10n.diagnosticsPrivacy,
+      cancelLabel: context.l10n.cancel,
+      confirmLabel: context.l10n.viewAndShare,
       confirmKey: const ValueKey('confirm-export-diagnostics'),
     );
     if (confirmed == true && context.mounted) {
@@ -996,10 +1094,32 @@ final class _StorageMetricRow extends StatelessWidget {
   }
 }
 
-String _languageLabel(List<String> languages) {
-  const labels = {'zh': '中', 'yue': '粤', 'en': '英', 'ja': '日', 'ko': '韩'};
-  return '${languages.map((language) => labels[language] ?? language).join('、')}语';
+String _languageLabel(AppLocalizations l10n, List<String> languages) {
+  final labels = {
+    'zh': l10n.languageChineseShort,
+    'yue': l10n.languageCantoneseShort,
+    'en': l10n.languageEnglishShort,
+    'ja': l10n.languageJapaneseShort,
+    'ko': l10n.languageKoreanShort,
+  };
+  return languages
+      .map((language) => labels[language] ?? language)
+      .join(l10n.modelLanguageSeparator);
 }
+
+String _statusLabel(AppLocalizations l10n, AsrModelUiStatus status) =>
+    switch (status) {
+      AsrModelUiStatus.notInstalled => l10n.modelStatusNotDownloaded,
+      AsrModelUiStatus.checking => l10n.modelStatusChecking,
+      AsrModelUiStatus.downloading => l10n.modelStatusDownloading,
+      AsrModelUiStatus.paused => l10n.modelStatusPaused,
+      AsrModelUiStatus.verifying => l10n.modelStatusVerifying,
+      AsrModelUiStatus.installed => l10n.modelStatusInstalled,
+      AsrModelUiStatus.updateAvailable => l10n.modelStatusUpdateAvailable,
+      AsrModelUiStatus.deleting => l10n.modelStatusDeleting,
+      AsrModelUiStatus.failed => l10n.modelStatusDownloadFailed,
+      AsrModelUiStatus.insufficientStorage => l10n.modelStatusInsufficientSpace,
+    };
 
 String _decimalMegabytes(int bytes) =>
     '${(bytes / 1000 / 1000).toStringAsFixed(1)} MB';

@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/meeting.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_sheet.dart';
 import '../../../../../core/app_text_field.dart';
@@ -34,17 +35,19 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
 
   String get _normalized => normalizeMeetingTitle(_controller.text);
 
-  String? get _validationMessage =>
+  String? _validationMessage(AppLocalizations l10n) =>
       switch (meetingTitleIssue(_controller.text)) {
-        MeetingTitleIssue.empty => '请输入会议标题',
-        MeetingTitleIssue.multiline => '会议标题只能使用单行文本',
-        MeetingTitleIssue.tooLong => '会议标题最多 $meetingTitleMaxLength 个字符',
+        MeetingTitleIssue.empty => l10n.meetingTitleRequired,
+        MeetingTitleIssue.multiline => l10n.meetingTitleSingleLine,
+        MeetingTitleIssue.tooLong => l10n.meetingTitleMaxLength(
+          meetingTitleMaxLength,
+        ),
         null => null,
       };
 
-  bool get _canSave =>
+  bool _canSave(AppLocalizations l10n) =>
       !_saving &&
-      _validationMessage == null &&
+      _validationMessage(l10n) == null &&
       _normalized != widget.meeting.title;
 
   @override
@@ -55,13 +58,14 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final appStyle = context.theme.style.app;
     return PopScope(
       canPop: !_saving,
       child: AppSheetSurface(
         surfaceKey: const ValueKey('rename-meeting-sheet'),
-        title: '重命名会议',
-        semanticsLabel: '重命名会议',
+        title: l10n.renameMeetingTitle,
+        semanticsLabel: l10n.renameMeetingTitle,
         compact: true,
         footer: LayoutBuilder(
           builder: (context, constraints) {
@@ -70,13 +74,13 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
               variant: FButtonVariant.outline,
               size: FButtonSizeVariant.lg,
               onPress: _saving ? null : () => Navigator.of(context).pop(),
-              child: const Text('取消'),
+              child: Text(l10n.cancel),
             );
             final save = FButton(
               key: const ValueKey('save-rename-meeting'),
               size: FButtonSizeVariant.lg,
-              onPress: _canSave ? () => unawaited(_save()) : null,
-              child: Text(_saving ? '正在保存' : '保存'),
+              onPress: _canSave(l10n) ? () => unawaited(_save(l10n)) : null,
+              child: Text(_saving ? l10n.saving : l10n.save),
             );
             if (constraints.maxWidth < appStyle.dualActionMinWidth ||
                 MediaQuery.textScalerOf(context).scale(1) > 1.4) {
@@ -104,25 +108,25 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
             AppTextField(
               key: const ValueKey('rename-meeting-title-field'),
               controller: _controller,
-              label: '会议标题',
-              hint: '输入会议标题',
+              label: l10n.meetingTitleLabel,
+              hint: l10n.meetingTitleHint,
               maxLength: meetingTitleMaxLength,
               counterVisibilityThreshold: 50,
               autofocus: true,
               enabled: !_saving,
-              errorText: _validationMessage,
+              errorText: _validationMessage(l10n),
               textInputAction: TextInputAction.done,
               onChanged: (_) => setState(() => _saveFailed = false),
               onSubmitted: (_) {
-                if (_canSave) {
-                  unawaited(_save());
+                if (_canSave(l10n)) {
+                  unawaited(_save(l10n));
                 }
               },
             ),
             if (_saveFailed) ...[
               SizedBox(height: appStyle.spaceSm),
               Text(
-                '重命名失败，原会议标题仍保留。请重试。',
+                l10n.renameFailedPreserved,
                 key: const ValueKey('rename-meeting-save-error'),
                 style: context.theme.typography.body.sm.copyWith(
                   color: context.theme.colors.mutedForeground,
@@ -135,8 +139,8 @@ final class _RenameMeetingSheetState extends State<RenameMeetingSheet> {
     );
   }
 
-  Future<void> _save() async {
-    if (!_canSave) {
+  Future<void> _save(AppLocalizations l10n) async {
+    if (!_canSave(l10n)) {
       return;
     }
     setState(() {

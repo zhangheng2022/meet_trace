@@ -12,6 +12,7 @@
 - ASR 仅用官方 `sherpa_onnx` 和固定 SenseVoice。SenseVoice、Silero VAD、Pyannote、3D-Speaker 权重不得进入 APK、IPA 或 MSIX；资源未齐阻断首页。
 - 设置只保存全局默认模型；会议开始后锁定同一 ASR 与分离配置，不得本场覆盖、自动切换或混合输出。
 - 主题默认跟随系统，可切换浅色/深色并仅本机保存；异常回退系统主题，不阻断核心流程。
+- 应用语言支持简体中文/英文，默认跟随系统；任意 `zh-*` 使用简体中文，其他未支持语言回退英文。设置可即时切换并仅本机保存，且不得中断录音、ASR 或最终处理。
 - 新会议按本地开始时间确定性命名。文本分享只含最终转录；音频分享独立二次确认并生成临时 WAV，不改写 PCM。
 - Android 只发布签名 arm64 APK；iOS 只经 TestFlight；Windows 只经 Microsoft Store 发布 Windows 10 22H2/11 x64 MSIX。GitHub 不上传 IPA 或 MSIX。
 - 发布链仅含 `Alpha Release` 与 `Alpha Release Reconciler`。三平台同 SHA：Android Firebase 原包一次、iOS 固定组 `Testing`、同一 MSIX 依次取得 Flight `Published` 与 production `Published/Public`；随后公开原 Draft、重验 APK、前移指针。无最终人工审批或专用 Windows runner，且 Store 回执不证明客户端生命周期。

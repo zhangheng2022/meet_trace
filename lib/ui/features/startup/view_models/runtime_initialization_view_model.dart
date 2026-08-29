@@ -146,6 +146,7 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
           totalBytes: _state.totalBytes,
           resourceName: _state.resourceName,
           message: error.message,
+          messageCode: error.code,
           shortageBytes: error.shortageBytes,
         ),
       );
@@ -189,6 +190,7 @@ final class RuntimeInitializationViewModel extends ChangeNotifier {
         totalBytes: state.totalBytes,
         resourceName: state.resourceName,
         message: '重试未成功：$message',
+        messageCode: state.messageCode,
         shortageBytes: state.shortageBytes,
       ),
     );

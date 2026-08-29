@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
 
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 
 const recordingWaveformTransitionDuration = Duration(milliseconds: 100);
@@ -68,13 +69,26 @@ final class _RecordingAudioWaveformState extends State<RecordingAudioWaveform>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = context.theme;
     final appStyle = theme.style.app;
     final (semanticsLabel, caption) = switch (widget.state) {
-      RecordingAudioWaveformState.waiting => ('麦克风输入波形，等待录音', '麦克风输入 · 等待录音'),
-      RecordingAudioWaveformState.live => ('麦克风输入波形，实时反馈', '麦克风输入 · 实时反馈'),
-      RecordingAudioWaveformState.paused => ('麦克风输入波形，录音已暂停', '麦克风输入 · 已暂停'),
-      RecordingAudioWaveformState.stopped => ('麦克风输入波形，录音已停止', '麦克风输入 · 已停止'),
+      RecordingAudioWaveformState.waiting => (
+        l10n.waveformWaitingSemantics,
+        l10n.waveformWaitingLabel,
+      ),
+      RecordingAudioWaveformState.live => (
+        l10n.waveformLiveSemantics,
+        l10n.waveformLiveLabel,
+      ),
+      RecordingAudioWaveformState.paused => (
+        l10n.waveformPausedSemantics,
+        l10n.waveformPausedLabel,
+      ),
+      RecordingAudioWaveformState.stopped => (
+        l10n.waveformStoppedSemantics,
+        l10n.waveformStoppedLabel,
+      ),
     };
     final active = widget.state == RecordingAudioWaveformState.live;
     return Semantics(

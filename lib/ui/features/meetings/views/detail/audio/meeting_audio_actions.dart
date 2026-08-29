@@ -5,6 +5,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/ports/audio_playback.dart';
 import '../../../../../../domain/use_cases/build_meeting_share.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_dialog.dart';
 import '../../../../../core/app_sheet.dart';
@@ -38,7 +39,9 @@ final class AudioEvidenceStrip extends StatelessWidget {
           : () => unawaited(
               playing ? viewModel.stopPlayback() : viewModel.playFullAudio(),
             ),
-      child: Text(playing ? '停止播放' : '播放录音'),
+      child: Text(
+        playing ? context.l10n.stopPlayback : context.l10n.playRecording,
+      ),
     );
     return DecoratedBox(
       key: const ValueKey('meeting-audio-evidence-strip'),
@@ -70,11 +73,17 @@ final class AudioEvidenceStrip extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('本地事实录音', style: theme.typography.body.lg),
+                      Text(
+                        context.l10n.localSourceRecording,
+                        style: theme.typography.body.lg,
+                      ),
                       SizedBox(height: appStyle.space2Xs),
                       Text(
-                        '录音仅保存在本机 · '
-                        '${meetingDurationLabel(viewModel.meeting.audioDurationMs)}',
+                        context.l10n.recordingLocalDuration(
+                          meetingDurationLabel(
+                            viewModel.meeting.audioDurationMs,
+                          ),
+                        ),
                         style: theme.typography.body.sm.copyWith(
                           color: theme.colors.mutedForeground,
                         ),
@@ -152,13 +161,15 @@ final class TranscriptEditBottomBar extends StatelessWidget {
                     variant: FButtonVariant.outline,
                     size: FButtonSizeVariant.lg,
                     onPress: saving ? null : onCancel,
-                    child: const Text('取消'),
+                    child: Text(context.l10n.cancel),
                   );
                   final save = FButton(
                     key: const ValueKey('save-transcript-revision'),
                     size: FButtonSizeVariant.lg,
                     onPress: saving ? null : onSave,
-                    child: Text(saving ? '正在保存' : '保存修订'),
+                    child: Text(
+                      saving ? context.l10n.saving : context.l10n.saveRevision,
+                    ),
                   );
                   if (constraints.maxWidth < appStyle.dualActionMinWidth ||
                       MediaQuery.textScalerOf(context).scale(1) > 1.4) {
@@ -206,8 +217,8 @@ final class _MeetingShareActionButtonState
     return FHeaderAction(
       key: const ValueKey('request-share-meeting'),
       icon: const Icon(FLucideIcons.share2),
-      semanticsLabel: '分享会议',
-      semanticsTooltip: '分享会议',
+      semanticsLabel: context.l10n.shareMeeting,
+      semanticsTooltip: context.l10n.shareMeeting,
       onPress:
           (viewModel.canShare || viewModel.canShareAudio) &&
               !viewModel.isProcessing
@@ -222,18 +233,18 @@ final class _MeetingShareActionButtonState
       side: FLayout.btt,
       useSafeArea: true,
       mainAxisMaxRatio: 0.72,
-      barrierLabel: '关闭分享会议面板',
+      barrierLabel: context.l10n.closeShareMeeting,
       builder: (context) => _MeetingActionSheet(
-        title: '分享会议',
-        description: '文本只包含最终转录；事实音频需要单独确认。',
-        semanticsLabel: '会议分享方式',
+        title: context.l10n.shareMeeting,
+        description: context.l10n.shareMeetingDescription,
+        semanticsLabel: context.l10n.meetingShareMethods,
         actions: [
           FTile(
             key: const ValueKey('share-plain-text'),
             enabled: viewModel.canShare,
             prefix: const Icon(FLucideIcons.fileText),
-            title: const Text('纯文本'),
-            subtitle: const Text('适合消息和邮件正文'),
+            title: Text(context.l10n.plainText),
+            subtitle: Text(context.l10n.plainTextDescription),
             onPress: () =>
                 Navigator.of(context).pop(_MeetingShareAction.plainText),
           ),
@@ -242,7 +253,7 @@ final class _MeetingShareActionButtonState
             enabled: viewModel.canShare,
             prefix: const Icon(FLucideIcons.fileCode2),
             title: const Text('Markdown'),
-            subtitle: const Text('保留标题、时间戳和结构'),
+            subtitle: Text(context.l10n.markdownDescription),
             onPress: () =>
                 Navigator.of(context).pop(_MeetingShareAction.markdown),
           ),
@@ -250,8 +261,8 @@ final class _MeetingShareActionButtonState
             key: const ValueKey('share-audio'),
             enabled: viewModel.canShareAudio,
             prefix: const Icon(FLucideIcons.fileAudio),
-            title: const Text('单独分享音频'),
-            subtitle: const Text('生成临时 WAV，并再次确认隐私风险'),
+            title: Text(context.l10n.shareAudioSeparately),
+            subtitle: Text(context.l10n.shareAudioSeparatelyDescription),
             onPress: () => Navigator.of(context).pop(_MeetingShareAction.audio),
           ),
         ],
@@ -278,25 +289,25 @@ final class _MeetingShareActionButtonState
     if (!preparation.canShare) {
       await showAppAlertDialog(
         context: context,
-        semanticsLabel: '音频分享空间不足',
-        title: '可用空间不足',
-        message:
-            '生成临时 WAV 还缺少 '
-            '${formatStorageBytes(preparation.storage.shortageBytes)}，未创建任何文件。',
+        semanticsLabel: context.l10n.audioShareInsufficientSpace,
+        title: context.l10n.availableSpaceInsufficient,
+        message: context.l10n.temporaryWavShortage(
+          formatStorageBytes(preparation.storage.shortageBytes),
+        ),
       );
       return;
     }
     final confirmed = await showAppConfirmDialog(
       context: context,
-      semanticsLabel: '确认分享会议音频',
-      title: '确认单独分享音频？',
-      message:
-          '会议：${preparation.meetingTitle}\n'
-          '时长：${meetingDurationLabel(preparation.durationMs)}\n'
-          '文件：${formatStorageBytes(preparation.storage.wavBytes)} WAV\n\n'
-          '录音可能包含敏感或私密信息。确认后才会生成临时副本并打开系统分享面板；不会附带转录文本。',
-      cancelLabel: '取消',
-      confirmLabel: '生成并分享',
+      semanticsLabel: context.l10n.confirmShareMeetingAudio,
+      title: context.l10n.confirmShareAudioQuestion,
+      message: context.l10n.audioShareConfirmation(
+        preparation.meetingTitle,
+        meetingDurationLabel(preparation.durationMs),
+        formatStorageBytes(preparation.storage.wavBytes),
+      ),
+      cancelLabel: context.l10n.cancel,
+      confirmLabel: context.l10n.generateAndShare,
       confirmKey: const ValueKey('confirm-share-audio'),
     );
     if (confirmed == true && mounted) {
@@ -336,8 +347,8 @@ final class _MeetingMoreActionsButtonState
       return FHeaderAction(
         key: const ValueKey('meeting-more-actions'),
         icon: const Icon(FLucideIcons.ellipsis),
-        semanticsLabel: '更多会议操作',
-        semanticsTooltip: '更多会议操作',
+        semanticsLabel: context.l10n.moreMeetingActions,
+        semanticsTooltip: context.l10n.moreMeetingActions,
         onPress: viewModel.isProcessing
             ? null
             : () => unawaited(_showActionSheet(viewModel)),
@@ -346,7 +357,7 @@ final class _MeetingMoreActionsButtonState
     return FPopoverMenu.tiles(
       menuAnchor: Alignment.topRight,
       childAnchor: Alignment.bottomRight,
-      semanticsLabel: '更多会议操作',
+      semanticsLabel: context.l10n.moreMeetingActions,
       menuBuilder: (context, controller, _) => [
         FTileGroup(
           children: _moreActionTiles(
@@ -359,8 +370,8 @@ final class _MeetingMoreActionsButtonState
       builder: (context, controller, child) => FHeaderAction(
         key: const ValueKey('meeting-more-actions'),
         icon: const Icon(FLucideIcons.ellipsis),
-        semanticsLabel: '更多会议操作',
-        semanticsTooltip: '更多会议操作',
+        semanticsLabel: context.l10n.moreMeetingActions,
+        semanticsTooltip: context.l10n.moreMeetingActions,
         onPress: viewModel.isProcessing
             ? null
             : () => unawaited(controller.toggle()),
@@ -374,11 +385,11 @@ final class _MeetingMoreActionsButtonState
       side: FLayout.btt,
       useSafeArea: true,
       mainAxisMaxRatio: 0.64,
-      barrierLabel: '关闭更多会议操作',
+      barrierLabel: context.l10n.closeMoreMeetingActions,
       builder: (context) => _MeetingActionSheet(
-        title: '更多操作',
-        description: '低频操作集中在这里；删除会议后无法恢复。',
-        semanticsLabel: '更多会议操作',
+        title: context.l10n.moreActions,
+        description: context.l10n.moreActionsDescription,
+        semanticsLabel: context.l10n.moreMeetingActions,
         actions: _moreActionTiles(
           viewModel,
           onSelected: (action) => Navigator.of(context).pop(action),
@@ -398,16 +409,18 @@ final class _MeetingMoreActionsButtonState
       FTile(
         key: const ValueKey('retranscribe-meeting'),
         prefix: const Icon(FLucideIcons.rotateCcw),
-        title: const Text('重新生成转录'),
-        subtitle: Text('继续使用本场锁定的 ${viewModel.sourceModel.displayName}'),
+        title: Text(context.l10n.regenerateTranscript),
+        subtitle: Text(
+          context.l10n.useLockedModel(viewModel.sourceModel.displayName),
+        ),
         onPress: () => onSelected(_MeetingMoreAction.retranscribe),
       ),
     FTile(
       key: const ValueKey('request-delete-meeting'),
       variant: FItemVariant.destructive,
       prefix: const Icon(FLucideIcons.trash2),
-      title: const Text('删除会议'),
-      subtitle: const Text('同时删除事实录音和全部派生结果'),
+      title: Text(context.l10n.deleteMeeting),
+      subtitle: Text(context.l10n.deleteMeetingAllDerived),
       onPress: () => onSelected(_MeetingMoreAction.delete),
     ),
   ];
@@ -437,11 +450,11 @@ final class _MeetingMoreActionsButtonState
   Future<void> _confirmDelete(MeetingDetailViewModel viewModel) async {
     final confirmed = await showAppConfirmDialog(
       context: context,
-      semanticsLabel: '确认永久删除会议',
-      title: '永久删除这场会议？',
-      message: '将删除本场事实录音、转录、说话人标签和处理记录，无法撤销。',
-      cancelLabel: '取消',
-      confirmLabel: '删除全部数据',
+      semanticsLabel: context.l10n.confirmPermanentDeleteMeeting,
+      title: context.l10n.permanentlyDeleteThisMeeting,
+      message: context.l10n.deleteThisMeetingMessage,
+      cancelLabel: context.l10n.cancel,
+      confirmLabel: context.l10n.deleteAllData,
       destructive: true,
       confirmKey: const ValueKey('confirm-delete-meeting'),
     );

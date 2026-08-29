@@ -33,6 +33,9 @@ dependencies:
   characters: 1.4.1
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
 
   connectivity_plus: 7.3.1
   crypto: 3.0.7
@@ -78,6 +81,8 @@ patrol:
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

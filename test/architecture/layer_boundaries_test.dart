@@ -182,9 +182,16 @@ void main() {
 List<List<String>> _findImportCycles(String rootPath) {
   final projectRoot = p.normalize(p.absolute(Directory.current.path));
   final root = p.normalize(p.absolute(rootPath));
+  final generatedLocalizations = p.join(
+    projectRoot,
+    'lib',
+    'l10n',
+    'generated',
+  );
   final files = {
     for (final file in _dartFilesUnder(root))
-      p.normalize(p.absolute(file.path)),
+      if (!p.isWithin(generatedLocalizations, p.absolute(file.path)))
+        p.normalize(p.absolute(file.path)),
   };
   final graph = <String, Set<String>>{};
   for (final filePath in files) {

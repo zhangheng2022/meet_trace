@@ -14,6 +14,8 @@ import 'package:forui/forui.dart';
 import '../../../../../domain/models/meeting.dart';
 import '../../../../../domain/models/app_update.dart';
 import '../../../../../keys.dart';
+import '../../../../../l10n/l10n.dart';
+import '../../../../../l10n/ui_message_localizations.dart';
 import '../../../../core/app_dialog.dart';
 import '../../../../core/branding/meettrace_brand_mark.dart';
 import '../../../../core/view_state.dart';
@@ -86,6 +88,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
   }
 
   Widget _page(ViewState<List<Meeting>> state) {
+    final l10n = context.l10n;
     final viewModel = widget.viewModel;
     return FScaffold(
       childPad: false,
@@ -94,7 +97,10 @@ final class _MeetingListViewState extends State<MeetingListView> {
         suffixes: [
           if (widget.onOpenSettings != null)
             FHeaderAction(
-              icon: const Icon(FLucideIcons.settings, semanticLabel: '打开设置'),
+              icon: Icon(
+                FLucideIcons.settings,
+                semanticLabel: l10n.openSettings,
+              ),
               onPress: widget.onOpenSettings,
             ),
         ],
@@ -134,7 +140,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
       side: FLayout.btt,
       useSafeArea: true,
       mainAxisMaxRatio: 0.72,
-      barrierLabel: '关闭录音条件面板',
+      barrierLabel: context.l10n.closeRecordingConditions,
       builder: (context) => RecordingConditionsSheet(
         readiness: viewModel.readiness,
         canRepairRuntime: widget.onRepairRuntime != null,
@@ -164,13 +170,14 @@ final class _MeetingListViewState extends State<MeetingListView> {
       return;
     }
     _deleteDialogOpen = true;
+    final l10n = context.l10n;
     final confirmed = await showAppConfirmDialog(
       context: context,
-      semanticsLabel: '永久删除${meeting.title}',
-      title: '永久删除「${meeting.title}」？',
-      message: '将删除本场事实音频、转录、说话人标签及处理记录。此操作无法撤销。',
-      cancelLabel: '取消',
-      confirmLabel: '永久删除',
+      semanticsLabel: l10n.permanentlyDeleteMeetingSemantics(meeting.title),
+      title: l10n.permanentlyDeleteMeetingQuestion(meeting.title),
+      message: l10n.permanentlyDeleteMeetingMessage,
+      cancelLabel: l10n.cancel,
+      confirmLabel: l10n.permanentlyDelete,
       destructive: true,
       cancelAutofocus: true,
       confirmKey: ValueKey('confirm-delete-meeting-${meeting.id}'),
@@ -188,10 +195,14 @@ final class _MeetingListViewState extends State<MeetingListView> {
       context: context,
       variant: deleted ? FToastVariant.primary : FToastVariant.destructive,
       icon: Icon(deleted ? FLucideIcons.circleCheck : FLucideIcons.circleAlert),
-      title: Text(deleted ? '会议及本地数据已删除' : '删除失败'),
+      title: Text(deleted ? l10n.meetingLocalDataDeleted : l10n.deleteFailed),
       description: deleted
           ? Text(meeting.title)
-          : Text(viewModel.deleteErrorMessage ?? '会议正在录音或处理中，暂时不能删除'),
+          : Text(
+              viewModel.deleteErrorMessage == null
+                  ? l10n.meetingCannotDeleteNow
+                  : l10n.localizeUiMessage(viewModel.deleteErrorMessage!),
+            ),
     );
   }
 
@@ -210,7 +221,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
         side: FLayout.btt,
         useSafeArea: true,
         mainAxisMaxRatio: 0.72,
-        barrierLabel: '关闭重命名会议面板',
+        barrierLabel: context.l10n.closeRenameMeeting,
         builder: (context) => RenameMeetingSheet(
           meeting: meeting,
           onSave: (title) => viewModel.renameMeeting(meeting, title),
@@ -226,7 +237,7 @@ final class _MeetingListViewState extends State<MeetingListView> {
       context: context,
       variant: FToastVariant.primary,
       icon: const Icon(FLucideIcons.circleCheck),
-      title: const Text('会议标题已更新'),
+      title: Text(context.l10n.meetingTitleUpdated),
       description: Text(renamedTitle),
     );
   }
@@ -268,16 +279,29 @@ final class _MeetingListViewState extends State<MeetingListView> {
     _updateDialogOpen = true;
     _promptedUpdateReleaseIds.add(candidate.releaseId);
     final resetsData = kind == AppUpdateDecisionKind.dataResetWarningRequired;
+    final l10n = context.l10n;
     try {
       final confirmed = await showAppConfirmDialog(
         context: context,
-        semanticsLabel: resetsData ? '更新会清除本地数据' : '发现会迹新版本',
-        title: resetsData ? '更新前必须确认本地数据风险' : '新版本已通过公开发布门禁',
+        semanticsLabel: resetsData
+            ? l10n.updateClearsLocalData
+            : l10n.newVersionFound,
+        title: resetsData
+            ? l10n.confirmUpdateDataRisk
+            : l10n.newVersionPassedReleaseGate,
         message: resetsData
-            ? '版本 ${candidate.versionName}（构建 ${candidate.buildNumber}）提高了数据代。安装后首次启动会清除本机会议音频、转录、模型和设置，并重新初始化。请先分享或导出需要保留的内容。'
-            : '版本 ${candidate.versionName}（构建 ${candidate.buildNumber}）已准备好。继续后将交给系统安装器、TestFlight 或 Microsoft Store，系统仍可能要求你的确认。',
-        cancelLabel: '稍后处理',
-        confirmLabel: resetsData ? '确认风险并继续' : '继续更新',
+            ? l10n.destructiveUpdateMessage(
+                candidate.versionName,
+                candidate.buildNumber,
+              )
+            : l10n.updateReadyMessage(
+                candidate.versionName,
+                candidate.buildNumber,
+              ),
+        cancelLabel: l10n.handleLater,
+        confirmLabel: resetsData
+            ? l10n.confirmRiskContinue
+            : l10n.continueUpdate,
         destructive: resetsData,
         cancelAutofocus: true,
         confirmKey: const ValueKey('confirm-app-update'),
@@ -297,8 +321,8 @@ final class _MeetingListViewState extends State<MeetingListView> {
             context: context,
             variant: FToastVariant.primary,
             icon: const Icon(FLucideIcons.externalLink),
-            title: const Text('已交给系统更新'),
-            description: const Text('录音和本地数据不会在应用内被强制中断'),
+            title: Text(l10n.updateHandedToSystem),
+            description: Text(l10n.updateDoesNotForceInterrupt),
           );
           break;
         case AppUpdateDecisionKind.deferred:
@@ -307,8 +331,8 @@ final class _MeetingListViewState extends State<MeetingListView> {
             context: context,
             variant: FToastVariant.primary,
             icon: const Icon(FLucideIcons.clock),
-            title: const Text('更新已延后'),
-            description: const Text('会议录音或最终处理结束后再提示'),
+            title: Text(l10n.updateDeferred),
+            description: Text(l10n.updateDeferredDescription),
           );
           break;
         case AppUpdateDecisionKind.installHandoffFailed:
@@ -317,8 +341,8 @@ final class _MeetingListViewState extends State<MeetingListView> {
             context: context,
             variant: FToastVariant.destructive,
             icon: const Icon(FLucideIcons.circleAlert),
-            title: const Text('暂时无法打开系统更新'),
-            description: const Text('请检查系统安装授权后重试'),
+            title: Text(l10n.cannotOpenSystemUpdate),
+            description: Text(l10n.checkSystemInstallAuthorization),
           );
           break;
         default:
@@ -345,7 +369,7 @@ final class _MeetingListBrandTitle extends StatelessWidget {
       key: keys.meetings.listBrandTitle,
       container: true,
       header: true,
-      label: '会迹，MeetTrace',
+      label: context.l10n.brandSemantics,
       child: ExcludeSemantics(
         child: Align(
           alignment: AlignmentDirectional.centerStart,

@@ -38,7 +38,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     this.audioSharing,
     this.deletion,
     this.playback,
-    this.shareBuilder = const BuildMeetingShareUseCase(),
+    required this.shareBuilderProvider,
+    required this.speakerLabelBuilder,
     AsrModelRegistry? registry,
   })
     // ignore: prefer_initializing_formals
@@ -56,7 +57,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   final ShareMeetingAudioUseCase? audioSharing;
   final DeleteMeetingUseCase? deletion;
   final AudioPlaybackService? playback;
-  final BuildMeetingShareUseCase shareBuilder;
+  final BuildMeetingShareUseCase Function() shareBuilderProvider;
+  final String Function(int number) speakerLabelBuilder;
   final AsrModelRegistry registry;
 
   Meeting _meeting;
@@ -125,7 +127,10 @@ final class MeetingDetailViewModel extends ChangeNotifier {
       for (final entry in groups.entries)
         SpeakerLabelGroup(
           speakerId: entry.key,
-          displayLabel: displaySpeakerLabel(entry.key),
+          displayLabel: displaySpeakerLabel(
+            entry.key,
+            speakerLabelBuilder: speakerLabelBuilder,
+          ),
           segmentCount: entry.value,
         ),
     ]);
@@ -466,7 +471,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         if (service == null || currentSnapshot == null) {
           return;
         }
-        final document = shareBuilder.execute(
+        final document = shareBuilderProvider().execute(
           meeting: _meeting,
           snapshot: currentSnapshot,
           format: format,

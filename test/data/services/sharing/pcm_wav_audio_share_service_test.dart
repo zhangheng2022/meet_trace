@@ -51,6 +51,7 @@ void main() {
       expect(preview.pcmBytes, 32000);
       expect(preview.wavBytes, 32044);
       expect(systemShare.fileName, '产品_周会.wav');
+      expect(systemShare.title, '分享会议录音：产品/周会');
       expect(String.fromCharCodes(systemShare.bytes!.sublist(0, 4)), 'RIFF');
       expect(String.fromCharCodes(systemShare.bytes!.sublist(8, 12)), 'WAVE');
       expect(systemShare.bytes!.sublist(44), originalPcm);
@@ -61,6 +62,28 @@ void main() {
       );
     });
   }
+
+  test('系统分享标题和空文件名回退使用注入的语言', () async {
+    final systemShare = _SystemShare();
+    final service = PcmWavAudioShareService(
+      layout: layout,
+      systemShare: systemShare,
+      freeSpace: DeviceFreeSpaceService(reader: () async => 1),
+      shareTitleBuilder: (title) => 'Share meeting recording: $title',
+      fileNameFallbackBuilder: () => 'Meeting/Recording',
+    );
+    final preview = await service.inspect(audioPath: source.path);
+
+    await service.share(
+      meetingId: 'meeting-1',
+      meetingTitle: '...',
+      audioPath: source.path,
+      expectedPcmBytes: preview.pcmBytes,
+    );
+
+    expect(systemShare.title, 'Share meeting recording: ...');
+    expect(systemShare.fileName, 'Meeting_Recording.wav');
+  });
 
   test('空间不足时返回精确差额且不生成 WAV 或调用系统分享', () async {
     final systemShare = _SystemShare();
@@ -256,6 +279,7 @@ final class _SystemShare implements SystemAudioFileSharer {
   int calls = 0;
   Uint8List? bytes;
   String? fileName;
+  String? title;
   final List<String> paths = [];
 
   @override
@@ -269,6 +293,7 @@ final class _SystemShare implements SystemAudioFileSharer {
     expect(await File(path).exists(), true);
     bytes = await File(path).readAsBytes();
     this.fileName = fileName;
+    this.title = title;
     await Future<void>.delayed(delay);
     if (error case final error?) {
       throw error;

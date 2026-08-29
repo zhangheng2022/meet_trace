@@ -3,6 +3,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/meeting_readiness.dart';
 import '../../../../../../keys.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_sheet.dart';
 import '../../../view_models/list/meeting_list_view_model.dart';
@@ -25,12 +26,13 @@ final class RecordingConditionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final action = _action;
     return AppSheetSurface(
       surfaceKey: const ValueKey('recording-conditions-sheet-surface'),
-      title: '录音条件',
-      description: '开始会议前会再次检查；录音和转录资源只保存在本机。',
-      semanticsLabel: '录音条件详情',
+      title: l10n.recordingConditionsTitle,
+      description: l10n.recordingConditionsDescription,
+      semanticsLabel: l10n.recordingConditionsDetails,
       footer: action == null
           ? null
           : SizedBox(
@@ -39,46 +41,48 @@ final class RecordingConditionsSheet extends StatelessWidget {
                 key: keys.meetings.recordingConditionsAction,
                 size: FButtonSizeVariant.lg,
                 onPress: () => Navigator.of(context).pop(action),
-                child: Text(_actionLabel(action)),
+                child: Text(_actionLabel(l10n, action)),
               ),
             ),
       child: FTileGroup(
-        semanticsLabel: '录音条件状态',
+        semanticsLabel: l10n.recordingConditionsStatus,
         children: [
           _conditionTile(
             context: context,
             key: const ValueKey('recording-condition-microphone'),
             icon: FLucideIcons.mic,
-            title: '麦克风权限',
+            title: l10n.microphonePermission,
             detail: readiness.microphonePermissionGranted == true
-                ? '应用可以录制会议音频'
-                : '授权前不会创建会议',
+                ? l10n.canRecordMeetingAudio
+                : l10n.meetingNotCreatedBeforePermission,
             available: readiness.microphonePermissionGranted == true,
-            availableLabel: '已授权',
-            unavailableLabel: '待授权',
+            availableLabel: l10n.authorized,
+            unavailableLabel: l10n.awaitingAuthorization,
             statusKey: keys.meetings.recordingConditionMicrophoneStatus,
           ),
           _conditionTile(
             context: context,
             key: const ValueKey('recording-condition-storage'),
             icon: FLucideIcons.hardDrive,
-            title: '本地存储',
-            detail: _storageDetail(readiness.freeBytes),
+            title: l10n.localStorage,
+            detail: _storageDetail(l10n, readiness.freeBytes),
             available:
                 readiness.freeBytes != null &&
                 readiness.freeBytes! >= minimumRecordingFreeBytes,
-            availableLabel: '空间充足',
-            unavailableLabel: '空间不足',
+            availableLabel: l10n.spaceAvailable,
+            unavailableLabel: l10n.spaceInsufficient,
           ),
           _conditionTile(
             context: context,
             key: const ValueKey('recording-condition-model'),
             icon: FLucideIcons.audioLines,
-            title: '离线转录',
-            detail: '${readiness.defaultModelName ?? '默认模型'}用于会中与最终转录',
+            title: l10n.offlineTranscription,
+            detail: l10n.modelUsedForMeeting(
+              readiness.defaultModelName ?? l10n.defaultModel,
+            ),
             available: readiness.defaultModelAvailable == true,
-            availableLabel: '可用',
-            unavailableLabel: '需修复',
+            availableLabel: l10n.available,
+            unavailableLabel: l10n.needsRepair,
           ),
         ],
       ),
@@ -129,12 +133,12 @@ FTile _conditionTile({
   ),
 );
 
-String _storageDetail(int? freeBytes) {
+String _storageDetail(AppLocalizations l10n, int? freeBytes) {
   final minimum = _readinessByteLabel(minimumRecordingFreeBytes);
   if (freeBytes == null) {
-    return '开始会议至少需要 $minimum';
+    return l10n.minimumStorageRequired(minimum);
   }
-  return '可用 ${_readinessByteLabel(freeBytes)} · 最低要求 $minimum';
+  return l10n.availableStorageMinimum(_readinessByteLabel(freeBytes), minimum);
 }
 
 String _readinessByteLabel(int bytes) {
@@ -146,8 +150,10 @@ String _readinessByteLabel(int bytes) {
   return '${(bytes / mib).toStringAsFixed(1)} MiB';
 }
 
-String _actionLabel(RecordingConditionsAction action) => switch (action) {
-  RecordingConditionsAction.requestMicrophonePermission => '授权麦克风',
-  RecordingConditionsAction.recheck => '重新检查',
-  RecordingConditionsAction.repairRuntime => '修复离线资源',
-};
+String _actionLabel(AppLocalizations l10n, RecordingConditionsAction action) =>
+    switch (action) {
+      RecordingConditionsAction.requestMicrophonePermission =>
+        l10n.authorizeMicrophone,
+      RecordingConditionsAction.recheck => l10n.recheck,
+      RecordingConditionsAction.repairRuntime => l10n.repairOfflineResources,
+    };

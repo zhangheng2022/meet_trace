@@ -198,7 +198,7 @@ final class LocalRuntimeAssetPreparationService
                     vadManifest.requiredBytes +
                     completed,
                 totalBytes: totalBytes,
-                resourceName: '说话人分离',
+                resourceName: 'speaker.diarization',
               ),
             );
           },

@@ -13,6 +13,7 @@ import '../../../../domain/models/transcript.dart';
 import '../../../../domain/models/workflow_states.dart';
 import '../../../../domain/ports/final_transcription.dart';
 import '../../../../domain/ports/repositories.dart';
+import '../../../../domain/use_cases/build_meeting_share.dart';
 import '../view_models/detail/meeting_detail_view_model.dart';
 import '../views/detail/meeting_detail_view.dart';
 import 'support/preview_meeting_repository.dart';
@@ -35,6 +36,8 @@ Widget meetingProcessingPreview() {
         meetings: PreviewMeetingRepository([meeting]),
         transcripts: _PreviewTranscriptRepository(),
         transcription: const _PendingTranscriptionRunner(),
+        shareBuilderProvider: () => const BuildMeetingShareUseCase(),
+        speakerLabelBuilder: (number) => '说话人 $number',
       ),
       onBack: () {},
     ),
@@ -54,6 +57,8 @@ Widget _resultPreview() {
         meetings: PreviewMeetingRepository([meeting]),
         transcripts: _PreviewTranscriptRepository(snapshot),
         transcription: const _UnavailableTranscriptionRunner(),
+        shareBuilderProvider: () => const BuildMeetingShareUseCase(),
+        speakerLabelBuilder: (number) => '说话人 $number',
       ),
       onBack: () {},
     ),

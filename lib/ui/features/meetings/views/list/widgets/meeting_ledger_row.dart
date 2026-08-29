@@ -4,6 +4,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/meeting.dart';
 import '../../../../../../domain/models/workflow_states.dart';
+import '../../../../../../l10n/l10n.dart';
 import '../../../../../core/app_ledger.dart';
 import '../../../../../core/semantic_date_time.dart';
 import 'meeting_list_formatters.dart';
@@ -38,13 +39,15 @@ final class MeetingLedgerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AppLedgerRow(
       key: ValueKey('meeting-${meeting.id}'),
       dateLabel: semanticCompactDateLabel(
         meeting.createdAt,
         reference: referenceTime,
+        l10n: l10n,
       ),
-      timeLabel: clockTimeLabel(meeting.createdAt),
+      timeLabel: clockTimeLabel(meeting.createdAt, locale: l10n.localeName),
       title: meeting.title,
       metaLabel: meetingDurationLabel(
         Duration(milliseconds: meeting.audioDurationMs),
@@ -53,43 +56,50 @@ final class MeetingLedgerRow extends StatelessWidget {
           ? FLucideIcons.loaderCircle
           : meetingStatusIcon(meeting.status),
       statusLabel: deleting
-          ? '正在删除'
+          ? l10n.deleting
           : renaming
-          ? '正在重命名'
-          : meetingLedgerStatus(meeting),
+          ? l10n.renaming
+          : meetingLedgerStatus(l10n, meeting),
       emphasized: meeting.status == MeetingState.recording,
       selected: selected,
       showDivider: showDivider,
-      semanticsLabel:
-          '打开会议：${meeting.title}，'
-          '${semanticDateTimeLabel(meeting.createdAt, reference: referenceTime)}，'
-          '${meetingStatusLabel(meeting.status)}',
+      semanticsLabel: l10n.openMeetingSemantics(
+        meeting.title,
+        semanticDateTimeLabel(
+          meeting.createdAt,
+          reference: referenceTime,
+          l10n: l10n,
+        ),
+        meetingStatusLabel(l10n, meeting.status),
+      ),
       semanticsHint: deleting || renaming
           ? deleting
-                ? '正在删除本机会议数据'
-                : '正在保存新会议标题'
+                ? l10n.deletingLocalMeetingData
+                : l10n.savingMeetingTitle
           : [
               if (meeting.status == MeetingState.failed)
-                '查看失败原因和事实音频状态'
+                l10n.viewFailureAndAudio
               else
-                '查看会议详情',
-              if (renameable && deletable) '向左滑动显示重命名和删除操作',
-              if (renameable && !deletable) '向左滑动显示重命名操作',
-            ].join('；'),
-      customSemanticsActions: _customSemanticsActions(),
+                l10n.viewMeetingDetails,
+              if (renameable && deletable) l10n.swipeRenameDelete,
+              if (renameable && !deletable) l10n.swipeRename,
+            ].join(l10n.semanticSentenceSeparator),
+      customSemanticsActions: _customSemanticsActions(l10n),
       onPress: onPress,
     );
   }
 
-  Map<CustomSemanticsAction, VoidCallback> _customSemanticsActions() {
+  Map<CustomSemanticsAction, VoidCallback> _customSemanticsActions(
+    AppLocalizations l10n,
+  ) {
     final actions = <CustomSemanticsAction, VoidCallback>{};
     final rename = onRename;
     final delete = onDelete;
     if (rename != null) {
-      actions[const CustomSemanticsAction(label: '重命名会议')] = rename;
+      actions[CustomSemanticsAction(label: l10n.renameMeetingAction)] = rename;
     }
     if (delete != null) {
-      actions[const CustomSemanticsAction(label: '删除会议')] = delete;
+      actions[CustomSemanticsAction(label: l10n.deleteMeetingAction)] = delete;
     }
     return actions;
   }

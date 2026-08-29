@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:meettrace/app/application.dart';
+import 'package:meettrace/domain/models/app_language.dart';
 import 'package:meettrace/domain/models/app_theme.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/data_control.dart';
@@ -18,6 +19,7 @@ import 'package:meettrace/domain/ports/text_share.dart';
 import 'package:meettrace/domain/use_cases/build_meeting_share.dart';
 import 'package:meettrace/ui/core/asr_model_option.dart';
 import 'package:meettrace/ui/features/settings/view_models/data_controls_view_model.dart';
+import 'package:meettrace/ui/features/settings/view_models/language_settings_view_model.dart';
 import 'package:meettrace/ui/features/settings/view_models/model_settings_view_model.dart';
 import 'package:meettrace/ui/features/settings/view_models/theme_settings_view_model.dart';
 import 'package:meettrace/ui/features/settings/views/model_settings_view.dart';
@@ -25,6 +27,51 @@ import 'package:meettrace/ui/features/settings/views/model_settings_view.dart';
 import '../../../../support/model_selection_fakes.dart';
 
 void main() {
+  testWidgets('设置页切换语言并保存全局选择', (tester) async {
+    final installations = TestActiveInstallations();
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(installations.installed(descriptor), active: true);
+    final modelViewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
+      installations: installations,
+      actions: const ModelMaintenanceActions(),
+    );
+    final languageMode = ValueNotifier(AppLanguageMode.english);
+    final languagePreferences = _FakeLanguagePreferences();
+    final languageViewModel = LanguageSettingsViewModel(
+      preferences: languagePreferences,
+      languageMode: languageMode,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        languageMode: languageMode,
+        home: ModelSettingsView(
+          viewModel: modelViewModel,
+          languageSettings: languageViewModel,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('language-section')), findsOneWidget);
+    expect(find.text('Language'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey('language-mode-simplifiedChinese')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(languageMode.value, AppLanguageMode.simplifiedChinese);
+    expect(languagePreferences.savedMode, AppLanguageMode.simplifiedChinese);
+    expect(find.text('语言'), findsOneWidget);
+
+    languageViewModel.dispose();
+    languageMode.dispose();
+    modelViewModel.dispose();
+    await installations.dispose();
+  });
+
   testWidgets('设置页切换深色主题并保存全局选择', (tester) async {
     final installations = TestActiveInstallations();
     final descriptor = AsrModelRegistry.alpha.defaultModel;
@@ -528,6 +575,7 @@ final class _Fixture {
       dataViewModel: DataControlsViewModel(
         dataControl: _FakeDataControl(),
         sharing: sharing,
+        diagnosticsSubjectBuilder: () => '会迹诊断信息',
       ),
       sharing: sharing,
     );
@@ -587,6 +635,18 @@ final class _FakeThemePreferences implements ThemePreferenceRepository {
 
   @override
   Future<void> setThemeMode(AppThemeMode mode) async {
+    savedMode = mode;
+  }
+}
+
+final class _FakeLanguagePreferences implements LanguagePreferenceRepository {
+  AppLanguageMode? savedMode;
+
+  @override
+  Future<AppLanguageMode> getLanguageMode() async => AppLanguageMode.system;
+
+  @override
+  Future<void> setLanguageMode(AppLanguageMode mode) async {
     savedMode = mode;
   }
 }

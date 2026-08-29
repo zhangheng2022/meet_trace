@@ -6,6 +6,8 @@ import 'package:forui/forui.dart';
 import '../../../../../../domain/models/speaker_diarization.dart';
 import '../../../../../../domain/models/transcript.dart';
 import '../../../../../../domain/use_cases/revise_final_transcript.dart';
+import '../../../../../../l10n/l10n.dart';
+import '../../../../../../l10n/ui_message_localizations.dart';
 import '../../../../../../theme/theme.dart';
 import '../../../../../core/app_sheet.dart';
 import '../../../../../core/app_text_field.dart';
@@ -34,11 +36,34 @@ final class TranscriptSection extends StatefulWidget {
 final class TranscriptSectionState extends State<TranscriptSection> {
   late Map<String, TextEditingController> _texts;
   late Map<String, TextEditingController> _speakers;
+  late Map<String, String> _automaticSpeakerLabels;
+  String? _localeName;
 
   @override
   void initState() {
     super.initState();
     _createControllers();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final localeName = context.l10n.localeName;
+    if (_localeName != null && _localeName != localeName) {
+      for (final segment in widget.snapshot.segments) {
+        final controller = _speakers[segment.id];
+        final previous = _automaticSpeakerLabels[segment.id];
+        if (controller == null ||
+            previous == null ||
+            controller.text != previous) {
+          continue;
+        }
+        final current = _speakerLabel(segment.speakerId);
+        controller.text = current;
+        _automaticSpeakerLabels[segment.id] = current;
+      }
+    }
+    _localeName = localeName;
   }
 
   @override
@@ -61,13 +86,22 @@ final class TranscriptSectionState extends State<TranscriptSection> {
       for (final segment in widget.snapshot.segments)
         segment.id: TextEditingController(text: segment.text),
     };
+    _automaticSpeakerLabels = {
+      for (final segment in widget.snapshot.segments)
+        segment.id: _speakerLabel(segment.speakerId),
+    };
     _speakers = {
       for (final segment in widget.snapshot.segments)
         segment.id: TextEditingController(
-          text: displaySpeakerLabel(segment.speakerId),
+          text: _automaticSpeakerLabels[segment.id],
         ),
     };
   }
+
+  String _speakerLabel(String? speakerId) => displaySpeakerLabel(
+    speakerId,
+    speakerLabelBuilder: widget.viewModel.speakerLabelBuilder,
+  );
 
   void _disposeControllers() {
     for (final controller in [..._texts.values, ..._speakers.values]) {
@@ -102,7 +136,12 @@ final class TranscriptSectionState extends State<TranscriptSection> {
       children: [
         Row(
           children: [
-            Expanded(child: Text('最终转录', style: theme.typography.display.lg)),
+            Expanded(
+              child: Text(
+                context.l10n.finalTranscriptTitle,
+                style: theme.typography.display.lg,
+              ),
+            ),
             if (widget.snapshot.segments.isNotEmpty)
               FButton(
                 key: ValueKey(
@@ -113,14 +152,16 @@ final class TranscriptSectionState extends State<TranscriptSection> {
                 onPress: widget.viewModel.isProcessing
                     ? null
                     : () => widget.onEditingChanged(!widget.editing),
-                child: Text(widget.editing ? '取消' : '编辑'),
+                child: Text(
+                  widget.editing ? context.l10n.cancel : context.l10n.edit,
+                ),
               ),
           ],
         ),
         if (widget.editing) ...[
           SizedBox(height: appStyle.spaceSm),
           Text(
-            '保存后会生成新的最终转录版本，事实音频和时间轴保持不变。',
+            context.l10n.transcriptRevisionDescription,
             style: theme.typography.body.sm.copyWith(
               color: theme.colors.mutedForeground,
             ),
@@ -128,11 +169,11 @@ final class TranscriptSectionState extends State<TranscriptSection> {
         ],
         SizedBox(height: appStyle.spaceSm),
         if (widget.snapshot.segments.isEmpty)
-          const Text('未识别到可显示的语音内容。')
+          Text(context.l10n.noRecognizedSpeech)
         else if (widget.editing)
           for (final segment in widget.snapshot.segments) ...[
             Text(
-              '${displaySpeakerLabel(segment.speakerId)} · '
+              '${_speakerLabel(segment.speakerId)} · '
               '${meetingTimestampLabel(segment.startMs)}',
               style: theme.typography.body.sm.copyWith(
                 color: theme.colors.mutedForeground,
@@ -142,13 +183,13 @@ final class TranscriptSectionState extends State<TranscriptSection> {
             AppTextField(
               key: ValueKey('segment-speaker-${segment.id}'),
               controller: _speakers[segment.id]!,
-              label: '说话人',
+              label: context.l10n.speaker,
             ),
             SizedBox(height: appStyle.spaceSm),
             AppTextField(
               key: ValueKey('segment-text-${segment.id}'),
               controller: _texts[segment.id]!,
-              label: '转录内容',
+              label: context.l10n.transcriptContent,
               maxLines: 4,
             ),
             SizedBox(height: appStyle.spaceMd),
@@ -159,6 +200,7 @@ final class TranscriptSectionState extends State<TranscriptSection> {
               segment: widget.snapshot.segments[index],
               first: index == 0,
               last: index == widget.snapshot.segments.length - 1,
+              speakerLabelBuilder: widget.viewModel.speakerLabelBuilder,
             ),
       ],
     );
@@ -170,11 +212,13 @@ final class _TranscriptLedgerRow extends StatelessWidget {
     required this.segment,
     required this.first,
     required this.last,
+    required this.speakerLabelBuilder,
   });
 
   final TranscriptSegment segment;
   final bool first;
   final bool last;
+  final String Function(int number) speakerLabelBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +276,10 @@ final class _TranscriptLedgerRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      displaySpeakerLabel(segment.speakerId),
+                      displaySpeakerLabel(
+                        segment.speakerId,
+                        speakerLabelBuilder: speakerLabelBuilder,
+                      ),
                       style: theme.typography.body.sm.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -326,7 +373,11 @@ final class DiarizationSection extends StatelessWidget {
       0,
       (total, group) => total + group.segmentCount,
     );
-    final status = _speakerOverviewStatus(viewModel, groups.length);
+    final status = _speakerOverviewStatus(
+      context.l10n,
+      viewModel,
+      groups.length,
+    );
     return DecoratedBox(
       key: const ValueKey('speaker-overview-section'),
       decoration: BoxDecoration(
@@ -345,7 +396,7 @@ final class DiarizationSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '说话人',
+                        context.l10n.speakersTitle,
                         style: theme.typography.body.md.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -353,8 +404,11 @@ final class DiarizationSection extends StatelessWidget {
                       SizedBox(height: appStyle.space2Xs),
                       Text(
                         groups.isEmpty
-                            ? '暂无说话人片段'
-                            : '${groups.length} 位说话人 · $segmentCount 个片段',
+                            ? context.l10n.noSpeakerSegments
+                            : context.l10n.speakerSegmentCount(
+                                groups.length,
+                                segmentCount,
+                              ),
                         key: const ValueKey('speaker-overview-count'),
                         style: theme.typography.body.sm.copyWith(
                           color: theme.colors.mutedForeground,
@@ -382,7 +436,7 @@ final class DiarizationSection extends StatelessWidget {
                   onPress: editing || viewModel.isProcessing
                       ? null
                       : () => unawaited(_showSpeakerManagement(context)),
-                  child: const Text('管理'),
+                  child: Text(context.l10n.manage),
                 ),
               ],
             ),
@@ -397,26 +451,31 @@ final class DiarizationSection extends StatelessWidget {
     side: FLayout.btt,
     useSafeArea: true,
     mainAxisMaxRatio: 0.84,
-    barrierLabel: '关闭说话人管理面板',
+    barrierLabel: context.l10n.closeSpeakerManagement,
     builder: (context) => _SpeakerManagementSheet(viewModel: viewModel),
   );
 }
 
 String? _speakerOverviewStatus(
+  AppLocalizations l10n,
   MeetingDetailViewModel viewModel,
   int speakerCount,
 ) {
   if (viewModel.isDiarizing) {
-    return '正在重新区分说话人，最终转录仍可查看。';
+    return l10n.speakerReprocessing;
   }
   if (!viewModel.diarizationAvailable) {
-    return speakerCount == 0 ? '本机说话人模型不可用。' : '本机说话人模型不可用，可手工修改标签。';
+    return speakerCount == 0
+        ? l10n.speakerModelUnavailable
+        : l10n.speakerModelUnavailableManual;
   }
   if (!viewModel.diarizationEnabled) {
-    return '自动区分已关闭，现有标签保持不变。';
+    return l10n.speakerAutoDisabled;
   }
   if (viewModel.diarizationStatus == SpeakerDiarizationStatus.degraded) {
-    return speakerCount == 1 ? '自动区分未完成，当前按单一说话人显示。' : '自动区分未完成，当前标签仍可查看和修改。';
+    return speakerCount == 1
+        ? l10n.speakerDegradedSingle
+        : l10n.speakerDegradedEditable;
   }
   return null;
 }
@@ -455,11 +514,13 @@ final class _SpeakerManagementSheetState
         final keyId = _editingSpeakerId ?? 'unlabeled';
         return AppSheetSurface(
           surfaceKey: const ValueKey('speaker-management-sheet'),
-          title: _editing ? '修改说话人标签' : '说话人管理',
+          title: _editing
+              ? context.l10n.editSpeakerLabel
+              : context.l10n.speakerManagement,
           description: _editing
-              ? '只修改显示标签，不会改变事实音频、转录内容或时间轴。'
-              : '自动区分和标签修改不会改变事实音频或转录时间轴。',
-          semanticsLabel: '说话人管理',
+              ? context.l10n.editSpeakerDescription
+              : context.l10n.speakerManagementDescription,
+          semanticsLabel: context.l10n.speakerManagement,
           footer: _editing
               ? Row(
                   children: [
@@ -470,7 +531,7 @@ final class _SpeakerManagementSheetState
                         onPress: viewModel.isProcessing || _saving
                             ? null
                             : _finishEditing,
-                        child: const Text('取消'),
+                        child: Text(context.l10n.cancel),
                       ),
                     ),
                     SizedBox(width: appStyle.spaceSm),
@@ -480,7 +541,7 @@ final class _SpeakerManagementSheetState
                         onPress: viewModel.isProcessing || _saving
                             ? null
                             : () => unawaited(_saveLabel()),
-                        child: const Text('保存'),
+                        child: Text(context.l10n.save),
                       ),
                     ),
                   ],
@@ -493,13 +554,13 @@ final class _SpeakerManagementSheetState
                     AppTextField(
                       key: ValueKey('speaker-label-$keyId'),
                       controller: _controller!,
-                      label: '显示名称',
-                      hint: '输入说话人名称',
+                      label: context.l10n.displayName,
+                      hint: context.l10n.speakerNameHint,
                     ),
                     if (_saveFailed) ...[
                       SizedBox(height: appStyle.spaceSm),
                       Text(
-                        '标签保存未完成，请检查名称后重试。',
+                        context.l10n.speakerLabelSaveFailed,
                         key: const ValueKey('speaker-label-save-error'),
                         style: context.theme.typography.body.sm.copyWith(
                           color: context.theme.colors.mutedForeground,
@@ -531,12 +592,16 @@ final class _SpeakerManagementSheetState
             enabled: !viewModel.isProcessing,
             onChange: (enabled) =>
                 unawaited(viewModel.setDiarizationEnabled(enabled)),
-            label: const Text('自动区分说话人'),
-            description: const Text('关闭后不再自动处理；现有标签保持不变。'),
+            label: Text(context.l10n.automaticSpeakerSeparation),
+            description: Text(
+              context.l10n.automaticSpeakerSeparationDescription,
+            ),
           )
         else
           Text(
-            groups.isEmpty ? '本机说话人模型不可用，暂无可管理的标签。' : '本机说话人模型不可用，仍可手工修改现有标签。',
+            groups.isEmpty
+                ? context.l10n.speakerUnavailableNoLabels
+                : context.l10n.speakerUnavailableExistingLabels,
             key: const ValueKey('diarization-unavailable-reason'),
             style: theme.typography.body.sm.copyWith(
               color: theme.colors.mutedForeground,
@@ -544,20 +609,20 @@ final class _SpeakerManagementSheetState
           ),
         if (viewModel.isDiarizing) ...[
           SizedBox(height: appStyle.spaceLg),
-          const FProgress(semanticsLabel: '说话人分离处理中'),
+          FProgress(semanticsLabel: context.l10n.speakerSeparationProcessing),
           SizedBox(height: appStyle.spaceSm),
           Text(
-            '正在重新区分说话人，最终转录仍可查看。',
+            context.l10n.speakerReprocessing,
             style: theme.typography.body.sm.copyWith(
               color: theme.colors.mutedForeground,
             ),
           ),
         ] else if (viewModel.diarizationMessage case final message?) ...[
           SizedBox(height: appStyle.spaceLg),
-          Text('状态', style: theme.typography.body.sm),
+          Text(context.l10n.status, style: theme.typography.body.sm),
           SizedBox(height: appStyle.space2Xs),
           Text(
-            message,
+            context.l10n.localizeUiMessage(message),
             key: const ValueKey('speaker-management-status'),
             style: theme.typography.body.sm.copyWith(
               color: theme.colors.mutedForeground,
@@ -574,23 +639,23 @@ final class _SpeakerManagementSheetState
               variant: FButtonVariant.outline,
               mainAxisSize: MainAxisSize.min,
               onPress: () => unawaited(viewModel.retryDiarization()),
-              child: const Text('重新处理'),
+              child: Text(context.l10n.reprocess),
             ),
           ),
         ],
         SizedBox(height: appStyle.spaceLg),
-        Text('标签', style: theme.typography.body.sm),
+        Text(context.l10n.labels, style: theme.typography.body.sm),
         SizedBox(height: appStyle.spaceSm),
         if (groups.isEmpty)
           Text(
-            '暂无可修改的说话人标签。',
+            context.l10n.noEditableSpeakerLabels,
             style: theme.typography.body.sm.copyWith(
               color: theme.colors.mutedForeground,
             ),
           )
         else
           FTileGroup(
-            semanticsLabel: '说话人标签',
+            semanticsLabel: context.l10n.speakerLabelsSemantics,
             children: [
               for (final group in groups)
                 FTile(
@@ -599,7 +664,7 @@ final class _SpeakerManagementSheetState
                   ),
                   enabled: !viewModel.isProcessing,
                   title: Text(group.displayLabel),
-                  subtitle: Text('${group.segmentCount} 个片段'),
+                  subtitle: Text(context.l10n.segmentCount(group.segmentCount)),
                   suffix: const Icon(FLucideIcons.pencil, size: 16),
                   onPress: () => _beginEditing(group),
                 ),

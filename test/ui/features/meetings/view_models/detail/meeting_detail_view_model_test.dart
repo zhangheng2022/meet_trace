@@ -6,6 +6,7 @@ import 'package:meettrace/domain/models/speaker_diarization.dart';
 import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
+import 'package:meettrace/domain/use_cases/build_meeting_share.dart';
 import 'package:meettrace/domain/use_cases/run_final_transcription.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail_view_model.dart';
@@ -373,6 +374,8 @@ _Fixture _fixture(
       diarization: diarization,
       diarizationPreferences: _DiarizationPreference(diarizationEnabled),
       processingTasks: selectedTasks,
+      shareBuilderProvider: () => const BuildMeetingShareUseCase(),
+      speakerLabelBuilder: (number) => '说话人 $number',
     ),
   );
 }
