@@ -67,15 +67,11 @@ void main() {
       expect(workflow, isNot(contains('\n    paths-ignore:')));
     });
 
-    test('Codacy 与 CodeQL 继续保留既定分析边界', () async {
-      final codacy = await File('.codacy.yml').readAsString();
+    test('CodeQL 继续保留既定分析边界', () async {
       final codeql = await _workflow('codeql.yml');
       final config = await File('.github/codeql/codeql-config.yml')
           .readAsString();
 
-      expect(codacy, contains('dartanalyzer:'));
-      expect(codacy, contains('- "test/**"'));
-      expect(codacy, isNot(contains('lib/**')));
       expect(
         codeql,
         contains('config-file: ./.github/codeql/codeql-config.yml'),

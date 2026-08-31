@@ -48,7 +48,7 @@
 - 完整门禁前不得公开 Draft 或修改 `updates/alpha/alpha.json`；撤回不删除或覆盖资产。
 - Store、Apple、签名与更新私钥不得进入 PR 工作流、日志、仓库或非发布 Artifact。
 
-第三方 Actions 固定完整提交 SHA。Dependabot 安全更新仍需通过 `CI Gate`；历史 Artifact 按保留期到期，不做批量删除。Codacy 不分析 `test/**` 的 Flutter package graph，测试仍由仓库锁定 Flutter 的 `analyze` 和 `test` 覆盖；`.agents/**` 与 `.claude/**` 排除于项目质量扫描。
+第三方 Actions 固定完整提交 SHA。Dependabot 安全更新仍需通过 `CI Gate`；历史 Artifact 按保留期到期，不做批量删除。代码质量由仓库锁定 Flutter 的 `analyze`、`test` 与 CodeQL 覆盖；`.agents/**` 与 `.claude/**` 排除于 CodeQL 扫描。
 
 ## 5. 变更验证
 
