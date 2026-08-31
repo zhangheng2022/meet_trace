@@ -13,6 +13,7 @@
 - 设置只保存全局默认模型；会议开始后锁定同一 ASR 与分离配置，不得本场覆盖、自动切换或混合输出。
 - 主题默认跟随系统，可切换浅色/深色并仅本机保存；异常回退系统主题，不阻断核心流程。
 - 应用语言支持简体中文/英文，默认跟随系统；任意 `zh-*` 使用简体中文，其他未支持语言回退英文。设置可即时切换并仅本机保存，且不得中断录音、ASR 或最终处理。
+- Android、iOS、Windows Release 默认开启可退出的 Sentry：错误 100%、进程级性能抽样 20%、录音期每 60 秒匿名窗口；禁用 PII、Replay、日志、截图、View Hierarchy、用户交互与 Production Profiling。Sentry 失败不得影响事实录音；三平台生产配置与符号化失败阻断统一发布。
 - 新会议按本地开始时间确定性命名。文本分享只含最终转录；音频分享独立二次确认并生成临时 WAV，不改写 PCM。
 - Android 只发布签名 arm64 APK；iOS 只经 TestFlight；Windows 只经 Microsoft Store 发布 Windows 10 22H2/11 x64 MSIX。GitHub 不上传 IPA 或 MSIX。
 - 发布链仅含 `Alpha Release` 与 `Alpha Release Reconciler`。三平台同 SHA：Android Firebase 原包一次、iOS 固定组 `Testing`、同一 MSIX 依次取得 Flight `Published` 与 production `Published/Public`；随后公开原 Draft、重验 APK、前移指针。无最终人工审批或专用 Windows runner，且 Store 回执不证明客户端生命周期。
@@ -41,7 +42,7 @@ Domain 不导入 data；UI 不直连 ONNX、存储或 HTTP。ASR 统一走 `AsrE
 ## 审查、Git 与安全
 
 - 所有 PR 使用 `$open-code-review`：同一 workspace/range/commit 先 `--preview`，再 `--audience agent`，并注入需求、方案和用户影响。录音、模型锁定、快照、分离、音频分享或删除变更必须附相应产品边界。
-- 以 Git 完整清单为基线；OCR 覆盖 reviewable 文件，人工补审其余文件，覆盖率 100%。报告有效 Critical/High/Medium/Low、路径、行号、触发、影响和修复；Critical/High 未清零不得 Ready 或合并。OCR 不替代格式、分析、测试或构建。
+- 以 Git 完整清单为基线；OCR 覆盖 reviewable 文件，人工补审其余文件，尊重ORC 规则。报告有效 Critical/High/Medium/Low、路径、行号、触发、影响和修复；Critical/High 未清零不得 Ready 或合并。OCR 不替代格式、分析、测试或构建。
 - 使用独立分支和 Draft PR；Codex 分支默认 `codex/`。只暂存本次路径，禁止 `git add .`/`-A`，不得覆盖用户改动。
 - 仅经用户明确授权后 squash 合并；禁止 merge commit。合并后删分支、同步默认分支并确认工作区干净。
 - PR 引用 PRD、说明用户影响、验证和 OCR 范围；PRD/UI 不适用时明示，UI 变更附截图。

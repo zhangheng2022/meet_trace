@@ -1756,7 +1756,9 @@ jobs:
             --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true `
             --dart-define=MEETTRACE_VERSION_NAME=$env:MARKETING_VERSION `
             --dart-define=MEETTRACE_BUILD_NUMBER=$env:RELEASE_BUILD_NUMBER `
-            --dart-define=SENTRY_ENABLED=false
+            --dart-define=SENTRY_ENABLED=true `
+            --dart-define="SENTRY_RELEASE=com.meettrace.app@$env:MARKETING_VERSION+$env:RELEASE_BUILD_NUMBER" `
+            --dart-define="SENTRY_DIST=$env:RELEASE_BUILD_NUMBER"
 
       - name: Create Microsoft Store MSIX candidate
         if: steps.staged.outputs.reuse != 'true'

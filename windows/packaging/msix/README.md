@@ -16,7 +16,7 @@
 
 正式候选由 `Alpha Release` 构建、审计并上传 Actions Artifact；Reconciler 核对摘要后，将同一 MSIX 依次提交固定 Flight 和 100% non-flighted production。两阶段必须取得精确包身份与 `Published`、`Published/Public` 回执。该门禁不证明 Store 客户端生命周期。
 
-本地只运行不可分发探针：
+本地只运行不可分发探针，因此可显式关闭 Sentry；正式 Store 候选必须按 PRD 使用生产 Sentry 配置和统一 `release/dist`：
 
 ```powershell
 flutter build windows --release --dart-define SENTRY_ENABLED=false

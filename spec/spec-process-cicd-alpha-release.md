@@ -1,6 +1,6 @@
 # Alpha Release 自动发布规格
 
-> 状态：Active · 版本：3.7 · 日期：2026-08-28
+> 状态：Active · 版本：3.8 · 日期：2026-08-31
 >
 > 产品上游：[Alpha PRD](../docs/product/Alpha_PRD_无登录版.md) 3.1、AT-21～AT-26
 
@@ -50,6 +50,7 @@ flowchart LR
 | REL-010 | 协调器使用当前已审查工具；候选代码、tag、版本、数据 generation 和摘要始终来自原 candidate |
 | REL-011 | 同一时刻只有一个活动 Draft；其定义是最新公开 Alpha 之后创建的最新合法 Draft |
 | REL-012 | 公开资产、tag 和撤回记录不可删除、覆盖或回退；修复使用更高版本 |
+| REL-013 | 三平台候选启用同一 Sentry 项目和统一 `release/dist`；生产配置、符号上传或符号化验证任一失败均阻断公开 |
 
 ## 4. 门禁
 
@@ -58,7 +59,8 @@ flowchart LR
 - 固定 TestFlight group、审核和 `Testing` 回执；
 - Windows Flight `Published` 与精确目标包回执；
 - Windows production `Published/Public`、100% 与同一目标包回执；
-- 来源运行内唯一 Android Firebase ARM 回执。
+- 来源运行内唯一 Android Firebase ARM 回执；
+- Android、iOS、Windows 的 Sentry 生产配置、符号上传和符号化验证结果。
 
 最终发布端必须使用 Dart 校验器重验整个门禁，不能只看 job conclusion。原始 Apple/Store 响应、P8、client secret、短期 URL 和测试者信息不得进入 Artifact。
 
@@ -77,7 +79,7 @@ flowchart LR
 | --- | --- |
 | `android-alpha` | Android 签名、Firebase、Sentry |
 | `testflight` | iOS 签名、App Store Connect、固定 group/link、Sentry |
-| `windows-alpha` | Store MSIX 构建与审计；无发布 Secret |
+| `windows-alpha` | Store MSIX 构建、审计与 Sentry 符号上传；除最小权限 Sentry Token 外无发布 Secret |
 | `microsoft-store` | Partner Center 最小权限凭据与固定 Flight |
 | `github-release` | 最终重验和指针签名；无 reviewer |
 
