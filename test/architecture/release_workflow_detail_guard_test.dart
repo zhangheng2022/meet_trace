@@ -30,7 +30,7 @@ void main() {
       )).join('\n');
       const flutterAction =
           'uses: axi92/flutter-action@'
-          '72633a794ba0b23276fa4fc465a6cacb758a90c5';
+          '36d2c2625bac6ea011cd7808d2a01bd8a7e5c766';
       final setupCount = flutterAction.allMatches(workflows).length;
       final versionFileCount = RegExp(r'flutter-version-file: "\.fvmrc"')
           .allMatches(workflows)

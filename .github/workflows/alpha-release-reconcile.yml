@@ -211,7 +211,7 @@ jobs:
         run: ruby -c tool/release/app_store_connect_status.rb
 
       - name: Set up Flutter for receipt verification
-        uses: axi92/flutter-action@72633a794ba0b23276fa4fc465a6cacb758a90c5 # v2.23.0, cache v5.0.4 pinned
+        uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
           cache: true
@@ -342,7 +342,7 @@ jobs:
           version: v0.4.1
 
       - name: Download immutable Windows candidate
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ needs.resolve.outputs.windows_bundle_name }}
           path: build/reconcile/windows-candidate
@@ -439,7 +439,7 @@ jobs:
           ref: ${{ github.workflow_sha }}
 
       - name: Set up Flutter for receipt verification
-        uses: axi92/flutter-action@72633a794ba0b23276fa4fc465a6cacb758a90c5 # v2.23.0, cache v5.0.4 pinned
+        uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
           cache: true
