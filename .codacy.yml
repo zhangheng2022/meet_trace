@@ -1,0 +1,17 @@
+---
+exclude_paths:
+  - ".agents/**"
+  - ".claude/**"
+
+engines:
+  dartanalyzer:
+    # Codacy 的托管 Dart Analyzer 不解析 Flutter test package graph，
+    # 测试代码及依赖 Flutter/外部 package 的更新边界适配器由仓库内的
+    # flutter analyze、flutter test 与全平台构建门禁负责。
+    exclude_paths:
+      - "test/**"
+      - "lib/data/services/updates/android_app_update_handler.dart"
+      - "lib/data/services/updates/app_update_configuration.dart"
+      - "lib/data/services/updates/ed25519_app_update_signature_verifier.dart"
+      - "lib/data/services/updates/external_store_app_update_handler.dart"
+      - "lib/ui/features/updates/view_models/app_update_view_model.dart"
