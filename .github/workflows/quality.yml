@@ -112,7 +112,7 @@ jobs:
         run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
 
       - name: Set up Flutter 3.47.0
-        uses: axi92/flutter-action@72633a794ba0b23276fa4fc465a6cacb758a90c5 # v2.23.0, cache v5.0.4 pinned
+        uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
           cache: true
@@ -142,13 +142,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Java 17 for JNI headers
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Flutter 3.47.0
-        uses: axi92/flutter-action@72633a794ba0b23276fa4fc465a6cacb758a90c5 # v2.23.0, cache v5.0.4 pinned
+        uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
           cache: true
