@@ -113,25 +113,20 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
         finalBytes: written,
         resumed: acceptedResume,
       );
-    } on TimeoutException catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       if (cancellation.isCanceled) {
         Error.throwWithStackTrace(
           const ModelDownloadCanceledException(),
           stackTrace,
         );
       }
-      Error.throwWithStackTrace(
-        DownloadableModelException(
-          code: 'model.download.timeout',
-          message: '模型文件下载超时，请重试',
-          cause: error,
-        ),
-        stackTrace,
-      );
-    } catch (error, stackTrace) {
-      if (cancellation.isCanceled && error is! ModelDownloadCanceledException) {
+      if (error is TimeoutException) {
         Error.throwWithStackTrace(
-          const ModelDownloadCanceledException(),
+          DownloadableModelException(
+            code: 'model.download.timeout',
+            message: '模型文件下载超时，请重试',
+            cause: error,
+          ),
           stackTrace,
         );
       }
