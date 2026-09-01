@@ -53,7 +53,11 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        unawaited(SentryFlutter.currentDisplay()?.reportFullyDisplayed());
+        try {
+          SentryFlutter.currentDisplay()?.reportFullyDisplayed().ignore();
+        } on Object {
+          // TTFD 上报失败不得影响会议详情。
+        }
       }
     });
   }

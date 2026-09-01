@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -107,5 +108,42 @@ void main() {
       ),
     );
     await requestHandled;
+  });
+
+  test('取消会立即强制终止正在等待的响应体', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    final responseStarted = Completer<void>();
+    server.listen((request) async {
+      request.response
+        ..statusCode = HttpStatus.ok
+        ..contentLength = 5
+        ..add('he'.codeUnits);
+      await request.response.flush();
+      responseStarted.complete();
+    });
+    final cancellation = ModelDownloadCancellationToken();
+    final download =
+        HttpModelFileDownloader(
+          requireHttps: false,
+          responseBodyTimeout: const Duration(minutes: 1),
+        ).download(
+          source: Uri.parse(
+            'http://${server.address.address}:${server.port}/model.bin',
+          ),
+          destinationPath: p.join(root.path, 'model.bin'),
+          resumeFrom: 0,
+          expectedBytes: 5,
+          cancellation: cancellation,
+          onProgress: (_) {},
+        );
+
+    await responseStarted.future;
+    cancellation.cancel();
+
+    await expectLater(
+      download.timeout(const Duration(seconds: 1)),
+      throwsA(isA<ModelDownloadCanceledException>()),
+    );
   });
 }

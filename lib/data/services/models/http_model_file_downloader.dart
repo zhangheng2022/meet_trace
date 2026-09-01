@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:path/path.dart' as p;
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -10,12 +11,10 @@ import 'model_download_types.dart';
 
 final class HttpModelFileDownloader implements ModelFileDownloader {
   HttpModelFileDownloader({
-    SentryHttpClient Function()? clientFactory,
+    HttpClient Function()? clientFactory,
     this.requireHttps = true,
     this.responseBodyTimeout = const Duration(seconds: 60),
-  }) : _clientFactory =
-           clientFactory ??
-           (() => SentryHttpClient(captureFailedRequests: false)) {
+  }) : _clientFactory = clientFactory ?? HttpClient.new {
     if (responseBodyTimeout <= Duration.zero) {
       throw ArgumentError.value(
         responseBodyTimeout,
@@ -25,7 +24,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
     }
   }
 
-  final SentryHttpClient Function() _clientFactory;
+  final HttpClient Function() _clientFactory;
   final bool requireHttps;
   final Duration responseBodyTimeout;
 
@@ -50,8 +49,14 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
 
     cancellation.throwIfCanceled();
     await Directory(p.dirname(destinationPath)).create(recursive: true);
-    final client = _clientFactory();
-    void cancelRequest() => client.close();
+    final ioClient = _clientFactory()
+      ..connectionTimeout = const Duration(seconds: 30)
+      ..idleTimeout = const Duration(seconds: 60);
+    final client = SentryHttpClient(
+      client: IOClient(ioClient),
+      captureFailedRequests: false,
+    );
+    void cancelRequest() => ioClient.close(force: true);
     cancellation.addCancelListener(cancelRequest);
 
     RandomAccessFile? output;
@@ -102,6 +107,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
         }
         onProgress(written);
       }
+      cancellation.throwIfCanceled();
       await output.flush();
       return ModelFileDownloadResult(
         finalBytes: written,
@@ -127,6 +133,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
     } finally {
       cancellation.removeCancelListener(cancelRequest);
       await output?.close();
+      ioClient.close(force: true);
       client.close();
     }
   }

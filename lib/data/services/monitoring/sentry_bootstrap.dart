@@ -284,6 +284,10 @@ final class SentryRemoteDiagnosticsController
       );
       return initialized;
     } on Object catch (error) {
+      sentryRecordingTelemetryGate.configure(
+        enabled: false,
+        performanceSampled: false,
+      );
       // 远程诊断故障不得阻断 App、事实录音或最终处理。
       debugPrint('远程诊断状态切换失败：$error');
       return false;

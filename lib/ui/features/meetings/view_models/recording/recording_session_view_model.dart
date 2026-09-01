@@ -304,10 +304,14 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       }
       final previous = _previewMetrics;
       _previewMetrics = metrics;
-      telemetry.observePreview(
-        queuedAudioMs: metrics.queuedAudioMs,
-        droppedWindows: metrics.droppedPreviewWindows,
-      );
+      try {
+        telemetry.observePreview(
+          queuedAudioMs: metrics.queuedAudioMs,
+          droppedWindows: metrics.droppedPreviewWindows,
+        );
+      } on Object {
+        // 遥测是旁路诊断，失败不得中断预览状态通知。
+      }
       if (previous.state != metrics.state ||
           previous.lastErrorCode != metrics.lastErrorCode) {
         transcriptListenable.notifyListeners();

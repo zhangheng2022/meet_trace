@@ -3,16 +3,24 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 final class BoundedHttpsClient {
   BoundedHttpsClient({
-    http.Client? client,
+    HttpClient? client,
     this.allowInsecureLocalhostForTesting = false,
     this.maxRedirects = 5,
-  }) : _client = SentryHttpClient(client: client, captureFailedRequests: false);
+  }) : _ioClient = client ?? HttpClient() {
+    _ioClient.connectionTimeout = const Duration(seconds: 15);
+    _client = SentryHttpClient(
+      client: IOClient(_ioClient),
+      captureFailedRequests: false,
+    );
+  }
 
-  final SentryHttpClient _client;
+  final HttpClient _ioClient;
+  late final SentryHttpClient _client;
   final bool allowInsecureLocalhostForTesting;
   final int maxRedirects;
 
@@ -124,5 +132,8 @@ final class BoundedHttpsClient {
       statusCode == HttpStatus.temporaryRedirect ||
       statusCode == HttpStatus.permanentRedirect;
 
-  void close() => _client.close();
+  void close() {
+    _ioClient.close(force: true);
+    _client.close();
+  }
 }

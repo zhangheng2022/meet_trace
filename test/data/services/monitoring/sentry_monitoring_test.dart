@@ -70,4 +70,41 @@ void main() {
     expect(SentryMonitoring.sanitizeMetric(recording), same(recording));
     expect(SentryMonitoring.sanitizeMetric(business), isNull);
   });
+
+  test('V2 HTTP Span 删除完整 URL、Header、Body 并强制安全名称', () {
+    final span =
+        RecordingSentrySpanV2.root(
+          traceId: SentryId.newId(),
+          name: 'GET https://api.example.com/private?token=secret',
+          onSpanEnd: (_) async {},
+          clock: DateTime.now,
+          dscCreator: (_) => SentryTraceContextHeader(SentryId.newId(), 'key'),
+          samplingDecision: SentryTracesSamplingDecision(true),
+        )..setAttributes({
+          'url.full': SentryAttribute.string(
+            'https://api.example.com/private?token=secret',
+          ),
+          'http.request.method': SentryAttribute.string('GET'),
+          'http.response.status_code': SentryAttribute.int(200),
+          'http.request.header.authorization': SentryAttribute.string('secret'),
+          'http.request.body': SentryAttribute.string('private'),
+        });
+
+    SentryMonitoring.sanitizeSpan(span);
+
+    expect(span.name, 'GET api.example.com');
+    expect(span.attributes.keys.toSet(), {
+      'server.address',
+      'http.request.method',
+      'http.response.status_code',
+    });
+    expect(span.attributes['server.address']?.value, 'api.example.com');
+
+    span
+      ..name = 'GET https://api.example.com/private?token=secret'
+      ..removeAttribute('server.address')
+      ..removeAttribute('http.request.method');
+    SentryMonitoring.sanitizeSpan(span);
+    expect(span.name, 'HTTP');
+  });
 }

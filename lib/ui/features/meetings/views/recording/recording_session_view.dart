@@ -47,9 +47,19 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
 
   Future<void> _start() async {
     final started = await widget.viewModel.start();
-    if (mounted && started) {
-      await SentryFlutter.currentDisplay()?.reportFullyDisplayed();
+    if (!mounted || !started) {
+      return;
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      try {
+        SentryFlutter.currentDisplay()?.reportFullyDisplayed().ignore();
+      } on Object {
+        // TTFD 上报失败不得影响录音页面。
+      }
+    });
   }
 
   @override

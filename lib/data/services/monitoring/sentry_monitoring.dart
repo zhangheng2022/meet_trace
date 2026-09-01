@@ -12,7 +12,7 @@ abstract final class SentryMonitoring {
     try {
       span =
           Sentry.getSpan()?.startChild(operation, description: name) ??
-          Sentry.startTransaction(name, operation, bindToScope: true);
+          Sentry.startTransaction(name, operation, bindToScope: false);
     } on Object {
       // 遥测启动失败不能阻断被观测操作。
     }
@@ -72,13 +72,19 @@ abstract final class SentryMonitoring {
     SentryTransaction transaction,
     Hint _,
   ) {
-    sanitizeEvent(transaction, Hint());
-    for (final span in transaction.spans) {
-      if (span.context.operation == 'http.client') {
-        _sanitizeHttpSpan(span);
+    try {
+      if (sanitizeEvent(transaction, Hint()) == null) {
+        return null;
       }
+      for (final span in transaction.spans) {
+        if (span.context.operation == 'http.client') {
+          _sanitizeHttpSpan(span);
+        }
+      }
+      return transaction;
+    } on Object {
+      return null;
     }
-    return transaction;
   }
 
   static Breadcrumb? sanitizeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
@@ -138,9 +144,7 @@ abstract final class SentryMonitoring {
       );
     }
     final name = [?method, ?host].join(' ');
-    if (name.isNotEmpty) {
-      span.name = name;
-    }
+    span.name = name.isEmpty ? 'HTTP' : name;
   }
 
   static List<Breadcrumb>? _sanitizeBreadcrumbs(List<Breadcrumb>? breadcrumbs) {
@@ -216,8 +220,4 @@ abstract final class SentryMonitoring {
         ? duration
         : null;
   }
-}
-
-extension<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

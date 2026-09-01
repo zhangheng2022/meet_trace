@@ -10,8 +10,8 @@ void main() {
     ]) {
       final source = await File(path).readAsString();
       expect(source, contains('SentryHttpClient'));
-      expect(source, isNot(contains('HttpClient()')));
-      expect(source, isNot(contains('HttpClient.new')));
+      expect(source, contains('IOClient'));
+      expect(source, contains('force: true'));
     }
   });
 
@@ -32,6 +32,7 @@ void main() {
     expect(bootstrap, contains('beforeSendTransaction'));
     expect(bootstrap, contains('beforeSendMetric'));
     expect(monitoring, contains("metric.name.startsWith('recording.')"));
+    expect(monitoring, contains('bindToScope: false'));
   });
 
   test('四个主页面保持静态命名路由与 TTFD 上报', () async {

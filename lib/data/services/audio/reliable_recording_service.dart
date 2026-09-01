@@ -280,7 +280,7 @@ final class ReliableRecordingService
     _systemLifecycleCompletion = lifecycleCompletion;
     _captureRecoveryActive = true;
     _state = RecordingState.recovering;
-    telemetry.recordInterruption();
+    _recordTelemetry(telemetry.recordInterruption);
     SentryMonitoring.addBreadcrumb(
       category: 'recording.continuity',
       phase: 'system_suspended',
@@ -389,7 +389,7 @@ final class ReliableRecordingService
       _captureRecoveryActive = false;
       _state = RecordingState.recording;
       _attachCaptureStream(stream);
-      telemetry.recordRecovery();
+      _recordTelemetry(telemetry.recordRecovery);
       SentryMonitoring.addBreadcrumb(
         category: 'recording.continuity',
         phase: 'system_resumed',
@@ -495,7 +495,7 @@ final class ReliableRecordingService
     }
     _captureRecoveryActive = true;
     _state = RecordingState.recovering;
-    telemetry.recordInterruption();
+    _recordTelemetry(telemetry.recordInterruption);
     SentryMonitoring.addBreadcrumb(
       category: 'recording.continuity',
       phase: 'interrupted',
@@ -567,7 +567,7 @@ final class ReliableRecordingService
       _captureRecoveryActive = false;
       _state = RecordingState.recording;
       _attachCaptureStream(stream);
-      telemetry.recordRecovery();
+      _recordTelemetry(telemetry.recordRecovery);
       SentryMonitoring.addBreadcrumb(
         category: 'recording.continuity',
         phase: 'recovered',
@@ -728,9 +728,11 @@ final class ReliableRecordingService
       await output.writeFrom(combined);
       await output.flush();
       writeTimer.stop();
-      telemetry.observePcmWrite(
-        latency: writeTimer.elapsed,
-        pendingChunks: batch.length + _pendingFactChunks.length,
+      _recordTelemetry(
+        () => telemetry.observePcmWrite(
+          latency: writeTimer.elapsed,
+          pendingChunks: _pendingFactChunks.length,
+        ),
       );
       final startByteOffset = _persistedBytes;
       _persistedBytes += combined.length;
@@ -792,6 +794,14 @@ final class ReliableRecordingService
     final error = _writeError;
     if (error != null) {
       Error.throwWithStackTrace(error, _writeStackTrace ?? StackTrace.current);
+    }
+  }
+
+  void _recordTelemetry(void Function() record) {
+    try {
+      record();
+    } on Object {
+      // 遥测是旁路诊断，失败不得改变录音状态或连续性。
     }
   }
 

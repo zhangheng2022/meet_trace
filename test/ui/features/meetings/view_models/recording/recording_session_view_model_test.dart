@@ -87,12 +87,16 @@ void main() {
   test('预览降级和乱序事件不会停止录音，片段按时间排序', () async {
     final preview = _PreviewSession();
     final recording = _RecordingService();
+    final telemetry = _RecordingTelemetryGate()..throwOnPreview = true;
     final viewModel = _viewModel(
       meetings: TestMeetingRepository(),
       recording: recording,
       preview: preview,
+      telemetry: telemetry,
     );
     await viewModel.start();
+    var transcriptNotifications = 0;
+    viewModel.transcriptListenable.addListener(() => transcriptNotifications++);
 
     preview.emitSegment(id: 'late', startMs: 2000, text: '第二段');
     preview.emitSegment(id: 'early', startMs: 1000, text: '第一段');
@@ -104,6 +108,7 @@ void main() {
     ]);
     expect(viewModel.previewMetrics.state, AsrPreviewState.recordingOnly);
     expect(viewModel.recordingState, RecordingState.recording);
+    expect(transcriptNotifications, greaterThan(0));
     viewModel.dispose();
     await preview.close();
   });
@@ -583,6 +588,8 @@ final class _DesktopLifecycle implements DesktopLifecycle {
 }
 
 final class _RecordingTelemetryGate implements RecordingTelemetryGate {
+  bool throwOnPreview = false;
+
   @override
   bool recordingActive = false;
 
@@ -601,7 +608,11 @@ final class _RecordingTelemetryGate implements RecordingTelemetryGate {
   void observePreview({
     required int queuedAudioMs,
     required int droppedWindows,
-  }) {}
+  }) {
+    if (throwOnPreview) {
+      throw StateError('configured telemetry failure');
+    }
+  }
 
   @override
   void recordInterruption() {}
