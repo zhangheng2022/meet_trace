@@ -87,7 +87,9 @@ void main() {
   test('预览降级和乱序事件不会停止录音，片段按时间排序', () async {
     final preview = _PreviewSession();
     final recording = _RecordingService();
-    final telemetry = _RecordingTelemetryGate()..throwOnPreview = true;
+    final telemetry = _RecordingTelemetryGate()
+      ..throwOnPreview = true
+      ..throwOnSetActive = true;
     final viewModel = _viewModel(
       meetings: TestMeetingRepository(),
       recording: recording,
@@ -589,12 +591,16 @@ final class _DesktopLifecycle implements DesktopLifecycle {
 
 final class _RecordingTelemetryGate implements RecordingTelemetryGate {
   bool throwOnPreview = false;
+  bool throwOnSetActive = false;
 
   @override
   bool recordingActive = false;
 
   @override
   void setRecordingActive(bool active) {
+    if (throwOnSetActive) {
+      throw StateError('configured telemetry failure');
+    }
     recordingActive = active;
   }
 

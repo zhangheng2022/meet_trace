@@ -117,6 +117,7 @@ abstract final class SentryMonitoring {
     if (!isHttp) {
       return;
     }
+    span.name = 'HTTP';
     final host = _host(
       attributes['url.full']?.value ?? attributes['server.address']?.value,
     );

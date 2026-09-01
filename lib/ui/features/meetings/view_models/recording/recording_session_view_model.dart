@@ -109,7 +109,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     }
     _subscribePreview();
     _setBusy(true);
-    telemetry.setRecordingActive(true);
+    _recordTelemetry(() => telemetry.setRecordingActive(true));
     await _setDesktopRecordingActiveBestEffort(true);
     try {
       await sessionLifecycle.start(_meeting);
@@ -132,7 +132,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     } finally {
       if (recordingState != RecordingState.recording &&
           recordingState != RecordingState.paused) {
-        telemetry.setRecordingActive(false);
+        _recordTelemetry(() => telemetry.setRecordingActive(false));
         await _setDesktopRecordingActiveBestEffort(false);
       }
       _setBusy(false);
@@ -191,7 +191,7 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     } finally {
       if (recordingState != RecordingState.recording &&
           recordingState != RecordingState.paused) {
-        telemetry.setRecordingActive(false);
+        _recordTelemetry(() => telemetry.setRecordingActive(false));
       }
       _isFinalizing = false;
       _setBusy(false);
@@ -304,14 +304,12 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       }
       final previous = _previewMetrics;
       _previewMetrics = metrics;
-      try {
-        telemetry.observePreview(
+      _recordTelemetry(
+        () => telemetry.observePreview(
           queuedAudioMs: metrics.queuedAudioMs,
           droppedWindows: metrics.droppedPreviewWindows,
-        );
-      } on Object {
-        // 遥测是旁路诊断，失败不得中断预览状态通知。
-      }
+        ),
+      );
       if (previous.state != metrics.state ||
           previous.lastErrorCode != metrics.lastErrorCode) {
         transcriptListenable.notifyListeners();
@@ -361,6 +359,14 @@ final class RecordingSessionViewModel extends ChangeNotifier {
   void _setBusy(bool value) {
     _isBusy = value;
     _notify();
+  }
+
+  void _recordTelemetry(void Function() record) {
+    try {
+      record();
+    } on Object {
+      // 遥测是旁路诊断，失败不得中断录音控制或预览通知。
+    }
   }
 
   Future<void> _initializePreview() async {

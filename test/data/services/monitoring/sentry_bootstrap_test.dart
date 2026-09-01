@@ -181,11 +181,21 @@ void main() {
   });
 
   test('SDK 初始化异常被隔离并返回失败', () async {
+    sentryRecordingTelemetryGate
+      ..setRecordingActive(true)
+      ..configure(enabled: true, performanceSampled: true);
+    addTearDown(() {
+      sentryRecordingTelemetryGate
+        ..configure(enabled: false, performanceSampled: false)
+        ..setRecordingActive(false);
+    });
+    expect(sentryRecordingTelemetryGate.isCollecting, isTrue);
     final controller = SentryRemoteDiagnosticsController(
       _configuration(dsn: 'not-a-dsn'),
     );
 
     expect(await controller.setEnabled(true), isFalse);
+    expect(sentryRecordingTelemetryGate.isCollecting, isFalse);
   });
 
   test('启用超时后在迟到 init 完成时串行自动关闭', () async {

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:meettrace/domain/ports/recording_telemetry.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -67,6 +68,9 @@ final class SentryRecordingTelemetryGate implements RecordingTelemetryGate {
 
   @override
   bool get recordingActive => _recordingActive;
+
+  @visibleForTesting
+  bool get isCollecting => _canCollect;
 
   void configure({required bool enabled, required bool performanceSampled}) {
     _diagnosticsEnabled = enabled;

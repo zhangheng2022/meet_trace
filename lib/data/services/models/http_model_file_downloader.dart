@@ -114,6 +114,12 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
         resumed: acceptedResume,
       );
     } on TimeoutException catch (error, stackTrace) {
+      if (cancellation.isCanceled) {
+        Error.throwWithStackTrace(
+          const ModelDownloadCanceledException(),
+          stackTrace,
+        );
+      }
       Error.throwWithStackTrace(
         DownloadableModelException(
           code: 'model.download.timeout',
@@ -132,9 +138,9 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
       rethrow;
     } finally {
       cancellation.removeCancelListener(cancelRequest);
-      await output?.close();
       ioClient.close(force: true);
       client.close();
+      await output?.close();
     }
   }
 }
