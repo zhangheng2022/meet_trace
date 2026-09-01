@@ -82,6 +82,9 @@ $forbiddenUserData = @($entries | Where-Object {
 $forbiddenCredentials = @($entries | Where-Object {
     $_ -match '(?i)(^|/)(\.env(?:\..*)?|[^/]+\.(pfx|p12|pem|key|keystore|jks))$'
 })
+$forbiddenDebugSymbols = @($entries | Where-Object {
+    $_ -match '(?i)\.(pdb|symbols)$'
+})
 $hasSignature = 'AppxSignature.p7x' -in $entries
 $authenticodeStatus = 'NotChecked'
 $signerSubject = $null
@@ -140,6 +143,7 @@ $report = [ordered]@{
     forbiddenWeights = $forbiddenWeights
     forbiddenUserData = $forbiddenUserData
     forbiddenCredentials = $forbiddenCredentials
+    forbiddenDebugSymbols = $forbiddenDebugSymbols
 }
 
 if ([string]::IsNullOrWhiteSpace($ReportPath)) {
@@ -153,6 +157,6 @@ Write-Output "MSIX inspection report: $ReportPath"
 $failedChecks = @($checks.GetEnumerator() | Where-Object { -not $_.Value })
 if ($failedChecks.Count -gt 0 -or $missingEntries.Count -gt 0 -or
     $forbiddenWeights.Count -gt 0 -or $forbiddenUserData.Count -gt 0 -or
-    $forbiddenCredentials.Count -gt 0) {
+    $forbiddenCredentials.Count -gt 0 -or $forbiddenDebugSymbols.Count -gt 0) {
     throw 'MSIX identity, signature, or content inspection failed.'
 }

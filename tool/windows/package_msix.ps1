@@ -204,6 +204,9 @@ New-Item -ItemType Directory -Path $stagingPath | Out-Null
 
 try {
     Copy-Item -Path (Join-Path $BuildDirectory '*') -Destination $stagingPath -Recurse -Force
+    Get-ChildItem -LiteralPath $stagingPath -Recurse -File |
+        Where-Object { $_.Name -match '(?i)\.(pdb|symbols)$' } |
+        Remove-Item -Force
     Copy-Item -LiteralPath $assetsPath -Destination (Join-Path $stagingPath 'Assets') -Recurse -Force
 
     $manifest = Get-Content -LiteralPath $templatePath -Raw

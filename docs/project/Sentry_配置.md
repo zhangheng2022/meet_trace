@@ -58,8 +58,7 @@
 | `SENTRY_ENVIRONMENT` | `production` |
 | `SENTRY_RELEASE` | `com.meettrace.app@<version>+<共享构建号>` |
 | `SENTRY_DIST` | 共享构建号 |
-| `SENTRY_PERFORMANCE_SESSION_SAMPLE_RATE` | `0.2`，应用侧进程级一次抽样 |
-| `SENTRY_PROFILES_SAMPLE_RATE` | `0` |
+| `SENTRY_TRACES_SAMPLE_RATE` | `0.2`，应用侧进程级一次抽样 |
 
 不可分发的本地受控验证使用 `development`，不得复用生产 `release/dist`：
 
@@ -72,7 +71,7 @@ flutter run -d '<device-id>' `
 ## 符号、服务端与告警
 
 - `SENTRY_AUTH_TOKEN` 只存在于被忽略的本地配置或 `android-alpha`、`testflight`、`windows-alpha` Environment，不得进入仓库、构建参数、应用包或日志。
-- 三平台候选上传 Dart `split-debug-info`、混淆映射及所需 Android 原生符号、iOS dSYM、Windows PDB/minidump 符号；禁止上传完整源码和 Web source maps。
+- 三平台候选上传 Dart `split-debug-info` 及所需 Android 原生符号、iOS dSYM、Windows PDB/minidump 符号；Android/iOS 另上传 SDK 支持的 Dart 混淆映射，Windows 不虚构尚未支持的 Dart symbol-map 上传。禁止上传完整源码和 Web source maps。
 - 任一平台生产配置缺失、符号上传失败、测试事件无法符号化或最终入库字段越界，均阻断统一发布，不允许公开后补传符号。
 - 新出现或回归的 Fatal、原生崩溃、ANR、App Hang/Watchdog 按 Issue 聚合通知维护者；性能只进入 Dashboard。
 

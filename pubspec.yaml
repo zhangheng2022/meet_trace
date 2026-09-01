@@ -138,7 +138,8 @@ flutter:
 
 sentry:
   upload_debug_symbols: true
-  upload_source_maps: true
+  upload_source_maps: false
+  upload_sources: false
   wait_for_processing: true
   project: meettrace
   org: zhangheng-bc

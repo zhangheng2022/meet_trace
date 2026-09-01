@@ -403,17 +403,27 @@ jobs:
           MEETTRACE_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           MEETTRACE_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           MEETTRACE_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           set -euo pipefail
+          [[ -n "${SENTRY_DSN//[[:space:]]/}" ]]
+          mkdir -p build/sentry/android
           flutter build apk \
             --release \
             --target-platform android-arm64 \
             --split-per-abi \
+            --obfuscate \
+            --split-debug-info=build/sentry/android \
+            --extra-gen-snapshot-options=--save-obfuscation-map=build/sentry/android/dart-obfuscation-map.json \
             --build-name="$MARKETING_VERSION" \
             --build-number="$ANDROID_PACKAGE_BUILD_NUMBER" \
             --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true \
             --dart-define="MEETTRACE_VERSION_NAME=$MARKETING_VERSION" \
             --dart-define="MEETTRACE_BUILD_NUMBER=$ANDROID_BUILD_NUMBER" \
+            --dart-define=SENTRY_ENABLED=true \
+            --dart-define="SENTRY_DSN=$SENTRY_DSN" \
+            --dart-define=SENTRY_ENVIRONMENT=production \
+            --dart-define=SENTRY_TRACES_SAMPLE_RATE=0.2 \
             --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE" \
             --dart-define="SENTRY_DIST=$SENTRY_DIST"
           source_apk="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
@@ -432,9 +442,13 @@ jobs:
         run: |
           set -euo pipefail
           [[ -n "${SENTRY_AUTH_TOKEN//[[:space:]]/}" ]]
+          [[ -s build/sentry/android/dart-obfuscation-map.json ]]
           for attempt in 1 2 3; do
             if dart run sentry_dart_plugin \
-              --sentry-define="symbols_path=build" \
+              --sentry-define="symbols_path=build/sentry/android" \
+              --sentry-define="dart_symbol_map_path=build/sentry/android/dart-obfuscation-map.json" \
+              --sentry-define="upload_source_maps=false" \
+              --sentry-define="upload_sources=false" \
               --sentry-define="release=$SENTRY_RELEASE" \
               --sentry-define="dist=$SENTRY_DIST"; then
               exit 0
@@ -996,15 +1010,26 @@ jobs:
       - name: Build and inspect unsigned Release app
         if: steps.staged.outputs.reuse != 'true'
         shell: bash
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           set -euo pipefail
+          [[ -n "${SENTRY_DSN//[[:space:]]/}" ]]
+          mkdir -p build/sentry/ios
           flutter build ios \
             --release --no-codesign \
+            --obfuscate \
+            --split-debug-info=build/sentry/ios \
+            --extra-gen-snapshot-options=--save-obfuscation-map=build/sentry/ios/dart-obfuscation-map.json \
             --build-name="$MARKETING_VERSION" \
             --build-number="$IOS_BUILD_NUMBER" \
             --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true \
             --dart-define="MEETTRACE_VERSION_NAME=$MARKETING_VERSION" \
             --dart-define="MEETTRACE_BUILD_NUMBER=$IOS_BUILD_NUMBER" \
+            --dart-define=SENTRY_ENABLED=true \
+            --dart-define="SENTRY_DSN=$SENTRY_DSN" \
+            --dart-define=SENTRY_ENVIRONMENT=production \
+            --dart-define=SENTRY_TRACES_SAMPLE_RATE=0.2 \
             --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE" \
             --dart-define="SENTRY_DIST=$SENTRY_DIST"
           bash tool/benchmarks/inspect_ios_app.sh \
@@ -1418,9 +1443,13 @@ jobs:
           [[ -n "${SENTRY_AUTH_TOKEN//[[:space:]]/}" ]]
           symbols_path="$RUNNER_TEMP/MeetTrace.xcarchive/dSYMs"
           [[ -d "$symbols_path" ]]
+          [[ -s build/sentry/ios/dart-obfuscation-map.json ]]
           for attempt in 1 2 3; do
             if dart run sentry_dart_plugin \
               --sentry-define="symbols_path=$symbols_path" \
+              --sentry-define="dart_symbol_map_path=build/sentry/ios/dart-obfuscation-map.json" \
+              --sentry-define="upload_source_maps=false" \
+              --sentry-define="upload_sources=false" \
               --sentry-define="release=$SENTRY_RELEASE" \
               --sentry-define="dist=$SENTRY_DIST"; then
               exit 0
@@ -1571,6 +1600,10 @@ jobs:
             throw 'Windows marketing version does not match the release ID.'
           }
           "MARKETING_VERSION=$marketingVersion" | Out-File `
+            -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SENTRY_RELEASE=com.meettrace.app@$marketingVersion+$($env:RELEASE_BUILD_NUMBER)" | Out-File `
+            -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SENTRY_DIST=$($env:RELEASE_BUILD_NUMBER)" | Out-File `
             -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "MEETTRACE_MSIX_VERSION=1.0.$($env:RELEASE_BUILD_NUMBER).0" | Out-File `
             -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -1749,16 +1782,71 @@ jobs:
       - name: Build Windows x64 Store Release
         if: steps.staged.outputs.reuse != 'true'
         shell: pwsh
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:SENTRY_DSN)) {
+            throw 'Sentry DSN is required for a Windows Store candidate.'
+          }
+          New-Item -ItemType Directory -Force -Path build/sentry/windows | Out-Null
+          # sentry_dart_plugin 3.4.0 only supports dart_symbol_map_path on
+          # Android/iOS; Windows uses the split-debug-info .symbols file.
           flutter build windows --release `
+            --obfuscate `
+            --split-debug-info=build/sentry/windows `
             --build-name $env:MARKETING_VERSION `
             --build-number $env:RELEASE_BUILD_NUMBER `
             --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true `
             --dart-define=MEETTRACE_VERSION_NAME=$env:MARKETING_VERSION `
             --dart-define=MEETTRACE_BUILD_NUMBER=$env:RELEASE_BUILD_NUMBER `
             --dart-define=SENTRY_ENABLED=true `
-            --dart-define="SENTRY_RELEASE=com.meettrace.app@$env:MARKETING_VERSION+$env:RELEASE_BUILD_NUMBER" `
-            --dart-define="SENTRY_DIST=$env:RELEASE_BUILD_NUMBER"
+            --dart-define="SENTRY_DSN=$env:SENTRY_DSN" `
+            --dart-define=SENTRY_ENVIRONMENT=production `
+            --dart-define=SENTRY_TRACES_SAMPLE_RATE=0.2 `
+            --dart-define="SENTRY_RELEASE=$env:SENTRY_RELEASE" `
+            --dart-define="SENTRY_DIST=$env:SENTRY_DIST"
+
+      - name: Upload Windows debug symbols to Sentry
+        if: steps.staged.outputs.reuse != 'true'
+        shell: pwsh
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_LOG_LEVEL: info
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:SENTRY_AUTH_TOKEN)) {
+            throw 'Sentry auth token is required for a Windows Store candidate.'
+          }
+          if (-not (Get-ChildItem -LiteralPath build/sentry/windows `
+              -Filter *.symbols -File | Select-Object -First 1)) {
+            throw 'Windows Dart split-debug-info is missing.'
+          }
+          if (-not (Test-Path -LiteralPath `
+              build/windows/x64/runner/Release/meettrace.pdb -PathType Leaf)) {
+            throw 'Windows Release PDB is missing.'
+          }
+          $succeeded = $false
+          foreach ($attempt in 1..3) {
+            # The official plugin always scans the Windows Release directory
+            # (including meettrace.pdb); symbols_path adds Dart .symbols.
+            dart run sentry_dart_plugin `
+              --sentry-define="symbols_path=build/sentry/windows" `
+              --sentry-define="upload_source_maps=false" `
+              --sentry-define="upload_sources=false" `
+              --sentry-define="release=$env:SENTRY_RELEASE" `
+              --sentry-define="dist=$env:SENTRY_DIST"
+            if ($LASTEXITCODE -eq 0) {
+              $succeeded = $true
+              break
+            }
+            if ($attempt -lt 3) {
+              Start-Sleep -Seconds ($attempt * 10)
+            }
+          }
+          if (-not $succeeded) {
+            throw 'Sentry Windows debug symbol upload failed after 3 attempts.'
+          }
 
       - name: Create Microsoft Store MSIX candidate
         if: steps.staged.outputs.reuse != 'true'

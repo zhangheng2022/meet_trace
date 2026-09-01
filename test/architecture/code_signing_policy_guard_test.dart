@@ -16,15 +16,9 @@ void main() {
     expect(workflow, contains('--dart-define=SENTRY_ENABLED=true'));
     expect(
       workflow,
-      contains(
-        '--dart-define="SENTRY_RELEASE=com.meettrace.app@'
-        '\$env:MARKETING_VERSION+\$env:RELEASE_BUILD_NUMBER"',
-      ),
+      contains('--dart-define="SENTRY_RELEASE=\$env:SENTRY_RELEASE"'),
     );
-    expect(
-      workflow,
-      contains('--dart-define="SENTRY_DIST=\$env:RELEASE_BUILD_NUMBER"'),
-    );
+    expect(workflow, contains('--dart-define="SENTRY_DIST=\$env:SENTRY_DIST"'));
     expect(
       policy,
       contains(
