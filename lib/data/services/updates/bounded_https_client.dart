@@ -2,16 +2,17 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
+import 'package:sentry_flutter/sentry_flutter.dart';
+
 final class BoundedHttpsClient {
   BoundedHttpsClient({
-    HttpClient? client,
+    http.Client? client,
     this.allowInsecureLocalhostForTesting = false,
     this.maxRedirects = 5,
-  }) : _client = client ?? HttpClient() {
-    _client.connectionTimeout = const Duration(seconds: 15);
-  }
+  }) : _client = SentryHttpClient(client: client, captureFailedRequests: false);
 
-  final HttpClient _client;
+  final SentryHttpClient _client;
   final bool allowInsecureLocalhostForTesting;
   final int maxRedirects;
 
@@ -21,13 +22,15 @@ final class BoundedHttpsClient {
     }
     final response = await _open(uri);
     final declaredLength = response.contentLength;
-    if (declaredLength > maxBytes) {
-      await response.drain<void>();
+    if (declaredLength != null && declaredLength > maxBytes) {
+      await response.stream.drain<void>();
       throw const HttpException('响应超过允许大小');
     }
     final builder = BytesBuilder(copy: false);
     var received = 0;
-    await for (final chunk in response.timeout(const Duration(seconds: 30))) {
+    await for (final chunk in response.stream.timeout(
+      const Duration(seconds: 30),
+    )) {
       received += chunk.length;
       if (received > maxBytes) {
         throw const HttpException('响应超过允许大小');
@@ -46,16 +49,18 @@ final class BoundedHttpsClient {
       throw ArgumentError.value(expectedBytes, 'expectedBytes');
     }
     final response = await _open(uri);
-    if (response.contentLength >= 0 &&
+    if (response.contentLength != null &&
         response.contentLength != expectedBytes) {
-      await response.drain<void>();
+      await response.stream.drain<void>();
       throw const HttpException('下载长度与 Manifest 不一致');
     }
     await destination.parent.create(recursive: true);
     final sink = destination.openWrite(mode: FileMode.writeOnly);
     var received = 0;
     try {
-      await for (final chunk in response.timeout(const Duration(minutes: 5))) {
+      await for (final chunk in response.stream.timeout(
+        const Duration(minutes: 5),
+      )) {
         received += chunk.length;
         if (received > expectedBytes) {
           throw const HttpException('下载内容超过 Manifest 声明长度');
@@ -71,31 +76,30 @@ final class BoundedHttpsClient {
     }
   }
 
-  Future<HttpClientResponse> _open(Uri initialUri) async {
+  Future<http.StreamedResponse> _open(Uri initialUri) async {
     var uri = initialUri;
     for (var redirect = 0; redirect <= maxRedirects; redirect++) {
       _validateUri(uri);
-      final request = await _client.getUrl(uri);
-      request
+      final request = http.Request('GET', uri)
         ..followRedirects = false
-        ..headers.set(HttpHeaders.acceptHeader, 'application/octet-stream')
-        ..headers.set(HttpHeaders.userAgentHeader, 'MeetTrace-AppUpdate/1');
-      final response = await request.close().timeout(
-        const Duration(seconds: 30),
-      );
+        ..headers[HttpHeaders.acceptHeader] = 'application/octet-stream'
+        ..headers[HttpHeaders.userAgentHeader] = 'MeetTrace-AppUpdate/1';
+      final response = await _client
+          .send(request)
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode == HttpStatus.ok) {
         return response;
       }
       if (_isRedirect(response.statusCode)) {
-        final location = response.headers.value(HttpHeaders.locationHeader);
-        await response.drain<void>();
+        final location = response.headers[HttpHeaders.locationHeader];
+        await response.stream.drain<void>();
         if (location == null || redirect == maxRedirects) {
           throw const HttpException('更新下载重定向无效或过多');
         }
         uri = uri.resolve(location);
         continue;
       }
-      await response.drain<void>();
+      await response.stream.drain<void>();
       throw HttpException('更新服务器返回 HTTP ${response.statusCode}', uri: uri);
     }
     throw const HttpException('更新下载重定向过多');
@@ -120,5 +124,5 @@ final class BoundedHttpsClient {
       statusCode == HttpStatus.temporaryRedirect ||
       statusCode == HttpStatus.permanentRedirect;
 
-  void close() => _client.close(force: true);
+  void close() => _client.close();
 }

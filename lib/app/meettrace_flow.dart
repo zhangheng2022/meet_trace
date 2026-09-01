@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../data/services/storage/local_data_generation_gate.dart';
 import '../data/services/sharing/share_plus_cache_cleaner.dart';
@@ -365,6 +366,11 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(SentryFlutter.currentDisplay()?.reportFullyDisplayed());
+      }
+    });
   }
 
   @override
@@ -451,6 +457,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
     unawaited(
       Navigator.of(context).push<void>(
         MaterialPageRoute(
+          settings: const RouteSettings(name: '/recording'),
           builder: (_) => RecordingBootstrapView(
             createViewModel: () =>
                 widget.dependencies.createRecordingSessionViewModel(session),
@@ -489,6 +496,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
       speakerLabelBuilder: (number) => currentL10n().speakerNumber(number),
     );
     final route = MaterialPageRoute<void>(
+      settings: const RouteSettings(name: '/meeting-detail'),
       builder: (_) => MeetingDetailView(
         viewModel: viewModel,
         onBack: () => Navigator.of(context).maybePop(),
@@ -522,6 +530,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
       Navigator.of(context)
           .push<void>(
             MaterialPageRoute(
+              settings: const RouteSettings(name: '/settings'),
               builder: (_) => ModelSettingsView(
                 viewModel: modelSettings,
                 dataControls: dataControls,

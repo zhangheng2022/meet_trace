@@ -61,7 +61,15 @@ void main() {
       expect(options.enableMetrics, isTrue);
       expect(options.captureFailedRequests, isFalse);
       expect(options.captureNativeFailedRequests, isFalse);
-      expect(options.recordHttpBreadcrumbs, isFalse);
+      expect(options.recordHttpBreadcrumbs, isTrue);
+      expect(options.maxRequestBodySize, MaxRequestBodySize.never);
+      expect(options.tracePropagationTargets, isEmpty);
+      expect(options.propagateTraceparent, isFalse);
+      expect(options.beforeSend, isNotNull);
+      expect(options.beforeSendTransaction, isNotNull);
+      expect(options.beforeBreadcrumb, isNotNull);
+      expect(options.beforeSendMetric, isNotNull);
+      expect(options.beforeSendSpan, isNotNull);
       expect(options.maxBreadcrumbs, 100);
       expect(options.maxCacheItems, 10);
       expect(options.enableAutoSessionTracking, isTrue);

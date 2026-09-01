@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../../../domain/models/meeting.dart';
 import '../../../../../domain/models/workflow_states.dart';
@@ -41,7 +42,14 @@ final class _RecordingSessionViewState extends State<RecordingSessionView> {
   @override
   void initState() {
     super.initState();
-    unawaited(widget.viewModel.start());
+    unawaited(_start());
+  }
+
+  Future<void> _start() async {
+    final started = await widget.viewModel.start();
+    if (mounted && started) {
+      await SentryFlutter.currentDisplay()?.reportFullyDisplayed();
+    }
   }
 
   @override

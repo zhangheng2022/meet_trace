@@ -13,6 +13,7 @@ import 'package:meettrace/domain/models/recording_continuity_event.dart';
 import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
+import 'package:meettrace/domain/ports/recording_telemetry.dart';
 import 'package:meettrace/domain/use_cases/lock_recording_input.dart';
 
 import '../../../support/recording_fakes.dart';
@@ -52,6 +53,7 @@ void main() {
     bool enableInputRecovery = false,
     LockedRecordingInput initialInput =
         const LockedRecordingInput.systemDefault(),
+    RecordingTelemetryGate telemetry = const NoopRecordingTelemetryGate(),
   }) {
     return ReliableRecordingService(
       capture: capture,
@@ -66,6 +68,7 @@ void main() {
       foreground: foreground,
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
+      telemetry: telemetry,
       captureStopTimeout: captureStopTimeout,
       factCommitInterval: factCommitInterval,
       checkpointSaveInterval: checkpointSaveInterval,
@@ -114,6 +117,22 @@ void main() {
 
     await service.stop();
     await subscription.cancel();
+  });
+
+  test('事实 PCM flush 后只提交匿名写入性能样本', () async {
+    final telemetry = _RecordingTelemetryRecorder();
+    final service = createService(telemetry: telemetry);
+
+    await service.start(meetingId: 'meeting-telemetry');
+    capture.add(_pcmBytes(3200));
+    await _waitFor(() => telemetry.writeLatencies.isNotEmpty);
+    await service.stop();
+
+    expect(
+      telemetry.writeLatencies.single,
+      greaterThanOrEqualTo(Duration.zero),
+    );
+    expect(telemetry.pendingChunks.single, greaterThanOrEqualTo(1));
   });
 
   test('生产提交窗口将同批 PCM 合并为一个连续预览块', () async {
@@ -891,6 +910,38 @@ final class FixedRecordingStorageCapacity
 
   @override
   Future<int> getFreeBytes() async => freeBytes;
+}
+
+final class _RecordingTelemetryRecorder implements RecordingTelemetryGate {
+  final List<Duration> writeLatencies = [];
+  final List<int> pendingChunks = [];
+
+  @override
+  bool get recordingActive => true;
+
+  @override
+  void setRecordingActive(bool active) {}
+
+  @override
+  void observePcmWrite({
+    required Duration latency,
+    required int pendingChunks,
+  }) {
+    writeLatencies.add(latency);
+    this.pendingChunks.add(pendingChunks);
+  }
+
+  @override
+  void observePreview({
+    required int queuedAudioMs,
+    required int droppedWindows,
+  }) {}
+
+  @override
+  void recordInterruption() {}
+
+  @override
+  void recordRecovery() {}
 }
 
 final class FakeRecordingForegroundLifecycle

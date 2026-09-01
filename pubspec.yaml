@@ -42,6 +42,7 @@ dependencies:
   disk_space_2: 1.0.13
   forui: ^0.26.0
   flutter_foreground_task: ^11.0.0
+  http: 1.6.0
   path: 1.9.1
   path_provider: 2.1.6
   record: 7.1.1

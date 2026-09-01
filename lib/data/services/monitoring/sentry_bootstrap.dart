@@ -3,26 +3,15 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:meettrace/domain/ports/recording_telemetry.dart';
 import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'sentry_monitoring.dart';
+import 'sentry_recording_telemetry.dart';
+
+export 'sentry_recording_telemetry.dart' show sentryRecordingTelemetryGate;
+
 typedef AppLauncher = void Function(Widget app);
-
-final class SentryRecordingTelemetryGate implements RecordingTelemetryGate {
-  // 阶段 3 将用于生成不含会议标识的 60 秒录音性能窗口。
-  bool _recordingActive = false;
-
-  @override
-  bool get recordingActive => _recordingActive;
-
-  @override
-  void setRecordingActive(bool active) {
-    _recordingActive = active;
-  }
-}
-
-final sentryRecordingTelemetryGate = SentryRecordingTelemetryGate();
 
 /// Sentry 的编译期运行配置。
 ///
@@ -124,7 +113,8 @@ final class SentryRuntimeConfiguration {
       ..sendClientReports = true
       ..captureFailedRequests = false
       ..captureNativeFailedRequests = false
-      ..recordHttpBreadcrumbs = false
+      ..recordHttpBreadcrumbs = true
+      ..maxRequestBodySize = MaxRequestBodySize.never
       ..enableDartSymbolication = true
       ..propagateTraceparent = false
       ..strictTraceContinuation = true
@@ -153,7 +143,14 @@ final class SentryRuntimeConfiguration {
       ..enableUserInteractionTracing = false
       ..enableTimeToFullDisplayTracing = true
       ..enableAppHangTracking = true
-      ..enableFramesTracking = true;
+      ..enableFramesTracking = true
+      ..beforeSend = SentryMonitoring.sanitizeEvent
+      ..beforeSendTransaction = SentryMonitoring.sanitizeTransaction
+      ..beforeBreadcrumb = SentryMonitoring.sanitizeBreadcrumb
+      ..beforeSendMetric = SentryMonitoring.sanitizeMetric
+      ..beforeSendSpan = SentryMonitoring.sanitizeSpan;
+
+    options.tracePropagationTargets.clear();
 
     if (release case final release?) {
       options.release = release;
@@ -168,6 +165,17 @@ final class SentryRuntimeConfiguration {
       ..onErrorSampleRate = 0;
     // sentry_flutter 9.28.0 的 profiling setter 仍是 experimental；保持 SDK 默认关闭。
   }
+
+  SentryRuntimeConfiguration resamplePerformance() =>
+      SentryRuntimeConfiguration._(
+        enabled: enabled,
+        dsn: dsn,
+        environment: environment,
+        release: release,
+        dist: dist,
+        tracesSampleRate: tracesSampleRate,
+        performanceSampled: Random().nextDouble() < tracesSampleRate,
+      );
 
   static double _parseSampleRate(String rawValue, {required double fallback}) {
     final parsed = double.tryParse(rawValue.trim());
@@ -254,6 +262,10 @@ final class SentryRemoteDiagnosticsController
   Future<bool> _apply(bool enabled) async {
     try {
       if (!enabled) {
+        sentryRecordingTelemetryGate.configure(
+          enabled: false,
+          performanceSampled: false,
+        );
         if (_isEnabled()) {
           await _close();
         }
@@ -263,8 +275,14 @@ final class SentryRemoteDiagnosticsController
         // 编译期关闭是当前构建的能力上限，仍接受用户的本机偏好。
         return true;
       }
-      await _initialize(configuration);
-      return _isEnabled();
+      final sampledConfiguration = configuration.resamplePerformance();
+      await _initialize(sampledConfiguration);
+      final initialized = _isEnabled();
+      sentryRecordingTelemetryGate.configure(
+        enabled: initialized,
+        performanceSampled: sampledConfiguration.performanceSampled,
+      );
+      return initialized;
     } on Object catch (error) {
       // 远程诊断故障不得阻断 App、事实录音或最终处理。
       debugPrint('远程诊断状态切换失败：$error');
@@ -280,7 +298,12 @@ final class SentryRemoteDiagnosticsController
 }
 
 List<NavigatorObserver> createSentryNavigatorObservers() {
-  return <NavigatorObserver>[SentryNavigatorObserver()];
+  return <NavigatorObserver>[
+    SentryNavigatorObserver(
+      enableNewTraceOnNavigation: true,
+      setRouteNameAsTransaction: true,
+    ),
+  ];
 }
 
 /// 组合根中的 Sentry 启动适配器。
@@ -294,6 +317,7 @@ abstract final class SentryBootstrap {
     SentryRuntimeConfiguration? configuration,
     AppLauncher appLauncher = runApp,
     bool userEnabled = false,
+    DateTime? appStartedAt,
   }) async {
     final resolvedConfiguration =
         configuration ?? SentryRuntimeConfiguration.fromEnvironment();
@@ -310,6 +334,10 @@ abstract final class SentryBootstrap {
     }
 
     if (!resolvedConfiguration.enabled || !userEnabled) {
+      sentryRecordingTelemetryGate.configure(
+        enabled: false,
+        performanceSampled: false,
+      );
       WidgetsFlutterBinding.ensureInitialized();
       await launch();
       return;
@@ -319,13 +347,36 @@ abstract final class SentryBootstrap {
       await SentryFlutter.init(
         resolvedConfiguration.applyTo,
         appRunner: () async {
+          sentryRecordingTelemetryGate.configure(
+            enabled: true,
+            performanceSampled: resolvedConfiguration.performanceSampled,
+          );
+          ISentrySpan? appStartSpan;
+          try {
+            appStartSpan = Sentry.startTransaction(
+              'app.start',
+              'app.start',
+              bindToScope: true,
+              startTimestamp: appStartedAt,
+            );
+          } on Object {
+            // 启动 Span 失败不影响应用启动。
+          }
           await launch();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            unawaited(SentryFlutter.currentDisplay()?.reportFullyDisplayed());
+            try {
+              appStartSpan?.finish(status: const SpanStatus.ok()).ignore();
+            } on Object {
+              // 结束 Span 失败不影响首帧。
+            }
           });
         },
       );
     } on Object {
+      sentryRecordingTelemetryGate.configure(
+        enabled: false,
+        performanceSampled: false,
+      );
       if (launchStarted) {
         rethrow;
       }

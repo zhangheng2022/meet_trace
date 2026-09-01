@@ -590,6 +590,24 @@ final class _RecordingTelemetryGate implements RecordingTelemetryGate {
   void setRecordingActive(bool active) {
     recordingActive = active;
   }
+
+  @override
+  void observePcmWrite({
+    required Duration latency,
+    required int pendingChunks,
+  }) {}
+
+  @override
+  void observePreview({
+    required int queuedAudioMs,
+    required int droppedWindows,
+  }) {}
+
+  @override
+  void recordInterruption() {}
+
+  @override
+  void recordRecovery() {}
 }
 
 final class _RecordingService

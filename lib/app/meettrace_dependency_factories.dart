@@ -224,6 +224,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       foreground: createRecordingForegroundLifecycle(),
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
+      telemetry: sentryRecordingTelemetryGate,
     );
     return RecordingSessionViewModel(
       session: session,

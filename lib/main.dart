@@ -9,6 +9,7 @@ import 'package:meettrace/domain/models/app_theme.dart';
 import 'package:meettrace/theme/system_ui.dart';
 
 Future<void> main() async {
+  final appStartedAt = DateTime.now().toUtc();
   WidgetsFlutterBinding.ensureInitialized();
   final sentryConfiguration = SentryRuntimeConfiguration.fromEnvironment();
   SharedPreferencesRemoteDiagnosticsRepository? remoteDiagnostics;
@@ -46,5 +47,6 @@ Future<void> main() async {
       await initializeDateFormatting();
       await enableAppEdgeToEdge();
     },
+    appStartedAt: appStartedAt,
   );
 }

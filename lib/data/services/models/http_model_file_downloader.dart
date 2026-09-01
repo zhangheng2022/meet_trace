@@ -1,17 +1,21 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'downloadable_model_service.dart';
 import 'model_download_types.dart';
 
 final class HttpModelFileDownloader implements ModelFileDownloader {
   HttpModelFileDownloader({
-    HttpClient Function()? clientFactory,
+    SentryHttpClient Function()? clientFactory,
     this.requireHttps = true,
     this.responseBodyTimeout = const Duration(seconds: 60),
-  }) : _clientFactory = clientFactory ?? HttpClient.new {
+  }) : _clientFactory =
+           clientFactory ??
+           (() => SentryHttpClient(captureFailedRequests: false)) {
     if (responseBodyTimeout <= Duration.zero) {
       throw ArgumentError.value(
         responseBodyTimeout,
@@ -21,7 +25,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
     }
   }
 
-  final HttpClient Function() _clientFactory;
+  final SentryHttpClient Function() _clientFactory;
   final bool requireHttps;
   final Duration responseBodyTimeout;
 
@@ -46,23 +50,20 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
 
     cancellation.throwIfCanceled();
     await Directory(p.dirname(destinationPath)).create(recursive: true);
-    final client = _clientFactory()
-      ..connectionTimeout = const Duration(seconds: 30)
-      ..idleTimeout = const Duration(seconds: 60);
-    void cancelRequest() => client.close(force: true);
+    final client = _clientFactory();
+    void cancelRequest() => client.close();
     cancellation.addCancelListener(cancelRequest);
 
     RandomAccessFile? output;
     try {
-      final request = await client.getUrl(source);
-      request.headers.set(
-        HttpHeaders.userAgentHeader,
-        'MeetTrace-Mobile-Alpha/1.0',
-      );
+      final request = http.Request('GET', source)
+        ..headers[HttpHeaders.userAgentHeader] = 'MeetTrace-Mobile-Alpha/1.0';
       if (resumeFrom > 0) {
-        request.headers.set(HttpHeaders.rangeHeader, 'bytes=$resumeFrom-');
+        request.headers[HttpHeaders.rangeHeader] = 'bytes=$resumeFrom-';
       }
-      final response = await request.close();
+      final response = await client
+          .send(request)
+          .timeout(const Duration(seconds: 30));
       cancellation.throwIfCanceled();
 
       final acceptedResume =
@@ -74,9 +75,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
         );
       }
       if (acceptedResume) {
-        final contentRange = response.headers.value(
-          HttpHeaders.contentRangeHeader,
-        );
+        final contentRange = response.headers[HttpHeaders.contentRangeHeader];
         if (contentRange == null ||
             !contentRange.startsWith('bytes $resumeFrom-')) {
           throw const DownloadableModelException(
@@ -91,7 +90,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
           .open(mode: acceptedResume ? FileMode.append : FileMode.write);
       var written = effectiveStart;
       onProgress(written);
-      await for (final chunk in response.timeout(responseBodyTimeout)) {
+      await for (final chunk in response.stream.timeout(responseBodyTimeout)) {
         cancellation.throwIfCanceled();
         await output.writeFrom(chunk);
         written += chunk.length;
@@ -128,7 +127,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
     } finally {
       cancellation.removeCancelListener(cancelRequest);
       await output?.close();
-      client.close(force: true);
+      client.close();
     }
   }
 }

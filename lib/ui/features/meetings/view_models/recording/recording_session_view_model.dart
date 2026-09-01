@@ -304,6 +304,10 @@ final class RecordingSessionViewModel extends ChangeNotifier {
       }
       final previous = _previewMetrics;
       _previewMetrics = metrics;
+      telemetry.observePreview(
+        queuedAudioMs: metrics.queuedAudioMs,
+        droppedWindows: metrics.droppedPreviewWindows,
+      );
       if (previous.state != metrics.state ||
           previous.lastErrorCode != metrics.lastErrorCode) {
         transcriptListenable.notifyListeners();
