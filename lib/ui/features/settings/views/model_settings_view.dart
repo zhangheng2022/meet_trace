@@ -23,6 +23,7 @@ import '../../../core/app_page_body.dart';
 import '../../../core/app_responsive.dart';
 import '../view_models/data_controls_view_model.dart';
 import '../view_models/model_settings_view_model.dart';
+import '../view_models/remote_diagnostics_settings_view_model.dart';
 import '../view_models/theme_settings_view_model.dart';
 import '../view_models/language_settings_view_model.dart';
 
@@ -32,6 +33,7 @@ final class ModelSettingsView extends StatefulWidget {
     this.dataControls,
     this.themeSettings,
     this.languageSettings,
+    this.remoteDiagnostics,
     this.onBack,
     super.key,
   });
@@ -40,6 +42,7 @@ final class ModelSettingsView extends StatefulWidget {
   final DataControlsViewModel? dataControls;
   final ThemeSettingsViewModel? themeSettings;
   final LanguageSettingsViewModel? languageSettings;
+  final RemoteDiagnosticsSettingsViewModel? remoteDiagnostics;
   final VoidCallback? onBack;
 
   @override
@@ -52,6 +55,7 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
     super.initState();
     unawaited(widget.viewModel.load());
     unawaited(widget.dataControls?.load());
+    unawaited(widget.remoteDiagnostics?.load());
   }
 
   @override
@@ -143,7 +147,7 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
         width: AppPageWidth.wide,
         child: AppResponsiveBuilder(
           builder: (context, sizeClass, constraints) {
-            if (dataControls == null) {
+            if (dataControls == null && widget.remoteDiagnostics == null) {
               return Align(
                 alignment: Alignment.topCenter,
                 child: ConstrainedBox(
@@ -155,8 +159,14 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
               );
             }
             final dataLedger = ListenableBuilder(
-              listenable: dataControls,
-              builder: (context, _) => _DataLedger(viewModel: dataControls),
+              listenable: Listenable.merge([
+                ?dataControls,
+                ?widget.remoteDiagnostics,
+              ]),
+              builder: (context, _) => _DataLedger(
+                viewModel: dataControls,
+                remoteDiagnostics: widget.remoteDiagnostics,
+              ),
             );
             if (sizeClass != AppWindowSizeClass.expanded) {
               return Column(
@@ -816,9 +826,10 @@ final class _ModelMaintenanceMenu extends StatelessWidget {
 }
 
 final class _DataLedger extends StatelessWidget {
-  const _DataLedger({required this.viewModel});
+  const _DataLedger({required this.viewModel, required this.remoteDiagnostics});
 
-  final DataControlsViewModel viewModel;
+  final DataControlsViewModel? viewModel;
+  final RemoteDiagnosticsSettingsViewModel? remoteDiagnostics;
 
   @override
   Widget build(BuildContext context) {
@@ -826,10 +837,45 @@ final class _DataLedger extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _StoragePrivacySection(viewModel: viewModel),
-        SizedBox(height: appStyle.spaceXl),
-        _DiagnosticsSection(viewModel: viewModel),
+        if (viewModel case final viewModel?) ...[
+          _StoragePrivacySection(viewModel: viewModel),
+          SizedBox(height: appStyle.spaceXl),
+        ],
+        if (remoteDiagnostics case final remoteDiagnostics?) ...[
+          _RemoteDiagnosticsSection(viewModel: remoteDiagnostics),
+          if (viewModel != null) SizedBox(height: appStyle.spaceXl),
+        ],
+        if (viewModel case final viewModel?)
+          _DiagnosticsSection(viewModel: viewModel),
       ],
+    );
+  }
+}
+
+final class _RemoteDiagnosticsSection extends StatelessWidget {
+  const _RemoteDiagnosticsSection({required this.viewModel});
+
+  final RemoteDiagnosticsSettingsViewModel viewModel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return _SettingsSection(
+      key: const ValueKey('remote-diagnostics-section'),
+      title: l10n.remoteDiagnosticsTitle,
+      child: FSwitch(
+        key: const ValueKey('remote-diagnostics-switch'),
+        leadingLabel: true,
+        value: viewModel.enabled,
+        enabled: !viewModel.isLoading && !viewModel.isBusy,
+        semanticsLabel: l10n.remoteDiagnosticsEnabled,
+        label: Text(l10n.remoteDiagnosticsEnabled),
+        description: Text(l10n.remoteDiagnosticsDescription),
+        error: viewModel.saveFailed
+            ? Text(l10n.remoteDiagnosticsSaveFailed)
+            : null,
+        onChange: (enabled) => unawaited(viewModel.setEnabled(enabled)),
+      ),
     );
   }
 }

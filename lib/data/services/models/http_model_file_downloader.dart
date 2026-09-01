@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:path/path.dart' as p;
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'downloadable_model_service.dart';
 import 'model_download_types.dart';
@@ -46,23 +49,26 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
 
     cancellation.throwIfCanceled();
     await Directory(p.dirname(destinationPath)).create(recursive: true);
-    final client = _clientFactory()
+    final ioClient = _clientFactory()
       ..connectionTimeout = const Duration(seconds: 30)
       ..idleTimeout = const Duration(seconds: 60);
-    void cancelRequest() => client.close(force: true);
+    final client = SentryHttpClient(
+      client: IOClient(ioClient),
+      captureFailedRequests: false,
+    );
+    void cancelRequest() => ioClient.close(force: true);
     cancellation.addCancelListener(cancelRequest);
 
     RandomAccessFile? output;
     try {
-      final request = await client.getUrl(source);
-      request.headers.set(
-        HttpHeaders.userAgentHeader,
-        'MeetTrace-Mobile-Alpha/1.0',
-      );
+      final request = http.Request('GET', source)
+        ..headers[HttpHeaders.userAgentHeader] = 'MeetTrace-Mobile-Alpha/1.0';
       if (resumeFrom > 0) {
-        request.headers.set(HttpHeaders.rangeHeader, 'bytes=$resumeFrom-');
+        request.headers[HttpHeaders.rangeHeader] = 'bytes=$resumeFrom-';
       }
-      final response = await request.close();
+      final response = await client
+          .send(request)
+          .timeout(const Duration(seconds: 30));
       cancellation.throwIfCanceled();
 
       final acceptedResume =
@@ -74,9 +80,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
         );
       }
       if (acceptedResume) {
-        final contentRange = response.headers.value(
-          HttpHeaders.contentRangeHeader,
-        );
+        final contentRange = response.headers[HttpHeaders.contentRangeHeader];
         if (contentRange == null ||
             !contentRange.startsWith('bytes $resumeFrom-')) {
           throw const DownloadableModelException(
@@ -91,7 +95,7 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
           .open(mode: acceptedResume ? FileMode.append : FileMode.write);
       var written = effectiveStart;
       onProgress(written);
-      await for (final chunk in response.timeout(responseBodyTimeout)) {
+      await for (final chunk in response.stream.timeout(responseBodyTimeout)) {
         cancellation.throwIfCanceled();
         await output.writeFrom(chunk);
         written += chunk.length;
@@ -103,32 +107,44 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
         }
         onProgress(written);
       }
+      cancellation.throwIfCanceled();
       await output.flush();
       return ModelFileDownloadResult(
         finalBytes: written,
         resumed: acceptedResume,
       );
-    } on TimeoutException catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        DownloadableModelException(
-          code: 'model.download.timeout',
-          message: '模型文件下载超时，请重试',
-          cause: error,
-        ),
-        stackTrace,
-      );
     } catch (error, stackTrace) {
-      if (cancellation.isCanceled && error is! ModelDownloadCanceledException) {
+      if (cancellation.isCanceled) {
         Error.throwWithStackTrace(
           const ModelDownloadCanceledException(),
+          stackTrace,
+        );
+      }
+      if (error is TimeoutException) {
+        Error.throwWithStackTrace(
+          DownloadableModelException(
+            code: 'model.download.timeout',
+            message: '模型文件下载超时，请重试',
+            cause: error,
+          ),
+          stackTrace,
+        );
+      }
+      if (error is http.ClientException) {
+        Error.throwWithStackTrace(
+          const DownloadableModelException(
+            code: 'model.download.network',
+            message: '模型文件下载失败，请检查网络后重试',
+          ),
           stackTrace,
         );
       }
       rethrow;
     } finally {
       cancellation.removeCancelListener(cancelRequest);
+      ioClient.close(force: true);
+      client.close();
       await output?.close();
-      client.close(force: true);
     }
   }
 }

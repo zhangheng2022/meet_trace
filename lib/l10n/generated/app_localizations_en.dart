@@ -229,6 +229,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'Meeting recordings, final transcripts, and runtime resources remain on this device. Uninstalling the app may permanently delete them.';
 
   @override
+  String get remoteDiagnosticsTitle => 'Remote diagnostics';
+
+  @override
+  String get remoteDiagnosticsEnabled =>
+      'Allow anonymous error and performance diagnostics';
+
+  @override
+  String get remoteDiagnosticsDescription =>
+      'On by default. Turning it off stops new errors, performance traces, and metrics. Cached or uploaded data cannot be recalled; Windows native crash handling is fully off by the next launch at the latest.';
+
+  @override
+  String get remoteDiagnosticsSaveFailed =>
+      'The setting was not applied. This screen was restored; the next launch uses the value saved on this device.';
+
+  @override
+  String get remoteDiagnosticsNoticeTitle =>
+      'Anonymous remote diagnostics are on by default';
+
+  @override
+  String get remoteDiagnosticsNoticeDescription =>
+      'MeetTrace sends scrubbed errors and performance data, never recordings or transcripts. You can turn this off in Settings; cached or uploaded data cannot be recalled.';
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
   String get diagnosticsTitle => 'Diagnostics';
 
   @override

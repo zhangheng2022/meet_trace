@@ -31,7 +31,7 @@
 
 - 不提供登录、跨设备同步、云端 ASR、AI 总结或会中切换模型。
 - 文本分享只使用最终转录；音频分享需独立入口和二次确认，临时 WAV 不改写事实 PCM。
-- Android/iOS Release 默认启用 Sentry；Windows Store 候选固定关闭。完整披露见[隐私政策](PRIVACY.md)。
+- Android/iOS/Windows Release 默认启用可在设置中关闭的 Sentry 远程诊断。完整披露见[隐私政策](PRIVACY.md)。
 - 当前 Windows 由 Microsoft Store 签名和分发；[Code signing policy](CODE_SIGNING_POLICY.md) 仅用于未接入的 SignPath 申请路线。
 
 产品范围和验收只以 [Alpha PRD](docs/product/Alpha_PRD_无登录版.md) 为准。

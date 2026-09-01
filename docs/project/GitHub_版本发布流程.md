@@ -50,7 +50,7 @@ gh secret set PARTNER_CENTER_CLIENT_SECRET --repo '<owner>/<repo>' --env microso
 | --- | --- |
 | `android-alpha` | Android 签名、Firebase、Sentry |
 | `testflight` | App Store Connect、iOS 签名、固定 group/link、Sentry |
-| `windows-alpha` | 无发布 Secret；只构建 Store 候选 |
+| `windows-alpha` | 只构建 Store 候选；含最小权限 Sentry 符号上传 Token，无 Store 发布 Secret |
 | `microsoft-store` | Partner Center 凭据与固定 Flight ID |
 | `github-release` | 更新指针私钥及最终重验所需固定值；无 reviewer |
 | Repository Variables | Firebase OIDC 配置 |
@@ -75,4 +75,5 @@ Reconciler 对正常 processing/review/certification/publishing 状态只等待�
 - [ ] TestFlight 固定组、公测链接、审核联系与出口合规已配置。
 - [ ] Partner Center 固定 Flight、自动认证后发布和 100% production 已配置。
 - [ ] Firebase OIDC 与 ARM 设备可用。
+- [ ] 三平台 Sentry 生产配置、统一 `release/dist`、最小权限 Token 与符号化验证已配置。
 - [ ] 本次只填写新的 `release_id` 和可选说明。

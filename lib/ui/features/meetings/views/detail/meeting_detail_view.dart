@@ -8,6 +8,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../../../../keys.dart';
 import '../../../../../l10n/l10n.dart';
@@ -42,7 +43,23 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
   @override
   void initState() {
     super.initState();
-    unawaited(widget.viewModel.load());
+    unawaited(_load());
+  }
+
+  Future<void> _load() async {
+    await widget.viewModel.load();
+    if (!mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        try {
+          SentryFlutter.currentDisplay()?.reportFullyDisplayed().ignore();
+        } on Object {
+          // TTFD 上报失败不得影响会议详情。
+        }
+      }
+    });
   }
 
   @override

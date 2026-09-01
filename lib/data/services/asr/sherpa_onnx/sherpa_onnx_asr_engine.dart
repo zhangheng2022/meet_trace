@@ -10,6 +10,7 @@ import '../../../../domain/models/transcript.dart';
 import '../../../../domain/ports/asr_engine.dart';
 import '../../../../domain/use_cases/plan_asr_preview_windows.dart';
 import '../../vad/silero_vad_segmenter.dart';
+import '../../monitoring/sentry_monitoring.dart';
 import 'sherpa_onnx_adapter.dart';
 
 const sherpaOnnxAsrSampleRate = 16000;
@@ -126,7 +127,11 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
     if (current != null) {
       return current;
     }
-    final operation = _initialize();
+    final operation = SentryMonitoring.trace<void>(
+      name: 'model.initialize',
+      operation: 'model.initialize',
+      run: _initialize,
+    );
     _initializing = operation;
     return operation.whenComplete(() {
       _initializing = null;
@@ -182,6 +187,20 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
 
   @override
   Future<TranscriptSnapshot> finalizeMeeting(
+    AudioSource source, {
+    required String meetingId,
+    String? snapshotId,
+  }) => SentryMonitoring.trace(
+    name: 'asr.final',
+    operation: 'asr.final',
+    isCancellation: (error) =>
+        error is AsrEngineException &&
+        error.failure.code.endsWith('.cancelled'),
+    run: () =>
+        _finalizeMeeting(source, meetingId: meetingId, snapshotId: snapshotId),
+  );
+
+  Future<TranscriptSnapshot> _finalizeMeeting(
     AudioSource source, {
     required String meetingId,
     String? snapshotId,

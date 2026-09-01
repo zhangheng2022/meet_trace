@@ -197,18 +197,45 @@ void main() {
       expect(windows, isNot(contains('New-SelfSignedCertificate')));
     });
 
-    test('Android 与 iOS 符号上传绑定 Environment Secret 和 release dist', () async {
+    test('三平台生产 Sentry 配置与符号上传均阻断发布', () async {
       final workflow = await _workflow('alpha-release.yml');
+      final windowsRunner = await File('windows/runner/CMakeLists.txt')
+          .readAsString();
       final android = _job(workflow, 'android', 'android_distribution');
       final ios = _job(workflow, 'ios', 'windows');
+      final windows = _job(workflow, 'windows', 'queue_reconciliation');
 
-      for (final job in <String>[android, ios]) {
+      for (final job in <String>[android, ios, windows]) {
+        expect(job, contains(r'${{ secrets.SENTRY_DSN }}'));
         expect(job, contains(r'${{ secrets.SENTRY_AUTH_TOKEN }}'));
+        expect(job, contains('SENTRY_ENABLED=true'));
+        expect(job, contains('SENTRY_ENVIRONMENT=production'));
+        expect(job, contains('SENTRY_TRACES_SAMPLE_RATE=0.2'));
+        expect(job, contains('--obfuscate'));
+        expect(job, contains('--split-debug-info='));
         expect(job, contains('dart run sentry_dart_plugin'));
-        expect(job, contains(r'--sentry-define="release=$SENTRY_RELEASE"'));
-        expect(job, contains(r'--sentry-define="dist=$SENTRY_DIST"'));
+        expect(job, contains(r'--sentry-define="upload_source_maps=false"'));
+        expect(job, contains(r'--sentry-define="upload_sources=false"'));
         expect(job, contains('failed after 3 attempts'));
       }
+      for (final job in <String>[android, ios]) {
+        expect(job, contains('--save-obfuscation-map='));
+        expect(job, contains(r'--sentry-define="dart_symbol_map_path='));
+        expect(job, contains(r'--sentry-define="release=$SENTRY_RELEASE"'));
+        expect(job, contains(r'--sentry-define="dist=$SENTRY_DIST"'));
+      }
+      expect(windows, isNot(contains('dart_symbol_map_path=')));
+      expect(windows, contains('Windows Release PDB is missing.'));
+      expect(
+        windows,
+        contains(r'SENTRY_RELEASE=com.meettrace.app@$marketingVersion+'),
+      );
+      expect(
+        windows,
+        contains(r'--sentry-define="release=$env:SENTRY_RELEASE"'),
+      );
+      expect(windowsRunner, contains(r'$<$<CONFIG:Release>:/Zi>'));
+      expect(windowsRunner, contains(r'$<$<CONFIG:Release>:/DEBUG:FULL>'));
       expect(
         await _workflow('quality.yml'),
         isNot(contains('SENTRY_AUTH_TOKEN')),

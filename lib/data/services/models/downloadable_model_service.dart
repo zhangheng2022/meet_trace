@@ -9,6 +9,7 @@ import '../../../domain/models/model_manifest.dart';
 import '../../../domain/models/workflow_states.dart';
 import '../../../domain/ports/repositories.dart';
 import '../storage/app_file_layout.dart';
+import '../monitoring/sentry_monitoring.dart';
 import 'model_file_verifier.dart';
 import 'model_download_types.dart';
 import 'runtime_artifact_install_transaction.dart';
@@ -99,6 +100,31 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
     DownloadableModelProgressCallback? onProgress,
     bool skipPreflight = false,
     bool forceDownload = false,
+  }) => SentryMonitoring.trace(
+    name: 'model.download',
+    operation: 'resource.download',
+    isCancellation: (error) =>
+        error is DownloadableModelException &&
+        error.code == 'model.download.canceled',
+    run: () => _download(
+      descriptor: descriptor,
+      manifest: manifest,
+      allowMeteredNetwork: allowMeteredNetwork,
+      cancellation: cancellation,
+      onProgress: onProgress,
+      skipPreflight: skipPreflight,
+      forceDownload: forceDownload,
+    ),
+  );
+
+  Future<DownloadableModelResult> _download({
+    required AsrModelDescriptor descriptor,
+    required ModelManifestEntry manifest,
+    required bool allowMeteredNetwork,
+    required ModelDownloadCancellationToken? cancellation,
+    required DownloadableModelProgressCallback? onProgress,
+    required bool skipPreflight,
+    required bool forceDownload,
   }) async {
     _validateInputs(descriptor, manifest);
     final token = cancellation ?? ModelDownloadCancellationToken();

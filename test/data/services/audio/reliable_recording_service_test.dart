@@ -13,6 +13,7 @@ import 'package:meettrace/domain/models/recording_continuity_event.dart';
 import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
+import 'package:meettrace/domain/ports/recording_telemetry.dart';
 import 'package:meettrace/domain/use_cases/lock_recording_input.dart';
 
 import '../../../support/recording_fakes.dart';
@@ -52,6 +53,7 @@ void main() {
     bool enableInputRecovery = false,
     LockedRecordingInput initialInput =
         const LockedRecordingInput.systemDefault(),
+    RecordingTelemetryGate telemetry = const NoopRecordingTelemetryGate(),
   }) {
     return ReliableRecordingService(
       capture: capture,
@@ -66,6 +68,7 @@ void main() {
       foreground: foreground,
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
+      telemetry: telemetry,
       captureStopTimeout: captureStopTimeout,
       factCommitInterval: factCommitInterval,
       checkpointSaveInterval: checkpointSaveInterval,
@@ -114,6 +117,38 @@ void main() {
 
     await service.stop();
     await subscription.cancel();
+  });
+
+  test('事实 PCM flush 后只提交匿名写入性能样本', () async {
+    final telemetry = _RecordingTelemetryRecorder();
+    final service = createService(telemetry: telemetry);
+
+    await service.start(meetingId: 'meeting-telemetry');
+    capture.add(_pcmBytes(3200));
+    await _waitFor(() => telemetry.writeLatencies.isNotEmpty);
+    await service.stop();
+
+    expect(
+      telemetry.writeLatencies.single,
+      greaterThanOrEqualTo(Duration.zero),
+    );
+    expect(telemetry.pendingChunks.single, 0);
+  });
+
+  test('遥测异常不影响事实 PCM、系统挂起恢复或安全封存', () async {
+    final service = createService(
+      telemetry: const _ThrowingRecordingTelemetry(),
+    );
+
+    await service.start(meetingId: 'meeting-telemetry-failure');
+    capture.add(_pcmBytes(3200));
+    await _waitFor(() => service.persistedBytes == 3200);
+    await service.handleSystemSuspending();
+    await service.handleSystemResumed();
+    final result = await service.stop();
+
+    expect(result.bytes, 3200);
+    expect(service.state, RecordingState.completed);
   });
 
   test('生产提交窗口将同批 PCM 合并为一个连续预览块', () async {
@@ -547,8 +582,10 @@ void main() {
   });
 
   test('系统挂起先排空事实 PCM 并在同一字节偏移保存检查点和缺口起点', () async {
+    final telemetry = _RecordingTelemetryRecorder();
     final service = createService(
       factCommitInterval: const Duration(milliseconds: 20),
+      telemetry: telemetry,
     );
     await service.start(meetingId: 'meeting-system-suspend');
     capture.add(_pcmBytes(recordingBytesPerSecond));
@@ -571,6 +608,8 @@ void main() {
     expect(continuity.single.persistedBytes, recordingBytesPerSecond);
 
     await service.handleSystemResumed();
+    expect(telemetry.interruptions, 1);
+    expect(telemetry.recoveries, 1);
     await service.stop();
   });
 
@@ -891,6 +930,70 @@ final class FixedRecordingStorageCapacity
 
   @override
   Future<int> getFreeBytes() async => freeBytes;
+}
+
+final class _RecordingTelemetryRecorder implements RecordingTelemetryGate {
+  final List<Duration> writeLatencies = [];
+  final List<int> pendingChunks = [];
+  int interruptions = 0;
+  int recoveries = 0;
+
+  @override
+  bool get recordingActive => true;
+
+  @override
+  void setRecordingActive(bool active) {}
+
+  @override
+  void observePcmWrite({
+    required Duration latency,
+    required int pendingChunks,
+  }) {
+    writeLatencies.add(latency);
+    this.pendingChunks.add(pendingChunks);
+  }
+
+  @override
+  void observePreview({
+    required int queuedAudioMs,
+    required int droppedWindows,
+  }) {}
+
+  @override
+  void recordInterruption() => interruptions++;
+
+  @override
+  void recordRecovery() => recoveries++;
+}
+
+final class _ThrowingRecordingTelemetry implements RecordingTelemetryGate {
+  const _ThrowingRecordingTelemetry();
+
+  Never _fail() => throw StateError('configured telemetry failure');
+
+  @override
+  bool get recordingActive => true;
+
+  @override
+  void setRecordingActive(bool active) => _fail();
+
+  @override
+  void observePcmWrite({
+    required Duration latency,
+    required int pendingChunks,
+  }) => _fail();
+
+  @override
+  void observePreview({
+    required int queuedAudioMs,
+    required int droppedWindows,
+  }) => _fail();
+
+  @override
+  void recordInterruption() => _fail();
+
+  @override
+  void recordRecovery() => _fail();
 }
 
 final class FakeRecordingForegroundLifecycle

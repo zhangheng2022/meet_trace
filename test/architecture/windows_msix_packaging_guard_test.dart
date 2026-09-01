@@ -43,6 +43,7 @@ void main() {
         ),
       );
       expect(script, contains(r'& $makeAppx pack /o /v /h SHA256'));
+      expect(script, contains(r"\.(pdb|symbols)$"));
       expect(script, contains(r'signed = $false'));
       expect(
         script,
@@ -112,6 +113,8 @@ void main() {
       expect(script, contains(r"$authenticodeStatus -ceq 'Valid'"));
       expect(script, contains(r'$signerSubject -ceq $ExpectedPublisher'));
       expect(script, contains(r'$ExpectedPublisherDisplayName'));
+      expect(script, contains(r'$forbiddenDebugSymbols'));
+      expect(script, contains(r"\.(pdb|symbols)$"));
     });
 
     test('CMake 始终把安装阶段固定到 Flutter bundle', () async {

@@ -18,6 +18,6 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 1. 候选先通过 CI、包审计和代码审查，并与 Android/iOS 使用同一 SHA、版本和构建号。
 2. Approver 逐次核对提交、工作流、MSIX SHA-256、文件清单、许可、元数据和候选清单。
 3. 私钥由 SignPath HSM 保管，不导出或写入 GitHub Secrets；不允许用自签名包、未签名包或个人 PFX 进行公开分发。
-4. 候选固定使用 `SENTRY_ENABLED=false`。网络和数据边界见[隐私政策](PRIVACY.md)。
+4. 候选与当前三平台合同一致使用 `SENTRY_ENABLED=true`、统一 `release/dist` 并在公开前完成符号上传；Sentry Token 不得进入 MSIX。网络和数据边界见[隐私政策](PRIVACY.md)。
 
 发现来源不明、签名滥用、供应链污染或密钥事件时立即停止签名与更新，保留原资产和标签并通知 SignPath。撤回不覆盖资产；修复使用更高版本重新完成门禁。

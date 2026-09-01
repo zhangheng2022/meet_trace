@@ -42,10 +42,12 @@ dependencies:
   disk_space_2: 1.0.13
   forui: ^0.26.0
   flutter_foreground_task: ^11.0.0
+  http: 1.6.0
   path: 1.9.1
   path_provider: 2.1.6
   record: 7.1.1
-  sentry_flutter: ^9.26.0
+  sentry_flutter: 9.28.0
+  shared_preferences: 2.5.5
   sherpa_onnx: 1.13.6
   share_plus: 13.3.0
   sqflite: 2.4.3
@@ -61,6 +63,7 @@ dev_dependencies:
   meta: ^1.19.0
   patrol: 4.9.0
   sentry_dart_plugin: ^3.4.0
+  shared_preferences_platform_interface: 2.4.2
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -135,7 +138,8 @@ flutter:
 
 sentry:
   upload_debug_symbols: true
-  upload_source_maps: true
+  upload_source_maps: false
+  upload_sources: false
   wait_for_processing: true
   project: meettrace
   org: zhangheng-bc

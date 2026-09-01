@@ -414,7 +414,7 @@ packages:
     source: hosted
     version: "0.15.7"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
@@ -854,7 +854,7 @@ packages:
     source: hosted
     version: "7.2.0"
   shared_preferences:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: shared_preferences
       sha256: c3025c5534b01739267eb7d76959bbc25a6d10f6988e1c2a3036940133dd10bf
@@ -886,7 +886,7 @@ packages:
     source: hosted
     version: "2.4.1"
   shared_preferences_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: shared_preferences_platform_interface
       sha256: "649dc798a33931919ea356c4305c2d1f81619ea6e92244070b520187b5140ef9"

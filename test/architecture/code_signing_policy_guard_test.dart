@@ -13,6 +13,12 @@ void main() {
     expect(readme, contains('CODE_SIGNING_POLICY.md'));
     expect(workflow, isNot(contains('SignPath')));
     expect(workflow, contains('Build Microsoft Store Windows candidate'));
+    expect(workflow, contains('--dart-define=SENTRY_ENABLED=true'));
+    expect(
+      workflow,
+      contains('--dart-define="SENTRY_RELEASE=\$env:SENTRY_RELEASE"'),
+    );
+    expect(workflow, contains('--dart-define="SENTRY_DIST=\$env:SENTRY_DIST"'));
     expect(
       policy,
       contains(
@@ -25,7 +31,7 @@ void main() {
     expect(policy, contains('未接入当前发布工作流'));
     expect(policy, contains('不得启用本政策或与 Store 包并存'));
     expect(policy, contains('[隐私政策](PRIVACY.md)'));
-    expect(policy, contains('SENTRY_ENABLED=false'));
+    expect(policy, contains('SENTRY_ENABLED=true'));
     expect(policy, contains('不允许用自签名包、未签名包或个人 PFX 进行公开分发'));
   });
 

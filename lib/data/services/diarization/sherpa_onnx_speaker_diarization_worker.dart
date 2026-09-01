@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../../domain/models/audio_source.dart';
+import '../monitoring/sentry_isolate_error_monitor.dart';
 import 'speaker_diarization_worker.dart';
 
 final class OfficialSpeakerDiarizationWorkerFactory
@@ -27,6 +28,7 @@ final class _IsolateSpeakerDiarizationWorker
     required this._exits,
     required this._exitSubscription,
     required this._commandsReady,
+    required this._sentryErrors,
   });
 
   final Isolate _isolate;
@@ -35,6 +37,7 @@ final class _IsolateSpeakerDiarizationWorker
   final ReceivePort _exits;
   final StreamSubscription<Object?> _exitSubscription;
   final Completer<SendPort> _commandsReady;
+  final SentryIsolateErrorMonitor _sentryErrors;
   final Map<int, Completer<Map<Object?, Object?>>> _pending = {};
   int _nextRequestId = 1;
   bool _closed = false;
@@ -92,10 +95,14 @@ final class _IsolateSpeakerDiarizationWorker
     final isolate = await Isolate.spawn<List<Object?>>(
       _speakerDiarizationWorkerMain,
       [responses.sendPort, config.toMessage()],
+      paused: true,
       debugName: 'meettrace-speaker-diarization',
       onExit: exits.sendPort,
     );
+    SentryIsolateErrorMonitor? sentryErrors;
     try {
+      sentryErrors = SentryIsolateErrorMonitor.attach(isolate);
+      isolate.resume(isolate.pauseCapability!);
       worker = _IsolateSpeakerDiarizationWorker._(
         isolate: isolate,
         responses: responses,
@@ -103,6 +110,7 @@ final class _IsolateSpeakerDiarizationWorker
         exits: exits,
         exitSubscription: exitSubscription,
         commandsReady: ready,
+        sentryErrors: sentryErrors,
       );
       final exitBeforeConstruction = earlyExit;
       if (exitBeforeConstruction != null) {
@@ -113,6 +121,7 @@ final class _IsolateSpeakerDiarizationWorker
       }
       return worker;
     } on Object {
+      sentryErrors?.close();
       isolate.kill(priority: Isolate.immediate);
       await responseSubscription.cancel();
       await exitSubscription.cancel();
@@ -249,6 +258,7 @@ final class _IsolateSpeakerDiarizationWorker
       return;
     }
     _cleanedUp = true;
+    _sentryErrors.close();
     await _responseSubscription.cancel();
     await _exitSubscription.cancel();
     _responses.close();

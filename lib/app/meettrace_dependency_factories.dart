@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/repositories/shared_preferences_remote_diagnostics_repository.dart';
 import '../data/services/asr/asr_preview_coordinator.dart';
 import '../data/services/audio/device_recording_storage_capacity.dart';
 import '../data/services/audio/pcm_audio_playback_service.dart';
@@ -35,6 +36,7 @@ import '../ui/features/meetings/view_models/recording/recording_session_view_mod
 import '../ui/features/meetings/view_models/start/start_meeting_view_model.dart';
 import '../ui/features/settings/view_models/data_controls_view_model.dart';
 import '../ui/features/settings/view_models/model_settings_view_model.dart';
+import '../ui/features/settings/view_models/remote_diagnostics_settings_view_model.dart';
 import '../ui/features/settings/view_models/theme_settings_view_model.dart';
 import '../ui/features/settings/view_models/language_settings_view_model.dart';
 import '../ui/features/startup/view_models/runtime_initialization_view_model.dart';
@@ -178,6 +180,15 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
     );
   }
 
+  RemoteDiagnosticsSettingsViewModel
+  createRemoteDiagnosticsSettingsViewModel() {
+    final configuration = SentryRuntimeConfiguration.fromEnvironment();
+    return RemoteDiagnosticsSettingsViewModel(
+      preferences: SharedPreferencesRemoteDiagnosticsRepository(),
+      controller: SentryRemoteDiagnosticsController(configuration),
+    );
+  }
+
   StartMeetingViewModel createStartMeetingViewModel({
     required String Function(DateTime) meetingTitleFactory,
   }) {
@@ -213,6 +224,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       foreground: createRecordingForegroundLifecycle(),
       previewSink: preview,
       audioLevelMeter: PcmAudioLevelMeter(),
+      telemetry: sentryRecordingTelemetryGate,
     );
     return RecordingSessionViewModel(
       session: session,

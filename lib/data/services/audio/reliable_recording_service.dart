@@ -11,7 +11,9 @@ import '../../../domain/models/workflow_states.dart';
 import '../../../domain/ports/recording_continuity.dart';
 import '../../../domain/ports/recording_session.dart';
 import '../../../domain/ports/recording_system_lifecycle.dart';
+import '../../../domain/ports/recording_telemetry.dart';
 import '../../../domain/use_cases/lock_recording_input.dart';
+import '../monitoring/sentry_monitoring.dart';
 import '../storage/app_file_layout.dart';
 import '../storage/durable_file_committer.dart';
 import 'pcm_audio_level_meter.dart';
@@ -35,6 +37,7 @@ final class ReliableRecordingService
     this.inputRecoveryPlanner,
     this.continuityEvents = const NoopRecordingContinuityEventStore(),
     this.foreground = const NoopRecordingForegroundLifecycle(),
+    this.telemetry = const NoopRecordingTelemetryGate(),
     RecordingPreviewSink previewSink = const DiscardingRecordingPreviewSink(),
     this.fileCommitter = const DurableFileCommitter(),
     this.minimumFreeBytes = minimumRecordingFreeBytes,
@@ -98,6 +101,7 @@ final class ReliableRecordingService
   final PlanRecordingInputRecoveryUseCase? inputRecoveryPlanner;
   final RecordingContinuityEventStore continuityEvents;
   final RecordingForegroundLifecycle foreground;
+  final RecordingTelemetryGate telemetry;
   final DurableFileCommitter fileCommitter;
   final int minimumFreeBytes;
   final int maxPendingPreviewChunks;
@@ -149,7 +153,13 @@ final class ReliableRecordingService
   int get droppedPreviewChunks => _asrPreview.droppedChunks;
 
   @override
-  Future<void> start({required String meetingId}) async {
+  Future<void> start({required String meetingId}) => SentryMonitoring.trace(
+    name: 'recording.start',
+    operation: 'recording.start',
+    run: () => _start(meetingId: meetingId),
+  );
+
+  Future<void> _start({required String meetingId}) async {
     if (_state != RecordingState.idle) {
       throw StateError('录音实例只能启动一次');
     }
@@ -231,6 +241,10 @@ final class ReliableRecordingService
     _state = RecordingState.paused;
     await _saveCheckpoint(RecordingCheckpointState.paused);
     await foreground.setPaused(true);
+    SentryMonitoring.addBreadcrumb(
+      category: 'recording.lifecycle',
+      phase: 'paused',
+    );
   }
 
   @override
@@ -246,6 +260,10 @@ final class ReliableRecordingService
     if (subscription != null && subscription.isPaused) {
       subscription.resume();
     }
+    SentryMonitoring.addBreadcrumb(
+      category: 'recording.lifecycle',
+      phase: 'resumed',
+    );
   }
 
   @override
@@ -262,6 +280,11 @@ final class ReliableRecordingService
     _systemLifecycleCompletion = lifecycleCompletion;
     _captureRecoveryActive = true;
     _state = RecordingState.recovering;
+    _recordTelemetry(telemetry.recordInterruption);
+    SentryMonitoring.addBreadcrumb(
+      category: 'recording.continuity',
+      phase: 'system_suspended',
+    );
     final subscription = _audioSubscription;
     if (subscription != null && !subscription.isPaused) {
       // 先冻结 Dart 侧事件投递，再等待已经进入写盘队列的 PCM。这样挂起处理
@@ -366,6 +389,11 @@ final class ReliableRecordingService
       _captureRecoveryActive = false;
       _state = RecordingState.recording;
       _attachCaptureStream(stream);
+      _recordTelemetry(telemetry.recordRecovery);
+      SentryMonitoring.addBreadcrumb(
+        category: 'recording.continuity',
+        phase: 'system_resumed',
+      );
       await _appendContinuityEventBestEffort(
         incidentId: incidentId,
         kind: RecordingContinuityEventKind.systemResumed,
@@ -467,6 +495,11 @@ final class ReliableRecordingService
     }
     _captureRecoveryActive = true;
     _state = RecordingState.recovering;
+    _recordTelemetry(telemetry.recordInterruption);
+    SentryMonitoring.addBreadcrumb(
+      category: 'recording.continuity',
+      phase: 'interrupted',
+    );
     final interruptedAt = now().toUtc();
     final incidentId =
         '${_meetingId!}-$generation-${interruptedAt.microsecondsSinceEpoch}';
@@ -534,6 +567,11 @@ final class ReliableRecordingService
       _captureRecoveryActive = false;
       _state = RecordingState.recording;
       _attachCaptureStream(stream);
+      _recordTelemetry(telemetry.recordRecovery);
+      SentryMonitoring.addBreadcrumb(
+        category: 'recording.continuity',
+        phase: 'recovered',
+      );
     } on Object {
       if (_state == RecordingState.recovering) {
         _state = RecordingState.interrupted;
@@ -549,7 +587,13 @@ final class ReliableRecordingService
   }
 
   @override
-  Future<RecordingArtifact> stop() async {
+  Future<RecordingArtifact> stop() => SentryMonitoring.trace(
+    name: 'recording.seal',
+    operation: 'recording.seal',
+    run: _stop,
+  );
+
+  Future<RecordingArtifact> _stop() async {
     if (!canFinalize) {
       throw StateError('当前状态不能结束录音：${_state.name}');
     }
@@ -680,8 +724,16 @@ final class ReliableRecordingService
         combined.setRange(combinedOffset, combinedOffset + bytes.length, bytes);
         combinedOffset += bytes.length;
       }
+      final writeTimer = Stopwatch()..start();
       await output.writeFrom(combined);
       await output.flush();
+      writeTimer.stop();
+      _recordTelemetry(
+        () => telemetry.observePcmWrite(
+          latency: writeTimer.elapsed,
+          pendingChunks: _pendingFactChunks.length,
+        ),
+      );
       final startByteOffset = _persistedBytes;
       _persistedBytes += combined.length;
       final persistedChunk = RecordingPcmChunk(
@@ -742,6 +794,14 @@ final class ReliableRecordingService
     final error = _writeError;
     if (error != null) {
       Error.throwWithStackTrace(error, _writeStackTrace ?? StackTrace.current);
+    }
+  }
+
+  void _recordTelemetry(void Function() record) {
+    try {
+      record();
+    } on Object {
+      // 遥测是旁路诊断，失败不得改变录音状态或连续性。
     }
   }
 

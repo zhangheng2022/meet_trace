@@ -1,6 +1,7 @@
 import '../../../domain/models/audio_source.dart';
 import '../../../domain/models/speaker_diarization.dart';
 import '../../../domain/ports/speaker_diarization.dart';
+import '../monitoring/sentry_monitoring.dart';
 import 'sherpa_onnx_speaker_diarization_worker.dart';
 import 'speaker_diarization_worker.dart';
 
@@ -34,7 +35,17 @@ final class SherpaOnnxSpeakerDiarizationService
       : const SpeakerDiarizationCapability.available();
 
   @override
-  Future<List<SpeakerTurn>> diarize(AudioSource source) async {
+  Future<List<SpeakerTurn>> diarize(AudioSource source) =>
+      SentryMonitoring.trace(
+        name: 'speaker.diarization',
+        operation: 'speaker.diarization',
+        isCancellation: (error) =>
+            error is SpeakerDiarizationException &&
+            error.code == 'speaker_diarization.cancelled',
+        run: () => _diarize(source),
+      );
+
+  Future<List<SpeakerTurn>> _diarize(AudioSource source) async {
     _validateSource(source);
     if (_disposed) {
       throw const SpeakerDiarizationException('speaker_diarization.disposed');
