@@ -356,9 +356,10 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
       debugName: 'meettrace-sherpa-${config.kind.name}',
       onExit: exits.sendPort,
     );
-    final sentryErrors = SentryIsolateErrorMonitor.attach(isolate);
-    isolate.resume(isolate.pauseCapability!);
+    SentryIsolateErrorMonitor? sentryErrors;
     try {
+      sentryErrors = SentryIsolateErrorMonitor.attach(isolate);
+      isolate.resume(isolate.pauseCapability!);
       final commands = await ready.future;
       worker = _IsolateSherpaOnnxWorker._(
         isolate: isolate,
@@ -378,7 +379,7 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
       }
       return worker;
     } on Object {
-      sentryErrors.close();
+      sentryErrors?.close();
       isolate.kill(priority: Isolate.immediate);
       await subscription.cancel();
       await exitSubscription.cancel();

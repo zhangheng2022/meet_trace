@@ -99,9 +99,10 @@ final class _IsolateSpeakerDiarizationWorker
       debugName: 'meettrace-speaker-diarization',
       onExit: exits.sendPort,
     );
-    final sentryErrors = SentryIsolateErrorMonitor.attach(isolate);
-    isolate.resume(isolate.pauseCapability!);
+    SentryIsolateErrorMonitor? sentryErrors;
     try {
+      sentryErrors = SentryIsolateErrorMonitor.attach(isolate);
+      isolate.resume(isolate.pauseCapability!);
       worker = _IsolateSpeakerDiarizationWorker._(
         isolate: isolate,
         responses: responses,
@@ -120,7 +121,7 @@ final class _IsolateSpeakerDiarizationWorker
       }
       return worker;
     } on Object {
-      sentryErrors.close();
+      sentryErrors?.close();
       isolate.kill(priority: Isolate.immediate);
       await responseSubscription.cancel();
       await exitSubscription.cancel();

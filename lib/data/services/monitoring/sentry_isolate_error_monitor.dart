@@ -35,18 +35,20 @@ final class SentryIsolateErrorMonitor {
     StackTrace? stackTrace,
   ) => Sentry.captureException(error, stackTrace: stackTrace);
 
-  static FutureOr<void> _handle(Object? message, IsolateErrorCapture capture) {
+  static void _handle(Object? message, IsolateErrorCapture capture) {
     if (message is! List<Object?> || message.length != 2) {
-      return null;
+      return;
     }
     if (message[0] == null) {
-      return null;
+      return;
     }
     final stackText = message[1];
-    return capture(
-      const _BackgroundIsolateError(),
-      stackText is String ? StackTrace.fromString(stackText) : null,
-    );
+    Future<void>.sync(
+      () => capture(
+        const _BackgroundIsolateError(),
+        stackText is String ? StackTrace.fromString(stackText) : null,
+      ),
+    ).ignore();
   }
 }
 
