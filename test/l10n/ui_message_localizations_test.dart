@@ -86,6 +86,13 @@ void main() {
       ),
       startsWith('Retry did not succeed'),
     );
+    expect(
+      english.localizeRuntimeMessage(
+        'model.download.network',
+        '模型文件下载失败，请检查网络后重试',
+      ),
+      english.modelDownloadFailedRetry,
+    );
   });
 
   test('启动资源名使用稳定码本地化', () {

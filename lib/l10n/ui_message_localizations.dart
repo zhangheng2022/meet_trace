@@ -30,6 +30,7 @@ extension UiMessageLocalizations on AppLocalizations {
       'vad.prepare.failed' ||
       'speaker.archive.invalid' => modelPreparationFailed,
       'model.download.failed' ||
+      'model.download.network' ||
       'vad.download.incomplete' ||
       'speaker.download.incomplete' => modelDownloadFailedRetry,
       _ => localizeUiMessage(message),

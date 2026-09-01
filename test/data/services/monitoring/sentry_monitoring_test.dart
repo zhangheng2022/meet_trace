@@ -6,6 +6,7 @@ void main() {
   test('取消分类不改变业务异常', () async {
     final failure = StateError('cancelled');
     var classifications = 0;
+    Object? classified;
 
     await expectLater(
       SentryMonitoring.trace<void>(
@@ -13,7 +14,7 @@ void main() {
         operation: 'test.cancel',
         isCancellation: (error) {
           classifications++;
-          expect(error, same(failure));
+          classified = error;
           return true;
         },
         run: () async => throw failure,
@@ -21,6 +22,7 @@ void main() {
       throwsA(same(failure)),
     );
     expect(classifications, 1);
+    expect(classified, same(failure));
   });
 
   test('HTTP Breadcrumb 只保留域名、方法、状态码和耗时', () {
