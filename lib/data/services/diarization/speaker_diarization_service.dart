@@ -39,6 +39,9 @@ final class SherpaOnnxSpeakerDiarizationService
       SentryMonitoring.trace(
         name: 'speaker.diarization',
         operation: 'speaker.diarization',
+        isCancellation: (error) =>
+            error is SpeakerDiarizationException &&
+            error.code == 'speaker_diarization.cancelled',
         run: () => _diarize(source),
       );
 

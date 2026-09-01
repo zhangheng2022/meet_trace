@@ -193,6 +193,9 @@ final class SherpaOnnxAsrEngine implements AsrEngine {
   }) => SentryMonitoring.trace(
     name: 'asr.final',
     operation: 'asr.final',
+    isCancellation: (error) =>
+        error is AsrEngineException &&
+        error.failure.code.endsWith('.cancelled'),
     run: () =>
         _finalizeMeeting(source, meetingId: meetingId, snapshotId: snapshotId),
   );

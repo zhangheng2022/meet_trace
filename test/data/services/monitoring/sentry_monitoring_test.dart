@@ -3,6 +3,26 @@ import 'package:meettrace/data/services/monitoring/sentry_monitoring.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 void main() {
+  test('取消分类不改变业务异常', () async {
+    final failure = StateError('cancelled');
+    var classifications = 0;
+
+    await expectLater(
+      SentryMonitoring.trace<void>(
+        name: 'test.cancel',
+        operation: 'test.cancel',
+        isCancellation: (error) {
+          classifications++;
+          expect(error, same(failure));
+          return true;
+        },
+        run: () async => throw failure,
+      ),
+      throwsA(same(failure)),
+    );
+    expect(classifications, 1);
+  });
+
   test('HTTP Breadcrumb 只保留域名、方法、状态码和耗时', () {
     final breadcrumb = Breadcrumb.http(
       url: Uri.parse(

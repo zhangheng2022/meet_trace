@@ -7,6 +7,7 @@ abstract final class SentryMonitoring {
     required String name,
     required String operation,
     required Future<T> Function() run,
+    bool Function(Object error)? isCancellation,
   }) async {
     ISentrySpan? span;
     try {
@@ -23,12 +24,20 @@ abstract final class SentryMonitoring {
       addBreadcrumb(category: operation, phase: 'completed');
       return result;
     } on Object catch (error) {
+      var canceled = false;
+      try {
+        canceled = isCancellation?.call(error) ?? false;
+      } on Object {
+        // 遥测分类失败不能改变业务异常。
+      }
       span
-        ?..status = const SpanStatus.internalError()
+        ?..status = canceled
+            ? const SpanStatus.cancelled()
+            : const SpanStatus.internalError()
         ..setData('error.type', error.runtimeType.toString());
       addBreadcrumb(
         category: operation,
-        phase: 'failed',
+        phase: canceled ? 'canceled' : 'failed',
         data: {'error_type': error.runtimeType.toString()},
       );
       rethrow;

@@ -130,6 +130,15 @@ final class HttpModelFileDownloader implements ModelFileDownloader {
           stackTrace,
         );
       }
+      if (error is http.ClientException) {
+        Error.throwWithStackTrace(
+          const DownloadableModelException(
+            code: 'model.download.network',
+            message: '模型文件下载失败，请检查网络后重试',
+          ),
+          stackTrace,
+        );
+      }
       rethrow;
     } finally {
       cancellation.removeCancelListener(cancelRequest);

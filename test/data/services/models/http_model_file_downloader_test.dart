@@ -74,6 +74,35 @@ void main() {
     );
   });
 
+  test('网络异常不保留可能含完整 URI 的底层异常', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final source = Uri.parse(
+      'http://${server.address.address}:${server.port}/private?token=secret',
+    );
+    await server.close(force: true);
+
+    await expectLater(
+      HttpModelFileDownloader(requireHttps: false).download(
+        source: source,
+        destinationPath: p.join(root.path, 'model.bin'),
+        resumeFrom: 0,
+        expectedBytes: 5,
+        cancellation: ModelDownloadCancellationToken(),
+        onProgress: (_) {},
+      ),
+      throwsA(
+        isA<DownloadableModelException>()
+            .having((error) => error.code, 'code', 'model.download.network')
+            .having((error) => error.cause, 'cause', isNull)
+            .having(
+              (error) => error.toString(),
+              'message',
+              isNot(contains('token=secret')),
+            ),
+      ),
+    );
+  });
+
   test('响应体停止传输时超时失败', () async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     addTearDown(() => server.close(force: true));

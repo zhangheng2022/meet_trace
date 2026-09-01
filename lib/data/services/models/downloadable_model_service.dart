@@ -103,6 +103,9 @@ final class DownloadableModelService implements RuntimeAsrModelInstaller {
   }) => SentryMonitoring.trace(
     name: 'model.download',
     operation: 'resource.download',
+    isCancellation: (error) =>
+        error is DownloadableModelException &&
+        error.code == 'model.download.canceled',
     run: () => _download(
       descriptor: descriptor,
       manifest: manifest,
