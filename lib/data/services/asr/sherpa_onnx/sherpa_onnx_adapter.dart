@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
 import '../../../../domain/models/app_failure.dart';
+import '../../monitoring/sentry_isolate_error_monitor.dart';
 
 enum SherpaOnnxRecognizerKind { senseVoice }
 
@@ -290,6 +291,7 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
     required this._exits,
     required this._exitSubscription,
     required this._commands,
+    required this._sentryErrors,
   });
 
   final Isolate _isolate;
@@ -298,6 +300,7 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
   final ReceivePort _exits;
   final StreamSubscription<Object?> _exitSubscription;
   final SendPort _commands;
+  final SentryIsolateErrorMonitor _sentryErrors;
   final Map<int, Completer<Map<Object?, Object?>>> _pending = {};
   int _nextRequestId = 1;
   bool _disposed = false;
@@ -349,9 +352,12 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
     final isolate = await Isolate.spawn<List<Object?>>(
       _sherpaOnnxWorkerMain,
       [responses.sendPort, config.toMessage()],
+      paused: true,
       debugName: 'meettrace-sherpa-${config.kind.name}',
       onExit: exits.sendPort,
     );
+    final sentryErrors = SentryIsolateErrorMonitor.attach(isolate);
+    isolate.resume(isolate.pauseCapability!);
     try {
       final commands = await ready.future;
       worker = _IsolateSherpaOnnxWorker._(
@@ -361,6 +367,7 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
         exits: exits,
         exitSubscription: exitSubscription,
         commands: commands,
+        sentryErrors: sentryErrors,
       );
       final exitBeforeConstruction = earlyExit;
       if (exitBeforeConstruction != null) {
@@ -371,6 +378,7 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
       }
       return worker;
     } on Object {
+      sentryErrors.close();
       isolate.kill(priority: Isolate.immediate);
       await subscription.cancel();
       await exitSubscription.cancel();
@@ -420,6 +428,7 @@ final class _IsolateSherpaOnnxWorker implements SherpaOnnxWorker {
         throw _RemoteWorkerError(response['errorType']! as String);
       }
     } finally {
+      _sentryErrors.close();
       _isolate.kill(priority: Isolate.immediate);
       await _responseSubscription.cancel();
       await _exitSubscription.cancel();
