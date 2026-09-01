@@ -9,13 +9,13 @@
 - 性能会话按进程抽样一次，生产抽样率为 20%；应用保存本进程结果，公开 `tracesSampler` 只返回 `1.0` 或 `0.0`。覆盖启动、命名路由、模型下载/初始化、录音开始/安全封存、最终 ASR 和说话人分离。
 - 被抽样的录音会话每 60 秒生成一次匿名窗口：PCM 写入延迟、写入积压、预览积压/丢弃、录音中断/恢复次数和窗口时长。应用交给 SDK 后不等待上传。
 - Android/iOS 使用 SDK 原生离线缓存并设置 `maxCacheItems=10`；Windows 的 Dart 错误、Span 和 Metrics 在线发送、失败即丢，Crashpad 只持久化原生崩溃。不增加自定义传输层。初始化、缓存或上传失败不得阻断 App、事实录音或最终处理。
-- Android 采集原生崩溃、ANR、Android 12+ Tombstone、原生启动和卡帧；iOS 采集原生崩溃、App Hang、Watchdog、原生启动和卡帧；Windows x64 使用 Crashpad 原生崩溃/minidump，启动阶段使用 Dart Span。
+- Android 采集原生崩溃、ANR、Android 12+ Tombstone 和卡帧；iOS 采集原生崩溃、App Hang、Watchdog 和卡帧；Windows x64 使用 Crashpad 原生崩溃/minidump。三平台启动阶段统一使用 Dart Span；为先读取退出开关，不承诺需要在 Flutter Binding 前初始化的自动原生 App Start。
 - Production 禁用 Profiling；仅 iOS 受控 `development` 诊断构建可显式启用。所有平台禁用 Replay、结构化日志、业务分析指标、截图、View Hierarchy、用户交互追踪、用户反馈和附件。
 
 ## 告知与开关
 
 - 首次安装在 Sentry 最早初始化的同一首屏展示一次可关闭的非阻断告知；设置页开关默认开启并仅保存在本机。
-- 后续启动先读取开关。关闭时不初始化；运行中关闭立即停止应用侧新事件、Tracing、Metrics 和当前窗口，且不回填。
+- 后续启动先读取开关。关闭或读取异常时本次进程不初始化，读取异常不得覆盖已有退出选择或阻断本地启动；运行中关闭立即停止应用侧新事件、Tracing、Metrics 和当前窗口，且不回填。
 - 已交给 SDK、进入原生缓存或上传的数据不能保证撤回。Windows 原生 Crashpad 最迟在下次启动时完全关闭；文案必须披露该边界。
 - 重新开启后立即恢复错误监控，并从下一个 60 秒边界重新抽样性能会话。
 

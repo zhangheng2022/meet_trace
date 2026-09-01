@@ -41,8 +41,8 @@ Domain 不导入 data；UI 不直连 ONNX、存储或 HTTP。ASR 统一走 `AsrE
 
 ## 审查、Git 与安全
 
-- 所有 PR 使用 `$open-code-review`：同一 workspace/range/commit 先 `--preview`，再 `--audience agent`，并注入需求、方案和用户影响。录音、模型锁定、快照、分离、音频分享或删除变更必须附相应产品边界。
-- 以 Git 完整清单为基线；OCR 覆盖 reviewable 文件，人工补审其余文件，尊重ORC 规则。报告有效 Critical/High/Medium/Low、路径、行号、触发、影响和修复；Critical/High 未清零不得 Ready 或合并。OCR 不替代格式、分析、测试或构建。
+- 所有 PR 使用 `$open-code-review`：同一 workspace/range/commit 先完整执行 `--preview`，再执行 `--audience agent`，并注入需求、方案和用户影响。录音、模型锁定、快照、分离、音频分享或删除变更必须附相应产品边界。
+- 以 Git 完整清单为基线；OCR 覆盖全部 reviewable 文件，人工逐项补审其余文件，尊重 OCR 规则。不得因耗时、文件数、超时、供应商故障或 Token 成本改用抽样、低强度、部分文件或仅 preview 结果；失败文件必须按同一范围和规则逐一重试，直到全部完成或明确阻断并报告。报告有效 Critical/High/Medium/Low、路径、行号、触发、影响和修复；Critical/High 未清零不得提交阶段、Ready 或合并。OCR 不替代格式、分析、测试或构建。
 - 使用独立分支和 Draft PR；Codex 分支默认 `codex/`。只暂存本次路径，禁止 `git add .`/`-A`，不得覆盖用户改动。
 - 仅经用户明确授权后 squash 合并；禁止 merge commit。合并后删分支、同步默认分支并确认工作区干净。
 - PR 引用 PRD、说明用户影响、验证和 OCR 范围；PRD/UI 不适用时明示，UI 变更附截图。

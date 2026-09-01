@@ -494,6 +494,48 @@ abstract class AppLocalizations {
   /// **'Meeting recordings, final transcripts, and runtime resources remain on this device. Uninstalling the app may permanently delete them.'**
   String get localStoragePrivacyDescription;
 
+  /// No description provided for @remoteDiagnosticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote diagnostics'**
+  String get remoteDiagnosticsTitle;
+
+  /// No description provided for @remoteDiagnosticsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow anonymous error and performance diagnostics'**
+  String get remoteDiagnosticsEnabled;
+
+  /// No description provided for @remoteDiagnosticsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'On by default. Turning it off stops new errors, performance traces, and metrics. Cached or uploaded data cannot be recalled; Windows native crash handling is fully off by the next launch at the latest.'**
+  String get remoteDiagnosticsDescription;
+
+  /// No description provided for @remoteDiagnosticsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The setting was not applied. This screen was restored; the next launch uses the value saved on this device.'**
+  String get remoteDiagnosticsSaveFailed;
+
+  /// No description provided for @remoteDiagnosticsNoticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous remote diagnostics are on by default'**
+  String get remoteDiagnosticsNoticeTitle;
+
+  /// No description provided for @remoteDiagnosticsNoticeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'MeetTrace sends scrubbed errors and performance data, never recordings or transcripts. You can turn this off in Settings; cached or uploaded data cannot be recalled.'**
+  String get remoteDiagnosticsNoticeDescription;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
   /// No description provided for @diagnosticsTitle.
   ///
   /// In en, this message translates to:

@@ -107,6 +107,27 @@ abstract interface class LanguagePreferenceRepository {
   Future<void> setLanguageMode(AppLanguageMode mode);
 }
 
+/// 本机诊断偏好端口。
+///
+/// 平台存储异常由实现原样传播；调用方必须设置超时，并将读取失败按 `false` 处理。
+abstract interface class RemoteDiagnosticsPreferenceRepository {
+  Future<bool> getEnabled();
+
+  Future<void> setEnabled(bool enabled);
+
+  Future<bool> getNoticeDismissed();
+
+  Future<void> setNoticeDismissed();
+}
+
+abstract interface class RemoteDiagnosticsController {
+  /// 请求当前构建应用诊断偏好；返回该请求是否被接受。
+  ///
+  /// 编译期未包含诊断能力的构建应将开启视为成功的无操作，避免覆盖用户偏好。
+  /// 实现必须在有界时间内完成，并将 SDK 故障转换为 `false`。
+  Future<bool> setEnabled(bool enabled);
+}
+
 abstract interface class ProcessingTaskRepository {
   Future<ProcessingTask?> getById(String taskId);
 

@@ -1,17 +1,16 @@
-// Sentry 9.26 将 Profiling、View Hierarchy 和独立 App Start 标记为实验 API；
-// 产品决策要求启用这些能力，升级 SDK 时必须重新验证这些调用。
-// ignore_for_file: experimental_member_use
-
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meettrace/domain/ports/recording_telemetry.dart';
+import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 typedef AppLauncher = void Function(Widget app);
 
 final class SentryRecordingTelemetryGate implements RecordingTelemetryGate {
+  // 阶段 3 将用于生成不含会议标识的 60 秒录音性能窗口。
   bool _recordingActive = false;
 
   @override
@@ -37,9 +36,7 @@ final class SentryRuntimeConfiguration {
     required this.release,
     required this.dist,
     required this.tracesSampleRate,
-    required this.profilesSampleRate,
-    required this.replaySessionSampleRate,
-    required this.replayOnErrorSampleRate,
+    required this.performanceSampled,
   });
 
   static const _projectDsn =
@@ -51,12 +48,18 @@ final class SentryRuntimeConfiguration {
   final String environment;
   final String? release;
   final String? dist;
-  final double tracesSampleRate;
-  final double profilesSampleRate;
-  final double replaySessionSampleRate;
-  final double replayOnErrorSampleRate;
 
-  factory SentryRuntimeConfiguration.fromEnvironment() {
+  /// 仅用于决定本进程是否采样；运行时由 [performanceSampled] 固定返回 1 或 0。
+  final double tracesSampleRate;
+  final bool performanceSampled;
+
+  static final SentryRuntimeConfiguration _environmentConfiguration =
+      SentryRuntimeConfiguration._fromEnvironment();
+
+  factory SentryRuntimeConfiguration.fromEnvironment() =>
+      _environmentConfiguration;
+
+  factory SentryRuntimeConfiguration._fromEnvironment() {
     return SentryRuntimeConfiguration.fromValues(
       enabled: const bool.fromEnvironment(
         'SENTRY_ENABLED',
@@ -76,18 +79,6 @@ final class SentryRuntimeConfiguration {
         'SENTRY_TRACES_SAMPLE_RATE',
         defaultValue: '0.2',
       ),
-      profilesSampleRate: const String.fromEnvironment(
-        'SENTRY_PROFILES_SAMPLE_RATE',
-        defaultValue: '0.1',
-      ),
-      replaySessionSampleRate: const String.fromEnvironment(
-        'SENTRY_REPLAY_SESSION_SAMPLE_RATE',
-        defaultValue: '0.1',
-      ),
-      replayOnErrorSampleRate: const String.fromEnvironment(
-        'SENTRY_REPLAY_ON_ERROR_SAMPLE_RATE',
-        defaultValue: '1',
-      ),
     );
   }
 
@@ -99,12 +90,14 @@ final class SentryRuntimeConfiguration {
     String release = '',
     String dist = '',
     required String tracesSampleRate,
-    required String profilesSampleRate,
-    required String replaySessionSampleRate,
-    required String replayOnErrorSampleRate,
+    bool? performanceSampled,
   }) {
     final normalizedDsn = dsn.trim();
     final normalizedEnvironment = environment.trim();
+    final normalizedTraceRate = _parseSampleRate(
+      tracesSampleRate,
+      fallback: 0.2,
+    );
     return SentryRuntimeConfiguration._(
       enabled: enabled && normalizedDsn.isNotEmpty,
       dsn: normalizedDsn,
@@ -113,42 +106,30 @@ final class SentryRuntimeConfiguration {
           : normalizedEnvironment,
       release: _normalizedOptional(release),
       dist: _normalizedOptional(dist),
-      tracesSampleRate: _parseSampleRate(tracesSampleRate, fallback: 0.2),
-      profilesSampleRate: _parseSampleRate(profilesSampleRate, fallback: 0.1),
-      replaySessionSampleRate: _parseSampleRate(
-        replaySessionSampleRate,
-        fallback: 0.1,
-      ),
-      replayOnErrorSampleRate: _parseSampleRate(
-        replayOnErrorSampleRate,
-        fallback: 1,
-      ),
+      tracesSampleRate: normalizedTraceRate,
+      performanceSampled:
+          performanceSampled ?? Random().nextDouble() < normalizedTraceRate,
     );
   }
 
-  void applyTo(
-    SentryFlutterOptions options, {
-    RecordingTelemetryGate? telemetryGate,
-  }) {
-    final gate = telemetryGate ?? sentryRecordingTelemetryGate;
+  void applyTo(SentryFlutterOptions options) {
     options
       ..dsn = dsn
       ..environment = environment
       ..sampleRate = 1
-      ..sendDefaultPii = true
+      ..sendDefaultPii = false
       ..attachThreads = true
-      ..captureFailedRequests = true
-      ..captureNativeFailedRequests = true
-      ..recordHttpBreadcrumbs = true
+      ..captureFailedRequests = false
+      ..captureNativeFailedRequests = false
+      ..recordHttpBreadcrumbs = false
       ..enableDartSymbolication = true
-      ..propagateTraceparent = true
+      ..propagateTraceparent = false
       ..strictTraceContinuation = true
       ..groupExceptions = true
-      ..enableLogs = true
+      ..enableLogs = false
       ..enableMetrics = true
       ..includeModuleInStackTrace = true
-      ..tracesSampleRate = tracesSampleRate
-      ..profilesSampleRate = profilesSampleRate
+      ..maxBreadcrumbs = 100
       ..autoInitializeNativeSdk = true
       ..enableAutoSessionTracking = true
       ..enableNativeCrashHandling = true
@@ -163,13 +144,10 @@ final class SentryRuntimeConfiguration {
       ..reportSilentFlutterErrors = true
       ..enableWatchdogTerminationTracking = true
       ..enableAutoPerformanceTracing = true
-      ..enableStandaloneAppStartTracing = true
-      ..attachScreenshot = true
-      ..screenshotQuality = SentryScreenshotQuality.full
-      ..enableUserInteractionBreadcrumbs = true
-      ..enableUserInteractionTracing = true
+      ..attachScreenshot = false
+      ..enableUserInteractionBreadcrumbs = false
+      ..enableUserInteractionTracing = false
       ..enableTimeToFullDisplayTracing = true
-      ..attachViewHierarchy = true
       ..enableAppHangTracking = true
       ..enableFramesTracking = true;
 
@@ -180,27 +158,11 @@ final class SentryRuntimeConfiguration {
       options.dist = dist;
     }
 
-    options.tracesSampler = (_) => gate.recordingActive ? 0 : tracesSampleRate;
-    options.beforeSendTransaction = (transaction, _) =>
-        gate.recordingActive ? null : transaction;
-    options.beforeBreadcrumb = (breadcrumb, _) {
-      if (gate.recordingActive &&
-          (breadcrumb?.category?.startsWith('ui.') ?? false)) {
-        return null;
-      }
-      return breadcrumb;
-    };
-    options.beforeCaptureScreenshot = (_, _, _) => !gate.recordingActive;
-    options.beforeCaptureViewHierarchy = (_, _, _) => !gate.recordingActive;
-
+    options.tracesSampler = (_) => performanceSampled ? 1 : 0;
     options.replay
-      ..sessionSampleRate = replaySessionSampleRate
-      ..onErrorSampleRate = replayOnErrorSampleRate
-      ..quality = SentryReplayQuality.high;
-    options.privacy
-      ..maskAllText = true
-      ..maskAllImages = true
-      ..maskAssetImages = true;
+      ..sessionSampleRate = 0
+      ..onErrorSampleRate = 0;
+    // sentry_flutter 9.28.0 的 profiling setter 仍是 experimental；保持 SDK 默认关闭。
   }
 
   static double _parseSampleRate(String rawValue, {required double fallback}) {
@@ -217,6 +179,102 @@ final class SentryRuntimeConfiguration {
   }
 }
 
+/// 严格串行切换 Sentry 运行时状态。
+///
+/// 原生调用超时后会快速拒绝后续请求，直到该调用收敛；若它永久不返回，
+/// 由进程重启按已保存偏好恢复，避免脱离旧调用后并发操作 SDK。
+final class SentryRemoteDiagnosticsController
+    implements RemoteDiagnosticsController {
+  SentryRemoteDiagnosticsController(
+    this.configuration, {
+    bool Function()? isEnabled,
+    Future<void> Function()? close,
+    Future<void> Function(SentryRuntimeConfiguration)? initialize,
+    this.transitionTimeout = const Duration(seconds: 10),
+  }) : _isEnabled = isEnabled ?? _sentryIsEnabled,
+       _close = close ?? Sentry.close,
+       _initialize = initialize ?? _initializeSentry;
+
+  static Future<void> _pendingTransition = Future<void>.value();
+  static bool _poisoned = false;
+
+  @visibleForTesting
+  static void resetTransitionState() {
+    _pendingTransition = Future<void>.value();
+    _poisoned = false;
+  }
+
+  final SentryRuntimeConfiguration configuration;
+  final bool Function() _isEnabled;
+  final Future<void> Function() _close;
+  final Future<void> Function(SentryRuntimeConfiguration) _initialize;
+  final Duration transitionTimeout;
+
+  @override
+  Future<bool> setEnabled(bool enabled) {
+    if (_poisoned) {
+      debugPrint('远程诊断状态链已超时，等待底层操作收敛。');
+      return Future<bool>.value(false);
+    }
+    final transition = _pendingTransition.then((_) => _apply(enabled));
+    _pendingTransition = transition.then<void>((_) {}, onError: (_, _) {});
+    return transition.timeout(
+      transitionTimeout,
+      onTimeout: () {
+        _poisoned = true;
+        debugPrint('远程诊断状态切换超时。');
+        if (enabled) {
+          // 迟到的 init 完成后立即按同一串行链关闭，保持 fail-closed。
+          final closeTransition = _pendingTransition.then((_) => _apply(false));
+          _pendingTransition = closeTransition.then<void>(
+            (_) {},
+            onError: (_, _) {},
+          );
+          unawaited(
+            closeTransition.then((_) {
+              _poisoned = false;
+            }),
+          );
+        } else {
+          unawaited(
+            transition.then((_) {
+              _poisoned = false;
+            }),
+          );
+        }
+        return false;
+      },
+    );
+  }
+
+  Future<bool> _apply(bool enabled) async {
+    try {
+      if (!enabled) {
+        if (_isEnabled()) {
+          await _close();
+        }
+        return !_isEnabled();
+      }
+      if (!configuration.enabled || _isEnabled()) {
+        // 编译期关闭是当前构建的能力上限，仍接受用户的本机偏好。
+        return true;
+      }
+      await _initialize(configuration);
+      return _isEnabled();
+    } on Object catch (error) {
+      // 远程诊断故障不得阻断 App、事实录音或最终处理。
+      debugPrint('远程诊断状态切换失败：$error');
+      return false;
+    }
+  }
+
+  static bool _sentryIsEnabled() => Sentry.isEnabled;
+
+  static Future<void> _initializeSentry(
+    SentryRuntimeConfiguration configuration,
+  ) => SentryFlutter.init(configuration.applyTo);
+}
+
 List<NavigatorObserver> createSentryNavigatorObservers() {
   return <NavigatorObserver>[SentryNavigatorObserver()];
 }
@@ -231,13 +289,14 @@ abstract final class SentryBootstrap {
     FutureOr<void> Function()? beforeRunApp,
     SentryRuntimeConfiguration? configuration,
     AppLauncher appLauncher = runApp,
-    RecordingTelemetryGate? telemetryGate,
+    bool userEnabled = false,
   }) async {
     final resolvedConfiguration =
         configuration ?? SentryRuntimeConfiguration.fromEnvironment();
+    final root = SentryWidget(child: app);
     var launchStarted = false;
 
-    Future<void> launch(Widget root) async {
+    Future<void> launch() async {
       if (launchStarted) {
         return;
       }
@@ -246,20 +305,17 @@ abstract final class SentryBootstrap {
       appLauncher(root);
     }
 
-    if (!resolvedConfiguration.enabled) {
+    if (!resolvedConfiguration.enabled || !userEnabled) {
       WidgetsFlutterBinding.ensureInitialized();
-      await launch(app);
+      await launch();
       return;
     }
 
     try {
       await SentryFlutter.init(
-        (options) => resolvedConfiguration.applyTo(
-          options,
-          telemetryGate: telemetryGate,
-        ),
+        resolvedConfiguration.applyTo,
         appRunner: () async {
-          await launch(SentryWidget(child: app));
+          await launch();
           WidgetsBinding.instance.addPostFrameCallback((_) {
             unawaited(SentryFlutter.currentDisplay()?.reportFullyDisplayed());
           });
@@ -270,7 +326,7 @@ abstract final class SentryBootstrap {
         rethrow;
       }
       WidgetsFlutterBinding.ensureInitialized();
-      await launch(app);
+      await launch();
     }
   }
 }
