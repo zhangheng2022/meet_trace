@@ -151,10 +151,8 @@ void main() {
       expect(ios, contains('tool/release/changelog.py'));
       expect(ios, contains(r'--changelog "$candidate_changelog"'));
       expect(ios, contains(r'RELEASE_NOTES: ${{ inputs.release_notes }}'));
-      expect(
-        ios,
-        contains(r'export TESTFLIGHT_CHANGELOG="$(cat "$notes_path")"'),
-      );
+      expect(ios, contains(r'TESTFLIGHT_CHANGELOG="$(cat "$notes_path")"'));
+      expect(ios, contains('export TESTFLIGHT_CHANGELOG'));
       expect(ios, contains('Reuse immutable uploaded TestFlight candidate'));
       expect(ios, contains(r'meettrace-ios-testflight-$source_run_id-'));
       expect(ios, contains("if: steps.staged.outputs.reuse != 'true'"));

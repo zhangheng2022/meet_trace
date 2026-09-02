@@ -1532,7 +1532,8 @@ jobs:
               printf '%s\n' "$RELEASE_NOTES"
             } >> "$notes_path"
           fi
-          export TESTFLIGHT_CHANGELOG="$(cat "$notes_path")"
+          TESTFLIGHT_CHANGELOG="$(cat "$notes_path")"
+          export TESTFLIGHT_CHANGELOG
           bundle exec fastlane ios upload_testflight
 
       - name: Write release summary
