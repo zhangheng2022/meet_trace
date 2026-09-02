@@ -59,6 +59,7 @@ flutter test
 
 ## 文档
 
+- [更新日志](CHANGELOG.md)
 - [文档入口](docs/README.md)
 - [Alpha PRD](docs/product/Alpha_PRD_无登录版.md)
 - [设计系统](DESIGN.md)

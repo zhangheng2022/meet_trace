@@ -1,6 +1,6 @@
 # Alpha Release 自动发布规格
 
-> 状态：Active · 版本：3.8 · 日期：2026-08-31
+> 状态：Active · 版本：3.9 · 日期：2026-09-02
 >
 > 产品上游：[Alpha PRD](../docs/product/Alpha_PRD_无登录版.md) 3.1、AT-21～AT-26
 
@@ -51,6 +51,7 @@ flowchart LR
 | REL-011 | 同一时刻只有一个活动 Draft；其定义是最新公开 Alpha 之后创建的最新合法 Draft |
 | REL-012 | 公开资产、tag 和撤回记录不可删除、覆盖或回退；修复使用更高版本 |
 | REL-013 | 三平台候选启用同一 Sentry 项目和统一 `release/dist`；生产配置、符号上传或符号化验证任一失败均阻断公开 |
+| REL-014 | `v1.0.0-alpha.13` 起，候选 SHA 的 `CHANGELOG.md` 必须存在唯一匹配 release ID 的非空版本段；同一正文进入 GitHub Release 与 TestFlight，恢复发布不得依赖重新输入；此前已存在的活动 Draft 只允许恢复，不得据此创建新候选 |
 
 ## 4. 门禁
 
@@ -88,6 +89,7 @@ flowchart LR
 ## 7. 验证
 
 - `actionlint -config-file .github/actionlint.yaml`
+- `python tool/release/changelog.py --changelog CHANGELOG.md`
 - `flutter test test/architecture/release_workflow_guard_test.dart`
 - `flutter test test/tool/release/release_orchestration_gate_test.dart`
 - PowerShell Parser 校验 `tool/release/*.ps1`

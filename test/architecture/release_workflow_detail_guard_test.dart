@@ -133,6 +133,10 @@ void main() {
       expect(android, contains('Refusing to overwrite assets'));
       expect(android, contains('ANDROID_SIGNING_CERT_SHA256'));
       expect(android, contains('actions/attest@'));
+      expect(android, contains('tool/release/changelog.py'));
+      expect(android, contains(r'--changelog "$candidate_changelog"'));
+      expect(android, contains('meettrace-public-notes:start'));
+      expect(android, contains('meettrace-public-notes:end'));
       expect(android, isNot(contains('--clobber')));
       expect(android, isNot(contains('build/app/outputs/flutter-apk/*.apk')));
     });
@@ -144,17 +148,14 @@ void main() {
 
       expect(ios, contains('environment: testflight'));
       expect(ios, contains('bundle exec fastlane ios upload_testflight'));
+      expect(ios, contains('tool/release/changelog.py'));
+      expect(ios, contains(r'--changelog "$candidate_changelog"'));
+      expect(ios, contains(r'RELEASE_NOTES: ${{ inputs.release_notes }}'));
+      expect(ios, contains(r'TESTFLIGHT_CHANGELOG="$(cat "$notes_path")"'));
+      expect(ios, contains('export TESTFLIGHT_CHANGELOG'));
       expect(
         ios,
-        contains(r'TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}'),
-      );
-      expect(
-        ios,
-        contains(r'if [[ -z "${TESTFLIGHT_CHANGELOG//[[:space:]]/}" ]]'),
-      );
-      expect(
-        ios,
-        contains(r'export TESTFLIGHT_CHANGELOG="MeetTrace $RELEASE_ID"'),
+        isNot(contains(r'export TESTFLIGHT_CHANGELOG="$(cat "$notes_path")"')),
       );
       expect(ios, contains('Reuse immutable uploaded TestFlight candidate'));
       expect(ios, contains(r'meettrace-ios-testflight-$source_run_id-'));
@@ -244,6 +245,58 @@ void main() {
   });
 
   group('最终公开与恢复细节守卫', () {
+    test('版本日志在创建候选前校验并在恢复时绑定候选正文', () async {
+      final workflow = await _workflow('alpha-release.yml');
+      final prepare = _job(workflow, 'prepare', 'quality');
+      final publish = _job(workflow, 'publish');
+      final quality = await _workflow('quality.yml');
+      final changelogTool = await File('tool/release/changelog.py')
+          .readAsString();
+
+      expect(prepare, contains('Validate immutable candidate changelog'));
+      expect(prepare, contains(r'git show "$CANDIDATE_SHA:CHANGELOG.md"'));
+      expect(
+        prepare,
+        contains('A changelog-backed resume reuses immutable Draft notes'),
+      );
+      expect(
+        prepare,
+        contains('Resuming a legacy candidate created before CHANGELOG.md'),
+      );
+      expect(
+        prepare.indexOf('Validate immutable candidate changelog'),
+        lessThan(prepare.indexOf('Allocate shared release build number')),
+      );
+      expect(publish, contains(r'--draft-body "$draft_path"'));
+      expect(
+        changelogTool,
+        contains(
+          'Draft release notes differ from the immutable candidate changelog',
+        ),
+      );
+      expect(changelogTool, contains('meettrace-public-notes:start'));
+      expect(publish, contains(r'git show "$CANDIDATE_SHA:CHANGELOG.md"'));
+      expect(
+        publish,
+        contains('Publishing a legacy candidate created before CHANGELOG.md'),
+      );
+      expect(
+        publish,
+        contains(r'if [[ -n "${RELEASE_NOTES//[[:space:]]/}" ]]'),
+      );
+      expect(
+        workflow,
+        contains(
+          r'if [[ "$RELEASE_NOTES" == *"<!-- meettrace-public-notes:"* ]]',
+        ),
+      );
+      expect(
+        workflow,
+        isNot(contains(r'"$mode" != metadata && "$RELEASE_NOTES"')),
+      );
+      expect(quality, contains('python3 tool/release/changelog.py'));
+    });
+
     test('完整门禁、公开 APK 复核和签名指针严格有序', () async {
       final workflow = await _workflow('alpha-release.yml');
       final publish = _job(workflow, 'publish');
@@ -328,6 +381,7 @@ void main() {
       expect(publish, contains(r'ref: ${{ github.workflow_sha }}'));
       expect(publish, contains(r'WORKFLOW_SHA: ${{ github.workflow_sha }}'));
       expect(publish, contains(r'git show "$CANDIDATE_SHA:pubspec.yaml"'));
+      expect(publish, contains(r'git show "$CANDIDATE_SHA:CHANGELOG.md"'));
       expect(
         publish,
         contains(

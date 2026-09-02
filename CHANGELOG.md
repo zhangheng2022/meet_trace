@@ -1,0 +1,9 @@
+# 更新日志
+
+本文件记录会迹面向用户的版本变化，并从 `v1.0.0-alpha.13` 开始维护。更早版本请查看 [GitHub Releases](https://github.com/zhangheng2022/meet_trace/releases)。
+
+每项使用“新增、变更、修复、安全、兼容性、已知问题”之一作为前缀；内部重构、依赖更新和 CI 调整仅在影响用户或发布可靠性时记录。
+
+## [Unreleased]
+
+- 新增：项目提供可审查的更新日志，并由发布流程同步到 GitHub Release 与 TestFlight。
