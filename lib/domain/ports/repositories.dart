@@ -114,10 +114,6 @@ abstract interface class RemoteDiagnosticsPreferenceRepository {
   Future<bool> getEnabled();
 
   Future<void> setEnabled(bool enabled);
-
-  Future<bool> getNoticeDismissed();
-
-  Future<void> setNoticeDismissed();
 }
 
 abstract interface class RemoteDiagnosticsController {

@@ -6,4 +6,5 @@
 
 ## [Unreleased]
 
+- 变更：移除首页一次性 Sentry 告知，保留设置页远程诊断披露与退出开关。
 - 新增：项目提供可审查的更新日志，并由发布流程同步到 GitHub Release 与 TestFlight。

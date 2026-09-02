@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
-import 'package:forui/forui.dart';
 import 'package:intl/intl.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -10,7 +9,6 @@ import '../data/services/sharing/share_plus_cache_cleaner.dart';
 import '../domain/models/meeting.dart';
 import '../domain/models/app_theme.dart';
 import '../domain/models/app_language.dart';
-import '../domain/ports/repositories.dart';
 import '../domain/use_cases/start_meeting.dart';
 import '../domain/use_cases/build_meeting_share.dart';
 import '../l10n/l10n.dart';
@@ -40,14 +38,12 @@ final class MeetTraceBootstrap extends StatefulWidget {
     this.preflight = clearMeetTraceBootstrapCache,
     this.themeMode,
     this.languageMode,
-    this.remoteDiagnosticsPreferences,
   });
 
   final MeetTraceDependenciesLoader loadDependencies;
   final MeetTraceBootstrapPreflight preflight;
   final ValueNotifier<AppThemeMode>? themeMode;
   final ValueNotifier<AppLanguageMode>? languageMode;
-  final RemoteDiagnosticsPreferenceRepository? remoteDiagnosticsPreferences;
 
   @override
   State<MeetTraceBootstrap> createState() => _MeetTraceBootstrapState();
@@ -57,58 +53,11 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
   late Future<MeetTraceDependencies> _loading;
   Future<MeetTraceDependencies>? _activeLoading;
   MeetTraceDependencies? _dependencies;
-  bool _showRemoteDiagnosticsNotice = false;
 
   @override
   void initState() {
     super.initState();
     _loading = _beginLoading();
-    unawaited(_loadRemoteDiagnosticsNotice());
-  }
-
-  Future<void> _loadRemoteDiagnosticsNotice() async {
-    final preferences = widget.remoteDiagnosticsPreferences;
-    if (preferences == null) {
-      return;
-    }
-    const timeout = Duration(seconds: 10);
-    var enabled = false;
-    var dismissed = false;
-    try {
-      enabled = await preferences.getEnabled().timeout(timeout);
-    } on Object {
-      // 开关读取失败时本次按关闭处理，且不得阻断本地启动。
-      return;
-    }
-    if (!enabled) {
-      return;
-    }
-    try {
-      dismissed = await preferences.getNoticeDismissed().timeout(timeout);
-    } on Object {
-      // 告知状态读取失败时仍展示，避免已启用诊断却缺少告知。
-    }
-    if (mounted && !dismissed) {
-      setState(() => _showRemoteDiagnosticsNotice = true);
-    }
-  }
-
-  void _dismissRemoteDiagnosticsNotice() {
-    if (!_showRemoteDiagnosticsNotice) {
-      return;
-    }
-    setState(() => _showRemoteDiagnosticsNotice = false);
-    final preferences = widget.remoteDiagnosticsPreferences;
-    if (preferences != null) {
-      unawaited(
-        preferences
-            .setNoticeDismissed()
-            .timeout(const Duration(seconds: 10))
-            .onError((error, stackTrace) {
-              debugPrint('远程诊断告知状态保存失败：$error');
-            }),
-      );
-    }
   }
 
   Future<MeetTraceDependencies> _createDependencies() async {
@@ -199,16 +148,7 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
             languageMode: widget.languageMode,
           );
         }
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            content,
-            if (_showRemoteDiagnosticsNotice && !snapshot.hasError)
-              _RemoteDiagnosticsNotice(
-                onDismiss: _dismissRemoteDiagnosticsNotice,
-              ),
-          ],
-        );
+        return content;
       },
     );
   }
@@ -217,67 +157,6 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
   void dispose() {
     unawaited(_dependencies?.dispose());
     super.dispose();
-  }
-}
-
-final class _RemoteDiagnosticsNotice extends StatelessWidget {
-  const _RemoteDiagnosticsNotice({required this.onDismiss});
-
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: CustomScrollView(
-              primary: false,
-              shrinkWrap: true,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        FAlert(
-                          key: const ValueKey('remote-diagnostics-notice'),
-                          title: Text(l10n.remoteDiagnosticsNoticeTitle),
-                          subtitle: Text(
-                            l10n.remoteDiagnosticsNoticeDescription,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: FButton(
-                            key: const ValueKey(
-                              'dismiss-remote-diagnostics-notice',
-                            ),
-                            variant: FButtonVariant.outline,
-                            onPress: onDismiss,
-                            child: Text(l10n.gotIt),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

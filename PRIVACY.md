@@ -19,7 +19,7 @@ MeetTrace 是无登录、无跨设备同步的本地优先会议记录应用。�
 - 候选经 Microsoft Partner Center 认证、签名和分发；SignPath 仅为未接入的申请路线，当前不接收候选。
 - TestFlight 和 Microsoft Store 的账户、商店及平台诊断受 Apple、Microsoft 的设置与政策约束。
 
-首次安装会在 Sentry 最早初始化的同一首屏展示一次非阻断告知；设置中的“远程诊断”开关默认开启并可随时关闭。关闭会停止应用侧后续采集，但已交给 SDK、已进入原生缓存或已上传的数据不能保证撤回；Windows 原生崩溃采集最迟在下次启动时完全关闭。MeetTrace 不接入广告、业务分析、用户画像或 AI 总结服务。
+首页不展示 Sentry 告知；设置中的“远程诊断”区域披露采集边界，开关默认开启并可随时关闭。关闭会停止应用侧后续采集，但已交给 SDK、已进入原生缓存或已上传的数据不能保证撤回；Windows 原生崩溃采集最迟在下次启动时完全关闭。MeetTrace 不接入广告、业务分析、用户画像或 AI 总结服务。
 
 Android/iOS 最多离线缓存 10 个 Sentry Envelope；Windows 的 Dart 错误和性能数据在线发送，失败即丢，只有 Crashpad 原生崩溃数据可能在下次启动补传。
 

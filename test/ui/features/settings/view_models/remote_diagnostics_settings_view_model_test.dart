@@ -192,9 +192,6 @@ final class _RemoteDiagnosticsPreferences
   }
 
   @override
-  Future<bool> getNoticeDismissed() async => false;
-
-  @override
   Future<void> setEnabled(bool enabled) async {
     saveAttempts += 1;
     if (failSaving || saveAttempts == failOnSaveAttempt) {
@@ -204,9 +201,6 @@ final class _RemoteDiagnosticsPreferences
     savedEnabled = enabled;
     this.enabled = enabled;
   }
-
-  @override
-  Future<void> setNoticeDismissed() async {}
 }
 
 final class _RemoteDiagnosticsController

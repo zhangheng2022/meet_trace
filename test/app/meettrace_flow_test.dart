@@ -1,11 +1,30 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/app/application.dart';
 import 'package:meettrace/app/meettrace_dependencies.dart';
 import 'package:meettrace/app/meettrace_flow.dart';
 
 void main() {
+  testWidgets('首页不展示 Sentry 告知', (tester) async {
+    await tester.pumpWidget(
+      Application(
+        home: MeetTraceBootstrap(
+          preflight: () async {},
+          loadDependencies: () => Completer<MeetTraceDependencies>().future,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('remote-diagnostics-notice')),
+      findsNothing,
+    );
+    expect(find.text('正在准备会迹'), findsOneWidget);
+  });
+
   testWidgets('初始化失败页连续点击重试只启动一个依赖创建任务', (tester) async {
     final retryCompletion = Completer<MeetTraceDependencies>();
     var attempts = 0;

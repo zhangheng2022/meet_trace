@@ -244,14 +244,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The setting was not applied. This screen was restored; the next launch uses the value saved on this device.';
 
   @override
-  String get remoteDiagnosticsNoticeTitle =>
-      'Anonymous remote diagnostics are on by default';
-
-  @override
-  String get remoteDiagnosticsNoticeDescription =>
-      'MeetTrace sends scrubbed errors and performance data, never recordings or transcripts. You can turn this off in Settings; cached or uploaded data cannot be recalled.';
-
-  @override
   String get gotIt => 'Got it';
 
   @override

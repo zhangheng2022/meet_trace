@@ -70,8 +70,6 @@
   "remoteDiagnosticsEnabled": "允许匿名错误与性能诊断",
   "remoteDiagnosticsDescription": "默认开启。关闭后停止新的错误、性能与指标采集；已缓存或上传的数据不能撤回，Windows 原生崩溃处理最迟在下次启动完全关闭。",
   "remoteDiagnosticsSaveFailed": "设置未应用，已恢复本次显示；下次启动以本机保存值为准。",
-  "remoteDiagnosticsNoticeTitle": "匿名远程诊断默认开启",
-  "remoteDiagnosticsNoticeDescription": "会迹会发送脱敏错误与性能信息，不发送录音或转录。可随时在设置中关闭；已缓存或上传的数据不能撤回。",
   "gotIt": "知道了",
   "diagnosticsTitle": "诊断",
   "diagnosticsShareSubject": "会迹诊断信息",
