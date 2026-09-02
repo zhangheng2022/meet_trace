@@ -161,7 +161,7 @@
       "source": "alibaba/open-code-review",
       "sourceType": "github",
       "skillPath": "skills/open-code-review/SKILL.md",
-      "computedHash": "e2476a92ace5a4fafdc12ce9ff30840ca81c076f43693f1d904a8346f6b1586e"
+      "computedHash": "d5c35cfe19facf6e6e2bf9d9072abcf6d006903a097dce2eda4f29c567c4a9d5"
     },
     "patrol-setup": {
       "source": "leancodepl/patrol",
