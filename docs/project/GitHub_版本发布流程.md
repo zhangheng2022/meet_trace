@@ -6,8 +6,9 @@
 
 在 Actions 手动运行一次 `Alpha Release`：
 
-- 必填 `release_id`，例如 `v1.0.0-alpha.11`。
-- `release_notes` 可留空。
+- 必填 `release_id`，例如 `v1.0.0-alpha.13`。
+- 候选提交的 `CHANGELOG.md` 必须包含与 `release_id` 匹配的已定版区段；发布链自动同步到 GitHub Release 与 TestFlight。
+- `release_notes` 仅用于紧急补充，正常发布留空。
 - 不填写内部的 `resume_run_id`、`orchestration_run_id`，也不选择修复或撤回模式。
 
 其余步骤自动完成：
@@ -20,6 +21,8 @@
 6. 自动公开原 Draft，重新下载 Android APK 核对 SHA-256，再原子更新签名指针。
 
 等待商店处理时不要重跑。正常路径没有逐版本人工审批，也不要求 Windows 专用机；Store API 回执不证明客户端安装、启动、更新或卸载。
+
+`CHANGELOG.md` 规则从 `v1.0.0-alpha.13` 起生效；此前已创建的活动 Draft 只允许由 Reconciler 以 `resume` 模式完成，不得据此创建缺少日志的新候选。
 
 ## 一次性 bootstrap
 
@@ -70,10 +73,11 @@ Reconciler 对正常 processing/review/certification/publishing 状态只等待�
 
 ## 发布前检查
 
+- [ ] `CHANGELOG.md` 的 `Unreleased` 内容已移入 `## [<release-id 去掉 v>] - YYYY-MM-DD`，并重新保留空的 `Unreleased` 区段。
 - [ ] 自动化变更已合并到 `master`，bootstrap 已完成。
 - [ ] required checks 正常，发布 Environment 无 reviewer 或 wait timer。
 - [ ] TestFlight 固定组、公测链接、审核联系与出口合规已配置。
 - [ ] Partner Center 固定 Flight、自动认证后发布和 100% production 已配置。
 - [ ] Firebase OIDC 与 ARM 设备可用。
 - [ ] 三平台 Sentry 生产配置、统一 `release/dist`、最小权限 Token 与符号化验证已配置。
-- [ ] 本次只填写新的 `release_id` 和可选说明。
+- [ ] 本次只填写新的 `release_id`；仅在无法通过候选提交表达时填写紧急补充说明。

@@ -32,6 +32,7 @@ Domain 不导入 data；UI 不直连 ONNX、存储或 HTTP。ASR 统一走 `AsrE
 ## 实现与验证
 
 - 新功能或重构：`flutter-apply-architecture-best-practices`；行为变化：`flutter-add-widget-test` 或 `dart-add-unit-test`；交付前：`dart-run-static-analysis`；审查：`$open-code-review`。
+- 用户可见行为变化同步写入 `CHANGELOG.md` 的 `Unreleased`；发布前移入与 `release_id` 完全匹配的定版区段。
 - sherpa-onnx 只能在 data/service 层通过官方包适配 `AsrEngine`；禁止自建 JNI、FFI、C/C++ 链或 `jniLibs`。
 - Actions YAML 只留触发、权限、Environment、依赖与短胶水；可测试逻辑下沉 `tool/`。`CI Gate` 必须依赖 Actions 静态检查。
 - 纯文档运行 `git diff --check` 并核对链接、命令和 Markdown。Dart/Flutter 变更至少格式化、分析和受影响测试；跨模块/高风险跑全量测试；平台、依赖、构建、发布或路径分类变更增加相应构建与守卫。未运行项必须说明原因、风险和补偿。

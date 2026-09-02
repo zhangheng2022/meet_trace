@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       release_notes:
-        description: Optional public release notes
+        description: Optional emergency supplement to the versioned CHANGELOG entry
         required: false
         type: string
       resume_run_id:
@@ -150,9 +150,39 @@ jobs:
             echo "Withdrawal and pointer repair are mutually exclusive" >&2
             exit 1
           fi
+          if [[ "$RELEASE_NOTES" == *"<!-- meettrace-public-notes:"* ]]; then
+            echo "release_notes contains a reserved release-note marker" >&2
+            exit 1
+          fi
 
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "candidate_sha=$candidate_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Validate immutable candidate changelog
+        if: steps.resolve.outputs.mode == 'candidate' || steps.resolve.outputs.mode == 'resume'
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SHA: ${{ steps.resolve.outputs.candidate_sha }}
+          RELEASE_MODE: ${{ steps.resolve.outputs.mode }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+          if git cat-file -e "$CANDIDATE_SHA:CHANGELOG.md" 2>/dev/null; then
+            git show "$CANDIDATE_SHA:CHANGELOG.md" > "$RUNNER_TEMP/CHANGELOG.md"
+            python3 tool/release/changelog.py \
+              --changelog "$RUNNER_TEMP/CHANGELOG.md" \
+              --release-id "$RELEASE_ID"
+            if [[ "$RELEASE_MODE" == resume && -n "${RELEASE_NOTES//[[:space:]]/}" ]]; then
+              echo "A changelog-backed resume reuses immutable Draft notes; leave release_notes empty" >&2
+              exit 1
+            fi
+          elif [[ "$RELEASE_MODE" == resume ]]; then
+            echo "Resuming a legacy candidate created before CHANGELOG.md"
+          else
+            echo "New Alpha candidates require CHANGELOG.md" >&2
+            exit 1
+          fi
 
       - name: Allocate shared release build number
         id: build_number
@@ -589,6 +619,13 @@ jobs:
           fi
 
           notes_path="$RUNNER_TEMP/android-release-notes.md"
+          changelog_path="$RUNNER_TEMP/changelog-release-notes.md"
+          candidate_changelog="$RUNNER_TEMP/candidate-CHANGELOG.md"
+          git show "$CANDIDATE_SHA:CHANGELOG.md" > "$candidate_changelog"
+          python3 tool/release/changelog.py \
+            --changelog "$candidate_changelog" \
+            --release-id "$RELEASE_ID" \
+            --output "$changelog_path"
           {
             echo "MeetTrace Android candidate \`$RELEASE_ID\` (not publicly installable yet)."
             echo
@@ -596,10 +633,18 @@ jobs:
             echo "Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
             echo "This Draft Release must remain unpublished until the matching iOS TestFlight candidate passes final verification."
-            if [[ -n "$RELEASE_NOTES" ]]; then
+            echo
+            echo '<!-- meettrace-public-notes:start -->'
+            echo "## 本版变化"
+            echo
+            cat "$changelog_path"
+            if [[ -n "${RELEASE_NOTES//[[:space:]]/}" ]]; then
+              echo
+              echo "## 补充说明"
               echo
               printf '%s\n' "$RELEASE_NOTES"
             fi
+            echo '<!-- meettrace-public-notes:end -->'
           } > "$notes_path"
 
           if gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
@@ -1469,12 +1514,25 @@ jobs:
         if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
-          TESTFLIGHT_CHANGELOG: ${{ inputs.release_notes }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
         run: |
           set -euo pipefail
-          if [[ -z "${TESTFLIGHT_CHANGELOG//[[:space:]]/}" ]]; then
-            export TESTFLIGHT_CHANGELOG="MeetTrace $RELEASE_ID"
+          notes_path="$RUNNER_TEMP/testflight-changelog.txt"
+          candidate_changelog="$RUNNER_TEMP/candidate-CHANGELOG.md"
+          git show "$CANDIDATE_SHA:CHANGELOG.md" > "$candidate_changelog"
+          python3 tool/release/changelog.py \
+            --changelog "$candidate_changelog" \
+            --release-id "$RELEASE_ID" \
+            --output "$notes_path"
+          if [[ -n "${RELEASE_NOTES//[[:space:]]/}" ]]; then
+            {
+              echo
+              echo "补充说明"
+              echo
+              printf '%s\n' "$RELEASE_NOTES"
+            } >> "$notes_path"
           fi
+          export TESTFLIGHT_CHANGELOG="$(cat "$notes_path")"
           bundle exec fastlane ios upload_testflight
 
       - name: Write release summary
@@ -2451,6 +2509,30 @@ jobs:
           path.write_text(body, encoding="utf-8")
           PY
           else
+            candidate_changelog="$RUNNER_TEMP/candidate-changelog.md"
+            draft_path="$RUNNER_TEMP/draft-release-notes.md"
+            version_notes_path=""
+            if git cat-file -e "$CANDIDATE_SHA:CHANGELOG.md" 2>/dev/null; then
+              version_notes_path="$RUNNER_TEMP/version-release-notes.md"
+              git show "$CANDIDATE_SHA:CHANGELOG.md" > "$candidate_changelog"
+              gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
+                --json body --jq .body > "$draft_path"
+              python3 tool/release/changelog.py \
+                --changelog "$candidate_changelog" \
+                --release-id "$RELEASE_ID" \
+                --draft-body "$draft_path" \
+                --output "$version_notes_path"
+            else
+              echo "Publishing a legacy candidate created before CHANGELOG.md"
+              if [[ -n "${RELEASE_NOTES//[[:space:]]/}" ]]; then
+                version_notes_path="$RUNNER_TEMP/version-release-notes.md"
+                {
+                  echo "## 补充说明"
+                  echo
+                  printf '%s\n' "$RELEASE_NOTES"
+                } > "$version_notes_path"
+              fi
+            fi
             testflight_line="- iOS TestFlight 外部测试链接：$TESTFLIGHT_URL"
             {
               echo "MeetTrace \`$RELEASE_ID\` Alpha 已完成 Android、iOS 与 Windows 候选验收。"
@@ -2467,11 +2549,9 @@ jobs:
               echo '需要在系统设置中允许当前来源“安装未知应用”。应用无登录和云同步，数据只保存在本机；卸载应用会删除本机数据。Alpha 升级可能清除旧数据并重新下载模型，首次启动约下载 286.3 MB 运行资源。'
               echo
               echo '如版本被撤回，发布说明会标记“已撤回，不建议安装”，已有资产和标签仍保留。'
-              if [[ -n "$RELEASE_NOTES" ]]; then
+              if [[ -n "$version_notes_path" ]]; then
                 echo
-                echo "## 补充说明"
-                echo
-                printf '%s\n' "$RELEASE_NOTES"
+                cat "$version_notes_path"
               fi
             } > "$notes_path"
           fi
