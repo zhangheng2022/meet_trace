@@ -110,16 +110,28 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @moreSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'More settings'**
+  String get moreSettingsTitle;
+
   /// No description provided for @backToMeetings.
   ///
   /// In en, this message translates to:
   /// **'Back to meetings'**
   String get backToMeetings;
 
+  /// No description provided for @appearanceLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance and language'**
+  String get appearanceLanguageTitle;
+
   /// No description provided for @languageSectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Language'**
+  /// **'App language'**
   String get languageSectionTitle;
 
   /// No description provided for @languageSaveFailedTitle.
@@ -179,7 +191,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceSectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Appearance'**
+  /// **'Appearance mode'**
   String get appearanceSectionTitle;
 
   /// No description provided for @themeSaveFailedTitle.
@@ -245,7 +257,7 @@ abstract class AppLocalizations {
   /// No description provided for @newMeetingTranscriptionModel.
   ///
   /// In en, this message translates to:
-  /// **'New meeting transcription model'**
+  /// **'Speech recognition engine'**
   String get newMeetingTranscriptionModel;
 
   /// No description provided for @reading.
@@ -257,7 +269,7 @@ abstract class AppLocalizations {
   /// No description provided for @modelLockDescription.
   ///
   /// In en, this message translates to:
-  /// **'Only affects future meetings. The model is locked after recording starts and never switches automatically.'**
+  /// **'Future meetings only; locked after recording starts—no automatic switching.'**
   String get modelLockDescription;
 
   /// No description provided for @recordingInputTitle.
@@ -335,7 +347,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineResourcesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Offline transcription resources'**
+  /// **'Local resources'**
   String get offlineResourcesTitle;
 
   /// No description provided for @readingOfflineResources.

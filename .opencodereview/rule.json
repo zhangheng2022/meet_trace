@@ -16,6 +16,7 @@
     "**/generatedpluginregistrant.*",
     "**/generated_plugins.cmake",
     "pubspec.lock",
-    "skills-lock.json"
+    "skills-lock.json",
+    ".impeccable/**"
   ]
 }

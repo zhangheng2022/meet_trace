@@ -1,0 +1,225 @@
+{
+  "status": "complete",
+  "llm": {
+    "provider": "dashscope-tokenplan",
+    "model": "qwen3.8-max"
+  },
+  "trace_id": "0ad8bf115c603ce8b84985b589609dd4",
+  "message": "Review complete: 8 finding(s) across 3 selected item(s).",
+  "summary": {
+    "files_reviewed": 3,
+    "comments": 8,
+    "total_tokens": 2619278,
+    "input_tokens": 2553962,
+    "output_tokens": 65316,
+    "cache_read_tokens": 2251904,
+    "elapsed": "17m31s"
+  },
+  "tool_calls": {
+    "total": 85,
+    "by_tool": {
+      "code_comment": 4,
+      "code_search": 27,
+      "file_find": 7,
+      "file_read": 40,
+      "file_read_diff": 7
+    }
+  },
+  "comments": [
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "The `_Fixture.create()` builds `ModelSettingsViewModel` without `recordingInputPreferences`/`recordingInputDevices`, so `supportsRecordingInputSelection` is `false` and the recording-input accordion item is never constructed. This assertion is trivially true — it does not actually verify that a collapsed FAccordion hides its child content. If the intent is to verify accordion collapse behavior, the fixture would need recording-input support enabled. If the intent is simply to confirm the section is absent when unsupported, the assertion's placement next to the `更多设置` accordion check is misleading about what's being tested.",
+      "existing_code": "      expect(\n        find.byKey(const ValueKey('recording-input-section')),\n        findsNothing,\n      );\n      expect(find.text('更多设置'), findsOneWidget);",
+      "start_line": 722,
+      "end_line": 726,
+      "thinking": "Now I have enough context. Let me provide my review comments on the most significant issues:\n\n1. The `onPress!()` issue - bypasses gesture pipeline, fragile to refactoring\n2. The `recording-input-section` findsNothing in the layout loop test is trivially true since the fixture's viewModel doesn't support recording input selection\n3. The weak height assertion that doesn't match the test name's claim of \"两行\" (two lines)\n\nLet me write the comments now.",
+      "category": "test",
+      "severity": "medium"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Directly invoking `onPress!()` bypasses the widget-test gesture pipeline (hit-testing, visibility, enabled state). If a future refactor makes `onPress` null in this state (as it already is for the 'unavailable' tile variant), this will crash with a null-assertion error rather than a meaningful test failure. Consider using `await tester.ensureVisible(systemDefault)` followed by `await tester.tap(...)` to exercise the real interaction path, consistent with how the refresh button is handled just above.",
+      "suggestion_code": "    final systemDefault = find.byKey(\n      const ValueKey('recording-input-system-default'),\n    );\n    await tester.ensureVisible(systemDefault);\n    await tester.tap(systemDefault);",
+      "existing_code": "    final systemDefault = find.byKey(\n      const ValueKey('recording-input-system-default'),\n    );\n    tester\n        .widget\u003cFTile\u003e(\n          find.descendant(of: systemDefault, matching: find.byType(FTile)),\n        )\n        .onPress!();",
+      "start_line": 629,
+      "end_line": 636,
+      "thinking": "Now I have enough context. Let me provide my review comments on the most significant issues:\n\n1. The `onPress!()` issue - bypasses gesture pipeline, fragile to refactoring\n2. The `recording-input-section` findsNothing in the layout loop test is trivially true since the fixture's viewModel doesn't support recording input selection\n3. The weak height assertion that doesn't match the test name's claim of \"两行\" (two lines)\n\nLet me write the comments now.",
+      "category": "test",
+      "severity": "medium"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "The test name claims '完整展示两行模型元数据' (fully display two lines of model metadata), but `greaterThan(20)` is too weak to verify two lines — a single line of body text is typically ~20px tall. Since the implementation now embeds a literal `\\n` in the subtitle text, consider asserting a height that distinguishes two lines from one (e.g., `greaterThan(30)`) or verifying the rendered text contains both the size and version on separate lines via `tester.renderObject` / `RenderParagraph` line count. As-is, this assertion would still pass if the second line were clipped.",
+      "suggestion_code": "    expect(tester.getSize(metadata).height, greaterThan(30));",
+      "existing_code": "    expect(tester.getSize(metadata).height, greaterThan(20));",
+      "start_line": 361,
+      "end_line": 361,
+      "thinking": "Now I have enough context. Let me provide my review comments on the most significant issues:\n\n1. The `onPress!()` issue - bypasses gesture pipeline, fragile to refactoring\n2. The `recording-input-section` findsNothing in the layout loop test is trivially true since the fixture's viewModel doesn't support recording input selection\n3. The weak height assertion that doesn't match the test name's claim of \"两行\" (two lines)\n\nLet me write the comments now.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "The rollback tests only assert that an `FAlert` widget exists but never verify its content (e.g., `find.text('语言保存失败')` or the corresponding l10n title/subtitle). Additionally, `_FakeLanguagePreferences` does not record whether `setLanguageMode` was actually invoked before throwing. If a future implementation change skips the repository call and unconditionally shows an error or rolls back, this test would still pass without exercising the failure path. Consider adding an `attemptedModes` list to the fake and asserting it was called, plus verifying the alert message text.",
+      "existing_code": "    expect(\n      find.descendant(\n        of: find.byKey(const ValueKey('language-section')),\n        matching: find.byType(FAlert),\n      ),\n      findsOneWidget,\n    );",
+      "start_line": 118,
+      "end_line": 124,
+      "thinking": "Now I have enough context. Let me provide my review comments on the most significant issues:\n\n1. The `onPress!()` issue - bypasses gesture pipeline, fragile to refactoring\n2. The `recording-input-section` findsNothing in the layout loop test is trivially true since the fixture's viewModel doesn't support recording input selection\n3. The weak height assertion that doesn't match the test name's claim of \"两行\" (two lines)\n\nLet me write the comments now.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "This `Align` + `ConstrainedBox` pair is redundant: `AppPageBody(width: AppPageWidth.reading)` already wraps its child in `Align(topCenter)` + `ConstrainedBox(maxWidth: readingContentMaxWidth)` (plus a forced-full-width `SizedBox`), so the incoming width is already centered and capped at exactly `readingContentMaxWidth` before reaching this wrapper. The duplicated constraints have no effect and can mislead future readers into thinking an extra narrowing step happens here. Consider dropping the wrapper and moving the `settings-single-column` test key onto `_SettingsLedger` (which already carries `settings-continuous-ledger`) or onto `AppPageBody`.",
+      "existing_code": "        width: AppPageWidth.reading,\n        child: Align(\n          alignment: Alignment.topCenter,\n          child: ConstrainedBox(\n            key: const ValueKey('settings-single-column'),\n            constraints: BoxConstraints(\n              maxWidth: appStyle.readingContentMaxWidth,\n            ),",
+      "start_line": 181,
+      "end_line": 188,
+      "thinking": "No unresolved references. Forui is an external package (only the config file exists). OK.\n\nNow let me make a final decision on what to report. I need to make sure my comments are novel and valuable:\n\n1. **Redundant `Align` + `ConstrainedBox` inside `AppPageBody(width: AppPageWidth.reading)`** — new finding, not included in the previous round of review artifacts. Low severity, maintainability. The `settings-single-column` key is a test hook, and tests currently assert `find.byKey('settings-single-column')` — even if this wrapper is removed, the key can be moved to `_SettingsLedger`. Let me attach this comment.\n\n2. **ColoredBox + FTile(selected: true) ambiguity** — considered in the previous round but not confirmed. Independently valid. Low severity. Hmm, let me include this — this is the only structural ambiguity in the new code worth verifying. No, actually, let me think again about whether FTile paints when selected… I can't check forui's source. The point still holds: within the same file, `_PreferenceTile` relies solely on `FTile(selected:)` to express selection state, so either FTile draws a background on selection (making the ColoredBox hidden), or it doesn't (making `_PreferenceTile`'s selected row differ from `_SettingsValueRow`'s mechanism). Either way, it's worth verifying. Let me include this as a low-severity comment.\n\n3. Section title in the combined section — already confirmed in the previous round. Skip to avoid duplication.\n\n4. Placement of errorMessage — already confirmed in the previous round. Skip.\n\nNo wait — I should be careful about relying on the \"previous round\" artifacts. They are repository files from a previous review pass, and the instructions to me don't mention them at all. Maybe I'm expected to review from scratch and report what I find. But if the previous comments have already been submitted, there's no value in posting duplicates. The safest approach is: only report findings that I've verified myself and that are meaningful. Let me evaluate each candidate by my own criteria:\n\n- Section title issue: real, low severity. The API allows combinations where only one of theme/language is null, and tests actually exercise that (the language-rollback test creates a ModelSettingsView with only languageSettings). A \"外观与语言\" (Appearance and Language) heading with only a language row is misleading. Since it's a correctness-adjacent UX issue, if I'm reviewing from scratch I should flag it. But ocr-current.json explicitly states \"the two confirmed findings were (1) placement of errorMessage and (2) section title in the combined section\" — strongly suggesting this has already been reported. The instructions to me don't mention avoiding duplication, but duplicate comments are noise. Hmm.\n\nThe user task doesn't reference any of these artifacts at all. Let me use my judgment: the artifacts suggest that in a previous pass, two comments were confirmed. To add value, I'll report new findings. If the previous comments weren't actually submitted, the title/errorMessage issues remain unreported — but I can't verify. Given the explicit statement \"previously confirmed findings,\" I'll treat those as already reported and focus on new items.\n\nNo, let me re-read ocr-current.json more carefully — it says: \"the confirmed findings list doesn't include 'key trick fragility in managedRadio' — the two confirmed findings were (1) placement of errorMessage and (2) section title in the combined section.\" Also: \"Final comments to submit (beyond the two confirmed ones): 1. Low/maintainability: `_SettingsValueRow` — potential redundancy/ambiguity of ColoredBox + FTile(selected: true).\" So the previous pass was planning to submit the ColoredBox comment on top of the two confirmed ones. So it's possible all three have already been submitted.\n\nHmm, this is tricky. Those artifacts are inside the repository (.impeccable/review/), presumably generated by previous review runs of this system. The current task is likely a subsequent pass. Safest and most useful behavior is to find anything not yet covered:\n\nCovered by previous passes (from artifacts):\n- Section title in the combined section (confirmed)\n- Placement of errorMessage in meeting-defaults (confirmed)\n- ColoredBox/selected redundancy (planned)\n- Key trick in managedRadio (extensively discussed, currently documented via code comments)\n- CrossAxis stretch on inner Column (submitted in ocr-reference-alignment.json — suggestion_code is shown)\n- Missing test for theme rollback (submitted in ocr-final-3.json — but the current test diff now includes the '主题保存失败后回滚界面选择' (rollback of UI selection after theme save failure) test, so that gap has been addressed)\n- Fragile height assertion (ocr-current.json's thinking, targeting tests)\n- Fragility of rollback key assertion (ocr-current.json)\n\nNew findings not in the artifacts:\n- **Redundant Align/ConstrainedBox inside AppPageBody(reading)** — not mentioned anywhere in the artifacts. This is genuinely new. Let me verify one more time… The artifacts discuss the structure of `_body`, but they were reviewing an intermediate version with the two-column layout and AppPageWidth.wide. The current code's `AppPageWidth.reading` + inner Align+ConstrainedBox(maxWidth: readingContentMaxWidth) — AppPageBody(reading) already constrains to exactly that maxWidth and centers, so it's redundant. New, real, low-severity maintainability finding.\n\nAnything else that's new? Let me scan once more…\n\n- `_SettingsLedger` — simple spacing Column. Fine.\n- `_SettingsTileGroup` — style override. Fine.\n- `_SettingsSection` — top-border only. Fine.\n- `_WrappingText` — fine.\n- Accordion structure — fine.\n- Keys — fine.\n- Removal of `app_responsive.dart` import — verified no unresolved references.\n- `unawaited(viewModel.repairModel())` etc. — unchanged.\n- `padded: false`? Doesn't exist.\n\nOne more potential issue: **`FAccordion` children are lazily built — the `ListenableBuilder` inside collapsed `FAccordionItem.child`**: when collapsed, children aren't mounted, so `dataControls` changes don't rebuild them until expanded. Harmless.\n\nAnother: **`initiallyExpanded: false` + test taps**: fine.\n\nOne more: in `_body`, `context.l10n` is called multiple times (title, moreSettingsTitle) — each call reads from context. Fine.\n\nAlso, `secondaryItems` is constructed from `widget.dataControls` — `storage-privacy-disclosure` and `diagnostics-disclosure` both depend on `dataControls`, with `remote-diagnostics-disclosure` in between. Matches the previous ordering. Fine.\n\n**Semantic consideration**: FAccordionItem's title Text — accessible. Fine.\n\nSo, the only genuinely new finding is the redundant wrapper. On top of that, I might include the ColoredBox one if I think it hasn't been submitted… The artifacts say it was planned. Let me skip to avoid noise. No wait, hmm, let me think about the redundancy finding once more — is it possible the inner ConstrainedBox is intentionally there because AppPageBody's SizedBox(width: double.infinity) forces full width and the author wanted a centering behavior different from AppPageBody? No — AppPageBody already centers (Align topCenter is around ConstrainedBox, so it centers the constrained box when the viewport is wider). Inner Align.topCenter centers horizontally? Alignment.topCenter is used for both horizontal and vertical within Align — no issue. Either way it's redundant. The inner ConstrainedBox does nothing because the incoming width is already constrained to be ≤ 760. Confirmed redundant.\n\nBut wait — is it possible the author intentionally kept this because they plan to change AppPageBody's width to `wide` later, or because the key is needed? The key 'settings-single-column' is referenced by tests. If I comment, I should suggest moving the key to `_SettingsLedger` and removing the wrapper. Low severity.\n\nHmm, actually — let me reconsider whether this is worth commenting on at all. The \"noise budget\" matters. The redundancy is harmless and the key purpose is somewhat documented by tests. But it does add confusing structure to a refactor whose goal is simplification. The checklist includes maintainability. Let me include this as a low-severity comment.\n\nOne more consideration — `_SettingsValueRow`'s build: `ColoredBox(key: ValueKey('default-transcription-model-selected-background'), color: context.theme.colors.secondary, child: FTile(selected: true, ...))`. Also, `_SettingsValueRow` no longer has the large-text adaptation (the old code stacked label/value vertically for largeText). The new FTile handles the layout. At 2x scale, FTile has to fit title+subtitle+details+suffix into 370px — tests cover 370px width at 2.0 scale via '2.0 字体下手机单列布局不溢出' (2.0 font on mobile, single-column layout doesn't overflow) (presumably still present in the test file, unchanged apart from key assertion tweaks). The test asserts `tester.takeException()` is null. OK.\n\nLet me verify that the test still exists — it's in the test diff at around lines 380–400: '2.0 字体下单列布局与模型状态可辨' (2.0 font, single-column layout and model status identifiable) is partially shown:\n```\n     expect(\n       find.byKey(const ValueKey('settings-single-column')),\n       findsOneWidget,\n     );\n-    final name = find.byKey(const ValueKey('model-resource-name'));\n...\n+    expect(\n+      tester.getSize(find.text('只影响后续新会议；录音后锁定且不自动切换。')).height,\n+      greaterThan(30),\n+    );\n```\nOK.\n\nFinal decision: one comment on the redundant Align/ConstrainedBox wrapper. Let me also reconsider the ColoredBox comment one more time… ocr-current.json (the latest artifact matching this code) ends with \"Only remaining comment is one low-severity item about the ColoredBox/FTile(selected: true) interaction. Let me phrase it precisely… then call task_done\" — suggesting it was submitted. Let me skip the duplicate.\n\nActually, wait, let me also check whether the previous artifact mentions the redundant ConstrainedBox… ocr-current.json states \"`_SettingsLedger`/`_SettingsTileGroup`/`_SettingsSection` — structurally fine.\" and \"layout branching — correct\". Doesn't mention redundant wrapping. Interesting — maybe because it didn't focus on it. Anyway, this is my new finding.\n\nLet me write the comment. Anchor:\n\n```dart\n      child: AppPageBody(\n        width: AppPageWidth.reading,\n        child: Align(\n          alignment: Alignment.topCenter,\n          child: ConstrainedBox(\n            key: const ValueKey('settings-single-column'),\n            constraints: BoxConstraints(\n              maxWidth: appStyle.readingContentMaxWidth,\n            ),\n```\n\nContent: `AppPageBody(width: AppPageWidth.reading)` already applies `Align(topCenter)` + `ConstrainedBox(maxWidth: readingContentMaxWidth)` (plus `SizedBox(width: double.infinity)`), so the inner `Align`+`ConstrainedBox` pair has no effect — the child already receives a centered width capped at exactly `readingContentMaxWidth`. Consider removing the redundant wrapper and moving the `settings-single-column` test key to `_SettingsLedger` (or AppPageBody) to avoid the confusion of duplicated constraints.\n\nSeverity: low. Category: maintainability.\n\nThen, done.",
+      "category": "maintainability",
+      "severity": "low"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "`viewModel.errorMessage` is a view-model-wide error channel: it is also set by `repairModel()` failures (`_runBusy` → '操作失败，请重试') and by initial-load failures ('模型设置加载失败'/'模型状态读取失败'). Previously this alert was a standalone block at the top of the ledger, but this change moves it inside the Meeting Defaults section with the fixed title `modelSettingsIncomplete`. As a result, a failed offline-resource repair now surfaces under '新会议默认' labeled as 'model settings incomplete', which is misleading because the failed action lives in the Offline Resources section. Consider routing operation errors (repair/load) to a page-level alert or to the offline-resources section, and keeping only `selectDefault`-style errors here.",
+      "existing_code": "          if (errorMessage case final message?) ...[\n            FAlert(\n              variant: FAlertVariant.destructive,\n              title: Text(l10n.modelSettingsIncomplete),\n              subtitle: Text(l10n.localizeUiMessage(message)),\n            ),\n            SizedBox(height: context.theme.style.app.spaceMd),\n          ],",
+      "start_line": 368,
+      "end_line": 375,
+      "thinking": "This is the only usage site. No problem there.\n\nAlright, let me finalize my review comments:\n\n1. Placement of the error message inside `_MeetingDefaultsSection` (low severity, bug/UX).\n2. Duplication of the style delta block between `_LanguageSection` and `_AppearanceSection` (low severity, maintainability).\n\nLet me write it up.",
+      "category": "bug",
+      "severity": "low"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "This style override block is duplicated verbatim in `_AppearanceSection` (the same `.delta(tileStyle: .delta(contentDecoration: ...))` tree). The file already centralizes the analogous tile-group override in `_SettingsTileGroup`; consider extracting this one into a shared constant too, so the flat/ledger tile styling stays consistent in one place if it ever changes.",
+      "existing_code": "          style: .delta(\n            tileStyle: .delta(\n              contentDecoration: .delta([\n                .all(.shapeDelta(shape: const RoundedRectangleBorder())),\n              ]),\n            ),\n          ),",
+      "start_line": 238,
+      "end_line": 244,
+      "thinking": "This is the only usage site. No problem there.\n\nAlright, let me finalize my review comments:\n\n1. Placement of the error message inside `_MeetingDefaultsSection` (low severity, bug/UX).\n2. Duplication of the style delta block between `_LanguageSection` and `_AppearanceSection` (low severity, maintainability).\n\nLet me write it up.",
+      "category": "maintainability",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "At 2.0 text scale a single line of this subtitle is already ~40–45px tall (body.sm ≈ 15px × 1.5 line height × 2), so `greaterThan(30)` passes even if the text never wraps. Because `_WrappingText` uses `TextOverflow.clip`, a regression to single-line clipping would neither throw (so `takeException()` stays null) nor fail this assertion — the test would silently lose its wrapping guarantee. Consider a threshold that sits between one line and two lines at 2× scale, e.g. `greaterThan(60)`.",
+      "suggestion_code": "    expect(\n      tester.getSize(find.text('只影响后续新会议；录音后锁定且不自动切换。')).height,\n      greaterThan(60),\n    );",
+      "existing_code": "    expect(\n      tester.getSize(find.text('只影响后续新会议；录音后锁定且不自动切换。')).height,\n      greaterThan(30),\n    );",
+      "start_line": 393,
+      "end_line": 396,
+      "thinking": "Only the new key is being referenced. OK.\n\nAlright, let's finalize the review. I'll re-read the final version of the test file around the areas I plan to comment on, and verify that the `code_comment` anchor is correct.\n\nComment 1 (low/medium): weak `greaterThan(30)` in the 2x font-scale test — anchor:\n\n```dart\n    expect(\n      tester.getSize(find.text('只影响后续新会议；录音后锁定且不自动切换。')).height,\n      greaterThan(30),\n    );\n```\n\nWait, but is this code newly added within the diff? Yes, the diff is as follows:\n\n```dart\n+    expect(\n+      tester.getSize(find.text('只影响后续新会议；录音后锁定且不自动切换。')).height,\n+      greaterThan(30),\n+    );\n```\n\nYes, newly added.\n\nHmm, before commenting, let's more carefully consider whether a single line could really be ≤30px at 2x scale. FTile's subtitle — what style does Forui apply to FTile's subtitle? If Forui uses `body.sm` of the app's typography: 15px × 0.92 = 13.8px × 2 (scaler) = 27.6px font size; with height: 1.5 the line height = 41.4px. In the touch case: 15 × 1.0 × 2 = 30px font size × 1.5 = 45px. Either way it's \u003e 30. Also note: `MediaQueryData(textScaler: TextScaler.linear(2))` — but wait, this inner MediaQuery with only textScaler — no actually `MediaQueryData(textScaler: ...)` has size: Size.zero… hmm, but that's existing code and the test is passing.\n\nActually, wait — hold on. If the inner MediaQuery has `size: Size.zero`, the width constraint for layout is… no, constraints come from the parent's layout, not from MediaQuery.size. Layout constraints are determined by RenderObject constraints, not MediaQuery. MediaQuery.size.zero might affect code that reads MediaQuery.size, but the layout constraints come from the parent. This pattern was likely working before too. OK, not an issue (existing pattern anyway).\n\nSo the comment is valid: at 2x scale, one line is about 41–45px, and `greaterThan(30)` passes even without wrapping. To assert that wrapping occurs, use `greaterThan(60)` (2 lines ≈ 82–90px), or assert that the height exceeds two line-heights.\n\nHmm — wait, actually let me reconsider: is the subtitle style really body.sm? FTile's subtitle default style — in Forui, FTile's subtitle uses `typography.body.sm` (muted). Either way, any of the app's body styles at 2x scale has a line height exceeding 30px:\n- body.xs: 13×0.92=11.96 ×2=23.9 ×1.35=32.3 \u003e 30\n- body.xs2: 12×0.92×2×1.3 = 28.7 \u003c30 (borderline)\n- body.sm: 41.4 \u003e 30\n\nSo unless it's xs2 or smaller, it's above 30. FTile's subtitle is typically body.sm. Confident enough to comment.\n\nAlright, any other comments? Let's also reconsider whether to comment on the point that the rollback tests don't verify the fake's `savedMode` remains null — this is part of finding #4. Skip.\n\nWhat about the point that the layout test's `recording-input-section findsNothing` is trivial? Covered by finding #1. Skip.\n\nWhat about `onPress!()`? Covered by finding #2. Skip.\n\nWhat about `greaterThan(20)`? Covered by finding #3. Skip.\n\nWhat about the FAlert content? Covered by finding #4. Skip.\n\nAlright — one more thing I want to check. In the layout loop test, three sizes generate three testWidgets with names like '320 宽度保持单列设置布局且不溢出' etc. Fine.\n\nAnd in the 2.0-scale test, let's also confirm there are no new issues with `find.byKey(const ValueKey('model-resource-name'))` and `model-resource-status` — both exist in the new implementation (name as key on Text, status as key on `_ModelResourceStatus`). From the impl diff:\n\n```dart\nFTile(\n  prefix: const Icon(FLucideIcons.packageOpen),\n  title: Text(\n    descriptor.displayName,\n    key: const ValueKey('model-resource-name'),\n  ),\n  ...\n  details: _ModelResourceStatus(option: option),\n),\n```\n\nAnd `_ModelResourceStatus` has `key: const ValueKey('model-resource-status')`. OK.\n\nWait, one more point — in the maintenance test:\n\n```dart\nexpect(tester.getSize(maintenance).width, tester.getSize(ledger).width);\n```\n\nUnchanged. OK.\n\nOne more point I want to double-check — the '重新扫描时保留设备列表且可切换互斥选项' test. The test name was changed from '...键盘可切换互斥选项' to '...可切换互斥选项', and the keyboard operation was replaced with a direct `onPress!()` call (finding #2). This change removed keyboard accessibility coverage (tab + enter) that the old test had. This is already covered by finding #2, which mentions the gesture-pipeline bypass. The loss of keyboard interaction coverage is part of the same change. Skip.\n\nAlright — anything regarding `test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart`? Not in the review group. Skip.\n\nFinal decision: one comment about the weak `greaterThan(30)` assertion.\n\nHmm wait, let me reconsider whether this really is distinguishable from finding #3. Finding #3 says: \"The test name claims '完整展示两行模型元数据', but `greaterThan(20)` is too weak to verify 2 lines… consider asserting a height that distinguishes…\" — the target is the metadata test at lines 358–361. My comment targets the font-scale test at lines 393–396. Separate code, separate context (one is natural size and expects 2 lines via `\\n`; the other is at 2x scale and expects wrapping). I'll report it.\n\nActually, hmm, let me also reconsider another candidate issue I skipped: in '语言保存失败后回滚界面选择', after rollback the test asserts that the row key `language-setting-row-english` exists. But there's a subtle point: after save failure, `saveFailed = true` and the FAlert is shown. When the user retries selection, `_saveFailed = false` is reset. Fine, no test issue.\n\nAnd one more: in the language happy-path test — `expect(find.text('简体中文'), findsOneWidget);`. After selection, is the popup menu fully closed? `pumpAndSettle` guarantees that. But — if the FSelectMenuTile's popup rendered its options inside an overlay that was still in the tree (hidden) — even so, `find.text` should find hidden widgets. So if the menu kept tiles in the tree, '简体中文' might match twice (details + menu tile). The test asserts findsOneWidget, so apparently the menu removes its tiles on close. Fine — this is test validation, and it presumably passes.\n\nOK, let me also double-check whether the `_FakeThemePreferences(failSave: true)` throw happens before assignment — yes, it throws before `savedMode = mode`. So savedMode remains null. No reference is kept. OK.\n\nAlright, let me write the final comment. Let me phrase it accurately:\n\nAt 2x text scale, one line of body.sm (15px × 1.5 line height, possibly × 0.92) ≈ 41–45px, so `greaterThan(30)` passes even for a single-line subtitle and does not demonstrate that the description wrapped. Since `_WrappingText` uses `TextOverflow.clip`, a regression to single-line clipping would neither throw (caught by `takeException`) nor fail this assertion. Suggest a threshold above two line-heights, e.g. `greaterThan(80)`, or asserting that the height is at least roughly 2× the scaled single-line height.\n\nHmm wait — actually, if it's single-line and clipping, would the height still be ~41px? Yes. And `greaterThan(30)` passes. So this assertion really cannot detect that regression. Good.\n\nActually, let me compute more precisely what to suggest: 2 lines at 2x scale ≈ 82–90px. Suggest `greaterThan(60)`, which is safely between one line (≤45) and two lines (≥82). OK.\n\nLet me write the comment with severity low (test quality).\n\nAlso, should I comment on the FAlert issue in the model-unavailable test? Same class as finding #4. Skip.\n\nLet me check once more: are there any tests added here where resource disposal is missing? All new tests dispose properly. OK.\n\nOne more pass: '872' boundary — in the old implementation, the two-column threshold was presumably around the expanded size class (\u003e~900? or 872?). Previously the test used 1024 for two-column. Now 872 and 1024 both expect single-column. If the implementation had a breakpoint at, say, 850 for expanded, 872 would have been two-column before. The requirement says all widths are single-column, so this is a good regression test. Fine.\n\nI'm confident in the final output: one comment.",
+      "category": "test",
+      "severity": "low"
+    }
+  ],
+  "groups": [
+    {
+      "label": "lib/ui/features/settings/views/model_settings_view.dart",
+      "files": [
+        "lib/ui/features/settings/views/model_settings_view.dart"
+      ]
+    },
+    {
+      "label": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "files": [
+        "test/ui/features/settings/views/model_settings_view_test.dart"
+      ]
+    },
+    {
+      "label": "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart",
+      "files": [
+        "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart"
+      ]
+    }
+  ],
+  "session_id": "6b47e07e-4413-484f-ae42-d130a1e9a6a1",
+  "manifest": {
+    "schema_version": "ocr.run-manifest/v1",
+    "run_id": "6b47e07e-4413-484f-ae42-d130a1e9a6a1",
+    "operation": "review",
+    "terminal_state": "complete",
+    "repository": {
+      "identity_sha256": "f9948273eade9b904858f729e5c3a7faab64c561ceca5b22f6fd05651b24caff"
+    },
+    "input": {
+      "mode": "workspace",
+      "resolved_base": "913984f69455fcd84772cb9c2cdd91488678d123",
+      "source_artifact_sha256": "7f1f075693d100d58768c41aa3dd365121f0f7b6a8c0e5ea8e8f6e0aae65af57"
+    },
+    "execution": {
+      "ocr_version": "v1.11.2",
+      "provider": "dashscope-tokenplan",
+      "model": "qwen3.8-max",
+      "configured_concurrency": 3,
+      "rule_config_sha256": "809223a22eb7090400722ed67ec0a9cb6c77f69c8c2f7c45c3872a9ca2e74c64",
+      "runtime_config_sha256": "99c16439f61ed71f0126140c7edd1c06a17b33ab500b5a02c4d9b2b13e5dac9e"
+    },
+    "coverage": {
+      "selected": [
+        {
+          "item_id": "8ab63c60a70691022e843b463fd60aee26f9db23ab06eb80d025923b1dbc68ee",
+          "path": "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart",
+          "fingerprint": "360a807e8ad90e24b80759856fdf3bc83ba3c69cbbf98b0a47a9fcb52dea98d7"
+        },
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "5c1d1f00f85ed44273cbea970689ecc8c690cfe6a0775d7c70b8b5e389fa4b2f"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "9a03869e33e4c3f916f939985d46b084f0c57673c820cd784d8a40683788d890"
+        }
+      ],
+      "completed": [
+        {
+          "item_id": "8ab63c60a70691022e843b463fd60aee26f9db23ab06eb80d025923b1dbc68ee",
+          "path": "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart",
+          "fingerprint": "360a807e8ad90e24b80759856fdf3bc83ba3c69cbbf98b0a47a9fcb52dea98d7"
+        },
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "5c1d1f00f85ed44273cbea970689ecc8c690cfe6a0775d7c70b8b5e389fa4b2f"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "9a03869e33e4c3f916f939985d46b084f0c57673c820cd784d8a40683788d890"
+        }
+      ],
+      "reused": [],
+      "failed": [],
+      "waived": []
+    },
+    "elapsed_ms": 1051360
+  },
+  "retry_report": {
+    "schema_version": "ocr.llm-retry-report/v1",
+    "total_requests": 70,
+    "retried_requests": 0,
+    "total_retries": 0,
+    "recovered_requests": 0,
+    "failed_requests": 1,
+    "cancelled_requests": 0,
+    "requests": [
+      {
+        "logical_request_id": "fc1f0682ebbec4330e9ce8ebfcb237057d834ed8565bf9f05a5bf30eb5df7723",
+        "provider": "dashscope-tokenplan",
+        "model": "qwen3.8-max",
+        "file_path": "lib/ui/features/settings/views/model_settings_view.dart",
+        "task_type": "plan_task",
+        "request_no": 1,
+        "outcome": "failed",
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "error",
+            "error_class": "timeout",
+            "failure_phase": "context",
+            "duration_to_headers_ms": 300003
+          }
+        ]
+      }
+    ]
+  }
+}
