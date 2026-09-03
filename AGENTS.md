@@ -52,4 +52,4 @@ Domain 不导入 data；UI 不直连 ONNX、存储或 HTTP。ASR 统一走 `AsrE
 
 ## graphify
 
-用户输入 `/graphify` 时使用已安装技能。若 `graphify-out/graph.json` 存在，代码库问题优先 `graphify query`，关系用 `graphify path`，概念用 `graphify explain`；广泛导航读 `graphify-out/wiki/index.md`。图输出脏文件正常，仅在图过时/错误或用户禁用时跳过；修改代码后运行 `graphify update .`。
+处理代码库导航、调用链、依赖关系或架构问题时，优先使用 Graphify。若 `graphify-out/graph.json` 存在，代码库问题优先 `graphify query`，关系用 `graphify path`，概念用 `graphify explain`；广泛导航读 `graphify-out/wiki/index.md`。用户输入 `/graphify` 时强制使用。图输出脏文件正常，仅在图过时、错误或用户明确禁用时跳过；修改代码后运行 `graphify update .`。
