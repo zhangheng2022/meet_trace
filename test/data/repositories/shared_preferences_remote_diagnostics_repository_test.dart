@@ -6,21 +6,18 @@ import 'package:shared_preferences_platform_interface/shared_preferences_platfor
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  test('首次安装默认开启且告知未关闭', () async {
+  test('首次安装默认开启', () async {
     final repository = SharedPreferencesRemoteDiagnosticsRepository();
 
     expect(await repository.getEnabled(), isTrue);
-    expect(await repository.getNoticeDismissed(), isFalse);
   });
 
-  test('持久化退出选择和一次性告知状态', () async {
+  test('持久化退出选择', () async {
     final repository = SharedPreferencesRemoteDiagnosticsRepository();
 
     await repository.setEnabled(false);
-    await repository.setNoticeDismissed();
 
     expect(await repository.getEnabled(), isFalse);
-    expect(await repository.getNoticeDismissed(), isTrue);
 
     await repository.setEnabled(true);
 
@@ -36,16 +33,7 @@ void main() {
     expect(await repository.getEnabled(), isFalse);
   });
 
-  test('告知状态存在非布尔异常值时按未告知处理', () async {
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      'remote_diagnostics_notice_dismissed': 'legacy-value',
-    });
-    final repository = SharedPreferencesRemoteDiagnosticsRepository();
-
-    expect(await repository.getNoticeDismissed(), isFalse);
-  });
-
-  test('平台拒绝写入时两个保存入口都显式失败', () async {
+  test('平台拒绝写入时保存入口显式失败', () async {
     final previousStore = SharedPreferencesStorePlatform.instance;
     addTearDown(() {
       SharedPreferencesStorePlatform.instance = previousStore;
@@ -56,7 +44,6 @@ void main() {
     final repository = SharedPreferencesRemoteDiagnosticsRepository();
 
     await expectLater(repository.setEnabled(false), throwsStateError);
-    await expectLater(repository.setNoticeDismissed(), throwsStateError);
   });
 }
 

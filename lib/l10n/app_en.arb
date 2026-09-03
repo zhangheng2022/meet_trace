@@ -75,8 +75,6 @@
   "remoteDiagnosticsEnabled": "Allow anonymous error and performance diagnostics",
   "remoteDiagnosticsDescription": "On by default. Turning it off stops new errors, performance traces, and metrics. Cached or uploaded data cannot be recalled; Windows native crash handling is fully off by the next launch at the latest.",
   "remoteDiagnosticsSaveFailed": "The setting was not applied. This screen was restored; the next launch uses the value saved on this device.",
-  "remoteDiagnosticsNoticeTitle": "Anonymous remote diagnostics are on by default",
-  "remoteDiagnosticsNoticeDescription": "MeetTrace sends scrubbed errors and performance data, never recordings or transcripts. You can turn this off in Settings; cached or uploaded data cannot be recalled.",
   "gotIt": "Got it",
   "diagnosticsTitle": "Diagnostics",
   "diagnosticsShareSubject": "MeetTrace diagnostics",
