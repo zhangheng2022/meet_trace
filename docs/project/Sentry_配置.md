@@ -12,9 +12,9 @@
 - Android 采集原生崩溃、ANR、Android 12+ Tombstone 和卡帧；iOS 采集原生崩溃、App Hang、Watchdog 和卡帧；Windows x64 使用 Crashpad 原生崩溃/minidump。三平台启动阶段统一使用 Dart Span；为先读取退出开关，不承诺需要在 Flutter Binding 前初始化的自动原生 App Start。
 - Production 禁用 Profiling；仅 iOS 受控 `development` 诊断构建可显式启用。所有平台禁用 Replay、结构化日志、业务分析指标、截图、View Hierarchy、用户交互追踪、用户反馈和附件。
 
-## 告知与开关
+## 开关
 
-- 首次安装在 Sentry 最早初始化的同一首屏展示一次可关闭的非阻断告知；设置页开关默认开启并仅保存在本机。
+- 首页不展示 Sentry 告知；设置页说明采集边界，开关默认开启并仅保存在本机。
 - 后续启动先读取开关。关闭或读取异常时本次进程不初始化，读取异常不得覆盖已有退出选择或阻断本地启动；运行中关闭立即停止应用侧新事件、Tracing、Metrics 和当前窗口，且不回填。
 - 已交给 SDK、进入原生缓存或上传的数据不能保证撤回。Windows 原生 Crashpad 最迟在下次启动时完全关闭；文案必须披露该边界。
 - 重新开启后立即恢复错误监控，并从下一个 60 秒边界重新抽样性能会话。
@@ -84,5 +84,5 @@ dart run sentry_dart_plugin
 1. 验证三平台候选默认开启、Debug/Profile 默认关闭，以及缺失生产配置会阻断。
 2. 分别注入 Dart 未处理异常和平台支持的原生故障，核对统一 `release/dist` 与符号栈。
 3. 验证 20% 进程级一次抽样、主流程 Span、录音 60 秒窗口、`SentryHttpClient` HTTP 脱敏和最多 100 条 Breadcrumb。
-4. 验证首次告知、默认开启开关、运行中关闭/重开、不回填及 Windows 下次启动完全关闭。
+4. 验证首页不展示 Sentry 告知、设置页披露、默认开启开关、运行中关闭/重开、不回填及 Windows 下次启动完全关闭。
 5. 审计 Android/iOS 最多 10 个离线 Envelope、Windows 在线失败即丢与 Crashpad 补传、最终入库字段、IP/PII 清洗、保留期和故障不影响录音。受控验证完成后删除人工测试 Issue。

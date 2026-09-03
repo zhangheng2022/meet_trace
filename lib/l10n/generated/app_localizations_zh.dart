@@ -228,13 +228,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get remoteDiagnosticsSaveFailed => '设置未应用，已恢复本次显示；下次启动以本机保存值为准。';
 
   @override
-  String get remoteDiagnosticsNoticeTitle => '匿名远程诊断默认开启';
-
-  @override
-  String get remoteDiagnosticsNoticeDescription =>
-      '会迹会发送脱敏错误与性能信息，不发送录音或转录。可随时在设置中关闭；已缓存或上传的数据不能撤回。';
-
-  @override
   String get gotIt => '知道了';
 
   @override

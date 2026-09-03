@@ -37,7 +37,6 @@ Future<void> main() async {
       home: MeetTraceBootstrap(
         themeMode: themeMode,
         languageMode: languageMode,
-        remoteDiagnosticsPreferences: remoteDiagnostics,
       ),
       navigatorObservers: sentryConfiguration.enabled
           ? createSentryNavigatorObservers()
