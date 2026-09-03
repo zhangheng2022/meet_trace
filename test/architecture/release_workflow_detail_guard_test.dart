@@ -40,7 +40,7 @@ void main() {
       expect(setupCount, greaterThan(0));
       expect(versionFileCount, setupCount);
       expect(workflows, isNot(contains('subosito/flutter-action@')));
-      expect(fvm['flutter'], '3.47.1');
+      expect(fvm['flutter'], '3.47.2');
       expect(workflows, isNot(contains('channel: stable')));
       expect(workflows, isNot(contains('runs-on: ubuntu-latest')));
       expect(workflows, isNot(contains('runs-on: macos-latest')));
