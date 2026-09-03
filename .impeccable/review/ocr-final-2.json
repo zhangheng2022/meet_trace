@@ -1,0 +1,176 @@
+{
+  "status": "complete",
+  "llm": {
+    "provider": "dashscope-tokenplan",
+    "model": "qwen3.8-max"
+  },
+  "trace_id": "4d9c022d08da86fc8258ef229dc04f8d",
+  "message": "Review complete: 5 finding(s) across 2 selected item(s).",
+  "summary": {
+    "files_reviewed": 2,
+    "comments": 5,
+    "total_tokens": 2131102,
+    "input_tokens": 2059345,
+    "output_tokens": 71757,
+    "cache_read_tokens": 1856512,
+    "elapsed": "20m28s"
+  },
+  "tool_calls": {
+    "total": 99,
+    "by_tool": {
+      "code_comment": 3,
+      "code_search": 37,
+      "file_find": 12,
+      "file_read": 43,
+      "file_read_diff": 4
+    }
+  },
+  "comments": [
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Test coverage gap: the trailing-value assertions here (and in the theme test) only exercise the success path. The stated purpose of the new `language-setting-row-${selectedMode.name}` / `appearance-setting-row-${selectedMode.name}` keys is to rebuild `managedRadio` so the UI selection state stays in sync when an async save fails and the view model rolls back (`languageMode.value = previous`). No widget-level test exercises that failure path — `_FakeLanguagePreferences`/`_FakeThemePreferences` never throw, and rollback is only covered at the view-model level. If someone later removes the mode from those keys, the rolled-back radio/detail state would silently desync and no test would catch it. Consider adding a variant where the fake repository throws, then asserting the trailing detail reverts (e.g. back to 'English'/'跟随系统') and the language section's `saveFailed` FAlert appears.",
+      "existing_code": "    expect(languageMode.value, AppLanguageMode.simplifiedChinese);\n    expect(languagePreferences.savedMode, AppLanguageMode.simplifiedChinese);\n    expect(find.text('语言'), findsOneWidget);\n    expect(find.text('简体中文'), findsOneWidget);",
+      "start_line": 69,
+      "end_line": 72,
+      "thinking": "Confirmed — no widget test references the rollback path via a failing fake. `_FakeLanguagePreferences` and `_FakeThemePreferences` never throw, so no widget test at all has exercised the rollback scenario through the new selection menu.\n\nOverall assessment of the test file changes:\n\n1. Language test update — correct: the initial mode `english` matches the key `language-setting-row-english`; after selection, the trailing '简体中文' assertion matches `languageSimplifiedChinese` in zh. ✓\n2. Appearance test update — correct: the initial mode `system` matches `appearance-setting-row-system`; the collapsed-state assertion (`findsNothing`) matches the new FSelectMenuTile design; the trailing '深色' after selection. ✓\n3. New error display test — correct: no installation → `selectDefault` synchronously sets errorMessage → ListenableBuilder rebuilds → FAlert inside `meeting-defaults-section`. ✓\n4. Responsive ledger keys — correct against `wideLayoutMinWidth = 840` (pinned in theme_test) and against the fixture's non-null dataControls. ✓\n\nIssues to raise:\n1. (test, medium) No widget-level test for the async save-failure rollback — the rebuild mechanism via key change ('...setting-row-${mode.name}') and the language `saveFailed` FAlert are untested at the widget level.\n2. (maintainability, low) The hardcoded `840` is duplicating `wideLayoutMinWidth`. Could branch on `dimensions.$2` instead.\n\nGoing to raise both, then done.",
+      "category": "test",
+      "severity": "medium"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Minor: `840` duplicates the theme constant `AppStyle.wideLayoutMinWidth`. The tuple already encodes which layout is expected via `dimensions.$2`, so the branch could key off that instead of re-stating the breakpoint, e.g. `if (dimensions.$2 == const ValueKey('settings-two-column'))`. This avoids a magic number that could silently diverge from the actual layout threshold if `wideLayoutMinWidth` ever changes.",
+      "existing_code": "      if (dimensions.$1.width \u003c 840) {\n        expect(\n          find.byKey(const ValueKey('settings-continuous-ledger')),\n          findsOneWidget,\n        );\n      } else {",
+      "start_line": 579,
+      "end_line": 584,
+      "thinking": "Confirmed — no widget test references the rollback path via a failing fake. `_FakeLanguagePreferences` and `_FakeThemePreferences` never throw, so no widget test at all has exercised the rollback scenario through the new selection menu.\n\nOverall assessment of the test file changes:\n\n1. Language test update — correct: the initial mode `english` matches the key `language-setting-row-english`; after selection, the trailing '简体中文' assertion matches `languageSimplifiedChinese` in zh. ✓\n2. Appearance test update — correct: the initial mode `system` matches `appearance-setting-row-system`; the collapsed-state assertion (`findsNothing`) matches the new FSelectMenuTile design; the trailing '深色' after selection. ✓\n3. New error display test — correct: no installation → `selectDefault` synchronously sets errorMessage → ListenableBuilder rebuilds → FAlert inside `meeting-defaults-section`. ✓\n4. Responsive ledger keys — correct against `wideLayoutMinWidth = 840` (pinned in theme_test) and against the fixture's non-null dataControls. ✓\n\nIssues to raise:\n1. (test, medium) No widget-level test for the async save-failure rollback — the rebuild mechanism via key change ('...setting-row-${mode.name}') and the language `saveFailed` FAlert are untested at the widget level.\n2. (maintainability, low) The hardcoded `840` is duplicating `wideLayoutMinWidth`. Could branch on `dimensions.$2` instead.\n\nGoing to raise both, then done.",
+      "category": "maintainability",
+      "severity": "low"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "The rollback-sync guarantee relies entirely on this key changing with `selectedMode`: because `managedRadio` is recreated (not reactively re-seeded), the key must encode the committed mode so that a failed save rebuilds the row with the reverted `initial`. This coupling is currently unprotected at the widget level — the view-model tests cover rollback with a failing repository, but the widget-test fakes (`_FakeLanguagePreferences`/`_FakeThemePreferences`) always succeed and only assert the happy path. If a future refactor simplifies this to a static key, the radio would silently desync from the reverted value on save failure (the trailing `details` text would show the reverted mode while the radio keeps the failed selection) and no test would catch it. Consider adding a widget test that forces `setLanguageMode`/`setThemeMode` to throw and asserts the row key reverts and the trailing label shows the original mode.",
+      "existing_code": "          key: ValueKey('language-setting-row-${viewModel.selectedMode.name}'),",
+      "start_line": 211,
+      "end_line": 211,
+      "thinking": "Confirmed: The view-model test verifies rollback at the model level (reverting languageMode.value, setting saveFailed). However, the widget-level tests use `_FakeLanguagePreferences`/`_FakeThemePreferences` which always succeed, and there is no widget test that verifies the key-based recreation of the radio on save failure.\n\nWith this, my investigation findings are confirmed. Finalizing the comments.\n\nFinal comments:\n\n1. Medium-severity test-coverage note: the key-based rollback mechanism (that the key encodes selectedMode) is not covered by widget tests on the failure path — since the widget test's fakes always succeed, if the key were to be made static, the desync between the radio's recreation would silently pass through. Anchored to the row key of the language section.\n\n2. Low-severity maintainability note: the two `FSelectMenuTile` style deltas are identical, and a similar RoundedRectangleBorder override also appears in `_SettingsTileGroup`. Propose extraction into a shared helper. Anchored to the style block of `_AppearanceSection` (or the language side).\n\nAlright, writing both.",
+      "category": "test",
+      "severity": "medium"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "This style delta is identical to the one in `_LanguageSection` (tileStyle \u003e contentDecoration \u003e `.all(.shapeDelta(shape: const RoundedRectangleBorder()))`), and `_SettingsTileGroup` applies the same rounded-corner removal for `FTileGroup`. Extracting the `FSelectMenuTile` variant into a shared constant/helper (e.g. a private `_settingsSelectMenuStyle`) would keep the settings controls visually consistent and avoid drift if the border shape needs to change later.",
+      "existing_code": "          style: .delta(\n            tileStyle: .delta(\n              contentDecoration: .delta([\n                .all(.shapeDelta(shape: const RoundedRectangleBorder())),\n              ]),\n            ),\n          ),\n          semanticsLabel: l10n.themeOptionsSemantics,",
+      "start_line": 282,
+      "end_line": 289,
+      "thinking": "Confirmed: The view-model test verifies rollback at the model level (reverting languageMode.value, setting saveFailed). However, the widget-level tests use `_FakeLanguagePreferences`/`_FakeThemePreferences` which always succeed, and there is no widget test that verifies the key-based recreation of the radio on save failure.\n\nWith this, my investigation findings are confirmed. Finalizing the comments.\n\nFinal comments:\n\n1. Medium-severity test-coverage note: the key-based rollback mechanism (that the key encodes selectedMode) is not covered by widget tests on the failure path — since the widget test's fakes always succeed, if the key were to be made static, the desync between the radio's recreation would silently pass through. Anchored to the row key of the language section.\n\n2. Low-severity maintainability note: the two `FSelectMenuTile` style deltas are identical, and a similar RoundedRectangleBorder override also appears in `_SettingsTileGroup`. Propose extraction into a shared helper. Anchored to the style block of `_AppearanceSection` (or the language side).\n\nAlright, writing both.",
+      "category": "maintainability",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Coverage gap: this branch condition only distinguishes ledgers by width, but the implementation's single-column path is `sizeClass != expanded || !hasDataSections`. The `!hasDataSections` fallback at expanded width is never exercised: every test that omits `dataControls`/`remoteDiagnostics` runs at the default 800×600 surface (\u003c `wideLayoutMinWidth` 840), where `sizeClass != expanded` is already true, and both loop cases here supply `dataControls`. If the `|| !hasDataSections` clause were dropped or inverted, all current assertions would still pass. Consider adding one wide-width case (e.g. 1024) without `dataControls` that expects `settings-continuous-ledger`.",
+      "existing_code": "      if (dimensions.$1.width \u003c 840) {\n        expect(\n          find.byKey(const ValueKey('settings-continuous-ledger')),\n          findsOneWidget,\n        );\n      } else {",
+      "start_line": 579,
+      "end_line": 584,
+      "thinking": "Confirmed: the single-column branch is selected when `sizeClass != expanded || !hasDataSections`. The layout loop tests only cover the following:\n- 320 (compact, with dataControls) → single column via the sizeClass path\n- 1024 (expanded, with dataControls) → two-column\n\nThe `!hasDataSections` fallback at expanded width is not covered by any test: all tests that omit `dataControls` run at the default 800×600, and since that's smaller than `wideLayoutMinWidth` (840), the first condition (`sizeClass != expanded`) is already true, making `!hasDataSections` dead code from the tests' perspective. Even if this condition were deleted or inverted, the tests would not fail.\n\nThis is the only substantive observation point that does not overlap with existing confirmed findings. Report it at low severity.",
+      "category": "test",
+      "severity": "low"
+    }
+  ],
+  "groups": [
+    {
+      "label": "lib/ui/features/settings/views/model_settings_view.dart",
+      "files": [
+        "lib/ui/features/settings/views/model_settings_view.dart"
+      ]
+    },
+    {
+      "label": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "files": [
+        "test/ui/features/settings/views/model_settings_view_test.dart"
+      ]
+    }
+  ],
+  "session_id": "a210fbbc-3739-41e2-a089-195717097e0e",
+  "manifest": {
+    "schema_version": "ocr.run-manifest/v1",
+    "run_id": "a210fbbc-3739-41e2-a089-195717097e0e",
+    "operation": "review",
+    "terminal_state": "complete",
+    "repository": {
+      "identity_sha256": "f9948273eade9b904858f729e5c3a7faab64c561ceca5b22f6fd05651b24caff"
+    },
+    "input": {
+      "mode": "workspace",
+      "resolved_base": "913984f69455fcd84772cb9c2cdd91488678d123",
+      "source_artifact_sha256": "cf75bb46656408ead636439ac99e8627af8bc59e90dc28d66afcf9dde36cb0e1"
+    },
+    "execution": {
+      "ocr_version": "v1.11.2",
+      "provider": "dashscope-tokenplan",
+      "model": "qwen3.8-max",
+      "configured_concurrency": 3,
+      "rule_config_sha256": "1e50bc989e4c5683dccb92dbf308284212277cd7fd3c3cd2321eb7443042daf5",
+      "runtime_config_sha256": "99c16439f61ed71f0126140c7edd1c06a17b33ab500b5a02c4d9b2b13e5dac9e"
+    },
+    "coverage": {
+      "selected": [
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "e692418fe569c73fcd94b2f26f75443f7b7cdb3201759906260a9c170266b7ee"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "7a92b01eb3c375436b7c6bb4638ef4ef6d02451e7a1b65e91716aa9c7421bcc2"
+        }
+      ],
+      "completed": [
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "e692418fe569c73fcd94b2f26f75443f7b7cdb3201759906260a9c170266b7ee"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "7a92b01eb3c375436b7c6bb4638ef4ef6d02451e7a1b65e91716aa9c7421bcc2"
+        }
+      ],
+      "reused": [],
+      "failed": [],
+      "waived": []
+    },
+    "elapsed_ms": 1228343
+  },
+  "retry_report": {
+    "schema_version": "ocr.llm-retry-report/v1",
+    "total_requests": 81,
+    "retried_requests": 0,
+    "total_retries": 0,
+    "recovered_requests": 0,
+    "failed_requests": 1,
+    "cancelled_requests": 0,
+    "requests": [
+      {
+        "logical_request_id": "4d8e9b4bc467bd98050d85a3e39bff598e0c82bb2f16fa095b850271b1520d9d",
+        "provider": "dashscope-tokenplan",
+        "model": "qwen3.8-max",
+        "file_path": "test/ui/features/settings/views/model_settings_view_test.dart",
+        "task_type": "plan_task",
+        "request_no": 1,
+        "outcome": "failed",
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "error",
+            "error_class": "timeout",
+            "failure_phase": "context",
+            "duration_to_headers_ms": 300000
+          }
+        ]
+      }
+    ]
+  }
+}

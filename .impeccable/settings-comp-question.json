@@ -1,0 +1,45 @@
+{
+  "title": "批准设置页版式",
+  "question": "选择要落地的构图。三版都保留现有功能、灰阶账本风格与原生交互。",
+  "options": [
+    {
+      "id": "comp-c",
+      "label": "账本旅程轨道",
+      "kicker": "建议",
+      "lineage": "Quiet Evidence Ledger",
+      "thesis": "用 01–04 连续轨道建立清晰的设置阅读顺序。",
+      "palette": ["#F7F7F5", "#FFFFFF", "#111111", "#D8D8D3"],
+      "materials": ["垂直事实轨", "连续设置行"],
+      "viewport": "手机从界面到新会议、本地运行、隐私支持依次下行；宽屏轨道拆成左右两段。",
+      "risk": "轨道如果过重会抢内容注意力，实装会缩小编号并保持细线。",
+      "hero": ".impeccable/mocks/settings-c-journey-rail.png"
+    },
+    {
+      "id": "comp-a",
+      "label": "连续分组",
+      "kicker": "更熟悉",
+      "lineage": "Native grouped settings",
+      "thesis": "最克制的连续分组，把重点留给当前值与状态。",
+      "palette": ["#F7F7F5", "#FFFFFF", "#111111", "#D8D8D3"],
+      "materials": ["章节标题", "全宽规则线"],
+      "viewport": "四组设置顺序下排，选中项用静默灰面确认。",
+      "risk": "熟悉但品牌辨识度较弱。",
+      "hero": ".impeccable/mocks/settings-a-continuous.png"
+    },
+    {
+      "id": "comp-b",
+      "label": "配置摘要",
+      "kicker": "更快速",
+      "lineage": "Operational status sheet",
+      "thesis": "先给出当前外观、语言与模型状态，再进入具体设置。",
+      "palette": ["#F7F7F5", "#FFFFFF", "#111111", "#D8D8D3"],
+      "materials": ["配置摘要条", "连续设置行"],
+      "viewport": "首屏先看到三项当前配置，再进入个人偏好与会议设置。",
+      "risk": "摘要与下方设置会重复信息。",
+      "hero": ".impeccable/mocks/settings-b-summary.png"
+    }
+  ],
+  "reroll": false,
+  "canon": false,
+  "steer": true
+}

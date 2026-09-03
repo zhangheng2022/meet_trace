@@ -1,0 +1,222 @@
+{
+  "status": "complete",
+  "llm": {
+    "provider": "dashscope-tokenplan",
+    "model": "qwen3.8-max"
+  },
+  "trace_id": "19c72f13e5639a4502938987a1ea5bd6",
+  "message": "Review complete: 6 finding(s) across 2 selected item(s).",
+  "summary": {
+    "files_reviewed": 2,
+    "comments": 6,
+    "total_tokens": 1481333,
+    "input_tokens": 1430902,
+    "output_tokens": 50431,
+    "cache_read_tokens": 1265280,
+    "elapsed": "13m35s"
+  },
+  "tool_calls": {
+    "total": 70,
+    "by_tool": {
+      "code_comment": 4,
+      "code_search": 25,
+      "file_find": 12,
+      "file_read": 25,
+      "file_read_diff": 4
+    }
+  },
+  "comments": [
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "Bug (latent): The `labels` map is manually maintained and accessed with `!` (e.g., `labels[viewModel.selectedMode]!`, `labels[mode]!`). If a new value is added to `AppLanguageMode` in the future, the `switch` expression used for `subtitle` below will produce a compile-time exhaustiveness error, but the map lookup will silently compile and then throw a null-check runtime error when the new enum value is encountered. The same applies to `_AppearanceSection` with `AppThemeMode`.\n\nConsider replacing the map with a `switch` expression helper (or inline it) so that exhaustiveness is enforced at compile time, consistent with how the subtitle text is already resolved:",
+      "suggestion_code": "    String labelFor(AppLanguageMode mode) =\u003e switch (mode) {\n      AppLanguageMode.system =\u003e l10n.languageSystem,\n      AppLanguageMode.simplifiedChinese =\u003e l10n.languageSimplifiedChinese,\n      AppLanguageMode.english =\u003e l10n.languageEnglish,\n    };",
+      "existing_code": "    final labels = {\n      AppLanguageMode.system: l10n.languageSystem,\n      AppLanguageMode.simplifiedChinese: l10n.languageSimplifiedChinese,\n      AppLanguageMode.english: l10n.languageEnglish,\n    };",
+      "start_line": 193,
+      "end_line": 197,
+      "thinking": "Now I have a thorough understanding of the code. Let me compile my findings and provide feedback.\n\nKey issues I've confirmed:\n\n1. **Labels map with `!` null assertion** (medium): Both `_LanguageSection` and `_AppearanceSection` use manually-maintained `Map` literals with `!` null assertions (`labels[viewModel.selectedMode]!` and `labels[mode]!`). The code already uses exhaustive `switch` expressions for the subtitle/description text right below, which would catch new enum values at compile time. The label maps bypass this safety. If a new value is added to `AppLanguageMode` or `AppThemeMode`, the `switch` would produce a compile error but the `labels[mode]!` would silently compile and then throw at runtime.\n\n2. **Duplicate `mic` icon** (low): Both `_MeetingDefaultsSection` (line 336) and `_RecordingInputSection` (line 376) use `FLucideIcons.mic`. These are adjacent sections in the primary column.\n\nLet me now provide my code review comments.",
+      "category": "bug",
+      "severity": "medium"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "Same issue as in `_LanguageSection`: the `labels` map with `!` null assertions bypasses compile-time exhaustiveness checking. A `switch` expression would be safer and consistent with the `switch` already used for `subtitle` below.",
+      "suggestion_code": "    String labelFor(AppThemeMode mode) =\u003e switch (mode) {\n      AppThemeMode.system =\u003e l10n.themeSystem,\n      AppThemeMode.light =\u003e l10n.themeLight,\n      AppThemeMode.dark =\u003e l10n.themeDark,\n    };",
+      "existing_code": "    final labels = {\n      AppThemeMode.system: l10n.themeSystem,\n      AppThemeMode.light: l10n.themeLight,\n      AppThemeMode.dark: l10n.themeDark,\n    };",
+      "start_line": 261,
+      "end_line": 265,
+      "thinking": "Now I have a thorough understanding of the code. Let me compile my findings and provide feedback.\n\nKey issues I've confirmed:\n\n1. **Labels map with `!` null assertion** (medium): Both `_LanguageSection` and `_AppearanceSection` use manually-maintained `Map` literals with `!` null assertions (`labels[viewModel.selectedMode]!` and `labels[mode]!`). The code already uses exhaustive `switch` expressions for the subtitle/description text right below, which would catch new enum values at compile time. The label maps bypass this safety. If a new value is added to `AppLanguageMode` or `AppThemeMode`, the `switch` would produce a compile error but the `labels[mode]!` would silently compile and then throw at runtime.\n\n2. **Duplicate `mic` icon** (low): Both `_MeetingDefaultsSection` (line 336) and `_RecordingInputSection` (line 376) use `FLucideIcons.mic`. These are adjacent sections in the primary column.\n\nLet me now provide my code review comments.",
+      "category": "bug",
+      "severity": "medium"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "Design: Both `_MeetingDefaultsSection` and `_RecordingInputSection` use `FLucideIcons.mic` as their section icon. These two sections are adjacent in the primary column, so the identical icon reduces visual distinctiveness and makes it harder for users to scan and differentiate them at a glance. Consider using a different icon for one of them (e.g., `FLucideIcons.audioLines` or `FLucideIcons.settings2` for the recording input section).",
+      "existing_code": "      icon: FLucideIcons.mic,\n      child: Column(\n        crossAxisAlignment: CrossAxisAlignment.stretch,\n        children: [\n          Text(\n            l10n.recordingInputDescription,",
+      "start_line": 376,
+      "end_line": 381,
+      "thinking": "Now I have a thorough understanding of the code. Let me compile my findings and provide feedback.\n\nKey issues I've confirmed:\n\n1. **Labels map with `!` null assertion** (medium): Both `_LanguageSection` and `_AppearanceSection` use manually-maintained `Map` literals with `!` null assertions (`labels[viewModel.selectedMode]!` and `labels[mode]!`). The code already uses exhaustive `switch` expressions for the subtitle/description text right below, which would catch new enum values at compile time. The label maps bypass this safety. If a new value is added to `AppLanguageMode` or `AppThemeMode`, the `switch` would produce a compile error but the `labels[mode]!` would silently compile and then throw at runtime.\n\n2. **Duplicate `mic` icon** (low): Both `_MeetingDefaultsSection` (line 336) and `_RecordingInputSection` (line 376) use `FLucideIcons.mic`. These are adjacent sections in the primary column.\n\nLet me now provide my code review comments.",
+      "category": "maintainability",
+      "severity": "low"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "Potential state inconsistency: `FMultiValueControl.managedRadio(initial: ...)` typically seeds internal state only on first mount. If `viewModel.select(mode)` fails asynchronously (setting `saveFailed` / `errorMessage`), the `ListenableBuilder` above will rebuild this section and the error `FAlert` will appear, but the radio control's internal selection may not revert to `viewModel.selectedMode` (the old value) because `initial` is usually consumed only once. This would leave the dropdown displaying a value that was not actually persisted, contradicting the visible error alert.\n\nPlease verify that `FMultiValueControl.managedRadio` re-syncs when rebuilt with a changed `initial` value, or consider keying the `FSelectMenuTile` on `viewModel.selectedMode` so the element is replaced (and internal state reset) whenever the persisted value changes.",
+      "existing_code": "          selectControl: FMultiValueControl.managedRadio(\n            initial: viewModel.selectedMode,\n            onChange: (values) {\n              if (values.firstOrNull case final mode?) {\n                unawaited(viewModel.select(mode));\n              }\n            },\n          ),\n          menu: [\n            for (final mode in AppLanguageMode.values)\n              FSelectTile(",
+      "start_line": 224,
+      "end_line": 234,
+      "thinking": "Let me also check if there's an issue with the `FMultiValueControl.managedRadio` initial state not reverting on failure. This is a potentially important issue. Let me think about it more carefully.\n\nThe `_LanguageSection` is wrapped in a `ListenableBuilder` that listens to `languageSettings`. When `viewModel.select(mode)` is called:\n1. The radio control internally updates to the new mode\n2. `viewModel.select(mode)` is called asynchronously\n3. If it fails, the viewModel sets `saveFailed = true` and notifies listeners\n4. The `ListenableBuilder` rebuilds, creating a new `_LanguageSection`\n5. The new `_LanguageSection` creates a new `FSelectMenuTile` with `FMultiValueControl.managedRadio(initial: viewModel.selectedMode)`\n6. But `viewModel.selectedMode` may still be the old value (since the save failed)\n7. The question is: does the `FSelectMenuTile` use the new `initial` value or keep its internal state?\n\nSince `FMultiValueControl.managedRadio` likely creates a controller-like object, and the widget has a `const ValueKey('language-setting-row')`, Flutter will try to update the existing element. The `FSelectMenuTile`'s state may or may not reset based on the new `selectControl`.\n\nThis is a valid concern but I can't confirm it without seeing the forui source. The `initial` parameter name strongly suggests it's only used for initial seeding. Let me note this as a potential issue.\n\nActually, I should be careful here. The `FMultiValueControl.managedRadio` is from the forui package. The term \"managed\" might mean the control manages its own state, and `initial` is just the seed. If the widget is rebuilt with a new `initial`, the internal state might not update. This would mean after a failed save, the dropdown would show the failed selection while the error alert says it failed.\n\nBut I can't confirm this without the source. Let me note it as a potential issue with appropriate caveats.\n\nActually, I think I should report this as it's a legitimate concern that could lead to inconsistent UI state. Let me add a comment about it.",
+      "category": "bug",
+      "severity": "medium"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "The layout loop only exercises `sizeClass != expanded` (320px) and `expanded \u0026\u0026 hasDataSections` (1024px, with `dataControls` from the fixture). The new fallback branch in the view — wide window but no data sections (`sizeClass == expanded \u0026\u0026 !hasDataSections`) must also render the single `settings-continuous-ledger` — is left untested. Since this condition was introduced in this redesign, consider adding a wide-width case without `dataControls` that expects `settings-single-column` + `settings-continuous-ledger`.\n\nMinor: `840` duplicates the theme's `wideLayoutMinWidth`; it would be more robust (and simpler, given the size list is fixed) to encode the expected ledger keys directly in the test data tuple instead of re-deriving them from a hardcoded threshold.",
+      "existing_code": "      if (dimensions.$1.width \u003c 840) {\n        expect(\n          find.byKey(const ValueKey('settings-continuous-ledger')),\n          findsOneWidget,\n        );\n      } else {",
+      "start_line": 573,
+      "end_line": 578,
+      "thinking": "Alright, the localization matches. The new test's assertion is correct.\n\nNext, let me verify the subtitle message 'SenseVoice 尚未安装或校验未通过' set by selectDefault — the test doesn't assert that it's displayed within the section, but the title assertion is sufficient for the regression intent.\n\nSo, finalizing the review feedback. There's one substantive point:\n\n1. **Coverage gap for the new `!hasDataSections` single-column fallback** (low~medium severity, test category). The implementation condition is `sizeClass != AppWindowSizeClass.expanded || !hasDataSections`. The layout loop test passes `dataControls` at both 320 and 1024, so the wide-no-data path (which should render `settings-continuous-ledger` instead of the two-column ledger) isn't verified. I suggest adding a wide-size case without `dataControls`.\n\nShould I also mention the hardcoded 840 within the same comment? The magic number `\u003c 840` overlaps with `wideLayoutMinWidth`. I could suggest including the expected ledger key in the tuple. I'll touch on it briefly as part of the same comment, or as a separate comment. The instructions say comments should be focused. I'll write one comment that combines both points (they're on the same code block), keeping it brief.\n\nAnything else? The theme test's assertion and the language test's change look correct. The new error test is sound.\n\nOne more check — line 141 of the \"settings page only shows real SenseVoice…\" test: `expect(find.text('SenseVoice'), findsNWidgets(2))` — this isn't a new change. Skip.\n\nOne more consideration about the new error test: it doesn't call `await tester.pumpWidget(const SizedBox.shrink());` before dispose, but neither do several other tests. Consistent. Skip.\n\nAlso, in the new test `await tester.pump();` — since the FAlert animation is still running when the test ends, flutter_test may complain about pending timers/animations at teardown. pump() starts the animation, but the test ends right after the expect. In widget tests, pending animations at test end are usually tolerated (pumpWidget teardown). But could this cause a \"Timer is still pending\" error? Animations aren't timers. `tester.pumpWidget(SizedBox.shrink())` isn't called; at test end, the binding automatically unmounts. Other tests in this file that interact with animations similarly end without settling after tap+pumpAndSettle… actually, most call pumpAndSettle after tapping. Here it's a single pump. Could FAlert have an entrance animation that needs more frames? It doesn't affect the assertions. At test end, the framework doesn't fail on incomplete animations. Skip.\n\nLet me write the final comment.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Test coverage: the redesign's contract is that these rows show the *current* value as a trailing label, but neither updated test asserts that the trailing label refreshes after a selection. Here the initial value ('跟随系统') is verified before expansion, but after tapping 'theme-mode-dark' and settling, there is no assertion that the collapsed row now displays '深色' (same gap in the language test — '简体中文' is never asserted as the row's trailing detail). Once the menu closes, consider asserting the row's current-value text (e.g., `expect(find.text('深色'), findsOneWidget)`) so the trailing-current-value behavior is protected against regressions.",
+      "existing_code": "    await tester.tap(find.byKey(const ValueKey('appearance-setting-row')));\n    await tester.pumpAndSettle();\n    await tester.tap(find.byKey(const ValueKey('theme-mode-dark')));\n    await tester.pumpAndSettle();",
+      "start_line": 109,
+      "end_line": 112,
+      "thinking": "The forui source isn't vendored locally. Can't verify FSelectMenuTile's close-on-select behavior. Given this uncertainty, proposing a post-selection trailing-value assertion as a firm requirement is risky. That said, it's possible to frame it as a coverage suggestion tied to the \"当前值尾随 (current value following)\" requirement.\n\nLet me refocus: are there any actual bugs/issues in the new test code?\n\nLooking again at the new regression test:\n\n```dart\nawait tester.pumpWidget(\n  Application(home: ModelSettingsView(viewModel: viewModel)),\n);\nawait tester.pumpAndSettle();\nawait viewModel.selectDefault(senseVoiceDefaultModelId);\nawait tester.pump();\n```\n\nNote: `Application` wraps the app with localization etc. The view's `initState` calls `viewModel.load()`. Wait, there's actually a subtle issue: `TestModelPreferences(senseVoiceDefaultModelId)` — let me check whether TestModelPreferences returns the id synchronously. If `load()` fails… the test expects a specific error alert. If load fails, `_errorMessage = '模型设置加载失败'` and the alert title still displays as '模型设置未完成', but the subtitle differs. The test only asserts on the title, so either way it passes. But actually, other tests using the same fake are passing with model rendering, so load is working.\n\nHmm, but wait — one more thing to verify: does the test actually guarantee the error comes from selectDefault rather than load? If `_load` failed, FAlert would already be displayed before selectDefault. The test would still pass, but it wouldn't be testing the intended path. To be strict, we could assert `expect(find.byType(FAlert), findsNothing)` before `selectDefault`. However, other assertions in the file (e.g., the SenseVoice test on line 141) indicate load is working properly with TestModelPreferences. So this isn't an actual risk.\n\nNext, the width-conditioned layout assertion — anything problematic? The loop's two sizes and the `\u003c 840` branch. In the 1024 case with dataControls, primary + local ledgers are asserted. Good. The confirmed finding covers the missing case.\n\nAnother thought: in the 1024 case, the `settings-two-column` key still exists (unchanged), and the assertion on line 572 handles it. And in the 320 case, `settings-single-column` exists in the new single-column branch. ✓.\n\nAlso, at 320 the test asserts `settings-continuous-ledger`, but doesn't assert that all sections are within it. Not a problem.\n\nOK, there might be one more thing worth verifying: in the diff, the language test now asserts `expect(find.text('Language'), findsOneWidget);` (unchanged line), and later `expect(find.text('语言'), findsOneWidget);` (also unchanged). No changes there.\n\nThe appearance test changed `findsOneWidget` → `findsNothing` for '浅色'/'深色'. Correct given the collapsed menu.\n\nIs there a problem where the appearance row's details displays '跟随系统', but the theme section title is also displayed, plus '外观'…? No, no problem.\n\nLet me also confirm there's no missing coverage for the requirement \"语言仅出现一次 (language appears only once)\". The language test asserts `language-section` findsOneWidget. But it doesn't assert the absence of a duplicated language row (e.g., `find.byKey('language-setting-row')` findsOneWidget). Since the key itself guarantees uniqueness within the tree, tapping it would fail if there were duplicates. Implicitly covered.\n\nAlright — beyond the confirmed finding, I haven't found any truly significant issues. The minor points are:\n\n1. Test coverage: neither the language nor appearance test asserts that after selection the collapsed row's trailing detail updates to the newly selected value (the core of the \"当前值尾随\" design). The appearance test verifies the initial trailing value ('跟随系统'), but not after switching to dark. The language test never asserts the trailing value at all. This is a reasonable, low-to-medium severity test coverage suggestion tied to the stated requirement.\n\n2. The new error regression test asserts FAlert within the section but doesn't assert the subtitle message (e.g., 'SenseVoice 尚未安装或校验未通过'). It would be stronger to assert the subtitle. Minor.\n\nLet me also verify one more potential issue: after `await tester.pump()` in the error test, there might be pending microtasks from `refreshRecordingInputs` inside `load` — already settled in pumpAndSettle. OK.\n\nShould I report these two minor coverage points? Per the instructions, focus on actual issues and avoid noise. The trailing-value assertion point is legitimate and tied to the redesign requirement. The subtitle point is weaker — asserting on title + variant placement is probably sufficient. I'll raise just the trailing-value one at low severity… actually, let me reconsider: is it safe to assert the post-selection trailing value? After `tester.tap(theme-mode-dark); await tester.pumpAndSettle();`, if the menu auto-closes, the row's details would display '深色' and `find.text('深色')` would be findsOneWidget (the tile in the menu is gone). If the menu doesn't auto-close, '深色' would appear both in details and in the open tile → findsNWidgets(2). Since I can't verify FSelectMenuTile's behavior, my suggestion should be phrased conditionally: \"consider asserting the row's trailing value after the menu closes.\" This is fair as a test-coverage improvement suggestion.\n\nHmm, but wait — actually, let me reconsider whether the menu even closes. In the language test, after selecting simplifiedChinese, `expect(find.text('语言'), findsOneWidget)` passes and the app rebuilds under the new locale. If the menu stayed open, menu tile subtitles like '跟随系统' etc. would still be visible… no assertion contradicts that. Inconclusive.\n\nGiven that the confirmed finding already covers the major gap, and these are low-severity, I'll report the trailing-value coverage gap as a single comment. Let me carefully decide where to place it: on the appearance test changes (lines with the findsNothing assertion + tap), or the layout loop? On the appearance test block.\n\nActually, one more consideration — are there issues around disposal ordering in the new test? `viewModel.dispose(); await installations.dispose();` — viewModel holds `_subscription` on `installations.watchAll()`. Disposing viewModel first cancels the subscription, then installations disposes. Correct order. ✓\n\nOne more check: the new test doesn't wrap in try/finally — consistent with the rest of the file. ✓\n\nAlright, let me reconsider whether the conditional branch in the new layout assertion could mask a failure: at 1024, if the view mistakenly rendered the continuous ledger (e.g., a regression in hasDataSections), `settings-primary-ledger` would fail → good. At 320, if the view mistakenly rendered two columns, `settings-continuous-ledger` would fail. Good.\n\nFinal decision: report one low-severity test coverage comment about asserting the trailing current value after selection. I might skip the second one. Let me also think about whether to mention `await tester.pump()` → could be an issue if selectDefault's error path is ever made async. Not worth it.\n\nActually — wait. I should double-check one more thing in the appearance test:\n\n```dart\nawait tester.tap(find.byKey(const ValueKey('appearance-setting-row')));\nawait tester.pumpAndSettle();\nawait tester.tap(find.byKey(const ValueKey('theme-mode-dark')));\n```\n\nIf FSelectMenuTile opens as an overlay/dialog, the option's tile might be off-screen and require ensureVisible. The test presumably passes in CI, so no problem.\n\nAnd the language test: same pattern.\n\nOne more thing I want to verify: `find.text('跟随系统')` — in the collapsed state, this appears as the trailing details. But could '跟随系统' also appear as a prefix/semantics label? FindsOneWidget passed per test design. No problem.\n\nOK, finalizing with one comment. Let me phrase it concisely.\n\nComment on the appearance test block:\n\n\"The redesign's premise is that appearance/language rows display a trailing label of the *current* value, but neither updated test asserts that this trailing label updates after a selection. The test verifies the initial value ('跟随系统') but doesn't verify that, after the menu closes post-selection, the row displays '深色'. Consider asserting the row's trailing details after pumpAndSettle (and do the same for '语言'/'简体中文' in the language test). That way, the '当前值尾随' behavior is protected against regressions.\"\n\nSeverity: low, category: test.\n\nThis is reasonable and doesn't duplicate the confirmed finding.",
+      "category": "test",
+      "severity": "low"
+    }
+  ],
+  "groups": [
+    {
+      "label": "lib/ui/features/settings/views/model_settings_view.dart",
+      "files": [
+        "lib/ui/features/settings/views/model_settings_view.dart"
+      ]
+    },
+    {
+      "label": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "files": [
+        "test/ui/features/settings/views/model_settings_view_test.dart"
+      ]
+    }
+  ],
+  "session_id": "e6c21df3-72d6-4bae-8981-d9816650ce0a",
+  "manifest": {
+    "schema_version": "ocr.run-manifest/v1",
+    "run_id": "e6c21df3-72d6-4bae-8981-d9816650ce0a",
+    "operation": "review",
+    "terminal_state": "complete",
+    "repository": {
+      "identity_sha256": "f9948273eade9b904858f729e5c3a7faab64c561ceca5b22f6fd05651b24caff"
+    },
+    "input": {
+      "mode": "workspace",
+      "resolved_base": "913984f69455fcd84772cb9c2cdd91488678d123",
+      "source_artifact_sha256": "773cc7d8efa2beb5295046c474ae6c1b838a97b2131b2ef12d9b350332bdfa61"
+    },
+    "execution": {
+      "ocr_version": "v1.11.2",
+      "provider": "dashscope-tokenplan",
+      "model": "qwen3.8-max",
+      "configured_concurrency": 3,
+      "rule_config_sha256": "1e50bc989e4c5683dccb92dbf308284212277cd7fd3c3cd2321eb7443042daf5",
+      "runtime_config_sha256": "99c16439f61ed71f0126140c7edd1c06a17b33ab500b5a02c4d9b2b13e5dac9e"
+    },
+    "coverage": {
+      "selected": [
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "594de1b8bc7619eb0c2be7cef7ffe09834a3458bf482c4997400c97c178fcd98"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "1c915291245442c000b1b1c90e7306b6a314c8167414eeaf6fefdca2c9cad4ba"
+        }
+      ],
+      "completed": [
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "594de1b8bc7619eb0c2be7cef7ffe09834a3458bf482c4997400c97c178fcd98"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "1c915291245442c000b1b1c90e7306b6a314c8167414eeaf6fefdca2c9cad4ba"
+        }
+      ],
+      "reused": [],
+      "failed": [],
+      "waived": []
+    },
+    "elapsed_ms": 815215
+  },
+  "retry_report": {
+    "schema_version": "ocr.llm-retry-report/v1",
+    "total_requests": 60,
+    "retried_requests": 2,
+    "total_retries": 2,
+    "recovered_requests": 2,
+    "failed_requests": 0,
+    "cancelled_requests": 0,
+    "requests": [
+      {
+        "logical_request_id": "00d7cffbe8c0236b5803addcb28c9b6c5fa330808beb8412eae5e8fcb3abc78f",
+        "provider": "dashscope-tokenplan",
+        "model": "qwen3.8-max",
+        "file_path": "lib/ui/features/settings/views/model_settings_view.dart",
+        "task_type": "main_task",
+        "request_no": 24,
+        "outcome": "recovered",
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "error",
+            "error_class": "network",
+            "failure_phase": "transport",
+            "duration_to_headers_ms": 12071
+          },
+          {
+            "attempt": 2,
+            "outcome": "success",
+            "status_code": 200,
+            "request_id": "2f12c164-e9de-461f-85a4-443b9c9648f8",
+            "observed_backoff_ms": 404,
+            "duration_to_headers_ms": 13471
+          }
+        ]
+      },
+      {
+        "logical_request_id": "3939c4107dadd05961e949b4a0253e6daee01f9477fb3d46d5638ac13dedc6a2",
+        "provider": "dashscope-tokenplan",
+        "model": "qwen3.8-max",
+        "file_path": "test/ui/features/settings/views/model_settings_view_test.dart",
+        "task_type": "main_task",
+        "request_no": 28,
+        "outcome": "recovered",
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "error",
+            "error_class": "network",
+            "failure_phase": "transport",
+            "duration_to_headers_ms": 16764
+          },
+          {
+            "attempt": 2,
+            "outcome": "success",
+            "status_code": 200,
+            "request_id": "c0d40557-1e16-43be-b893-89378213924d",
+            "observed_backoff_ms": 497,
+            "duration_to_headers_ms": 70967
+          }
+        ]
+      }
+    ]
+  }
+}

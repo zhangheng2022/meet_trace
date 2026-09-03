@@ -1,0 +1,20 @@
+{
+  "title": "确认设置页结构",
+  "question": "按使用旅程重组设置页，保留现有功能和灰阶账本风格。继续，或重新抽取结构。",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "使用旅程",
+      "kicker": "推荐结构",
+      "lineage": "Quiet Evidence Ledger",
+      "thesis": "先处理个人偏好，再确认新会议默认、本地资源与隐私支持。",
+      "palette": ["#F7F7F5", "#FFFFFF", "#111111", "#D8D8D3"],
+      "materials": ["连续分区", "细规则线"],
+      "viewport": "手机为单列连续账本；宽屏用左侧偏好与会议、右侧资源与隐私的双栏布局。",
+      "risk": "分区过多会拉长手机页面，因此会用紧凑标题与连续表面控制长度。"
+    }
+  ],
+  "reroll": true,
+  "canon": false,
+  "steer": true
+}

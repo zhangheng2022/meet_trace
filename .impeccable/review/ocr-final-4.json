@@ -1,0 +1,150 @@
+{
+  "status": "complete",
+  "llm": {
+    "provider": "dashscope-tokenplan",
+    "model": "qwen3.8-max"
+  },
+  "trace_id": "840c38a5fcdb7641adc2a5c9f6baaab3",
+  "message": "Review complete: 5 finding(s) across 2 selected item(s).",
+  "summary": {
+    "files_reviewed": 2,
+    "comments": 5,
+    "total_tokens": 2502150,
+    "input_tokens": 2422920,
+    "output_tokens": 79230,
+    "cache_read_tokens": 2191104,
+    "elapsed": "21m23s"
+  },
+  "tool_calls": {
+    "total": 113,
+    "by_tool": {
+      "code_comment": 3,
+      "code_search": 45,
+      "file_find": 9,
+      "file_read": 50,
+      "file_read_diff": 6
+    }
+  },
+  "comments": [
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "The failing fake is constructed inline here, so the test can never inspect it afterwards. Consider capturing it in a local (like the sibling success test does with `languagePreferences`) and asserting `savedMode` is still `null` after the failed save — this guards against a future regression where a retry or pre-write persists the mode even though the UI rolled back. Also consider asserting the row's displayed value reverted, e.g. `expect(find.text('English'), findsOneWidget)`, mirroring the success test's `find.text('简体中文')` check; that verifies the visible current-value label (a key part of the redesign), not just the notifier and the mode-embedded key.",
+      "existing_code": "    expect(languageMode.value, AppLanguageMode.english);\n    expect(\n      find.byKey(const ValueKey('language-setting-row-english')),\n      findsOneWidget,\n    );",
+      "start_line": 114,
+      "end_line": 118,
+      "thinking": "Confirmed: None of the wide-width (≥840) tests omit `dataControls`. Therefore, the `expanded \u0026\u0026 !hasDataSections → continuous ledger` branch is not covered. Also, `840` is duplicated from the default of `AppStyle.wideLayoutMinWidth`.\n\nFurthermore, in this file, using a single `pump()` after a synchronous state change is also used in other tests (lines 421, 552, 596), so using a single `tester.pump()` in the model-unavailable test is consistent with the file's conventions. This backs up that issue #1 is a false positive.\n\nNow, final decision. Posting 3 comments:\n\n1. Language rollback test — capture the fake and assert `savedMode` is null, plus assert the displayed label rollback (`find.text('English')`). Category: test, severity low.\n\n2. Theme rollback test — same (assert `savedMode` is null and `find.text('跟随系统')`). Category: test, severity low. To avoid verbosity, keep it brief and reference the parallel issue.\n\nActually, should these two be merged into one? They're separate test bodies with different code anchors. Since it's the same kind of issue, it might be better to put one thorough comment on the language one and one short reference comment on the theme one. That seems reasonable.\n\n3. Responsive block — magic number 840 and the uncovered wide-with-no-local-data branch. Category: test (or maintainability). Severity low.\n\nAlright, let me write the comments.\n\nFor comment 1, existing_code:\n```\n    expect(languageMode.value, AppLanguageMode.english);\n    expect(\n      find.byKey(const ValueKey('language-setting-row-english')),\n      findsOneWidget,\n    );\n```\n\nFor comment 2, existing_code:\n```\n    expect(themeMode.value, AppThemeMode.system);\n    expect(\n      find.byKey(const ValueKey('appearance-setting-row-system')),\n      findsOneWidget,\n    );\n```\n\nFor comment 3, existing_code:\n```\n      if (dimensions.$1.width \u003c 840) {\n```\n\nSeverity: all low? For the savedMode part of comments 1/2 — the requirement focuses on UI rollback, and since the fake throws before writing, the assertion is a cheap regression guard → low. Responsive: low.\n\nHmm, let me consider once more whether to comment on `pump()` and `pumpAndSettle()` at all. The file itself uses a single `pump()` after synchronous interactions elsewhere, and `selectDefault`'s error path is synchronous. Confirmed false positive — no comment.\n\nAnd regarding TestActiveInstallations' empty precondition — it's structurally guaranteed (`_records` starts empty). No comment.\n\nWriting the final comments.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Same gap as the language rollback test: `_FakeThemePreferences(failSave: true)` is passed inline, so the test cannot assert that `savedMode` stayed `null` (i.e. nothing was persisted). Capturing the fake and adding that assertion, plus a visual rollback check such as `expect(find.text('跟随系统'), findsOneWidget)` (mirroring the success test's `find.text('深色')` assertion), would make this test verify the full rollback contract.",
+      "existing_code": "    expect(themeMode.value, AppThemeMode.system);\n    expect(\n      find.byKey(const ValueKey('appearance-setting-row-system')),\n      findsOneWidget,\n    );",
+      "start_line": 217,
+      "end_line": 221,
+      "thinking": "Confirmed: None of the wide-width (≥840) tests omit `dataControls`. Therefore, the `expanded \u0026\u0026 !hasDataSections → continuous ledger` branch is not covered. Also, `840` is duplicated from the default of `AppStyle.wideLayoutMinWidth`.\n\nFurthermore, in this file, using a single `pump()` after a synchronous state change is also used in other tests (lines 421, 552, 596), so using a single `tester.pump()` in the model-unavailable test is consistent with the file's conventions. This backs up that issue #1 is a false positive.\n\nNow, final decision. Posting 3 comments:\n\n1. Language rollback test — capture the fake and assert `savedMode` is null, plus assert the displayed label rollback (`find.text('English')`). Category: test, severity low.\n\n2. Theme rollback test — same (assert `savedMode` is null and `find.text('跟随系统')`). Category: test, severity low. To avoid verbosity, keep it brief and reference the parallel issue.\n\nActually, should these two be merged into one? They're separate test bodies with different code anchors. Since it's the same kind of issue, it might be better to put one thorough comment on the language one and one short reference comment on the theme one. That seems reasonable.\n\n3. Responsive block — magic number 840 and the uncovered wide-with-no-local-data branch. Category: test (or maintainability). Severity low.\n\nAlright, let me write the comments.\n\nFor comment 1, existing_code:\n```\n    expect(languageMode.value, AppLanguageMode.english);\n    expect(\n      find.byKey(const ValueKey('language-setting-row-english')),\n      findsOneWidget,\n    );\n```\n\nFor comment 2, existing_code:\n```\n    expect(themeMode.value, AppThemeMode.system);\n    expect(\n      find.byKey(const ValueKey('appearance-setting-row-system')),\n      findsOneWidget,\n    );\n```\n\nFor comment 3, existing_code:\n```\n      if (dimensions.$1.width \u003c 840) {\n```\n\nSeverity: all low? For the savedMode part of comments 1/2 — the requirement focuses on UI rollback, and since the fake throws before writing, the assertion is a cheap regression guard → low. Responsive: low.\n\nHmm, let me consider once more whether to comment on `pump()` and `pumpAndSettle()` at all. The file itself uses a single `pump()` after synchronous interactions elsewhere, and `selectDefault`'s error path is synchronous. Confirmed false positive — no comment.\n\nAnd regarding TestActiveInstallations' empty precondition — it's structurally guaranteed (`_records` starts empty). No comment.\n\nWriting the final comments.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Two concerns here. First, `840` duplicates the default of `AppStyle.wideLayoutMinWidth` (lib/theme/style.dart); if that default ever changes, this condition silently asserts the wrong layout variant — consider referencing the constant or adding a comment pointing to its source. Second, this loop always pumps the view with `dataControls` present, so the `expanded \u0026\u0026 !hasDataSections` branch (wide screen but no local-resource data → single continuous ledger) is never exercised. Since the requirement specifies two-column only when local-resource data is available, adding a wide-width case without `dataControls` asserting `settings-continuous-ledger` would cover that fallback.",
+      "existing_code": "      if (dimensions.$1.width \u003c 840) {",
+      "start_line": 682,
+      "end_line": 682,
+      "thinking": "Confirmed: None of the wide-width (≥840) tests omit `dataControls`. Therefore, the `expanded \u0026\u0026 !hasDataSections → continuous ledger` branch is not covered. Also, `840` is duplicated from the default of `AppStyle.wideLayoutMinWidth`.\n\nFurthermore, in this file, using a single `pump()` after a synchronous state change is also used in other tests (lines 421, 552, 596), so using a single `tester.pump()` in the model-unavailable test is consistent with the file's conventions. This backs up that issue #1 is a false positive.\n\nNow, final decision. Posting 3 comments:\n\n1. Language rollback test — capture the fake and assert `savedMode` is null, plus assert the displayed label rollback (`find.text('English')`). Category: test, severity low.\n\n2. Theme rollback test — same (assert `savedMode` is null and `find.text('跟随系统')`). Category: test, severity low. To avoid verbosity, keep it brief and reference the parallel issue.\n\nActually, should these two be merged into one? They're separate test bodies with different code anchors. Since it's the same kind of issue, it might be better to put one thorough comment on the language one and one short reference comment on the theme one. That seems reasonable.\n\n3. Responsive block — magic number 840 and the uncovered wide-with-no-local-data branch. Category: test (or maintainability). Severity low.\n\nAlright, let me write the comments.\n\nFor comment 1, existing_code:\n```\n    expect(languageMode.value, AppLanguageMode.english);\n    expect(\n      find.byKey(const ValueKey('language-setting-row-english')),\n      findsOneWidget,\n    );\n```\n\nFor comment 2, existing_code:\n```\n    expect(themeMode.value, AppThemeMode.system);\n    expect(\n      find.byKey(const ValueKey('appearance-setting-row-system')),\n      findsOneWidget,\n    );\n```\n\nFor comment 3, existing_code:\n```\n      if (dimensions.$1.width \u003c 840) {\n```\n\nSeverity: all low? For the savedMode part of comments 1/2 — the requirement focuses on UI rollback, and since the fake throws before writing, the assertion is a cheap regression guard → low. Responsive: low.\n\nHmm, let me consider once more whether to comment on `pump()` and `pumpAndSettle()` at all. The file itself uses a single `pump()` after synchronous interactions elsewhere, and `selectDefault`'s error path is synchronous. Confirmed false positive — no comment.\n\nAnd regarding TestActiveInstallations' empty precondition — it's structurally guaranteed (`_records` starts empty). No comment.\n\nWriting the final comments.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "Both `_MeetingDefaultsSection` and the adjacent `_RecordingInputSection` use `FLucideIcons.mic`. The redesign clearly intends each section to have a distinct identity icon (monitor/languages/packageOpen/shieldCheck/hardDrive/fileJson2), and these two sections render stacked next to each other in the primary ledger column, so the duplicated mic icon weakens visual scannability. Consider a more differentiated icon for one of them — e.g., `FLucideIcons.brain`/`cpu` (or similar) for the transcription-model default, keeping `mic` for the actual recording-device section.",
+      "existing_code": "    return _SettingsSection(\n      key: const ValueKey('meeting-defaults-section'),\n      title: l10n.meetingDefaultsTitle,\n      icon: FLucideIcons.mic,",
+      "start_line": 338,
+      "end_line": 341,
+      "thinking": "`wideLayoutMinWidth = 840` matches the test assumption.\n\nAlright, one last check on a detail I noticed in the diff: in the single-column branch, `ConstrainedBox` now has `key: const ValueKey('settings-single-column')` attached to it (previously it had no key). And `_SettingsLedger` has `key: const ValueKey('settings-continuous-ledger')`. In two-column mode, the `Row` has `key: ValueKey('settings-two-column')`. The keys are different, so remounting happens on transitions — that's acceptable.\n\nLet me also double-check that the `FAlert` for language's `saveFailed` and the theme's `errorMessage` get cleared: `LanguageSettingsViewModel` clears `_saveFailed` at the start of the next `select()`. But what if the user doesn't attempt another selection? The alert persists. This is existing behavior.\n\nNow, is there anything about \"redundancy between app language and UI language\" that needs to be verified in this file? Language entry is now singular: `_LanguageSection` is the only language selector. Good.\n\nOne more consideration — **the `managedRadio` rollback key pattern has a subtle pitfall**: the `ValueKey('language-setting-row-${viewModel.selectedMode.name}')` key sits on `FSelectMenuTile`, which is inside a `ListenableBuilder` that's inside a `_SettingsLedger` wrapped with `DecoratedBox`/`Padding`. On rollback, only the key changes — the widget type remains the same, but different keys cause an element remount. That's the intent. Good.\n\nAnother potential real issue to consider: **`_SettingsLedger`'s dividers use `Border(bottom: ...)` via `DecoratedBox` — combined with `Padding(EdgeInsets.all(spaceMd))`.** The bottom border sits right at the edge of each section's padding. No problem.\n\nOkay, after thorough analysis, most of the review plan's concerns are resolved by the design and view model implementation. Are there any that are actually worth commenting on?\n\nLet me reconsider Issue #2 (concurrent rapid selection) more carefully. The view model gates it: `if (_disposed || _isBusy || mode == selectedMode) return;`. And the UI disables the tile during busy. So concurrent invocations are handled. ✅\n\nIssue #1: handled. ✅\n\nHmm, but wait — there's a race to consider: `select()` is async. On tap, `managedRadio`'s `onChange` fires. The optimistic update notifies listeners → rebuild → `FSelectMenuTile` gets remounted (key change). Does the remount interrupt `managedRadio`'s internal state management mid-selection-change? The test passes (`pumpAndSettle` after tap, value gets saved), so in practice it's fine.\n\nOne more thing worth checking: does the test cover the 2x font / large text scenario for the new section headers? The review focus mentioned \"2x 字体 (2x font)\". `_ModelResourceHeader` has explicit large-text handling (`textScaler.scale(1) \u003e 1.4`). The new `_SettingsSection` header `Row` uses `Expanded(child: Text(title))`, which handles wrapping. Icon size doesn't scale. This is consistent with the rest of the codebase.\n\nLet me check if there are any font scaling tests in the test files for settings... The test diff only shows the layout dimension loop. Not strictly necessary.\n\nOne more check — potential unused variables: is `dataControls` still referenced in `_body` after `_DataLedger` was removed? Yes, line 135: `final dataControls = widget.dataControls;` is used for `hasDataSections`. Good.\n\nAnd the previously used `l10n` was removed from `_body` — it was moved to each section. Checking `_body` for any lingering `l10n` references... nope.\n\nOkay, final verdict. I don't see any high-severity bugs. A few minor observations:\n\n1. **Duplicated mic icon** between `_MeetingDefaultsSection` and `_RecordingInputSection` — very minor visual nitpick. Skip? The review plan's requirement emphasizes section distinctiveness via icons. Having two sections share `FLucideIcons.mic` weakens the visual differentiation. It's low severity and somewhat subjective. I'll mention it as low severity.\n\nActually, wait, let me think about whether there are any more substantive issues worth pointing out. Let me re-examine the single-column merged ledger: `[...primarySections, ...localSections]` — sections like `_StoragePrivacySection` and `_DiagnosticsSection` are built from `widget.dataControls` via `ListenableBuilder` inside `localSections`. In two-column mode, `localSections` is passed to `_SettingsLedger(key: 'settings-local-ledger')`. When size class changes between expanded and non-expanded, the parent widget key changes (`settings-continuous-ledger` vs `settings-primary-ledger`/`settings-local-ledger`), so the entire subtree gets remounted — any ephemeral state (e.g., an open popover menu, scroll state) gets lost. That's fine.\n\nAlso note: even in the two-column layout, `_OfflineResourcesSection` appears in the local ledger. In single-column, it's included via `localSections`. Consistent.\n\nLet me also verify this: `hasDataSections` only considers `dataControls` and `remoteDiagnostics`. But `localSections` always includes `_OfflineResourcesSection`. So when expanded with no data sections, single-column shows everything including offline resources. Previously it was the same (the old early-return also included the full modelLedger, which contained `_OfflineResourcesSection`). ✅ Consistent.\n\nOne more possible issue: in the old code, when `dataControls == null \u0026\u0026 remoteDiagnostics == null`, it was a single constrained column at all size classes. New code: `sizeClass != expanded || !hasDataSections` → same behavior for that case. ✅\n\nOkay, let me also verify the diff removed the `l10n` variable from `_body` — the `FAlert` that used `l10n.modelSettingsIncomplete` has been moved inside `_MeetingDefaultsSection` (which computes its own l10n). ✅\n\nI think there's at most 1-2 minor comments. Let me decide:\n\n**Comment 1 (low)**: The icon duplication between meeting defaults and recording input sections — adjacent sections sharing the same mic icon undermines the per-section visual identity the redesign introduces. Suggest using a different icon for recording input (e.g., `FLucideIcons.audioLines`, `cable`, or `settings` for the model defaults). Actually, thinking more about it: meeting defaults is about the transcription model, and mic is about microphone/recording. `FLucideIcons.mic` for meeting defaults is arguably a bit off, and the recording input is literally about mics. The icon is more naturally suited to the recording input. I'll flag this as low.\n\n**Comment 2?** Anything else? Let me think about the `style: .delta(...)` on `FSelectMenuTile` that strips border radius via `RoundedRectangleBorder()`. The `prefix: const Icon(...)` inside the tile is probably fine. The `contentDecoration` delta strips rounded corners, making it rectangular to match the flat ledger. Consistent with `_SettingsTileGroup`.\n\nHmm, one more point: in `_LanguageSection`, `details: Text(labelFor(viewModel.selectedMode))` shows the current value. On rollback, `selectedMode` reverts so details also reverts. ✅ Matches the \"current value directly visible\" requirement.\n\nLet me also re-check the test regarding the first language test's expectations: after selecting simplifiedChinese, `expect(find.text('简体中文'), findsOneWidget)` — details shows 简体中文 (the app is now displaying zh). ✅\n\nAlright, let me write up the low-severity comment about the duplicate mic icon. Also, should I flag the `saveFailed` alert persistence? It's existing behavior from the view model and wasn't changed here. Skip.\n\nActually, let me reconsider whether there's an issue with `Icon(icon, size: theme.typography.body.lg.fontSize)` where `theme.typography.body.lg.fontSize` could be `null`. The theme's `iconStyle` uses the same thing as `size:` — `IconThemeData(size: null)` is valid (falls back to ambient). And since `_ModelResourceStatus` similarly uses `theme.typography.body.sm.fontSize`, this is an established pattern. Skip.\n\nAnd regarding the accessibility focus: the review mentions \"2x 字体 (2x font)\" — the new section header Row: `Icon` is fixed size, `Expanded(Text)` wraps fine. No overflow risk. OK.\n\nOne last thing: let me verify that the `_DiagnosticsSection` and `_StoragePrivacySection` sections still work with their `ListenableBuilder` wrappers — two separate builders for the same `dataControls`. Both rebuild when dataControls notifies. No problem.\n\nLet me write up the final comment. Given the thorough verification, I'll keep it minimal: one low-severity comment about the duplicated mic icon.\n\nActually, hmm. Let me also consider: in the single-column layout, `ConstrainedBox` has `key: ValueKey('settings-single-column')` — previously this key didn't exist on the ConstrainedBox. When `hasDataSections` changes at runtime (e.g., dataControls gets injected later), no problem.\n\nAlso, a thought on the responsive test assertion: `dimensions.$1.width \u003c 840` uses a hardcoded 840 while the theme defines `wideLayoutMinWidth = 840` — it's in the test file (the other modified file, not under review). I won't comment on the test file since it's outside the review scope, but the rules permit cross-file observations… actually, per the strict focus rules, comments must target files within `\u003creview_files\u003e`. The test file is listed under other modified files. So no comments on it.\n\nFinal decision: one low-severity comment about the duplicated `FLucideIcons.mic` icon between `_MeetingDefaultsSection` and `_RecordingInputSection`.\n\nWait, let me reconsider the severity and whether this is really worth pointing out. The redesign explicitly adds distinct icons per section (`monitor`, `languages`, `packageOpen`, `shieldCheck`, `hardDrive`, `fileJson2`) — clear intent for visual differentiation. Then two sections share `mic`. In two-column view, they'd be stacked adjacent in the primary column. This is a legitimate (if minor) design inconsistency worth a low-severity note.\n\nOkay, let me finalize.",
+      "category": "style",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "This wide branch only asserts that the two ledger containers exist, not what ended up in each column. Every other test in the file runs below the wide threshold (default test surface is 800×600), so nothing anywhere verifies the redesign's column distribution: `meeting-defaults-section` belongs to `settings-primary-ledger` while `offline-resources-section`/`storage-privacy-section` belong to `settings-local-ledger`. A regression that swaps or drops a section between columns would pass this test silently. Consider adding descendant assertions, e.g. `find.descendant(of: find.byKey(ValueKey('settings-primary-ledger')), matching: find.byKey(ValueKey('meeting-defaults-section')))` and the equivalent for `offline-resources-section` / `storage-privacy-section` against `settings-local-ledger`.",
+      "existing_code": "        expect(\n          find.byKey(const ValueKey('settings-primary-ledger')),\n          findsOneWidget,\n        );\n        expect(\n          find.byKey(const ValueKey('settings-local-ledger')),\n          findsOneWidget,\n        );",
+      "start_line": 688,
+      "end_line": 695,
+      "thinking": "Confirmed the implementation details. Next, let me verify the overall flow and check the remaining test regions to make sure there are no missed issues (the test file on lines 120-320 has already been checked). To be thorough about the context of the responsive test changes, I'll quickly re-check lines 660-700 (already checked).\n\nSummary of my review:\n- The language success/failure rollback test: correct against the view model semantics (optimistic update + rollback + `_saveFailed`).\n- The theme success/failure rollback test: correct.\n- The model error tests: correct (`watchAll` emits an empty list even when nothing is installed, so options are set to notInstalled, `selectDefault` enters the early-return path of the error, and a single pump rebuilds the ListenableBuilder).\n- Responsive test: correct against the branching, but only asserts the container key and does not assert the allocation of sections to columns.\n- Fakes: correct.\n\nThe three issues previously confirmed already cover the inline-fake persistence assertion and the threshold duplication. The only new finding I can substantiate is the absence of column content assertions in the two-column branch (test coverage, low importance).\n\nLet me write this comment against the else branch.",
+      "category": "test",
+      "severity": "low"
+    }
+  ],
+  "groups": [
+    {
+      "label": "lib/ui/features/settings/views/model_settings_view.dart",
+      "files": [
+        "lib/ui/features/settings/views/model_settings_view.dart"
+      ]
+    },
+    {
+      "label": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "files": [
+        "test/ui/features/settings/views/model_settings_view_test.dart"
+      ]
+    }
+  ],
+  "session_id": "38f92933-af39-486f-8c3e-47bf1988e095",
+  "manifest": {
+    "schema_version": "ocr.run-manifest/v1",
+    "run_id": "38f92933-af39-486f-8c3e-47bf1988e095",
+    "operation": "review",
+    "terminal_state": "complete",
+    "repository": {
+      "identity_sha256": "f9948273eade9b904858f729e5c3a7faab64c561ceca5b22f6fd05651b24caff"
+    },
+    "input": {
+      "mode": "commit",
+      "requested_head": "HEAD",
+      "resolved_base": "913984f69455fcd84772cb9c2cdd91488678d123",
+      "resolved_head": "ce461c73a91029303fe58920ae106479bb8020d2",
+      "exact_range": "913984f69455fcd84772cb9c2cdd91488678d123..ce461c73a91029303fe58920ae106479bb8020d2",
+      "source_artifact_sha256": "74ac4746e484ecb444b1823948ebedf829d4569a19a230ff6d2fa86ba50f0b59"
+    },
+    "execution": {
+      "ocr_version": "v1.11.2",
+      "provider": "dashscope-tokenplan",
+      "model": "qwen3.8-max",
+      "configured_concurrency": 3,
+      "rule_config_sha256": "1e50bc989e4c5683dccb92dbf308284212277cd7fd3c3cd2321eb7443042daf5",
+      "runtime_config_sha256": "99c16439f61ed71f0126140c7edd1c06a17b33ab500b5a02c4d9b2b13e5dac9e"
+    },
+    "coverage": {
+      "selected": [
+        {
+          "item_id": "7975188fb9ca12944b6a5979a8bd8fbba17a1cedd8fabde0ebd60345eaa208aa",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "1f8acb495cbfbb54bfe877a5f946adcf526df6b114ad85b85c93a70f68b24ef6"
+        },
+        {
+          "item_id": "ca3327bc147f399ddc26a829cdb875c1b3dd1747204611e5bf783e7b57f3192b",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "4fd5d31ca52b39a5f0453693b353831aacdf08863abd929fb226c8c6170033b8"
+        }
+      ],
+      "completed": [
+        {
+          "item_id": "7975188fb9ca12944b6a5979a8bd8fbba17a1cedd8fabde0ebd60345eaa208aa",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "1f8acb495cbfbb54bfe877a5f946adcf526df6b114ad85b85c93a70f68b24ef6"
+        },
+        {
+          "item_id": "ca3327bc147f399ddc26a829cdb875c1b3dd1747204611e5bf783e7b57f3192b",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "4fd5d31ca52b39a5f0453693b353831aacdf08863abd929fb226c8c6170033b8"
+        }
+      ],
+      "reused": [],
+      "failed": [],
+      "waived": []
+    },
+    "elapsed_ms": 1282960
+  }
+}

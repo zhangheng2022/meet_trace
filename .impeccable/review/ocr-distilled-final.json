@@ -1,0 +1,203 @@
+{
+  "status": "complete",
+  "llm": {
+    "provider": "dashscope-tokenplan",
+    "model": "qwen3.8-max"
+  },
+  "trace_id": "cfa8d07fd076987fd7d04253f8eaca39",
+  "message": "Review complete: 6 finding(s) across 3 selected item(s).",
+  "summary": {
+    "files_reviewed": 3,
+    "comments": 6,
+    "total_tokens": 2535810,
+    "input_tokens": 2470410,
+    "output_tokens": 65400,
+    "cache_read_tokens": 2176512,
+    "elapsed": "16m42s"
+  },
+  "tool_calls": {
+    "total": 88,
+    "by_tool": {
+      "code_comment": 4,
+      "code_search": 30,
+      "file_find": 6,
+      "file_read": 41,
+      "file_read_diff": 7
+    }
+  },
+  "comments": [
+    {
+      "path": "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart",
+      "content": "Low-severity suggestion: the requirement states the accordion is collapsed by default (\"默认折叠\"), but this test only exercises expanding it without explicitly asserting the initial collapsed state. The sibling test in model_settings_view_test.dart pins this explicitly for recording input (`expect(find.text('系统默认麦克风').hitTestable(), findsNothing)` before expanding). Consider adding a similar assertion here before the expansion (e.g. `expect(find.byKey(switchKey), findsNothing)`), so the collapsed-by-default contract for remote diagnostics is documented explicitly and a regression produces a clear failure at the right step, rather than an opaque failure later.",
+      "suggestion_code": "    expect(\n      find.byKey(const ValueKey('remote-diagnostics-switch')),\n      findsNothing,\n    );\n    final disclosure = find.byKey(\n      const ValueKey('remote-diagnostics-disclosure'),\n    );\n    await tester.ensureVisible(disclosure);\n    await tester.tap(disclosure);\n    await tester.pumpAndSettle();",
+      "existing_code": "    final disclosure = find.byKey(\n      const ValueKey('remote-diagnostics-disclosure'),\n    );\n    await tester.ensureVisible(disclosure);\n    await tester.tap(disclosure);\n    await tester.pumpAndSettle();",
+      "start_line": 40,
+      "end_line": 45,
+      "thinking": "In other words, the remote diagnostics disclosure is only verified in this test file. The test is currently expanding the disclosure, but there's no assertion anywhere that it's collapsed by default (i.e., that the switch isn't visible before expansion). The \"默认折叠\" (collapsed by default) requirement is an explicitly stated behavior change. The recording-input test in model_settings_view_test.dart explicitly asserts the collapsed state before expansion (`find.text('系统默认麦克风').hitTestable(), findsNothing`), but the remote diagnostics test doesn't have an equivalent assertion.\n\nThis is a legitimate, low-severity suggestion regarding test coverage. I'll raise it.\n\nLet me double-check one more potential subtle point: after `await tester.tap(disclosure)`, `pumpAndSettle` waits for the animation. Then the switch is found. No problem.\n\nAnother consideration — `find.byKey(disclosure)` + `ensureVisible`: `ensureVisible` works on widgets within a scrollable. OK.\n\nOne more check: the header Text of the FAccordionItem in the collapsed state — the tap lands on the center of FAccordionItem. After the child expands, the item's bounds contain the child. However, we only tap once, while collapsed. No problem.\n\nAlso, is there any risk that the test fails because the disclosure is initially offscreen? The default test surface is 800x600. The page contains the meeting defaults and offline resources sections before \"更多设置\". ensureVisible handles scrolling. No problem.\n\nFinal point to check: in the production code, FAccordion uses `expanded: _expandedSecondaryItems.contains` as a tear-off — `_expandedSecondaryItems.contains` takes an `int` and returns a `bool`. The signature that Forui's lifted control expects is probably `bool Function(int)`. No problem.\n\nTherefore, the only feedback is: before expanding, we should add an assertion that the switch is hidden (collapsed by default). Severity: low, category: test.\n\nActually, let me reconsider whether it's fair to call this an \"issue\". The review checklist asks \"do the test cases cover the boundary conditions?\" and \"are there test cases corresponding to critical logic paths?\" The collapsed-by-default behavior is the core behavior of this change (the entire point of the diff to this test file is that the content is now hidden behind the disclosure). An assertion before expansion would pin down that behavior. Without it, even if someone accidentally made the accordion expanded by default, this test would still pass (expanding it would toggle it… wait no — if it's expanded by default, the tap would collapse it, and then the switch wouldn't be found and the test would fail). Hmm, interesting: actually, if the accordion were expanded by default, this tap would \"collapse\" it, and the subsequent `expect(switchFinder, findsOneWidget)` would fail. So the test does implicitly depend on the collapsed-by-default state — if it were expanded by default, the test would fail. So this behavior is implicitly pinned down, just not with an explicit assertion.\n\nGiven that, the missing assertion is minor — the test still fails when the default state is wrong (just fails on a different, less clear assertion). It might still be worth mentioning as a low-severity suggestion to improve the clarity of the test failure and to explicitly document the collapsed-by-default requirement… but per the instructions, we should avoid commenting on code that is correct. This is a valid but low-value suggestion.\n\nLet me also confirm that there's nothing problematic about the deletion in this diff — no lines are deleted in this file, only additions.\n\nHmm, wait — one more consideration. `await tester.ensureVisible(disclosure);` — the `ensureVisible` documentation: it requires the finder to match exactly one widget and it must be within a scrollable. No problem.\n\nBut there's a subtlety with FAccordion in the collapsed state: are collapsed items still in the widget tree with zero height? In Forui, collapsed items might only render the header. The key exists either way. No problem.\n\nNow, let me decide whether to raise the low-severity comment. I think it's reasonable and constructive: before expansion, we should assert that the switch isn't visible, explicitly pinning down the \"默认折叠\" requirement. This also aligns with the pattern used for the recording input in model_settings_view_test.dart. I'll add it as a low-severity test category comment.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "The new test name promises \"完整展示两行\" (both lines fully displayed), but `greaterThan(20)` barely discriminates that: the metadata is now a single Text containing an explicit `\\n`, so it renders two lines today, but a single line at a slightly larger `body.sm` size or line height would also clear 20px and let a clipping/`maxLines: 1` regression pass. Consider a bound that actually encodes \"two lines\" (e.g., `greaterThan(30)`, matching the sibling wrapping assertion in the 2.0-scale test) or compare against a measured single-line reference widget.",
+      "existing_code": "    expect(tester.getSize(metadata).height, greaterThan(20));",
+      "start_line": 335,
+      "end_line": 335,
+      "thinking": "All keys match the production environment. That confirms my review. Final comments:\n\n1. **Weak height assertion (low, test)**: Line 335 — `greaterThan(20)` barely guards anything against the intent of the test name \"完整展示两行模型元数据\" (fully display two lines of model metadata). Since the metadata is intentionally rendered as two lines via embedded `\\n`, a threshold that can distinguish two lines from one line (e.g., `greaterThan(30)`), or comparison against a measured single-line reference, would better match the intent.\n\n2. **Loss of keyboard operation coverage (low, test)**: The Tab+Enter key event manipulation was replaced with a tap, and no keyboard-driven tests remain anywhere in test/. If keyboard accessibility for the exclusive options matters (desktop target), consider maintaining at least one keyboard path.\n\n3. **Recovery boundary not covered in rollback tests (low, test)**: Both new failure tests assert that FAlert appears, but neither asserts that the alert clears on a subsequent successful retry (the view model resets `saveFailed`/`errorMessage` at the start of the next selection). Also, since the fake is created inline, `savedMode` remaining null cannot be asserted. Proposed fixes: make `failSave` a mutable field held in a local variable, fail once, then flip to false and reselect, and assert that the alert disappears and the value is saved.\n\nI'll write these three comments concisely.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "The Tab+Enter key-event interaction was replaced with a tap, and no keyboard-driven interaction test remains anywhere in `test/` (no `sendKeyEvent`/`LogicalKeyboardKey` usage left). The exclusive recording-input options are still keyboard-focusable Forui tiles, so keyboard-activation regressions (focus traversal, key activation inside the new FAccordion disclosures) would now go undetected. If keyboard accessibility still matters for the desktop target, consider keeping at least one keyboard-operated path for a mutually exclusive option.",
+      "existing_code": "    final systemDefault = find.byKey(\n      const ValueKey('recording-input-system-default'),\n    );\n    await tester.ensureVisible(systemDefault);\n    await tester.pumpAndSettle();\n    await tester.tap(systemDefault);",
+      "start_line": 605,
+      "end_line": 610,
+      "thinking": "All keys match the production environment. That confirms my review. Final comments:\n\n1. **Weak height assertion (low, test)**: Line 335 — `greaterThan(20)` barely guards anything against the intent of the test name \"完整展示两行模型元数据\" (fully display two lines of model metadata). Since the metadata is intentionally rendered as two lines via embedded `\\n`, a threshold that can distinguish two lines from one line (e.g., `greaterThan(30)`), or comparison against a measured single-line reference, would better match the intent.\n\n2. **Loss of keyboard operation coverage (low, test)**: The Tab+Enter key event manipulation was replaced with a tap, and no keyboard-driven tests remain anywhere in test/. If keyboard accessibility for the exclusive options matters (desktop target), consider maintaining at least one keyboard path.\n\n3. **Recovery boundary not covered in rollback tests (low, test)**: Both new failure tests assert that FAlert appears, but neither asserts that the alert clears on a subsequent successful retry (the view model resets `saveFailed`/`errorMessage` at the start of the next selection). Also, since the fake is created inline, `savedMode` remaining null cannot be asserted. Proposed fixes: make `failSave` a mutable field held in a local variable, fail once, then flip to false and reselect, and assert that the alert disappears and the value is saved.\n\nI'll write these three comments concisely.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "Both new rollback tests (language here and theme below) verify the failure side (notifier rollback, mode-dependent row key, FAlert shown) but not the recovery boundary: `LanguageSettingsViewModel.select`/`ThemeSettingsViewModel.select` clear `saveFailed`/`errorMessage` at the start of the next attempt, and nothing asserts the alert disappears after a successful retry. Since the fakes are constructed inline with a `final failSave`, consider holding a reference with a mutable flag (e.g., fail the first save, set `failSave = false`, select again) and asserting the FAlert is gone and `savedMode` was persisted — this also lets you assert `savedMode` stayed null after the failed attempt, which is currently only guaranteed by the fake's internal ordering.",
+      "existing_code": "    expect(\n      find.descendant(\n        of: find.byKey(const ValueKey('language-section')),\n        matching: find.byType(FAlert),\n      ),\n      findsOneWidget,\n    );",
+      "start_line": 118,
+      "end_line": 124,
+      "thinking": "All keys match the production environment. That confirms my review. Final comments:\n\n1. **Weak height assertion (low, test)**: Line 335 — `greaterThan(20)` barely guards anything against the intent of the test name \"完整展示两行模型元数据\" (fully display two lines of model metadata). Since the metadata is intentionally rendered as two lines via embedded `\\n`, a threshold that can distinguish two lines from one line (e.g., `greaterThan(30)`), or comparison against a measured single-line reference, would better match the intent.\n\n2. **Loss of keyboard operation coverage (low, test)**: The Tab+Enter key event manipulation was replaced with a tap, and no keyboard-driven tests remain anywhere in test/. If keyboard accessibility for the exclusive options matters (desktop target), consider maintaining at least one keyboard path.\n\n3. **Recovery boundary not covered in rollback tests (low, test)**: Both new failure tests assert that FAlert appears, but neither asserts that the alert clears on a subsequent successful retry (the view model resets `saveFailed`/`errorMessage` at the start of the next selection). Also, since the fake is created inline, `savedMode` remaining null cannot be asserted. Proposed fixes: make `failSave` a mutable field held in a local variable, fail once, then flip to false and reselect, and assert that the alert disappears and the value is saved.\n\nI'll write these three comments concisely.",
+      "category": "test",
+      "severity": "low"
+    },
+    {
+      "path": "lib/ui/features/settings/views/model_settings_view.dart",
+      "content": "Expansion state is tracked by positional index, but `secondaryItems` is built conditionally (`supportsRecordingInputSelection`, `widget.dataControls`, `widget.remoteDiagnostics`). If the item set ever changes during the page's lifetime, the retained indices would silently expand/collapse the wrong panel (e.g., with `_expandedSecondaryItems == {1}`, dropping the recording-input item would move the expanded state from storage/privacy onto remote diagnostics). In the current wiring these flags are fixed per route push, so this is latent rather than observable — but the items already carry stable `ValueKey`s, so consider keying the expansion set by those identifiers (e.g., a `Set\u003cString\u003e` of disclosure ids mapped to indices when building the control). That keeps the required \"stay expanded after data refreshes\" property intact even if the configuration becomes dynamic later.",
+      "existing_code": "                child: FAccordion(\n                  control: .lifted(\n                    expanded: _expandedSecondaryItems.contains,\n                    onChange: (index, expanded) =\u003e setState(() {\n                      expanded\n                          ? _expandedSecondaryItems.add(index)\n                          : _expandedSecondaryItems.remove(index);\n                    }),\n                  ),\n                  children: secondaryItems,\n                ),",
+      "start_line": 189,
+      "end_line": 199,
+      "thinking": "In the current UI test, there's no usage of `selectDefault` — consistent with the requirements (unreachable tests were deleted. View model-level tests still cover `selectDefault`).\n\nAlright, finalizing. Submitting one comment about the index-based accordion expansion state. Writing carefully:\n\nAnchor (new code within the diff):\n```dart\n                child: FAccordion(\n                  control: .lifted(\n                    expanded: _expandedSecondaryItems.contains,\n                    onChange: (index, expanded) =\u003e setState(() {\n                      expanded\n                          ? _expandedSecondaryItems.add(index)\n                          : _expandedSecondaryItems.remove(index);\n                    }),\n                  ),\n                  children: secondaryItems,\n                ),\n```\n\nContent: Since the expansion state is tracked by positional index while `secondaryItems` is being built conditionally (`supportsRecordingInputSelection`, `widget.dataControls`, `widget.remoteDiagnostics`), if the item set changes during the page's lifetime, the persisted indices will silently expand the wrong panel (e.g., if the recording-input item disappears, `{1}` would expand storage/privacy instead of remote diagnostics). In the current wiring, these flags are fixed per route push, so this is a latent issue — but since each item already has a stable `ValueKey`, consider keying the expansion state by those IDs (e.g., a `Set\u003cValueKey\u003e`, or mapping stable IDs to indices) so the \"keep expanded across refreshes\" behavior is preserved even if the configuration becomes dynamic in the future.\n\nSeverity: low. Category: maintainability.\n\nThen done. Actually — let me reconsider the severity/category. This is a robustness/maintainability concern, low severity. Yeah.\n\nAlso, should I mention anything about `setState` being called inside `onChange` — standard. No problem.\n\nSubmitting this single comment and wrapping up.",
+      "category": "maintainability",
+      "severity": "low"
+    },
+    {
+      "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "content": "These key assertions can no longer discriminate layout: `settings-single-column` is now unconditionally attached to `AppPageBody` and `settings-two-column` was removed from the implementation entirely, so all three key checks pass at any width regardless of the actual layout. The only width-sensitive assertion left in the loop is `tester.takeException()`. Since the requirement is \"所有宽度保持居中单列\", consider asserting geometry at the wide surfaces, e.g. that the ledger is width-constrained (`tester.getSize(find.byKey(const ValueKey('settings-continuous-ledger'))).width` ≤ 760, i.e. `readingContentMaxWidth`) and horizontally centered (`getTopLeft(...).dx \u003e 0` at 1024). As written, a regression that stretches the settings content full-width at 1024 without overflowing would keep this test green.",
+      "existing_code": "      expect(\n        find.byKey(const ValueKey('settings-single-column')),\n        findsOneWidget,\n      );\n      expect(\n        find.byKey(const ValueKey('settings-continuous-ledger')),\n        findsOneWidget,\n      );\n      expect(find.byKey(const ValueKey('settings-two-column')), findsNothing);",
+      "start_line": 687,
+      "end_line": 695,
+      "thinking": "Confirmed. The `settings-single-column` key is set unconditionally on `AppPageBody`, and `settings-continuous-ledger` is set on `_SettingsLedger`. Neither is conditional on width. The `settings-two-column` key has been completely removed.\n\nTherefore, in the looped layout test:\n- `find.byKey('settings-single-column')` findsOneWidget → tautological\n- `find.byKey('settings-continuous-ledger')` findsOneWidget → tautological\n- `find.byKey('settings-two-column')` findsNothing → tautological\n- `find.text('更多设置')` findsOneWidget → data-dependent, not width-dependent\n- `tester.takeException()` → width-dependent (the only genuinely width-sensitive check)\n\nThe requirement \"所有宽度保持居中单列\" (centered single column at all widths) is not actually verified at widths 872/1024. If someone later changed `AppPageWidth.reading` to `AppPageWidth.wide` (or removed the constraint), the test would still pass (as long as no overflow occurs). A simple geometric assertion would fix this.\n\nI'm going to submit this single comment now. This is the only substantive new finding beyond the confirmed items. Everything else I investigated (rollback test flow, disclosure expansion adaptation, fake's failSave, disposal order, pump patterns, 2-line metadata finder) is consistent with the new view implementation, and the remaining weaknesses (height threshold, keyboard coverage, recovery path) are already confirmed findings.",
+      "category": "test",
+      "severity": "low"
+    }
+  ],
+  "groups": [
+    {
+      "label": "lib/ui/features/settings/views/model_settings_view.dart",
+      "files": [
+        "lib/ui/features/settings/views/model_settings_view.dart"
+      ]
+    },
+    {
+      "label": "test/ui/features/settings/views/model_settings_view_test.dart",
+      "files": [
+        "test/ui/features/settings/views/model_settings_view_test.dart"
+      ]
+    },
+    {
+      "label": "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart",
+      "files": [
+        "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart"
+      ]
+    }
+  ],
+  "session_id": "7547e9cc-a209-45f1-a712-f607924e85eb",
+  "manifest": {
+    "schema_version": "ocr.run-manifest/v1",
+    "run_id": "7547e9cc-a209-45f1-a712-f607924e85eb",
+    "operation": "review",
+    "terminal_state": "complete",
+    "repository": {
+      "identity_sha256": "f9948273eade9b904858f729e5c3a7faab64c561ceca5b22f6fd05651b24caff"
+    },
+    "input": {
+      "mode": "workspace",
+      "resolved_base": "913984f69455fcd84772cb9c2cdd91488678d123",
+      "source_artifact_sha256": "a6469d39350495cfcbbc43e2c133c0dbea07b93d9273fde4e43716d6ef488fd3"
+    },
+    "execution": {
+      "ocr_version": "v1.11.2",
+      "provider": "dashscope-tokenplan",
+      "model": "qwen3.8-max",
+      "configured_concurrency": 3,
+      "rule_config_sha256": "809223a22eb7090400722ed67ec0a9cb6c77f69c8c2f7c45c3872a9ca2e74c64",
+      "runtime_config_sha256": "99c16439f61ed71f0126140c7edd1c06a17b33ab500b5a02c4d9b2b13e5dac9e"
+    },
+    "coverage": {
+      "selected": [
+        {
+          "item_id": "8ab63c60a70691022e843b463fd60aee26f9db23ab06eb80d025923b1dbc68ee",
+          "path": "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart",
+          "fingerprint": "360a807e8ad90e24b80759856fdf3bc83ba3c69cbbf98b0a47a9fcb52dea98d7"
+        },
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "7fef1e3f9ddedf67d129ad3255e392073f9a0aac886b21d0cd0b307be658a517"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "a4ac2daa6e9f92e3e9ddade53ca3e1929063607d528245cc7cc503d2c06c4d3c"
+        }
+      ],
+      "completed": [
+        {
+          "item_id": "8ab63c60a70691022e843b463fd60aee26f9db23ab06eb80d025923b1dbc68ee",
+          "path": "test/ui/features/settings/views/remote_diagnostics_settings_view_test.dart",
+          "fingerprint": "360a807e8ad90e24b80759856fdf3bc83ba3c69cbbf98b0a47a9fcb52dea98d7"
+        },
+        {
+          "item_id": "9bb334cd08a841f0f67f1616752bf03f22e8fb8bda12f756c96225e30f16bb4f",
+          "path": "lib/ui/features/settings/views/model_settings_view.dart",
+          "fingerprint": "7fef1e3f9ddedf67d129ad3255e392073f9a0aac886b21d0cd0b307be658a517"
+        },
+        {
+          "item_id": "d97bd3f1b3919e90640c763a4d6c52258834785317d10b116c15093518f03eec",
+          "path": "test/ui/features/settings/views/model_settings_view_test.dart",
+          "fingerprint": "a4ac2daa6e9f92e3e9ddade53ca3e1929063607d528245cc7cc503d2c06c4d3c"
+        }
+      ],
+      "reused": [],
+      "failed": [],
+      "waived": []
+    },
+    "elapsed_ms": 1002342
+  },
+  "retry_report": {
+    "schema_version": "ocr.llm-retry-report/v1",
+    "total_requests": 79,
+    "retried_requests": 0,
+    "total_retries": 0,
+    "recovered_requests": 0,
+    "failed_requests": 1,
+    "cancelled_requests": 0,
+    "requests": [
+      {
+        "logical_request_id": "93fe363584df8e3ce0bf8ab4fbf57240b0ac776f13db816dbbb84fb9682ef579",
+        "provider": "dashscope-tokenplan",
+        "model": "qwen3.8-max",
+        "file_path": "lib/ui/features/settings/views/model_settings_view.dart",
+        "task_type": "plan_task",
+        "request_no": 1,
+        "outcome": "failed",
+        "attempts": [
+          {
+            "attempt": 1,
+            "outcome": "error",
+            "error_class": "timeout",
+            "failure_phase": "context",
+            "duration_to_headers_ms": 300000
+          }
+        ]
+      }
+    ]
+  }
+}
