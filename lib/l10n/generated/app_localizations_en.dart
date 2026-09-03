@@ -16,10 +16,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get moreSettingsTitle => 'More settings';
+
+  @override
   String get backToMeetings => 'Back to meetings';
 
   @override
-  String get languageSectionTitle => 'Language';
+  String get appearanceLanguageTitle => 'Appearance and language';
+
+  @override
+  String get languageSectionTitle => 'App language';
 
   @override
   String get languageSaveFailedTitle => 'Language setting not saved';
@@ -52,7 +58,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageEnglishDescription => 'Always use English';
 
   @override
-  String get appearanceSectionTitle => 'Appearance';
+  String get appearanceSectionTitle => 'Appearance mode';
 
   @override
   String get themeSaveFailedTitle => 'Theme setting not saved';
@@ -86,14 +92,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetingDefaultsTitle => 'Meeting defaults';
 
   @override
-  String get newMeetingTranscriptionModel => 'New meeting transcription model';
+  String get newMeetingTranscriptionModel => 'Speech recognition engine';
 
   @override
   String get reading => 'Reading';
 
   @override
   String get modelLockDescription =>
-      'Only affects future meetings. The model is locked after recording starts and never switches automatically.';
+      'Future meetings only; locked after recording starts—no automatic switching.';
 
   @override
   String get recordingInputTitle => 'Recording input';
@@ -136,7 +142,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rescanMicrophones => 'Rescan microphones';
 
   @override
-  String get offlineResourcesTitle => 'Offline transcription resources';
+  String get offlineResourcesTitle => 'Local resources';
 
   @override
   String get readingOfflineResources =>

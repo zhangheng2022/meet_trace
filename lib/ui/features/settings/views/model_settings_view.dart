@@ -1,9 +1,3 @@
-// THESIS: 设置页是一张本地运行账本，让用户确认新会议默认值、离线资源和本机数据状态。
-// OWN-WORLD: 连续分区、细规则线、对齐数值与按状态提升的维护操作，不使用卡片仪表盘。
-// STORY: 先确认新会议使用什么，再核对资源是否可用，最后查看存储、隐私与诊断入口。
-// FIRST VIEWPORT: 宽屏维持设置双栏，录音输入位于左栏会议默认与离线资源之间；紧凑宽度自然下排。
-// FORM: 继承既有 Quiet Evidence Ledger 的窄范围扩展，不启动新的视觉世界或概念选型。
-
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -20,7 +14,6 @@ import '../../../core/asr_model_option.dart';
 import '../../../core/app_back_icon.dart';
 import '../../../core/app_dialog.dart';
 import '../../../core/app_page_body.dart';
-import '../../../core/app_responsive.dart';
 import '../view_models/data_controls_view_model.dart';
 import '../view_models/model_settings_view_model.dart';
 import '../view_models/remote_diagnostics_settings_view_model.dart';
@@ -50,6 +43,8 @@ final class ModelSettingsView extends StatefulWidget {
 }
 
 final class _ModelSettingsViewState extends State<ModelSettingsView> {
+  final Set<int> _expandedSecondaryItems = {};
+
   @override
   void initState() {
     super.initState();
@@ -83,112 +78,127 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
   }
 
   Widget _body(BuildContext context) {
-    final l10n = context.l10n;
     final viewModel = widget.viewModel;
     final appStyle = context.theme.style.app;
     final descriptor = viewModel.registry.requireById(viewModel.defaultModelId);
     final option = viewModel.options.isEmpty ? null : viewModel.options.first;
-    final modelLedger = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (widget.themeSettings case final themeSettings?) ...[
-          ListenableBuilder(
-            listenable: themeSettings,
-            builder: (context, _) =>
-                _AppearanceSection(viewModel: themeSettings),
+    final themeSettings = widget.themeSettings;
+    final languageSettings = widget.languageSettings;
+    final primarySections = <Widget>[
+      if (themeSettings != null || languageSettings != null)
+        _SettingsSection(
+          key: const ValueKey('appearance-language-section'),
+          title: context.l10n.appearanceLanguageTitle,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (themeSettings != null)
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: languageSettings == null
+                        ? null
+                        : Border(
+                            bottom: BorderSide(
+                              color: context.theme.colors.border,
+                              width: appStyle.dividerWidth,
+                            ),
+                          ),
+                  ),
+                  child: ListenableBuilder(
+                    listenable: themeSettings,
+                    builder: (context, _) =>
+                        _AppearanceSection(viewModel: themeSettings),
+                  ),
+                ),
+              if (languageSettings != null)
+                ListenableBuilder(
+                  listenable: languageSettings,
+                  builder: (context, _) =>
+                      _LanguageSection(viewModel: languageSettings),
+                ),
+            ],
           ),
-          SizedBox(height: appStyle.spaceXl),
-        ],
-        if (widget.languageSettings case final languageSettings?) ...[
-          ListenableBuilder(
-            listenable: languageSettings,
-            builder: (context, _) => _LanguageSection(
-              viewModel: languageSettings,
-              topRule: widget.themeSettings != null,
+        ),
+      _MeetingDefaultsSection(
+        descriptor: descriptor,
+        loading: viewModel.isLoading,
+        errorMessage: viewModel.errorMessage,
+      ),
+      _OfflineResourcesSection(
+        option: option,
+        loading: viewModel.isLoading,
+        busy: viewModel.isBusy,
+        onRepair: viewModel.actions.repair == null
+            ? null
+            : () => unawaited(viewModel.repairModel()),
+        onPause: viewModel.actions.pause == null ? null : viewModel.pauseRepair,
+      ),
+    ];
+    final secondaryItems = <FAccordionItem>[
+      if (viewModel.supportsRecordingInputSelection)
+        FAccordionItem(
+          key: const ValueKey('recording-input-disclosure'),
+          title: Text(context.l10n.recordingInputTitle),
+          child: _RecordingInputSection(viewModel: viewModel, embedded: true),
+        ),
+      if (widget.dataControls case final dataControls?)
+        FAccordionItem(
+          key: const ValueKey('storage-privacy-disclosure'),
+          title: Text(context.l10n.storagePrivacyTitle),
+          child: ListenableBuilder(
+            listenable: dataControls,
+            builder: (context, _) =>
+                _StoragePrivacySection(viewModel: dataControls, embedded: true),
+          ),
+        ),
+      if (widget.remoteDiagnostics case final remoteDiagnostics?)
+        FAccordionItem(
+          key: const ValueKey('remote-diagnostics-disclosure'),
+          title: Text(context.l10n.remoteDiagnosticsTitle),
+          child: ListenableBuilder(
+            listenable: remoteDiagnostics,
+            builder: (context, _) => _RemoteDiagnosticsSection(
+              viewModel: remoteDiagnostics,
+              embedded: true,
             ),
           ),
-          SizedBox(height: appStyle.spaceXl),
-        ],
-        if (viewModel.errorMessage case final message?) ...[
-          FAlert(
-            variant: FAlertVariant.destructive,
-            title: Text(l10n.modelSettingsIncomplete),
-            subtitle: Text(l10n.localizeUiMessage(message)),
+        ),
+      if (widget.dataControls case final dataControls?)
+        FAccordionItem(
+          key: const ValueKey('diagnostics-disclosure'),
+          title: Text(context.l10n.diagnosticsTitle),
+          child: ListenableBuilder(
+            listenable: dataControls,
+            builder: (context, _) =>
+                _DiagnosticsSection(viewModel: dataControls, embedded: true),
           ),
-          SizedBox(height: appStyle.spaceLg),
-        ],
-        _MeetingDefaultsSection(
-          descriptor: descriptor,
-          loading: viewModel.isLoading,
-          topRule:
-              widget.themeSettings != null || widget.languageSettings != null,
         ),
-        if (viewModel.supportsRecordingInputSelection) ...[
-          SizedBox(height: appStyle.spaceXl),
-          _RecordingInputSection(viewModel: viewModel),
-        ],
-        SizedBox(height: appStyle.spaceXl),
-        _OfflineResourcesSection(
-          option: option,
-          loading: viewModel.isLoading,
-          busy: viewModel.isBusy,
-          onRepair: viewModel.actions.repair == null
-              ? null
-              : () => unawaited(viewModel.repairModel()),
-          onPause: viewModel.actions.pause == null
-              ? null
-              : viewModel.pauseRepair,
-        ),
-      ],
-    );
-    final dataControls = widget.dataControls;
+    ];
     return SingleChildScrollView(
       child: AppPageBody(
-        width: AppPageWidth.wide,
-        child: AppResponsiveBuilder(
-          builder: (context, sizeClass, constraints) {
-            if (dataControls == null && widget.remoteDiagnostics == null) {
-              return Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: appStyle.readingContentMaxWidth,
+        key: const ValueKey('settings-single-column'),
+        width: AppPageWidth.reading,
+        child: _SettingsLedger(
+          key: const ValueKey('settings-continuous-ledger'),
+          children: [
+            ...primarySections,
+            if (secondaryItems.isNotEmpty)
+              _SettingsSection(
+                key: const ValueKey('more-settings-section'),
+                title: context.l10n.moreSettingsTitle,
+                child: FAccordion(
+                  control: .lifted(
+                    expanded: _expandedSecondaryItems.contains,
+                    onChange: (index, expanded) => setState(() {
+                      expanded
+                          ? _expandedSecondaryItems.add(index)
+                          : _expandedSecondaryItems.remove(index);
+                    }),
                   ),
-                  child: modelLedger,
+                  children: secondaryItems,
                 ),
-              );
-            }
-            final dataLedger = ListenableBuilder(
-              listenable: Listenable.merge([
-                ?dataControls,
-                ?widget.remoteDiagnostics,
-              ]),
-              builder: (context, _) => _DataLedger(
-                viewModel: dataControls,
-                remoteDiagnostics: widget.remoteDiagnostics,
               ),
-            );
-            if (sizeClass != AppWindowSizeClass.expanded) {
-              return Column(
-                key: const ValueKey('settings-single-column'),
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  modelLedger,
-                  SizedBox(height: appStyle.spaceXl),
-                  dataLedger,
-                ],
-              );
-            }
-            return Row(
-              key: const ValueKey('settings-two-column'),
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: modelLedger),
-                SizedBox(width: appStyle.spaceXl),
-                Expanded(child: dataLedger),
-              ],
-            );
-          },
+          ],
         ),
       ),
     );
@@ -196,61 +206,71 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
 }
 
 final class _LanguageSection extends StatelessWidget {
-  const _LanguageSection({required this.viewModel, required this.topRule});
+  const _LanguageSection({required this.viewModel});
 
   final LanguageSettingsViewModel viewModel;
-  final bool topRule;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final appStyle = context.theme.style.app;
-    return _SettingsSection(
+    String labelFor(AppLanguageMode mode) => switch (mode) {
+      AppLanguageMode.system => l10n.languageSystem,
+      AppLanguageMode.simplifiedChinese => l10n.languageSimplifiedChinese,
+      AppLanguageMode.english => l10n.languageEnglish,
+    };
+    return Column(
       key: const ValueKey('language-section'),
-      title: l10n.languageSectionTitle,
-      topRule: topRule,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (viewModel.saveFailed) ...[
-            FAlert(
-              variant: FAlertVariant.destructive,
-              title: Text(l10n.languageSaveFailedTitle),
-              subtitle: Text(l10n.languageSaveFailedMessage),
-            ),
-            SizedBox(height: appStyle.spaceMd),
-          ],
-          FTileGroup(
-            semanticsLabel: l10n.languageOptionsSemantics,
-            children: [
-              for (final mode in AppLanguageMode.values)
-                _PreferenceTile(
-                  key: ValueKey('language-mode-${mode.name}'),
-                  label: switch (mode) {
-                    AppLanguageMode.system => l10n.languageSystem,
-                    AppLanguageMode.simplifiedChinese =>
-                      l10n.languageSimplifiedChinese,
-                    AppLanguageMode.english => l10n.languageEnglish,
-                  },
-                  detail: switch (mode) {
-                    AppLanguageMode.system => l10n.languageSystemDescription,
-                    AppLanguageMode.simplifiedChinese =>
-                      l10n.languageSimplifiedChineseDescription,
-                    AppLanguageMode.english => l10n.languageEnglishDescription,
-                  },
-                  icon: switch (mode) {
-                    AppLanguageMode.system => FLucideIcons.languages,
-                    AppLanguageMode.simplifiedChinese ||
-                    AppLanguageMode.english => FLucideIcons.text,
-                  },
-                  selected: viewModel.selectedMode == mode,
-                  enabled: !viewModel.isBusy,
-                  onPress: () => unawaited(viewModel.select(mode)),
-                ),
-            ],
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (viewModel.saveFailed) ...[
+          FAlert(
+            variant: FAlertVariant.destructive,
+            title: Text(l10n.languageSaveFailedTitle),
+            subtitle: Text(l10n.languageSaveFailedMessage),
           ),
+          SizedBox(height: appStyle.spaceMd),
         ],
-      ),
+        // managedRadio only reads initial once; include the mode in the key so
+        // a failed save rebuilds the control with the rolled-back selection.
+        FSelectMenuTile<AppLanguageMode>(
+          key: ValueKey('language-setting-row-${viewModel.selectedMode.name}'),
+          style: .delta(
+            tileStyle: .delta(
+              contentDecoration: .delta([
+                .all(.shapeDelta(shape: const RoundedRectangleBorder())),
+              ]),
+            ),
+          ),
+          semanticsLabel: l10n.languageOptionsSemantics,
+          prefix: const Icon(FLucideIcons.languages),
+          title: Text(l10n.languageSectionTitle),
+          details: Text(labelFor(viewModel.selectedMode)),
+          enabled: !viewModel.isBusy,
+          selectControl: FMultiValueControl.managedRadio(
+            initial: viewModel.selectedMode,
+            onChange: (values) {
+              if (values.firstOrNull case final mode?) {
+                unawaited(viewModel.select(mode));
+              }
+            },
+          ),
+          menu: [
+            for (final mode in AppLanguageMode.values)
+              FSelectTile(
+                key: ValueKey('language-mode-${mode.name}'),
+                value: mode,
+                title: Text(labelFor(mode)),
+                subtitle: Text(switch (mode) {
+                  AppLanguageMode.system => l10n.languageSystemDescription,
+                  AppLanguageMode.simplifiedChinese =>
+                    l10n.languageSimplifiedChineseDescription,
+                  AppLanguageMode.english => l10n.languageEnglishDescription,
+                }),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -264,49 +284,63 @@ final class _AppearanceSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final appStyle = context.theme.style.app;
-    return _SettingsSection(
+    String labelFor(AppThemeMode mode) => switch (mode) {
+      AppThemeMode.system => l10n.themeSystem,
+      AppThemeMode.light => l10n.themeLight,
+      AppThemeMode.dark => l10n.themeDark,
+    };
+    return Column(
       key: const ValueKey('appearance-section'),
-      title: l10n.appearanceSectionTitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (viewModel.errorMessage case final message?) ...[
-            FAlert(
-              variant: FAlertVariant.destructive,
-              title: Text(l10n.themeSaveFailedTitle),
-              subtitle: Text(l10n.localizeUiMessage(message)),
-            ),
-            SizedBox(height: appStyle.spaceMd),
-          ],
-          FTileGroup(
-            semanticsLabel: l10n.themeOptionsSemantics,
-            children: [
-              for (final mode in AppThemeMode.values)
-                _PreferenceTile(
-                  key: ValueKey('theme-mode-${mode.name}'),
-                  label: switch (mode) {
-                    AppThemeMode.system => l10n.themeSystem,
-                    AppThemeMode.light => l10n.themeLight,
-                    AppThemeMode.dark => l10n.themeDark,
-                  },
-                  detail: switch (mode) {
-                    AppThemeMode.system => l10n.themeSystemDescription,
-                    AppThemeMode.light => l10n.themeLightDescription,
-                    AppThemeMode.dark => l10n.themeDarkDescription,
-                  },
-                  icon: switch (mode) {
-                    AppThemeMode.system => FLucideIcons.monitor,
-                    AppThemeMode.light => FLucideIcons.sun,
-                    AppThemeMode.dark => FLucideIcons.moon,
-                  },
-                  selected: viewModel.selectedMode == mode,
-                  enabled: !viewModel.isBusy,
-                  onPress: () => unawaited(viewModel.select(mode)),
-                ),
-            ],
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (viewModel.errorMessage case final message?) ...[
+          FAlert(
+            variant: FAlertVariant.destructive,
+            title: Text(l10n.themeSaveFailedTitle),
+            subtitle: Text(l10n.localizeUiMessage(message)),
           ),
+          SizedBox(height: appStyle.spaceMd),
         ],
-      ),
+        // Keep this key mode-dependent for the same managedRadio rollback.
+        FSelectMenuTile<AppThemeMode>(
+          key: ValueKey(
+            'appearance-setting-row-${viewModel.selectedMode.name}',
+          ),
+          style: .delta(
+            tileStyle: .delta(
+              contentDecoration: .delta([
+                .all(.shapeDelta(shape: const RoundedRectangleBorder())),
+              ]),
+            ),
+          ),
+          semanticsLabel: l10n.themeOptionsSemantics,
+          prefix: const Icon(FLucideIcons.monitor),
+          title: Text(l10n.appearanceSectionTitle),
+          details: Text(labelFor(viewModel.selectedMode)),
+          enabled: !viewModel.isBusy,
+          selectControl: FMultiValueControl.managedRadio(
+            initial: viewModel.selectedMode,
+            onChange: (values) {
+              if (values.firstOrNull case final mode?) {
+                unawaited(viewModel.select(mode));
+              }
+            },
+          ),
+          menu: [
+            for (final mode in AppThemeMode.values)
+              FSelectTile(
+                key: ValueKey('theme-mode-${mode.name}'),
+                value: mode,
+                title: Text(labelFor(mode)),
+                subtitle: Text(switch (mode) {
+                  AppThemeMode.system => l10n.themeSystemDescription,
+                  AppThemeMode.light => l10n.themeLightDescription,
+                  AppThemeMode.dark => l10n.themeDarkDescription,
+                }),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -315,12 +349,12 @@ final class _MeetingDefaultsSection extends StatelessWidget {
   const _MeetingDefaultsSection({
     required this.descriptor,
     required this.loading,
-    this.topRule = false,
+    required this.errorMessage,
   });
 
   final AsrModelDescriptor descriptor;
   final bool loading;
-  final bool topRule;
+  final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -328,21 +362,41 @@ final class _MeetingDefaultsSection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('meeting-defaults-section'),
       title: l10n.meetingDefaultsTitle,
-      topRule: topRule,
-      child: _SettingsValueRow(
-        key: const ValueKey('default-transcription-model'),
-        label: l10n.newMeetingTranscriptionModel,
-        value: loading ? l10n.reading : descriptor.displayName,
-        description: l10n.modelLockDescription,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (errorMessage case final message?) ...[
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: Text(l10n.modelSettingsIncomplete),
+              subtitle: Text(l10n.localizeUiMessage(message)),
+            ),
+            SizedBox(height: context.theme.style.app.spaceMd),
+          ],
+          _SettingsTileGroup(
+            children: [
+              _SettingsValueRow(
+                key: const ValueKey('default-transcription-model'),
+                label: l10n.newMeetingTranscriptionModel,
+                value: loading ? l10n.reading : descriptor.displayName,
+                description: l10n.modelLockDescription,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
 final class _RecordingInputSection extends StatelessWidget {
-  const _RecordingInputSection({required this.viewModel});
+  const _RecordingInputSection({
+    required this.viewModel,
+    this.embedded = false,
+  });
 
   final ModelSettingsViewModel viewModel;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +409,7 @@ final class _RecordingInputSection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('recording-input-section'),
       title: l10n.recordingInputTitle,
-      topRule: true,
+      showTitle: !embedded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -378,7 +432,7 @@ final class _RecordingInputSection extends StatelessWidget {
             if (viewModel.recordingInputsLoading)
               FProgress(semanticsLabel: l10n.readingWindowsMicrophones),
           ] else ...[
-            FTileGroup(
+            _SettingsTileGroup(
               semanticsLabel: l10n.windowsRecordingDevices,
               children: [
                 _PreferenceTile(
@@ -535,7 +589,6 @@ final class _OfflineResourcesSection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('offline-resources-section'),
       title: l10n.offlineResourcesTitle,
-      topRule: true,
       child: option == null
           ? Padding(
               padding: EdgeInsets.symmetric(vertical: appStyle.spaceSm),
@@ -583,24 +636,22 @@ final class _ModelResourceLedger extends StatelessWidget {
       key: const ValueKey('model-resource-ledger'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _ModelResourceHeader(option: option),
-        SizedBox(height: appStyle.spaceXs),
-        Text(
-          '${_languageLabel(l10n, descriptor.supportedLanguages)} · '
-          '${_decimalMegabytes(descriptor.requiredBytes)}',
-          style: theme.typography.body.sm.copyWith(
-            color: theme.colors.mutedForeground,
-          ),
-        ),
-        SizedBox(height: appStyle.spaceSm),
-        Text(
-          l10n.modelVersionAutoLanguage(
-            descriptor.version,
-            descriptor.useInverseTextNormalization ? l10n.itnEnabledSuffix : '',
-          ),
-          style: theme.typography.body.sm.copyWith(
-            color: theme.colors.mutedForeground,
-          ),
+        _SettingsTileGroup(
+          children: [
+            FTile(
+              prefix: const Icon(FLucideIcons.packageOpen),
+              title: Text(
+                descriptor.displayName,
+                key: const ValueKey('model-resource-name'),
+              ),
+              subtitle: _WrappingText(
+                '${_languageLabel(l10n, descriptor.supportedLanguages)} · '
+                '${_decimalMegabytes(descriptor.requiredBytes)}\n'
+                '${l10n.modelVersionAutoLanguage(descriptor.version, descriptor.useInverseTextNormalization ? l10n.itnEnabledSuffix : '')}',
+              ),
+              details: _ModelResourceStatus(option: option),
+            ),
+          ],
         ),
         if (option.status == AsrModelUiStatus.installed &&
             onRepair != null) ...[
@@ -665,43 +716,6 @@ final class _ModelResourceLedger extends StatelessWidget {
       AsrModelUiStatus.verifying ||
       AsrModelUiStatus.deleting => null,
     };
-  }
-}
-
-final class _ModelResourceHeader extends StatelessWidget {
-  const _ModelResourceHeader({required this.option});
-
-  final AsrModelOption option;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
-    final name = Text(
-      option.descriptor.displayName,
-      key: const ValueKey('model-resource-name'),
-      style: theme.typography.display.md,
-    );
-    final status = _ModelResourceStatus(option: option);
-    if (largeText) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          name,
-          SizedBox(height: appStyle.spaceXs),
-          status,
-        ],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(child: name),
-        SizedBox(width: appStyle.spaceSm),
-        status,
-      ],
-    );
   }
 }
 
@@ -825,37 +839,14 @@ final class _ModelMaintenanceMenu extends StatelessWidget {
   }
 }
 
-final class _DataLedger extends StatelessWidget {
-  const _DataLedger({required this.viewModel, required this.remoteDiagnostics});
-
-  final DataControlsViewModel? viewModel;
-  final RemoteDiagnosticsSettingsViewModel? remoteDiagnostics;
-
-  @override
-  Widget build(BuildContext context) {
-    final appStyle = context.theme.style.app;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (viewModel case final viewModel?) ...[
-          _StoragePrivacySection(viewModel: viewModel),
-          SizedBox(height: appStyle.spaceXl),
-        ],
-        if (remoteDiagnostics case final remoteDiagnostics?) ...[
-          _RemoteDiagnosticsSection(viewModel: remoteDiagnostics),
-          if (viewModel != null) SizedBox(height: appStyle.spaceXl),
-        ],
-        if (viewModel case final viewModel?)
-          _DiagnosticsSection(viewModel: viewModel),
-      ],
-    );
-  }
-}
-
 final class _RemoteDiagnosticsSection extends StatelessWidget {
-  const _RemoteDiagnosticsSection({required this.viewModel});
+  const _RemoteDiagnosticsSection({
+    required this.viewModel,
+    this.embedded = false,
+  });
 
   final RemoteDiagnosticsSettingsViewModel viewModel;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
@@ -863,6 +854,7 @@ final class _RemoteDiagnosticsSection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('remote-diagnostics-section'),
       title: l10n.remoteDiagnosticsTitle,
+      showTitle: !embedded,
       child: FSwitch(
         key: const ValueKey('remote-diagnostics-switch'),
         leadingLabel: true,
@@ -881,9 +873,13 @@ final class _RemoteDiagnosticsSection extends StatelessWidget {
 }
 
 final class _StoragePrivacySection extends StatelessWidget {
-  const _StoragePrivacySection({required this.viewModel});
+  const _StoragePrivacySection({
+    required this.viewModel,
+    this.embedded = false,
+  });
 
   final DataControlsViewModel viewModel;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
@@ -893,6 +889,7 @@ final class _StoragePrivacySection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('storage-privacy-section'),
       title: l10n.storagePrivacyTitle,
+      showTitle: !embedded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -952,9 +949,10 @@ final class _StoragePrivacySection extends StatelessWidget {
 }
 
 final class _DiagnosticsSection extends StatelessWidget {
-  const _DiagnosticsSection({required this.viewModel});
+  const _DiagnosticsSection({required this.viewModel, this.embedded = false});
 
   final DataControlsViewModel viewModel;
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
@@ -964,11 +962,11 @@ final class _DiagnosticsSection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('diagnostics-section'),
       title: l10n.diagnosticsTitle,
-      topRule: true,
+      showTitle: !embedded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FTileGroup(
+          _SettingsTileGroup(
             children: [
               FTile(
                 key: const ValueKey('export-diagnostics'),
@@ -1011,44 +1009,88 @@ final class _DiagnosticsSection extends StatelessWidget {
   }
 }
 
+final class _SettingsLedger extends StatelessWidget {
+  const _SettingsLedger({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final appStyle = context.theme.style.app;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < children.length; index++) ...[
+          children[index],
+          if (index != children.length - 1) SizedBox(height: appStyle.spaceLg),
+        ],
+      ],
+    );
+  }
+}
+
+final class _SettingsTileGroup extends StatelessWidget {
+  const _SettingsTileGroup({required this.children, this.semanticsLabel});
+
+  final List<FTileMixin> children;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) => FTileGroup(
+    semanticsLabel: semanticsLabel,
+    style: const FTileGroupStyleDelta.delta(
+      decoration: DecorationDelta.value(
+        ShapeDecoration(shape: RoundedRectangleBorder()),
+      ),
+    ),
+    children: children,
+  );
+}
+
 final class _SettingsSection extends StatelessWidget {
   const _SettingsSection({
     required this.title,
     required this.child,
-    this.topRule = false,
+    this.showTitle = true,
     super.key,
   });
 
   final String title;
   final Widget child;
-  final bool topRule;
+  final bool showTitle;
 
   @override
   Widget build(BuildContext context) {
+    if (!showTitle) {
+      return child;
+    }
     final theme = context.theme;
     final appStyle = theme.style.app;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: topRule
-            ? Border(top: BorderSide(color: theme.colors.border))
-            : null,
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(top: topRule ? appStyle.spaceLg : 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title, style: theme.typography.display.md),
-            SizedBox(height: appStyle.spaceMd),
-            child,
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
+          style: theme.typography.body.sm.copyWith(fontWeight: FontWeight.w500),
         ),
-      ),
+        SizedBox(height: appStyle.spaceXs),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: theme.colors.border,
+                width: appStyle.dividerWidth,
+              ),
+            ),
+          ),
+          child: child,
+        ),
+      ],
     );
   }
 }
 
-final class _SettingsValueRow extends StatelessWidget {
+final class _SettingsValueRow extends StatelessWidget with FTileMixin {
   const _SettingsValueRow({
     required this.label,
     required this.value,
@@ -1061,38 +1103,37 @@ final class _SettingsValueRow extends StatelessWidget {
   final String description;
 
   @override
+  Widget build(BuildContext context) => ColoredBox(
+    key: const ValueKey('default-transcription-model-selected-background'),
+    color: context.theme.colors.secondary,
+    child: FTile(
+      selected: true,
+      prefix: const Icon(FLucideIcons.audioLines),
+      title: Text(label),
+      subtitle: _WrappingText(description),
+      details: Text(value),
+      suffix: const ExcludeSemantics(child: Icon(FLucideIcons.check)),
+    ),
+  );
+}
+
+final class _WrappingText extends StatelessWidget {
+  const _WrappingText(this.text);
+
+  final String text;
+
+  @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final appStyle = theme.style.app;
-    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
-    final labels = largeText
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: theme.typography.body.md),
-              SizedBox(height: appStyle.spaceXs),
-              Text(value, style: theme.typography.body.md),
-            ],
-          )
-        : Row(
-            children: [
-              Expanded(child: Text(label, style: theme.typography.body.md)),
-              SizedBox(width: appStyle.spaceMd),
-              Text(value, style: theme.typography.body.md),
-            ],
-          );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        labels,
-        SizedBox(height: appStyle.spaceSm),
-        Text(
-          description,
-          style: theme.typography.body.sm.copyWith(
-            color: theme.colors.mutedForeground,
-          ),
-        ),
-      ],
+    final inherited = DefaultTextStyle.of(context);
+    return DefaultTextStyle(
+      style: inherited.style,
+      textAlign: inherited.textAlign,
+      softWrap: true,
+      overflow: TextOverflow.clip,
+      maxLines: null,
+      textWidthBasis: inherited.textWidthBasis,
+      textHeightBehavior: inherited.textHeightBehavior,
+      child: Text(text),
     );
   }
 }

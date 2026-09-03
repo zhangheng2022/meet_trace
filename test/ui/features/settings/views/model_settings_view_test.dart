@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
@@ -55,8 +54,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('language-section')), findsOneWidget);
-    expect(find.text('Language'), findsOneWidget);
+    expect(find.text('App language'), findsOneWidget);
 
+    await tester.tap(
+      find.byKey(const ValueKey('language-setting-row-english')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey('language-mode-simplifiedChinese')),
     );
@@ -64,7 +67,61 @@ void main() {
 
     expect(languageMode.value, AppLanguageMode.simplifiedChinese);
     expect(languagePreferences.savedMode, AppLanguageMode.simplifiedChinese);
-    expect(find.text('语言'), findsOneWidget);
+    expect(find.text('应用语言'), findsOneWidget);
+    expect(find.text('简体中文'), findsOneWidget);
+
+    languageViewModel.dispose();
+    languageMode.dispose();
+    modelViewModel.dispose();
+    await installations.dispose();
+  });
+
+  testWidgets('语言保存失败后回滚界面选择', (tester) async {
+    final installations = TestActiveInstallations();
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(installations.installed(descriptor), active: true);
+    final modelViewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
+      installations: installations,
+      actions: const ModelMaintenanceActions(),
+    );
+    final languageMode = ValueNotifier(AppLanguageMode.english);
+    final languageViewModel = LanguageSettingsViewModel(
+      preferences: _FakeLanguagePreferences(failSave: true),
+      languageMode: languageMode,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        languageMode: languageMode,
+        home: ModelSettingsView(
+          viewModel: modelViewModel,
+          languageSettings: languageViewModel,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('language-setting-row-english')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('language-mode-simplifiedChinese')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(languageMode.value, AppLanguageMode.english);
+    expect(
+      find.byKey(const ValueKey('language-setting-row-english')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('language-section')),
+        matching: find.byType(FAlert),
+      ),
+      findsOneWidget,
+    );
 
     languageViewModel.dispose();
     languageMode.dispose();
@@ -101,17 +158,72 @@ void main() {
 
     expect(find.byKey(const ValueKey('appearance-section')), findsOneWidget);
     expect(find.text('跟随系统'), findsOneWidget);
-    expect(find.text('浅色'), findsOneWidget);
-    expect(find.text('深色'), findsOneWidget);
+    expect(find.text('浅色'), findsNothing);
+    expect(find.text('深色'), findsNothing);
 
+    await tester.tap(
+      find.byKey(const ValueKey('appearance-setting-row-system')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('theme-mode-dark')));
     await tester.pumpAndSettle();
 
     expect(themeMode.value, AppThemeMode.dark);
     expect(themePreferences.savedMode, AppThemeMode.dark);
+    expect(find.text('深色'), findsOneWidget);
     expect(
       tester.widget<FTheme>(find.byType(FTheme)).data.colors.brightness,
       Brightness.dark,
+    );
+    themeViewModel.dispose();
+    themeMode.dispose();
+    modelViewModel.dispose();
+    await installations.dispose();
+  });
+
+  testWidgets('主题保存失败后回滚界面选择', (tester) async {
+    final installations = TestActiveInstallations();
+    final descriptor = AsrModelRegistry.alpha.defaultModel;
+    installations.install(installations.installed(descriptor), active: true);
+    final modelViewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
+      installations: installations,
+      actions: const ModelMaintenanceActions(),
+    );
+    final themeMode = ValueNotifier(AppThemeMode.system);
+    final themeViewModel = ThemeSettingsViewModel(
+      preferences: _FakeThemePreferences(failSave: true),
+      themeMode: themeMode,
+    );
+
+    await tester.pumpWidget(
+      Application(
+        themeMode: themeMode,
+        home: ModelSettingsView(
+          viewModel: modelViewModel,
+          themeSettings: themeViewModel,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('appearance-setting-row-system')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('theme-mode-dark')));
+    await tester.pumpAndSettle();
+
+    expect(themeMode.value, AppThemeMode.system);
+    expect(
+      find.byKey(const ValueKey('appearance-setting-row-system')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('appearance-section')),
+        matching: find.byType(FAlert),
+      ),
+      findsOneWidget,
     );
     themeViewModel.dispose();
     themeMode.dispose();
@@ -147,6 +259,12 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey('offline-resources-section')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey('default-transcription-model-selected-background'),
+      ),
       findsOneWidget,
     );
     expect(find.textContaining('只影响后续新会议'), findsOneWidget);
@@ -194,7 +312,7 @@ void main() {
     await installations.dispose();
   });
 
-  testWidgets('手机宽度下资源大小不被维护操作挤成两行', (tester) async {
+  testWidgets('手机宽度完整展示两行模型元数据', (tester) async {
     await tester.binding.setSurfaceSize(const Size(370, 829));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final installations = TestActiveInstallations();
@@ -213,7 +331,8 @@ void main() {
 
     final metadata = find.textContaining('239.5 MB');
     expect(metadata, findsOneWidget);
-    expect(tester.getSize(metadata).height, lessThan(30));
+    expect(find.textContaining(descriptor.version), findsOneWidget);
+    expect(tester.getSize(metadata).height, greaterThan(20));
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -243,11 +362,11 @@ void main() {
       find.byKey(const ValueKey('settings-single-column')),
       findsOneWidget,
     );
-    final name = find.byKey(const ValueKey('model-resource-name'));
-    final status = find.byKey(const ValueKey('model-resource-status'));
+    expect(find.byKey(const ValueKey('model-resource-name')), findsOneWidget);
+    expect(find.byKey(const ValueKey('model-resource-status')), findsOneWidget);
     expect(
-      tester.getTopLeft(status).dy,
-      greaterThan(tester.getBottomLeft(name).dy),
+      tester.getSize(find.text('只影响后续新会议；录音后锁定且不自动切换。')).height,
+      greaterThan(30),
     );
     expect(tester.takeException(), isNull);
     await fixture.dispose();
@@ -312,12 +431,16 @@ void main() {
       Application(home: ModelSettingsView(viewModel: viewModel)),
     );
     await tester.pumpAndSettle();
+    expect(find.text('系统默认麦克风').hitTestable(), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('recording-input-disclosure')));
+    await tester.pumpAndSettle();
 
     expect(
       find.byKey(const ValueKey('recording-input-section')),
       findsOneWidget,
     );
     expect(find.text('系统默认麦克风'), findsOneWidget);
+    expect(find.text('系统默认麦克风').hitTestable(), findsOneWidget);
     expect(find.text('桌面麦克风'), findsOneWidget);
     expect(find.text('USB 麦克风'), findsOneWidget);
     final desktopMic = find.byKey(const ValueKey('recording-input-mic-1'));
@@ -374,6 +497,8 @@ void main() {
       Application(home: ModelSettingsView(viewModel: viewModel)),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording-input-disclosure')));
+    await tester.pumpAndSettle();
 
     expect(find.text('会议室麦克风'), findsOneWidget);
     expect(find.textContaining('当前不可用'), findsOneWidget);
@@ -411,6 +536,8 @@ void main() {
       Application(home: ModelSettingsView(viewModel: viewModel)),
     );
     await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('recording-input-disclosure')));
+    await tester.pump();
 
     expect(
       find.byKey(const ValueKey('recording-input-system-default')),
@@ -430,7 +557,7 @@ void main() {
     await installations.dispose();
   });
 
-  testWidgets('重新扫描时保留设备列表且键盘可切换互斥选项', (tester) async {
+  testWidgets('重新扫描时保留设备列表且可切换互斥选项', (tester) async {
     final installations = TestActiveInstallations();
     final descriptor = AsrModelRegistry.alpha.defaultModel;
     installations.install(installations.installed(descriptor), active: true);
@@ -452,8 +579,12 @@ void main() {
       Application(home: ModelSettingsView(viewModel: viewModel)),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('recording-input-disclosure')));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('refresh-recording-inputs')));
+    final refresh = find.byKey(const ValueKey('refresh-recording-inputs'));
+    await tester.ensureVisible(refresh);
+    await tester.tap(refresh);
     await tester.pump();
     expect(find.text('桌面麦克风'), findsOneWidget);
     expect(find.byType(FProgress), findsOneWidget);
@@ -471,8 +602,12 @@ void main() {
     devices.completeRefresh();
     await tester.pumpAndSettle();
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    final systemDefault = find.byKey(
+      const ValueKey('recording-input-system-default'),
+    );
+    await tester.ensureVisible(systemDefault);
+    await tester.pumpAndSettle();
+    await tester.tap(systemDefault);
     await tester.pumpAndSettle();
     expect(preferences.preference.usesSystemDefault, isTrue);
 
@@ -495,6 +630,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
+      find.byKey(const ValueKey('storage-privacy-disclosure')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('storage-privacy-disclosure')));
+    await tester.pumpAndSettle();
+
+    expect(
       find.byKey(const ValueKey('storage-privacy-section')),
       findsOneWidget,
     );
@@ -502,6 +644,10 @@ void main() {
     expect(find.text('20.00 GiB'), findsOneWidget);
     expect(fixture.sharing.documents, isEmpty);
 
+    final diagnostics = find.byKey(const ValueKey('diagnostics-disclosure'));
+    await tester.ensureVisible(diagnostics);
+    await tester.tap(diagnostics);
+    await tester.pumpAndSettle();
     final export = find.byKey(const ValueKey('export-diagnostics'));
     await tester.ensureVisible(export);
     await tester.tap(export);
@@ -518,14 +664,13 @@ void main() {
     await fixture.dispose();
   });
 
-  for (final dimensions in <(Size, Key)>[
-    (const Size(320, 760), const ValueKey('settings-single-column')),
-    (const Size(1024, 760), const ValueKey('settings-two-column')),
+  for (final size in <Size>[
+    const Size(320, 760),
+    const Size(872, 760),
+    const Size(1024, 760),
   ]) {
-    testWidgets('${dimensions.$1.width.toInt()} 宽度使用对应设置布局且不溢出', (
-      tester,
-    ) async {
-      await tester.binding.setSurfaceSize(dimensions.$1);
+    testWidgets('${size.width.toInt()} 宽度保持单列设置布局且不溢出', (tester) async {
+      await tester.binding.setSurfaceSize(size);
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final fixture = await _Fixture.create();
 
@@ -539,7 +684,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(dimensions.$2), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('settings-single-column')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('settings-continuous-ledger')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('settings-two-column')), findsNothing);
+      expect(find.text('更多设置'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await fixture.dispose();
     });
@@ -628,6 +782,9 @@ final class _FakeRecordingInputPreferences
 }
 
 final class _FakeThemePreferences implements ThemePreferenceRepository {
+  _FakeThemePreferences({this.failSave = false});
+
+  final bool failSave;
   AppThemeMode? savedMode;
 
   @override
@@ -635,11 +792,17 @@ final class _FakeThemePreferences implements ThemePreferenceRepository {
 
   @override
   Future<void> setThemeMode(AppThemeMode mode) async {
+    if (failSave) {
+      throw StateError('save failed');
+    }
     savedMode = mode;
   }
 }
 
 final class _FakeLanguagePreferences implements LanguagePreferenceRepository {
+  _FakeLanguagePreferences({this.failSave = false});
+
+  final bool failSave;
   AppLanguageMode? savedMode;
 
   @override
@@ -647,6 +810,9 @@ final class _FakeLanguagePreferences implements LanguagePreferenceRepository {
 
   @override
   Future<void> setLanguageMode(AppLanguageMode mode) async {
+    if (failSave) {
+      throw StateError('save failed');
+    }
     savedMode = mode;
   }
 }

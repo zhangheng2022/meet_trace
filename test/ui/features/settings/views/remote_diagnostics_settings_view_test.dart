@@ -37,6 +37,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    final disclosure = find.byKey(
+      const ValueKey('remote-diagnostics-disclosure'),
+    );
+    await tester.ensureVisible(disclosure);
+    await tester.tap(disclosure);
+    await tester.pumpAndSettle();
 
     final switchFinder = find.byKey(
       const ValueKey('remote-diagnostics-switch'),

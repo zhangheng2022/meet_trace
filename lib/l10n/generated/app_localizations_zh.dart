@@ -16,10 +16,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTitle => '设置';
 
   @override
+  String get moreSettingsTitle => '更多设置';
+
+  @override
   String get backToMeetings => '返回会议列表';
 
   @override
-  String get languageSectionTitle => '语言';
+  String get appearanceLanguageTitle => '外观与语言';
+
+  @override
+  String get languageSectionTitle => '应用语言';
 
   @override
   String get languageSaveFailedTitle => '语言设置未保存';
@@ -49,7 +55,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get languageEnglishDescription => '始终使用英文';
 
   @override
-  String get appearanceSectionTitle => '外观';
+  String get appearanceSectionTitle => '外观模式';
 
   @override
   String get themeSaveFailedTitle => '主题设置未保存';
@@ -79,16 +85,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modelSettingsIncomplete => '模型设置未完成';
 
   @override
-  String get meetingDefaultsTitle => '会议默认';
+  String get meetingDefaultsTitle => '新会议默认';
 
   @override
-  String get newMeetingTranscriptionModel => '新会议转录模型';
+  String get newMeetingTranscriptionModel => '语音识别引擎';
 
   @override
   String get reading => '正在读取';
 
   @override
-  String get modelLockDescription => '只影响后续新会议；录音开始后模型锁定，不会自动切换。';
+  String get modelLockDescription => '只影响后续新会议；录音后锁定且不自动切换。';
 
   @override
   String get recordingInputTitle => '录音输入';
@@ -127,7 +133,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get rescanMicrophones => '重新扫描麦克风';
 
   @override
-  String get offlineResourcesTitle => '离线转录资源';
+  String get offlineResourcesTitle => '本地资源';
 
   @override
   String get readingOfflineResources => '正在读取离线转录资源';
