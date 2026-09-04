@@ -176,6 +176,8 @@ void main() {
       );
       expect(validation, contains(r'ref: ${{ github.workflow_sha }}'));
       expect(validation, contains("if: steps.prior.outputs.reuse != 'true'"));
+      expect(validation, contains('steps.prior.outputs.firebase_reuse'));
+      expect(validation, contains('firebaseValidationRunId'));
       expect(validation, contains('{schemaVersion: 3'));
       expect(validation, isNot(contains('gh run list')));
       expect(validation, isNot(contains('reusedFromArtifactId')));

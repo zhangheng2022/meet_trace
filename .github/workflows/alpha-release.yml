@@ -710,10 +710,14 @@ jobs:
             --source-run-id "$GITHUB_RUN_ID" \
             --manifest build/android/distribution/candidate-manifest.json \
             --output-directory build/android/distribution \
-            --github-output "$GITHUB_OUTPUT"
+            --github-output "$GITHUB_OUTPUT" \
+            --arm64-model "$ARM64_DEVICE_MODEL" \
+            --arm64-version "$ARM64_ANDROID_VERSION" \
+            --arm32-model "$ARM32_DEVICE_MODEL" \
+            --arm32-version "$ARM32_ANDROID_VERSION"
 
       - name: Authenticate to Google Cloud
-        if: steps.prior.outputs.reuse != 'true'
+        if: steps.prior.outputs.reuse != 'true' && steps.prior.outputs.firebase_reuse != 'true'
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
@@ -721,14 +725,14 @@ jobs:
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Google Cloud SDK
-        if: steps.prior.outputs.reuse != 'true'
+        if: steps.prior.outputs.reuse != 'true' && steps.prior.outputs.firebase_reuse != 'true'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
         with:
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
           version: "580.0.0"
 
       - name: Verify Firebase targets are physical devices with required ABIs
-        if: steps.prior.outputs.reuse != 'true'
+        if: steps.prior.outputs.reuse != 'true' && steps.prior.outputs.firebase_reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -748,7 +752,7 @@ jobs:
           done
 
       - name: Install and launch ARM APKs on Firebase real devices
-        if: steps.prior.outputs.reuse != 'true'
+        if: steps.prior.outputs.reuse != 'true' && steps.prior.outputs.firebase_reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -786,6 +790,8 @@ jobs:
       - name: Record immutable Android distribution receipt
         if: steps.prior.outputs.reuse != 'true'
         shell: bash
+        env:
+          FIREBASE_VALIDATION_RUN_ID: ${{ steps.prior.outputs.firebase_validation_run_id || github.run_id }}
         run: |
           set -euo pipefail
           manifest=build/android/distribution/candidate-manifest.json
@@ -794,11 +800,13 @@ jobs:
             --arg candidateCommitSha "$CANDIDATE_SHA" \
             --argjson sourceRunId "$GITHUB_RUN_ID" \
             --argjson validationRunId "$GITHUB_RUN_ID" \
+            --argjson firebaseValidationRunId "$FIREBASE_VALIDATION_RUN_ID" \
             --arg candidateManifestSha256 "$(sha256sum "$manifest" | cut -d ' ' -f 1)" \
             --arg validatedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{schemaVersion: 3, validation: "androidCandidateDistribution",
               releaseId: $releaseId, candidateCommitSha: $candidateCommitSha,
               sourceRunId: $sourceRunId, validationRunId: $validationRunId,
+              firebaseValidationRunId: $firebaseValidationRunId,
               runtimeValidation: {universalArm64Firebase: "passed",
                 arm64Firebase: "passed", armeabiV7aFirebase: "passed",
                 x86_64Emulator: "passed"},

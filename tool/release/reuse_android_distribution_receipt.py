@@ -16,6 +16,11 @@ from urllib.parse import urlencode
 
 ANDROID_JOB_NAME = "Validate complete signed Android candidate set"
 GH_ATTEMPTS = 3
+FIREBASE_REQUIRED_STEPS = {
+    "Download immutable Draft APK set and manifest",
+    "Verify Firebase targets are physical devices with required ABIs",
+    "Install and launch ARM APKs on Firebase real devices",
+}
 
 
 def _positive_int(value: object) -> int | None:
@@ -150,6 +155,173 @@ def _download_artifact(
 def _single_file(directory: Path, name: str) -> Path | None:
     matches = [path for path in directory.rglob(name) if path.is_file()]
     return matches[0] if len(matches) == 1 else None
+
+
+def has_reusable_firebase_steps(run_details: dict[str, Any]) -> bool:
+    """Accept only a failed run whose complete ARM validation already passed."""
+    jobs = run_details.get("jobs")
+    android_jobs = (
+        [
+            job
+            for job in jobs
+            if isinstance(job, dict) and job.get("name") == ANDROID_JOB_NAME
+        ]
+        if isinstance(jobs, list)
+        else []
+    )
+    if not (
+        run_details.get("workflowName") == "Alpha Release"
+        and run_details.get("event") == "workflow_dispatch"
+        and run_details.get("headBranch") == "master"
+        and len(android_jobs) == 1
+        and android_jobs[0].get("conclusion")
+        in {"failure", "cancelled", "timed_out"}
+    ):
+        return False
+    steps = android_jobs[0].get("steps")
+    succeeded = (
+        {
+            step.get("name")
+            for step in steps
+            if isinstance(step, dict) and step.get("conclusion") == "success"
+        }
+        if isinstance(steps, list)
+        else set()
+    )
+    return FIREBASE_REQUIRED_STEPS <= succeeded
+
+
+def firebase_evidence_is_complete(
+    *,
+    directory: Path,
+    release_id: str,
+    arm64_model: str,
+    arm64_version: str,
+    arm32_model: str,
+    arm32_version: str,
+) -> bool:
+    firebase_output = _single_file(directory, "firebase-output.txt")
+    arm64_path = _single_file(directory, "firebase-model-arm64.json")
+    arm32_path = _single_file(directory, "firebase-model-arm32.json")
+    if None in (firebase_output, arm64_path, arm32_path):
+        return False
+    assert firebase_output is not None and arm64_path is not None and arm32_path is not None
+    try:
+        output = firebase_output.read_text(encoding="utf-8")
+        arm64 = json.loads(arm64_path.read_text(encoding="utf-8"))
+        arm32 = json.loads(arm32_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    expected_apks = {
+        f"meettrace-{release_id}-android-universal.apk",
+        f"meettrace-{release_id}-android-arm64.apk",
+        f"meettrace-{release_id}-android-armeabi-v7a.apk",
+    }
+    if (
+        any(output.count(name) != 1 for name in expected_apks)
+        or output.count("│ Passed  │") != 3
+        or "ERROR:" in output
+    ):
+        return False
+
+    def valid_model(model: object, expected_id: str, version: str, abi: str) -> bool:
+        return (
+            isinstance(model, dict)
+            and model.get("id") == expected_id
+            and model.get("form") == "PHYSICAL"
+            and version in model.get("supportedVersionIds", [])
+            and abi in model.get("supportedAbis", [])
+        )
+
+    return valid_model(arm64, arm64_model, arm64_version, "arm64-v8a") and valid_model(
+        arm32, arm32_model, arm32_version, "armeabi-v7a"
+    )
+
+
+def reuse_prior_firebase_validation(
+    *,
+    repository: str,
+    release_id: str,
+    source_run_id: int,
+    output_directory: Path,
+    arm64_model: str,
+    arm64_version: str,
+    arm32_model: str,
+    arm32_version: str,
+) -> int | None:
+    expected_name = f"meettrace-android-distribution-{release_id}"
+    query = urlencode({"name": expected_name, "per_page": 100})
+    payload = _gh_json(["api", f"repos/{repository}/actions/artifacts?{query}"])
+    artifacts = payload.get("artifacts") if isinstance(payload, dict) else None
+    if not isinstance(artifacts, list):
+        raise RuntimeError("GitHub Artifact 列表格式无效")
+    run_counts: dict[int, int] = {}
+    for artifact in artifacts:
+        workflow_run = artifact.get("workflow_run") if isinstance(artifact, dict) else None
+        run_id = (
+            _positive_int(workflow_run.get("id"))
+            if isinstance(workflow_run, dict)
+            else None
+        )
+        if run_id is not None and run_id < source_run_id:
+            run_counts[run_id] = run_counts.get(run_id, 0) + 1
+
+    for artifact in sorted(
+        (item for item in artifacts if isinstance(item, dict)),
+        key=lambda item: _positive_int(item.get("id")) or 0,
+        reverse=True,
+    ):
+        workflow_run = artifact.get("workflow_run")
+        prior_run_id = (
+            _positive_int(workflow_run.get("id"))
+            if isinstance(workflow_run, dict)
+            else None
+        )
+        if (
+            prior_run_id is None
+            or prior_run_id >= source_run_id
+            or run_counts.get(prior_run_id) != 1
+            or artifact.get("name") != expected_name
+            or artifact.get("expired") is not False
+        ):
+            continue
+        run_details = _gh_json(
+            [
+                "run",
+                "view",
+                str(prior_run_id),
+                "--repo",
+                repository,
+                "--json",
+                "workflowName,event,headBranch,jobs",
+            ]
+        )
+        if not isinstance(run_details, dict) or not has_reusable_firebase_steps(run_details):
+            continue
+        with tempfile.TemporaryDirectory(prefix="meettrace-android-firebase-") as temp:
+            directory = Path(temp)
+            if not _download_artifact(repository, prior_run_id, expected_name, directory):
+                continue
+            if not firebase_evidence_is_complete(
+                directory=directory,
+                release_id=release_id,
+                arm64_model=arm64_model,
+                arm64_version=arm64_version,
+                arm32_model=arm32_model,
+                arm32_version=arm32_version,
+            ):
+                continue
+            output_directory.mkdir(parents=True, exist_ok=True)
+            for name in (
+                "firebase-output.txt",
+                "firebase-model-arm64.json",
+                "firebase-model-arm32.json",
+            ):
+                source = _single_file(directory, name)
+                assert source is not None
+                shutil.copyfile(source, output_directory / name)
+            return prior_run_id
+    return None
 
 
 def reuse_prior_receipt(
@@ -312,6 +484,10 @@ def main() -> int:
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--output-directory", required=True, type=Path)
     parser.add_argument("--github-output", required=True, type=Path)
+    parser.add_argument("--arm64-model", required=True)
+    parser.add_argument("--arm64-version", required=True)
+    parser.add_argument("--arm32-model", required=True)
+    parser.add_argument("--arm32-version", required=True)
     args = parser.parse_args()
 
     reused_from = reuse_prior_receipt(
@@ -322,10 +498,27 @@ def main() -> int:
         manifest_path=args.manifest,
         output_directory=args.output_directory,
     )
+    firebase_reused_from = None
+    if reused_from is None:
+        firebase_reused_from = reuse_prior_firebase_validation(
+            repository=args.repository,
+            release_id=args.release_id,
+            source_run_id=args.source_run_id,
+            output_directory=args.output_directory,
+            arm64_model=args.arm64_model,
+            arm64_version=args.arm64_version,
+            arm32_model=args.arm32_model,
+            arm32_version=args.arm32_version,
+        )
     with args.github_output.open("a", encoding="utf-8") as output:
         output.write(f"reuse={'true' if reused_from is not None else 'false'}\n")
         if reused_from is not None:
             output.write(f"validation_run_id={reused_from}\n")
+        output.write(
+            f"firebase_reuse={'true' if firebase_reused_from is not None else 'false'}\n"
+        )
+        if firebase_reused_from is not None:
+            output.write(f"firebase_validation_run_id={firebase_reused_from}\n")
     return 0
 
 
