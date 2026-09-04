@@ -101,6 +101,115 @@ print(json.dumps({
   return (jsonDecode(result.stdout.toString()) as Map).cast<String, Object?>();
 }
 
+Future<Map<String, Object?>> _firebaseEvidenceChecks() async {
+  final directory = await Directory.systemTemp.createTemp(
+    'meettrace-android-firebase-verify-',
+  );
+  addTearDown(() => directory.delete(recursive: true));
+  final executable = Platform.isWindows ? 'python' : 'python3';
+  final result = await Process.run(executable, [
+    '-c',
+    r'''
+import importlib.util
+import json
+import shutil
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("receipt", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+root = Path(sys.argv[2])
+release_id = "v1.0.0-alpha.10"
+evidence = root / "evidence"
+evidence.mkdir()
+evidence.joinpath("firebase-output.txt").write_text(
+    "\n".join(
+        f"meettrace-{release_id}-android-{variant}.apk\n│ Passed  │"
+        for variant in ("universal", "arm64", "armeabi-v7a")
+    ),
+    encoding="utf-8",
+)
+evidence.joinpath("firebase-model-arm64.json").write_text(json.dumps({
+    "id": "akita", "form": "PHYSICAL",
+    "supportedVersionIds": ["34"], "supportedAbis": ["arm64-v8a"],
+}))
+evidence.joinpath("firebase-model-arm32.json").write_text(json.dumps({
+    "id": "a13", "form": "PHYSICAL",
+    "supportedVersionIds": ["34"], "supportedAbis": ["armeabi-v7a"],
+}))
+run = {
+    "workflowName": "Alpha Release", "event": "workflow_dispatch",
+    "headBranch": "master", "jobs": [{
+        "name": module.ANDROID_JOB_NAME, "conclusion": "failure",
+        "steps": [
+            {"name": name, "conclusion": "success"}
+            for name in module.FIREBASE_REQUIRED_STEPS
+        ],
+    }],
+}
+arguments = {
+    "directory": evidence, "release_id": release_id,
+    "arm64_model": "akita", "arm64_version": "34",
+    "arm32_model": "a13", "arm32_version": "34",
+}
+complete = module.firebase_evidence_is_complete(**arguments)
+wrong_device = module.firebase_evidence_is_complete(
+    **{**arguments, "arm64_model": "wrong"}
+)
+run["jobs"][0]["steps"][0]["conclusion"] = "failure"
+missing_step = module.has_reusable_firebase_steps(run)
+failed_run = json.loads(json.dumps(run))
+run["jobs"][0]["steps"][0]["conclusion"] = "success"
+artifact_name = f"meettrace-android-distribution-{release_id}"
+
+def fake_gh(arguments):
+    if arguments[0] == "api":
+        return {"artifacts": [
+            {"id": 5000, "name": artifact_name, "expired": False,
+             "workflow_run": {"id": 150}},
+            {"id": 4321, "name": artifact_name, "expired": False,
+             "workflow_run": {"id": 100}},
+        ]}
+    return failed_run if arguments[2] == "150" else run
+
+def fake_download(repository, run_id, name, destination):
+    for path in evidence.iterdir():
+        shutil.copyfile(path, destination / path.name)
+    return True
+
+module._gh_json = fake_gh
+module._download_artifact = fake_download
+output = root / "output"
+reuse_run_id = module.reuse_prior_firebase_validation(
+    repository="owner/repo", release_id=release_id, source_run_id=200,
+    output_directory=output, arm64_model="akita", arm64_version="34",
+    arm32_model="a13", arm32_version="34",
+)
+evidence.joinpath("firebase-output.txt").write_text("ERROR:", encoding="utf-8")
+print(json.dumps({
+    "steps": module.has_reusable_firebase_steps({
+        **run,
+        "jobs": [{**run["jobs"][0], "steps": [
+            {"name": name, "conclusion": "success"}
+            for name in module.FIREBASE_REQUIRED_STEPS
+        ]}],
+    }),
+    "complete": complete,
+    "wrongDevice": wrong_device,
+    "missingStep": missing_step,
+    "errorOutput": module.firebase_evidence_is_complete(**arguments),
+    "reuseRunId": reuse_run_id,
+    "copiedFiles": sorted(path.name for path in output.iterdir()),
+}))
+''',
+    'tool/release/reuse_android_distribution_receipt.py',
+    directory.path,
+  ]);
+  expect(result.exitCode, 0, reason: result.stderr.toString());
+  return (jsonDecode(result.stdout.toString()) as Map).cast<String, Object?>();
+}
+
 Map<String, Object?> _payload() => <String, Object?>{
   'run_details': <String, Object?>{
     'workflowName': 'Alpha Release',
@@ -144,6 +253,24 @@ Map<String, Object?> _payload() => <String, Object?>{
 };
 
 void main() {
+  test('仅复用步骤和内容都完整的 Firebase ARM 证据', () async {
+    final result = await _firebaseEvidenceChecks();
+
+    expect(result, {
+      'steps': true,
+      'complete': true,
+      'wrongDevice': false,
+      'missingStep': false,
+      'errorOutput': false,
+      'reuseRunId': 100,
+      'copiedFiles': [
+        'firebase-model-arm32.json',
+        'firebase-model-arm64.json',
+        'firebase-output.txt',
+      ],
+    });
+  });
+
   test('把原始成功回执转为可追溯 schema 3 复用回执', () async {
     final receipt = await _buildReceipt(_payload()) as Map<String, Object?>;
 
