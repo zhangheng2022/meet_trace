@@ -87,9 +87,10 @@ run_id = module.reuse_prior_receipt(
     manifest_path=manifest,
     output_directory=output,
 )
+receipt_path = output / "receipt.json"
 print(json.dumps({
     "runId": run_id,
-    "receipt": json.loads(output.joinpath("receipt.json").read_text()),
+    "receipt": json.loads(receipt_path.read_text()) if receipt_path.exists() else None,
 }))
 ''',
     'tool/release/reuse_android_distribution_receipt.py',
@@ -276,5 +277,34 @@ void main() {
     });
 
     expect(result['runId'], 100);
+  });
+
+  test('只有失败运行证据时允许重新执行验证', () async {
+    final original = _payload();
+    final failedRun = Map<String, Object?>.from(
+      original['run_details']! as Map<String, Object?>,
+    );
+    failedRun['jobs'] = <Object?>[
+      <String, Object?>{
+        'name': 'Validate complete signed Android candidate set',
+        'conclusion': 'failure',
+      },
+    ];
+    final artifactName = 'meettrace-android-distribution-v1.0.0-alpha.10';
+    final result = await _reuseFixture(<String, Object?>{
+      'artifacts': <Object?>[
+        <String, Object?>{
+          'id': 5000,
+          'name': artifactName,
+          'expired': false,
+          'workflow_run': <String, Object?>{'id': 150},
+        },
+      ],
+      'runs': <String, Object?>{'150': failedRun},
+      'receipts': <String, Object?>{'150': original['prior_receipt']},
+    });
+
+    expect(result['runId'], isNull);
+    expect(result['receipt'], isNull);
   });
 }
