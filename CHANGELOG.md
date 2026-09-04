@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [1.0.0-alpha.14] - 2026-09-04
+
 - 新增：Android 发布同时提供 armeabi-v7a、arm64、x86_64 split 与 universal APK；README 默认推荐 arm64，应用内更新按设备 ABI 下载对应 split。
 
 ## [1.0.0-alpha.13] - 2026-09-03
