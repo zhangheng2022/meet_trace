@@ -427,7 +427,8 @@ jobs:
           set -euo pipefail
           [[ -n "${SENTRY_DSN//[[:space:]]/}" ]]
           mkdir -p build/sentry/android
-          # shellcheck disable=SC2054 -- Flutter expects this comma-delimited value.
+          # Flutter expects this comma-delimited value.
+          # shellcheck disable=SC2054
           common_args=(
             --release
             --target-platform android-arm,android-arm64,android-x64
