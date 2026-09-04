@@ -148,16 +148,21 @@ void main() {
       expect(validation, contains('androidCandidateDistribution'));
       expect(validation, contains('candidateManifestSha256'));
       expect(validation, contains('x86_64Emulator'));
-      expect(validation, contains('script: |\n            set -eu\n'));
       expect(
         validation,
-        contains('} > build/android/distribution/emulator-output.txt'),
+        contains('script: bash tool/release/verify_android_emulator.sh'),
       );
-      expect(validation, contains(r'adb logcat -d --pid="$app_pid"'));
+      expect(validation, isNot(contains('script: |\n            set -eu\n')));
+      final emulatorScript = await File(
+        'tool/release/verify_android_emulator.sh',
+      ).readAsString();
+      expect(emulatorScript, contains('set -euo pipefail'));
+      expect(emulatorScript, contains(r'adb install --no-streaming "$apk"'));
+      expect(emulatorScript, contains(r'adb logcat -d --pid="$app_pid"'));
       expect(
-        validation,
+        emulatorScript,
         contains(
-          "if grep -Eq 'FATAL EXCEPTION|Fatal signal|ANR in com\\.meettrace\\.app|",
+          "grep -Eq 'FATAL EXCEPTION|Fatal signal|ANR in com\\.meettrace\\.app|",
         ),
       );
       expect(validation, contains('contents: write'));
