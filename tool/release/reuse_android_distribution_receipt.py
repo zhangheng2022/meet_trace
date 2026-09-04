@@ -191,7 +191,7 @@ def reuse_prior_receipt(
         if run_id is not None and run_id <= source_run_id:
             run_counts[run_id] = run_counts.get(run_id, 0) + 1
 
-    saw_candidate_evidence = bool(artifacts)
+    saw_blocking_evidence = False
     for artifact in sorted(
         artifacts,
         key=lambda item: _positive_int(item.get("id")) or 0,
@@ -209,6 +209,7 @@ def reuse_prior_receipt(
             or run_counts.get(prior_run_id) != 1
             or artifact.get("expired") is not False
         ):
+            saw_blocking_evidence = True
             continue
         try:
             run_details = _gh_json(
@@ -228,6 +229,19 @@ def reuse_prior_receipt(
             ) from error
         if not isinstance(run_details, dict):
             raise RuntimeError(f"历史发布运行 {prior_run_id} 返回格式无效")
+        jobs = run_details.get("jobs")
+        android_jobs = [
+            job
+            for job in jobs
+            if isinstance(job, dict) and job.get("name") == ANDROID_JOB_NAME
+        ] if isinstance(jobs, list) else []
+        if (
+            len(android_jobs) == 1
+            and android_jobs[0].get("conclusion")
+            in {"failure", "cancelled", "timed_out"}
+        ):
+            continue
+        saw_blocking_evidence = True
 
         with tempfile.TemporaryDirectory(prefix="meettrace-android-receipt-") as temp:
             directory = Path(temp)
@@ -281,7 +295,7 @@ def reuse_prior_receipt(
             shutil.copyfile(arm64_model, output_directory / "firebase-model-arm64.json")
             shutil.copyfile(arm32_model, output_directory / "firebase-model-arm32.json")
             return prior_run_id
-    if saw_candidate_evidence:
+    if saw_blocking_evidence:
         raise RuntimeError(
             "发现同一候选的既有 Android 分发证据，但无法验证原始成功回执；"
             "为避免重复执行 Firebase 验证，发布已失败关闭"
