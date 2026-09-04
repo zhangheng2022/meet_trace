@@ -781,24 +781,7 @@ jobs:
           api-level: 35
           arch: x86_64
           target: google_apis
-          script: |
-            set -eu
-            apk="build/android/distribution/meettrace-${RELEASE_ID}-android-x86_64.apk"
-            adb install --no-streaming "$apk"
-            adb logcat -c
-            adb shell am start -W -n com.meettrace.app/.MainActivity
-            sleep 10
-            app_pid="$(adb shell pidof com.meettrace.app | tr -d '\r')"
-            test -n "$app_pid"
-            {
-              adb logcat -d --pid="$app_pid" '*:E'
-              adb logcat -d '*:E' | grep -E 'ANR in com\.meettrace\.app' || true
-            } > build/android/distribution/emulator-output.txt
-            cat build/android/distribution/emulator-output.txt
-            if grep -Eq 'FATAL EXCEPTION|Fatal signal|ANR in com\.meettrace\.app|sherpa/ONNX 原生运行时加载失败' build/android/distribution/emulator-output.txt; then
-              echo 'x86_64 emulator reported an app or native-runtime crash' >&2
-              exit 1
-            fi
+          script: bash tool/release/verify_android_emulator.sh
 
       - name: Record immutable Android distribution receipt
         if: steps.prior.outputs.reuse != 'true'
