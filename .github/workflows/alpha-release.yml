@@ -782,7 +782,7 @@ jobs:
           arch: x86_64
           target: google_apis
           script: |
-            set -euo pipefail
+            set -eu
             apk="build/android/distribution/meettrace-${RELEASE_ID}-android-x86_64.apk"
             adb install --no-streaming "$apk"
             adb logcat -c
@@ -793,7 +793,8 @@ jobs:
             {
               adb logcat -d --pid="$app_pid" '*:E'
               adb logcat -d '*:E' | grep -E 'ANR in com\.meettrace\.app' || true
-            } | tee build/android/distribution/emulator-output.txt
+            } > build/android/distribution/emulator-output.txt
+            cat build/android/distribution/emulator-output.txt
             if grep -Eq 'FATAL EXCEPTION|Fatal signal|ANR in com\.meettrace\.app|sherpa/ONNX 原生运行时加载失败' build/android/distribution/emulator-output.txt; then
               echo 'x86_64 emulator reported an app or native-runtime crash' >&2
               exit 1

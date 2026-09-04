@@ -148,6 +148,11 @@ void main() {
       expect(validation, contains('androidCandidateDistribution'));
       expect(validation, contains('candidateManifestSha256'));
       expect(validation, contains('x86_64Emulator'));
+      expect(validation, contains('script: |\n            set -eu\n'));
+      expect(
+        validation,
+        contains('} > build/android/distribution/emulator-output.txt'),
+      );
       expect(validation, contains(r'adb logcat -d --pid="$app_pid"'));
       expect(
         validation,
