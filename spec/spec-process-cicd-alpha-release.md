@@ -8,7 +8,7 @@
 
 维护者只手动运行一次 `Alpha Release` 并提供 `release_id`。自动化从 `master` 的同一不可变 SHA 构建 Android、iOS 和 Windows 候选；所有平台门禁通过后公开原 Draft，重验公开 APK，再原子更新签名指针。
 
-逐版本流程不允许最终人工审批、人工 Store 状态证明、重建已批准候选或旁路公开。GitHub Release 只包含 Android APK 与候选清单。
+逐版本流程不允许最终人工审批、人工 Store 状态证明、重建已批准候选或旁路公开。GitHub Release 只包含四个 Android APK 与候选清单。
 
 ## 2. 拓扑
 
@@ -40,12 +40,12 @@ flowchart LR
 | --- | --- |
 | REL-001 | 三平台共享 annotated tag、release ID、candidate SHA、source run 和构建号 |
 | REL-002 | 构建号从 `2001` 连续递增；Android 实测 `versionCode`、iOS build、Windows `1.0.<build>.0` 的 build 相同 |
-| REL-003 | Android 只发布签名 arm64 APK，保留 `--split-per-abi`；Firebase `--no-resign` 原包验证一次，恢复时只复用已验身份和摘要 |
+| REL-003 | Android 发布三个签名 split 与一个 universal APK；ARM 包在对应 Firebase 真机执行 `--no-resign`，x86_64 在 CI 模拟器验证，恢复时仅整组复用相同候选清单摘要 |
 | REL-004 | iOS 只经固定 TestFlight 外测组；Beta App Review 通过并进入 `Testing`，GitHub 不上传 IPA |
 | REL-005 | 同一 Windows x64 MSIX 先进入固定 Flight；Flight 为 `Published` 且包名、版本、架构、上传状态匹配后，才提交 100% non-flighted production |
 | REL-006 | production 必须为同一 MSIX 和 `Published/Public`；提交前重验来源 Artifact 的 SHA-256，GitHub 不上传 MSIX |
 | REL-007 | 完整门禁前不得公开 Draft 或更新指针；Windows 回执不证明客户端生命周期 |
-| REL-008 | 公开后重新下载 Android APK 并核对 SHA-256，之后才更新指针 |
+| REL-008 | 公开后重新下载四个 Android APK 并按候选清单核对 SHA-256，之后才更新指针 |
 | REL-009 | 拒审、未知状态、查询/合同失败维护 `release-blocked` Issue；恢复或正常等待时关闭，Draft 和旧指针不变 |
 | REL-010 | 协调器使用当前已审查工具；候选代码、tag、版本、数据 generation 和摘要始终来自原 candidate |
 | REL-011 | 同一时刻只有一个活动 Draft；其定义是最新公开 Alpha 之后创建的最新合法 Draft |
@@ -60,7 +60,7 @@ flowchart LR
 - 固定 TestFlight group、审核和 `Testing` 回执；
 - Windows Flight `Published` 与精确目标包回执；
 - Windows production `Published/Public`、100% 与同一目标包回执；
-- 来源运行内唯一 Android Firebase ARM 回执；
+- 来源运行内 Android 四包安装、启动与 sherpa/ONNX 原生库加载回执；
 - Android、iOS、Windows 的 Sentry 生产配置、符号上传和符号化验证结果。
 
 最终发布端必须使用 Dart 校验器重验整个门禁，不能只看 job conclusion。原始 Apple/Store 响应、P8、client secret、短期 URL 和测试者信息不得进入 Artifact。

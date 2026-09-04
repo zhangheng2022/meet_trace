@@ -25,7 +25,7 @@ void main() {
       'assets/flutter_assets/assets/licenses/3d-speaker-NOTICE.txt',
       'assets/flutter_assets/assets/licenses/3d-speaker-LICENSE.txt',
       'assets/flutter_assets/NOTICES.Z',
-      'lib/arm64-v8a/libapp.so',
+      'lib/x86_64/libapp.so',
     }) {
       archive.addFile(ArchiveFile.string(path, 'test'));
     }
@@ -42,6 +42,8 @@ void main() {
       apk.path,
       '-ReportPath',
       report.path,
+      '-RequiredAbi',
+      'x86_64',
     ]);
 
     expect(
@@ -51,11 +53,36 @@ void main() {
     );
     final decoded =
         jsonDecode(await report.readAsString()) as Map<String, Object?>;
-    expect(decoded['abis'], <Object?>['arm64-v8a']);
-    expect(decoded['hasArm64'], isTrue);
+    expect(decoded['abis'], <Object?>['x86_64']);
+    expect(decoded['hasArm64'], isFalse);
+    expect(decoded['hasRequiredAbi'], isTrue);
     expect(decoded['hasFlutterNotices'], isTrue);
     expect(decoded['missingAssets'], isEmpty);
     expect(decoded['forbiddenWeights'], isEmpty);
     expect(decoded['forbiddenUserData'], isEmpty);
+
+    final missingDefaultAbi = await Process.run('pwsh', <String>[
+      '-NoLogo',
+      '-NoProfile',
+      '-File',
+      'tool/benchmarks/inspect_debug_apk.ps1',
+      '-ApkPath',
+      apk.path,
+      '-ReportPath',
+      report.path,
+    ]);
+    expect(missingDefaultAbi.exitCode, isNot(0));
+
+    final emptyRequiredAbi = await Process.run('pwsh', <String>[
+      '-NoLogo',
+      '-NoProfile',
+      '-File',
+      'tool/benchmarks/inspect_debug_apk.ps1',
+      '-ApkPath',
+      apk.path,
+      '-RequiredAbi',
+      ' ',
+    ]);
+    expect(emptyRequiredAbi.exitCode, isNot(0));
   });
 }

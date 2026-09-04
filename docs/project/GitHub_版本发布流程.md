@@ -1,6 +1,6 @@
 # 会迹（MeetTrace）Alpha 发布运行手册
 
-> 适用于 Android arm64 APK、iOS TestFlight 和 Windows x64 Microsoft Store 的统一候选。机器合同见 [Alpha Release 规格](../../spec/spec-process-cicd-alpha-release.md)。
+> 适用于 Android 三个 ABI split 与 universal APK、iOS TestFlight 和 Windows x64 Microsoft Store 的统一候选。机器合同见 [Alpha Release 规格](../../spec/spec-process-cicd-alpha-release.md)。
 
 ## 正常发布
 
@@ -14,11 +14,11 @@
 其余步骤自动完成：
 
 1. 从 `master` 固定同一 SHA、tag 和共享构建号，创建 Draft。
-2. 构建并审计 Android 签名 arm64 APK、iOS TestFlight 候选和 Windows Store x64 MSIX。
-3. Android 原包在 Firebase ARM 验证一次；iOS 进入固定外测组并提交 Beta App Review；Windows 包只进入 Actions Artifact。
+2. 构建并审计 Android 四个签名 APK、iOS TestFlight 候选和 Windows Store x64 MSIX。
+3. Android universal/arm64/armeabi-v7a 原包在对应 Firebase 真机验证，x86_64 原包在 CI 模拟器验证；iOS 进入固定外测组并提交 Beta App Review；Windows 包只进入 Actions Artifact。
 4. Reconciler 立即运行，之后每小时第 7、22、37、52 分钟查询商店状态，依次推进固定 Flight 与 100% production。
 5. TestFlight 为 `Testing`、Flight 为 `Published`、production 为 `Published/Public` 且身份完全匹配后，生成 schema 3 门禁。
-6. 自动公开原 Draft，重新下载 Android APK 核对 SHA-256，再原子更新签名指针。
+6. 自动公开原 Draft，重新下载四个 Android APK 并按候选清单核对 SHA-256，再原子更新签名指针。
 
 等待商店处理时不要重跑。正常路径没有逐版本人工审批，也不要求 Windows 专用机；Store API 回执不证明客户端安装、启动、更新或卸载。
 
@@ -44,14 +44,18 @@ gh secret set PARTNER_CENTER_CLIENT_SECRET --repo '<owner>/<repo>' --env microso
 ./tool/release/bootstrap_release_automation.ps1 `
   -TestFlightExternalGroup '<固定外测组名>' `
   -TestFlightPublicLink 'https://testflight.apple.com/join/<固定代码>' `
-  -PartnerCenterFlightId '<固定 Package Flight ID>'
+  -PartnerCenterFlightId '<固定 Package Flight ID>' `
+  -FirebaseAndroidArm64DeviceModel '<Firebase ARM64 真机 model ID>' `
+  -FirebaseAndroidArm64Version '<支持版本>' `
+  -FirebaseAndroidArm32DeviceModel '<Firebase 32 位 ARM 真机 model ID>' `
+  -FirebaseAndroidArm32Version '<支持版本>'
 ```
 
 脚本只校验和设置配置，不读取或复制 Secret。Partner Center 的产品、listing、年龄分级、定价、固定 Flight 和自动发布，以及 TestFlight 固定外测组、公测链接与 App Manager API Key，仍需预先完成一次。
 
 | Environment | 内容 |
 | --- | --- |
-| `android-alpha` | Android 签名、Firebase、Sentry |
+| `android-alpha` | Android 签名、Firebase、Sentry，以及 ARM64/32 位 ARM 真机 model/version |
 | `testflight` | App Store Connect、iOS 签名、固定 group/link、Sentry |
 | `windows-alpha` | 只构建 Store 候选；含最小权限 Sentry 符号上传 Token，无 Store 发布 Secret |
 | `microsoft-store` | Partner Center 凭据与固定 Flight ID |
@@ -78,6 +82,6 @@ Reconciler 对正常 processing/review/certification/publishing 状态只等待�
 - [ ] required checks 正常，发布 Environment 无 reviewer 或 wait timer。
 - [ ] TestFlight 固定组、公测链接、审核联系与出口合规已配置。
 - [ ] Partner Center 固定 Flight、自动认证后发布和 100% production 已配置。
-- [ ] Firebase OIDC 与 ARM 设备可用。
+- [ ] Firebase OIDC、ARM64 真机和支持 32 位 ABI 的 ARM 真机 model/version 已配置且可用。
 - [ ] 三平台 Sentry 生产配置、统一 `release/dist`、最小权限 Token 与符号化验证已配置。
 - [ ] 本次只填写新的 `release_id`；仅在无法通过候选提交表达时填写紧急补充说明。

@@ -20,7 +20,7 @@
 
 | 平台 | 构建与分发门禁 |
 | --- | --- |
-| Android | API 24+；仅正式签名 `arm64-v8a` APK；Draft 与公开 APK 摘要一致 |
+| Android | API 24+；正式签名的三个 ABI split 与 universal APK；Draft 与公开四包摘要一致 |
 | iOS | iOS 15+；只经固定 TestFlight 外测组，GitHub 不上传 IPA |
 | Windows | Windows 10 22H2/11 x64；固定 Store 身份；Flight `Published` 与 production `Published/Public` 精确回执；GitHub 不上传 MSIX |
 

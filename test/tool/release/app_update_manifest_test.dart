@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:ffi';
+
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/data/services/updates/ed25519_app_update_signature_verifier.dart';
@@ -25,6 +28,7 @@ void main() {
         expectedKeyId: 'alpha-0123456789abcdef',
         publicKeyBytes: publicKey,
       ),
+      androidAbi: Abi.androidArm64,
     );
 
     final android = await parser.parse(
@@ -44,7 +48,7 @@ void main() {
     expect(
       android.artifact.installUri.toString(),
       'https://github.com/example/meettrace/releases/download/'
-      'v1.1.0-alpha.1/meettrace.apk',
+      'v1.1.0-alpha.1/meettrace-v1.1.0-alpha.1-android-arm64.apk',
     );
     expect(ios.artifact.installUri.host, 'testflight.apple.com');
     expect(windows.artifact.installUri.scheme, 'ms-windows-store');
@@ -94,6 +98,7 @@ void main() {
         expectedKeyId: 'alpha-0123456789abcdef',
         publicKeyBytes: publicKey,
       ),
+      androidAbi: Abi.androidArm64,
     ).parse(withdrawn, platform: AppUpdatePlatform.android);
     expect(
       parsedWithdrawal.candidate.status,
@@ -143,9 +148,10 @@ void main() {
     );
   });
 
-  test('拒绝 Android arm64 split versionCode 与基础构建号不匹配', () async {
+  test('拒绝 Android split versionCode 与共享构建号不匹配', () async {
     final request = _request(seed: seed, publicKey: publicKey);
-    request.androidCandidate['versionCode'] = 2002;
+    final artifacts = request.androidCandidate['artifacts']! as Map;
+    (artifacts['arm64-v8a']! as Map)['versionCode'] = 2002;
 
     await expectLater(
       createSignedAppUpdateManifest(request),
@@ -153,22 +159,48 @@ void main() {
     );
   });
 
-  test('schema 1 遗留候选仍可修复指针但不伪造真实 versionCode', () async {
+  test('拒绝旧 Android 候选 schema', () async {
     final request = _request(seed: seed, publicKey: publicKey);
-    request.androidCandidate
-      ..['schemaVersion'] = 1
-      ..remove('androidBaseBuildNumber')
-      ..remove('versionCode');
+    request.androidCandidate['schemaVersion'] = 2;
+    await expectLater(
+      createSignedAppUpdateManifest(request),
+      throwsFormatException,
+    );
+  });
 
-    final envelope = await createSignedAppUpdateManifest(request);
-    final parsed = await SignedAppUpdateManifestParser(
-      signatureVerifier: Ed25519AppUpdateSignatureVerifier(
-        expectedKeyId: 'alpha-0123456789abcdef',
-        publicKeyBytes: publicKey,
+  test('签名器可从已验签 schema 1 指针单向迁移到 schema 2', () async {
+    final current = await createSignedAppUpdateManifest(
+      _request(seed: seed, publicKey: publicKey),
+    );
+    final envelope = jsonDecode(utf8.decode(current)) as Map<String, Object?>;
+    final payload = jsonDecode(
+      utf8.decode(base64Decode(envelope['signedPayload']! as String)),
+    ) as Map<String, Object?>;
+    payload['schemaVersion'] = 1;
+    final payloadBytes = utf8.encode(jsonEncode(payload));
+    final signature = await Ed25519().sign(
+      payloadBytes,
+      keyPair: await Ed25519().newKeyPairFromSeed(seed),
+    );
+    envelope['signedPayload'] = base64Encode(payloadBytes);
+    (envelope['signature']! as Map<String, Object?>)['value'] = base64Encode(
+      signature.bytes,
+    );
+
+    final migrated = await createSignedAppUpdateManifest(
+      _request(
+        seed: seed,
+        publicKey: publicKey,
+        previous: utf8.encode(jsonEncode(envelope)),
+        releaseId: 'v1.1.0-alpha.2',
+        buildNumber: 2002,
       ),
-    ).parse(envelope, platform: AppUpdatePlatform.android);
-
-    expect(parsed.artifact.versionCode, isNull);
+    );
+    final migratedEnvelope = jsonDecode(utf8.decode(migrated)) as Map;
+    final migratedPayload = jsonDecode(
+      utf8.decode(base64Decode(migratedEnvelope['signedPayload'] as String)),
+    ) as Map;
+    expect(migratedPayload['schemaVersion'], 2);
   });
 }
 
@@ -194,19 +226,26 @@ AppUpdateManifestSigningRequest _request({
   approvedAt: DateTime.utc(2026, 8, 20),
   repository: 'example/meettrace',
   androidCandidate: <String, Object?>{
-    'schemaVersion': 2,
+    'schemaVersion': 3,
     'releaseId': releaseId,
     'marketingVersion': versionName,
     'buildNumber': buildNumber,
-    'androidBaseBuildNumber': buildNumber - 2000,
-    'versionCode': buildNumber,
     'commitSha': '0123456789abcdef0123456789abcdef01234567',
     'packageIdentity': 'com.meettrace.app',
     'signingIdentitySha256': 'a' * 64,
-    'artifact': <String, Object?>{
-      'name': 'meettrace.apk',
-      'bytes': 1024,
-      'sha256': 'b' * 64,
+    'artifacts': <String, Object?>{
+      for (final entry in const <String, String>{
+        'armeabi-v7a': 'armeabi-v7a',
+        'arm64-v8a': 'arm64',
+        'x86_64': 'x86_64',
+        'universal': 'universal',
+      }.entries)
+        entry.key: <String, Object?>{
+          'name': 'meettrace-$releaseId-android-${entry.value}.apk',
+          'bytes': 1024,
+          'sha256': 'b' * 64,
+          'versionCode': buildNumber,
+        },
     },
   },
   testFlightUri:

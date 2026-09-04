@@ -90,16 +90,37 @@ void main() {
       );
     });
 
-    test('拒绝 Android 验证回执绑定其他 APK 摘要', () {
+    test('拒绝 Android 验证回执绑定其他候选清单摘要', () {
       final gate = _gate();
       final validations = gate['validations']! as Map<String, Object?>;
-      (validations['android']! as Map<String, Object?>)['artifactSha256'] =
+      (validations['android']!
+              as Map<String, Object?>)['candidateManifestSha256'] =
           'c' * 64;
 
       expect(
         () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
         throwsFormatException,
       );
+    });
+
+    test('拒绝 Android 任一架构运行验证未通过或缺失', () {
+      for (final mutation in <void Function(Map<String, Object?>)>[
+        (android) =>
+            (android['runtimeValidation']!
+                    as Map<String, Object?>)['x86_64Emulator'] =
+                'failed',
+        (android) => (android['runtimeValidation']! as Map<String, Object?>)
+            .remove('armeabiV7aFirebase'),
+        (android) => android.remove('runtimeValidation'),
+      ]) {
+        final gate = _gate();
+        final validations = gate['validations']! as Map<String, Object?>;
+        mutation(validations['android']! as Map<String, Object?>);
+        expect(
+          () => verifyReleaseOrchestrationGate(jsonEncode(gate), _request()),
+          throwsFormatException,
+        );
+      }
     });
 
     test('拒绝 Flight 回执绑定其他候选', () {
@@ -153,7 +174,7 @@ ReleaseOrchestrationGateRequest _request({int sourceRunId = 101}) =>
       buildNumber: 2001,
       marketingVersion: '1.2.3',
       testFlightExternalGroup: 'MeetTrace External',
-      androidArtifactSha256: 'b' * 64,
+      androidCandidateManifestSha256: 'b' * 64,
       windowsArtifactName: 'meettrace-v1.2.3-alpha.4-windows-store-x64.msix',
       windowsPackageVersion: '1.0.2001.0',
       windowsFlightId: 'flight-fixed',
@@ -198,14 +219,19 @@ Map<String, Object?> _gate() => <String, Object?>{
   },
   'validations': <String, Object?>{
     'android': <String, Object?>{
-      'schemaVersion': 2,
+      'schemaVersion': 3,
       'validation': 'androidCandidateDistribution',
       'releaseId': 'v1.2.3-alpha.4',
       'candidateCommitSha': 'a' * 40,
       'sourceRunId': 101,
       'validationRunId': 101,
-      'androidFirebaseArm': 'passed',
-      'artifactSha256': 'b' * 64,
+      'runtimeValidation': <String, Object?>{
+        'universalArm64Firebase': 'passed',
+        'arm64Firebase': 'passed',
+        'armeabiV7aFirebase': 'passed',
+        'x86_64Emulator': 'passed',
+      },
+      'candidateManifestSha256': 'b' * 64,
       'reused': false,
     },
   },

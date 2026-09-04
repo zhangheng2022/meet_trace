@@ -3,6 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:meettrace/app/application.dart';
 import 'package:meettrace/app/meettrace_flow.dart';
 import 'package:meettrace/data/repositories/shared_preferences_remote_diagnostics_repository.dart';
+import 'package:meettrace/data/services/asr/sherpa_onnx/sherpa_onnx_runtime_initializer.dart';
 import 'package:meettrace/data/services/monitoring/sentry_bootstrap.dart';
 import 'package:meettrace/domain/models/app_language.dart';
 import 'package:meettrace/domain/models/app_theme.dart';
@@ -43,6 +44,12 @@ Future<void> main() async {
           : const [],
     ),
     beforeRunApp: () async {
+      if (const bool.fromEnvironment('MEETTRACE_REQUIRE_NATIVE_RUNTIME')) {
+        final runtime = sherpaOnnxRuntimeInitializer.initialize();
+        if (!runtime.isReady) {
+          throw StateError('sherpa/ONNX 原生运行时加载失败');
+        }
+      }
       await initializeDateFormatting();
       await enableAppEdgeToEdge();
     },

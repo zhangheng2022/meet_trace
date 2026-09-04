@@ -60,7 +60,6 @@ Future<List<int>> createSignedAppUpdateManifest(
         );
   _validateTransition(request, previousPayload);
 
-  final artifact = _object(request.androidCandidate['artifact'], 'artifact');
   if (_text(request.androidCandidate, 'releaseId') != request.releaseId ||
       _text(request.androidCandidate, 'marketingVersion') !=
           request.versionName ||
@@ -69,43 +68,53 @@ Future<List<int>> createSignedAppUpdateManifest(
       _text(request.androidCandidate, 'commitSha') != request.sourceCommitSha) {
     throw const FormatException('Android 候选身份与待签名版本不匹配');
   }
-  final artifactName = _text(artifact, 'name');
-  final artifactBytes = _positiveInt(artifact, 'bytes');
-  if (artifactBytes > _maxAndroidUpdateBytes) {
-    throw const FormatException('Android 更新包超过 512 MiB 上限');
-  }
   final signingIdentity = _sha256(
     request.androidCandidate,
     'signingIdentitySha256',
   );
-  final candidateSchema = _positiveInt(
-    request.androidCandidate,
-    'schemaVersion',
-  );
-  if (candidateSchema != 1 && candidateSchema != 2) {
+  if (_positiveInt(request.androidCandidate, 'schemaVersion') != 3) {
     throw const FormatException('Android 候选 schemaVersion 不受支持');
-  }
-  final androidVersionCode = candidateSchema == 2
-      ? _positiveInt(request.androidCandidate, 'versionCode')
-      : null;
-  if (candidateSchema == 2) {
-    final androidBaseBuildNumber = _positiveInt(
-      request.androidCandidate,
-      'androidBaseBuildNumber',
-    );
-    if (androidVersionCode != androidBaseBuildNumber + 2000 ||
-        androidVersionCode != request.buildNumber) {
-      throw const FormatException('Android arm64 split versionCode 映射无效');
-    }
   }
   if (_text(request.androidCandidate, 'packageIdentity') !=
       'com.meettrace.app') {
     throw const FormatException('Android 候选包名不匹配');
   }
   final encodedRelease = Uri.encodeComponent(request.releaseId);
-  final encodedArtifact = Uri.encodeComponent(artifactName);
+  final candidateArtifacts = _object(
+    request.androidCandidate['artifacts'],
+    'artifacts',
+  );
+  final androidVariants = <String, Object?>{};
+  for (final abi in const <String>['armeabi-v7a', 'arm64-v8a', 'x86_64']) {
+    final artifact = _object(candidateArtifacts[abi], 'artifacts.$abi');
+    final artifactName = _text(artifact, 'name');
+    final artifactBytes = _positiveInt(artifact, 'bytes');
+    if (artifactBytes > _maxAndroidUpdateBytes) {
+      throw const FormatException('Android 更新包超过 512 MiB 上限');
+    }
+    final versionCode = _positiveInt(artifact, 'versionCode');
+    if (versionCode != request.buildNumber) {
+      throw const FormatException('Android split versionCode 与共享构建号不匹配');
+    }
+    androidVariants[abi] = <String, Object?>{
+      'artifactId': 'android-$abi-${request.buildNumber}-$artifactName',
+      'installUri':
+          'https://github.com/${request.repository}/releases/download/'
+          '$encodedRelease/${Uri.encodeComponent(artifactName)}',
+      'bytes': artifactBytes,
+      'sha256': _sha256(artifact, 'sha256'),
+      'versionCode': versionCode,
+    };
+  }
+  final universal = _object(
+    candidateArtifacts['universal'],
+    'artifacts.universal',
+  );
+  if (_positiveInt(universal, 'versionCode') != request.buildNumber) {
+    throw const FormatException('Android universal versionCode 与共享构建号不匹配');
+  }
   final payload = <String, Object?>{
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'channel': 'alpha',
     'status': request.status,
     'releaseId': request.releaseId,
@@ -116,15 +125,9 @@ Future<List<int>> createSignedAppUpdateManifest(
     'approvedAt': request.approvedAt.toUtc().toIso8601String(),
     'artifacts': <String, Object?>{
       'android': <String, Object?>{
-        'artifactId': 'android-${request.buildNumber}-$artifactName',
-        'installUri':
-            'https://github.com/${request.repository}/releases/download/'
-            '$encodedRelease/$encodedArtifact',
-        'bytes': artifactBytes,
-        'sha256': _sha256(artifact, 'sha256'),
         'packageIdentity': 'com.meettrace.app',
         'signingIdentitySha256': signingIdentity,
-        'versionCode': ?androidVersionCode,
+        'variants': androidVariants,
       },
       'ios': <String, Object?>{
         'artifactId': 'ios-testflight-${request.buildNumber}',
@@ -232,7 +235,9 @@ Future<Map<String, Object?>> _verifyEnvelope(
     jsonDecode(utf8.decode(payloadBytes)),
     'previous payload',
   );
-  if (payload['schemaVersion'] != 1 || payload['channel'] != 'alpha') {
+  final schemaVersion = payload['schemaVersion'];
+  if ((schemaVersion != 1 && schemaVersion != 2) ||
+      payload['channel'] != 'alpha') {
     throw const FormatException('上一更新 payload schema 或频道无效');
   }
   return payload;

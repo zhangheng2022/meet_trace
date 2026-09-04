@@ -51,31 +51,66 @@ void main() {
     expect(receipt.toJson()['publishRunId'], 456);
   });
 
-  test('拒绝公开 manifest 与签名指针的身份或摘要不一致', () async {
+  test('拒绝任一 Android split 与签名指针的摘要不一致', () async {
     final envelope = await createSignedAppUpdateManifest(
       _request(seed: seed, publicKey: publicKey),
     );
-    final candidate = _androidCandidate();
-    (candidate['artifact']! as Map<String, Object?>)['sha256'] = 'c' * 64;
+    for (final abi in const <String>['armeabi-v7a', 'arm64-v8a', 'x86_64']) {
+      final candidate = _androidCandidate();
+      final artifacts = candidate['artifacts']! as Map<String, Object?>;
+      (artifacts[abi]! as Map<String, Object?>)['sha256'] = 'c' * 64;
 
-    await expectLater(
-      validatePublicUpdateContract(
-        envelopeBytes: envelope,
-        androidCandidate: candidate,
-        iosCandidate: _iosCandidate(),
-        windowsCandidate: _windowsCandidate(),
-        windowsProductionReceipt: _windowsProductionReceipt(),
-        expectedReleaseId: 'v1.1.0-alpha.1',
-        expectedRepository: 'example/meettrace',
-        expectedSourceRunId: 123,
-        expectedPublishRunId: 456,
-        signatureVerifier: Ed25519AppUpdateSignatureVerifier(
-          expectedKeyId: 'alpha-0123456789abcdef',
-          publicKeyBytes: publicKey,
+      await expectLater(
+        validatePublicUpdateContract(
+          envelopeBytes: envelope,
+          androidCandidate: candidate,
+          iosCandidate: _iosCandidate(),
+          windowsCandidate: _windowsCandidate(),
+          windowsProductionReceipt: _windowsProductionReceipt(),
+          expectedReleaseId: 'v1.1.0-alpha.1',
+          expectedRepository: 'example/meettrace',
+          expectedSourceRunId: 123,
+          expectedPublishRunId: 456,
+          signatureVerifier: Ed25519AppUpdateSignatureVerifier(
+            expectedKeyId: 'alpha-0123456789abcdef',
+            publicKeyBytes: publicKey,
+          ),
         ),
-      ),
-      throwsFormatException,
+        throwsFormatException,
+      );
+    }
+  });
+
+  test('拒绝 Android 候选四包缺失或共享构建号不一致', () async {
+    final envelope = await createSignedAppUpdateManifest(
+      _request(seed: seed, publicKey: publicKey),
     );
+    for (final mutate in <void Function(Map<String, Object?>)>[
+      (artifacts) => artifacts.remove('x86_64'),
+      (artifacts) =>
+          (artifacts['universal']! as Map<String, Object?>)['versionCode'] = 12,
+    ]) {
+      final candidate = _androidCandidate();
+      mutate(candidate['artifacts']! as Map<String, Object?>);
+      await expectLater(
+        validatePublicUpdateContract(
+          envelopeBytes: envelope,
+          androidCandidate: candidate,
+          iosCandidate: _iosCandidate(),
+          windowsCandidate: _windowsCandidate(),
+          windowsProductionReceipt: _windowsProductionReceipt(),
+          expectedReleaseId: 'v1.1.0-alpha.1',
+          expectedRepository: 'example/meettrace',
+          expectedSourceRunId: 123,
+          expectedPublishRunId: 456,
+          signatureVerifier: Ed25519AppUpdateSignatureVerifier(
+            expectedKeyId: 'alpha-0123456789abcdef',
+            publicKeyBytes: publicKey,
+          ),
+        ),
+        throwsFormatException,
+      );
+    }
   });
 
   test('拒绝已撤回候选和错误的 Alpha Release 运行身份', () async {
@@ -210,7 +245,7 @@ AppUpdateManifestSigningRequest _request({
 );
 
 Map<String, Object?> _androidCandidate() => <String, Object?>{
-  'schemaVersion': 1,
+  'schemaVersion': 3,
   'platform': 'android',
   'releaseId': 'v1.1.0-alpha.1',
   'marketingVersion': '1.1.0',
@@ -222,10 +257,19 @@ Map<String, Object?> _androidCandidate() => <String, Object?>{
   'runAttempt': '1',
   'packageIdentity': 'com.meettrace.app',
   'signingIdentitySha256': 'a' * 64,
-  'artifact': <String, Object?>{
-    'name': 'meettrace-v1.1.0-alpha.1-android-arm64.apk',
-    'bytes': 1024,
-    'sha256': 'b' * 64,
+  'artifacts': <String, Object?>{
+    for (final entry in const <String, String>{
+      'armeabi-v7a': 'armeabi-v7a',
+      'arm64-v8a': 'arm64',
+      'x86_64': 'x86_64',
+      'universal': 'universal',
+    }.entries)
+      entry.key: <String, Object?>{
+        'name': 'meettrace-v1.1.0-alpha.1-android-${entry.value}.apk',
+        'bytes': 1024,
+        'sha256': 'b' * 64,
+        'versionCode': 11,
+      },
   },
   'distribution': <String, Object?>{'repository': 'example/meettrace'},
 };

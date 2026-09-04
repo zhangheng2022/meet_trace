@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:meettrace/data/services/updates/app_update_signing_identity.dart';
 import 'package:meettrace/data/services/updates/ed25519_app_update_signature_verifier.dart';
@@ -128,27 +129,40 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
     throw const FormatException('待验证 publish run ID 必须为正整数');
   }
 
-  final parser = SignedAppUpdateManifestParser(
-    signatureVerifier:
-        signatureVerifier ??
-        Ed25519AppUpdateSignatureVerifier(
-          expectedKeyId: appUpdateSigningKeyId,
-          publicKeyBytes: base64Decode(appUpdateSigningPublicKeyBase64),
-        ),
-  );
+  final verifier =
+      signatureVerifier ??
+      Ed25519AppUpdateSignatureVerifier(
+        expectedKeyId: appUpdateSigningKeyId,
+        publicKeyBytes: base64Decode(appUpdateSigningPublicKeyBase64),
+      );
+  final androidUpdates = <String, VerifiedPlatformAppUpdate>{};
+  for (final entry in const <String, Abi>{
+    'armeabi-v7a': Abi.androidArm,
+    'arm64-v8a': Abi.androidArm64,
+    'x86_64': Abi.androidX64,
+  }.entries) {
+    androidUpdates[entry.key] = await SignedAppUpdateManifestParser(
+      signatureVerifier: verifier,
+      androidAbi: entry.value,
+    ).parse(envelopeBytes, platform: AppUpdatePlatform.android);
+  }
+  final parser = SignedAppUpdateManifestParser(signatureVerifier: verifier);
   final updates = await Future.wait(<Future<VerifiedPlatformAppUpdate>>[
-    parser.parse(envelopeBytes, platform: AppUpdatePlatform.android),
     parser.parse(envelopeBytes, platform: AppUpdatePlatform.ios),
     parser.parse(envelopeBytes, platform: AppUpdatePlatform.windows),
   ]);
-  final android = updates[0];
-  final ios = updates[1];
-  final windows = updates[2];
+  final android = androidUpdates['arm64-v8a']!;
+  final ios = updates[0];
+  final windows = updates[1];
 
   if (android.candidate.status != AppUpdateCandidateStatus.publicApproved) {
     throw StateError('更新指针不是公开批准状态');
   }
-  for (final update in <VerifiedPlatformAppUpdate>[ios, windows]) {
+  for (final update in <VerifiedPlatformAppUpdate>[
+    ...androidUpdates.values,
+    ios,
+    windows,
+  ]) {
     _requireSameCandidate(android.candidate, update.candidate);
   }
   final candidate = android.candidate;
@@ -156,7 +170,7 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
     throw const FormatException('更新指针 releaseId 与待验证版本不匹配');
   }
 
-  _requireCandidateValue(androidCandidate, 'schemaVersion', 1);
+  _requireCandidateValue(androidCandidate, 'schemaVersion', 3);
   _requireCandidateValue(androidCandidate, 'platform', 'android');
   _requireCandidateValue(androidCandidate, 'releaseId', candidate.releaseId);
   _requireCandidateValue(
@@ -182,14 +196,63 @@ Future<PublicUpdateValidationReceipt> validatePublicUpdateContract({
     throw const FormatException('Android 候选构建或运行身份不匹配');
   }
 
-  final artifact = _object(androidCandidate['artifact'], 'artifact');
-  final artifactName = _text(artifact, 'name');
-  if (artifactName != 'meettrace-${candidate.releaseId}-android-arm64.apk') {
-    throw const FormatException('Android 候选文件名不匹配');
+  final candidateArtifacts = _object(
+    androidCandidate['artifacts'],
+    'artifacts',
+  );
+  if (candidateArtifacts.keys.toSet().difference(const {
+        'armeabi-v7a',
+        'arm64-v8a',
+        'x86_64',
+        'universal',
+      }).isNotEmpty ||
+      candidateArtifacts.length != 4) {
+    throw const FormatException('Android 候选产物集不完整');
   }
+  final signingIdentity = _sha(androidCandidate, 'signingIdentitySha256', 64);
+  for (final entry in const <String, String>{
+    'armeabi-v7a': 'armeabi-v7a',
+    'arm64-v8a': 'arm64',
+    'x86_64': 'x86_64',
+    'universal': 'universal',
+  }.entries) {
+    final current = _object(
+      candidateArtifacts[entry.key],
+      '${entry.key} artifact',
+    );
+    if (_text(current, 'name') !=
+            'meettrace-${candidate.releaseId}-android-${entry.value}.apk' ||
+        _positiveInt(current, 'versionCode') != candidate.buildNumber) {
+      throw const FormatException('Android 候选文件名或共享构建号不匹配');
+    }
+    final bytes = _positiveInt(current, 'bytes');
+    final sha256 = _sha(current, 'sha256', 64);
+    final expectedUri = Uri.https(
+      'github.com',
+      '/$expectedRepository/releases/download/'
+          '${Uri.encodeComponent(candidate.releaseId)}/'
+          '${Uri.encodeComponent(_text(current, 'name'))}',
+    );
+    if (entry.key == 'universal') {
+      // schema 2 不发布 universal 指针；其完整性由签名的候选清单 SHA 绑定。
+      continue;
+    }
+    final signed = androidUpdates[entry.key]!;
+    if (signed.artifact.installUri != expectedUri ||
+        signed.artifact.bytes != bytes ||
+        signed.artifact.sha256 != sha256 ||
+        signed.artifact.packageIdentity != _androidPackageIdentity ||
+        signed.artifact.signingIdentitySha256 != signingIdentity) {
+      throw const FormatException('Android split 与签名更新指针不匹配');
+    }
+  }
+  final artifact = _object(
+    candidateArtifacts['arm64-v8a'],
+    'arm64-v8a artifact',
+  );
+  final artifactName = _text(artifact, 'name');
   final artifactBytes = _positiveInt(artifact, 'bytes');
   final artifactSha256 = _sha(artifact, 'sha256', 64);
-  final signingIdentity = _sha(androidCandidate, 'signingIdentitySha256', 64);
   final androidDistribution = _object(
     androidCandidate['distribution'],
     'Android distribution',

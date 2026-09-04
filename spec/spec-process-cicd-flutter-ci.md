@@ -35,14 +35,14 @@
 
 - iOS：只构建 Release `Runner.app` 并检查；不创建、上传或描述为可安装 IPA。
 - Windows：在 `windows-2025` 以 `SENTRY_ENABLED=false` 构建 Release，生成 `CN=MeetTrace Development` 的不可分发探针，检查 manifest、运行资产和禁入内容，上传证据前删除 MSIX；该探针不是 Store 候选，不改变可分发 Release 默认开启 Sentry 的产品合同。
-- Android：正式候选只构建签名 arm64 APK，并在来源运行的 Firebase ARM 设备以 `--no-resign` 验证一次。
+- Android：正式候选构建签名的 armeabi-v7a、arm64-v8a、x86_64 split 与 universal APK；ARM 包在对应 Firebase 真机以 `--no-resign` 验证，x86_64 在 CI 模拟器验证。
 
 ## 4. 发布共享合同
 
 完整状态机见 [Alpha Release 规格](spec-process-cicd-alpha-release.md)。CI 与发布只共享以下规则：
 
 - 三平台使用同一营销版本和共享构建号。
-- GitHub Release 只含 Android APK 与公开候选清单；IPA、MSIX 和详细证据留在平台或短期 Artifact。
+- GitHub Release 只含四个 Android APK 与公开候选清单；IPA、MSIX 和详细证据留在平台或短期 Artifact。
 - Android/iOS/Windows 候选均启用 Sentry；`SENTRY_RELEASE` 为 `com.meettrace.app@<version>+<build>`，`SENTRY_DIST` 为共享构建号。
 - 三平台符号上传只读对应受保护 Environment 的 Token；任一候选缺少生产配置、符号上传失败或无法符号化均阻断统一发布。
 - 完整门禁前不得公开 Draft 或修改 `updates/alpha/alpha.json`；撤回不删除或覆盖资产。

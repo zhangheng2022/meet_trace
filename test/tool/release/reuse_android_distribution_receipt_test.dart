@@ -43,6 +43,7 @@ Future<Map<String, Object?>> _reuseFixture(Map<String, Object?> fixture) async {
     '-c',
     '''
 import importlib.util
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -55,6 +56,10 @@ with open(sys.argv[2], encoding="utf-8") as source:
 root = Path(sys.argv[3])
 manifest = root / "manifest.json"
 manifest.write_text(json.dumps({"artifact": {"sha256": "b" * 64}}))
+manifest_digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+for receipt in fixture["receipts"].values():
+    if isinstance(receipt, dict):
+        receipt["candidateManifestSha256"] = manifest_digest
 
 def fake_gh(arguments):
     if arguments[0] == "api":
@@ -66,6 +71,9 @@ def fake_download(repository, run_id, name, destination):
         json.dumps(fixture["receipts"][str(run_id)]), encoding="utf-8"
     )
     destination.joinpath("firebase-output.txt").write_text("passed")
+    destination.joinpath("emulator-output.txt").write_text("passed")
+    destination.joinpath("firebase-model-arm64.json").write_text("{}")
+    destination.joinpath("firebase-model-arm32.json").write_text("{}")
     return True
 
 module._gh_json = fake_gh
@@ -99,7 +107,7 @@ Map<String, Object?> _payload() => <String, Object?>{
     'headBranch': 'master',
     'jobs': <Object?>[
       <String, Object?>{
-        'name': 'Validate signed Android candidate once on Firebase ARM64',
+        'name': 'Validate complete signed Android candidate set',
         'conclusion': 'success',
       },
     ],
@@ -110,29 +118,35 @@ Map<String, Object?> _payload() => <String, Object?>{
     'expired': false,
   },
   'prior_receipt': <String, Object?>{
-    'schemaVersion': 1,
+    'schemaVersion': 3,
     'validation': 'androidCandidateDistribution',
     'releaseId': 'v1.0.0-alpha.10',
     'candidateCommitSha': 'a' * 40,
     'sourceRunId': 100,
     'validationRunId': 100,
-    'androidFirebaseArm': 'passed',
-    'artifactSha256': 'b' * 64,
+    'runtimeValidation': <String, Object?>{
+      'universalArm64Firebase': 'passed',
+      'arm64Firebase': 'passed',
+      'armeabiV7aFirebase': 'passed',
+      'x86_64Emulator': 'passed',
+    },
+    'candidateManifestSha256': 'b' * 64,
+    'reused': false,
     'validatedAtUtc': '2026-08-26T07:27:23Z',
   },
   'release_id': 'v1.0.0-alpha.10',
   'candidate_sha': 'a' * 40,
-  'artifact_sha256': 'b' * 64,
+  'candidate_manifest_sha256': 'b' * 64,
   'source_run_id': 200,
   'prior_run_id': 100,
   'original_receipt_sha256': 'c' * 64,
 };
 
 void main() {
-  test('把原始 schema 1 成功回执升级为可追溯 schema 2 复用回执', () async {
+  test('把原始成功回执转为可追溯 schema 3 复用回执', () async {
     final receipt = await _buildReceipt(_payload()) as Map<String, Object?>;
 
-    expect(receipt['schemaVersion'], 2);
+    expect(receipt['schemaVersion'], 3);
     expect(receipt['sourceRunId'], 200);
     expect(receipt['validationRunId'], 100);
     expect(receipt['reused'], true);
@@ -145,10 +159,10 @@ void main() {
     expect(receipt['originalReceiptSha256'], 'c' * 64);
   });
 
-  test('接受未复用的 schema 2 原始成功回执', () async {
+  test('接受未复用的 schema 3 原始成功回执', () async {
     final payload = _payload();
     (payload['prior_receipt']! as Map<String, Object?>)
-      ..['schemaVersion'] = 2
+      ..['schemaVersion'] = 3
       ..['reused'] = false;
 
     final receipt = await _buildReceipt(payload) as Map<String, Object?>;
@@ -166,18 +180,24 @@ void main() {
     expect(await _buildReceipt(failedJob), isNull);
 
     final wrongDigest = _payload();
-    wrongDigest['artifact_sha256'] = 'd' * 64;
+    wrongDigest['candidate_manifest_sha256'] = 'd' * 64;
     expect(await _buildReceipt(wrongDigest), isNull);
 
     final futureRun = _payload();
     futureRun['prior_run_id'] = 201;
     expect(await _buildReceipt(futureRun), isNull);
+
+    final failedRuntime = _payload();
+    final receipt = failedRuntime['prior_receipt']! as Map<String, Object?>;
+    (receipt['runtimeValidation']! as Map<String, Object?>)['x86_64Emulator'] =
+        'failed';
+    expect(await _buildReceipt(failedRuntime), isNull);
   });
 
   test('复用回执不能充当原始 Firebase 验证回执', () async {
     final payload = _payload();
     (payload['prior_receipt']! as Map<String, Object?>)
-      ..['schemaVersion'] = 2
+      ..['schemaVersion'] = 3
       ..['reused'] = true;
 
     expect(await _buildReceipt(payload), isNull);
@@ -190,7 +210,7 @@ void main() {
     );
     failedRun['jobs'] = <Object?>[
       <String, Object?>{
-        'name': 'Validate signed Android candidate once on Firebase ARM64',
+        'name': 'Validate complete signed Android candidate set',
         'conclusion': 'cancelled',
       },
     ];
@@ -225,5 +245,36 @@ void main() {
       (result['receipt']! as Map<String, Object?>)['reusedFromArtifactId'],
       4321,
     );
+  });
+
+  test('精确 Artifact 选择会跳过非对象 JSON 回执', () async {
+    final original = _payload();
+    final artifactName = 'meettrace-android-distribution-v1.0.0-alpha.10';
+    final result = await _reuseFixture(<String, Object?>{
+      'artifacts': <Object?>[
+        <String, Object?>{
+          'id': 5000,
+          'name': artifactName,
+          'expired': false,
+          'workflow_run': <String, Object?>{'id': 150},
+        },
+        <String, Object?>{
+          'id': 4321,
+          'name': artifactName,
+          'expired': false,
+          'workflow_run': <String, Object?>{'id': 100},
+        },
+      ],
+      'runs': <String, Object?>{
+        '150': original['run_details'],
+        '100': original['run_details'],
+      },
+      'receipts': <String, Object?>{
+        '150': <Object?>[],
+        '100': original['prior_receipt'],
+      },
+    });
+
+    expect(result['runId'], 100);
   });
 }
