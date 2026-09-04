@@ -28,7 +28,7 @@ jobs:
       candidate_sha: ${{ steps.candidate.outputs.candidate_sha }}
       marketing_version: ${{ steps.candidate.outputs.marketing_version }}
       build_number: ${{ steps.candidate.outputs.build_number }}
-      android_artifact_sha256: ${{ steps.candidate.outputs.android_artifact_sha256 }}
+      android_candidate_manifest_sha256: ${{ steps.candidate.outputs.android_candidate_manifest_sha256 }}
       windows_bundle_name: ${{ steps.candidate.outputs.windows_bundle_name }}
       windows_artifact_name: ${{ steps.candidate.outputs.windows_artifact_name }}
       windows_artifact_sha256: ${{ steps.candidate.outputs.windows_artifact_sha256 }}
@@ -86,8 +86,9 @@ jobs:
           [[ "$release_marketing_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           [[ "$release_build_number" =~ ^[1-9][0-9]*$ ]]
           jq -e --arg release "$release_id" --arg sha "$candidate_sha" --arg repository "$GITHUB_REPOSITORY" '
-            .schemaVersion == 2 and .platform == "android" and
+            .schemaVersion == 3 and .platform == "android" and
             .releaseId == $release and .commitSha == $sha and
+            (.artifacts | keys | sort) == ["arm64-v8a", "armeabi-v7a", "universal", "x86_64"] and
             .distribution.repository == $repository and
             .distribution.releaseState == "draft" and
             .distribution.publiclyInstallable == false
@@ -118,7 +119,7 @@ jobs:
               .workflowName == "Alpha Release" and .event == "workflow_dispatch" and
               .headBranch == "master" and (.headSha | test("^[0-9a-f]{40}$")) and
               ([.jobs[] | select(.name == "Build, sign, and stage Android Alpha" and .conclusion == "success")] | length == 1) and
-              ([.jobs[] | select(.name == "Validate signed Android candidate once on Firebase ARM64" and .conclusion == "success")] | length == 1) and
+              ([.jobs[] | select(.name == "Validate complete signed Android candidate set" and .conclusion == "success")] | length == 1) and
               ([.jobs[] | select(.name == "Build, sign, and upload iOS app" and .conclusion == "success")] | length == 1) and
               ([.jobs[] | select(.name == "Build Microsoft Store Windows candidate" and .conclusion == "success")] | length == 1)
             ' <<<"$source_run" >/dev/null; then
@@ -164,7 +165,7 @@ jobs:
             echo "candidate_sha=$candidate_sha"
             echo "marketing_version=$(jq -er .marketingVersion "$manifest")"
             echo "build_number=$(jq -er .buildNumber "$manifest")"
-            echo "android_artifact_sha256=$(jq -er .artifact.sha256 "$release_manifest")"
+            echo "android_candidate_manifest_sha256=$(sha256sum "$release_manifest" | cut -d ' ' -f 1)"
             echo "windows_bundle_name=$windows_bundle_name"
             echo "windows_artifact_name=$(jq -er .artifact.name "$manifest")"
             echo "windows_artifact_sha256=$(jq -er .artifact.sha256 "$manifest")"
@@ -645,7 +646,7 @@ jobs:
       RELEASE_ID: ${{ needs.resolve.outputs.release_id }}
       SOURCE_RUN_ID: ${{ needs.resolve.outputs.source_run_id }}
       CANDIDATE_SHA: ${{ needs.resolve.outputs.candidate_sha }}
-      ANDROID_ARTIFACT_SHA256: ${{ needs.resolve.outputs.android_artifact_sha256 }}
+      ANDROID_CANDIDATE_MANIFEST_SHA256: ${{ needs.resolve.outputs.android_candidate_manifest_sha256 }}
     steps:
       - name: Find exact Android validation receipt
         id: receipts
@@ -671,9 +672,9 @@ jobs:
           unzip -qp "$RUNNER_TEMP/android-$android_id.zip" receipt.json \
             > build/reconcile/validations/android.json
           jq -e --arg release "$RELEASE_ID" --arg sha "$CANDIDATE_SHA" \
-            --arg digest "$ANDROID_ARTIFACT_SHA256" \
+            --arg digest "$ANDROID_CANDIDATE_MANIFEST_SHA256" \
             --argjson run "$SOURCE_RUN_ID" '
-            .schemaVersion == 2 and
+            .schemaVersion == 3 and
             .validation == "androidCandidateDistribution" and
             .releaseId == $release and .candidateCommitSha == $sha and
             .sourceRunId == $run and
@@ -684,9 +685,11 @@ jobs:
                (.reusedFromArtifactId | type == "number" and . > 0) and
                .reusedFromArtifactName == ("meettrace-android-distribution-" + $release) and
                (.originalReceiptSha256 | type == "string" and test("^[0-9a-f]{64}$")))) and
-            .androidFirebaseArm == "passed" and
-            .artifactSha256 == $digest and
-            (.artifactSha256 | test("^[0-9a-f]{64}$"))
+            .runtimeValidation == {universalArm64Firebase: "passed",
+              arm64Firebase: "passed", armeabiV7aFirebase: "passed",
+              x86_64Emulator: "passed"} and
+            .candidateManifestSha256 == $digest and
+            (.candidateManifestSha256 | test("^[0-9a-f]{64}$"))
           ' build/reconcile/validations/android.json >/dev/null
           echo "android_ready=true" >> "$GITHUB_OUTPUT"
           echo "android_run_id=$SOURCE_RUN_ID" >> "$GITHUB_OUTPUT"

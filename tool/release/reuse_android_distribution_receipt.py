@@ -1,4 +1,4 @@
-"""Reuse the original successful Firebase ARM receipt for a release candidate."""
+"""Reuse the original successful Android artifact-set validation receipt."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 
-ANDROID_JOB_NAME = "Validate signed Android candidate once on Firebase ARM64"
+ANDROID_JOB_NAME = "Validate complete signed Android candidate set"
 GH_ATTEMPTS = 3
 
 
@@ -29,12 +29,12 @@ def build_reused_receipt(
     prior_receipt: dict[str, Any],
     release_id: str,
     candidate_sha: str,
-    artifact_sha256: str,
+    candidate_manifest_sha256: str,
     source_run_id: int,
     prior_run_id: int,
     original_receipt_sha256: str,
 ) -> dict[str, Any] | None:
-    """Return a schema-2 receipt only when every immutable identity matches."""
+    """Return a schema-3 receipt only when every immutable identity matches."""
     if not (0 < prior_run_id < source_run_id):
         return None
     jobs = run_details.get("jobs")
@@ -63,19 +63,22 @@ def build_reused_receipt(
     ):
         return None
 
-    schema_version = prior_receipt.get("schemaVersion")
-    original_is_fresh = schema_version == 1 or (
-        schema_version == 2 and prior_receipt.get("reused") is False
-    )
+    runtime_validation = prior_receipt.get("runtimeValidation")
     if not (
-        original_is_fresh
+        prior_receipt.get("schemaVersion") == 3
+        and prior_receipt.get("reused") is False
         and prior_receipt.get("validation") == "androidCandidateDistribution"
         and prior_receipt.get("releaseId") == release_id
         and prior_receipt.get("candidateCommitSha") == candidate_sha
         and prior_receipt.get("sourceRunId") == prior_run_id
         and prior_receipt.get("validationRunId") == prior_run_id
-        and prior_receipt.get("androidFirebaseArm") == "passed"
-        and prior_receipt.get("artifactSha256") == artifact_sha256
+        and runtime_validation == {
+            "universalArm64Firebase": "passed",
+            "arm64Firebase": "passed",
+            "armeabiV7aFirebase": "passed",
+            "x86_64Emulator": "passed",
+        }
+        and prior_receipt.get("candidateManifestSha256") == candidate_manifest_sha256
         and isinstance(prior_receipt.get("validatedAtUtc"), str)
         and prior_receipt["validatedAtUtc"].strip()
         and len(original_receipt_sha256) == 64
@@ -84,14 +87,14 @@ def build_reused_receipt(
         return None
 
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "validation": "androidCandidateDistribution",
         "releaseId": release_id,
         "candidateCommitSha": candidate_sha,
         "sourceRunId": source_run_id,
         "validationRunId": prior_run_id,
-        "androidFirebaseArm": "passed",
-        "artifactSha256": artifact_sha256,
+        "runtimeValidation": runtime_validation,
+        "candidateManifestSha256": candidate_manifest_sha256,
         "validatedAtUtc": prior_receipt["validatedAtUtc"],
         "reused": True,
         "reusedFromRunId": prior_run_id,
@@ -158,8 +161,7 @@ def reuse_prior_receipt(
     manifest_path: Path,
     output_directory: Path,
 ) -> int | None:
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    artifact_sha256 = manifest["artifact"]["sha256"]
+    candidate_manifest_sha256 = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     expected_name = f"meettrace-android-distribution-{release_id}"
     query = urlencode({"name": expected_name, "per_page": 100})
     artifacts_payload = _gh_json(
@@ -238,12 +240,23 @@ def reuse_prior_receipt(
                 continue
             receipt_path = _single_file(directory, "receipt.json")
             firebase_output = _single_file(directory, "firebase-output.txt")
-            if receipt_path is None or firebase_output is None:
+            emulator_output = _single_file(directory, "emulator-output.txt")
+            arm64_model = _single_file(directory, "firebase-model-arm64.json")
+            arm32_model = _single_file(directory, "firebase-model-arm32.json")
+            if None in (
+                receipt_path,
+                firebase_output,
+                emulator_output,
+                arm64_model,
+                arm32_model,
+            ):
                 continue
             receipt_bytes = receipt_path.read_bytes()
             try:
                 prior_receipt = json.loads(receipt_bytes)
             except json.JSONDecodeError:
+                continue
+            if not isinstance(prior_receipt, dict):
                 continue
             reused = build_reused_receipt(
                 run_details=run_details,
@@ -251,7 +264,7 @@ def reuse_prior_receipt(
                 prior_receipt=prior_receipt,
                 release_id=release_id,
                 candidate_sha=candidate_sha,
-                artifact_sha256=artifact_sha256,
+                candidate_manifest_sha256=candidate_manifest_sha256,
                 source_run_id=source_run_id,
                 prior_run_id=prior_run_id,
                 original_receipt_sha256=hashlib.sha256(receipt_bytes).hexdigest(),
@@ -264,6 +277,9 @@ def reuse_prior_receipt(
                 encoding="utf-8",
             )
             shutil.copyfile(firebase_output, output_directory / "firebase-output.txt")
+            shutil.copyfile(emulator_output, output_directory / "emulator-output.txt")
+            shutil.copyfile(arm64_model, output_directory / "firebase-model-arm64.json")
+            shutil.copyfile(arm32_model, output_directory / "firebase-model-arm32.json")
             return prior_run_id
     if saw_candidate_evidence:
         raise RuntimeError(

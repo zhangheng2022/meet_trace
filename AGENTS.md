@@ -15,10 +15,10 @@
 - 应用语言支持简体中文/英文，默认跟随系统；任意 `zh-*` 使用简体中文，其他未支持语言回退英文。设置可即时切换并仅本机保存，且不得中断录音、ASR 或最终处理。
 - Android、iOS、Windows Release 默认开启可退出的 Sentry，首页不展示告知，设置页披露采集边界：错误 100%、进程级性能抽样 20%、录音期每 60 秒匿名窗口；禁用 PII、Replay、日志、截图、View Hierarchy、用户交互与 Production Profiling。Sentry 失败不得影响事实录音；三平台生产配置与符号化失败阻断统一发布。
 - 新会议按本地开始时间确定性命名。文本分享只含最终转录；音频分享独立二次确认并生成临时 WAV，不改写 PCM。
-- Android 只发布签名 arm64 APK；iOS 只经 TestFlight；Windows 只经 Microsoft Store 发布 Windows 10 22H2/11 x64 MSIX。GitHub 不上传 IPA 或 MSIX。
-- 发布链仅含 `Alpha Release` 与 `Alpha Release Reconciler`。三平台同 SHA：Android Firebase 原包一次、iOS 固定组 `Testing`、同一 MSIX 依次取得 Flight `Published` 与 production `Published/Public`；随后公开原 Draft、重验 APK、前移指针。无最终人工审批或专用 Windows runner，且 Store 回执不证明客户端生命周期。
+- Android 同时发布签名的 `armeabi-v7a`、`arm64-v8a`、`x86_64` split APK 与包含三者的 universal APK；README 默认 arm64，universal 仅作手动兼容下载，自动更新只选择本机 ABI 的 split APK。iOS 只经 TestFlight；Windows 只经 Microsoft Store 发布 Windows 10 22H2/11 x64 MSIX。GitHub 不上传 IPA 或 MSIX。
+- 发布链仅含 `Alpha Release` 与 `Alpha Release Reconciler`。三平台同 SHA：Android 四包逐一验证签名、ABI、摘要、安装启动及 sherpa/ONNX 原生库加载，iOS 固定组 `Testing`，同一 MSIX 依次取得 Flight `Published` 与 production `Published/Public`；随后公开原 Draft、重验四个 APK、前移指针。无最终人工审批或专用 Windows runner，且 Store 回执不证明客户端生命周期。
 - 发布资产、tag 和撤回记录不可覆盖、移动或删除。SignPath 未接入；启用前更新 PRD、验证包身份并停止 Store 路线。
-- 共享构建号从 `2001` 连续递增；Android 基础号为共享号减 `2000`，实测 arm64 `versionCode` 必须等于 iOS/Windows 构建号并写入清单，客户端不得推导。
+- 共享构建号从 `2001` 连续递增；四个 Android APK 的实测 `versionCode` 必须与 iOS/Windows 共享构建号完全相同并写入清单，不得使用 ABI 偏移，客户端不得推导。
 - Alpha 仅支持当前公开版本，不承诺升级、降级、迁移或数据兼容。破坏性清理须安装前确认，录音或最终处理期间不得安装、退出或清理。
 
 ## 架构与 UI

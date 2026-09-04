@@ -4,6 +4,10 @@ param(
     [string]$TestFlightExternalGroup = '',
     [string]$TestFlightPublicLink = '',
     [string]$PartnerCenterFlightId = '',
+    [string]$FirebaseAndroidArm64DeviceModel = '',
+    [string]$FirebaseAndroidArm64Version = '',
+    [string]$FirebaseAndroidArm32DeviceModel = '',
+    [string]$FirebaseAndroidArm32Version = '',
     [switch]$Apply
 )
 
@@ -43,6 +47,16 @@ if (-not [string]::IsNullOrWhiteSpace($PartnerCenterFlightId) -and
     $PartnerCenterFlightId -notmatch '^[A-Za-z0-9._-]{1,128}$') {
     throw 'PartnerCenterFlightId has an invalid format.'
 }
+foreach ($model in @($FirebaseAndroidArm64DeviceModel, $FirebaseAndroidArm32DeviceModel)) {
+    if (-not [string]::IsNullOrWhiteSpace($model) -and $model -notmatch '^[A-Za-z0-9._-]+$') {
+        throw 'Firebase Android device model has an invalid format.'
+    }
+}
+foreach ($version in @($FirebaseAndroidArm64Version, $FirebaseAndroidArm32Version)) {
+    if (-not [string]::IsNullOrWhiteSpace($version) -and $version -notmatch '^[1-9][0-9]*$') {
+        throw 'Firebase Android version must be a positive integer.'
+    }
+}
 if (-not $Apply) {
     Write-Host ''
     Write-Host 'Dry run only. Re-run with -Apply after this workflow change is merged to master.'
@@ -67,6 +81,18 @@ if (-not [string]::IsNullOrWhiteSpace($PartnerCenterFlightId)) {
         --env microsoft-store --body $PartnerCenterFlightId
     gh variable set PARTNER_CENTER_FLIGHT_ID --repo $Repository `
         --env github-release --body $PartnerCenterFlightId
+}
+$androidVariables = @{
+    'FIREBASE_ANDROID_ARM64_DEVICE_MODEL' = $FirebaseAndroidArm64DeviceModel
+    'FIREBASE_ANDROID_ARM64_VERSION' = $FirebaseAndroidArm64Version
+    'FIREBASE_ANDROID_ARM32_DEVICE_MODEL' = $FirebaseAndroidArm32DeviceModel
+    'FIREBASE_ANDROID_ARM32_VERSION' = $FirebaseAndroidArm32Version
+}
+foreach ($name in $androidVariables.Keys) {
+    if (-not [string]::IsNullOrWhiteSpace($androidVariables[$name])) {
+        gh variable set $name --repo $Repository --env android-alpha `
+            --body $androidVariables[$name]
+    }
 }
 
 $requiredSecrets = @{
@@ -99,6 +125,15 @@ $testFlightVariables = @(
     gh variable list --repo $Repository --env testflight `
         --json name --jq '.[].name'
 )
+$configuredAndroidVariables = @(
+    gh variable list --repo $Repository --env android-alpha `
+        --json name --jq '.[].name'
+)
+foreach ($name in $androidVariables.Keys) {
+    if ($configuredAndroidVariables -notcontains $name) {
+        throw "Missing environment variable android-alpha/$name."
+    }
+}
 foreach ($name in @('TESTFLIGHT_EXTERNAL_GROUP', 'TESTFLIGHT_PUBLIC_LINK')) {
     if ($testFlightVariables -notcontains $name) {
         throw "Missing environment variable testflight/$name."

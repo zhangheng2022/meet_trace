@@ -315,15 +315,12 @@ jobs:
           set -euo pipefail
           [[ "$RELEASE_BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]]
           (( RELEASE_BUILD_NUMBER >= 2001 ))
-          ANDROID_PACKAGE_BUILD_NUMBER=$((RELEASE_BUILD_NUMBER - 2000))
           {
             echo "ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER"
-            echo "ANDROID_PACKAGE_BUILD_NUMBER=$ANDROID_PACKAGE_BUILD_NUMBER"
             echo "SENTRY_RELEASE=com.meettrace.app@$MARKETING_VERSION+$RELEASE_BUILD_NUMBER"
             echo "SENTRY_DIST=$RELEASE_BUILD_NUMBER"
           } >> "$GITHUB_ENV"
           echo "Android shared build: $RELEASE_BUILD_NUMBER"
-          echo "Android package base build: $ANDROID_PACKAGE_BUILD_NUMBER"
 
       - name: Reuse immutable staged Android candidate
         id: staged
@@ -346,8 +343,13 @@ jobs:
           [[ "$(jq -r .isDraft <<<"$release_json")" == true ]]
           [[ "$(jq -r .isPrerelease <<<"$release_json")" == true ]]
 
-          apk_name="meettrace-${RELEASE_ID}-android-arm64.apk"
-          required_assets=("$apk_name" candidate-manifest.json)
+          required_assets=(
+            "meettrace-${RELEASE_ID}-android-armeabi-v7a.apk"
+            "meettrace-${RELEASE_ID}-android-arm64.apk"
+            "meettrace-${RELEASE_ID}-android-x86_64.apk"
+            "meettrace-${RELEASE_ID}-android-universal.apk"
+            candidate-manifest.json
+          )
           for asset_name in "${required_assets[@]}"; do
             jq -e --arg name "$asset_name" \
               '.assets | any(.name == $name)' <<<"$release_json" >/dev/null || {
@@ -365,31 +367,18 @@ jobs:
             > build/android/alpha/candidate-manifest.json
 
           manifest=build/android/alpha/candidate-manifest.json
-          jq -e \
-            --arg release_id "$RELEASE_ID" \
-            --arg candidate_sha "$CANDIDATE_SHA" \
-            --arg build_number "$ANDROID_BUILD_NUMBER" \
-            --arg apk_name "$apk_name" \
-            '.platform == "android" and
-             .releaseId == $release_id and
-             .commitSha == $candidate_sha and
-             .schemaVersion == 2 and
-             (.buildNumber | tostring) == $build_number and
-             (.androidBaseBuildNumber | tonumber) == (($build_number | tonumber) - 2000) and
-             (.versionCode | tostring) == $build_number and
-             .artifact.name == $apk_name and
-             (.artifact.sha256 | test("^[0-9a-f]{64}$"))' \
-            "$manifest" >/dev/null
-
-          manifest_digest="sha256:$(jq -er .artifact.sha256 "$manifest")"
-          staged_digest="$(
-            jq -er --arg name "$apk_name" \
-              '.assets[] | select(.name == $name) | .digest' <<<"$release_json"
-          )"
-          [[ "$staged_digest" == "$manifest_digest" ]] || {
-            echo "Staged Android APK digest does not match its candidate manifest" >&2
-            exit 1
-          }
+          for asset_name in "${required_assets[@]:0:4}"; do
+            asset_url="$(jq -er --arg name "$asset_name" \
+              '.assets[] | select(.name == $name) | .apiUrl' <<<"$release_json")"
+            gh api -H "Accept: application/octet-stream" "$asset_url" \
+              > "build/android/alpha/$asset_name"
+          done
+          python3 tool/release/android_candidate_manifest.py \
+            --manifest "$manifest" \
+            --release-id "$RELEASE_ID" \
+            --build-number "$ANDROID_BUILD_NUMBER" \
+            --commit-sha "$CANDIDATE_SHA" \
+            --artifact-directory build/android/alpha
 
           echo "reuse=true" >> "$GITHUB_OUTPUT"
           echo "Reusing immutable staged Android candidate $RELEASE_ID"
@@ -426,7 +415,7 @@ jobs:
           chmod 600 "$keystore_path"
           echo "MEETTRACE_ANDROID_KEYSTORE_PATH=$keystore_path" >> "$GITHUB_ENV"
 
-      - name: Build signed Android Release APK
+      - name: Build signed Android Release APKs
         if: steps.staged.outputs.reuse != 'true'
         shell: bash
         env:
@@ -438,30 +427,42 @@ jobs:
           set -euo pipefail
           [[ -n "${SENTRY_DSN//[[:space:]]/}" ]]
           mkdir -p build/sentry/android
-          flutter build apk \
-            --release \
-            --target-platform android-arm64 \
-            --split-per-abi \
-            --obfuscate \
-            --split-debug-info=build/sentry/android \
-            --extra-gen-snapshot-options=--save-obfuscation-map=build/sentry/android/dart-obfuscation-map.json \
-            --build-name="$MARKETING_VERSION" \
-            --build-number="$ANDROID_PACKAGE_BUILD_NUMBER" \
-            --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true \
-            --dart-define="MEETTRACE_VERSION_NAME=$MARKETING_VERSION" \
-            --dart-define="MEETTRACE_BUILD_NUMBER=$ANDROID_BUILD_NUMBER" \
-            --dart-define=SENTRY_ENABLED=true \
-            --dart-define="SENTRY_DSN=$SENTRY_DSN" \
-            --dart-define=SENTRY_ENVIRONMENT=production \
-            --dart-define=SENTRY_TRACES_SAMPLE_RATE=0.2 \
-            --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE" \
+          # Flutter expects this comma-delimited value.
+          # shellcheck disable=SC2054
+          common_args=(
+            --release
+            --target-platform android-arm,android-arm64,android-x64
+            --obfuscate
+            --split-debug-info=build/sentry/android
+            --extra-gen-snapshot-options=--save-obfuscation-map=build/sentry/android/dart-obfuscation-map.json
+            --build-name="$MARKETING_VERSION"
+            --build-number="$ANDROID_BUILD_NUMBER"
+            --dart-define=MEETTRACE_APP_UPDATE_ENABLED=true
+            --dart-define=MEETTRACE_REQUIRE_NATIVE_RUNTIME=true
+            --dart-define="MEETTRACE_VERSION_NAME=$MARKETING_VERSION"
+            --dart-define="MEETTRACE_BUILD_NUMBER=$ANDROID_BUILD_NUMBER"
+            --dart-define=SENTRY_ENABLED=true
+            --dart-define="SENTRY_DSN=$SENTRY_DSN"
+            --dart-define=SENTRY_ENVIRONMENT=production
+            --dart-define=SENTRY_TRACES_SAMPLE_RATE=0.2
+            --dart-define="SENTRY_RELEASE=$SENTRY_RELEASE"
             --dart-define="SENTRY_DIST=$SENTRY_DIST"
-          source_apk="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
-          apk_path="build/android/alpha/meettrace-${RELEASE_ID}-android-arm64.apk"
-          [[ -s "$source_apk" ]]
-          mkdir -p "$(dirname "$apk_path")"
-          mv -- "$source_apk" "$apk_path"
-          echo "APK_PATH=$apk_path" >> "$GITHUB_ENV"
+          )
+          flutter build apk "${common_args[@]}"
+          mkdir -p build/android/alpha
+          universal="build/app/outputs/flutter-apk/app-release.apk"
+          [[ -s "$universal" ]]
+          mv -- "$universal" \
+            "build/android/alpha/meettrace-${RELEASE_ID}-android-universal.apk"
+
+          flutter build apk "${common_args[@]}" \
+            --split-per-abi -P force-version-code-ignoring-abi=true
+          mv -- build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+            "build/android/alpha/meettrace-${RELEASE_ID}-android-armeabi-v7a.apk"
+          mv -- build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            "build/android/alpha/meettrace-${RELEASE_ID}-android-arm64.apk"
+          mv -- build/app/outputs/flutter-apk/app-x86_64-release.apk \
+            "build/android/alpha/meettrace-${RELEASE_ID}-android-x86_64.apk"
 
       - name: Upload Android debug symbols to Sentry
         if: steps.staged.outputs.reuse != 'true'
@@ -492,14 +493,21 @@ jobs:
         if: steps.staged.outputs.reuse != 'true'
         shell: pwsh
         run: |
-          ./tool/benchmarks/inspect_debug_apk.ps1 `
-            -ApkPath $env:APK_PATH `
-            -ReportPath build/android/alpha/android-apk-inspection.json
-          $report = Get-Content -LiteralPath build/android/alpha/android-apk-inspection.json -Raw |
-            ConvertFrom-Json
-          $abis = @($report.abis)
-          if ($abis.Count -ne 1 -or $abis[0] -ne 'arm64-v8a') {
-            throw "Public Alpha APK must contain only arm64-v8a; found: $($abis -join ', ')"
+          $expected = [ordered]@{
+            'armeabi-v7a' = @('armeabi-v7a')
+            'arm64' = @('arm64-v8a')
+            'x86_64' = @('x86_64')
+            'universal' = @('arm64-v8a', 'armeabi-v7a', 'x86_64')
+          }
+          foreach ($variant in $expected.Keys) {
+            $apk = "build/android/alpha/meettrace-$env:RELEASE_ID-android-$variant.apk"
+            $reportPath = "build/android/alpha/android-apk-$variant-inspection.json"
+            ./tool/benchmarks/inspect_debug_apk.ps1 `
+              -ApkPath $apk -ReportPath $reportPath -RequiredAbi $expected[$variant][0]
+            $actual = @((Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json).abis)
+            if (Compare-Object $expected[$variant] $actual) {
+              throw "Android $variant APK ABI set is invalid: $($actual -join ', ')"
+            }
           }
 
       - name: Verify APK signature and certificate
@@ -512,90 +520,48 @@ jobs:
           mkdir -p build/android/alpha
           apksigner="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name apksigner | sort -V | tail -1)"
           [[ -x "$apksigner" ]]
-          "$apksigner" verify --verbose --print-certs "$APK_PATH" \
-            | tee build/android/alpha/apksigner.txt
-          actual="$(sed -nE 's/^.*certificate SHA-256 digest:[[:space:]]*([[:xdigit:]:]+)[[:space:]]*$/\1/p' build/android/alpha/apksigner.txt | head -1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
           expected="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
-          [[ -n "$actual" && -n "$expected" && "$actual" == "$expected" ]]
-          printf '%s\n' "$actual" > build/android/alpha/signing-certificate.sha256
-          sha256sum "$APK_PATH" | tee build/android/alpha/android-release-apk.sha256
-
           aapt="$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name aapt | sort -V | tail -1)"
           [[ -x "$aapt" ]]
-          "$aapt" dump badging "$APK_PATH" | tee build/android/alpha/android-apk-badging.txt
-          version_code="$(sed -nE "s/^package:.*versionCode='([0-9]+)'.*$/\1/p" build/android/alpha/android-apk-badging.txt | head -1)"
-          version_name="$(sed -nE "s/^package:.*versionName='([^']+)'.*$/\1/p" build/android/alpha/android-apk-badging.txt | head -1)"
-          expected_version_code="$ANDROID_BUILD_NUMBER"
-          [[ "$version_code" == "$expected_version_code" ]]
-          [[ "$version_name" == "$MARKETING_VERSION" ]]
-          printf '%s\n' "$version_code" > build/android/alpha/android-version-code.txt
+          for apk in build/android/alpha/*.apk; do
+            stem="$(basename "$apk" .apk)"
+            cert_output="build/android/alpha/${stem}-apksigner.txt"
+            badging="build/android/alpha/${stem}-badging.txt"
+            "$apksigner" verify --verbose --print-certs "$apk" | tee "$cert_output" >&2
+            actual="$(sed -nE 's/^.*certificate SHA-256 digest:[[:space:]]*([[:xdigit:]:]+)[[:space:]]*$/\1/p' "$cert_output" | head -1 | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+            [[ -n "$actual" && -n "$expected" && "$actual" == "$expected" ]]
+            "$aapt" dump badging "$apk" | tee "$badging" >&2
+            version_code="$(sed -nE "s/^package:.*versionCode='([0-9]+)'.*$/\1/p" "$badging" | head -1)"
+            version_name="$(sed -nE "s/^package:.*versionName='([^']+)'.*$/\1/p" "$badging" | head -1)"
+            [[ "$version_code" == "$ANDROID_BUILD_NUMBER" ]]
+            [[ "$version_name" == "$MARKETING_VERSION" ]]
+            sha256sum "$apk"
+          done | tee build/android/alpha/android-release-apks.sha256
+          printf '%s\n' "$expected" > build/android/alpha/signing-certificate.sha256
 
       - name: Write Android candidate manifest
         if: steps.staged.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
-          RELEASE_ID="$RELEASE_ID" \
-          MARKETING_VERSION="$MARKETING_VERSION" \
-          ANDROID_BUILD_NUMBER="$ANDROID_BUILD_NUMBER" \
-          ANDROID_PACKAGE_BUILD_NUMBER="$ANDROID_PACKAGE_BUILD_NUMBER" \
-          APK_PATH="$APK_PATH" \
-          python3 - <<'PY'
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-
-          apk = Path(os.environ["APK_PATH"])
-          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
-          signing_identity = Path(
-              "build/android/alpha/signing-certificate.sha256"
-          ).read_text().strip().replace(":", "").lower()
-          if len(signing_identity) != 64:
-              raise SystemExit("Android signing identity digest is invalid")
-          version_code = int(
-              Path("build/android/alpha/android-version-code.txt").read_text().strip()
-          )
-          android_base_build_number = int(os.environ["ANDROID_PACKAGE_BUILD_NUMBER"])
-          if (
-              version_code != android_base_build_number + 2000
-              or version_code != int(os.environ["ANDROID_BUILD_NUMBER"])
-          ):
-              raise SystemExit("Android arm64 split versionCode mapping is invalid")
-          manifest = {
-              "schemaVersion": 2,
-              "platform": "android",
-              "releaseId": os.environ["RELEASE_ID"],
-              "marketingVersion": os.environ["MARKETING_VERSION"],
-              "buildNumber": os.environ["ANDROID_BUILD_NUMBER"],
-              "androidBaseBuildNumber": android_base_build_number,
-              "versionCode": version_code,
-              "commitSha": os.environ["CANDIDATE_SHA"],
-              "workflowFile": ".github/workflows/alpha-release.yml",
-              "job": "android",
-              "runId": os.environ["GITHUB_RUN_ID"],
-              "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"],
-              "packageIdentity": "com.meettrace.app",
-              "signingIdentitySha256": signing_identity,
-              "artifact": {"name": apk.name, "bytes": apk.stat().st_size, "sha256": digest},
-              "distribution": {
-                  "repository": os.environ["GITHUB_REPOSITORY"],
-                  "visibility": "public-after-finalize",
-                  "releaseState": "draft",
-                  "publiclyInstallable": False,
-              },
-          }
-          Path("build/android/alpha/candidate-manifest.json").write_text(
-              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8",
-          )
-          PY
+          python3 tool/release/android_candidate_manifest.py \
+            --create \
+            --manifest build/android/alpha/candidate-manifest.json \
+            --release-id "$RELEASE_ID" \
+            --marketing-version "$MARKETING_VERSION" \
+            --build-number "$ANDROID_BUILD_NUMBER" \
+            --commit-sha "$CANDIDATE_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --repository "$GITHUB_REPOSITORY" \
+            --signing-identity-sha256 "$(cat build/android/alpha/signing-certificate.sha256)" \
+            --artifact-directory build/android/alpha
 
       - name: Generate APK provenance attestation
         if: steps.staged.outputs.reuse != 'true'
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: ${{ env.APK_PATH }}
+          subject-path: build/android/alpha/*.apk
 
       - name: Stage APK in this repository's draft release
         if: steps.staged.outputs.reuse != 'true'
@@ -632,7 +598,7 @@ jobs:
             echo "Source: \`$GITHUB_REPOSITORY@$CANDIDATE_SHA\`"
             echo "Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
-            echo "This Draft Release must remain unpublished until the matching iOS TestFlight candidate passes final verification."
+            echo "This Draft Release must remain unpublished until all Android, iOS, and Windows gates pass."
             echo
             echo '<!-- meettrace-public-notes:start -->'
             echo "## 本版变化"
@@ -659,7 +625,7 @@ jobs:
             --notes-file "$notes_path"
 
           gh release upload "$RELEASE_ID" \
-            "$APK_PATH" \
+            build/android/alpha/*.apk \
             build/android/alpha/candidate-manifest.json \
             --repo "$GITHUB_REPOSITORY"
 
@@ -687,9 +653,10 @@ jobs:
   android_distribution:
     if: needs.prepare.outputs.mode == 'candidate'
     needs: [prepare, android]
-    name: Validate signed Android candidate once on Firebase ARM64
+    name: Validate complete signed Android candidate set
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    environment: android-alpha
+    timeout-minutes: 60
     permissions:
       actions: read
       contents: write
@@ -698,8 +665,10 @@ jobs:
       FIREBASE_PROJECT_ID: meet-trace
       RELEASE_ID: ${{ inputs.release_id }}
       CANDIDATE_SHA: ${{ needs.prepare.outputs.candidate_sha }}
-      DEVICE_MODEL: MediumPhone.arm
-      ANDROID_VERSION: "35"
+      ARM64_DEVICE_MODEL: ${{ vars.FIREBASE_ANDROID_ARM64_DEVICE_MODEL }}
+      ARM64_ANDROID_VERSION: ${{ vars.FIREBASE_ANDROID_ARM64_VERSION }}
+      ARM32_DEVICE_MODEL: ${{ vars.FIREBASE_ANDROID_ARM32_DEVICE_MODEL }}
+      ARM32_ANDROID_VERSION: ${{ vars.FIREBASE_ANDROID_ARM32_VERSION }}
     steps:
       - name: Checkout reviewed receipt tooling
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -707,7 +676,7 @@ jobs:
           persist-credentials: false
           ref: ${{ github.workflow_sha }}
 
-      - name: Download immutable Draft APK and manifest
+      - name: Download immutable Draft APK set and manifest
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -715,21 +684,17 @@ jobs:
           set -euo pipefail
           mkdir -p build/android/distribution
           gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --pattern "meettrace-${RELEASE_ID}-android-*.apk" \
             --pattern candidate-manifest.json \
             --dir build/android/distribution
-          apk="build/android/distribution/meettrace-${RELEASE_ID}-android-arm64.apk"
           manifest=build/android/distribution/candidate-manifest.json
-          [[ -s "$apk" && -s "$manifest" ]]
-          expected_sha="$(jq -er .artifact.sha256 "$manifest")"
-          actual_sha="$(sha256sum "$apk" | cut -d ' ' -f 1)"
-          [[ "$actual_sha" == "$expected_sha" ]]
-          jq -e --arg release "$RELEASE_ID" --arg sha "$CANDIDATE_SHA" \
-            --arg actual "$actual_sha" \
-            '.schemaVersion == 2 and .platform == "android" and
-             .releaseId == $release and .commitSha == $sha and
-             .artifact.sha256 == $actual' \
-            "$manifest" >/dev/null
+          [[ -s "$manifest" ]]
+          python3 tool/release/android_candidate_manifest.py \
+            --manifest "$manifest" \
+            --release-id "$RELEASE_ID" \
+            --build-number "$(jq -er .buildNumber "$manifest")" \
+            --commit-sha "$CANDIDATE_SHA" \
+            --artifact-directory build/android/distribution
 
       - name: Reuse prior immutable Android distribution receipt
         id: prior
@@ -762,21 +727,77 @@ jobs:
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
           version: "580.0.0"
 
-      - name: Install and launch exact APK on Firebase ARM64
+      - name: Verify Firebase targets are physical devices with required ABIs
         if: steps.prior.outputs.reuse != 'true'
         shell: bash
         run: |
           set -euo pipefail
-          apk="build/android/distribution/meettrace-${RELEASE_ID}-android-arm64.apk"
-          gcloud firebase test android run \
-            --project "$FIREBASE_PROJECT_ID" \
-            --type robo \
-            --app "$apk" \
-            --device "model=$DEVICE_MODEL,version=$ANDROID_VERSION,locale=zh_CN,orientation=portrait" \
-            --no-resign \
-            --timeout 10m \
-            --client-details "matrixLabel=meettrace-android-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
-            2>&1 | tee build/android/distribution/firebase-output.txt
+          for entry in \
+            "arm64|$ARM64_DEVICE_MODEL|$ARM64_ANDROID_VERSION|arm64-v8a" \
+            "arm32|$ARM32_DEVICE_MODEL|$ARM32_ANDROID_VERSION|armeabi-v7a"; do
+            IFS='|' read -r label model version abi <<<"$entry"
+            [[ -n "$model" && "$version" =~ ^[1-9][0-9]*$ ]]
+            output="build/android/distribution/firebase-model-$label.json"
+            gcloud firebase test android models describe "$model" \
+              --project "$FIREBASE_PROJECT_ID" --format=json > "$output"
+            jq -e --arg version "$version" --arg abi "$abi" '
+              .form == "PHYSICAL" and
+              (.supportedVersionIds | index($version)) != null and
+              (.supportedAbis | index($abi)) != null
+            ' "$output" >/dev/null
+          done
+
+      - name: Install and launch ARM APKs on Firebase real devices
+        if: steps.prior.outputs.reuse != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${ARM64_DEVICE_MODEL//[[:space:]]/}" ]]
+          [[ -n "${ARM32_DEVICE_MODEL//[[:space:]]/}" ]]
+          [[ "$ARM64_ANDROID_VERSION" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ARM32_ANDROID_VERSION" =~ ^[1-9][0-9]*$ ]]
+          : > build/android/distribution/firebase-output.txt
+          for entry in \
+            "universal|$ARM64_DEVICE_MODEL|$ARM64_ANDROID_VERSION" \
+            "arm64|$ARM64_DEVICE_MODEL|$ARM64_ANDROID_VERSION" \
+            "armeabi-v7a|$ARM32_DEVICE_MODEL|$ARM32_ANDROID_VERSION"; do
+            IFS='|' read -r variant model version <<<"$entry"
+            apk="build/android/distribution/meettrace-${RELEASE_ID}-android-${variant}.apk"
+            gcloud firebase test android run \
+              --project "$FIREBASE_PROJECT_ID" \
+              --type robo \
+              --app "$apk" \
+              --device "model=$model,version=$version,locale=zh_CN,orientation=portrait" \
+              --no-resign \
+              --timeout 10m \
+              --client-details "matrixLabel=meettrace-${variant}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+              2>&1 | tee -a build/android/distribution/firebase-output.txt
+          done
+
+      - name: Install and launch x86_64 APK on Android emulator
+        if: steps.prior.outputs.reuse != 'true'
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          script: |
+            set -euo pipefail
+            apk="build/android/distribution/meettrace-${RELEASE_ID}-android-x86_64.apk"
+            adb install --no-streaming "$apk"
+            adb logcat -c
+            adb shell am start -W -n com.meettrace.app/.MainActivity
+            sleep 10
+            app_pid="$(adb shell pidof com.meettrace.app | tr -d '\r')"
+            test -n "$app_pid"
+            {
+              adb logcat -d --pid="$app_pid" '*:E'
+              adb logcat -d '*:E' | grep -E 'ANR in com\.meettrace\.app' || true
+            } | tee build/android/distribution/emulator-output.txt
+            if grep -Eq 'FATAL EXCEPTION|Fatal signal|ANR in com\.meettrace\.app|sherpa/ONNX 原生运行时加载失败' build/android/distribution/emulator-output.txt; then
+              echo 'x86_64 emulator reported an app or native-runtime crash' >&2
+              exit 1
+            fi
 
       - name: Record immutable Android distribution receipt
         if: steps.prior.outputs.reuse != 'true'
@@ -789,12 +810,15 @@ jobs:
             --arg candidateCommitSha "$CANDIDATE_SHA" \
             --argjson sourceRunId "$GITHUB_RUN_ID" \
             --argjson validationRunId "$GITHUB_RUN_ID" \
-            --arg artifactSha256 "$(jq -er .artifact.sha256 "$manifest")" \
+            --arg candidateManifestSha256 "$(sha256sum "$manifest" | cut -d ' ' -f 1)" \
             --arg validatedAtUtc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '{schemaVersion: 2, validation: "androidCandidateDistribution",
+            '{schemaVersion: 3, validation: "androidCandidateDistribution",
               releaseId: $releaseId, candidateCommitSha: $candidateCommitSha,
               sourceRunId: $sourceRunId, validationRunId: $validationRunId,
-              androidFirebaseArm: "passed", artifactSha256: $artifactSha256,
+              runtimeValidation: {universalArm64Firebase: "passed",
+                arm64Firebase: "passed", armeabiV7aFirebase: "passed",
+                x86_64Emulator: "passed"},
+              candidateManifestSha256: $candidateManifestSha256,
               validatedAtUtc: $validatedAtUtc, reused: false}' \
             > build/android/distribution/receipt.json
 
@@ -806,6 +830,8 @@ jobs:
           path: |
             build/android/distribution/receipt.json
             build/android/distribution/firebase-output.txt
+            build/android/distribution/firebase-model-*.json
+            build/android/distribution/emulator-output.txt
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
@@ -2161,7 +2187,7 @@ jobs:
           cp build/finalize/windows/candidate-manifest.json build/finalize/windows-candidate-manifest.json
           echo "SOURCE_RUN_ID=$source_run_id" >> "$GITHUB_ENV"
 
-      - name: Download staged Android APK
+      - name: Download staged Android APK set
         if: needs.prepare.outputs.mode == 'candidate' || needs.prepare.outputs.mode == 'resume'
         shell: bash
         env:
@@ -2170,7 +2196,7 @@ jobs:
           set -euo pipefail
           mkdir -p build/finalize/staged
           gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --pattern "meettrace-${RELEASE_ID}-android-*.apk" \
             --dir build/finalize/staged
 
       - name: Cross-check candidate manifests and staged APK
@@ -2180,13 +2206,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          expected_apk="meettrace-${RELEASE_ID}-android-arm64.apk"
           release_assets="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets)"
-          jq -e --arg apk "$expected_apk" '
-            ([.assets[].name | select(ascii_downcase | endswith(".apk"))] == [$apk]) and
+          jq -e --arg release "$RELEASE_ID" '
+            ([.assets[].name | select(ascii_downcase | endswith(".apk"))] | sort) ==
+              (["meettrace-\($release)-android-armeabi-v7a.apk",
+                "meettrace-\($release)-android-arm64.apk",
+                "meettrace-\($release)-android-universal.apk",
+                "meettrace-\($release)-android-x86_64.apk"] | sort) and
             ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0) and
             ([.assets[].name | select(ascii_downcase | endswith(".msix"))] | length == 0)
           ' <<<"$release_assets" >/dev/null
+          python3 tool/release/android_candidate_manifest.py \
+            --manifest build/finalize/android-candidate-manifest.json \
+            --release-id "$RELEASE_ID" \
+            --build-number "$(jq -er .buildNumber build/finalize/android-candidate-manifest.json)" \
+            --commit-sha "$CANDIDATE_SHA" \
+            --artifact-directory build/finalize/staged
           python3 - <<'PY'
           import hashlib
           import json
@@ -2198,9 +2233,6 @@ jobs:
           android = json.loads((root / "android-candidate-manifest.json").read_text())
           ios = json.loads((root / "ios-candidate-manifest.json").read_text())
           windows = json.loads((root / "windows-candidate-manifest.json").read_text(encoding="utf-8-sig"))
-          expected_apk_name = f"meettrace-{os.environ['RELEASE_ID']}-android-arm64.apk"
-          if android.get("artifact", {}).get("name") != expected_apk_name:
-              raise SystemExit("Android candidate manifest has an unexpected APK name")
           expected = {
               "releaseId": os.environ["RELEASE_ID"],
               "marketingVersion": os.environ["MARKETING_VERSION"],
@@ -2222,12 +2254,7 @@ jobs:
                   raise SystemExit(f"{name} candidate origin is invalid")
           if (
               android.get("packageIdentity") != "com.meettrace.app"
-              or android.get("schemaVersion") != 2
-              or int(android.get("androidBaseBuildNumber", 0)) <= 0
-              or int(android.get("versionCode", 0))
-              != int(android.get("androidBaseBuildNumber", 0)) + 2000
-              or int(android.get("versionCode", 0))
-              != int(android.get("buildNumber", 0))
+              or android.get("schemaVersion") != 3
               or not re.fullmatch(
                   r"[0-9a-f]{64}",
                   str(android.get("signingIdentitySha256", "")),
@@ -2262,12 +2289,6 @@ jobs:
           if windows.get("packageVersion") != expected_store_version:
               raise SystemExit("Windows Store package version mapping changed")
 
-          apk = root / "staged" / android["artifact"]["name"]
-          if not apk.is_file() or apk.stat().st_size != android["artifact"]["bytes"]:
-              raise SystemExit("Staged Android APK size changed")
-          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
-          if digest != android["artifact"]["sha256"]:
-              raise SystemExit("Staged Android APK digest changed")
           msix = root / "windows" / windows["artifact"]["name"]
           if not msix.is_file() or msix.stat().st_size != windows["artifact"]["bytes"]:
               raise SystemExit("Windows Store candidate size changed")
@@ -2301,7 +2322,7 @@ jobs:
           unzip -qp build/finalize/release-gate.zip release-gate.json > build/finalize/release-gate.json
           expected_version="$(jq -er .packageVersion build/finalize/windows-candidate-manifest.json)"
           expected_artifact="$(jq -er .artifact.name build/finalize/windows-candidate-manifest.json)"
-          expected_android_sha="$(jq -er .artifact.sha256 build/finalize/android-candidate-manifest.json)"
+          expected_android_sha="$(sha256sum build/finalize/android-candidate-manifest.json | cut -d ' ' -f 1)"
           dart run tool/release/verify_release_orchestration_gate.dart \
             --input build/finalize/release-gate.json \
             --output build/finalize/release-gate-verification.json \
@@ -2312,7 +2333,7 @@ jobs:
             --build-number "$(jq -er .buildNumber build/finalize/windows-candidate-manifest.json)" \
             --marketing-version "$MARKETING_VERSION" \
             --testflight-external-group "$TESTFLIGHT_EXTERNAL_GROUP" \
-            --android-artifact-sha256 "$expected_android_sha" \
+            --android-candidate-manifest-sha256 "$expected_android_sha" \
             --windows-artifact-name "$expected_artifact" \
             --windows-package-version "$expected_version" \
             --windows-flight-id "$PARTNER_CENTER_FLIGHT_ID" \
@@ -2339,18 +2360,27 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          expected_apk="meettrace-${RELEASE_ID}-android-arm64.apk"
           release_assets="$(gh release view "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --json assets)"
-          jq -e --arg apk "$expected_apk" '
-            ([.assets[].name | select(ascii_downcase | endswith(".apk"))] == [$apk]) and
+          jq -e --arg release "$RELEASE_ID" '
+            ([.assets[].name | select(ascii_downcase | endswith(".apk"))] | sort) ==
+              (["meettrace-\($release)-android-armeabi-v7a.apk",
+                "meettrace-\($release)-android-arm64.apk",
+                "meettrace-\($release)-android-universal.apk",
+                "meettrace-\($release)-android-x86_64.apk"] | sort) and
             ([.assets[].name | select(ascii_downcase | endswith(".ipa"))] | length == 0) and
             ([.assets[].name | select(ascii_downcase | endswith(".msix"))] | length == 0)
           ' <<<"$release_assets" >/dev/null
           mkdir -p build/finalize/published
           gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
             --pattern "candidate-manifest.json" \
-            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --pattern "meettrace-${RELEASE_ID}-android-*.apk" \
             --dir build/finalize/published
+          python3 tool/release/android_candidate_manifest.py \
+            --manifest build/finalize/published/candidate-manifest.json \
+            --release-id "$RELEASE_ID" \
+            --build-number "$(jq -er .buildNumber build/finalize/published/candidate-manifest.json)" \
+            --commit-sha "$CANDIDATE_SHA" \
+            --artifact-directory build/finalize/published
           python3 - <<'PY'
           import hashlib
           import json
@@ -2359,9 +2389,6 @@ jobs:
 
           root = Path("build/finalize/published")
           android = json.loads((root / "candidate-manifest.json").read_text())
-          expected_apk_name = f"meettrace-{os.environ['RELEASE_ID']}-android-arm64.apk"
-          if android.get("artifact", {}).get("name") != expected_apk_name:
-              raise SystemExit("Existing public Android APK identity changed")
           if android.get("releaseId") != os.environ["RELEASE_ID"]:
               raise SystemExit("Existing public release evidence changed")
           if android.get("commitSha") != os.environ["CANDIDATE_SHA"]:
@@ -2374,11 +2401,6 @@ jobs:
               or android.get("job") != "android"
           ):
               raise SystemExit("Existing public release evidence changed")
-          apk = root / android["artifact"]["name"]
-          if not apk.is_file() or apk.stat().st_size != android["artifact"]["bytes"]:
-              raise SystemExit("Existing public Android APK changed")
-          if hashlib.sha256(apk.read_bytes()).hexdigest() != android["artifact"]["sha256"]:
-              raise SystemExit("Existing public Android APK changed")
           PY
 
       - name: Prepare signed automatic-update pointer
@@ -2538,7 +2560,7 @@ jobs:
             {
               echo "MeetTrace \`$RELEASE_ID\` Alpha 已完成 Android、iOS 与 Windows 候选验收。"
               echo
-              echo "- Android APK：本 Release 附件（仅 Android 7.0+、arm64-v8a）"
+              echo "- Android APK：默认选择 arm64；另提供 armeabi-v7a、x86_64 split，以及仅供不确定架构时手动使用的较大 universal 包"
               echo "$testflight_line"
               echo "- Windows Microsoft Store：https://apps.microsoft.com/detail/9PHHSJMWK06G"
               echo "- 候选提交：\`$CANDIDATE_SHA\`"
@@ -2546,6 +2568,8 @@ jobs:
               echo "- 隐私政策：$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$CANDIDATE_SHA/PRIVACY.md"
               echo
               echo "## Android 安装提示"
+              echo
+              echo '大多数现代 Android 设备请选择 arm64；仅在明确知道设备 ABI 时选择其他 split，不确定时才使用 universal。应用内自动更新会自动选择本机 ABI 的 split。'
               echo
               echo '需要在系统设置中允许当前来源“安装未知应用”。应用无登录和云同步，数据只保存在本机；卸载应用会删除本机数据。Alpha 升级可能清除旧数据并重新下载模型，首次启动约下载 286.3 MB 运行资源。'
               echo
@@ -2585,7 +2609,7 @@ jobs:
               --notes-file "$PUBLIC_NOTES_PATH" --prerelease
           fi
 
-      - name: Re-download and verify public Android APK
+      - name: Re-download and verify public Android APK set
         if: needs.prepare.outputs.mode == 'resume'
         shell: bash
         env:
@@ -2599,13 +2623,14 @@ jobs:
              .tagName == $release' <<<"$release" >/dev/null
           mkdir -p build/finalize/public
           gh release download "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" \
-            --pattern "meettrace-${RELEASE_ID}-android-arm64.apk" \
+            --pattern "meettrace-${RELEASE_ID}-android-*.apk" \
             --dir build/finalize/public
-          apk="build/finalize/public/meettrace-${RELEASE_ID}-android-arm64.apk"
-          expected_sha="$(jq -er .artifact.sha256 \
-            build/finalize/android-candidate-manifest.json)"
-          actual_sha="$(sha256sum "$apk" | cut -d ' ' -f 1)"
-          [[ "$actual_sha" == "$expected_sha" ]]
+          python3 tool/release/android_candidate_manifest.py \
+            --manifest build/finalize/android-candidate-manifest.json \
+            --release-id "$RELEASE_ID" \
+            --build-number "$(jq -er .buildNumber build/finalize/android-candidate-manifest.json)" \
+            --commit-sha "$CANDIDATE_SHA" \
+            --artifact-directory build/finalize/public
 
       - name: Atomically publish signed automatic-update pointer
         shell: bash

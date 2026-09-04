@@ -29,9 +29,9 @@ Future<void> main(List<String> arguments) async {
           options,
           'testflight-external-group',
         ),
-        androidArtifactSha256: requireCliOption(
+        androidCandidateManifestSha256: requireCliOption(
           options,
-          'android-artifact-sha256',
+          'android-candidate-manifest-sha256',
         ),
         windowsArtifactName: requireCliOption(options, 'windows-artifact-name'),
         windowsPackageVersion: requireCliOption(

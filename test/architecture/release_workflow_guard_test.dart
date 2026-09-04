@@ -109,8 +109,11 @@ void main() {
       expect(quality, contains('uses: ./.github/workflows/_flutter-core.yml'));
       expect(workflow, contains('build_number:'));
       expect(android, contains('--split-per-abi'));
-      expect(android, contains('--target-platform android-arm64'));
-      expect(android, contains('androidBaseBuildNumber'));
+      expect(
+        android,
+        contains('--target-platform android-arm,android-arm64,android-x64'),
+      );
+      expect(android, contains('force-version-code-ignoring-abi=true'));
       expect(android, contains('versionCode'));
       expect(ios, contains('IOS_BUILD_NUMBER'));
       expect(windows, contains('RELEASE_BUILD_NUMBER'));
@@ -120,16 +123,38 @@ void main() {
       }
     });
 
-    test('Android 签名候选只执行一次 Firebase ARM 原包验证', () async {
+    test('Android 四包执行对应真机或模拟器原包验证', () async {
       final workflow = await _workflow('alpha-release.yml');
       final validation = _job(workflow, 'android_distribution', 'ios');
 
-      expect(validation, contains('Validate signed Android candidate once'));
-      expect(validation, contains('MediumPhone.arm'));
+      expect(
+        validation,
+        contains('Validate complete signed Android candidate set'),
+      );
+      expect(validation, contains('environment: android-alpha'));
+      expect(validation, contains('FIREBASE_ANDROID_ARM64_DEVICE_MODEL'));
+      expect(validation, contains('FIREBASE_ANDROID_ARM32_DEVICE_MODEL'));
+      expect(validation, contains('.form == "PHYSICAL"'));
+      expect(validation, contains(r'.supportedAbis | index($abi)'));
       expect(validation, contains('--type robo'));
       expect(validation, contains('--no-resign'));
+      expect(
+        validation,
+        contains(
+          'ReactiveCircus/android-emulator-runner@'
+          'a421e43855164a8197daf9d8d40fe71c6996bb0d',
+        ),
+      );
       expect(validation, contains('androidCandidateDistribution'));
-      expect(validation, contains('artifactSha256'));
+      expect(validation, contains('candidateManifestSha256'));
+      expect(validation, contains('x86_64Emulator'));
+      expect(validation, contains(r'adb logcat -d --pid="$app_pid"'));
+      expect(
+        validation,
+        contains(
+          "if grep -Eq 'FATAL EXCEPTION|Fatal signal|ANR in com\\.meettrace\\.app|",
+        ),
+      );
       expect(validation, contains('contents: write'));
       expect(
         validation,
@@ -141,7 +166,7 @@ void main() {
       );
       expect(validation, contains(r'ref: ${{ github.workflow_sha }}'));
       expect(validation, contains("if: steps.prior.outputs.reuse != 'true'"));
-      expect(validation, contains('{schemaVersion: 2'));
+      expect(validation, contains('{schemaVersion: 3'));
       expect(validation, isNot(contains('gh run list')));
       expect(validation, isNot(contains('reusedFromArtifactId')));
       expect(
@@ -243,7 +268,7 @@ void main() {
       expect(finalize, contains('gh workflow run alpha-release.yml'));
     });
 
-    test('候选发现只接受带 Firebase ARM 回执的新发布运行', () async {
+    test('候选发现只接受带 Android 四包回执的新发布运行', () async {
       final workflow = await _workflow('alpha-release-reconcile.yml');
       final resolve = _job(workflow, 'resolve', 'testflight_status');
       final validation = _job(
@@ -254,7 +279,7 @@ void main() {
 
       expect(
         resolve,
-        contains('Validate signed Android candidate once on Firebase ARM64'),
+        contains('Validate complete signed Android candidate set'),
       );
       expect(
         validation,
@@ -264,9 +289,9 @@ void main() {
         validation,
         contains('.validation == "androidCandidateDistribution"'),
       );
-      expect(validation, contains('.schemaVersion == 2'));
+      expect(validation, contains('.schemaVersion == 3'));
       expect(validation, contains('.reusedFromRunId == .validationRunId'));
-      expect(validation, contains(r'.artifactSha256 == $digest'));
+      expect(validation, contains(r'.candidateManifestSha256 == $digest'));
     });
 
     test('候选发现失败也会维护 release-blocked Issue', () async {
@@ -309,7 +334,7 @@ void main() {
       expect(publicCheckIndex, greaterThan(releaseIndex));
       expect(pointerIndex, greaterThan(publicCheckIndex));
       expect(publish, contains('gh release download'));
-      expect(publish, contains(r'[[ "$actual_sha" == "$expected_sha" ]]'));
+      expect(publish, contains('tool/release/android_candidate_manifest.py'));
     });
 
     test('拒审或未知状态失败关闭且正常路径无人工审批', () async {

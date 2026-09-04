@@ -23,7 +23,7 @@
 
 | 平台 | 入口 | 要求与状态 |
 | --- | --- | --- |
-| Android | [APK](https://github.com/zhangheng2022/meet_trace/releases/download/v1.0.0-alpha.10/meettrace-v1.0.0-alpha.10-android-arm64.apk) | Android 7.0+，仅 `arm64-v8a` |
+| Android | [arm64 APK（默认）](https://github.com/zhangheng2022/meet_trace/releases/download/v1.0.0-alpha.10/meettrace-v1.0.0-alpha.10-android-arm64.apk) | Android 7.0+；Release 另提供 `armeabi-v7a`、`x86_64` split 与较大的 universal 包 |
 | iOS | [TestFlight](https://testflight.apple.com/join/awDT2K6Q) | iOS 15.0+ |
 | Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) | Windows 10 22H2/11 x64；规划中/未就绪 |
 

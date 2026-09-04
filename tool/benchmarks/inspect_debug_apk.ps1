@@ -1,10 +1,14 @@
 param(
     [string]$ApkPath,
-    [string]$ReportPath
+    [string]$ReportPath,
+    [string]$RequiredAbi = 'arm64-v8a'
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
+if ([string]::IsNullOrWhiteSpace($RequiredAbi)) {
+    throw 'RequiredAbi must not be empty.'
+}
 if ([string]::IsNullOrWhiteSpace($ApkPath)) {
     $ApkPath = Join-Path $repoRoot 'build\app\outputs\flutter-apk\app-debug.apk'
 }
@@ -49,6 +53,7 @@ $forbiddenUserData = @($entries | Where-Object {
 $nativeLibraries = @($entries | Where-Object { $_ -match '^lib/[^/]+/.*\.so$' })
 $abis = @($nativeLibraries | ForEach-Object { ($_ -split '/')[1] } | Sort-Object -Unique)
 $hasArm64 = 'arm64-v8a' -in $abis
+$hasRequiredAbi = $RequiredAbi -cin $abis
 $hasNotices = 'assets/flutter_assets/NOTICES.Z' -in $entries
 
 $report = [ordered]@{
@@ -57,6 +62,8 @@ $report = [ordered]@{
     apkBytes = (Get-Item -LiteralPath $ApkPath).Length
     abis = $abis
     hasArm64 = $hasArm64
+    requiredAbi = $RequiredAbi
+    hasRequiredAbi = $hasRequiredAbi
     hasFlutterNotices = $hasNotices
     requiredAssets = $requiredAssets
     missingAssets = $missingAssets
@@ -72,7 +79,7 @@ New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($o
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $output -Encoding utf8
 Write-Host "APK inspection report: $output"
 
-if (-not $hasArm64 -or -not $hasNotices -or $missingAssets.Count -gt 0 -or
+if (-not $hasRequiredAbi -or -not $hasNotices -or $missingAssets.Count -gt 0 -or
     $forbiddenWeights.Count -gt 0 -or $forbiddenUserData.Count -gt 0) {
     throw 'APK model weight or packaging inspection failed.'
 }

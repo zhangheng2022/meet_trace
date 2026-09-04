@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:typed_data';
 
 import '../../../domain/models/app_update.dart';
@@ -54,9 +55,13 @@ final class VerifiedPlatformAppUpdate {
 /// 签名直接覆盖 `signedPayload` 的 Base64 解码字节，避免 JSON key 顺序、空白
 /// 或编码差异改变验签结果。
 final class SignedAppUpdateManifestParser {
-  const SignedAppUpdateManifestParser({required this.signatureVerifier});
+  const SignedAppUpdateManifestParser({
+    required this.signatureVerifier,
+    this.androidAbi,
+  });
 
   final AppUpdateManifestSignatureVerifier signatureVerifier;
+  final Abi? androidAbi;
 
   Future<VerifiedPlatformAppUpdate> parse(
     List<int> envelopeBytes, {
@@ -81,7 +86,7 @@ final class SignedAppUpdateManifestParser {
     }
 
     final payload = _jsonObject(utf8.decode(payloadBytes), 'signedPayload');
-    if (payload['schemaVersion'] != 1 || payload['channel'] != 'alpha') {
+    if (payload['schemaVersion'] != 2 || payload['channel'] != 'alpha') {
       throw const FormatException('更新 Manifest schema 或频道不受支持');
     }
     final status = switch (_text(payload, 'status')) {
@@ -90,7 +95,10 @@ final class SignedAppUpdateManifestParser {
       _ => throw const FormatException('更新候选不是公开批准或已撤回状态'),
     };
     final artifacts = _jsonObject(payload['artifacts'], 'artifacts');
-    final artifactJson = _jsonObject(artifacts[platform.name], platform.name);
+    var artifactJson = _jsonObject(artifacts[platform.name], platform.name);
+    if (platform == AppUpdatePlatform.android) {
+      artifactJson = _selectAndroidArtifact(artifactJson);
+    }
     final artifactId = _text(artifactJson, 'artifactId');
     final artifact = _parseArtifact(platform, artifactJson);
     final buildNumber = _positiveInt(payload, 'buildNumber');
@@ -109,6 +117,25 @@ final class SignedAppUpdateManifestParser {
       approvedAt: _utcDate(payload, 'approvedAt'),
     );
     return VerifiedPlatformAppUpdate(candidate: candidate, artifact: artifact);
+  }
+
+  Map<String, Object?> _selectAndroidArtifact(Map<String, Object?> android) {
+    final abi = androidAbi ?? Abi.current();
+    final abiName = switch (abi) {
+      Abi.androidArm => 'armeabi-v7a',
+      Abi.androidArm64 => 'arm64-v8a',
+      Abi.androidX64 => 'x86_64',
+      _ => throw FormatException('Android ABI 不受支持：$abi'),
+    };
+    final variant = _jsonObject(
+      _jsonObject(android['variants'], 'android.variants')[abiName],
+      'android.variants.$abiName',
+    );
+    return <String, Object?>{
+      ...variant,
+      'packageIdentity': android['packageIdentity'],
+      'signingIdentitySha256': android['signingIdentitySha256'],
+    };
   }
 
   VerifiedPlatformUpdateArtifact _parseArtifact(
@@ -130,7 +157,7 @@ final class SignedAppUpdateManifestParser {
         return VerifiedPlatformUpdateArtifact(
           platform: platform,
           installUri: installUri,
-          versionCode: _optionalPositiveInt(json, 'versionCode'),
+          versionCode: _positiveInt(json, 'versionCode'),
           bytes: bytes,
           sha256: _sha(json, 'sha256'),
           packageIdentity: packageIdentity,
@@ -195,11 +222,6 @@ int _positiveInt(Map<String, Object?> json, String key) {
     throw FormatException('$key 必须是正整数');
   }
   return value;
-}
-
-int? _optionalPositiveInt(Map<String, Object?> json, String key) {
-  if (!json.containsKey(key)) return null;
-  return _positiveInt(json, key);
 }
 
 String _sha(Map<String, Object?> json, String key) {

@@ -98,16 +98,9 @@ void main() {
       expect(workflow, contains('Reusing build number'));
       expect(prepare, contains('contents: write'));
       expect(android, contains(r'ANDROID_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
-      expect(
-        android,
-        contains(
-          r'ANDROID_PACKAGE_BUILD_NUMBER=$((RELEASE_BUILD_NUMBER - 2000))',
-        ),
-      );
-      expect(
-        android,
-        contains('version_code != android_base_build_number + 2000'),
-      );
+      expect(android, contains(r'--build-number="$ANDROID_BUILD_NUMBER"'));
+      expect(android, contains('MEETTRACE_REQUIRE_NATIVE_RUNTIME=true'));
+      expect(android, contains('force-version-code-ignoring-abi=true'));
       expect(ios, contains(r'IOS_BUILD_NUMBER=$RELEASE_BUILD_NUMBER'));
       expect(
         windows,
@@ -119,14 +112,20 @@ void main() {
       );
     });
 
-    test('Android 候选固定 arm64、签名、Draft 与不可覆盖语义', () async {
+    test('Android 候选四包固定 ABI、签名、Draft 与不可覆盖语义', () async {
       final workflow = await _workflow('alpha-release.yml');
       final android = _job(workflow, 'android', 'android_distribution');
 
       expect(android, contains('environment: android-alpha'));
-      expect(android, contains('--target-platform android-arm64'));
+      expect(
+        android,
+        contains('--target-platform android-arm,android-arm64,android-x64'),
+      );
       expect(android, contains('--split-per-abi'));
       expect(android, contains('app-arm64-v8a-release.apk'));
+      expect(android, contains('app-armeabi-v7a-release.apk'));
+      expect(android, contains('app-x86_64-release.apk'));
+      expect(android, contains('app-release.apk'));
       expect(android, contains(r'git tag -a "$RELEASE_ID"'));
       expect(android, contains('--draft --prerelease'));
       expect(android, contains('Reusing immutable staged Android candidate'));
@@ -317,7 +316,7 @@ void main() {
       expect(pointerPreparation, lessThan(releasePublication));
       expect(releasePublication, lessThan(publicApk));
       expect(publicApk, lessThan(pointerPublication));
-      expect(publish, contains('--android-artifact-sha256'));
+      expect(publish, contains('--android-candidate-manifest-sha256'));
       expect(publish, contains('endswith(".ipa")'));
       expect(publish, contains('endswith(".msix")'));
       expect(publish, isNot(contains('gh release create')));
@@ -337,7 +336,7 @@ void main() {
       expect(uploadEnd, greaterThan(uploadStart));
       final upload = android.substring(uploadStart, uploadEnd);
 
-      expect(upload, contains(r'"$APK_PATH"'));
+      expect(upload, contains('build/android/alpha/*.apk'));
       expect(upload, contains('build/android/alpha/candidate-manifest.json'));
       expect(upload, isNot(contains('apksigner.txt')));
       expect(android, contains('apksigner.txt'));

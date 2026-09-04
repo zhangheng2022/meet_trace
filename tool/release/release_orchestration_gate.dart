@@ -11,7 +11,7 @@ final class ReleaseOrchestrationGateRequest {
     required this.buildNumber,
     required this.marketingVersion,
     required this.testFlightExternalGroup,
-    required this.androidArtifactSha256,
+    required this.androidCandidateManifestSha256,
     required this.windowsArtifactName,
     required this.windowsPackageVersion,
     required this.windowsFlightId,
@@ -25,7 +25,7 @@ final class ReleaseOrchestrationGateRequest {
   final int buildNumber;
   final String marketingVersion;
   final String testFlightExternalGroup;
-  final String androidArtifactSha256;
+  final String androidCandidateManifestSha256;
   final String windowsArtifactName;
   final String windowsPackageVersion;
   final String windowsFlightId;
@@ -139,7 +139,7 @@ void _verifyAndroidValidation(
   Map<String, Object?> receipt,
   ReleaseOrchestrationGateRequest request,
 ) {
-  _require(receipt, 'schemaVersion', 2);
+  _require(receipt, 'schemaVersion', 3);
   _require(receipt, 'validation', 'androidCandidateDistribution');
   _require(receipt, 'releaseId', request.releaseId);
   _require(receipt, 'candidateCommitSha', request.candidateCommitSha);
@@ -165,8 +165,23 @@ void _verifyAndroidValidation(
       throw const FormatException('Android 原始验证回执摘要无效');
     }
   }
-  _require(receipt, 'androidFirebaseArm', 'passed');
-  _require(receipt, 'artifactSha256', request.androidArtifactSha256);
+  final runtimeValidation = _object(
+    receipt['runtimeValidation'],
+    'runtimeValidation',
+  );
+  for (final key in const <String>[
+    'universalArm64Firebase',
+    'arm64Firebase',
+    'armeabiV7aFirebase',
+    'x86_64Emulator',
+  ]) {
+    _require(runtimeValidation, key, 'passed');
+  }
+  _require(
+    receipt,
+    'candidateManifestSha256',
+    request.androidCandidateManifestSha256,
+  );
 }
 
 void _validateRequest(ReleaseOrchestrationGateRequest request) {
@@ -177,8 +192,9 @@ void _validateRequest(ReleaseOrchestrationGateRequest request) {
   if (!RegExp(r'^[0-9a-f]{40}$').hasMatch(request.candidateCommitSha)) {
     throw const FormatException('候选提交必须是小写 40 位 SHA');
   }
-  if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(request.androidArtifactSha256)) {
-    throw const FormatException('Android 候选摘要格式无效');
+  if (!RegExp(r'^[0-9a-f]{64}$')
+      .hasMatch(request.androidCandidateManifestSha256)) {
+    throw const FormatException('Android 候选清单摘要格式无效');
   }
   if (request.sourceRunId <= 0 ||
       request.orchestrationRunId <= 0 ||

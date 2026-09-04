@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +9,10 @@ import 'package:meettrace/domain/models/app_update.dart';
 void main() {
   test('验签成功后只解析目标平台的公开 Alpha 候选', () async {
     final verifier = _SignatureVerifier();
-    final parser = SignedAppUpdateManifestParser(signatureVerifier: verifier);
+    final parser = SignedAppUpdateManifestParser(
+      signatureVerifier: verifier,
+      androidAbi: Abi.androidArm64,
+    );
 
     final update = await parser.parse(
       _envelopeBytes(),
@@ -17,7 +21,7 @@ void main() {
 
     expect(update.candidate.status, AppUpdateCandidateStatus.publicApproved);
     expect(update.candidate.buildNumber, 2001);
-    expect(update.candidate.artifactId, 'android-2001');
+    expect(update.candidate.artifactId, 'android-arm64-2001');
     expect(update.artifact.platform, AppUpdatePlatform.android);
     expect(update.artifact.packageIdentity, 'com.meettrace.app');
     expect(update.artifact.versionCode, 2001);
@@ -42,29 +46,22 @@ void main() {
     for (final mutation in <void Function(Map<String, Object?>)>[
       (payload) => payload['status'] = 'draft',
       (payload) => payload['channel'] = 'nightly',
+      (payload) => payload['schemaVersion'] = 1,
       (payload) {
         final artifacts = payload['artifacts']! as Map<String, Object?>;
         final android = artifacts['android']! as Map<String, Object?>;
         android['packageIdentity'] = 'example.attacker';
       },
       (payload) {
-        final artifacts = payload['artifacts']! as Map<String, Object?>;
-        final android = artifacts['android']! as Map<String, Object?>;
-        android['bytes'] = 512 * 1024 * 1024 + 1;
+        _arm64Artifact(payload)['bytes'] = 512 * 1024 * 1024 + 1;
       },
-      (payload) {
-        final artifacts = payload['artifacts']! as Map<String, Object?>;
-        final android = artifacts['android']! as Map<String, Object?>;
-        android['versionCode'] = 0;
-      },
-      (payload) {
-        final artifacts = payload['artifacts']! as Map<String, Object?>;
-        final android = artifacts['android']! as Map<String, Object?>;
-        android['versionCode'] = 2002;
-      },
+      (payload) => _arm64Artifact(payload)['versionCode'] = 0,
+      (payload) => _arm64Artifact(payload)['versionCode'] = 2002,
+      (payload) => _arm64Artifact(payload).remove('versionCode'),
     ]) {
       final parser = SignedAppUpdateManifestParser(
         signatureVerifier: _SignatureVerifier(),
+        androidAbi: Abi.androidArm64,
       );
       await expectLater(
         parser.parse(
@@ -74,6 +71,28 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     }
+  });
+
+  test('Android 按当前 ABI 选择 split 且未知 ABI 失败关闭', () async {
+    for (final (abi, artifactId) in <(Abi, String)>[
+      (Abi.androidArm, 'android-arm-2001'),
+      (Abi.androidArm64, 'android-arm64-2001'),
+      (Abi.androidX64, 'android-x64-2001'),
+    ]) {
+      final update = await SignedAppUpdateManifestParser(
+        signatureVerifier: _SignatureVerifier(),
+        androidAbi: abi,
+      ).parse(_envelopeBytes(), platform: AppUpdatePlatform.android);
+      expect(update.candidate.artifactId, artifactId);
+    }
+
+    await expectLater(
+      SignedAppUpdateManifestParser(
+        signatureVerifier: _SignatureVerifier(),
+        androidAbi: Abi.windowsX64,
+      ).parse(_envelopeBytes(), platform: AppUpdatePlatform.android),
+      throwsFormatException,
+    );
   });
 
   test('Windows 只接受固定 Microsoft Store 产品和包身份', () async {
@@ -131,10 +150,17 @@ Map<String, Object?> _windowsArtifact(Map<String, Object?> payload) {
   return artifacts['windows']! as Map<String, Object?>;
 }
 
+Map<String, Object?> _arm64Artifact(Map<String, Object?> payload) {
+  final artifacts = payload['artifacts']! as Map<String, Object?>;
+  final android = artifacts['android']! as Map<String, Object?>;
+  final variants = android['variants']! as Map<String, Object?>;
+  return variants['arm64-v8a']! as Map<String, Object?>;
+}
+
 List<int> _envelopeBytes({void Function(Map<String, Object?>)? mutate}) {
   final hash = 'a' * 64;
   final payload = <String, Object?>{
-    'schemaVersion': 1,
+    'schemaVersion': 2,
     'channel': 'alpha',
     'status': 'publicApproved',
     'releaseId': 'v1.1.0-alpha.1',
@@ -145,13 +171,13 @@ List<int> _envelopeBytes({void Function(Map<String, Object?>)? mutate}) {
     'approvedAt': '2026-08-15T10:00:00Z',
     'artifacts': <String, Object?>{
       'android': <String, Object?>{
-        'artifactId': 'android-2001',
-        'installUri': 'https://updates.example.test/meettrace.apk',
-        'bytes': 1024,
-        'sha256': hash,
         'packageIdentity': 'com.meettrace.app',
         'signingIdentitySha256': hash,
-        'versionCode': 2001,
+        'variants': <String, Object?>{
+          'armeabi-v7a': _androidVariant('android-arm-2001', hash),
+          'arm64-v8a': _androidVariant('android-arm64-2001', hash),
+          'x86_64': _androidVariant('android-x64-2001', hash),
+        },
       },
       'ios': <String, Object?>{
         'artifactId': 'ios-11',
@@ -180,6 +206,15 @@ List<int> _envelopeBytes({void Function(Map<String, Object?>)? mutate}) {
     }),
   );
 }
+
+Map<String, Object?> _androidVariant(String artifactId, String hash) =>
+    <String, Object?>{
+      'artifactId': artifactId,
+      'installUri': 'https://updates.example.test/$artifactId.apk',
+      'bytes': 1024,
+      'sha256': hash,
+      'versionCode': 2001,
+    };
 
 final class _SignatureVerifier implements AppUpdateManifestSignatureVerifier {
   bool valid = true;
