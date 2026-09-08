@@ -1,5 +1,4 @@
 import '../domain/models/asr_model_registry.dart';
-import '../domain/ports/asr_engine.dart';
 import 'meettrace_meeting_dependencies.dart';
 import 'meettrace_runtime_dependencies.dart';
 import 'meettrace_storage_dependencies.dart';
@@ -19,7 +18,12 @@ final class MeetTraceDependencies {
   final UpdateDependencies? updates;
 
   static Future<MeetTraceDependencies> create({
-    AsrDeviceRiskMonitor? riskMonitor,
+    MeetingDependencies Function({
+          required StorageDependencies storage,
+          required RuntimeAssetDependencies runtime,
+        })
+        createMeeting =
+        MeetingDependencies.create,
   }) async {
     StorageDependencies? storage;
     RuntimeAssetDependencies? runtime;
@@ -32,11 +36,7 @@ final class MeetTraceDependencies {
         registry: registry,
         storage: storage,
       );
-      meeting = MeetingDependencies.create(
-        storage: storage,
-        runtime: runtime,
-        riskMonitor: riskMonitor,
-      );
+      meeting = createMeeting(storage: storage, runtime: runtime);
       try {
         updates = UpdateDependencies.create(storage: storage);
       } on Object {

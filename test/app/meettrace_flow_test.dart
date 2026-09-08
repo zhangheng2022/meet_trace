@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/app/application.dart';
 import 'package:meettrace/app/meettrace_dependencies.dart';
 import 'package:meettrace/app/meettrace_flow.dart';
+import 'package:meettrace/app/meettrace_meeting_dependencies.dart';
 import 'package:meettrace/data/services/asr/platform_asr_device_risk_monitor.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/ui/features/meetings/views/list/meeting_list_view.dart';
@@ -46,7 +47,14 @@ void main() {
     expect(p.isWithin(support!.path, layout!.rootPath), isTrue);
     final dependencies = await tester.runAsync(
       () => MeetTraceDependencies.create(
-        riskMonitor: PortableAsrDeviceRiskMonitor(processRssReader: () => 42),
+        createMeeting: ({required storage, required runtime}) =>
+            MeetingDependencies.create(
+              storage: storage,
+              runtime: runtime,
+              riskMonitor: PortableAsrDeviceRiskMonitor(
+                processRssReader: () => 42,
+              ),
+            ),
       ),
     );
     expect(dependencies, isNotNull);
