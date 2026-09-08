@@ -27,7 +27,7 @@ final class RemoteAsrPreviewSession
           _state != AsrPreviewState.recordingOnly) {
         _events.add(event);
         if (event is TranscriptSegmentEvent && event.isFinalForWindow) {
-          _coveredMs = event.endMs > _coveredMs ? event.endMs : _coveredMs;
+          _cover(event.startMs, event.endMs);
           _emitMetrics();
         }
       }
@@ -39,6 +39,7 @@ final class RemoteAsrPreviewSession
   final int maximumQueuedAudioMs;
   final Duration stopTimeout;
   final Queue<RecordingPcmChunk> _pending = Queue();
+  final _completed = <(int, int)>[];
   final _events = StreamController<TranscriptEvent>.broadcast();
   final _metrics = StreamController<AsrPreviewMetrics>.broadcast();
   late final StreamSubscription<TranscriptEvent> _engineEvents;
@@ -70,8 +71,27 @@ final class RemoteAsrPreviewSession
     processedPreviewWindows: _processed,
     droppedPreviewWindows: _dropped,
     previewLagMs: (_latestMs - _coveredMs).clamp(0, _latestMs),
+    isRecognizing:
+        _active &&
+        (_pending.isNotEmpty || _draining != null || _latestMs > _coveredMs),
     lastErrorCode: _lastError,
   );
+
+  void _cover(int start, int end) {
+    if (end <= _coveredMs) return;
+    // 合并相邻完成窗口；区间数最多为网络未完成窗口数（最多 8）加 1。
+    _completed.removeWhere((range) {
+      if (range.$1 > end || range.$2 < start) return false;
+      if (range.$1 < start) start = range.$1;
+      if (range.$2 > end) end = range.$2;
+      return true;
+    });
+    if (start <= _coveredMs) {
+      _coveredMs = end;
+    } else {
+      _completed.add((start, end));
+    }
+  }
 
   @override
   Future<void> initialize() => _initializing ??= _initialize();
@@ -89,6 +109,7 @@ final class RemoteAsrPreviewSession
   @override
   Future<void> add(RecordingPcmChunk chunk) async {
     if (!_active) return;
+    if (_audioEpoch == 0) _coveredMs = chunk.start.inMilliseconds;
     _audioEpoch++;
     _latestMs = chunk.end.inMilliseconds;
     if ((_queuedBytes + chunk.bytes.length) * 1000 >
@@ -113,6 +134,7 @@ final class RemoteAsrPreviewSession
     _draining = _drain().whenComplete(() {
       _draining = null;
       _startDrain();
+      _emitMetrics();
     });
   }
 
@@ -160,6 +182,7 @@ final class RemoteAsrPreviewSession
     _state = AsrPreviewState.recordingOnly;
     _dropped += _pending.length;
     _pending.clear();
+    _completed.clear();
     _queuedBytes = 0;
     engine.cancel();
     _emitMetrics();
@@ -175,6 +198,7 @@ final class RemoteAsrPreviewSession
     _state = AsrPreviewState.disposed;
     _dropped += _pending.length;
     _pending.clear();
+    _completed.clear();
     _queuedBytes = 0;
     engine.cancel();
     _emitMetrics();

@@ -115,6 +115,43 @@ void main() {
     ]);
   });
 
+  test(
+    'sub-millisecond server segments retain text within each chunk',
+    () async {
+      final engine = RemoteAsrEngine(
+        profile: remoteProfile(),
+        credentials: TestCredentials(),
+        client: MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'text': 'short edge tolerance',
+              'segments': [
+                {'start': 0.52, 'end': 0.5205, 'text': 'short'},
+                {'start': 0.9999, 'end': 1.0, 'text': 'edge'},
+                {'start': 1.0, 'end': 1.0005, 'text': 'tolerance'},
+              ],
+            }),
+            200,
+          ),
+        ),
+      );
+      addTearDown(engine.dispose);
+      final snapshot = await engine.finalizeMeeting(
+        source(),
+        meetingId: 'meeting',
+      );
+      expect(snapshot.timingPrecision, TranscriptTimingPrecision.segment);
+      expect(snapshot.segments.map((s) => (s.startMs, s.endMs, s.text)), [
+        for (final offset in [0, 1000, 2000]) ...[
+          (offset + 520, offset + 521, 'short'),
+          (offset + 999, offset + 1000, 'edge'),
+          (offset + 999, offset + 1000, 'tolerance'),
+        ],
+      ]);
+      expect(await pcm.readAsBytes(), raw);
+    },
+  );
+
   test('invalid timestamps and mixed reported model versions cannot form a complete snapshot', () async {
     var calls = 0;
     for (final invalidTimes in [true, false]) {

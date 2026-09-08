@@ -27,6 +27,7 @@ void main() {
       expect(engine.initialized, 0);
       expect(engine.samples, isEmpty);
       expect(preview.metrics.state, AsrPreviewState.recordingOnly);
+      expect(preview.metrics.isRecognizing, isFalse);
     },
   );
 
@@ -64,6 +65,7 @@ void main() {
       expect(preview.metrics.state, AsrPreviewState.recordingOnly);
       expect(preview.metrics.queuedAudioMs, 0);
       expect(preview.metrics.lastErrorCode, 'asr.remote.backlog_exceeded');
+      expect(preview.metrics.isRecognizing, isFalse);
       expect(engine.cancelled, isTrue);
       ready.complete();
       await initialization;
@@ -106,6 +108,71 @@ void main() {
     await preview.flush();
     expect(engine.flushes, 1);
   });
+
+  test(
+    'recognizing covers queued audio and all out-of-order completions',
+    () async {
+      final ready = Completer<void>();
+      final accepted = Completer<void>();
+      final engine = _PreviewEngine(
+        ready: ready.future,
+        accepted: accepted.future,
+      );
+      final preview = RemoteAsrPreviewSession(engine: engine);
+      addTearDown(preview.dispose);
+      expect(preview.metrics.isRecognizing, isFalse);
+      final initialization = preview.initialize();
+      await preview.add(chunk(0));
+      expect(preview.metrics.queuedAudioMs, 200);
+      expect(preview.metrics.isRecognizing, isTrue);
+      ready.complete();
+      await initialization;
+      expect(preview.metrics.queuedAudioMs, 0);
+      expect(preview.metrics.isRecognizing, isTrue);
+      accepted.complete();
+      await preview.flush();
+      await preview.add(chunk(6400));
+      await preview.add(chunk(12800));
+      await preview.flush();
+      expect(preview.metrics.isRecognizing, isTrue);
+
+      Future<void> completeWindow(
+        int start,
+        int end, {
+        String text = '',
+      }) async {
+        final changed = preview.metricsChanges.first;
+        engine.updates.add(
+          TranscriptSegmentEvent(
+            segmentId: 'window-$start',
+            startMs: start,
+            endMs: end,
+            text: text,
+            modelId: 'custom',
+            modelVersion: 'unreported',
+            isFinalForWindow: true,
+          ),
+        );
+        await changed;
+      }
+
+      await completeWindow(400, 600, text: 'last');
+      expect(preview.metrics.isRecognizing, isTrue);
+      expect(preview.metrics.previewLagMs, 600);
+      await completeWindow(0, 200, text: 'first');
+      expect(preview.metrics.isRecognizing, isTrue);
+      expect(preview.metrics.previewLagMs, 400);
+      await completeWindow(200, 400);
+      expect(preview.metrics.isRecognizing, isFalse);
+      expect(preview.metrics.previewLagMs, 0);
+      await completeWindow(400, 600, text: 'duplicate');
+      expect(preview.metrics.isRecognizing, isFalse);
+      await preview.add(chunk(19200));
+      expect(preview.metrics.isRecognizing, isTrue);
+      await preview.stop();
+      expect(preview.metrics.isRecognizing, isFalse);
+    },
+  );
 }
 
 final class _PreviewEngine implements AsrEngine, AsrPreviewControl {
@@ -117,8 +184,9 @@ final class _PreviewEngine implements AsrEngine, AsrPreviewControl {
   bool cancelled = false;
   final samples = <(int, Float32List)>[];
   final sampleRates = <int>[];
+  final updates = StreamController<TranscriptEvent>.broadcast();
   @override
-  Stream<TranscriptEvent> get events => const Stream.empty();
+  Stream<TranscriptEvent> get events => updates.stream;
   @override
   Future<void> initialize() async {
     initialized++;
@@ -147,7 +215,7 @@ final class _PreviewEngine implements AsrEngine, AsrPreviewControl {
   }
 
   @override
-  Future<void> dispose() async {}
+  Future<void> dispose() => updates.close();
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

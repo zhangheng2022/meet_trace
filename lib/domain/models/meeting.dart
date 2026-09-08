@@ -97,7 +97,8 @@ final class Meeting {
   final String? activeTranscriptSnapshotId;
   final String? lastErrorCode;
 
-  bool get isRecordingModelLocked => status != MeetingState.created;
+  bool get isRecordingModelLocked =>
+      transcriptionProfile != null || status != MeetingState.created;
 
   Meeting rename(String value) {
     final issue = meetingTitleIssue(value);
@@ -117,12 +118,15 @@ final class Meeting {
     String recordingModelLanguage = 'auto',
     bool recordingModelUseInverseTextNormalization = true,
   }) {
-    if (isRecordingModelLocked) {
+    if (status != MeetingState.created) {
       throw InvalidStateTransitionException(
         machine: 'meetingModelSelection',
         from: status,
         to: status,
       );
+    }
+    if (transcriptionProfile != null) {
+      throw const DomainInvariantViolation('会议转录配置已冻结，不能修改录音模型');
     }
     return _copyWith(
       recordingModelId: recordingModelId,

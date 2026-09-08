@@ -34,7 +34,8 @@ final class LocalDataGenerationGate {
   ///
   /// 标记缺失（含历史 Alpha 安装）或损坏一律视为旧数据代并清场，
   /// 清场失败时直接向上抛出，绝不带着旧数据继续启动。
-  /// 首次安装不存在数据根目录时只建立基线，不视为清场。
+  /// 不存在数据根目录时只建立文件基线，返回 false；仍须清理可能跨重装
+  /// 保留的安全凭据，不能仅据目录缺失判断安全存储为空。
   Future<bool> ensureCurrent() async {
     final marker = File(p.join(layout.rootPath, markerFileName));
     if (await _markerIsCurrent(marker)) {

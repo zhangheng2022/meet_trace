@@ -439,6 +439,9 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
         );
       }
       return selected;
+    } on Object {
+      if (mounted) await _showStartFailure(context.l10n.sourceFailure);
+      return null;
     } finally {
       vm.dispose();
       unawaited(_meetingList.refreshReadiness());
@@ -447,16 +450,21 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
 
   Future<bool> _confirmOnline(TranscriptionProfile profile) async {
     final l10n = context.l10n;
-    return await showAppConfirmDialog(
-          context: context,
-          semanticsLabel: l10n.sourceOnlineConsent(profile.endpoint!.host),
-          title: l10n.sourceOnlineConsent(profile.endpoint!.host),
-          message:
-              '${transcriptionSourceMode(l10n, profile)}\n\n${l10n.sourceOnlineConsentMessage(profile.modelId)}',
-          cancelLabel: l10n.cancel,
-          confirmLabel: l10n.sourceAcceptStart,
-        ) ==
-        true;
+    try {
+      return await showAppConfirmDialog(
+            context: context,
+            semanticsLabel: l10n.sourceOnlineConsent(profile.endpoint!.host),
+            title: l10n.sourceOnlineConsent(profile.endpoint!.host),
+            message:
+                '${transcriptionSourceMode(l10n, profile)}\n\n${l10n.sourceOnlineConsentMessage(profile.modelId)}',
+            cancelLabel: l10n.cancel,
+            confirmLabel: l10n.sourceAcceptStart,
+          ) ==
+          true;
+    } on Object {
+      if (mounted) await _showStartFailure(l10n.sourceFailure);
+      return false;
+    }
   }
 
   void _repairLocalResources() {
@@ -480,6 +488,9 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
             ),
           ) ==
           true;
+    } on Object {
+      if (mounted) await _showStartFailure(context.l10n.sourceFailure);
+      return false;
     } finally {
       vm.dispose();
       unawaited(_meetingList.refreshReadiness());

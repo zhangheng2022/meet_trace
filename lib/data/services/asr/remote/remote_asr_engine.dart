@@ -529,10 +529,14 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
         }
         final content = (segment['text'] as String).trim();
         if (content.isNotEmpty) {
+          final partStart = (startMs + (start * 1000).floor()).clamp(
+            startMs,
+            endMs - 1,
+          );
           parts.add(
             _Part(
-              startMs + (start * 1000).floor(),
-              (startMs + (end * 1000).floor()).clamp(startMs + 1, endMs),
+              partStart,
+              (startMs + (end * 1000).floor()).clamp(partStart + 1, endMs),
               content,
               true,
             ),

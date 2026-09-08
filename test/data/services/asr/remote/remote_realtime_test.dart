@@ -243,6 +243,55 @@ void main() {
     },
   );
 
+  for (final code in [
+    'asr.remote.audio_discontinuity',
+    'asr.remote.backlog_exceeded',
+  ]) {
+    test('$code permanently stops preview with only the safe code', () async {
+      fixture.respondToCommits = false;
+      final failures = <String>[];
+      final session = RemoteRealtimeSession(
+        profile: remoteProfile(
+          protocol: TranscriptionProtocol.realtimeTranscription,
+          endpoint: fixture.endpoint,
+          timeoutSeconds: 5,
+        ),
+        headers: {'X-Api-Key': 'test-secret-only'},
+        prefix: 'private-meeting',
+        onPiece: (_) => fail('A held completion must not emit a transcript'),
+        onFailure: failures.add,
+      );
+      addTearDown(session.close);
+      await session.initialize();
+      final samples = Float32List(32000);
+      final safeFailure = throwsA(
+        isA<RemoteAsrProtocolException>()
+            .having((e) => e.code, 'code', code)
+            .having((e) => e.toString(), 'safe error text', code),
+      );
+      if (code == 'asr.remote.audio_discontinuity') {
+        await session.add(samples, startMs: 0);
+        await expectLater(session.add(samples, startMs: 2002), safeFailure);
+      } else {
+        for (var index = 0; index < 8; index++) {
+          await session.add(samples, startMs: index * 2000);
+          await session.flush();
+        }
+        // Let the fixture acknowledge all queued commits before cancellation.
+        await Future.doWhile(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 1));
+          return fixture.commits.single < 8;
+        }).timeout(const Duration(seconds: 3));
+        expect(failures, isEmpty);
+        await session.add(samples, startMs: 16000);
+        await expectLater(session.flush(), safeFailure);
+      }
+      expect(failures, [code]);
+      await expectLater(session.add(samples, startMs: 18000), safeFailure);
+      expect(failures, [code]);
+    });
+  }
+
   test('unresponsive final completion times out with a safe code', () async {
     fixture.respondToCommits = false;
     final session = RemoteRealtimeSession(
