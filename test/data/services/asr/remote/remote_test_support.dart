@@ -34,8 +34,13 @@ TranscriptionProfile remoteProfile({
 final class TestCredentials implements TranscriptionCredentialStore {
   TestCredentials({this.headers = const {'X-Api-Key': 'test-secret-only'}});
   Map<String, String>? headers;
+  final requestedReferences = <String>[];
   @override
-  Future<Map<String, String>?> read(String reference) async => headers;
+  Future<Map<String, String>?> read(String reference) async {
+    requestedReferences.add(reference);
+    return headers;
+  }
+
   @override
   Future<void> write(String reference, Map<String, String> headers) async {
     this.headers = headers;
@@ -63,6 +68,8 @@ final class RealtimeFixture {
   bool respondToCommits = true;
   bool duplicateCompletions = false;
   bool reverseCompletions = false;
+  int? heldCompletionSequence;
+  void Function()? heldCompletion;
   String? serverError;
   final _deferred = <void Function()>[];
   Uri get endpoint => Uri.parse(
@@ -125,7 +132,9 @@ final class RealtimeFixture {
           }
 
           if (!fixture.respondToCommits) return;
-          if (fixture.reverseCompletions) {
+          if (sequence == fixture.heldCompletionSequence) {
+            fixture.heldCompletion = complete;
+          } else if (fixture.reverseCompletions) {
             fixture._deferred.add(complete);
             if (sequence == 3) {
               for (final callback in fixture._deferred.reversed) {

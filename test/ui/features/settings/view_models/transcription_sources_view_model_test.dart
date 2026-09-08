@@ -64,18 +64,56 @@ void main() {
     for (final headers in [
       '["not-object"]',
       '{"X-Tenant":1}',
+      '{"":"x"}',
       '{"bad header":"x"}',
+      '{"X:Tenant":"x"}',
+      '{"租户":"x"}',
+      r'{"X-Tenant\n":"x"}',
+      r'{"X-Tenant":"value\rInjected: true"}',
+      r'{"X-Tenant":"value\nInjected: true"}',
       r'{"X-Tenant":"value\r\nInjected: true"}',
+      r'{"X-Tenant":"value\u0000"}',
+      r'{"X-Tenant":"value\u0008"}',
+      r'{"X-Tenant":"value\u000b"}',
+      r'{"X-Tenant":"value\u001f"}',
+      r'{"X-Tenant":"value\u007f"}',
+      r'{"X-Tenant":"value\u0080"}',
+      r'{"X-Tenant":"value\u00ff"}',
+      r'{"X-Tenant":"value\u0100"}',
+      '{"X-Tenant":"租户"}',
       '{"HOST":"other.example"}',
       '{"Content-Length":"10"}',
       '{"Content-Type":"text/plain"}',
       '{"Connection":"close"}',
       '{"Transfer-Encoding":"chunked"}',
+      '{"uPgRaDe":"websocket"}',
+      '{"Sec-WebSocket-Key":"override"}',
+      '{"sec-websocket-protocol":"override"}',
+      '{"SEC-WEBSOCKET-Custom":"override"}',
     ]) {
       expect(await save(headers: headers), isFalse, reason: headers);
       expect(viewModel.failed, isTrue);
+      expect(credentials.values, isEmpty, reason: headers);
+      expect(profiles.saved, isEmpty, reason: headers);
     }
-    expect(await save(apiKey: 'token\r\ninjected'), isFalse);
+    for (final apiKey in [
+      'token\r',
+      'token\n',
+      'token\r\ninjected',
+      'token\x00',
+      'token\x08',
+      'token\x0b',
+      'token\x1f',
+      'token\x7f',
+      'token\x80',
+      'token\xff',
+      'token\u0100',
+      'token租户',
+    ]) {
+      expect(await save(apiKey: apiKey), isFalse);
+      expect(credentials.values, isEmpty);
+      expect(profiles.saved, isEmpty);
+    }
     expect(
       await save(endpoint: 'http://external.example/asr', apiKey: 'token'),
       isFalse,
@@ -87,6 +125,22 @@ void main() {
     expect(await save(endpoint: 'wss://example.com/asr'), isFalse);
     expect(credentials.values, isEmpty);
     expect(profiles.saved, isEmpty);
+  });
+
+  test('合法 X-Api-Key 认证头只保存到安全存储', () async {
+    expect(
+      await save(
+        headers: r'{"X-Api-Key":"custom-token","X-Tenant":"alpha\tbeta"}',
+      ),
+      isTrue,
+    );
+    final profile = profiles.saved.single;
+    expect(credentials.values[profile.credentialRef], {
+      'X-Api-Key': 'custom-token',
+      'X-Tenant': 'alpha\tbeta',
+    });
+    expect(profile.toJson().toString(), isNot(contains('custom-token')));
+    expect(viewModel.failed, isFalse);
   });
 
   test('编辑保留旧凭据引用，替换时生成新引用且历史秘密仍可读取', () async {
@@ -258,6 +312,56 @@ void main() {
       credentials: credentials,
     );
   });
+
+  test('disposed 后拒绝所有新操作且不访问仓储或调用 probe', () async {
+    var probes = 0;
+    viewModel.dispose();
+    viewModel = TranscriptionSourcesViewModel(
+      profiles: profiles,
+      credentials: credentials,
+      probe: (_) async => probes++,
+    );
+    await save();
+    final profile = profiles.saved.single;
+    final listCalls = profiles.listCalls;
+    viewModel.dispose();
+    expect(await viewModel.load(), isFalse);
+    expect(await save(apiKey: 'must-not-write'), isFalse);
+    expect(await viewModel.setDefault(profile), isFalse);
+    expect(await viewModel.delete(profile), isFalse);
+    expect(await viewModel.testConnection(profile), isFalse);
+    expect(profiles.listCalls, listCalls);
+    expect(profiles.saved, [profile]);
+    expect(profiles.values[profile.id], same(profile));
+    expect(profiles.defaultId, TranscriptionProfile.localProfileId);
+    expect(credentials.values, isEmpty);
+    expect(probes, 0);
+    viewModel = TranscriptionSourcesViewModel(
+      profiles: profiles,
+      credentials: credentials,
+    );
+  });
+
+  test('保存、设默认和删除均清除先前连接成功状态', () async {
+    viewModel.dispose();
+    viewModel = TranscriptionSourcesViewModel(
+      profiles: profiles,
+      credentials: credentials,
+      probe: (_) async {},
+    );
+    await save();
+    final profile = profiles.saved.single;
+    for (final operation in [
+      () => save(previous: profile, endpoint: 'https://changed.example/asr'),
+      () => viewModel.setDefault(profile),
+      () => viewModel.delete(profile),
+    ]) {
+      expect(await viewModel.testConnection(profile), isTrue);
+      expect(viewModel.probeSucceeded, isTrue);
+      expect(await operation(), isTrue);
+      expect(viewModel.probeSucceeded, isFalse);
+    }
+  });
 }
 
 final class _Profiles implements TranscriptionProfileRepository {
@@ -267,9 +371,11 @@ final class _Profiles implements TranscriptionProfileRepository {
   final saved = <TranscriptionProfile>[];
   String defaultId = TranscriptionProfile.localProfileId;
   bool failSave = false;
+  int listCalls = 0;
   Completer<void>? listGate;
   @override
   Future<List<TranscriptionProfile>> list() async {
+    listCalls++;
     await listGate?.future;
     return values.values.toList();
   }

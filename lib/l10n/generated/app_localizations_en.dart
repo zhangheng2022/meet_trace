@@ -1845,6 +1845,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceTimeout => 'Request timeout (seconds)';
 
   @override
+  String get sourceTimeoutInvalid => 'Enter a whole number from 1 to 3600.';
+
+  @override
   String get sourceAdvanced => 'Advanced connection settings';
 
   @override

@@ -528,6 +528,7 @@
   "sourcePrompt": "术语 / 转录提示",
   "sourceUploadLimit": "上传大小上限（MiB）",
   "sourceTimeout": "请求超时（秒）",
+  "sourceTimeoutInvalid": "请输入 1 到 3600 之间的整数。",
   "sourceAdvanced": "高级连接设置",
   "sourceFailure": "操作未完成，请检查填写内容、连接和凭据。",
   "sourceProbe": "测试协议连接",

@@ -27,7 +27,9 @@ Ctrl+C 停止。私有协议适配及 TLS 部署责任见 docs/development/onlin
   try {
     final fixture = arguments.contains('--fixture');
     final commandValue = Platform.environment['MEETTRACE_GATEWAY_COMMAND'];
-    final decoded = commandValue == null ? null : jsonDecode(commandValue);
+    final decoded = fixture || commandValue == null
+        ? null
+        : jsonDecode(commandValue);
     if (!fixture &&
         (decoded is! List<dynamic> ||
             decoded.isEmpty ||
@@ -45,14 +47,25 @@ Ctrl+C 停止。私有协议适配及 TLS 部署责任见 docs/development/onlin
       Platform.environment['MEETTRACE_GATEWAY_PORT'] ?? '8765',
     );
     if (port < 1 || port > 65535) throw const FormatException();
+    final token = Platform.environment['MEETTRACE_GATEWAY_TOKEN'];
+    if (token != null && token.trim().isEmpty) throw const FormatException();
+    const adapterTimeout = Duration(seconds: 55);
     gateway = OnlineAsrGateway(
-      bearerToken: Platform.environment['MEETTRACE_GATEWAY_TOKEN'],
+      bearerToken: token,
+      // 适配器截止后最多三秒回收进程和管道，外层保留五秒收尾余量。
+      timeout: adapterTimeout + const Duration(seconds: 5),
       transcribe: fixture
           ? (model, wav, context) async => {
               'text': '[协议演示，无实际转录]',
               'model_version': 'fixture-only',
             }
-          : (model, wav, context) => runAdapter(command, model, wav, context),
+          : (model, wav, context) => runAdapter(
+              command,
+              model,
+              wav,
+              context,
+              timeout: adapterTimeout,
+            ),
     );
     await gateway.start(port: port);
     stdout.writeln(
@@ -60,6 +73,9 @@ Ctrl+C 停止。私有协议适配及 TLS 部署责任见 docs/development/onlin
     );
     if (fixture) stderr.writeln('gateway.fixture_only：不能用于准确率评价或真实会议');
     await ProcessSignal.sigint.watch().first;
+  } on FormatException {
+    stderr.writeln('gateway.invalid_configuration；检查命令 JSON、端口及非空令牌');
+    exitCode = 64;
   } on Object {
     stderr.writeln('gateway.failed；检查非秘密配置和适配器，响应内容不会写入日志');
     exitCode = 1;

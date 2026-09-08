@@ -42,6 +42,7 @@ void main() {
       await preview.flush();
       expect(engine.samples.map((s) => s.$1), [0, 200]);
       expect(engine.samples.map((s) => s.$2.length), [3200, 3200]);
+      expect(engine.sampleRates, [16000, 16000]);
       expect(engine.flushes, 1);
       expect(preview.metrics.vadSegmentCount, 0);
     },
@@ -82,6 +83,8 @@ void main() {
       addTearDown(preview.dispose);
       await preview.initialize();
       await preview.add(chunk(0));
+      expect(engine.samples, hasLength(1));
+      expect(preview.metrics.state, AsrPreviewState.ready);
       await preview.stop().timeout(const Duration(milliseconds: 200));
       expect(preview.metrics.state, AsrPreviewState.disposed);
       expect(engine.cancelled, isTrue);
@@ -113,6 +116,7 @@ final class _PreviewEngine implements AsrEngine, AsrPreviewControl {
   int flushes = 0;
   bool cancelled = false;
   final samples = <(int, Float32List)>[];
+  final sampleRates = <int>[];
   @override
   Stream<TranscriptEvent> get events => const Stream.empty();
   @override
@@ -127,7 +131,7 @@ final class _PreviewEngine implements AsrEngine, AsrPreviewControl {
     required int sampleRate,
     required int startMs,
   }) async {
-    expect(sampleRate, 16000);
+    sampleRates.add(sampleRate);
     samples.add((startMs, data));
     await accepted;
   }

@@ -19,6 +19,7 @@
 - 事实音频固定为 16 kHz、mono、PCM16 little-endian。HTTP 只生成临时 WAV 副本；Realtime 以纯 Dart 线性插值派生 24 kHz，跨输入块保存相位及尾样本。暂停边界复制末样本收齐尾部；不改写事实 PCM。
 - 最终输入以至多 60 秒连续无重叠块处理，WAV 文件大小不超过配置 `maxUploadBytes`；Chat 的 JSON/base64 还有额外编码开销。小文件限制可降低此配置。完整 PCM 每个字节均被覆盖，不依赖本地 VAD；固定分块会割断句子和上下文，准确率必须用真实会议对照评估。
 - Realtime 预览约每 2 秒提交，最终重放每 8 秒提交；提前 delta 是否可用由模型决定，不能承诺 2 秒内上屏。暂停只提交尾句，不等待模型完成；网络积压或失败降级为仅录音。
+- Realtime 不人为每 10 分钟重建会话；服务自身的会话时限仍可能导致预览降级为仅录音，不保证无限时长会话。
 - 预览本地队列上限 5 秒音频，Realtime 至多 8 个待完成窗口；握手、请求及窗口结果都有配置超时。响应 JSON 上限 1 MiB，单窗口文本上限 65536 字符，诊断仅保留最近 128 个匿名窗口。达到限制直接失败，不无限排队。
 - `reportedModelVersion` 只采信服务明确返回的 `model_version`；`model` 别名不能当权重版本。未报告标记未知；已报告版本与配置不符或同任务跨块变化则失败。Realtime 当前不解析实际权重版本。
 - 不推断在线说话人，不制造逐词时间戳。若没有服务端时间信息，快照使用 `audioWindow`。在线的 `useInverseTextNormalization` 只保留在冻结配置中；当前三个通用协议不发送私有 ITN 参数，实际数字格式依赖服务默认行为。
@@ -62,7 +63,7 @@ dart run tool/online_asr_gateway/bin/gateway.dart --fixture
 
 MeetTrace 中选择 Chat 音频输入，端点 `http://127.0.0.1:8765/v1/chat/completions`，模型名可填 `fixture`，点击测试连接。演示返回明确标记的假文本，不连接任何模型，不能用于真实转录或准确率评价。手机上的 `127.0.0.1` 指手机自身，不能用它访问电脑网关。
 
-真实接入时移除 `--fixture`，将 `MEETTRACE_GATEWAY_COMMAND` 配置为 JSON argv 数组，例如 `['python','my_adapter.py']` 对应 JSON 为 `["python","my_adapter.py"]`。命令通过 `Process.start(..., runInShell:false)` 执行；命令不能由请求指定。可选 `MEETTRACE_GATEWAY_TOKEN` 为网关 Bearer 凭据，端口由 `MEETTRACE_GATEWAY_PORT` 控制。不要把真实凭据写入命令行、代码库或示例文件。
+真实接入时移除 `--fixture`，将 `MEETTRACE_GATEWAY_COMMAND` 配置为 JSON argv 数组，例如 `['python','my_adapter.py']` 对应 JSON 为 `["python","my_adapter.py"]`。命令通过 `Process.start(..., runInShell:false)` 执行；命令不能由请求指定，`--fixture` 忽略此配置。可选 `MEETTRACE_GATEWAY_TOKEN` 为网关 Bearer 凭据，设置后不得为空白；端口由 `MEETTRACE_GATEWAY_PORT` 控制，范围为 1～65535。错误配置以退出码 64 结束，启动或运行故障以退出码 1 结束。不要把真实凭据写入命令行、代码库或示例文件。
 
 适配进程从 stdin 读取一条 JSON：
 
@@ -76,7 +77,7 @@ MeetTrace 中选择 Chat 音频输入，端点 `http://127.0.0.1:8765/v1/chat/co
 {"text":"本块完整转录","model_version":"仅在服务确实报告时填写"}
 ```
 
-无版本信息时省略 `model_version`。不完整或失败必须非零退出，不能返回旧缓存、拼接稿或仅 partial。网关不采信 stderr，不向客户端转发原始错误；55 秒仍未结束会终止适配进程。此示例没有实时 WebSocket 转换，也不会把文件轮询伪装为实时字幕。
+无版本信息时省略 `model_version`。不完整或失败必须非零退出，不能返回旧缓存、拼接稿或仅 partial。网关不采信 stderr，不向客户端转发原始错误；适配器非零退出或输出不符合合同返回 502，客户端载荷错误返回 400。适配器执行上限仍为 55 秒；超时后发送终止信号，等待一秒未退出则强制终止并再次等待，外层 60 秒限制保留收尾余量。正常回收后的超时返回 504。此示例没有实时 WebSocket 转换，也不会把文件轮询伪装为实时字幕。
 
 ## 验证
 

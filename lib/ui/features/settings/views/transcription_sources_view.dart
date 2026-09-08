@@ -45,12 +45,14 @@ final class _TranscriptionSourcesViewState
   }
 
   Future<void> _edit([TranscriptionProfile? profile]) async {
+    final viewModel = widget.viewModel;
+    viewModel.clearFeedback();
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (_) =>
-            _SourceEditor(viewModel: widget.viewModel, profile: profile),
+        builder: (_) => _SourceEditor(viewModel: viewModel, profile: profile),
       ),
     );
+    viewModel.clearFeedback();
   }
 
   @override
@@ -236,7 +238,9 @@ final class _SourceEditorState extends State<_SourceEditor> {
   late final _timeout = TextEditingController(
     text: '${widget.profile?.requestTimeoutSeconds ?? 120}',
   );
-  bool _invalid = false;
+  bool _invalidLimit = false;
+  bool _invalidTimeout = false;
+  bool _advancedExpanded = false;
 
   @override
   void dispose() {
@@ -257,12 +261,15 @@ final class _SourceEditorState extends State<_SourceEditor> {
   }
 
   Future<void> _save() async {
-    final limit = double.tryParse(_limit.text);
+    final uploadBytes =
+        (double.tryParse(_limit.text) ?? double.nan) * 1024 * 1024;
     final timeout = int.tryParse(_timeout.text);
-    if (limit == null || !limit.isFinite || limit <= 0 || timeout == null) {
-      setState(() => _invalid = true);
-      return;
-    }
+    widget.viewModel.clearFeedback();
+    setState(() {
+      _invalidLimit = !uploadBytes.isFinite || uploadBytes < 1024;
+      _invalidTimeout = timeout == null || timeout < 1 || timeout > 3600;
+    });
+    if (_invalidLimit || _invalidTimeout) return;
     final success = await widget.viewModel.save(
       previous: widget.profile,
       name: _name.text,
@@ -273,8 +280,8 @@ final class _SourceEditorState extends State<_SourceEditor> {
       headersJson: _headers.text,
       language: _language.text,
       prompt: _prompt.text,
-      maxUploadBytes: (limit * 1024 * 1024).round(),
-      requestTimeoutSeconds: timeout,
+      maxUploadBytes: uploadBytes.round(),
+      requestTimeoutSeconds: timeout!,
     );
     if (success && mounted) Navigator.of(context).pop();
   }
@@ -297,6 +304,17 @@ final class _SourceEditorState extends State<_SourceEditor> {
           label: label,
           enabled: !vm.busy,
           obscureText: secret,
+          errorText: controller == _timeout && _invalidTimeout
+              ? l10n.sourceTimeoutInvalid
+              : null,
+          onChanged: (_) {
+            if (controller == _limit && _invalidLimit) {
+              setState(() => _invalidLimit = false);
+            }
+            if (controller == _timeout && _invalidTimeout) {
+              setState(() => _invalidTimeout = false);
+            }
+          },
         ),
       );
       return PopScope(
@@ -356,6 +374,11 @@ final class _SourceEditorState extends State<_SourceEditor> {
                 SizedBox(height: spacing),
                 field(_apiKey, l10n.sourceApiKey, secret: true),
                 FAccordion(
+                  control: FAccordionControl.lifted(
+                    expanded: (_) => _advancedExpanded,
+                    onChange: (_, expanded) =>
+                        setState(() => _advancedExpanded = expanded),
+                  ),
                   children: [
                     FAccordionItem(
                       title: Text(l10n.sourceAdvanced),
@@ -373,7 +396,7 @@ final class _SourceEditorState extends State<_SourceEditor> {
                   ],
                 ),
                 SizedBox(height: spacing),
-                if (_invalid || vm.failed)
+                if (_invalidLimit || vm.failed)
                   Padding(
                     padding: EdgeInsets.only(bottom: spacing),
                     child: Text(

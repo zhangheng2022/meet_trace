@@ -25,7 +25,11 @@ final class AsrModelDescriptor {
     if (installationType == AsrInstallationType.remote
         ? requiredBytes != 0
         : requiredBytes <= 0) {
-      throw ArgumentError.value(requiredBytes, 'requiredBytes', '必须大于 0');
+      throw ArgumentError.value(
+        requiredBytes,
+        'requiredBytes',
+        '本地资源大小必须大于 0，在线资源大小必须为 0',
+      );
     }
     if (this.supportedLanguages.isEmpty ||
         this.supportedLanguages.any((language) => language.trim().isEmpty)) {

@@ -47,7 +47,6 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
   bool _cancelled = false;
   bool _disposed = false;
   bool _finalizing = false;
-  int _sessionSequence = 0;
   int _recognized = 0;
   int _empty = 0;
   int _failed = 0;
@@ -87,7 +86,7 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
   Future<void> initialize() => _initializing ??= _guard(() async {
     await _loadHeaders();
     if (_isRealtime) {
-      _session = _newSession(prefix: 'remote-live-${++_sessionSequence}');
+      _session = _newSession(prefix: 'remote-live');
       await _session!.initialize();
     }
   });
@@ -102,26 +101,8 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
     if (stored == null) {
       throw const RemoteAsrProtocolException('asr.remote.credentials_missing');
     }
-    const forbidden = {
-      'host',
-      'content-length',
-      'content-type',
-      'transfer-encoding',
-      'connection',
-      'upgrade',
-    };
-    final namePattern = RegExp(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$");
-    for (final entry in stored.entries) {
-      final name = entry.key.toLowerCase();
-      if (!namePattern.hasMatch(entry.key) ||
-          forbidden.contains(name) ||
-          name.startsWith('sec-websocket-') ||
-          entry.value.contains('\r') ||
-          entry.value.contains('\n')) {
-        throw const RemoteAsrProtocolException(
-          'asr.remote.invalid_credentials',
-        );
-      }
+    if (!areValidTranscriptionHeaders(stored)) {
+      throw const RemoteAsrProtocolException('asr.remote.invalid_credentials');
     }
     _check();
     _headers = Map.unmodifiable(stored);
@@ -145,12 +126,6 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
     }
     if (_finalizing) throw const RemoteAsrProtocolException('asr.remote.busy');
     await initialize();
-    // 限制单条连接生命周期；新连接仍是同一冻结配置，不做模型回退。
-    if (_session!.inputSamples >= 16000 * 60 * 10) {
-      await _session!.finish();
-      _session = _newSession(prefix: 'remote-live-${++_sessionSequence}');
-      await _session!.initialize();
-    }
     await _session!.add(samples, startMs: startMs);
   });
 
@@ -291,10 +266,18 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
       );
       rethrow;
     } finally {
-      await _session?.close();
-      _session = null;
-      if (temporary != null) await temporary.delete(recursive: true);
-      _finalizing = false;
+      try {
+        await _session?.close();
+      } finally {
+        _session = null;
+        try {
+          if (temporary != null) await temporary.delete(recursive: true);
+        } on FileSystemException {
+          // 临时文件清理失败不得覆盖识别结果或原始识别错误。
+        } finally {
+          _finalizing = false;
+        }
+      }
     }
   }, stage: FailureStage.finalTranscription);
 
@@ -481,9 +464,19 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
   }
 
   List<_Part> _parseParts(Map<String, dynamic> result, int startMs, int endMs) {
-    if (result['pieces'] case final List<dynamic> pieces) {
+    if (_isRealtime && result.containsKey('pieces')) {
+      final pieces = result['pieces'];
+      if (pieces is! List) {
+        throw const RemoteAsrProtocolException('asr.remote.invalid_response');
+      }
       final parts = <_Part>[];
       for (final item in pieces) {
+        if (item is! Map ||
+            item['startMs'] is! int ||
+            item['endMs'] is! int ||
+            item['text'] is! String) {
+          throw const RemoteAsrProtocolException('asr.remote.invalid_response');
+        }
         final start = (item['startMs'] as int).clamp(startMs, endMs);
         final end = (item['endMs'] as int).clamp(startMs, endMs);
         final text = (item['text'] as String).trim();

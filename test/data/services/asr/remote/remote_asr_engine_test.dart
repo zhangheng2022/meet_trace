@@ -30,15 +30,19 @@ void main() {
   test('HTTP preview never uploads; complete PCM becomes ordered non-overlapping WAV chunks', () async {
     final uploaded = BytesBuilder();
     var calls = 0;
-    final profile = remoteProfile();
+    final profile = remoteProfile(credentialRef: 'locked-credential-v7');
+    final credentials = TestCredentials(
+      headers: {'X-Api-Key': 'test-secret-only', 'X-Tenant': 'alpha\tbeta'},
+    );
     final engine = RemoteAsrEngine(
       profile: profile,
-      credentials: TestCredentials(),
+      credentials: credentials,
       client: MockClient((request) async {
         calls++;
         expect(request.url, profile.endpoint);
         expect(request.followRedirects, isFalse);
         expect(request.headers['X-Api-Key'], 'test-secret-only');
+        expect(request.headers['X-Tenant'], 'alpha\tbeta');
         final content = latin1.decode(request.bodyBytes);
         expect(content, contains('filename="audio.wav"'));
         expect(content, isNot(contains('private-meeting-name')));
@@ -66,6 +70,7 @@ void main() {
       snapshotId: 'snapshot',
     );
     expect(calls, 3);
+    expect(credentials.requestedReferences, [profile.credentialRef]);
     expect(uploaded.takeBytes(), raw);
     expect(await pcm.readAsBytes(), raw);
     expect(snapshot.segments.map((s) => (s.startMs, s.endMs, s.text)), [
@@ -205,6 +210,119 @@ void main() {
     expect(snapshot.timingPrecision, TranscriptTimingPrecision.audioWindow);
   });
 
+  test('pieces alone cannot replace the HTTP text response contract', () async {
+    for (final pieces in <Object?>[
+      null,
+      {},
+      [null],
+      [7],
+      [
+        {'endMs': 1000, 'text': 'speech'},
+      ],
+      [
+        {'startMs': 0.0, 'endMs': 1000, 'text': 'speech'},
+      ],
+      [
+        {'startMs': 0, 'endMs': '1000', 'text': 'speech'},
+      ],
+      [
+        {'startMs': 0, 'endMs': 1000, 'text': 7},
+      ],
+    ]) {
+      final engine = RemoteAsrEngine(
+        profile: remoteProfile(),
+        credentials: TestCredentials(),
+        client: MockClient(
+          (_) async => http.Response(jsonEncode({'pieces': pieces}), 200),
+        ),
+      );
+      addTearDown(engine.dispose);
+      await expectLater(
+        engine.finalizeMeeting(source(), meetingId: 'meeting'),
+        throwsA(
+          isA<AsrEngineException>().having(
+            (e) => e.failure.code,
+            'code',
+            'asr.remote.invalid_response',
+          ),
+        ),
+        reason: 'pieces: $pieces',
+      );
+    }
+  });
+
+  test(
+    'extra HTTP pieces metadata does not override the transcript text',
+    () async {
+      final engine = RemoteAsrEngine(
+        profile: remoteProfile(maxUploadBytes: 2000000),
+        credentials: TestCredentials(),
+        client: MockClient(
+          (_) async => http.Response('{"text":"speech","pieces":[null]}', 200),
+        ),
+      );
+      addTearDown(engine.dispose);
+      final snapshot = await engine.finalizeMeeting(
+        source(),
+        meetingId: 'meeting',
+      );
+      expect(snapshot.segments.single.text, 'speech');
+    },
+  );
+
+  for (final firstStatus in [200, 401]) {
+    test(
+      'temporary cleanup failure preserves HTTP $firstStatus and releases finalization',
+      () async {
+        var calls = 0;
+        final engine = RemoteAsrEngine(
+          profile: remoteProfile(maxUploadBytes: 2000000),
+          credentials: TestCredentials(),
+          client: MockClient((_) async {
+            calls++;
+            // The upload has been consumed. Remove only its generated directory
+            // inside this test fixture so the engine's later cleanup fails.
+            final requestDirectory = await temporary
+                .list()
+                .where((entry) => entry is Directory)
+                .cast<Directory>()
+                .single;
+            await requestDirectory.delete(recursive: true);
+            return http.Response(
+              '{"text":"speech"}',
+              calls == 1 ? firstStatus : 200,
+            );
+          }),
+        );
+        addTearDown(engine.dispose);
+        await IOOverrides.runZoned(() async {
+          final first = engine.finalizeMeeting(source(), meetingId: 'meeting');
+          if (firstStatus == 200) {
+            expect((await first).segments.single.text, 'speech');
+          } else {
+            await expectLater(
+              first,
+              throwsA(
+                isA<AsrEngineException>().having(
+                  (e) => e.failure.code,
+                  'original code',
+                  'asr.remote.http_401',
+                ),
+              ),
+            );
+          }
+          final next = await engine.finalizeMeeting(
+            source(),
+            meetingId: 'meeting',
+          );
+          expect(next.segments.single.text, 'speech');
+        }, getSystemTempDirectory: () => temporary);
+        expect(calls, 2);
+        expect(await pcm.readAsBytes(), raw);
+      },
+    );
+  }
+
   test(
     'non-millisecond tail remains covered within recorded floor duration',
     () async {
@@ -295,15 +413,12 @@ void main() {
         ),
       );
       expect(calls, 1);
-      expect(
-        engine.diagnostics.toString(),
-        isNot(contains('private transcript')),
-      );
+      expect(engine.metrics.lastErrorCode, 'asr.remote.http_401');
     },
   );
 
   test(
-    'missing credential reference never silently sends unauthenticated audio',
+    'missing referenced credentials never silently sends unauthenticated audio',
     () async {
       var calls = 0;
       final engine = RemoteAsrEngine(
@@ -326,6 +441,101 @@ void main() {
         ),
       );
       expect(calls, 0);
+    },
+  );
+
+  test(
+    'an anonymous source skips credential lookup and sends no authentication',
+    () async {
+      final credentials = TestCredentials(headers: null);
+      final sentHeaders = <Map<String, String>>[];
+      final engine = RemoteAsrEngine(
+        profile: remoteProfile(credentialRef: null, maxUploadBytes: 2000000),
+        credentials: credentials,
+        client: MockClient((request) async {
+          sentHeaders.add(Map.of(request.headers));
+          return http.Response('{"text":"speech"}', 200);
+        }),
+      );
+      addTearDown(engine.dispose);
+      final snapshot = await engine.finalizeMeeting(
+        source(),
+        meetingId: 'meeting',
+      );
+      expect(snapshot.segments.single.text, 'speech');
+      expect(credentials.requestedReferences, isEmpty);
+      expect(sentHeaders, hasLength(1));
+      expect(
+        sentHeaders.single.keys.map((name) => name.toLowerCase()),
+        isNot(anyOf(contains('authorization'), contains('x-api-key'))),
+      );
+    },
+  );
+
+  test(
+    'runtime rejects invalid stored headers before HTTP or WebSocket traffic',
+    () async {
+      for (final headers in [
+        {'Host': 'example.invalid'},
+        {'Content-Length': '1'},
+        {'Content-Type': 'application/json'},
+        {'Transfer-Encoding': 'chunked'},
+        {'Connection': 'upgrade'},
+        {'Upgrade': 'websocket'},
+        {'sEc-WeBsOcKeT-Key': 'value'},
+        {'Bad Name': 'value'},
+        {'X-Api-Key\n': 'value'},
+        {'X-Api-Key': 'value\rvalue'},
+        {'X-Api-Key': 'value\nvalue'},
+        {'X-Api-Key': 'value\x00value'},
+        {'X-Api-Key': 'value\x08value'},
+        {'X-Api-Key': 'value\x0bvalue'},
+        {'X-Api-Key': 'value\x1fvalue'},
+        {'X-Api-Key': 'value\x7fvalue'},
+        {'X-Api-Key': 'value\x80value'},
+        {'X-Api-Key': 'value\xffvalue'},
+        {'X-Api-Key': 'value\u0100value'},
+        {'X-Api-Key': 'value中文value'},
+      ]) {
+        for (final protocol in [
+          TranscriptionProtocol.audioTranscriptions,
+          TranscriptionProtocol.realtimeTranscription,
+        ]) {
+          var requests = 0;
+          final engine = RemoteAsrEngine(
+            profile: remoteProfile(
+              protocol: protocol,
+              endpoint: protocol == TranscriptionProtocol.realtimeTranscription
+                  ? Uri.parse('wss://example.invalid/realtime')
+                  : null,
+            ),
+            credentials: TestCredentials(headers: headers),
+            client: MockClient((_) async {
+              requests++;
+              return http.Response('{}', 200);
+            }),
+            socketConnector: (_, _, _) async {
+              requests++;
+              throw StateError('Invalid headers reached the connector');
+            },
+          );
+          addTearDown(engine.dispose);
+          await expectLater(
+            protocol == TranscriptionProtocol.realtimeTranscription
+                ? engine.initialize()
+                : engine.finalizeMeeting(source(), meetingId: 'meeting'),
+            throwsA(
+              isA<AsrEngineException>().having(
+                (e) => e.failure.code,
+                'code',
+                'asr.remote.invalid_credentials',
+              ),
+            ),
+            reason: '$protocol: $headers',
+          );
+          expect(requests, 0);
+        }
+      }
     },
   );
 

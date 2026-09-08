@@ -153,6 +153,62 @@ void main() {
     },
   );
 
+  test('live audio past ten minutes keeps its connection while a completion is pending', () async {
+    fixture.heldCompletionSequence = 300;
+    final engine = RemoteAsrEngine(
+      profile: remoteProfile(
+        protocol: TranscriptionProtocol.realtimeTranscription,
+        endpoint: fixture.endpoint,
+        timeoutSeconds: 5,
+      ),
+      credentials: TestCredentials(),
+    );
+    addTearDown(engine.dispose);
+    final completions = StreamIterator(
+      engine.events.where(
+        (event) => event is TranscriptSegmentEvent && event.isFinalForWindow,
+      ),
+    );
+    addTearDown(completions.cancel);
+    final samples = Float32List(32000);
+    await engine.acceptAudio(samples, sampleRate: 16000, startMs: 0);
+    for (var index = 1; index < 300; index++) {
+      final received = completions.moveNext();
+      await engine.acceptAudio(
+        samples,
+        sampleRate: 16000,
+        startMs: index * 2000,
+      );
+      expect(await received.timeout(const Duration(seconds: 3)), isTrue);
+    }
+
+    // Completion 300 is deliberately held. An artificial rotation would await
+    // finish here and stall the recording preview consumer at 600 seconds.
+    await engine
+        .acceptAudio(samples, sampleRate: 16000, startMs: 600000)
+        .timeout(const Duration(seconds: 1));
+    for (var index = 301; index < 304; index++) {
+      final received = completions.moveNext();
+      await engine.acceptAudio(
+        samples,
+        sampleRate: 16000,
+        startMs: index * 2000,
+      );
+      expect(await received.timeout(const Duration(seconds: 3)), isTrue);
+      expect(
+        (completions.current as TranscriptSegmentEvent).text,
+        'final-$index',
+      );
+    }
+    expect(fixture.sockets, hasLength(1));
+    expect(fixture.commits, [303]);
+    expect(fixture.heldCompletion, isNotNull);
+    final delayed = completions.moveNext();
+    fixture.heldCompletion!();
+    expect(await delayed.timeout(const Duration(seconds: 3)), isTrue);
+    expect((completions.current as TranscriptSegmentEvent).text, 'final-300');
+  });
+
   test(
     'sub-millisecond replay tail fits the recorded duration without losing PCM',
     () async {
@@ -252,6 +308,8 @@ void main() {
     'websocket authentication is not forwarded to a redirect destination',
     () async {
       var leaked = false;
+      var sourceRequests = 0;
+      String? sourceAuthorization;
       final redirect = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final destination = await HttpServer.bind(
         InternetAddress.loopbackIPv4,
@@ -264,6 +322,10 @@ void main() {
         request.response.close();
       });
       redirect.listen((request) async {
+        sourceRequests++;
+        sourceAuthorization = request.headers.value(
+          HttpHeaders.authorizationHeader,
+        );
         request.response.statusCode = HttpStatus.temporaryRedirect;
         request.response.headers.set(
           HttpHeaders.locationHeader,
@@ -277,8 +339,10 @@ void main() {
           {'Authorization': 'Bearer test-secret-only'},
           const Duration(seconds: 1),
         ),
-        throwsA(isA<Object>()),
+        throwsA(isA<WebSocketException>()),
       );
+      expect(sourceRequests, 1);
+      expect(sourceAuthorization, 'Bearer test-secret-only');
       expect(leaked, isFalse);
     },
   );

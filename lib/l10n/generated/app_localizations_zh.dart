@@ -1670,6 +1670,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sourceTimeout => '请求超时（秒）';
 
   @override
+  String get sourceTimeoutInvalid => '请输入 1 到 3600 之间的整数。';
+
+  @override
   String get sourceAdvanced => '高级连接设置';
 
   @override

@@ -564,6 +564,7 @@
   "sourcePrompt": "Vocabulary / transcription prompt",
   "sourceUploadLimit": "Upload limit (MiB)",
   "sourceTimeout": "Request timeout (seconds)",
+  "sourceTimeoutInvalid": "Enter a whole number from 1 to 3600.",
   "sourceAdvanced": "Advanced connection settings",
   "sourceFailure": "Could not complete the operation. Check the fields, connection and credentials.",
   "sourceProbe": "Test connection",

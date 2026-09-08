@@ -3248,6 +3248,12 @@ abstract class AppLocalizations {
   /// **'Request timeout (seconds)'**
   String get sourceTimeout;
 
+  /// No description provided for @sourceTimeoutInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number from 1 to 3600.'**
+  String get sourceTimeoutInvalid;
+
   /// No description provided for @sourceAdvanced.
   ///
   /// In en, this message translates to:

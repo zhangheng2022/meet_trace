@@ -51,7 +51,7 @@ final class TranscriptionProfile {
       final localScheme = realtime ? 'ws' : 'http';
       final loopback =
           uri != null &&
-          const {'localhost', '127.0.0.1', '::1', '[::1]'}.contains(uri.host);
+          const {'localhost', '127.0.0.1', '::1'}.contains(uri.host);
       if (uri == null ||
           !uri.hasAuthority ||
           uri.host.isEmpty ||
@@ -161,6 +161,7 @@ final class TranscriptionProfile {
         diarizationEnabled: json['diarizationEnabled'] as bool? ?? false,
       );
 
+  /// 比较完整冻结配置，包括身份、名称与修订号；用于同一修订的幂等保存。
   bool hasSameConfiguration(TranscriptionProfile other) =>
       jsonEncode(toJson()) == jsonEncode(other.toJson());
 }

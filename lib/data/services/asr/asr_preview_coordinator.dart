@@ -358,7 +358,14 @@ final class AsrPreviewCoordinator
     while (_queuedAudioMs + outstanding + job.window.audioDurationMs >
             maximumQueuedAudioMs &&
         _pending.isNotEmpty) {
-      _dropJob(_pending.removeFirst());
+      final partial = _pending
+          .where((pending) => !pending.group.stable)
+          .firstOrNull;
+      // 新临时请求不能挤掉闭段任务；稳定请求先淘汰可替换的临时窗。
+      if (partial == null && !job.group.stable) break;
+      final victim = partial ?? _pending.first;
+      _pending.remove(victim);
+      _dropJob(victim);
     }
     if (_queuedAudioMs + outstanding + job.window.audioDurationMs >
         maximumQueuedAudioMs) {

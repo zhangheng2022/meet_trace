@@ -47,6 +47,47 @@ void main() {
     );
   });
 
+  for (final failQueued in [false, true]) {
+    test('自动最终转录使用本场冻结在线来源，排队诊断失败=$failQueued', () async {
+      final profile = _remoteProfile();
+      meetings.value = _meeting(transcriptionProfile: profile);
+      tasks.failQueued = failQueued;
+      engines.resultBuilder =
+          ({required descriptor, required meetingId, required snapshotId}) =>
+              _snapshot(
+                id: snapshotId,
+                meetingId: meetingId,
+                descriptor: descriptor,
+                createdAt: now,
+              );
+
+      final result = await service.transcribe(meetingId: 'meeting-1');
+
+      expect(engines.profileCalls, [profile]);
+      expect(engines.createCalls, isEmpty);
+      expect(engines.engine!.source!.path, '/audio/meeting-1.pcm');
+      expect(engines.engine!.source!.durationMs, 2000);
+      expect(result.snapshot.actualModelId, profile.modelId);
+      expect(result.snapshot.transcriptionProfile, same(profile));
+      expect(transcripts.saved.map((snapshot) => snapshot.status), [
+        TranscriptSnapshotStatus.processing,
+        TranscriptSnapshotStatus.complete,
+      ]);
+      expect(meetings.value!.status, MeetingState.completed);
+      expect(meetings.value!.activeTranscriptSnapshotId, result.snapshot.id);
+      expect(meetings.value!.transcriptionProfile, same(profile));
+      expect(tasks.saveAttempts, [
+        ProcessingState.queued,
+        ProcessingState.running,
+        ProcessingState.completed,
+      ]);
+      expect(tasks.records.values.single.state, ProcessingState.completed);
+      expect(tasks.records.values.single.transcriptionProfile, same(profile));
+      expect(diarization.diarizeCalls, 0);
+      expect(result.diarizationStatus, SpeakerDiarizationStatus.disabled);
+    });
+  }
+
   test('手动换来源生成完整新快照，保留会议原始来源和旧稿', () async {
     meetings.value = _meeting(
       status: MeetingState.completed,
@@ -150,7 +191,7 @@ void main() {
     expect(result.diarizationStatus, SpeakerDiarizationStatus.degraded);
   });
 
-  test('粗粒度在线文字不套用精确说话人标签，并保持会前分离开关', () async {
+  test('防御性契约：冻结分离成功也不能给粗粒度在线文字映射说话人', () async {
     meetings.value = _meeting();
     final profile = TranscriptionProfile.fromJson({
       ..._remoteProfile().toJson(),
@@ -177,6 +218,15 @@ void main() {
       profile: profile,
     );
     expect(diarization.diarizeCalls, 1);
+    expect(result.diarizationStatus, SpeakerDiarizationStatus.completed);
+    expect(
+      tasks.records.values
+          .singleWhere(
+            (task) => task.kind == ProcessingTaskKind.speakerDiarization,
+          )
+          .state,
+      ProcessingState.completed,
+    );
     expect(result.snapshot.segments.single.speakerId, 'speaker-1');
     expect(result.snapshot.reportedModelVersion, 'provider-build');
     expect(
@@ -211,6 +261,7 @@ void main() {
     expect(await transcripts.getById(old.id), same(old));
     expect(meetings.value!.status, MeetingState.completed);
     expect(engines.profileCalls, isEmpty);
+    expect(engines.createCalls, isEmpty);
   });
 
   test('推理失败时保留旧活动快照、音频并保存失败尝试', () async {
@@ -610,6 +661,7 @@ void main() {
 Meeting _meeting({
   MeetingState status = MeetingState.processing,
   String? activeTranscriptSnapshotId,
+  TranscriptionProfile? transcriptionProfile,
 }) {
   return Meeting(
     id: 'meeting-1',
@@ -620,8 +672,13 @@ Meeting _meeting({
     status: status,
     audioPath: '/audio/meeting-1.pcm',
     audioDurationMs: 2000,
-    recordingModelId: senseVoiceDefaultModelId,
-    recordingModelVersion: '2024-07-17',
+    recordingModelId: transcriptionProfile?.modelId ?? senseVoiceDefaultModelId,
+    recordingModelVersion:
+        transcriptionProfile?.identityVersion ?? '2024-07-17',
+    recordingModelLanguage: transcriptionProfile?.language ?? 'auto',
+    recordingModelUseInverseTextNormalization:
+        transcriptionProfile?.useInverseTextNormalization ?? true,
+    transcriptionProfile: transcriptionProfile,
     activeTranscriptSnapshotId: activeTranscriptSnapshotId,
   );
 }
@@ -770,6 +827,8 @@ final class _TranscriptRepository implements TranscriptRepository {
 
 final class _ProcessingTaskRepository implements ProcessingTaskRepository {
   final Map<String, ProcessingTask> records = {};
+  final List<ProcessingState> saveAttempts = [];
+  bool failQueued = false;
 
   @override
   Future<ProcessingTask?> getById(String taskId) async => records[taskId];
@@ -780,6 +839,10 @@ final class _ProcessingTaskRepository implements ProcessingTaskRepository {
 
   @override
   Future<void> save(ProcessingTask task) async {
+    saveAttempts.add(task.state);
+    if (failQueued && task.state == ProcessingState.queued) {
+      throw StateError('任务诊断写入失败');
+    }
     records[task.id] = task;
   }
 }

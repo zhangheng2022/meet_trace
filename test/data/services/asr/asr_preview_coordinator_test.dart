@@ -16,6 +16,52 @@ import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/use_cases/plan_asr_preview_windows.dart';
 
 void main() {
+  test('短噪声未达到 VAD 检测门槛时不遗留起点，hangover 保留合法句子', () async {
+    final vad = _ScriptedVad(const []);
+    final engine = _FakeAsrEngine(AsrModelRegistry.alpha.defaultModel);
+    final coordinator = AsrPreviewCoordinator(vad: vad, engine: engine);
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events
+        .where((event) => event is TranscriptSegmentEvent)
+        .cast<TranscriptSegmentEvent>()
+        .listen(events.add);
+    addTearDown(subscription.cancel);
+    addTearDown(coordinator.dispose);
+    await coordinator.initialize();
+
+    // sherpa-onnx 1.13.7 keeps isDetected false before minSpeechDuration.
+    await coordinator.add(_chunk(startSample: 0, sampleCount: 1600));
+    await coordinator.add(_chunk(startSample: 1600, sampleCount: 158400));
+    expect(engine.windows, isEmpty);
+    expect(coordinator.metrics.vadSegmentCount, 0);
+
+    vad.speechDetected = true;
+    await coordinator.add(_chunk(startSample: 160000, sampleCount: 32000));
+    await _waitFor(() => events.isNotEmpty);
+    expect(engine.windows.single, (9500, 12000));
+    final speechId = events.single.segmentId;
+    // A 200ms hangover still reports detected, so it must retain the group.
+    await coordinator.add(_chunk(startSample: 192000, sampleCount: 3200));
+    await coordinator.add(_chunk(startSample: 195200, sampleCount: 44800));
+    await _waitFor(() => !coordinator.isRecognizing);
+    expect(events.every((event) => event.segmentId == speechId), isTrue);
+    expect(events.every((event) => !event.isFinalForWindow), isTrue);
+    expect(coordinator.metrics.vadSegmentCount, 0);
+    expect(engine.windows.every((window) => window.$1 == 9500), isTrue);
+
+    // After the full silence boundary, official VAD publishes the segment
+    // before isDetected becomes false.
+    vad.speechDetected = false;
+    vad._outputs.add(const [
+      VadSpeechSegment(startSample: 160000, endSample: 240000),
+    ]);
+    await coordinator.add(_chunk(startSample: 240000, sampleCount: 8000));
+    await _waitFor(() => events.last.isFinalForWindow);
+    expect(events.last.segmentId, speechId);
+    expect(events.last.startMs, 10000);
+    expect(coordinator.metrics.vadSegmentCount, 1);
+  });
+
   test('连续讲话在 VAD 闭段前给临时字幕并以同一片段稳定修订', () async {
     final engine = _FakeAsrEngine(
       AsrModelRegistry.alpha.defaultModel,
@@ -388,6 +434,44 @@ void main() {
     await coordinator.dispose();
   });
 
+  test('新临时任务超出容量时保留排队稳定段', () async {
+    final gate = Completer<void>();
+    final vad = _ScriptedVad(const [
+      [VadSpeechSegment(startSample: 0, endSample: 16000)],
+      [VadSpeechSegment(startSample: 16000, endSample: 32000)],
+    ]);
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      firstGate: gate,
+    );
+    final coordinator = _coordinator(
+      engine: engine,
+      vad: vad,
+      maximumQueuedAudioMs: 4000,
+      highWaterMs: 3000,
+      lowWaterMs: 1000,
+    );
+    addTearDown(() async {
+      if (!gate.isCompleted) gate.complete();
+      await coordinator.dispose();
+    });
+    await coordinator.initialize();
+    await coordinator.add(_chunk(startSample: 0, sampleCount: 16000));
+    await coordinator.add(_chunk(startSample: 16000, sampleCount: 16000));
+    vad.speechDetected = true;
+    await coordinator.add(_chunk(startSample: 32000, sampleCount: 32000));
+
+    // 1s active + 1s stable + 2.5s new partial exceeds the 4s total budget.
+    expect(coordinator.metrics.queuedAudioMs, 1000);
+    expect(coordinator.metrics.droppedPreviewWindows, 1);
+    gate.complete();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
+    expect(engine.windows, [(0, 1000), (1000, 2000)]);
+  });
+
   test('Engine 故障切换到仅录音且后续音频不再进入推理', () async {
     final engine = _FakeAsrEngine(
       AsrModelRegistry.alpha.defaultModel,
@@ -579,13 +663,14 @@ final class _ScriptedVad implements VoiceActivitySegmenter {
   int acceptCalls = 0;
   int resetCalls = 0;
   bool disposed = false;
+  bool speechDetected = false;
   final Object? disposeError;
 
   @override
   int get sampleRate => recordingSampleRate;
 
   @override
-  bool get isSpeechDetected => false;
+  bool get isSpeechDetected => speechDetected;
 
   @override
   List<VadSpeechSegment> accept(Float32List samples) {

@@ -212,6 +212,124 @@ void main() {
     expect(changed.toJson().toString(), isNot(contains('demo-key-hidden')));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('列表失败不带入新编辑器，取消失败的保存不污染列表', (tester) async {
+    final profiles = _Profiles()..failSetDefault = true;
+    final vm = TranscriptionSourcesViewModel(
+      profiles: profiles,
+      credentials: _Credentials(),
+    );
+    addTearDown(vm.dispose);
+    await tester.pumpWidget(
+      Application(home: TranscriptionSourcesView(viewModel: vm)),
+    );
+    await tester.pumpAndSettle();
+    final l10n = tester.element(find.byType(TranscriptionSourcesView)).l10n;
+    await tester.tap(find.text(l10n.sourceSetDefault).first);
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.sourceFailure), findsOneWidget);
+    await tester.scrollUntilVisible(find.text(l10n.addOnlineSource), 300);
+    await tester.tap(find.text(l10n.addOnlineSource));
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.sourceFailure), findsNothing);
+    await tester.enterText(_field(l10n.sourceName), 'New source');
+    await tester.enterText(
+      _field(l10n.sourceEndpoint),
+      'https://new.example/asr',
+    );
+    await tester.enterText(_field(l10n.sourceModel), 'meeting-model');
+    await tester.pumpAndSettle();
+    profiles.failSave = true;
+    final save = find.byKey(const ValueKey('save-transcription-source'));
+    await tester.ensureVisible(save);
+    await tester.pumpAndSettle();
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.sourceFailure), findsOneWidget);
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.sourceFailure), findsNothing);
+    expect(vm.failed, isFalse);
+    expect(profiles.values, hasLength(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('超时须为 1 到 3600 整数，纠正输入后清除字段错误并可保存', (tester) async {
+    final profiles = _Profiles();
+    final vm = TranscriptionSourcesViewModel(
+      profiles: profiles,
+      credentials: _Credentials(),
+    );
+    addTearDown(vm.dispose);
+    await tester.pumpWidget(
+      Application(home: TranscriptionSourcesView(viewModel: vm)),
+    );
+    await tester.pumpAndSettle();
+    final l10n = tester.element(find.byType(TranscriptionSourcesView)).l10n;
+    await tester.tap(find.text(l10n.edit));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(l10n.sourceAdvanced));
+    await tester.tap(find.text(l10n.sourceAdvanced));
+    await tester.pumpAndSettle();
+    final timeout = _field(l10n.sourceTimeout);
+    final save = find.byKey(const ValueKey('save-transcription-source'));
+    for (final invalid in ['0', '-1', '3601', '1.5', 'invalid']) {
+      await tester.ensureVisible(timeout);
+      await tester.pumpAndSettle();
+      await tester.tap(timeout);
+      await tester.enterText(timeout, invalid);
+      await tester.pumpAndSettle();
+      expect(tester.widget<AppTextField>(timeout).controller.text, invalid);
+      await tester.ensureVisible(save);
+      await tester.pumpAndSettle();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<AppTextField>(timeout).errorText,
+        l10n.sourceTimeoutInvalid,
+      );
+      expect(profiles.values['team']!.revision, 1);
+      expect(vm.failed, isFalse);
+    }
+    await tester.ensureVisible(timeout);
+    await tester.pumpAndSettle();
+    await tester.tap(timeout);
+    await tester.enterText(timeout, '3600');
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppTextField>(timeout).controller.text, '3600');
+    expect(tester.widget<AppTextField>(timeout).errorText, isNull);
+    final limit = _field(l10n.sourceUploadLimit);
+    for (final invalid in ['invalid', '1e308', '0.0001']) {
+      await tester.ensureVisible(limit);
+      await tester.pumpAndSettle();
+      await tester.tap(limit);
+      await tester.enterText(limit, invalid);
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.sourceFailure), findsOneWidget);
+      expect(profiles.values['team']!.revision, 1);
+      expect(vm.failed, isFalse);
+      expect(tester.takeException(), isNull);
+    }
+    await tester.ensureVisible(limit);
+    await tester.pumpAndSettle();
+    await tester.tap(limit);
+    await tester.enterText(limit, '24');
+    await tester.pumpAndSettle();
+    expect(find.text(l10n.sourceFailure), findsNothing);
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(profiles.values['team']!.revision, 2);
+    expect(profiles.values['team']!.requestTimeoutSeconds, 3600);
+    expect(profiles.values['team']!.maxUploadBytes, 24 * 1024 * 1024);
+    expect(
+      find.byKey(const ValueKey('save-transcription-source')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Finder _field(String label) => find.byWidgetPredicate(
@@ -255,12 +373,15 @@ final class _Profiles implements TranscriptionProfileRepository {
     ),
   };
   String defaultId = 'team';
+  bool failSetDefault = false;
+  bool failSave = false;
   @override
   Future<List<TranscriptionProfile>> list() async => values.values.toList();
   @override
   Future<TranscriptionProfile?> getById(String id) async => values[id];
   @override
   Future<void> save(TranscriptionProfile profile) async {
+    if (failSave) throw StateError('save failed');
     values[profile.id] = profile;
   }
 
@@ -273,6 +394,7 @@ final class _Profiles implements TranscriptionProfileRepository {
   Future<String> getDefaultProfileId() async => defaultId;
   @override
   Future<void> setDefaultProfileId(String id) async {
+    if (failSetDefault) throw StateError('default failed');
     defaultId = id;
   }
 }

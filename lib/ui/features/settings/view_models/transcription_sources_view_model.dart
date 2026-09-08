@@ -60,23 +60,15 @@ final class TranscriptionSourcesViewModel extends ChangeNotifier {
       final decoded = jsonDecode(headersJson);
       if (decoded is! Map<String, dynamic>) throw const FormatException();
       for (final entry in decoded.entries) {
-        if (entry.value is! String ||
-            !RegExp(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$").hasMatch(entry.key) ||
-            RegExp(r'[\r\n\x00]').hasMatch(entry.value as String) ||
-            const {
-              'host',
-              'content-length',
-              'content-type',
-              'connection',
-              'transfer-encoding',
-            }.contains(entry.key.toLowerCase())) {
-          throw const FormatException();
-        }
+        if (entry.value is! String) throw const FormatException();
         headers[entry.key] = entry.value as String;
       }
     }
+    if (!areValidTranscriptionHeaders(headers)) throw const FormatException();
     if (apiKey.trim().isNotEmpty) {
-      if (RegExp(r'[\r\n\x00]').hasMatch(apiKey)) throw const FormatException();
+      if (!areValidTranscriptionHeaders({'Authorization': apiKey})) {
+        throw const FormatException();
+      }
       headers.removeWhere((key, _) => key.toLowerCase() == 'authorization');
       headers['Authorization'] = 'Bearer ${apiKey.trim()}';
     }
@@ -122,17 +114,22 @@ final class TranscriptionSourcesViewModel extends ChangeNotifier {
   });
 
   Future<bool> testConnection(TranscriptionProfile profile) => _run(() async {
-    probeSucceeded = false;
     await probe!(profile);
     probeSucceeded = true;
   });
 
-  Future<bool> _run(Future<void> Function() operation) async {
-    if (busy) return false;
-    busy = true;
+  void clearFeedback() {
+    if (_disposed) return;
     failed = false;
     requiresFreshCredentials = false;
+    probeSucceeded = false;
     _notify();
+  }
+
+  Future<bool> _run(Future<void> Function() operation) async {
+    if (_disposed || busy) return false;
+    busy = true;
+    clearFeedback();
     try {
       await operation();
       return true;

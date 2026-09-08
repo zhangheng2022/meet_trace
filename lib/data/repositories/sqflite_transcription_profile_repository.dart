@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../domain/models/transcription_profile.dart';
 import '../../domain/ports/transcription_profiles.dart';
 import '../services/storage/app_database.dart';
+import 'sqflite_diarization_preference_repository.dart';
 
 final class SqfliteTranscriptionProfileRepository
     implements TranscriptionProfileRepository {
@@ -15,13 +16,13 @@ final class SqfliteTranscriptionProfileRepository
   Future<List<TranscriptionProfile>> list() async {
     final db = await database.open();
     final rows = await db.query('transcription_profiles', orderBy: 'id');
-    return [TranscriptionProfile.local(), for (final row in rows) _decode(row)];
+    return [await _localProfile(), for (final row in rows) _decode(row)];
   }
 
   @override
   Future<TranscriptionProfile?> getById(String id) async {
     if (id == TranscriptionProfile.localProfileId) {
-      return TranscriptionProfile.local();
+      return _localProfile();
     }
     final db = await database.open();
     final rows = await db.query(
@@ -49,6 +50,13 @@ final class SqfliteTranscriptionProfileRepository
         if (previous.hasSameConfiguration(profile)) return;
         if (profile.revision <= previous.revision) {
           throw StateError('配置修订号必须递增，拒绝覆盖旧版本');
+        }
+        if (previous.credentialRef != null &&
+            previous.credentialRef == profile.credentialRef &&
+            (previous.endpoint!.scheme != profile.endpoint!.scheme ||
+                previous.endpoint!.host != profile.endpoint!.host ||
+                previous.endpoint!.port != profile.endpoint!.port)) {
+          throw StateError('更换端点接收方必须使用新的凭据引用或明确清空认证');
         }
       }
       final row = {
@@ -131,6 +139,13 @@ final class SqfliteTranscriptionProfileRepository
       }
     });
   }
+
+  Future<TranscriptionProfile> _localProfile() async =>
+      TranscriptionProfile.local(
+        diarizationEnabled: await SqfliteDiarizationPreferenceRepository(
+          database,
+        ).getEnabled(),
+      );
 }
 
 TranscriptionProfile _decode(Map<String, Object?> row) =>

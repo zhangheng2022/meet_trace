@@ -75,6 +75,8 @@ void main() {
   });
 
   test('英文和中英混合重叠保留词边界', () {
+    // 少于四个字符的重合可能是真实重复；没有词时间戳时保守保留。
+    expect(mergeOverlappingTranscriptText('ok now', 'now go'), 'ok now now go');
     expect(
       mergeOverlappingTranscriptText('hello world', 'world again'),
       'hello world again',

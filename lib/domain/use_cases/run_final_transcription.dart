@@ -203,20 +203,13 @@ final class FinalResultCoordinator implements ProfileFinalTranscriptionRunner {
       transcriptionProfile: profile,
     );
     await transcripts.save(processingSnapshot);
-    if (profile != null) {
-      await tasks.save(
-        ProcessingTask(
-          id: 'final-transcription-$snapshotId',
-          kind: ProcessingTaskKind.finalTranscription,
-          meetingId: meeting.id,
-          modelId: profile.modelId,
-          transcriptionProfile: profile,
-          state: ProcessingState.queued,
-          createdAt: createdAt,
-          updatedAt: createdAt,
-        ),
-      );
-    }
+    await _saveFinalTask(
+      profile,
+      meeting.id,
+      snapshotId,
+      createdAt,
+      ProcessingState.queued,
+    );
 
     final source = AudioSource(
       path: processingMeeting.audioPath!,
@@ -585,7 +578,7 @@ final class FinalResultCoordinator implements ProfileFinalTranscriptionRunner {
         ),
       );
     } on Object {
-      // 已冻结在快照中的配置不依赖任务诊断写入；诊断失败不推翻已提交稿件。
+      // 配置已冻结在快照中；任务诊断失败不得阻断最终处理或推翻已提交稿件。
     }
   }
 

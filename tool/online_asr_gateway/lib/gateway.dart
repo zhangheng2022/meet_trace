@@ -58,6 +58,7 @@ final class OnlineAsrGateway {
         request,
         4 * 1024 * 1024,
         timeout: const Duration(seconds: 10),
+        drainOnLimit: true,
       );
       final body = jsonDecode(utf8.decode(payload));
       if (body is! Map<String, dynamic> ||
@@ -106,16 +107,24 @@ final class OnlineAsrGateway {
           header.getUint32(40, Endian.little) != wav.length - 44) {
         throw const FormatException();
       }
-      final result = await transcribe(
-        body['model'] as String,
-        wav,
-        context,
-      ).timeout(timeout);
-      if (result['text'] is! String ||
-          (result['text'] as String).length > 65536 ||
-          (result['model_version'] != null &&
-              result['model_version'] is! String)) {
-        throw const FormatException();
+      final Map<String, Object?> result;
+      try {
+        result = await transcribe(
+          body['model'] as String,
+          wav,
+          context,
+        ).timeout(timeout);
+        if (result['text'] is! String ||
+            (result['text'] as String).length > 65536 ||
+            (result['model_version'] != null &&
+                result['model_version'] is! String)) {
+          throw StateError('gateway.adapter_failed');
+        }
+      } on TimeoutException {
+        rethrow;
+      } on Object {
+        await _respond(request, 502, {'error': 'gateway.adapter_failed'});
+        return;
       }
       await _respond(request, 200, {
         'model': body['model'],
@@ -160,19 +169,29 @@ Future<Uint8List> readBounded(
   Stream<List<int>> stream,
   int limit, {
   Duration timeout = const Duration(seconds: 55),
+  bool drainOnLimit = false,
 }) async {
   final bytes = BytesBuilder(copy: false);
   final iterator = StreamIterator<List<int>>(stream);
   final watch = Stopwatch()..start();
+  var exceeded = false;
   try {
     while (true) {
       final remaining = timeout - watch.elapsed;
       if (remaining <= Duration.zero) throw TimeoutException('gateway.timeout');
       if (!await iterator.moveNext().timeout(remaining)) break;
       final chunk = iterator.current;
-      if (bytes.length + chunk.length > limit) throw const FormatException();
-      bytes.add(chunk);
+      if (exceeded || bytes.length + chunk.length > limit) {
+        if (!drainOnLimit) throw const FormatException();
+        // HTTP 已订阅的请求体若立即 cancel 会关闭连接并丢失错误响应。
+        // 超限后只丢弃数据，仍受原总时限约束，不继续积累内存。
+        exceeded = true;
+        bytes.clear();
+      } else {
+        bytes.add(chunk);
+      }
     }
+    if (exceeded) throw const FormatException();
     return bytes.takeBytes();
   } finally {
     await iterator.cancel();
@@ -184,15 +203,22 @@ Future<Map<String, Object?>> runAdapter(
   List<String> command,
   String model,
   Uint8List wav,
-  String context,
-) async {
+  String context, {
+  Duration timeout = const Duration(seconds: 55),
+}) async {
   final process = await Process.start(
     command.first,
     command.skip(1).toList(),
     runInShell: false,
   );
+  var exited = false;
+  final exit = process.exitCode.then((code) {
+    exited = true;
+    return code;
+  });
   final stderrDone = process.stderr.drain<void>();
-  final output = readBounded(process.stdout, 1024 * 1024);
+  stderrDone.ignore();
+  final output = readBounded(process.stdout, 1024 * 1024, timeout: timeout);
   output.ignore();
   try {
     final response = await (() async {
@@ -205,14 +231,24 @@ Future<Map<String, Object?>> runAdapter(
       );
       await process.stdin.close();
       final bytes = await output;
-      if (await process.exitCode != 0) throw const FormatException();
+      if (await exit != 0) throw StateError('gateway.adapter_failed');
       final decoded = jsonDecode(utf8.decode(bytes));
       if (decoded is! Map<String, dynamic>) throw const FormatException();
       return decoded;
-    })().timeout(const Duration(seconds: 55));
+    })().timeout(timeout);
     return response;
+  } on FormatException {
+    throw StateError('gateway.adapter_failed');
   } finally {
-    process.kill();
+    if (!exited) {
+      process.kill();
+      try {
+        await exit.timeout(const Duration(seconds: 1));
+      } on TimeoutException {
+        process.kill(ProcessSignal.sigkill);
+        await exit.timeout(const Duration(seconds: 1));
+      }
+    }
     await stderrDone.timeout(const Duration(seconds: 1), onTimeout: () {});
   }
 }
