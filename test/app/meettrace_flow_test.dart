@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/app/application.dart';
 import 'package:meettrace/app/meettrace_dependencies.dart';
 import 'package:meettrace/app/meettrace_flow.dart';
+import 'package:meettrace/data/services/asr/platform_asr_device_risk_monitor.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/ui/features/meetings/views/list/meeting_list_view.dart';
 import 'package:path/path.dart' as p;
@@ -43,7 +44,11 @@ void main() {
     // 必须先验证实际应用目录已隔离，才能调用包含数据代清理的真实依赖创建。
     final layout = await tester.runAsync(AppFileLayout.forApplication);
     expect(p.isWithin(support!.path, layout!.rootPath), isTrue);
-    final dependencies = await tester.runAsync(MeetTraceDependencies.create);
+    final dependencies = await tester.runAsync(
+      () => MeetTraceDependencies.create(
+        riskMonitor: PortableAsrDeviceRiskMonitor(processRssReader: () => 42),
+      ),
+    );
     expect(dependencies, isNotNull);
     final weights = await tester.runAsync(
       () async =>

@@ -45,11 +45,12 @@ final class MeetingDependencies {
   factory MeetingDependencies.create({
     required StorageDependencies storage,
     required RuntimeAssetDependencies runtime,
+    AsrDeviceRiskMonitor? riskMonitor,
   }) {
     final localFactory = SherpaOnnxAsrEngineFactory(
       installations: storage.installations,
       leases: storage.leases,
-      riskMonitor: createPlatformAsrDeviceRiskMonitor(),
+      riskMonitor: riskMonitor ?? createPlatformAsrDeviceRiskMonitor(),
       ownerId: 'meettrace-app',
       vadModelPath: runtime.vadModelPath,
     );
