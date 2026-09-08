@@ -10,6 +10,7 @@ import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/recording.dart';
 import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/transcription_profile.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/asr_preview_session.dart';
 import 'package:meettrace/domain/ports/recording_session.dart';
@@ -23,6 +24,105 @@ import 'package:meettrace/ui/features/meetings/views/recording/widgets/recording
 import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
+  testWidgets('仅实际推理显示识别中，等待语音不误报忙碌', (tester) async {
+    final fixture = _fixture();
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('正常'), findsOneWidget);
+    fixture.preview.emit(AsrPreviewState.ready, isRecognizing: true);
+    await tester.pumpAndSettle();
+    expect(find.text('识别中'), findsOneWidget);
+    expect(find.text('正常'), findsNothing);
+    fixture.preview.emit(AsrPreviewState.ready);
+    await tester.pumpAndSettle();
+    expect(find.text('正常'), findsOneWidget);
+    expect(find.text('识别中'), findsNothing);
+    await fixture.dispose();
+  });
+
+  testWidgets('HTTP 会后来源在录音中明确无实时字幕，不误报预览失败', (tester) async {
+    final fixture = _fixture(
+      profile: TranscriptionProfile(
+        id: 'http',
+        name: '网关',
+        revision: 1,
+        protocol: TranscriptionProtocol.audioTranscriptions,
+        modelId: 'asr',
+        endpoint: Uri.parse('https://example.com/asr'),
+      ),
+    );
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    fixture.preview.emit(AsrPreviewState.recordingOnly);
+    await tester.pumpAndSettle();
+    expect(find.text('仅会后转录 · 无实时字幕'), findsWidgets);
+    expect(find.text('转录已停止，录音继续'), findsNothing);
+    expect(find.text('结束后将基于完整音频生成最终转录'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await fixture.dispose();
+  });
+  testWidgets('进行中字幕有临时标识，稳定修订复用同一行', (tester) async {
+    final fixture = _fixture();
+    await tester.pumpWidget(
+      Application(
+        home: RecordingSessionView(
+          viewModel: fixture.viewModel,
+          onFinished: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    fixture.preview.emitSegment(
+      const TranscriptSegmentEvent(
+        segmentId: 'interim',
+        startMs: 0,
+        endMs: 2000,
+        text: '临时文字',
+        modelId: senseVoiceDefaultModelId,
+        modelVersion: 'test',
+        isFinalForWindow: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('transcript-interim-interim')),
+      findsOneWidget,
+    );
+    fixture.preview.emitSegment(
+      const TranscriptSegmentEvent(
+        segmentId: 'interim',
+        startMs: 0,
+        endMs: 3000,
+        text: '稳定文字',
+        modelId: senseVoiceDefaultModelId,
+        modelVersion: 'test',
+        isFinalForWindow: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('稳定文字'), findsOneWidget);
+    expect(find.text('临时文字'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('transcript-interim-interim')),
+      findsNothing,
+    );
+    expect(find.text('1 段'), findsOneWidget);
+    await fixture.dispose();
+  });
   testWidgets('显示事实音频、锁定模型、暂停恢复和仅录音降级', (WidgetTester tester) async {
     final fixture = _fixture();
     Meeting? finished;
@@ -473,13 +573,13 @@ void main() {
   });
 }
 
-_Fixture _fixture() {
+_Fixture _fixture({TranscriptionProfile? profile}) {
   final meetings = TestMeetingRepository();
   final recording = _RecordingService();
   final preview = _PreviewSession();
-  final descriptor = AsrModelRegistry.alpha.requireById(
-    senseVoiceDefaultModelId,
-  );
+  final descriptor =
+      profile?.descriptor ??
+      AsrModelRegistry.alpha.requireById(senseVoiceDefaultModelId);
   final meeting = Meeting(
     id: 'meeting-1',
     title: '产品评审',
@@ -489,6 +589,7 @@ _Fixture _fixture() {
     audioDurationMs: 0,
     recordingModelId: descriptor.modelId,
     recordingModelVersion: descriptor.version,
+    transcriptionProfile: profile,
   );
   final viewModel = RecordingSessionViewModel(
     session: StartedMeetingSession(
@@ -618,8 +719,8 @@ final class _PreviewSession implements AsrPreviewSession {
   @override
   Future<void> initialize() async {}
 
-  void emit(AsrPreviewState state) {
-    _metrics = _value(state);
+  void emit(AsrPreviewState state, {bool isRecognizing = false}) {
+    _metrics = _value(state, isRecognizing: isRecognizing);
     _changes.add(_metrics);
   }
 
@@ -642,11 +743,13 @@ final class _PreviewSession implements AsrPreviewSession {
   }
 }
 
-AsrPreviewMetrics _value(AsrPreviewState state) => AsrPreviewMetrics(
-  state: state,
-  vadSegmentCount: 0,
-  queuedAudioMs: 0,
-  processedPreviewWindows: 0,
-  droppedPreviewWindows: 0,
-  previewLagMs: 0,
-);
+AsrPreviewMetrics _value(AsrPreviewState state, {bool isRecognizing = false}) =>
+    AsrPreviewMetrics(
+      state: state,
+      vadSegmentCount: 0,
+      queuedAudioMs: 0,
+      processedPreviewWindows: 0,
+      droppedPreviewWindows: 0,
+      previewLagMs: 0,
+      isRecognizing: isRecognizing,
+    );

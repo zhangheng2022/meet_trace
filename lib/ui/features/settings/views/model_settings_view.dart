@@ -28,6 +28,8 @@ final class ModelSettingsView extends StatefulWidget {
     this.languageSettings,
     this.remoteDiagnostics,
     this.onBack,
+    this.onOpenTranscriptionSources,
+    this.onPrepareLocalModels,
     super.key,
   });
 
@@ -37,6 +39,8 @@ final class ModelSettingsView extends StatefulWidget {
   final LanguageSettingsViewModel? languageSettings;
   final RemoteDiagnosticsSettingsViewModel? remoteDiagnostics;
   final VoidCallback? onBack;
+  final VoidCallback? onOpenTranscriptionSources;
+  final VoidCallback? onPrepareLocalModels;
 
   @override
   State<ModelSettingsView> createState() => _ModelSettingsViewState();
@@ -85,6 +89,18 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
     final themeSettings = widget.themeSettings;
     final languageSettings = widget.languageSettings;
     final primarySections = <Widget>[
+      if (widget.onOpenTranscriptionSources != null)
+        FButton(
+          variant: FButtonVariant.outline,
+          onPress: widget.onOpenTranscriptionSources,
+          child: Text(context.l10n.transcriptionSources),
+        ),
+      if (widget.onPrepareLocalModels != null)
+        FButton(
+          variant: FButtonVariant.outline,
+          onPress: widget.onPrepareLocalModels,
+          child: Text(context.l10n.prepareLocalModels),
+        ),
       if (themeSettings != null || languageSettings != null)
         _SettingsSection(
           key: const ValueKey('appearance-language-section'),
@@ -119,11 +135,12 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
             ],
           ),
         ),
-      _MeetingDefaultsSection(
-        descriptor: descriptor,
-        loading: viewModel.isLoading,
-        errorMessage: viewModel.errorMessage,
-      ),
+      if (widget.onOpenTranscriptionSources == null)
+        _MeetingDefaultsSection(
+          descriptor: descriptor,
+          loading: viewModel.isLoading,
+          errorMessage: viewModel.errorMessage,
+        ),
       _OfflineResourcesSection(
         option: option,
         loading: viewModel.isLoading,

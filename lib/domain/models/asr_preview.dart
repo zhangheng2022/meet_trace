@@ -57,6 +57,7 @@ final class AsrPreviewMetrics {
     required this.processedPreviewWindows,
     required this.droppedPreviewWindows,
     required this.previewLagMs,
+    this.isRecognizing = false,
     this.lastErrorCode,
   });
 
@@ -66,5 +67,6 @@ final class AsrPreviewMetrics {
   final int processedPreviewWindows;
   final int droppedPreviewWindows;
   final int previewLagMs;
+  final bool isRecognizing;
   final String? lastErrorCode;
 }

@@ -2,6 +2,7 @@ import 'package:characters/characters.dart';
 
 import 'domain_exception.dart';
 import 'transcript.dart';
+import 'transcription_profile.dart';
 import 'workflow_states.dart';
 
 const _notProvided = Object();
@@ -50,6 +51,7 @@ final class Meeting {
     required this.recordingModelVersion,
     this.recordingModelLanguage = 'auto',
     this.recordingModelUseInverseTextNormalization = true,
+    this.transcriptionProfile,
     this.activeTranscriptSnapshotId,
     this.lastErrorCode,
   }) {
@@ -58,6 +60,15 @@ final class Meeting {
     _requireText(recordingModelId, 'recordingModelId');
     _requireText(recordingModelVersion, 'recordingModelVersion');
     _requireText(recordingModelLanguage, 'recordingModelLanguage');
+    final profile = transcriptionProfile;
+    if (profile != null &&
+        (profile.modelId != recordingModelId ||
+            profile.identityVersion != recordingModelVersion ||
+            profile.language != recordingModelLanguage ||
+            profile.useInverseTextNormalization !=
+                recordingModelUseInverseTextNormalization)) {
+      throw ArgumentError('会议录音身份必须与冻结的转录配置一致');
+    }
     if (audioDurationMs < 0) {
       throw ArgumentError.value(audioDurationMs, 'audioDurationMs', '不能为负数');
     }
@@ -82,6 +93,7 @@ final class Meeting {
   final String recordingModelVersion;
   final String recordingModelLanguage;
   final bool recordingModelUseInverseTextNormalization;
+  final TranscriptionProfile? transcriptionProfile;
   final String? activeTranscriptSnapshotId;
   final String? lastErrorCode;
 
@@ -223,6 +235,7 @@ final class Meeting {
       recordingModelUseInverseTextNormalization:
           recordingModelUseInverseTextNormalization ??
           this.recordingModelUseInverseTextNormalization,
+      transcriptionProfile: transcriptionProfile,
       activeTranscriptSnapshotId:
           identical(activeTranscriptSnapshotId, _notProvided)
           ? this.activeTranscriptSnapshotId

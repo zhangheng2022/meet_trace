@@ -30,9 +30,9 @@ final class RecordingFactsPanel extends StatelessWidget {
     final recordingState = viewModel.isFinalizing
         ? RecordingState.finalizing
         : viewModel.recordingState;
-    final model = AsrModelRegistry.alpha.findById(
-      viewModel.meeting.recordingModelId,
-    );
+    final model =
+        viewModel.meeting.transcriptionProfile?.descriptor ??
+        AsrModelRegistry.alpha.findById(viewModel.meeting.recordingModelId);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

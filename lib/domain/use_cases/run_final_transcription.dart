@@ -5,6 +5,7 @@ import '../models/meeting.dart';
 import '../models/processing_task.dart';
 import '../models/speaker_diarization.dart';
 import '../models/transcript.dart';
+import '../models/transcription_profile.dart';
 import '../models/workflow_states.dart';
 import '../ports/asr_engine.dart';
 import '../ports/final_transcription.dart';
@@ -33,7 +34,7 @@ final class FinalTranscriptionException implements Exception {
 ///
 /// 会中预览不参与最终结果。说话人分离失败会生成单一说话人标签；ASR 或
 /// 最终 CAS 失败则保留事实音频与旧活动快照，不发布半成品。
-final class FinalResultCoordinator implements FinalTranscriptionRunner {
+final class FinalResultCoordinator implements ProfileFinalTranscriptionRunner {
   FinalResultCoordinator({
     required this.meetings,
     required this.transcripts,
@@ -69,6 +70,28 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required String meetingId,
     String? retrySnapshotId,
     FinalTranscriptionProgressCallback? onProgress,
+  }) => _enqueue(
+    meetingId: meetingId,
+    retrySnapshotId: retrySnapshotId,
+    onProgress: onProgress,
+  );
+
+  @override
+  Future<FinalTranscriptionResult> transcribeWithProfile({
+    required String meetingId,
+    required TranscriptionProfile profile,
+    FinalTranscriptionProgressCallback? onProgress,
+  }) => _enqueue(
+    meetingId: meetingId,
+    selection: profile,
+    onProgress: onProgress,
+  );
+
+  Future<FinalTranscriptionResult> _enqueue({
+    required String meetingId,
+    String? retrySnapshotId,
+    TranscriptionProfile? selection,
+    FinalTranscriptionProgressCallback? onProgress,
   }) {
     final previous = _meetingOperations[meetingId];
     late final Future<FinalTranscriptionResult> operation;
@@ -77,6 +100,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
       meetingId: meetingId,
       retrySnapshotId: retrySnapshotId,
       onProgress: onProgress,
+      selection: selection,
     );
     _meetingOperations[meetingId] = operation;
     return operation.whenComplete(() {
@@ -91,6 +115,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required String meetingId,
     required String? retrySnapshotId,
     required FinalTranscriptionProgressCallback? onProgress,
+    required TranscriptionProfile? selection,
   }) async {
     if (previous != null) {
       try {
@@ -103,6 +128,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
       meetingId: meetingId,
       retrySnapshotId: retrySnapshotId,
       onProgress: onProgress,
+      selection: selection,
     );
   }
 
@@ -110,6 +136,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required String meetingId,
     required String? retrySnapshotId,
     required FinalTranscriptionProgressCallback? onProgress,
+    required TranscriptionProfile? selection,
   }) async {
     final meeting = await meetings.getById(meetingId);
     if (meeting == null) {
@@ -117,30 +144,53 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
         'final_transcription.meeting_not_found',
       );
     }
-    final selected = (meeting.recordingModelId, meeting.recordingModelVersion);
+    var profile = selection ?? meeting.transcriptionProfile;
+    var selected = profile == null
+        ? (meeting.recordingModelId, meeting.recordingModelVersion)
+        : (profile.modelId, profile.identityVersion);
 
     final retryId = retrySnapshotId?.trim();
     if (retryId != null && retryId.isNotEmpty) {
       final existing = await transcripts.getById(retryId);
       if (existing != null) {
+        if (selection != null) {
+          throw const FinalTranscriptionException(
+            'final_transcription.retry_selection_conflict',
+          );
+        }
+        profile = existing.transcriptionProfile ?? meeting.transcriptionProfile;
+        selected = profile == null
+            ? (meeting.recordingModelId, meeting.recordingModelVersion)
+            : (profile.modelId, profile.identityVersion);
         _validateRetry(existing, meeting: meeting, selected: selected);
         if (existing.status == TranscriptSnapshotStatus.complete &&
             meeting.activeTranscriptSnapshotId == existing.id) {
           return FinalTranscriptionResult(meeting: meeting, snapshot: existing);
         }
+        if (existing.status == TranscriptSnapshotStatus.complete) {
+          throw const FinalTranscriptionException(
+            'final_transcription.completed_snapshot_immutable',
+          );
+        }
       }
-    }
-
-    final processingMeeting = meeting.beginFinalTranscription();
-    if (processingMeeting.status != meeting.status ||
-        processingMeeting.lastErrorCode != meeting.lastErrorCode) {
-      await meetings.save(processingMeeting);
     }
 
     final createdAt = now();
     final snapshotId = retryId?.isNotEmpty == true
         ? retryId!
         : snapshotIdFactory(meeting.id, createdAt);
+    if (retryId?.isNotEmpty != true &&
+        await transcripts.getById(snapshotId) != null) {
+      throw const FinalTranscriptionException(
+        'final_transcription.snapshot_id_conflict',
+      );
+    }
+    final processingMeeting = meeting.beginFinalTranscription();
+    if (processingMeeting.status != meeting.status ||
+        processingMeeting.lastErrorCode != meeting.lastErrorCode) {
+      await meetings.save(processingMeeting);
+    }
+
     final processingSnapshot = TranscriptSnapshot(
       id: snapshotId,
       meetingId: meeting.id,
@@ -150,8 +200,23 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
       createdAt: createdAt,
       status: TranscriptSnapshotStatus.processing,
       segments: const [],
+      transcriptionProfile: profile,
     );
     await transcripts.save(processingSnapshot);
+    if (profile != null) {
+      await tasks.save(
+        ProcessingTask(
+          id: 'final-transcription-$snapshotId',
+          kind: ProcessingTaskKind.finalTranscription,
+          meetingId: meeting.id,
+          modelId: profile.modelId,
+          transcriptionProfile: profile,
+          state: ProcessingState.queued,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+        ),
+      );
+    }
 
     final source = AudioSource(
       path: processingMeeting.audioPath!,
@@ -166,6 +231,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
         snapshotId: snapshotId,
         createdAt: createdAt,
         onProgress: onProgress,
+        profile: profile,
       ),
     );
   }
@@ -178,12 +244,21 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required String snapshotId,
     required DateTime createdAt,
     required FinalTranscriptionProgressCallback? onProgress,
+    required TranscriptionProfile? profile,
   }) async {
+    await _saveFinalTask(
+      profile,
+      meeting.id,
+      snapshotId,
+      createdAt,
+      ProcessingState.running,
+    );
     final diarizationOperation = _runDiarization(
       meetingId: meeting.id,
       snapshotId: snapshotId,
       source: source,
       audioDurationMs: processingMeeting.audioDurationMs,
+      enabledOverride: profile?.diarizationEnabled,
     );
     final transcriptionOperation = _finalizeTranscript(
       meeting: processingMeeting,
@@ -191,6 +266,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
       source: source,
       snapshotId: snapshotId,
       onProgress: onProgress,
+      profile: profile,
     );
 
     try {
@@ -202,10 +278,21 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
         snapshotId: snapshotId,
       );
       final diarizationResult = await diarizationOperation;
-      final publishable = _applyDiarization(completed, diarizationResult);
+      final publishable = _applyDiarization(
+        completed,
+        diarizationResult,
+        profile,
+      );
       await transcripts.saveFinalAndActivate(
         snapshot: publishable,
         expectedActiveSnapshotId: meeting.activeTranscriptSnapshotId,
+      );
+      await _saveFinalTask(
+        profile,
+        meeting.id,
+        snapshotId,
+        createdAt,
+        ProcessingState.completed,
       );
       return FinalTranscriptionResult(
         meeting: processingMeeting.activateFinalTranscript(publishable),
@@ -225,8 +312,16 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
         createdAt: createdAt,
         status: TranscriptSnapshotStatus.failed,
         segments: const [],
+        transcriptionProfile: profile,
       );
       await transcripts.save(failed);
+      await _saveFinalTask(
+        profile,
+        meeting.id,
+        snapshotId,
+        createdAt,
+        ProcessingState.failed,
+      );
       await _saveFailureIfCurrent(
         originalMeeting: meeting,
         errorCode: _errorCode(error),
@@ -241,17 +336,20 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required AudioSource source,
     required String snapshotId,
     required FinalTranscriptionProgressCallback? onProgress,
+    required TranscriptionProfile? profile,
   }) async {
     AsrEngine? engine;
     StreamSubscription<AsrFinalizationProgress>? progressSubscription;
     try {
-      engine = await engineFactory.create(
-        modelId: selected.$1,
-        modelVersion: selected.$2,
-        language: meeting.recordingModelLanguage,
-        useInverseTextNormalization:
-            meeting.recordingModelUseInverseTextNormalization,
-      );
+      engine = profile != null
+          ? await createEngineForProfile(engineFactory, profile)
+          : await engineFactory.create(
+              modelId: selected.$1,
+              modelVersion: selected.$2,
+              language: meeting.recordingModelLanguage,
+              useInverseTextNormalization:
+                  meeting.recordingModelUseInverseTextNormalization,
+            );
       _validateEngine(engine, selected);
       if (onProgress != null) {
         progressSubscription = engine.finalizationProgress.listen(onProgress);
@@ -280,12 +378,15 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
     required String snapshotId,
     required AudioSource source,
     required int audioDurationMs,
+    bool? enabledOverride,
   }) async {
-    var enabled = true;
-    try {
-      enabled = await diarizationPreferences.getEnabled();
-    } on Object {
-      // 偏好读取失败不得阻断最终文本；无可靠关闭记录时沿用默认开启。
+    var enabled = enabledOverride ?? true;
+    if (enabledOverride == null) {
+      try {
+        enabled = await diarizationPreferences.getEnabled();
+      } on Object {
+        // 旧合同无冻结配置时沿用默认开启，偏好读取失败不得阻断文本。
+      }
     }
     if (!enabled) {
       return const _DiarizationAttempt(
@@ -422,6 +523,7 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
   TranscriptSnapshot _applyDiarization(
     TranscriptSnapshot snapshot,
     _DiarizationAttempt result,
+    TranscriptionProfile? profile,
   ) {
     return TranscriptSnapshot(
       id: snapshot.id,
@@ -431,6 +533,9 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
       actualModelVersion: snapshot.actualModelVersion,
       createdAt: snapshot.createdAt,
       status: snapshot.status,
+      transcriptionProfile: profile,
+      reportedModelVersion: snapshot.reportedModelVersion,
+      timingPrecision: snapshot.timingPrecision,
       segments: [
         for (final segment in snapshot.segments)
           TranscriptSegment(
@@ -439,7 +544,11 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
             startMs: segment.startMs,
             endMs: segment.endMs,
             text: segment.text,
-            speakerId: result.status == SpeakerDiarizationStatus.completed
+            speakerId: profile?.isLocal == false && segment.speakerId != null
+                ? segment.speakerId
+                : result.status == SpeakerDiarizationStatus.completed &&
+                      snapshot.timingPrecision !=
+                          TranscriptTimingPrecision.audioWindow
                 ? mapTranscriptSegmentToSpeaker(
                     segment: segment,
                     turns: result.turns,
@@ -452,6 +561,32 @@ final class FinalResultCoordinator implements FinalTranscriptionRunner {
           ),
       ],
     );
+  }
+
+  Future<void> _saveFinalTask(
+    TranscriptionProfile? profile,
+    String meetingId,
+    String snapshotId,
+    DateTime createdAt,
+    ProcessingState state,
+  ) async {
+    if (profile == null) return;
+    try {
+      await tasks.save(
+        ProcessingTask(
+          id: 'final-transcription-$snapshotId',
+          kind: ProcessingTaskKind.finalTranscription,
+          meetingId: meetingId,
+          modelId: profile.modelId,
+          transcriptionProfile: profile,
+          state: state,
+          createdAt: createdAt,
+          updatedAt: now(),
+        ),
+      );
+    } on Object {
+      // 已冻结在快照中的配置不依赖任务诊断写入；诊断失败不推翻已提交稿件。
+    }
   }
 
   Future<void> _saveFailureIfCurrent({

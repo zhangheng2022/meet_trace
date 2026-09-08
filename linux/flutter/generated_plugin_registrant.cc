@@ -8,6 +8,7 @@
 
 #include <audioplayers_linux/audioplayers_linux_plugin.h>
 #include <disk_space_2/disk_space_2_plugin.h>
+#include <flutter_secure_storage_linux/flutter_secure_storage_linux_plugin.h>
 #include <record_linux/record_linux_plugin.h>
 #include <sentry_flutter/sentry_flutter_plugin.h>
 #include <url_launcher_linux/url_launcher_plugin.h>
@@ -19,6 +20,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) disk_space_2_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "DiskSpace_2Plugin");
   disk_space_2_plugin_register_with_registrar(disk_space_2_registrar);
+  g_autoptr(FlPluginRegistrar) flutter_secure_storage_linux_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterSecureStorageLinuxPlugin");
+  flutter_secure_storage_linux_plugin_register_with_registrar(flutter_secure_storage_linux_registrar);
   g_autoptr(FlPluginRegistrar) record_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "RecordLinuxPlugin");
   record_linux_plugin_register_with_registrar(record_linux_registrar);

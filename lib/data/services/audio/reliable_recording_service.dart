@@ -241,6 +241,7 @@ final class ReliableRecordingService
     _state = RecordingState.paused;
     await _saveCheckpoint(RecordingCheckpointState.paused);
     await foreground.setPaused(true);
+    await _asrPreview.flush();
     SentryMonitoring.addBreadcrumb(
       category: 'recording.lifecycle',
       phase: 'paused',

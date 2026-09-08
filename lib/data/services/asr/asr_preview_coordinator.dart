@@ -15,7 +15,28 @@ const defaultMaximumQueuedPreviewAudioMs = 30000;
 const defaultPreviewHighWaterMs = 15000;
 const defaultPreviewLowWaterMs = 5000;
 const defaultPreviewStopTimeout = Duration(milliseconds: 500);
+const defaultPreviewPartialInterval = Duration(seconds: 2);
 const _timelineRetentionMs = 20000;
+const _speechStartPrerollMs = 500;
+
+/// 本地基准可订阅这些匿名阶段时长；不自动上传，也不含识别文本。
+final class AsrPreviewObservation {
+  const AsrPreviewObservation({
+    required this.audioStartMs,
+    required this.audioEndMs,
+    required this.isStable,
+    required this.queueWait,
+    required this.inference,
+    required this.wasPublished,
+  });
+
+  final int audioStartMs;
+  final int audioEndMs;
+  final bool isStable;
+  final Duration queueWait;
+  final Duration inference;
+  final bool wasPublished;
+}
 
 final class AsrPreviewCoordinator
     implements RecordingPreviewSink, AsrPreviewSession {
@@ -27,6 +48,8 @@ final class AsrPreviewCoordinator
     this.highWaterMs = defaultPreviewHighWaterMs,
     this.lowWaterMs = defaultPreviewLowWaterMs,
     this.stopTimeout = defaultPreviewStopTimeout,
+    this.partialInterval = defaultPreviewPartialInterval,
+    this.onObservation,
   }) {
     if (vad.sampleRate != recordingSampleRate ||
         planner.sampleRate != recordingSampleRate) {
@@ -37,8 +60,14 @@ final class AsrPreviewCoordinator
         highWaterMs > maximumQueuedAudioMs ||
         lowWaterMs < 0 ||
         lowWaterMs >= highWaterMs ||
-        stopTimeout <= Duration.zero) {
-      throw ArgumentError('预览队列水位参数无效');
+        stopTimeout <= Duration.zero ||
+        partialInterval <= Duration.zero ||
+        planner.maximumWindowMs > asrPreviewMaximumWindowMs ||
+        planner.maximumWindowMs <=
+            planner.contextBeforeMs +
+                planner.contextAfterMs +
+                _speechStartPrerollMs) {
+      throw ArgumentError('预览队列或窗口参数无效');
     }
     _engineEvents = engine.events.listen(_handleEngineEvent);
   }
@@ -50,23 +79,26 @@ final class AsrPreviewCoordinator
   final int highWaterMs;
   final int lowWaterMs;
   final Duration stopTimeout;
+  final Duration partialInterval;
+  final void Function(AsrPreviewObservation)? onObservation;
 
-  final Queue<AsrPreviewWindow> _pending = Queue<AsrPreviewWindow>();
+  final Queue<_PreviewJob> _pending = Queue<_PreviewJob>();
   final _TimelineSampleBuffer _timeline = _TimelineSampleBuffer();
-  final Map<String, Queue<_WindowReference>> _windowReferences = {};
-  final Map<String, _TranscriptGroup> _transcriptGroups = {};
+  final Map<String, _TranscriptGroup> _groups = {};
+  final Stopwatch _clock = Stopwatch()..start();
   final StreamController<TranscriptEvent> _events =
       StreamController<TranscriptEvent>.broadcast(sync: true);
   final StreamController<AsrPreviewMetrics> _metricsChanges =
       StreamController<AsrPreviewMetrics>.broadcast(sync: true);
-
   late final StreamSubscription<TranscriptEvent> _engineEvents;
+
   Future<void>? _draining;
   Future<void>? _initializeOperation;
   Future<void>? _stopOperation;
   Future<void>? _disposeOperation;
   Future<void>? _engineDisposal;
-  AsrPreviewWindow? _active;
+  _PreviewJob? _active;
+  _LiveSpeech? _speech;
   AsrPreviewState _state = AsrPreviewState.ready;
   int? _expectedNextSample;
   int _nextSegmentSequence = 0;
@@ -74,8 +106,11 @@ final class AsrPreviewCoordinator
   int _queuedAudioMs = 0;
   int _processedPreviewWindows = 0;
   int _droppedPreviewWindows = 0;
-  int _latestWindowEndMs = 0;
-  int _coveredThroughMs = 0;
+  int _receivedThroughMs = 0;
+  int _recognizedThroughMs = 0;
+  int _lastInferenceMs = 0;
+  int _coalescedPartialWindows = 0;
+  int _missingInputSamples = 0;
   String? _lastErrorCode;
   bool _initialized = false;
 
@@ -84,31 +119,39 @@ final class AsrPreviewCoordinator
   @override
   Stream<AsrPreviewMetrics> get metricsChanges => _metricsChanges.stream;
 
+  int get coalescedPartialWindows => _coalescedPartialWindows;
+  int get missingInputSamples => _missingInputSamples;
+  bool get isRecognizing => _active != null;
+
   @override
   AsrPreviewMetrics get metrics => AsrPreviewMetrics(
     state: _state,
     vadSegmentCount: _vadSegmentCount,
+    // 只报告等待中的音频；当前正在解码的一窗不是排队积压。
     queuedAudioMs: _queuedAudioMs,
     processedPreviewWindows: _processedPreviewWindows,
     droppedPreviewWindows: _droppedPreviewWindows,
-    previewLagMs: (_latestWindowEndMs - _coveredThroughMs).clamp(
+    isRecognizing: !_isStopped && isRecognizing,
+    // 音频新鲜度包含尚未结束的语音，丢弃任务绝不算已经识别。
+    previewLagMs: (_receivedThroughMs - _recognizedThroughMs).clamp(
       0,
-      _latestWindowEndMs,
+      _receivedThroughMs,
     ),
     lastErrorCode: _lastErrorCode,
   );
+
+  bool get _isStopped =>
+      _state == AsrPreviewState.recordingOnly ||
+      _state == AsrPreviewState.disposed;
 
   @override
   Future<void> initialize() => _initializeOperation ??= _initialize();
 
   Future<void> _initialize() async {
-    if (_state == AsrPreviewState.recordingOnly ||
-        _state == AsrPreviewState.disposed) {
-      return;
-    }
+    if (_isStopped) return;
     try {
       await engine.initialize();
-      if (_state != AsrPreviewState.disposed) {
+      if (!_isStopped) {
         _initialized = true;
         _startDraining();
       }
@@ -123,26 +166,59 @@ final class AsrPreviewCoordinator
 
   @override
   Future<void> add(RecordingPcmChunk chunk) {
-    if (_state == AsrPreviewState.recordingOnly ||
-        _state == AsrPreviewState.disposed) {
-      return Future<void>.value();
-    }
+    if (_isStopped) return Future<void>.value();
     try {
       final startSample = chunk.startByteOffset ~/ recordingBytesPerSample;
-      final samples = _decodePcm16(chunk.bytes);
       final expected = _expectedNextSample;
       if (expected != null && expected != startSample) {
+        _missingInputSamples += (startSample - expected).abs();
+        _dropAllPending();
+        _clearUnstableSpeech();
+        _groups.clear(); // 当前推理的旧分组失效，迟到结果不能重新出现在 UI。
         vad.reset(nextStartSample: startSample);
         _timeline.reset(startSample: startSample);
-        _dropAllPending();
       } else if (_timeline.isEmpty) {
+        vad.reset(nextStartSample: startSample);
         _timeline.reset(startSample: startSample);
       }
-      final segments = vad.accept(samples);
-      _timeline.appendOwned(startSample: startSample, samples: samples);
+      final samples = _decodePcm16(chunk.bytes);
+      var offset = 0;
+      while (offset < samples.length) {
+        final cursor = startSample + offset;
+        var length = _min(recordingSampleRate, samples.length - offset);
+        final speech = _speech;
+        if (speech != null) {
+          final remaining = _hardSpeechEnd(speech) - cursor;
+          if (remaining <= 0) {
+            _flushSpeech();
+            continue;
+          }
+          length = _min(length, remaining);
+        }
+        final block = Float32List.sublistView(samples, offset, offset + length);
+        _timeline.appendOwned(startSample: cursor, samples: block);
+        final completed = vad.accept(block);
+        _receivedThroughMs = _timeline.endSample * 1000 ~/ recordingSampleRate;
+        _acceptSegments(completed);
+        if (vad.isSpeechDetected) {
+          _speech ??= _LiveSpeech(
+            id: 'vad-${++_nextSegmentSequence}',
+            startSample: _max(
+              _timeline.startSample,
+              cursor - _speechStartPrerollMs * recordingSampleRate ~/ 1000,
+            ),
+          );
+          if (_timeline.endSample >= _hardSpeechEnd(_speech!)) {
+            _flushSpeech();
+          } else {
+            _offerPartial();
+          }
+        }
+        offset += length;
+        _trimTimeline();
+      }
       _expectedNextSample = startSample + samples.length;
-      _acceptSegments(segments);
-      _trimTimeline();
+      _emitMetrics();
     } on Object catch (error) {
       _enterRecordingOnly(
         error is AsrEngineException
@@ -153,15 +229,20 @@ final class AsrPreviewCoordinator
     return Future<void>.value();
   }
 
+  int _hardSpeechEnd(_LiveSpeech speech) =>
+      speech.startSample +
+      (planner.maximumWindowMs -
+              planner.contextBeforeMs -
+              planner.contextAfterMs) *
+          recordingSampleRate ~/
+          1000;
+
   @override
   Future<void> flush() async {
-    if (_state == AsrPreviewState.recordingOnly ||
-        _state == AsrPreviewState.disposed) {
-      return;
-    }
+    if (_isStopped || _timeline.isEmpty) return;
     try {
-      _acceptSegments(vad.flush());
-      await _draining;
+      _flushSpeech();
+      // 暂停只提交尾句，不等待可丢弃的推理积压。
     } on Object catch (error) {
       _enterRecordingOnly(
         error is AsrEngineException
@@ -171,6 +252,314 @@ final class AsrPreviewCoordinator
     }
   }
 
+  void _flushSpeech() {
+    _acceptSegments(vad.flush());
+    _clearUnstableSpeech();
+    vad.reset(nextStartSample: _timeline.endSample);
+  }
+
+  void _offerPartial() {
+    final speech = _speech!;
+    final end = _timeline.endSample;
+    final intervalMs = _max(
+      partialInterval.inMilliseconds,
+      _lastInferenceMs * 2,
+    );
+    final earliest = speech.lastPartialEndSample == null
+        ? speech.startSample +
+              partialInterval.inMilliseconds * recordingSampleRate ~/ 1000
+        : speech.lastPartialEndSample! +
+              intervalMs * recordingSampleRate ~/ 1000;
+    if (end < earliest) return;
+    // 已结束的语音优先；同一活动语音只保留最新一个临时请求。
+    final group = _TranscriptGroup(
+      id: speech.id,
+      startMs: speech.startSample * 1000 ~/ recordingSampleRate,
+      windowCount: 1,
+      stable: false,
+    );
+    _replaceGroup(group);
+    _offer(
+      _PreviewJob(
+        group: group,
+        window: AsrPreviewWindow(
+          groupId: group.id,
+          windowIndex: 0,
+          windowCount: 1,
+          startSample: speech.startSample,
+          endSample: end,
+          sampleRate: recordingSampleRate,
+          samples: _timeline.read(
+            startSample: speech.startSample,
+            endSample: end,
+          ),
+        ),
+        offeredAt: _clock.elapsed,
+      ),
+    );
+    speech.lastPartialEndSample = end;
+  }
+
+  void _acceptSegments(List<VadSpeechSegment> segments) {
+    for (final segment in segments) {
+      _vadSegmentCount++;
+      final intervals = planner(
+        segment: segment,
+        availableStartSample: _timeline.startSample,
+        availableEndSample: _timeline.endSample,
+      );
+      final id = _speech?.id ?? 'vad-${++_nextSegmentSequence}';
+      _speech = null;
+      final group = _TranscriptGroup(
+        id: id,
+        startMs: segment.startSample * 1000 ~/ recordingSampleRate,
+        windowCount: intervals.length,
+        stable: true,
+      );
+      _replaceGroup(group);
+      for (var index = 0; index < intervals.length; index++) {
+        final interval = intervals[index];
+        _offer(
+          _PreviewJob(
+            group: group,
+            window: AsrPreviewWindow(
+              groupId: id,
+              windowIndex: index,
+              windowCount: intervals.length,
+              startSample: interval.startSample,
+              endSample: interval.endSample,
+              sampleRate: recordingSampleRate,
+              samples: _timeline.read(
+                startSample: interval.startSample,
+                endSample: interval.endSample,
+              ),
+            ),
+            offeredAt: _clock.elapsed,
+          ),
+        );
+      }
+    }
+  }
+
+  void _replaceGroup(_TranscriptGroup group) {
+    final previous = _groups[group.id];
+    group.hadText = previous?.hadText ?? false;
+    _groups[group.id] = group;
+    for (final job
+        in _pending.where((job) => job.group.id == group.id).toList()) {
+      _pending.remove(job);
+      _queuedAudioMs -= job.window.audioDurationMs;
+      _coalescedPartialWindows++;
+    }
+  }
+
+  void _offer(_PreviewJob job) {
+    final outstanding = _active?.window.audioDurationMs ?? 0;
+    while (_queuedAudioMs + outstanding + job.window.audioDurationMs >
+            maximumQueuedAudioMs &&
+        _pending.isNotEmpty) {
+      _dropJob(_pending.removeFirst());
+    }
+    if (_queuedAudioMs + outstanding + job.window.audioDurationMs >
+        maximumQueuedAudioMs) {
+      _dropJob(job, wasQueued: false);
+      return;
+    }
+    if (job.group.stable) {
+      final firstPartial = _pending
+          .where((pending) => !pending.group.stable)
+          .firstOrNull;
+      if (firstPartial != null) {
+        _pending.remove(firstPartial);
+        _pending.addLast(job);
+        _pending.addLast(firstPartial);
+      } else {
+        _pending.addLast(job);
+      }
+    } else {
+      _pending.addLast(job);
+    }
+    _queuedAudioMs += job.window.audioDurationMs;
+    _startDraining();
+    _updateQueueState();
+  }
+
+  void _startDraining() {
+    if (_draining != null || !_initialized || _pending.isEmpty || _isStopped) {
+      return;
+    }
+    final operation = _drain();
+    _draining = operation;
+    unawaited(
+      operation.whenComplete(() {
+        _draining = null;
+        if (_pending.isNotEmpty && !_isStopped) _startDraining();
+      }),
+    );
+  }
+
+  Future<void> _drain() async {
+    while (_pending.isNotEmpty && !_isStopped) {
+      final job = _pending.removeFirst();
+      _queuedAudioMs -= job.window.audioDurationMs;
+      _active = job;
+      _updateQueueState();
+      _emitMetrics();
+      final startedAt = _clock.elapsed;
+      var published = false;
+      try {
+        await engine.acceptAudio(
+          job.window.samples,
+          sampleRate: job.window.sampleRate,
+          startMs: job.window.startMs,
+        );
+        _processedPreviewWindows++;
+        if (!_isStopped && identical(_groups[job.group.id], job.group)) {
+          _recognizedThroughMs = _max(_recognizedThroughMs, job.window.endMs);
+          job.group.texts[job.window.windowIndex] = job.text ?? '';
+          job.group.endMs = _max(job.group.endMs, job.window.endMs);
+          job.group.remainingWindows--;
+          published = _publishGroup(job.group);
+        }
+      } on Object catch (error) {
+        _enterRecordingOnly(
+          error is AsrEngineException
+              ? error.failure.code
+              : 'asr.preview.engine_failed',
+        );
+      } finally {
+        final inference = _clock.elapsed - startedAt;
+        _lastInferenceMs = inference.inMilliseconds;
+        _active = null;
+        try {
+          onObservation?.call(
+            AsrPreviewObservation(
+              audioStartMs: job.window.startMs,
+              audioEndMs: job.window.endMs,
+              isStable: job.group.stable,
+              queueWait: startedAt - job.offeredAt,
+              inference: inference,
+              wasPublished: published,
+            ),
+          );
+        } on Object {
+          // 基准观测失败不得影响预览或事实录音。
+        }
+        _updateQueueState();
+        _emitMetrics();
+      }
+    }
+  }
+
+  void _handleEngineEvent(TranscriptEvent event) {
+    if (_isStopped) return;
+    if (event is! TranscriptSegmentEvent) {
+      _events.add(event);
+      return;
+    }
+    final job = _active;
+    if (job != null &&
+        event.startMs == job.window.startMs &&
+        event.endMs == _engineWindowEndMs(job.window)) {
+      job.text = event.text;
+    }
+  }
+
+  bool _publishGroup(_TranscriptGroup group) {
+    var merged = '';
+    for (var index = 0; index < group.windowCount; index++) {
+      merged = mergeOverlappingTranscriptText(merged, group.texts[index] ?? '');
+    }
+    final finished = group.stable && group.remainingWindows == 0;
+    final publish = merged.isNotEmpty || (finished && group.hadText);
+    if (publish) {
+      _events.add(
+        TranscriptSegmentEvent(
+          segmentId: group.id,
+          startMs: group.startMs,
+          endMs: _max(group.startMs + 1, group.endMs),
+          text: merged,
+          modelId: engine.descriptor.modelId,
+          modelVersion: engine.descriptor.version,
+          isFinalForWindow: finished,
+        ),
+      );
+      group.hadText = merged.isNotEmpty;
+    }
+    if (finished) _groups.remove(group.id);
+    return publish;
+  }
+
+  void _dropJob(_PreviewJob job, {bool wasQueued = true}) {
+    if (wasQueued) _queuedAudioMs -= job.window.audioDurationMs;
+    _droppedPreviewWindows++;
+    if (identical(_groups[job.group.id], job.group)) {
+      job.group.remainingWindows--;
+      _publishGroup(job.group);
+    }
+  }
+
+  void _dropAllPending() {
+    while (_pending.isNotEmpty) {
+      _dropJob(_pending.removeFirst());
+    }
+  }
+
+  void _clearUnstableSpeech() {
+    final speech = _speech;
+    _speech = null;
+    if (speech == null) return;
+    final group = _groups.remove(speech.id);
+    for (final job
+        in _pending.where((job) => job.group.id == speech.id).toList()) {
+      _pending.remove(job);
+      _queuedAudioMs -= job.window.audioDurationMs;
+      _coalescedPartialWindows++;
+    }
+    if (group?.hadText == true && !_events.isClosed) {
+      _events.add(
+        TranscriptSegmentEvent(
+          segmentId: speech.id,
+          startMs: group!.startMs,
+          endMs: _max(group.startMs + 1, group.endMs),
+          text: '',
+          modelId: engine.descriptor.modelId,
+          modelVersion: engine.descriptor.version,
+          isFinalForWindow: true,
+        ),
+      );
+    }
+  }
+
+  void _updateQueueState() {
+    if (_isStopped) return;
+    if (_queuedAudioMs >= highWaterMs) {
+      _state = AsrPreviewState.backlogged;
+    } else if (_queuedAudioMs <= lowWaterMs) {
+      _state = AsrPreviewState.ready;
+    }
+  }
+
+  void _enterRecordingOnly(String errorCode) {
+    if (_state == AsrPreviewState.disposed) return;
+    _state = AsrPreviewState.recordingOnly;
+    _lastErrorCode = errorCode;
+    _dropAllPending();
+    _clearUnstableSpeech();
+    _groups.clear();
+    _emitMetrics();
+  }
+
+  void _trimTimeline() {
+    _timeline.trimBefore(
+      _timeline.endSample - _timelineRetentionMs * recordingSampleRate ~/ 1000,
+    );
+  }
+
+  void _emitMetrics() {
+    if (!_metricsChanges.isClosed) _metricsChanges.add(metrics);
+  }
+
   @override
   Future<void> stop() => _stopOperation ??= _stop();
 
@@ -178,50 +567,42 @@ final class AsrPreviewCoordinator
     if (_state != AsrPreviewState.disposed) {
       _state = AsrPreviewState.disposed;
       _dropAllPending();
+      _groups.clear();
+      _speech = null;
       engine.cancel();
       _emitMetrics();
     }
-
     try {
       await _engineEvents.cancel();
     } on Object {
-      // 继续释放其余预览资源。
+      /* 继续释放其余资源。 */
     }
-    final draining = _draining;
-    if (draining != null) {
-      try {
-        await draining.timeout(stopTimeout);
-      } on TimeoutException {
-        // 预览推理可能仍在原生调用内；结束会议不能等待可丢弃积压。
-      } on Object {
-        // 停止路径只负责尽快释放派生预览，不影响事实音频。
-      }
+    try {
+      await _draining?.timeout(stopTimeout);
+    } on Object {
+      /* 不等待预览积压。 */
     }
     try {
       vad.dispose();
     } on Object {
-      // VAD 释放失败不能阻止 Engine 取消和流关闭。
+      /* 继续释放 Engine。 */
     }
     try {
-      if (!_events.isClosed) {
-        await _events.close();
-      }
+      await _events.close();
     } on Object {
-      // 继续释放其余预览资源。
+      /* 继续关闭指标流。 */
     }
     try {
-      if (!_metricsChanges.isClosed) {
-        await _metricsChanges.close();
-      }
+      await _metricsChanges.close();
     } on Object {
-      // 继续释放 Engine。
+      /* 继续释放 Engine。 */
     }
     try {
       final disposal = engine.dispose();
       _engineDisposal ??= disposal;
       unawaited(disposal.catchError((Object _) {}));
     } on Object {
-      // 同步释放异常也不得延长结束会议主链。
+      /* 派生资源释放不得延长结束会议。 */
     }
   }
 
@@ -233,249 +614,62 @@ final class AsrPreviewCoordinator
     try {
       await _engineDisposal;
     } on Object {
-      // dispose 保持幂等，释放异常不得传播到事实录音主链。
-    }
-  }
-
-  void _acceptSegments(List<VadSpeechSegment> segments) {
-    for (final segment in segments) {
-      _vadSegmentCount++;
-      final intervals = planner(
-        segment: segment,
-        availableStartSample: _timeline.startSample,
-        availableEndSample: _timeline.endSample,
-      );
-      final groupId =
-          'vad-${++_nextSegmentSequence}-${segment.startSample}-${segment.endSample}';
-      final group = _TranscriptGroup(
-        groupId: groupId,
-        startMs: intervals.first.startSample * 1000 ~/ recordingSampleRate,
-        windowCount: intervals.length,
-      );
-      _transcriptGroups[groupId] = group;
-      for (var index = 0; index < intervals.length; index++) {
-        final interval = intervals[index];
-        final window = AsrPreviewWindow(
-          groupId: groupId,
-          windowIndex: index,
-          windowCount: intervals.length,
-          startSample: interval.startSample,
-          endSample: interval.endSample,
-          sampleRate: recordingSampleRate,
-          samples: _timeline.read(
-            startSample: interval.startSample,
-            endSample: interval.endSample,
-          ),
-        );
-        _registerWindow(window);
-        _offer(window);
-      }
-    }
-    _emitMetrics();
-  }
-
-  void _offer(AsrPreviewWindow window) {
-    _latestWindowEndMs = _max(_latestWindowEndMs, window.endMs);
-    while (_queuedAudioMs + window.audioDurationMs > maximumQueuedAudioMs &&
-        _pending.isNotEmpty) {
-      _dropWindow(_pending.removeFirst());
-    }
-    if (_queuedAudioMs + window.audioDurationMs > maximumQueuedAudioMs) {
-      _dropWindow(window, wasQueued: false);
-      return;
-    }
-
-    _pending.addLast(window);
-    _queuedAudioMs += window.audioDurationMs;
-    if (_queuedAudioMs >= highWaterMs) {
-      _state = AsrPreviewState.backlogged;
-    }
-    _startDraining();
-  }
-
-  void _startDraining() {
-    if (_draining != null ||
-        !_initialized ||
-        _pending.isEmpty ||
-        _state == AsrPreviewState.recordingOnly ||
-        _state == AsrPreviewState.disposed) {
-      return;
-    }
-    final operation = _drain();
-    _draining = operation;
-    unawaited(
-      operation.whenComplete(() {
-        _draining = null;
-        if (_pending.isNotEmpty &&
-            _state != AsrPreviewState.recordingOnly &&
-            _state != AsrPreviewState.disposed) {
-          _startDraining();
-        }
-      }),
-    );
-  }
-
-  Future<void> _drain() async {
-    while (_pending.isNotEmpty &&
-        _state != AsrPreviewState.recordingOnly &&
-        _state != AsrPreviewState.disposed) {
-      final window = _pending.removeFirst();
-      _active = window;
-      var processed = false;
-      try {
-        await engine.acceptAudio(
-          window.samples,
-          sampleRate: window.sampleRate,
-          startMs: window.startMs,
-        );
-        processed = true;
-        if (_removeWindowReference(window)) {
-          _markWindowFinished(window.groupId);
-        }
-        _processedPreviewWindows++;
-        _coveredThroughMs = _max(_coveredThroughMs, window.endMs);
-      } on AsrEngineException catch (error) {
-        _enterRecordingOnly(error.failure.code);
-      } on Object {
-        _enterRecordingOnly('asr.preview.engine_failed');
-      } finally {
-        _active = null;
-        _queuedAudioMs -= window.audioDurationMs;
-        if (!processed) {
-          _removeWindowReference(window);
-          _markWindowFinished(window.groupId);
-        }
-        if (_state == AsrPreviewState.backlogged &&
-            _queuedAudioMs <= lowWaterMs) {
-          _state = AsrPreviewState.ready;
-        }
-        _emitMetrics();
-      }
-    }
-  }
-
-  void _dropWindow(AsrPreviewWindow window, {bool wasQueued = true}) {
-    if (wasQueued && !identical(window, _active)) {
-      _queuedAudioMs -= window.audioDurationMs;
-    }
-    _droppedPreviewWindows++;
-    _coveredThroughMs = _max(_coveredThroughMs, window.endMs);
-    _removeWindowReference(window);
-    _markWindowFinished(window.groupId);
-  }
-
-  void _dropAllPending() {
-    while (_pending.isNotEmpty) {
-      _dropWindow(_pending.removeFirst());
-    }
-  }
-
-  void _enterRecordingOnly(String errorCode) {
-    if (_state == AsrPreviewState.disposed) {
-      return;
-    }
-    _state = AsrPreviewState.recordingOnly;
-    _lastErrorCode = errorCode;
-    _dropAllPending();
-    _emitMetrics();
-  }
-
-  void _registerWindow(AsrPreviewWindow window) {
-    final key = _windowKey(window.startMs, _engineWindowEndMs(window));
-    (_windowReferences[key] ??= Queue<_WindowReference>()).addLast(
-      _WindowReference(window),
-    );
-  }
-
-  bool _removeWindowReference(AsrPreviewWindow window) {
-    final key = _windowKey(window.startMs, _engineWindowEndMs(window));
-    final references = _windowReferences[key];
-    if (references == null) {
-      return false;
-    }
-    final previousLength = references.length;
-    references.removeWhere(
-      (reference) =>
-          reference.window.groupId == window.groupId &&
-          reference.window.windowIndex == window.windowIndex,
-    );
-    if (references.isEmpty) {
-      _windowReferences.remove(key);
-    }
-    return references.length != previousLength;
-  }
-
-  void _handleEngineEvent(TranscriptEvent event) {
-    if (event is! TranscriptSegmentEvent) {
-      _events.add(event);
-      return;
-    }
-    final key = _windowKey(event.startMs, event.endMs);
-    final references = _windowReferences[key];
-    if (references == null || references.isEmpty) {
-      _events.add(event);
-      return;
-    }
-    final reference = references.removeFirst();
-    if (references.isEmpty) {
-      _windowReferences.remove(key);
-    }
-    final group = _transcriptGroups[reference.window.groupId];
-    if (group == null) {
-      _events.add(event);
-      return;
-    }
-    group.texts[reference.window.windowIndex] = event.text;
-    group.endMs = _max(group.endMs, event.endMs);
-    group.remainingWindows--;
-    var merged = '';
-    for (var index = 0; index < group.windowCount; index++) {
-      final text = group.texts[index];
-      if (text != null) {
-        merged = mergeOverlappingTranscriptText(merged, text);
-      }
-    }
-    _events.add(
-      TranscriptSegmentEvent(
-        segmentId: group.groupId,
-        startMs: group.startMs,
-        endMs: group.endMs,
-        text: merged,
-        modelId: event.modelId,
-        modelVersion: event.modelVersion,
-        isFinalForWindow: group.remainingWindows == 0,
-      ),
-    );
-    if (group.remainingWindows == 0) {
-      _transcriptGroups.remove(group.groupId);
-    }
-  }
-
-  void _markWindowFinished(String groupId) {
-    final group = _transcriptGroups[groupId];
-    if (group == null) {
-      return;
-    }
-    group.remainingWindows--;
-    if (group.remainingWindows == 0) {
-      _transcriptGroups.remove(groupId);
-    }
-  }
-
-  void _trimTimeline() {
-    final retentionSamples =
-        _timelineRetentionMs *
-        recordingSampleRate ~/
-        Duration.millisecondsPerSecond;
-    _timeline.trimBefore(_timeline.endSample - retentionSamples);
-  }
-
-  void _emitMetrics() {
-    if (!_metricsChanges.isClosed) {
-      _metricsChanges.add(metrics);
+      /* 保持释放幂等。 */
     }
   }
 }
+
+final class _LiveSpeech {
+  _LiveSpeech({required this.id, required this.startSample});
+  final String id;
+  final int startSample;
+  int? lastPartialEndSample;
+}
+
+final class _PreviewJob {
+  _PreviewJob({
+    required this.group,
+    required this.window,
+    required this.offeredAt,
+  });
+  final _TranscriptGroup group;
+  final AsrPreviewWindow window;
+  final Duration offeredAt;
+  String? text;
+}
+
+final class _TranscriptGroup {
+  _TranscriptGroup({
+    required this.id,
+    required this.startMs,
+    required this.windowCount,
+    required this.stable,
+  });
+  final String id;
+  final int startMs;
+  final int windowCount;
+  final bool stable;
+  final Map<int, String> texts = {};
+  late int remainingWindows = windowCount;
+  int endMs = 0;
+  bool hadText = false;
+}
+
+Float32List _decodePcm16(Uint8List bytes) {
+  final data = ByteData.sublistView(bytes);
+  final samples = Float32List(bytes.length ~/ recordingBytesPerSample);
+  for (var index = 0; index < samples.length; index++) {
+    samples[index] =
+        data.getInt16(index * recordingBytesPerSample, Endian.little) / 32768;
+  }
+  return samples;
+}
+
+int _engineWindowEndMs(AsrPreviewWindow window) =>
+    window.startMs +
+    (window.samples.length * 1000 + window.sampleRate - 1) ~/ window.sampleRate;
+int _max(int left, int right) => left > right ? left : right;
+int _min(int left, int right) => left < right ? left : right;
 
 final class _TimelineSampleBuffer {
   final Queue<_TimelineSampleBlock> _blocks = Queue<_TimelineSampleBlock>();
@@ -570,46 +764,3 @@ final class _TimelineSampleBlock {
 
   int get endSample => startSample + samples.length;
 }
-
-final class _WindowReference {
-  const _WindowReference(this.window);
-
-  final AsrPreviewWindow window;
-}
-
-final class _TranscriptGroup {
-  _TranscriptGroup({
-    required this.groupId,
-    required this.startMs,
-    required this.windowCount,
-  });
-
-  final String groupId;
-  final int startMs;
-  final int windowCount;
-  final Map<int, String> texts = {};
-  late int remainingWindows = windowCount;
-  int endMs = 0;
-}
-
-Float32List _decodePcm16(Uint8List bytes) {
-  final data = ByteData.sublistView(bytes);
-  final samples = Float32List(bytes.length ~/ recordingBytesPerSample);
-  for (var index = 0; index < samples.length; index++) {
-    samples[index] =
-        data.getInt16(index * recordingBytesPerSample, Endian.little) / 32768;
-  }
-  return samples;
-}
-
-String _windowKey(int startMs, int endMs) => '$startMs:$endMs';
-
-int _engineWindowEndMs(AsrPreviewWindow window) =>
-    window.startMs +
-    (window.samples.length * Duration.millisecondsPerSecond +
-            window.sampleRate -
-            1) ~/
-        window.sampleRate;
-
-int _max(int left, int right) => left > right ? left : right;
-int _min(int left, int right) => left < right ? left : right;

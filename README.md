@@ -2,7 +2,7 @@
   <img src="assets/branding/stitch/meettrace-app-icon.svg" width="112" alt="会迹 MeetTrace 图标">
   <h1>会迹（MeetTrace）</h1>
   <p><strong>本地优先、可核对、不会为推理牺牲录音的会议记录应用。</strong></p>
-  <p>Flutter · Android / iOS · Windows 规划中 · 端侧 ASR · 本地事实音频</p>
+  <p>Flutter · Android / iOS · Windows 规划中 · 本地 / 自定义在线 ASR · 本地事实音频</p>
 </div>
 
 <div align="center">
@@ -27,14 +27,20 @@
 | iOS | [TestFlight](https://testflight.apple.com/join/awDT2K6Q) | iOS 15.0+ |
 | Windows | [Microsoft Store](https://apps.microsoft.com/detail/9PHHSJMWK06G) | Windows 10 22H2/11 x64；规划中/未就绪 |
 
-首次启动约下载 286.3 MB 运行资源，并要求应用所在卷至少有 1 GiB 可用空间。Alpha 仅支持当前公开版本；升级或卸载可能清除本机会议、录音、模型和设置。
+本地转录按需下载约 286.3 MB 运行资源，准备时要求应用所在卷至少有 1 GiB 可用空间；在线来源无需下载本地权重。Alpha 仅支持当前公开版本；升级或卸载可能清除本机会议、录音、模型和设置。
 
-- 不提供登录、跨设备同步、云端 ASR、AI 总结或会中切换模型。
+- 支持每场选择本地或自定义在线转录，开始后锁定来源；无登录、跨设备同步、AI 总结或会中自动切换。
 - 文本分享只使用最终转录；音频分享需独立入口和二次确认，临时 WAV 不改写事实 PCM。
 - Android/iOS/Windows Release 默认启用可在设置中关闭的 Sentry 远程诊断。完整披露见[隐私政策](PRIVACY.md)。
 - 当前 Windows 由 Microsoft Store 签名和分发；[Code signing policy](CODE_SIGNING_POLICY.md) 仅用于未接入的 SignPath 申请路线。
 
 产品范围和验收只以 [Alpha PRD](docs/product/Alpha_PRD_无登录版.md) 为准。
+
+## 配置转录
+
+设置 → 转录来源 → 添加在线来源：填写完整端点、协议、任意模型 ID 和认证信息，再测试协议连接。Audio Transcriptions 与 Chat Audio 仅用于会后；Realtime Transcription 支持会中字幕。每场开始前确认来源及音频发送；结束后完整录音再转录生成最终稿。失败保留录音和旧稿，可在详情中换来源重转录。
+
+本地优化保留 SenseVoice，通过进行中临时字幕、硬窗口边界和最新预览优先减少等待；没有真实语料与设备测试前不承诺准确率或延迟提升幅度。[接口与网关说明](docs/development/online_asr_protocols.md)包含接入方式；[质量执行说明](docs/development/transcription_execution.md)说明本地评测。
 
 ## 开发
 
@@ -55,7 +61,7 @@ flutter analyze
 flutter test
 ```
 
-项目采用 `View → ViewModel → Use Case / Port → Repository / Service`；Domain 为纯 Dart，UI 不直连存储、网络、录音插件或 ONNX。ASR 仅通过官方 `sherpa_onnx` 包接入，模型权重不进入 APK、IPA 或 MSIX。
+项目采用 `View → ViewModel → Use Case / Port → Repository / Service`；Domain 为纯 Dart，UI 不直连存储、网络、录音插件或 ONNX。本地 ASR 仅通过官方 `sherpa_onnx` 包接入，模型权重不进入 APK、IPA 或 MSIX。
 
 ## 文档
 

@@ -17,16 +17,18 @@ final class LocalDataGenerationGate {
     required this.layout,
     this.now = DateTime.now,
     this.readMarker = _readMarkerFile,
+    this.beforeReset,
   });
 
   /// 当前数据代。引入数据不兼容变更时必须递增，并在 PRD 记录清数据原因。
-  static const currentGeneration = 3;
+  static const currentGeneration = 4;
 
   static const markerFileName = 'data_generation.json';
 
   final AppFileLayout layout;
   final DateTime Function() now;
   final Future<String> Function(File marker) readMarker;
+  final Future<void> Function()? beforeReset;
 
   /// 校验数据代；返回本次是否清除了旧数据。
   ///
@@ -38,6 +40,8 @@ final class LocalDataGenerationGate {
     if (await _markerIsCurrent(marker)) {
       return false;
     }
+    // Keychain 可跨重装保留；清理失败时保留旧 marker，下次启动必须重试。
+    await beforeReset?.call();
     final root = Directory(layout.rootPath);
     final removedLegacyData = await root.exists();
     if (removedLegacyData) {

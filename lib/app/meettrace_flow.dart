@@ -1,3 +1,10 @@
+import 'package:forui/forui.dart';
+
+import '../domain/models/transcription_profile.dart';
+import '../domain/models/runtime_initialization.dart';
+import '../ui/core/app_back_icon.dart';
+import '../ui/features/settings/views/transcription_sources_view.dart';
+
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -142,7 +149,7 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
           final dependencies = snapshot.data;
           assert(dependencies != null, '依赖初始化完成时必须返回依赖实例');
           _dependencies ??= dependencies;
-          content = _RuntimeInitializationGate(
+          content = MeetTraceFlow(
             dependencies: dependencies!,
             themeMode: widget.themeMode,
             languageMode: widget.languageMode,
@@ -160,74 +167,19 @@ final class _MeetTraceBootstrapState extends State<MeetTraceBootstrap> {
   }
 }
 
-final class _RuntimeInitializationGate extends StatefulWidget {
-  const _RuntimeInitializationGate({
-    required this.dependencies,
-    required this.themeMode,
-    required this.languageMode,
-  });
-
-  final MeetTraceDependencies dependencies;
-  final ValueNotifier<AppThemeMode>? themeMode;
-  final ValueNotifier<AppLanguageMode>? languageMode;
-
-  @override
-  State<_RuntimeInitializationGate> createState() =>
-      _RuntimeInitializationGateState();
-}
-
-final class _RuntimeInitializationGateState
-    extends State<_RuntimeInitializationGate> {
-  late RuntimeInitializationViewModel _viewModel;
-
-  @override
-  void initState() {
-    super.initState();
-    _viewModel = widget.dependencies.createRuntimeInitializationViewModel();
-    unawaited(_viewModel.start());
-  }
-
-  @override
-  Widget build(BuildContext context) =>
-      MeetTraceRuntimeInitializationTransition(
-        viewModel: _viewModel,
-        ready: MeetTraceFlow(
-          dependencies: widget.dependencies,
-          themeMode: widget.themeMode,
-          languageMode: widget.languageMode,
-          onRuntimeRepairRequired: _restartForRepair,
-        ),
-      );
-
-  void _restartForRepair() {
-    _viewModel.dispose();
-    _viewModel = widget.dependencies.createRuntimeInitializationViewModel(
-      forceRepair: true,
-    );
-    setState(() {});
-    unawaited(_viewModel.start());
-  }
-
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
-  }
-}
-
 final class MeetTraceFlow extends StatefulWidget {
   const MeetTraceFlow({
     required this.dependencies,
     required this.themeMode,
     required this.languageMode,
-    required this.onRuntimeRepairRequired,
+    this.onRuntimeRepairRequired,
     super.key,
   });
 
   final MeetTraceDependencies dependencies;
   final ValueNotifier<AppThemeMode>? themeMode;
   final ValueNotifier<AppLanguageMode>? languageMode;
-  final VoidCallback onRuntimeRepairRequired;
+  final VoidCallback? onRuntimeRepairRequired;
 
   @override
   State<MeetTraceFlow> createState() => _MeetTraceFlowState();
@@ -273,7 +225,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
       onStartMeeting: () => unawaited(_startMeeting()),
       onOpenMeeting: _openMeeting,
       onOpenSettings: _openSettings,
-      onRepairRuntime: widget.onRuntimeRepairRequired,
+      onRepairRuntime: _repairLocalResources,
     );
   }
 
@@ -296,6 +248,12 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
   }
 
   Future<void> _performStartMeeting() async {
+    final selected = await _chooseSource();
+    if (selected == null || !mounted) return;
+    if (!selected.isLocal && !await _confirmOnline(selected)) return;
+    if (!mounted) return;
+    if (selected.isLocal && !await _prepareLocalModels()) return;
+    if (!mounted) return;
     final l10n = context.l10n;
     final viewModel = widget.dependencies.createStartMeetingViewModel(
       meetingTitleFactory: (startedAt) => l10n.defaultMeetingTitle(
@@ -303,13 +261,13 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
       ),
     );
     try {
-      final session = await viewModel.start();
+      final session = await viewModel.start(selection: selected);
       if (!mounted) {
         return;
       }
       if (session == null) {
         if (viewModel.requiresRuntimeRepair) {
-          widget.onRuntimeRepairRequired();
+          _repairLocalResources();
           return;
         }
         final message = viewModel.errorMessage;
@@ -367,6 +325,7 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
             speakerFallback: l10n.speakerOne,
             exportFooter: l10n.shareExportFooter,
             labelSeparator: l10n.shareLabelSeparator,
+            windowTimingNote: l10n.sourceTimingWindow,
           ),
           dateTimeFormatter: (startedAt) =>
               _localizedMeetingDateTime(startedAt, l10n.localeName),
@@ -384,6 +343,28 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
         viewModel: viewModel,
         onBack: () => Navigator.of(context).maybePop(),
         onDeleted: () => Navigator.of(context).maybePop(),
+        onChooseTranscriptionSource: () => unawaited(() async {
+          final profile = await _chooseSource();
+          if (profile == null || !mounted) return;
+          if (profile.isLocal) {
+            if (!await _prepareLocalModels() || !mounted) return;
+            final l10n = context.l10n;
+            if (await showAppConfirmDialog(
+                  context: context,
+                  semanticsLabel: l10n.sourceSwitchRetranscribe,
+                  title: l10n.sourceSwitchRetranscribe,
+                  message: l10n.sourceRetranscribeNotice,
+                  cancelLabel: l10n.cancel,
+                  confirmLabel: l10n.sourceAcceptStart,
+                ) !=
+                true) {
+              return;
+            }
+          } else if (!await _confirmOnline(profile)) {
+            return;
+          }
+          if (mounted) await viewModel.retranscribeWithProfile(profile);
+        }()),
       ),
     );
     final navigation = replaceCurrent
@@ -420,6 +401,9 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
                 themeSettings: themeSettings,
                 languageSettings: languageSettings,
                 remoteDiagnostics: remoteDiagnostics,
+                onOpenTranscriptionSources: () =>
+                    unawaited(_chooseSource(selecting: false)),
+                onPrepareLocalModels: _repairLocalResources,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
             ),
@@ -433,6 +417,73 @@ final class _MeetTraceFlowState extends State<MeetTraceFlow>
             unawaited(_meetingList.refreshReadiness());
           }),
     );
+  }
+
+  Future<TranscriptionProfile?> _chooseSource({bool selecting = true}) async {
+    final vm = widget.dependencies.createTranscriptionSourcesViewModel();
+    try {
+      final selected = await Navigator.of(context).push<TranscriptionProfile>(
+        MaterialPageRoute(
+          settings: const RouteSettings(name: '/transcription-sources'),
+          builder: (_) =>
+              TranscriptionSourcesView(viewModel: vm, selecting: selecting),
+        ),
+      );
+      if (selected?.isLocal == true) {
+        return TranscriptionProfile.local(
+          diarizationEnabled: await widget
+              .dependencies
+              .storage
+              .diarizationPreferences
+              .getEnabled(),
+        );
+      }
+      return selected;
+    } finally {
+      vm.dispose();
+      unawaited(_meetingList.refreshReadiness());
+    }
+  }
+
+  Future<bool> _confirmOnline(TranscriptionProfile profile) async {
+    final l10n = context.l10n;
+    return await showAppConfirmDialog(
+          context: context,
+          semanticsLabel: l10n.sourceOnlineConsent(profile.endpoint!.host),
+          title: l10n.sourceOnlineConsent(profile.endpoint!.host),
+          message:
+              '${transcriptionSourceMode(l10n, profile)}\n\n${l10n.sourceOnlineConsentMessage(profile.modelId)}',
+          cancelLabel: l10n.cancel,
+          confirmLabel: l10n.sourceAcceptStart,
+        ) ==
+        true;
+  }
+
+  void _repairLocalResources() {
+    final callback = widget.onRuntimeRepairRequired;
+    if (callback != null) {
+      callback();
+      return;
+    }
+    unawaited(_prepareLocalModels(forceRepair: true));
+  }
+
+  Future<bool> _prepareLocalModels({bool forceRepair = false}) async {
+    final vm = widget.dependencies.createRuntimeInitializationViewModel(
+      forceRepair: forceRepair,
+    );
+    try {
+      return await Navigator.of(context).push<bool>(
+            MaterialPageRoute(
+              settings: const RouteSettings(name: '/local-resources'),
+              builder: (_) => _LocalResourcesPage(viewModel: vm),
+            ),
+          ) ==
+          true;
+    } finally {
+      vm.dispose();
+      unawaited(_meetingList.refreshReadiness());
+    }
   }
 
   @override
@@ -458,4 +509,52 @@ String _localizedMeetingDateTime(DateTime value, String locale) {
   final local = value.toLocal();
   return '${DateFormat.yMd(locale).format(local)} '
       '${DateFormat.jm(locale).format(local)}';
+}
+
+final class _LocalResourcesPage extends StatefulWidget {
+  const _LocalResourcesPage({required this.viewModel});
+  final RuntimeInitializationViewModel viewModel;
+  @override
+  State<_LocalResourcesPage> createState() => _LocalResourcesPageState();
+}
+
+final class _LocalResourcesPageState extends State<_LocalResourcesPage> {
+  bool _finished = false;
+  @override
+  void initState() {
+    super.initState();
+    widget.viewModel.addListener(_changed);
+    unawaited(widget.viewModel.start());
+  }
+
+  void _changed() {
+    if (!_finished &&
+        mounted &&
+        widget.viewModel.state.phase == RuntimeInitializationPhase.ready) {
+      _finished = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop(true);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.viewModel.removeListener(_changed);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FScaffold(
+    header: FHeader.nested(
+      title: Text(context.l10n.prepareLocalModels),
+      prefixes: [
+        FHeaderAction(
+          icon: AppBackIcon(semanticsLabel: context.l10n.cancel),
+          onPress: () => Navigator.of(context).pop(false),
+        ),
+      ],
+    ),
+    child: MeetTraceStartupView(viewModel: widget.viewModel),
+  );
 }

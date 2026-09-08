@@ -1,4 +1,4 @@
-enum AsrInstallationType { bundled, downloadable }
+enum AsrInstallationType { bundled, downloadable, remote }
 
 final class AsrModelDescriptor {
   AsrModelDescriptor({
@@ -22,7 +22,9 @@ final class AsrModelDescriptor {
     if (version.trim().isEmpty) {
       throw ArgumentError.value(version, 'version', '不能为空');
     }
-    if (requiredBytes <= 0) {
+    if (installationType == AsrInstallationType.remote
+        ? requiredBytes != 0
+        : requiredBytes <= 0) {
       throw ArgumentError.value(requiredBytes, 'requiredBytes', '必须大于 0');
     }
     if (this.supportedLanguages.isEmpty ||

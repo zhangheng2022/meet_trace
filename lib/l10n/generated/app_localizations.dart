@@ -503,7 +503,7 @@ abstract class AppLocalizations {
   /// No description provided for @localStoragePrivacyDescription.
   ///
   /// In en, this message translates to:
-  /// **'Meeting recordings, final transcripts, and runtime resources remain on this device. Uninstalling the app may permanently delete them.'**
+  /// **'Meeting recordings and results stay on this device. Choosing online transcription sends audio to your provider. Uninstalling may permanently delete local data.'**
   String get localStoragePrivacyDescription;
 
   /// No description provided for @remoteDiagnosticsTitle.
@@ -857,7 +857,7 @@ abstract class AppLocalizations {
   /// No description provided for @audioLocalModelAvailable.
   ///
   /// In en, this message translates to:
-  /// **'Audio stays on this device · {model} is available'**
+  /// **'Source audio saved locally · {model} available'**
   String audioLocalModelAvailable(String model);
 
   /// No description provided for @defaultModel.
@@ -1151,7 +1151,7 @@ abstract class AppLocalizations {
   /// No description provided for @recordingConditionsDescription.
   ///
   /// In en, this message translates to:
-  /// **'The app checks again before starting a meeting. Recording and transcription resources remain on this device.'**
+  /// **'Conditions are checked again before recording. The transcription source is selected before each meeting.'**
   String get recordingConditionsDescription;
 
   /// No description provided for @recordingConditionsDetails.
@@ -1895,7 +1895,7 @@ abstract class AppLocalizations {
   /// No description provided for @recordingLocalDuration.
   ///
   /// In en, this message translates to:
-  /// **'Stored only on this device · {duration}'**
+  /// **'Source recording saved locally · {duration}'**
   String recordingLocalDuration(String duration);
 
   /// No description provided for @saveRevision.
@@ -2525,7 +2525,7 @@ abstract class AppLocalizations {
   /// No description provided for @destructiveUpdateMessage.
   ///
   /// In en, this message translates to:
-  /// **'Version {version} (build {build}) raises the data generation. On first launch after installation, the app clears local meeting audio, transcripts, models, and settings, then initializes again. Share or export anything you need first.'**
+  /// **'Version {version} (build {build}) raises the data generation. On first launch after installation, the app clears local meeting audio, transcripts, models, settings, and online transcription credentials, then initializes again. Share or export anything you need first.'**
   String destructiveUpdateMessage(String version, int build);
 
   /// No description provided for @updateReadyMessage.
@@ -3109,6 +3109,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share meeting recording: {title}'**
   String audioShareSystemTitle(String title);
+
+  /// No description provided for @previewRecognizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognizing'**
+  String get previewRecognizing;
+
+  /// No description provided for @previewTemporary.
+  ///
+  /// In en, this message translates to:
+  /// **'Interim transcript'**
+  String get previewTemporary;
+
+  /// No description provided for @previewSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped {count} preview segments; recording preserved'**
+  String previewSkipped(int count);
+
+  /// No description provided for @transcriptionSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription sources'**
+  String get transcriptionSources;
+
+  /// No description provided for @addOnlineSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Add online source'**
+  String get addOnlineSource;
+
+  /// No description provided for @chooseTranscriptionSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose source'**
+  String get chooseTranscriptionSource;
+
+  /// No description provided for @sourceLockedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'The source is locked for this meeting. Recording continues if transcription fails.'**
+  String get sourceLockedNotice;
+
+  /// No description provided for @sourceLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local · SenseVoice'**
+  String get sourceLocal;
+
+  /// No description provided for @sourceAfterMeeting.
+  ///
+  /// In en, this message translates to:
+  /// **'After meeting only · no live captions'**
+  String get sourceAfterMeeting;
+
+  /// No description provided for @sourceRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Live captions + full recording final pass'**
+  String get sourceRealtime;
+
+  /// No description provided for @sourceDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get sourceDefault;
+
+  /// No description provided for @sourceSetDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default'**
+  String get sourceSetDefault;
+
+  /// No description provided for @sourceEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit configuration'**
+  String get sourceEdit;
+
+  /// No description provided for @sourceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration name'**
+  String get sourceName;
+
+  /// No description provided for @sourceProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'Protocol'**
+  String get sourceProtocol;
+
+  /// No description provided for @sourceEndpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Full endpoint URL (no secrets)'**
+  String get sourceEndpoint;
+
+  /// No description provided for @sourceModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model ID (custom)'**
+  String get sourceModel;
+
+  /// No description provided for @sourceApiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get sourceApiKey;
+
+  /// No description provided for @sourceHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication headers JSON'**
+  String get sourceHeaders;
+
+  /// No description provided for @sourceLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language (auto / zh / en / …)'**
+  String get sourceLanguage;
+
+  /// No description provided for @sourcePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary / transcription prompt'**
+  String get sourcePrompt;
+
+  /// No description provided for @sourceUploadLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload limit (MiB)'**
+  String get sourceUploadLimit;
+
+  /// No description provided for @sourceTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Request timeout (seconds)'**
+  String get sourceTimeout;
+
+  /// No description provided for @sourceAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced connection settings'**
+  String get sourceAdvanced;
+
+  /// No description provided for @sourceFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete the operation. Check the fields, connection and credentials.'**
+  String get sourceFailure;
+
+  /// No description provided for @sourceProbe.
+  ///
+  /// In en, this message translates to:
+  /// **'Test connection'**
+  String get sourceProbe;
+
+  /// No description provided for @sourceProbeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This sends a short generated test sound to the configured endpoint. It may incur a small fee; it does not measure recognition accuracy.'**
+  String get sourceProbeConfirm;
+
+  /// No description provided for @sourceProbeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Protocol test succeeded. Use a real sample to evaluate accuracy.'**
+  String get sourceProbeSuccess;
+
+  /// No description provided for @sourceRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this configuration? Past meetings keep their locked settings and credentials for manual retries.'**
+  String get sourceRemoveConfirm;
+
+  /// No description provided for @sourceOnlineConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Send audio to {host}?'**
+  String sourceOnlineConsent(String host);
+
+  /// No description provided for @sourceOnlineConsentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This meeting uses {model}. Audio goes directly to your provider. After recording ends, the entire recording is transcribed again, incurring an additional charge when live captions are used. The provider controls retention. Recording stays on this device if transcription fails.'**
+  String sourceOnlineConsentMessage(String model);
+
+  /// No description provided for @sourceAcceptStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree and continue'**
+  String get sourceAcceptStart;
+
+  /// No description provided for @sourceSwitchRetranscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose source and retranscribe'**
+  String get sourceSwitchRetranscribe;
+
+  /// No description provided for @sourceRetranscribeNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribe the complete recording with this source. The previous result remains until the new result succeeds.'**
+  String get sourceRetranscribeNotice;
+
+  /// No description provided for @prepareLocalModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare local models'**
+  String get prepareLocalModels;
+
+  /// No description provided for @localModelsReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Local models are ready'**
+  String get localModelsReady;
+
+  /// No description provided for @returnToMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to meetings'**
+  String get returnToMeetings;
+
+  /// No description provided for @sourceTimingWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate audio window; no precise timestamps were returned'**
+  String get sourceTimingWindow;
+
+  /// No description provided for @sourceRemotePrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio is sent only when you choose an online source and confirm. Keys stay in system secure storage. Private APIs need a compatible gateway.'**
+  String get sourceRemotePrivacy;
+
+  /// No description provided for @sourceVersionUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider model version unreported'**
+  String get sourceVersionUnknown;
+
+  /// No description provided for @sourceSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get sourceSelect;
+
+  /// No description provided for @sourceProbeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Test'**
+  String get sourceProbeAction;
+
+  /// No description provided for @sourceCredentialsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave both authentication fields blank to retain credentials for the same service. Editing either field replaces all credentials; include every required header. To clear authentication, use:'**
+  String get sourceCredentialsHelp;
+
+  /// No description provided for @sourceCredentialsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'The receiving service changed. Re-enter all required authentication, or enter an empty JSON object in authentication headers to clear it.'**
+  String get sourceCredentialsRequired;
 }
 
 class _AppLocalizationsDelegate

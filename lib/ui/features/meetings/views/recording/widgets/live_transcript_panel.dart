@@ -3,6 +3,7 @@ import 'package:forui/forui.dart';
 
 import '../../../../../../domain/models/asr_preview.dart';
 import '../../../../../../domain/models/transcript.dart';
+import '../../../../../../domain/models/transcription_profile.dart';
 import '../../../../../../domain/models/workflow_states.dart';
 import '../../../../../../l10n/l10n.dart';
 import '../../../../../../theme/theme.dart';
@@ -143,7 +144,11 @@ final class LiveTranscriptPanel extends StatelessWidget {
                   SizedBox(width: appStyle.spaceXs),
                   Expanded(
                     child: Text(
-                      l10n.liveTranscriptReferenceFooter,
+                      viewModel.previewMetrics.droppedPreviewWindows > 0
+                          ? l10n.previewSkipped(
+                              viewModel.previewMetrics.droppedPreviewWindows,
+                            )
+                          : l10n.liveTranscriptReferenceFooter,
                       style: theme.typography.body.xs.copyWith(
                         color: theme.colors.mutedForeground,
                       ),
@@ -179,7 +184,9 @@ final class _LiveTranscriptEmptyState extends StatelessWidget {
         vertical: compact ? appStyle.spaceXs : appStyle.spaceMd,
       ),
       child: Text(
-        stopped
+        _isAfterMeetingOnly(viewModel)
+            ? context.l10n.sourceAfterMeeting
+            : stopped
             ? context.l10n.finalFromFullAudio
             : context.l10n.speechAppearsHere,
         textAlign: TextAlign.center,
@@ -277,12 +284,25 @@ final class _TranscriptRow extends StatelessWidget {
             ),
             SizedBox(width: compact ? appStyle.spaceXs : appStyle.spaceSm),
             Expanded(
-              child: Text(
-                segment.text,
-                key: ValueKey('transcript-${segment.segmentId}'),
-                style: compact
-                    ? theme.typography.body.sm
-                    : theme.typography.body.md,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    segment.text,
+                    key: ValueKey('transcript-${segment.segmentId}'),
+                    style: compact
+                        ? theme.typography.body.sm
+                        : theme.typography.body.md,
+                  ),
+                  if (!segment.isFinalForWindow)
+                    Text(
+                      context.l10n.previewTemporary,
+                      key: ValueKey('transcript-interim-${segment.segmentId}'),
+                      style: theme.typography.body.xs.copyWith(
+                        color: theme.colors.mutedForeground,
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -293,6 +313,7 @@ final class _TranscriptRow extends StatelessWidget {
 }
 
 AppStatusTone _previewTone(RecordingSessionViewModel viewModel) {
+  if (_isAfterMeetingOnly(viewModel)) return AppStatusTone.info;
   if (viewModel.recordingState == RecordingState.paused) {
     return AppStatusTone.info;
   }
@@ -310,13 +331,26 @@ String _previewLabel(
   if (viewModel.recordingState == RecordingState.paused) {
     return l10n.previewPausedWithRecording;
   }
+  if (_isAfterMeetingOnly(viewModel)) return l10n.sourceAfterMeeting;
   return switch (viewModel.previewMetrics.state) {
-    AsrPreviewState.ready => l10n.previewNormal,
+    AsrPreviewState.ready =>
+      viewModel.previewMetrics.isRecognizing
+          ? l10n.previewRecognizing
+          : l10n.previewNormal,
     AsrPreviewState.backlogged => l10n.previewBacklogged,
     AsrPreviewState.recordingOnly => l10n.previewStoppedRecordingContinues,
     AsrPreviewState.disposed => l10n.previewEnded,
   };
 }
+
+bool _isAfterMeetingOnly(RecordingSessionViewModel viewModel) =>
+    viewModel.previewMetrics.lastErrorCode == null &&
+    viewModel.previewMetrics.state != AsrPreviewState.disposed &&
+    switch (viewModel.meeting.transcriptionProfile?.protocol) {
+      TranscriptionProtocol.audioTranscriptions ||
+      TranscriptionProtocol.chatAudio => true,
+      _ => false,
+    };
 
 String _timestamp(int milliseconds) =>
     formatClockDuration(Duration(milliseconds: milliseconds));

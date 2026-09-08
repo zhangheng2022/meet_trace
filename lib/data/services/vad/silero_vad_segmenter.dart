@@ -14,6 +14,8 @@ typedef SherpaOnnxVadRuntimeFactory = SherpaOnnxVadRuntime Function({
 abstract interface class VoiceActivitySegmenter {
   int get sampleRate;
 
+  bool get isSpeechDetected;
+
   List<VadSpeechSegment> accept(Float32List samples);
 
   List<VadSpeechSegment> flush();
@@ -27,6 +29,8 @@ abstract interface class SherpaOnnxVadRuntime {
   void acceptWaveform(Float32List samples);
 
   bool get isEmpty;
+
+  bool get isSpeechDetected;
 
   sherpa.SpeechSegment get front;
 
@@ -57,6 +61,9 @@ final class OfficialSherpaOnnxVadRuntime implements SherpaOnnxVadRuntime {
 
   @override
   bool get isEmpty => _detector.isEmpty();
+
+  @override
+  bool get isSpeechDetected => _detector.isDetected();
 
   @override
   sherpa.SpeechSegment get front => _detector.front();
@@ -120,6 +127,9 @@ final class SileroVadSegmenter implements VoiceActivitySegmenter {
 
   @override
   final int sampleRate;
+
+  @override
+  bool get isSpeechDetected => !_disposed && _runtime.isSpeechDetected;
 
   int _timelineOriginSample = 0;
   bool _disposed = false;

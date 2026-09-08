@@ -13,6 +13,7 @@ import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/processing_task.dart';
 import 'package:meettrace/domain/models/speaker_diarization.dart';
 import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/transcription_profile.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/speaker_diarization.dart';
 
@@ -46,6 +47,76 @@ void main() {
     );
   });
 
+  test('手动换来源生成完整新快照，保留会议原始来源和旧稿', () async {
+    meetings.value = _meeting(
+      status: MeetingState.completed,
+      activeTranscriptSnapshotId: 'old',
+    );
+    final old = _snapshot(
+      id: 'old',
+      meetingId: 'meeting-1',
+      descriptor: AsrModelRegistry.alpha.defaultModel,
+      createdAt: now,
+    );
+    await transcripts.save(old);
+    final profile = _remoteProfile();
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) =>
+            _snapshot(
+              id: snapshotId,
+              meetingId: meetingId,
+              descriptor: descriptor,
+              createdAt: now,
+            );
+    final result = await service.transcribeWithProfile(
+      meetingId: 'meeting-1',
+      profile: profile,
+    );
+    expect(result.snapshot.id, isNot(old.id));
+    expect(result.snapshot.actualModelId, 'custom-online');
+    expect(result.snapshot.actualModelVersion, 'unreported');
+    expect(result.snapshot.reportedModelVersion, isNull);
+    expect(result.snapshot.transcriptionProfile, same(profile));
+    expect(meetings.value!.recordingModelId, senseVoiceDefaultModelId);
+    expect(await transcripts.getById(old.id), same(old));
+    expect(engines.profileCalls, [profile]);
+    expect(diarization.diarizeCalls, 0);
+    expect(tasks.records.values.single.transcriptionProfile, same(profile));
+    expect(tasks.records.values.single.state, ProcessingState.completed);
+  });
+
+  test('换源失败保留旧稿，同任务重试使用冻结在线端点', () async {
+    meetings.value = _meeting(
+      status: MeetingState.completed,
+      activeTranscriptSnapshotId: 'old',
+    );
+    final profile = _remoteProfile();
+    engines.error = StateError('network failed');
+    await expectLater(
+      service.transcribeWithProfile(meetingId: 'meeting-1', profile: profile),
+      throwsStateError,
+    );
+    expect(meetings.value!.activeTranscriptSnapshotId, 'old');
+    final failed = (await transcripts.getById('snapshot-attempt-1'))!;
+    expect(failed.transcriptionProfile!.endpoint, profile.endpoint);
+    engines.error = null;
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) =>
+            _snapshot(
+              id: snapshotId,
+              meetingId: meetingId,
+              descriptor: descriptor,
+              createdAt: now,
+            );
+    final result = await service.transcribe(
+      meetingId: 'meeting-1',
+      retrySnapshotId: failed.id,
+    );
+    expect(result.snapshot.transcriptionProfile, same(profile));
+    expect(engines.profileCalls, [profile, profile]);
+    expect(meetings.value!.recordingModelId, senseVoiceDefaultModelId);
+  });
+
   test('默认使用本场锁定模型读取完整事实音频并原子激活', () async {
     meetings.value = _meeting();
     engines.resultBuilder =
@@ -77,6 +148,69 @@ void main() {
     expect(result.snapshot.actualModelId, senseVoiceDefaultModelId);
     expect(result.snapshot.segments.single.speakerId, 'speaker-1');
     expect(result.diarizationStatus, SpeakerDiarizationStatus.degraded);
+  });
+
+  test('粗粒度在线文字不套用精确说话人标签，并保持会前分离开关', () async {
+    meetings.value = _meeting();
+    final profile = TranscriptionProfile.fromJson({
+      ..._remoteProfile().toJson(),
+      'diarizationEnabled': true,
+    });
+    diarizationPreferences.enabled = false;
+    diarization
+      ..available = true
+      ..turns = const [
+        SpeakerTurn(startMs: 0, endMs: 2000, speakerId: 'speaker-2'),
+      ];
+    engines.resultBuilder =
+        ({required descriptor, required meetingId, required snapshotId}) =>
+            _snapshot(
+              id: snapshotId,
+              meetingId: meetingId,
+              descriptor: descriptor,
+              createdAt: now,
+              timingPrecision: TranscriptTimingPrecision.audioWindow,
+              reportedModelVersion: 'provider-build',
+            );
+    final result = await service.transcribeWithProfile(
+      meetingId: 'meeting-1',
+      profile: profile,
+    );
+    expect(diarization.diarizeCalls, 1);
+    expect(result.snapshot.segments.single.speakerId, 'speaker-1');
+    expect(result.snapshot.reportedModelVersion, 'provider-build');
+    expect(
+      result.snapshot.timingPrecision,
+      TranscriptTimingPrecision.audioWindow,
+    );
+  });
+
+  test('已完成历史快照不能通过重试覆盖，新任务也不能复用已有ID', () async {
+    meetings.value = _meeting(
+      status: MeetingState.completed,
+      activeTranscriptSnapshotId: 'current',
+    );
+    final old = _snapshot(
+      id: 'snapshot-attempt-1',
+      meetingId: 'meeting-1',
+      descriptor: AsrModelRegistry.alpha.defaultModel,
+      createdAt: now,
+    );
+    await transcripts.save(old);
+    await expectLater(
+      service.transcribe(meetingId: 'meeting-1', retrySnapshotId: old.id),
+      throwsA(isA<FinalTranscriptionException>()),
+    );
+    await expectLater(
+      service.transcribeWithProfile(
+        meetingId: 'meeting-1',
+        profile: _remoteProfile(),
+      ),
+      throwsA(isA<FinalTranscriptionException>()),
+    );
+    expect(await transcripts.getById(old.id), same(old));
+    expect(meetings.value!.status, MeetingState.completed);
+    expect(engines.profileCalls, isEmpty);
   });
 
   test('推理失败时保留旧活动快照、音频并保存失败尝试', () async {
@@ -498,6 +632,8 @@ TranscriptSnapshot _snapshot({
   required AsrModelDescriptor descriptor,
   required DateTime createdAt,
   int segmentEndMs = 2000,
+  TranscriptTimingPrecision timingPrecision = TranscriptTimingPrecision.segment,
+  String? reportedModelVersion,
 }) {
   return TranscriptSnapshot(
     id: id,
@@ -507,6 +643,8 @@ TranscriptSnapshot _snapshot({
     actualModelVersion: descriptor.version,
     createdAt: createdAt,
     status: TranscriptSnapshotStatus.complete,
+    timingPrecision: timingPrecision,
+    reportedModelVersion: reportedModelVersion,
     segments: [
       TranscriptSegment(
         id: '$id-segment-1',
@@ -724,13 +862,26 @@ typedef _ResultBuilder = TranscriptSnapshot Function({
   required String snapshotId,
 });
 
-final class _EngineFactory implements AsrEngineFactory {
+final class _EngineFactory implements ProfileAsrEngineFactory {
   final List<(String, String)> createCalls = [];
+  final List<TranscriptionProfile> profileCalls = [];
   _Engine? engine;
   Object? error;
   Object? disposeError;
   _ResultBuilder? resultBuilder;
   Future<void> Function()? beforeFinalize;
+
+  @override
+  Future<AsrEngine> createForProfile(TranscriptionProfile profile) async {
+    profileCalls.add(profile);
+    return engine = _Engine(
+      descriptor: profile.descriptor,
+      error: error,
+      disposeError: disposeError,
+      resultBuilder: resultBuilder,
+      beforeFinalize: beforeFinalize,
+    );
+  }
 
   @override
   Future<AsrEngine> create({
@@ -751,6 +902,16 @@ final class _EngineFactory implements AsrEngineFactory {
     return created;
   }
 }
+
+TranscriptionProfile _remoteProfile() => TranscriptionProfile(
+  id: 'remote',
+  name: '在线',
+  revision: 1,
+  protocol: TranscriptionProtocol.audioTranscriptions,
+  modelId: 'custom-online',
+  endpoint: Uri.parse('https://first.example/asr'),
+  credentialRef: 'credential-v1',
+);
 
 final class _Engine implements AsrEngine {
   _Engine({

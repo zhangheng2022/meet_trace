@@ -498,6 +498,8 @@ SherpaOnnxAsrEngine _createEngine({
 }
 
 final class _FakeVad implements VoiceActivitySegmenter {
+  @override
+  bool get isSpeechDetected => false;
   _FakeVad({this.segments = const [], this.acceptError, this.disposeError});
 
   final List<VadSpeechSegment> segments;

@@ -1,4 +1,5 @@
 import 'workflow_states.dart';
+import 'transcription_profile.dart';
 
 enum ProcessingTaskKind {
   finalTranscription,
@@ -17,6 +18,7 @@ final class ProcessingTask {
     required this.updatedAt,
     this.leaseExpiresAt,
     this.lastErrorCode,
+    this.transcriptionProfile,
   }) {
     if (id.trim().isEmpty) {
       throw ArgumentError.value(id, 'id', '不能为空');
@@ -38,6 +40,7 @@ final class ProcessingTask {
   final DateTime updatedAt;
   final DateTime? leaseExpiresAt;
   final String? lastErrorCode;
+  final TranscriptionProfile? transcriptionProfile;
 
   ProcessingTask transitionTo(
     ProcessingState next, {
@@ -55,6 +58,7 @@ final class ProcessingTask {
       updatedAt: updatedAt,
       leaseExpiresAt: leaseExpiresAt,
       lastErrorCode: errorCode,
+      transcriptionProfile: transcriptionProfile,
     );
   }
 }

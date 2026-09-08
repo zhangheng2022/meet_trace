@@ -70,7 +70,7 @@
   "storageModels": "Model data",
   "storageDatabase": "Database",
   "storageDeviceAvailable": "Available on device",
-  "localStoragePrivacyDescription": "Meeting recordings, final transcripts, and runtime resources remain on this device. Uninstalling the app may permanently delete them.",
+  "localStoragePrivacyDescription": "Meeting recordings and results stay on this device. Choosing online transcription sends audio to your provider. Uninstalling may permanently delete local data.",
   "remoteDiagnosticsTitle": "Remote diagnostics",
   "remoteDiagnosticsEnabled": "Allow anonymous error and performance diagnostics",
   "remoteDiagnosticsDescription": "On by default. Turning it off stops new errors, performance traces, and metrics. Cached or uploaded data cannot be recalled; Windows native crash handling is fully off by the next launch at the latest.",
@@ -131,7 +131,7 @@
   "checkingRecordingConditions": "Checking recording conditions",
   "microphoneStorageDefaultModel": "Microphone, storage, and default model",
   "recordingConditionsReady": "Recording conditions are ready",
-  "audioLocalModelAvailable": "Audio stays on this device · {model} is available",
+  "audioLocalModelAvailable": "Source audio saved locally · {model} available",
   "@audioLocalModelAvailable": {"placeholders": {"model": {"type": "String"}}},
   "defaultModel": "Default model",
   "microphonePermissionRequired": "Microphone permission required",
@@ -187,7 +187,7 @@
   "meetingTitleHint": "Enter a meeting title",
   "renameFailedPreserved": "Renaming failed. The original meeting title is preserved. Try again.",
   "recordingConditionsTitle": "Recording conditions",
-  "recordingConditionsDescription": "The app checks again before starting a meeting. Recording and transcription resources remain on this device.",
+  "recordingConditionsDescription": "Conditions are checked again before recording. The transcription source is selected before each meeting.",
   "recordingConditionsDetails": "Recording condition details",
   "recordingConditionsStatus": "Recording condition status",
   "microphonePermission": "Microphone permission",
@@ -319,7 +319,7 @@
   "stopPlayback": "Stop playback",
   "playRecording": "Play recording",
   "localSourceRecording": "Local source recording",
-  "recordingLocalDuration": "Stored only on this device · {duration}",
+  "recordingLocalDuration": "Source recording saved locally · {duration}",
   "@recordingLocalDuration": {"placeholders": {"duration": {"type": "String"}}},
   "saveRevision": "Save revision",
   "shareMeeting": "Share meeting",
@@ -431,7 +431,7 @@
   "newVersionFound": "New MeetTrace version found",
   "confirmUpdateDataRisk": "Confirm the local data risk before updating",
   "newVersionPassedReleaseGate": "The new version passed the public release gate",
-  "destructiveUpdateMessage": "Version {version} (build {build}) raises the data generation. On first launch after installation, the app clears local meeting audio, transcripts, models, and settings, then initializes again. Share or export anything you need first.",
+  "destructiveUpdateMessage": "Version {version} (build {build}) raises the data generation. On first launch after installation, the app clears local meeting audio, transcripts, models, settings, and online transcription credentials, then initializes again. Share or export anything you need first.",
   "@destructiveUpdateMessage": {"placeholders": {"version": {"type": "String"}, "build": {"type": "int"}}},
   "updateReadyMessage": "Version {version} (build {build}) is ready. Continuing hands off to the system installer, TestFlight, or Microsoft Store, which may still request confirmation.",
   "@updateReadyMessage": {"placeholders": {"version": {"type": "String"}, "build": {"type": "int"}}},
@@ -540,5 +540,70 @@
   "recordingAudioAlreadyExists": "This meeting already has source audio. Recording stopped to avoid overwriting it.",
   "speakerDiarizationResource": "Speaker separation",
   "audioShareSystemTitle": "Share meeting recording: {title}",
-  "@audioShareSystemTitle": {"placeholders": {"title": {"type": "String"}}}
+  "@audioShareSystemTitle": {"placeholders": {"title": {"type": "String"}}},
+  "previewRecognizing": "Recognizing",
+  "previewTemporary": "Interim transcript",
+  "previewSkipped": "Skipped {count} preview segments; recording preserved",
+  "transcriptionSources": "Transcription sources",
+  "addOnlineSource": "Add online source",
+  "chooseTranscriptionSource": "Choose source",
+  "sourceLockedNotice": "The source is locked for this meeting. Recording continues if transcription fails.",
+  "sourceLocal": "Local · SenseVoice",
+  "sourceAfterMeeting": "After meeting only · no live captions",
+  "sourceRealtime": "Live captions + full recording final pass",
+  "sourceDefault": "Default",
+  "sourceSetDefault": "Set as default",
+  "sourceEdit": "Edit configuration",
+  "sourceName": "Configuration name",
+  "sourceProtocol": "Protocol",
+  "sourceEndpoint": "Full endpoint URL (no secrets)",
+  "sourceModel": "Model ID (custom)",
+  "sourceApiKey": "API key",
+  "sourceHeaders": "Authentication headers JSON",
+  "sourceLanguage": "Language (auto / zh / en / …)",
+  "sourcePrompt": "Vocabulary / transcription prompt",
+  "sourceUploadLimit": "Upload limit (MiB)",
+  "sourceTimeout": "Request timeout (seconds)",
+  "sourceAdvanced": "Advanced connection settings",
+  "sourceFailure": "Could not complete the operation. Check the fields, connection and credentials.",
+  "sourceProbe": "Test connection",
+  "sourceProbeConfirm": "This sends a short generated test sound to the configured endpoint. It may incur a small fee; it does not measure recognition accuracy.",
+  "sourceProbeSuccess": "Protocol test succeeded. Use a real sample to evaluate accuracy.",
+  "sourceRemoveConfirm": "Remove this configuration? Past meetings keep their locked settings and credentials for manual retries.",
+  "sourceOnlineConsent": "Send audio to {host}?",
+  "sourceOnlineConsentMessage": "This meeting uses {model}. Audio goes directly to your provider. After recording ends, the entire recording is transcribed again, incurring an additional charge when live captions are used. The provider controls retention. Recording stays on this device if transcription fails.",
+  "sourceAcceptStart": "Agree and continue",
+  "sourceSwitchRetranscribe": "Choose source and retranscribe",
+  "sourceRetranscribeNotice": "Transcribe the complete recording with this source. The previous result remains until the new result succeeds.",
+  "prepareLocalModels": "Prepare local models",
+  "localModelsReady": "Local models are ready",
+  "returnToMeetings": "Return to meetings",
+  "sourceTimingWindow": "Approximate audio window; no precise timestamps were returned",
+  "sourceRemotePrivacy": "Audio is sent only when you choose an online source and confirm. Keys stay in system secure storage. Private APIs need a compatible gateway.",
+  "@previewSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@sourceOnlineConsent": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "@sourceOnlineConsentMessage": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "sourceVersionUnknown": "Provider model version unreported",
+  "sourceSelect": "Select",
+  "sourceProbeAction": "Test",
+  "sourceCredentialsHelp": "Leave both authentication fields blank to retain credentials for the same service. Editing either field replaces all credentials; include every required header. To clear authentication, use:",
+  "sourceCredentialsRequired": "The receiving service changed. Re-enter all required authentication, or enter an empty JSON object in authentication headers to clear it."
 }
