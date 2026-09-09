@@ -31,7 +31,7 @@ Domain 不导入 data；UI 不直连 ONNX、存储或 HTTP。ASR 统一走 `AsrE
 
 ## 实现与验证
 
-- 新功能或重构：`flutter-apply-architecture-best-practices`；行为变化：`flutter-add-widget-test` 或 `dart-add-unit-test`；交付前：`dart-run-static-analysis`；审查：`$open-code-review`。
+- 新功能或重构：`flutter-apply-architecture-best-practices`；行为变化：`flutter-add-widget-test` 或 `dart-add-unit-test`；交付前：`dart-run-static-analysis`；审查：`$open-code-review-delegate`。
 - 用户可见行为变化同步写入 `CHANGELOG.md` 的 `Unreleased`；发布前移入与 `release_id` 完全匹配的定版区段。
 - sherpa-onnx 只能在 data/service 层通过官方包适配 `AsrEngine`；禁止自建 JNI、FFI、C/C++ 链或 `jniLibs`。
 - Actions YAML 只留触发、权限、Environment、依赖与短胶水；可测试逻辑下沉 `tool/`。`CI Gate` 必须依赖 Actions 静态检查。
@@ -42,9 +42,10 @@ Domain 不导入 data；UI 不直连 ONNX、存储或 HTTP。ASR 统一走 `AsrE
 
 ## 审查、Git 与安全
 
-- 所有 PR 使用 `$open-code-review`：同一 workspace/range/commit 先完整执行 `--preview`，再执行 `--audience agent`，并注入需求、方案和用户影响。录音、模型锁定、快照、分离、音频分享或删除变更必须附相应产品边界。
-- 以 Git 完整清单为基线；OCR 覆盖全部 reviewable 文件，人工逐项补审其余文件，尊重 OCR 规则。不得因耗时、文件数、超时、供应商故障或 Token 成本改用抽样、低强度、部分文件或仅 preview 结果；失败文件必须按同一范围和规则逐一重试，直到全部完成或明确阻断并报告。报告有效 Critical/High/Medium/Low、路径、行号、触发、影响和修复；Critical/High 未清零不得提交阶段、Ready 或合并。OCR 不替代格式、分析、测试或构建。
-- 为减少 OCR 调用且不降低完整度，阶段内先集中完成实现、格式化、分析、测试与人工自检，再冻结 commit 执行完整 OCR；禁止每个小改动或每个 Low 后重跑全量。一次审查产生的 Critical/High/Medium 必须批量修复后再复审；有效 Low 统一记录，除非用户要求或其风险升级，否则不触发全量重跑。完整审查出现失败请求后，可在保留同一 commit、背景、模型、规则与强度的前提下只精确复审失败文件；这不视为抽样，已成功文件不得无故重复调用。`--background` 保持简短、稳定且仅含必要产品边界；并发默认 `3`、通常不得超过 `4`，除非已证明供应商可稳定承载。`--resume` 只有在确实重新发出失败请求时才算复审；仅返回缓存结果或零 Token 不算完成。
+- 所有 PR 默认使用官方 [`$open-code-review-delegate`](.agents/skills/open-code-review-delegate/SKILL.md)，通过 `npx skills add alibaba/open-code-review --skill open-code-review-delegate` 安装，不自行创建或改写技能。按技能执行同一 workspace/range/commit 的 `ocr delegate preview` 和 `ocr delegate rule`，由宿主代理实际审查。背景须包含需求、方案、用户影响及涉及的录音、模型锁定、快照、分离、音频分享或删除边界。仅用户明确指定时使用传统 `$open-code-review`；不得因委托失败自动切换外部模型或要求配置 API Key。
+- 以 Git 完整清单为基线；覆盖全部 reviewable 文件，人工逐项补审排除文件，遵守根目录及局部项目规则。委托模式按适用规则分组，每组至多一个只读审查代理，宿主默认最多并行 3 个审查任务；无子代理能力时宿主顺序完成同等审查并披露。主代理逐条核验、去重并核对覆盖，输出普通 Markdown；有效问题标明级别、路径、行号、触发、影响和修复建议，规则支持的发现附最小适用规则引用。Critical/High 未清零不得验收阶段、Ready 或合并；OCR 不替代格式、分析、测试或构建。
+- 先集中完成实现、必要验证和自检，再固定提交或工作区内容摘要进行审查；仅请求未提交审查时不得为冻结范围而擅自提交。Critical/High/Medium 集中修复后复审受影响范围；有效 Low 留档，不因每个小改动或 Low 重跑全量。不得抽样或降低覆盖标准；失败、中断及变更使结论失效的范围标记未完成，保留未变化的有效证据，直至完成或明确阻断并报告。
+- 审查记录保存在不提交的 `build/ocr-delegate/`，包含模式、基准、规则、文件覆盖和裁定，不保存密钥或模型思考。CLI preview/rule 成功只表示准备完成，Token、轮数、退出码或缓存不能替代实际审查证据。切换模式时建立新批次，按文件、内容和适用规则复用有效旧证据，并对未完成及已修改范围合并去重；不得把旧版本审查或传统模式的失败请求标成委托通过。
 - 使用独立分支和 Draft PR；Codex 分支默认 `codex/`。只暂存本次路径，禁止 `git add .`/`-A`，不得覆盖用户改动。
 - 仅经用户明确授权后 squash 合并；禁止 merge commit。合并后删分支、同步默认分支并确认工作区干净。
 - PR 引用 PRD、说明用户影响、验证和 OCR 范围；PRD/UI 不适用时明示，UI 变更附截图。
