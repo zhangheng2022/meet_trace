@@ -198,6 +198,9 @@ final class TranscriptSectionState extends State<TranscriptSection> {
           for (var index = 0; index < widget.snapshot.segments.length; index++)
             _TranscriptLedgerRow(
               segment: widget.snapshot.segments[index],
+              approximateTime:
+                  widget.snapshot.timingPrecision ==
+                  TranscriptTimingPrecision.audioWindow,
               first: index == 0,
               last: index == widget.snapshot.segments.length - 1,
               speakerLabelBuilder: widget.viewModel.speakerLabelBuilder,
@@ -210,12 +213,14 @@ final class TranscriptSectionState extends State<TranscriptSection> {
 final class _TranscriptLedgerRow extends StatelessWidget {
   const _TranscriptLedgerRow({
     required this.segment,
+    required this.approximateTime,
     required this.first,
     required this.last,
     required this.speakerLabelBuilder,
   });
 
   final TranscriptSegment segment;
+  final bool approximateTime;
   final bool first;
   final bool last;
   final String Function(int number) speakerLabelBuilder;
@@ -255,7 +260,7 @@ final class _TranscriptLedgerRow extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.only(top: appStyle.spaceXs),
                 child: Text(
-                  meetingTimestampLabel(segment.startMs),
+                  '${approximateTime ? '≈' : ''}${meetingTimestampLabel(segment.startMs)}',
                   key: ValueKey('transcript-time-${segment.id}'),
                   maxLines: 1,
                   softWrap: false,
@@ -465,6 +470,10 @@ String? _speakerOverviewStatus(
     return l10n.speakerReprocessing;
   }
   if (!viewModel.diarizationAvailable) {
+    if (viewModel.snapshot?.timingPrecision ==
+        TranscriptTimingPrecision.audioWindow) {
+      return null;
+    }
     return speakerCount == 0
         ? l10n.speakerModelUnavailable
         : l10n.speakerModelUnavailableManual;
@@ -599,7 +608,10 @@ final class _SpeakerManagementSheetState
           )
         else
           Text(
-            groups.isEmpty
+            viewModel.snapshot?.timingPrecision ==
+                    TranscriptTimingPrecision.audioWindow
+                ? context.l10n.sourceTimingWindow
+                : groups.isEmpty
                 ? context.l10n.speakerUnavailableNoLabels
                 : context.l10n.speakerUnavailableExistingLabels,
             key: const ValueKey('diarization-unavailable-reason'),

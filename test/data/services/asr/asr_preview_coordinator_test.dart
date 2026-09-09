@@ -16,6 +16,235 @@ import 'package:meettrace/domain/models/transcript.dart';
 import 'package:meettrace/domain/use_cases/plan_asr_preview_windows.dart';
 
 void main() {
+  test('短噪声未达到 VAD 检测门槛时不遗留起点，hangover 保留合法句子', () async {
+    final vad = _ScriptedVad(const []);
+    final engine = _FakeAsrEngine(AsrModelRegistry.alpha.defaultModel);
+    final coordinator = AsrPreviewCoordinator(vad: vad, engine: engine);
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events
+        .where((event) => event is TranscriptSegmentEvent)
+        .cast<TranscriptSegmentEvent>()
+        .listen(events.add);
+    addTearDown(subscription.cancel);
+    addTearDown(coordinator.dispose);
+    await coordinator.initialize();
+
+    // sherpa-onnx 1.13.7 keeps isDetected false before minSpeechDuration.
+    await coordinator.add(_chunk(startSample: 0, sampleCount: 1600));
+    await coordinator.add(_chunk(startSample: 1600, sampleCount: 158400));
+    expect(engine.windows, isEmpty);
+    expect(coordinator.metrics.vadSegmentCount, 0);
+
+    vad.speechDetected = true;
+    await coordinator.add(_chunk(startSample: 160000, sampleCount: 32000));
+    await _waitFor(() => events.isNotEmpty);
+    expect(engine.windows.single, (9500, 12000));
+    final speechId = events.single.segmentId;
+    // A 200ms hangover still reports detected, so it must retain the group.
+    await coordinator.add(_chunk(startSample: 192000, sampleCount: 3200));
+    await coordinator.add(_chunk(startSample: 195200, sampleCount: 44800));
+    await _waitFor(() => !coordinator.isRecognizing);
+    expect(events.every((event) => event.segmentId == speechId), isTrue);
+    expect(events.every((event) => !event.isFinalForWindow), isTrue);
+    expect(coordinator.metrics.vadSegmentCount, 0);
+    expect(engine.windows.every((window) => window.$1 == 9500), isTrue);
+
+    // After the full silence boundary, official VAD publishes the segment
+    // before isDetected becomes false.
+    vad.speechDetected = false;
+    vad._outputs.add(const [
+      VadSpeechSegment(startSample: 160000, endSample: 240000),
+    ]);
+    await coordinator.add(_chunk(startSample: 240000, sampleCount: 8000));
+    await _waitFor(() => events.last.isFinalForWindow);
+    expect(events.last.segmentId, speechId);
+    expect(events.last.startMs, 10000);
+    expect(coordinator.metrics.vadSegmentCount, 1);
+  });
+
+  test('连续讲话在 VAD 闭段前给临时字幕并以同一片段稳定修订', () async {
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      results: const ['临时内容', '完整内容'],
+    );
+    final coordinator = AsrPreviewCoordinator(vad: _LiveVad(), engine: engine);
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events.listen((event) {
+      if (event is TranscriptSegmentEvent) events.add(event);
+    });
+    await coordinator.initialize();
+    await coordinator.add(
+      _chunk(startSample: 0, sampleCount: 2 * recordingSampleRate),
+    );
+    await _waitFor(() => events.isNotEmpty);
+    expect(events.single.isFinalForWindow, isFalse);
+    expect(events.single.text, '临时内容');
+    await coordinator.flush();
+    await _waitFor(() => events.length == 2);
+    expect(events.last.segmentId, events.first.segmentId);
+    expect(events.last.isFinalForWindow, isTrue);
+    expect(events.last.text, '完整内容');
+    await coordinator.dispose();
+    await subscription.cancel();
+  });
+
+  test('慢推理只保留最新临时任务且迟到临时结果不覆盖稳定段', () async {
+    final gate = Completer<void>();
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      firstGate: gate,
+      results: const ['已过期', '稳定结果'],
+    );
+    final coordinator = AsrPreviewCoordinator(vad: _LiveVad(), engine: engine);
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events.listen((event) {
+      if (event is TranscriptSegmentEvent) events.add(event);
+    });
+    await coordinator.initialize();
+    for (var second = 0; second < 6; second += 2) {
+      await coordinator.add(
+        _chunk(
+          startSample: second * recordingSampleRate,
+          sampleCount: 2 * recordingSampleRate,
+        ),
+      );
+    }
+    expect(engine.windows, [(0, 2000)]);
+    expect(coordinator.metrics.queuedAudioMs, 6000);
+    expect(coordinator.coalescedPartialWindows, 1);
+    final watch = Stopwatch()..start();
+    await coordinator.flush();
+    expect(watch.elapsed, lessThan(const Duration(milliseconds: 200)));
+    expect(coordinator.coalescedPartialWindows, 2);
+    gate.complete();
+    await _waitFor(() => events.isNotEmpty);
+    expect(events.single.text, '稳定结果');
+    expect(events.single.isFinalForWindow, isTrue);
+    expect(engine.windows, [(0, 2000), (0, 6000)]);
+    await coordinator.dispose();
+    await subscription.cancel();
+  });
+
+  test('稳定空结果撤回已显示的临时文字', () async {
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      results: const ['临时误识别', ''],
+    );
+    final coordinator = AsrPreviewCoordinator(vad: _LiveVad(), engine: engine);
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events.listen((event) {
+      if (event is TranscriptSegmentEvent) events.add(event);
+    });
+    await coordinator.initialize();
+    await coordinator.add(
+      _chunk(startSample: 0, sampleCount: 2 * recordingSampleRate),
+    );
+    await _waitFor(() => events.isNotEmpty);
+    await coordinator.flush();
+    await _waitFor(() => events.length == 2);
+    expect(events.last.text, isEmpty);
+    expect(events.last.isFinalForWindow, isTrue);
+    expect(events.last.segmentId, events.first.segmentId);
+    await coordinator.dispose();
+    await subscription.cancel();
+  });
+
+  test('VAD 软上限不闭段时应用仍硬限窗口并持续处理 30 秒语音', () async {
+    final vad = _LiveVad();
+    final engine = _FakeAsrEngine(AsrModelRegistry.alpha.defaultModel);
+    final coordinator = AsrPreviewCoordinator(vad: vad, engine: engine);
+    await coordinator.initialize();
+    for (var second = 0; second < 30; second++) {
+      await coordinator.add(
+        _chunk(
+          startSample: second * recordingSampleRate,
+          sampleCount: recordingSampleRate,
+        ),
+      );
+      await _waitFor(
+        () =>
+            !coordinator.isRecognizing &&
+            coordinator.metrics.queuedAudioMs == 0,
+      );
+    }
+    await coordinator.flush();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
+    expect(vad.flushCalls, greaterThanOrEqualTo(3));
+    expect(
+      engine.windows.every((window) => window.$2 - window.$1 <= 15000),
+      isTrue,
+    );
+    expect(engine.windows.last.$2, 30000);
+    expect(coordinator.metrics.state, AsrPreviewState.ready);
+    expect(coordinator.metrics.droppedPreviewWindows, 0);
+    await coordinator.dispose();
+  });
+
+  test('等待 VAD 的语音计入新鲜度，单个活动窗不误报积压', () async {
+    final partialGate = Completer<void>();
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      firstGate: partialGate,
+    );
+    final coordinator = AsrPreviewCoordinator(vad: _LiveVad(), engine: engine);
+    await coordinator.initialize();
+    await coordinator.add(
+      _chunk(startSample: 0, sampleCount: recordingSampleRate),
+    );
+    expect(coordinator.metrics.previewLagMs, 1000);
+    expect(coordinator.metrics.queuedAudioMs, 0);
+    expect(coordinator.metrics.isRecognizing, isFalse);
+    await coordinator.add(
+      _chunk(
+        startSample: recordingSampleRate,
+        sampleCount: recordingSampleRate,
+      ),
+    );
+    expect(coordinator.metrics.queuedAudioMs, 0);
+    expect(coordinator.metrics.state, AsrPreviewState.ready);
+    expect(coordinator.metrics.previewLagMs, 2000);
+    expect(coordinator.metrics.isRecognizing, isTrue);
+    partialGate.complete();
+    await _waitFor(() => !coordinator.isRecognizing);
+    expect(coordinator.metrics.isRecognizing, isFalse);
+    await coordinator.dispose();
+  });
+
+  test('输入缺口使旧活动推理失效并记录缺失样本数', () async {
+    final gate = Completer<void>();
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      firstGate: gate,
+      results: const ['缺口前的过期结果', '缺口后'],
+    );
+    final coordinator = AsrPreviewCoordinator(vad: _LiveVad(), engine: engine);
+    final events = <TranscriptSegmentEvent>[];
+    final subscription = coordinator.events.listen((event) {
+      if (event is TranscriptSegmentEvent) events.add(event);
+    });
+    await coordinator.initialize();
+    await coordinator.add(
+      _chunk(startSample: 0, sampleCount: 2 * recordingSampleRate),
+    );
+    await coordinator.add(
+      _chunk(
+        startSample: 5 * recordingSampleRate,
+        sampleCount: 2 * recordingSampleRate,
+      ),
+    );
+    await coordinator.flush();
+    gate.complete();
+    await _waitFor(() => events.isNotEmpty);
+    expect(events.single.text, '缺口后');
+    expect(events.single.startMs, 5000);
+    expect(coordinator.missingInputSamples, 3 * recordingSampleRate);
+    await coordinator.dispose();
+    await subscription.cancel();
+  });
+
   test('两个模型使用完全相同的 VAD 全局区间', () async {
     final standard = _FakeAsrEngine(AsrModelRegistry.alpha.defaultModel);
     final advanced = _FakeAsrEngine(
@@ -46,6 +275,11 @@ void main() {
       advancedCoordinator.flush(),
     ]);
 
+    await _waitFor(
+      () =>
+          !standardCoordinator.isRecognizing &&
+          !advancedCoordinator.isRecognizing,
+    );
     expect(standard.windows, advanced.windows);
     expect(standard.windows, [(100, 900)]);
     await standardCoordinator.dispose();
@@ -76,6 +310,10 @@ void main() {
       _chunk(startSample: 0, sampleCount: 16 * recordingSampleRate),
     );
     await coordinator.flush();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
 
     expect(engine.windows, [(0, 15000), (14500, 16000)]);
     expect(events, hasLength(2));
@@ -106,6 +344,10 @@ void main() {
 
     await coordinator.add(_chunk(startSample: 0, sampleCount: 16001));
     await coordinator.flush();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
 
     expect(events.single.segmentId, startsWith('vad-'));
     expect(events.single.text, '偏移窗口');
@@ -137,6 +379,10 @@ void main() {
       _chunk(startSample: 0, sampleCount: 16 * recordingSampleRate),
     );
     await coordinator.flush();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
 
     expect(events, hasLength(1));
     expect(events.single.text, '后半段');
@@ -169,11 +415,16 @@ void main() {
     await coordinator.add(_chunk(startSample: 32000, sampleCount: 16000));
 
     expect(coordinator.metrics.state, AsrPreviewState.backlogged);
-    expect(coordinator.metrics.queuedAudioMs, 2000);
+    expect(coordinator.metrics.queuedAudioMs, 1000);
     expect(coordinator.metrics.droppedPreviewWindows, 1);
+    expect(coordinator.metrics.previewLagMs, 3000);
 
     firstGate.complete();
     await coordinator.flush();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
 
     expect(engine.windows, [(0, 1000), (2000, 3000)]);
     expect(coordinator.metrics.state, AsrPreviewState.ready);
@@ -181,6 +432,44 @@ void main() {
     expect(coordinator.metrics.processedPreviewWindows, 2);
     expect(coordinator.metrics.previewLagMs, 0);
     await coordinator.dispose();
+  });
+
+  test('新临时任务超出容量时保留排队稳定段', () async {
+    final gate = Completer<void>();
+    final vad = _ScriptedVad(const [
+      [VadSpeechSegment(startSample: 0, endSample: 16000)],
+      [VadSpeechSegment(startSample: 16000, endSample: 32000)],
+    ]);
+    final engine = _FakeAsrEngine(
+      AsrModelRegistry.alpha.defaultModel,
+      firstGate: gate,
+    );
+    final coordinator = _coordinator(
+      engine: engine,
+      vad: vad,
+      maximumQueuedAudioMs: 4000,
+      highWaterMs: 3000,
+      lowWaterMs: 1000,
+    );
+    addTearDown(() async {
+      if (!gate.isCompleted) gate.complete();
+      await coordinator.dispose();
+    });
+    await coordinator.initialize();
+    await coordinator.add(_chunk(startSample: 0, sampleCount: 16000));
+    await coordinator.add(_chunk(startSample: 16000, sampleCount: 16000));
+    vad.speechDetected = true;
+    await coordinator.add(_chunk(startSample: 32000, sampleCount: 32000));
+
+    // 1s active + 1s stable + 2.5s new partial exceeds the 4s total budget.
+    expect(coordinator.metrics.queuedAudioMs, 1000);
+    expect(coordinator.metrics.droppedPreviewWindows, 1);
+    gate.complete();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
+    expect(engine.windows, [(0, 1000), (1000, 2000)]);
   });
 
   test('Engine 故障切换到仅录音且后续音频不再进入推理', () async {
@@ -284,10 +573,46 @@ void main() {
     initializeGate.complete();
     await initializing;
     await coordinator.flush();
+    await _waitFor(
+      () =>
+          !coordinator.isRecognizing && coordinator.metrics.queuedAudioMs == 0,
+    );
 
     expect(engine.windows, [(0, 1000)]);
     await coordinator.dispose();
   });
+}
+
+final class _LiveVad implements VoiceActivitySegmenter {
+  int _origin = 0;
+  int _end = 0;
+  int flushCalls = 0;
+  @override
+  int get sampleRate => recordingSampleRate;
+  @override
+  bool get isSpeechDetected => _end > _origin;
+  @override
+  List<VadSpeechSegment> accept(Float32List samples) {
+    _end += samples.length;
+    return const [];
+  }
+
+  @override
+  List<VadSpeechSegment> flush() {
+    flushCalls++;
+    if (_end == _origin) return const [];
+    final segment = VadSpeechSegment(startSample: _origin, endSample: _end);
+    _origin = _end;
+    return [segment];
+  }
+
+  @override
+  void reset({required int nextStartSample}) {
+    _origin = _end = nextStartSample;
+  }
+
+  @override
+  void dispose() {}
 }
 
 AsrPreviewCoordinator _coordinator({
@@ -334,17 +659,28 @@ final class _ScriptedVad implements VoiceActivitySegmenter {
     : _outputs = Queue.of(outputs);
 
   final Queue<List<VadSpeechSegment>> _outputs;
+  int _acceptedThroughSample = 0;
   int acceptCalls = 0;
   int resetCalls = 0;
   bool disposed = false;
+  bool speechDetected = false;
   final Object? disposeError;
 
   @override
   int get sampleRate => recordingSampleRate;
 
   @override
+  bool get isSpeechDetected => speechDetected;
+
+  @override
   List<VadSpeechSegment> accept(Float32List samples) {
     acceptCalls++;
+    _acceptedThroughSample += samples.length;
+    if (_outputs.isNotEmpty &&
+        _outputs.first.isNotEmpty &&
+        _outputs.first.last.endSample > _acceptedThroughSample) {
+      return const [];
+    }
     return _outputs.isEmpty ? const [] : _outputs.removeFirst();
   }
 
@@ -354,6 +690,7 @@ final class _ScriptedVad implements VoiceActivitySegmenter {
   @override
   void reset({required int nextStartSample}) {
     resetCalls++;
+    _acceptedThroughSample = nextStartSample;
   }
 
   @override

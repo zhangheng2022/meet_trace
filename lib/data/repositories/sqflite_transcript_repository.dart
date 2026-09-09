@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
 import '../../domain/models/domain_exception.dart';
 import '../../domain/models/transcript.dart';
 import '../services/storage/app_database.dart';
 import '../../domain/ports/repositories.dart';
+import '../models/storage/storage_mappers.dart';
 
 final class SqfliteTranscriptRepository implements TranscriptRepository {
   SqfliteTranscriptRepository(this._appDatabase, {this.onMeetingChanged});
@@ -179,9 +182,31 @@ Future<void> _saveSnapshot(
     'kind': snapshot.kind.name,
     'actual_model_id': snapshot.actualModelId,
     'actual_model_version': snapshot.actualModelVersion,
+    'transcription_profile_json': snapshot.transcriptionProfile == null
+        ? null
+        : jsonEncode(snapshot.transcriptionProfile!.toJson()),
+    'reported_model_version': snapshot.reportedModelVersion,
+    'timing_precision': snapshot.timingPrecision.name,
     'created_at': snapshot.createdAt.millisecondsSinceEpoch,
     'status': snapshot.status.name,
   };
+  final existing = await executor.query(
+    'transcript_snapshots',
+    where: 'id = ?',
+    whereArgs: [snapshot.id],
+  );
+  if (existing.isNotEmpty) {
+    for (final key in const [
+      'meeting_id',
+      'actual_model_id',
+      'actual_model_version',
+      'transcription_profile_json',
+    ]) {
+      if (existing.single[key] != row[key]) {
+        throw const DomainInvariantViolation('同一快照不能修改已冻结的转录来源');
+      }
+    }
+  }
   final updated = await executor.update(
     'transcript_snapshots',
     row,
@@ -238,6 +263,13 @@ TranscriptSnapshot _snapshotFromRows(
     kind: TranscriptSnapshotKind.values.byName(row['kind']! as String),
     actualModelId: row['actual_model_id']! as String,
     actualModelVersion: row['actual_model_version']! as String,
+    transcriptionProfile: transcriptionProfileFromStorage(
+      row['transcription_profile_json'],
+    ),
+    reportedModelVersion: row['reported_model_version'] as String?,
+    timingPrecision: TranscriptTimingPrecision.values.byName(
+      row['timing_precision'] as String? ?? 'segment',
+    ),
     createdAt: DateTime.fromMillisecondsSinceEpoch(
       row['created_at']! as int,
       isUtc: true,

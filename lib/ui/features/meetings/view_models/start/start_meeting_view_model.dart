@@ -1,3 +1,5 @@
+import '../../../../../domain/models/transcription_profile.dart';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../../../domain/models/meeting_readiness.dart';
@@ -5,7 +7,7 @@ import '../../../../../domain/ports/asr_engine.dart';
 import '../../../../../domain/use_cases/lock_recording_input.dart';
 import '../../../../../domain/use_cases/start_meeting.dart';
 
-/// 使用全局默认模型直接创建会议，不提供本场标题或模型覆盖。
+/// 在创建会议时冻结所选转录来源。
 final class StartMeetingViewModel extends ChangeNotifier {
   StartMeetingViewModel({required this.startMeeting});
 
@@ -23,17 +25,21 @@ final class StartMeetingViewModel extends ChangeNotifier {
   bool get isModelLocked => _startedSession != null;
   bool get requiresRuntimeRepair => _requiresRuntimeRepair;
 
-  Future<StartedMeetingSession?> start() async {
+  Future<StartedMeetingSession?> start({
+    TranscriptionProfile? selection,
+  }) async {
     if (_isBusy || isModelLocked) {
       return _startedSession;
     }
-    return _startConfirmed();
+    return _startConfirmed(selection);
   }
 
-  Future<StartedMeetingSession?> _startConfirmed() async {
+  Future<StartedMeetingSession?> _startConfirmed(
+    TranscriptionProfile? selection,
+  ) async {
     StartedMeetingSession? session;
     await _runBusy(() async {
-      session = await startMeeting.execute();
+      session = await startMeeting.execute(selection: selection);
       _startedSession = session;
     });
     return session;

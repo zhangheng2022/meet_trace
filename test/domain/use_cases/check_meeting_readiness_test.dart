@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
+import 'package:meettrace/domain/models/transcription_profile.dart';
 import 'package:meettrace/domain/use_cases/check_meeting_readiness.dart';
 
 import '../../support/model_selection_fakes.dart';
@@ -18,6 +19,30 @@ void main() {
     });
 
     tearDown(() => installations.dispose());
+
+    test('会前选择在线不依赖本地权重，并返回同一冻结配置', () async {
+      final profile = TranscriptionProfile(
+        id: 'remote',
+        name: '在线',
+        revision: 1,
+        protocol: TranscriptionProtocol.audioTranscriptions,
+        modelId: 'custom-asr',
+        endpoint: Uri.parse('https://api.example/asr'),
+      );
+      final useCase = CheckMeetingReadinessUseCase(
+        device: device,
+        preferences: preferences,
+        installations: installations,
+      );
+      final result = await useCase.checkSelection(
+        profile,
+        requestMicrophonePermission: true,
+      );
+      expect(result.canStart, isTrue);
+      expect(result.transcriptionProfile, same(profile));
+      expect(result.defaultModelVersion, 'unreported');
+      expect(device.permissionRequests, [true]);
+    });
 
     test('权限、空间和已校验默认模型全部可用时允许开始', () async {
       final standard = AsrModelRegistry.alpha.defaultModel;

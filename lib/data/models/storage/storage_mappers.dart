@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 
 import '../../../domain/models/asr_model.dart';
+import '../../../domain/models/domain_exception.dart';
 import '../../../domain/models/meeting.dart';
 import '../../../domain/models/model_installation.dart';
 import '../../../domain/models/processing_task.dart';
 import '../../../domain/models/workflow_states.dart';
+import '../../../domain/models/transcription_profile.dart';
 
 Map<String, Object?> meetingToRow(Meeting meeting) {
   return {
@@ -23,6 +27,9 @@ Map<String, Object?> meetingToRow(Meeting meeting) {
         ? 1
         : 0,
     'active_transcript_snapshot_id': meeting.activeTranscriptSnapshotId,
+    'transcription_profile_json': meeting.transcriptionProfile == null
+        ? null
+        : jsonEncode(meeting.transcriptionProfile!.toJson()),
     'last_error_code': meeting.lastErrorCode,
   };
 }
@@ -43,12 +50,33 @@ Meeting meetingFromRow(Map<String, Object?> row) {
     recordingModelUseInverseTextNormalization:
         row['recording_model_use_itn']! as int == 1,
     activeTranscriptSnapshotId: row['active_transcript_snapshot_id'] as String?,
+    transcriptionProfile: transcriptionProfileFromStorage(
+      row['transcription_profile_json'],
+    ),
     lastErrorCode: row['last_error_code'] as String?,
   );
 }
 
 Future<void> upsertMeeting(DatabaseExecutor executor, Meeting meeting) async {
   final row = meetingToRow(meeting);
+  final existing = await executor.query(
+    'meetings',
+    where: 'id = ?',
+    whereArgs: [meeting.id],
+  );
+  if (existing.isNotEmpty && existing.single['status'] != 'created') {
+    for (final key in const [
+      'recording_model_id',
+      'recording_model_version',
+      'recording_model_language',
+      'recording_model_use_itn',
+      'transcription_profile_json',
+    ]) {
+      if (existing.single[key] != row[key]) {
+        throw const DomainInvariantViolation('会议开始后不能修改已锁定的转录配置');
+      }
+    }
+  }
   // 标题由 MeetingRepository.updateTitle 独立拥有。生命周期保存可能持有
   // 长任务开始前的旧 Meeting，更新现有行时不得把用户的新标题覆盖回去。
   final lifecycleRow = Map<String, Object?>.of(row)..remove('title');
@@ -69,6 +97,9 @@ Map<String, Object?> processingTaskToRow(ProcessingTask task) {
     'kind': task.kind.name,
     'meeting_id': task.meetingId,
     'model_id': task.modelId,
+    'transcription_profile_json': task.transcriptionProfile == null
+        ? null
+        : jsonEncode(task.transcriptionProfile!.toJson()),
     'state': task.state.name,
     'created_at': task.createdAt.millisecondsSinceEpoch,
     'updated_at': task.updatedAt.millisecondsSinceEpoch,
@@ -83,6 +114,9 @@ ProcessingTask processingTaskFromRow(Map<String, Object?> row) {
     kind: ProcessingTaskKind.values.byName(row['kind']! as String),
     meetingId: row['meeting_id'] as String?,
     modelId: row['model_id'] as String?,
+    transcriptionProfile: transcriptionProfileFromStorage(
+      row['transcription_profile_json'],
+    ),
     state: ProcessingState.values.byName(row['state']! as String),
     createdAt: _date(row['created_at']),
     updatedAt: _date(row['updated_at']),
@@ -126,3 +160,10 @@ DateTime _date(Object? value) {
 DateTime? _nullableDate(Object? value) {
   return value == null ? null : _date(value);
 }
+
+TranscriptionProfile? transcriptionProfileFromStorage(Object? value) =>
+    value == null
+    ? null
+    : TranscriptionProfile.fromJson(
+        jsonDecode(value as String) as Map<String, Object?>,
+      );

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/recording_input.dart';
+import '../../../domain/ports/asr_preview_session.dart';
 
 enum PcmAudioCaptureFailure { inputUnavailable }
 
@@ -84,6 +85,7 @@ final class RecordingPreviewDispatcher {
   bool _draining = false;
   bool _closed = false;
   int _droppedChunks = 0;
+  Future<void>? _drainOperation;
 
   int get droppedChunks => _droppedChunks;
 
@@ -105,7 +107,7 @@ final class RecordingPreviewDispatcher {
     _pending.addLast(chunk);
     if (!_draining) {
       _draining = true;
-      unawaited(_drain());
+      _drainOperation = _drain();
     }
   }
 
@@ -113,6 +115,25 @@ final class RecordingPreviewDispatcher {
     _closed = true;
     _droppedChunks += _pending.length;
     _pending.clear();
+  }
+
+  /// 暂停时先交付已落盘的尾块；超时不能拖住事实录音控制。
+  Future<void> flush({
+    Duration timeout = const Duration(milliseconds: 500),
+  }) async {
+    final watch = Stopwatch()..start();
+    final draining = _drainOperation;
+    try {
+      await draining?.timeout(timeout);
+      final remaining = timeout - watch.elapsed;
+      if (!_closed && remaining > Duration.zero) {
+        if (_sink case final AsrPreviewSession preview) {
+          await preview.flush().timeout(remaining);
+        }
+      }
+    } on Object {
+      // 预览不完整仍可由封存 PCM 重建；禁止把派生失败传播到录音。
+    }
   }
 
   Future<void> _drain() async {
@@ -127,7 +148,7 @@ final class RecordingPreviewDispatcher {
     _draining = false;
     if (!_closed && _pending.isNotEmpty) {
       _draining = true;
-      unawaited(_drain());
+      _drainOperation = _drain();
     }
   }
 }

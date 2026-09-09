@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 final class AppDatabase {
   AppDatabase({required this.databaseFactory, required this.path});
 
-  static const schemaVersion = 7;
+  static const schemaVersion = 8;
 
   final DatabaseFactory databaseFactory;
   final String path;
@@ -68,6 +68,7 @@ final class AppDatabase {
         recording_model_language TEXT NOT NULL,
         recording_model_use_itn INTEGER NOT NULL
           CHECK(recording_model_use_itn IN (0, 1)),
+        transcription_profile_json TEXT,
         active_transcript_snapshot_id TEXT,
         last_error_code TEXT
       )
@@ -79,6 +80,9 @@ final class AppDatabase {
         kind TEXT NOT NULL,
         actual_model_id TEXT NOT NULL,
         actual_model_version TEXT NOT NULL,
+        transcription_profile_json TEXT,
+        reported_model_version TEXT,
+        timing_precision TEXT NOT NULL DEFAULT 'segment',
         created_at INTEGER NOT NULL,
         status TEXT NOT NULL,
         FOREIGN KEY(meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
@@ -119,6 +123,7 @@ final class AppDatabase {
         kind TEXT NOT NULL,
         meeting_id TEXT,
         model_id TEXT,
+        transcription_profile_json TEXT,
         state TEXT NOT NULL,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
@@ -132,6 +137,13 @@ final class AppDatabase {
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,
         updated_at INTEGER NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE transcription_profiles (
+        id TEXT PRIMARY KEY,
+        revision INTEGER NOT NULL CHECK(revision > 0),
+        configuration_json TEXT NOT NULL
       )
     ''');
     await db.execute('''

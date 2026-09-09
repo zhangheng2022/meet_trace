@@ -80,7 +80,7 @@ void main() {
     final title = find.byKey(const ValueKey('recording-setup-title'));
     final detail = find.byKey(const ValueKey('recording-setup-detail'));
     expect(find.text('录音条件已就绪'), findsOneWidget);
-    expect(find.text('音频仅保存在本机 · SenseVoice可用'), findsOneWidget);
+    expect(find.text('事实音频保存在本机 · SenseVoice可用'), findsOneWidget);
     expect(find.text('查看'), findsNothing);
     expect(find.text('处理'), findsNothing);
     expect(find.text('重试'), findsNothing);
@@ -635,7 +635,7 @@ void main() {
     expect(find.text('开始会议'), findsOneWidget);
     expect(find.text('录音中'), findsOneWidget);
     expect(find.text('录音条件已就绪'), findsOneWidget);
-    expect(find.text('音频仅保存在本机 · SenseVoice可用'), findsOneWidget);
+    expect(find.text('事实音频保存在本机 · SenseVoice可用'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.text('录音条件已就绪'));

@@ -9,6 +9,9 @@ import 'package:meettrace/data/services/audio/recording_ports.dart';
 import 'package:meettrace/data/services/audio/reliable_recording_service.dart';
 import 'package:meettrace/data/services/storage/app_file_layout.dart';
 import 'package:meettrace/domain/models/recording.dart';
+import 'package:meettrace/domain/models/asr_preview.dart';
+import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/ports/asr_preview_session.dart';
 import 'package:meettrace/domain/models/recording_continuity_event.dart';
 import 'package:meettrace/domain/models/recording_input.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
@@ -236,6 +239,19 @@ void main() {
     expect(await File(result.audioPath).length(), 9600);
     expect(previewCalls, 1);
     firstPreview.complete();
+  });
+
+  test('暂停在已落盘尾块交付后通知预览 flush', () async {
+    final preview = _PausePreview();
+    final service = createService(preview: preview);
+    await service.start(meetingId: 'meeting-1');
+    capture.add(_pcmBytes(recordingBytesPerSecond));
+    await _waitFor(() => service.persistedBytes == recordingBytesPerSecond);
+    await service.pause();
+    expect(preview.received, ['audio:$recordingBytesPerSecond', 'flush']);
+    expect(service.state, RecordingState.paused);
+    final artifact = await service.stop();
+    expect(artifact.bytes, recordingBytesPerSecond);
   });
 
   test('暂停和恢复只按已持久化样本累计连续时间轴', () async {
@@ -1055,4 +1071,37 @@ final class _TrackingRecordingCheckpointStore
     await delegate.save(checkpoint);
     completedSaves++;
   }
+}
+
+final class _PausePreview implements RecordingPreviewSink, AsrPreviewSession {
+  final List<String> received = [];
+  @override
+  Future<void> add(RecordingPcmChunk chunk) async {
+    received.add('audio:${chunk.endByteOffset}');
+  }
+
+  @override
+  Future<void> flush() async {
+    received.add('flush');
+  }
+
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> dispose() async {}
+  @override
+  Stream<TranscriptEvent> get events => const Stream.empty();
+  @override
+  Stream<AsrPreviewMetrics> get metricsChanges => const Stream.empty();
+  @override
+  AsrPreviewMetrics get metrics => const AsrPreviewMetrics(
+    state: AsrPreviewState.ready,
+    vadSegmentCount: 0,
+    queuedAudioMs: 0,
+    processedPreviewWindows: 0,
+    droppedPreviewWindows: 0,
+    previewLagMs: 0,
+  );
 }

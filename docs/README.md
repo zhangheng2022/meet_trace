@@ -18,6 +18,8 @@
 | [DESIGN](../DESIGN.md) | 交互、视觉与自适应规则 |
 | [产品上下文](../PRODUCT.md) | 设计和文案所需的 PRD 摘要 |
 | [技术方案](technical/端侧_SenseVoice_转录技术方案.md) | 端侧实现契约 |
+| [在线协议与网关](development/online_asr_protocols.md) | 自定义接口合同与网关适配 |
+| [转录执行说明](development/transcription_execution.md) | 配置操作、本地优化与实测方法 |
 | [质量与验收](quality/README.md) | 当前门禁和未闭环风险 |
 | [发布 Runbook](project/GitHub_版本发布流程.md) | 发布、恢复和撤回操作 |
 | [Sentry 配置](project/Sentry_配置.md) | 监控参数、隐私边界和符号上传 |

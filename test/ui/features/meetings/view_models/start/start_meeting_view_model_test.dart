@@ -3,10 +3,12 @@ import 'package:meettrace/domain/models/asr_model_registry.dart';
 import 'package:meettrace/domain/models/app_failure.dart';
 import 'package:meettrace/domain/models/meeting_readiness.dart';
 import 'package:meettrace/domain/models/recording_input.dart';
+import 'package:meettrace/domain/models/transcription_profile.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/ports/asr_engine.dart';
 import 'package:meettrace/domain/ports/recording_input.dart';
 import 'package:meettrace/domain/use_cases/lock_recording_input.dart';
+import 'package:meettrace/domain/use_cases/check_meeting_readiness.dart';
 import 'package:meettrace/domain/use_cases/start_meeting.dart';
 import 'package:meettrace/ui/features/meetings/view_models/start/start_meeting_view_model.dart';
 
@@ -19,6 +21,38 @@ void main() {
   setUp(() {
     meetings = TestMeetingRepository();
     factory = TestAsrEngineFactory();
+  });
+
+  test('显式选择在线来源冻结完整配置，开始后再次选择不会换源或初始化网络', () async {
+    final selected = TranscriptionProfile(
+      id: 'selected-remote',
+      name: 'Online',
+      revision: 4,
+      protocol: TranscriptionProtocol.realtimeTranscription,
+      endpoint: Uri.parse('wss://speech.example.test/transcribe'),
+      modelId: 'custom-model',
+      credentialRef: 'key-version-4',
+      language: 'zh',
+    );
+    final profileFactory = _ProfileFactory();
+    final readiness = _SelectedReadiness();
+    final vm = _viewModel(meetings, profileFactory, readiness: readiness);
+    addTearDown(vm.dispose);
+
+    final session = await vm.start(selection: selected);
+    final second = await vm.start(selection: TranscriptionProfile.local());
+
+    expect(session, isNotNull);
+    expect(second, same(session));
+    expect(session!.meeting.transcriptionProfile, same(selected));
+    expect(session.meeting.recordingModelVersion, 'unreported');
+    expect(session.meeting.recordingModelLanguage, 'zh');
+    expect(profileFactory.profiles, [same(selected)]);
+    expect(readiness.selections, [same(selected)]);
+    expect(readiness.requestedPermission, isTrue);
+    expect(profileFactory.engines.single.initializeCalls, 0);
+    expect(meetings.saved, hasLength(1));
+    expect(vm.requiresRuntimeRepair, isFalse);
   });
 
   test('直接使用全局默认模型并以本地开始时间生成标题', () async {
@@ -187,8 +221,8 @@ void main() {
 
 StartMeetingViewModel _viewModel(
   TestMeetingRepository meetings,
-  TestAsrEngineFactory factory, {
-  TestMeetingReadinessChecker? readiness,
+  AsrEngineFactory factory, {
+  MeetingReadinessChecker? readiness,
   LockRecordingInputUseCase? recordingInputLock,
 }) {
   return StartMeetingViewModel(
@@ -225,6 +259,52 @@ final class _RecordingInputPreferences
   Future<void> setPreference(RecordingInputPreference preference) async {
     this.preference = preference;
   }
+}
+
+final class _ProfileFactory implements ProfileAsrEngineFactory {
+  final profiles = <TranscriptionProfile>[];
+  final engines = <TestAsrEngine>[];
+  @override
+  Future<AsrEngine> createForProfile(TranscriptionProfile profile) async {
+    profiles.add(profile);
+    final engine = TestAsrEngine(profile.descriptor);
+    engines.add(engine);
+    return engine;
+  }
+
+  @override
+  Future<AsrEngine> create({
+    required String modelId,
+    required String modelVersion,
+    String language = 'auto',
+    bool useInverseTextNormalization = true,
+  }) => throw StateError('selected source must use frozen profile');
+}
+
+final class _SelectedReadiness implements SelectedMeetingReadinessChecker {
+  final selections = <TranscriptionProfile>[];
+  bool requestedPermission = false;
+  @override
+  Future<MeetingReadiness> checkSelection(
+    TranscriptionProfile profile, {
+    bool requestMicrophonePermission = false,
+  }) async {
+    selections.add(profile);
+    requestedPermission = requestMicrophonePermission;
+    return MeetingReadiness(
+      microphonePermissionGranted: true,
+      freeBytes: minimumRecordingFreeBytes,
+      defaultModelId: profile.modelId,
+      defaultModelVersion: profile.identityVersion,
+      defaultModelName: profile.name,
+      defaultModelAvailable: true,
+      transcriptionProfile: profile,
+    );
+  }
+
+  @override
+  Future<MeetingReadiness> check({bool requestMicrophonePermission = false}) =>
+      throw StateError('explicit selection must not fall back to default');
 }
 
 final class _RecordingInputDevices implements RecordingInputDeviceCatalog {

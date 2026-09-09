@@ -33,7 +33,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('更新前必须确认本地数据风险'), findsOneWidget);
-    expect(find.textContaining('会议音频、转录、模型和设置'), findsOneWidget);
+    expect(find.textContaining('会议音频、转录、模型、设置和在线转录凭据'), findsOneWidget);
     expect(find.text('确认风险并继续'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('confirm-app-update')));

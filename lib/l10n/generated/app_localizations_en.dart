@@ -232,7 +232,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get localStoragePrivacyDescription =>
-      'Meeting recordings, final transcripts, and runtime resources remain on this device. Uninstalling the app may permanently delete them.';
+      'Meeting recordings and results stay on this device. Choosing online transcription sends audio to your provider. Uninstalling may permanently delete local data.';
 
   @override
   String get remoteDiagnosticsTitle => 'Remote diagnostics';
@@ -422,7 +422,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String audioLocalModelAvailable(String model) {
-    return 'Audio stays on this device · $model is available';
+    return 'Source audio saved locally · $model available';
   }
 
   @override
@@ -595,7 +595,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recordingConditionsDescription =>
-      'The app checks again before starting a meeting. Recording and transcription resources remain on this device.';
+      'Conditions are checked again before recording. The transcription source is selected before each meeting.';
 
   @override
   String get recordingConditionsDetails => 'Recording condition details';
@@ -1016,7 +1016,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String recordingLocalDuration(String duration) {
-    return 'Stored only on this device · $duration';
+    return 'Source recording saved locally · $duration';
   }
 
   @override
@@ -1395,7 +1395,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String destructiveUpdateMessage(String version, int build) {
-    return 'Version $version (build $build) raises the data generation. On first launch after installation, the app clears local meeting audio, transcripts, models, and settings, then initializes again. Share or export anything you need first.';
+    return 'Version $version (build $build) raises the data generation. On first launch after installation, the app clears local meeting audio, transcripts, models, settings, and online transcription credentials, then initializes again. Share or export anything you need first.';
   }
 
   @override
@@ -1771,4 +1771,155 @@ class AppLocalizationsEn extends AppLocalizations {
   String audioShareSystemTitle(String title) {
     return 'Share meeting recording: $title';
   }
+
+  @override
+  String get previewRecognizing => 'Recognizing';
+
+  @override
+  String get previewTemporary => 'Interim transcript';
+
+  @override
+  String previewSkipped(int count) {
+    return 'Skipped $count preview segments; recording preserved';
+  }
+
+  @override
+  String get transcriptionSources => 'Transcription sources';
+
+  @override
+  String get addOnlineSource => 'Add online source';
+
+  @override
+  String get chooseTranscriptionSource => 'Choose source';
+
+  @override
+  String get sourceLockedNotice =>
+      'The source is locked for this meeting. Recording continues if transcription fails.';
+
+  @override
+  String get sourceLocal => 'Local · SenseVoice';
+
+  @override
+  String get sourceAfterMeeting => 'After meeting only · no live captions';
+
+  @override
+  String get sourceRealtime => 'Live captions + full recording final pass';
+
+  @override
+  String get sourceDefault => 'Default';
+
+  @override
+  String get sourceSetDefault => 'Set as default';
+
+  @override
+  String get sourceEdit => 'Edit configuration';
+
+  @override
+  String get sourceName => 'Configuration name';
+
+  @override
+  String get sourceProtocol => 'Protocol';
+
+  @override
+  String get sourceEndpoint => 'Full endpoint URL (no secrets)';
+
+  @override
+  String get sourceModel => 'Model ID (custom)';
+
+  @override
+  String get sourceApiKey => 'API key';
+
+  @override
+  String get sourceHeaders => 'Authentication headers JSON';
+
+  @override
+  String get sourceLanguage => 'Language (auto / zh / en / …)';
+
+  @override
+  String get sourcePrompt => 'Vocabulary / transcription prompt';
+
+  @override
+  String get sourceUploadLimit => 'Upload limit (MiB)';
+
+  @override
+  String get sourceTimeout => 'Request timeout (seconds)';
+
+  @override
+  String get sourceTimeoutInvalid => 'Enter a whole number from 1 to 3600.';
+
+  @override
+  String get sourceAdvanced => 'Advanced connection settings';
+
+  @override
+  String get sourceFailure =>
+      'Could not complete the operation. Check the fields, connection and credentials.';
+
+  @override
+  String get sourceProbe => 'Test connection';
+
+  @override
+  String get sourceProbeConfirm =>
+      'This sends a short generated test sound to the configured endpoint. It may incur a small fee; it does not measure recognition accuracy.';
+
+  @override
+  String get sourceProbeSuccess =>
+      'Protocol test succeeded. Use a real sample to evaluate accuracy.';
+
+  @override
+  String get sourceRemoveConfirm =>
+      'Remove this configuration? Past meetings keep their locked settings and credentials for manual retries.';
+
+  @override
+  String sourceOnlineConsent(String host) {
+    return 'Send audio to $host?';
+  }
+
+  @override
+  String sourceOnlineConsentMessage(String model) {
+    return 'This meeting uses $model. Audio goes directly to your provider. After recording ends, the entire recording is transcribed again, incurring an additional charge when live captions are used. The provider controls retention. Recording stays on this device if transcription fails.';
+  }
+
+  @override
+  String get sourceAcceptStart => 'Agree and continue';
+
+  @override
+  String get sourceSwitchRetranscribe => 'Choose source and retranscribe';
+
+  @override
+  String get sourceRetranscribeNotice =>
+      'Transcribe the complete recording with this source. The previous result remains until the new result succeeds.';
+
+  @override
+  String get prepareLocalModels => 'Prepare local models';
+
+  @override
+  String get localModelsReady => 'Local models are ready';
+
+  @override
+  String get returnToMeetings => 'Return to meetings';
+
+  @override
+  String get sourceTimingWindow =>
+      'Approximate audio window; no precise timestamps were returned';
+
+  @override
+  String get sourceRemotePrivacy =>
+      'Audio is sent only when you choose an online source and confirm. Keys stay in system secure storage. Private APIs need a compatible gateway.';
+
+  @override
+  String get sourceVersionUnknown => 'Provider model version unreported';
+
+  @override
+  String get sourceSelect => 'Select';
+
+  @override
+  String get sourceProbeAction => 'Test';
+
+  @override
+  String get sourceCredentialsHelp =>
+      'Leave both authentication fields blank to retain credentials for the same service. Editing either field replaces all credentials; include every required header. To clear authentication, use:';
+
+  @override
+  String get sourceCredentialsRequired =>
+      'The receiving service changed. Re-enter all required authentication, or enter an empty JSON object in authentication headers to clear it.';
 }

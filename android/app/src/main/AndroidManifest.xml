@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
+        android:allowBackup="false"
         android:label="会迹"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"

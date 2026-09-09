@@ -1,3 +1,8 @@
+import '../domain/models/transcription_profile.dart';
+import '../domain/ports/asr_engine.dart';
+import '../domain/ports/transcription_profiles.dart';
+import '../data/services/asr/remote/remote_asr_engine.dart';
+
 import 'package:flutter/foundation.dart';
 
 import '../data/services/asr/platform_asr_device_risk_monitor.dart';
@@ -29,7 +34,7 @@ final class MeetingDependencies {
     required this.desktopLifecycle,
   });
 
-  final SherpaOnnxAsrEngineFactory engineFactory;
+  final ProfileAsrEngineFactory engineFactory;
   final FinalResultCoordinator finalTranscription;
   final SpeakerDiarizationCoordinator diarization;
   final SpeakerDiarizationService diarizationService;
@@ -40,13 +45,18 @@ final class MeetingDependencies {
   factory MeetingDependencies.create({
     required StorageDependencies storage,
     required RuntimeAssetDependencies runtime,
+    AsrDeviceRiskMonitor? riskMonitor,
   }) {
-    final engineFactory = SherpaOnnxAsrEngineFactory(
+    final localFactory = SherpaOnnxAsrEngineFactory(
       installations: storage.installations,
       leases: storage.leases,
-      riskMonitor: createPlatformAsrDeviceRiskMonitor(),
+      riskMonitor: riskMonitor ?? createPlatformAsrDeviceRiskMonitor(),
       ownerId: 'meettrace-app',
       vadModelPath: runtime.vadModelPath,
+    );
+    final engineFactory = _ProfileEngineFactory(
+      localFactory,
+      storage.transcriptionCredentials,
     );
     final diarizationService = createMeetTraceSpeakerDiarizationService(
       segmentationModelPath: runtime.speakerSegmentationModelPath,
@@ -82,6 +92,7 @@ final class MeetingDependencies {
         preferences: storage.preferences,
         installations: storage.installations,
         registry: runtime.registry,
+        profiles: storage.transcriptionProfiles,
       ),
       recordingInputLock: LockRecordingInputUseCase(
         preferences: storage.recordingInputPreferences,
@@ -135,5 +146,35 @@ SherpaOnnxSpeakerDiarizationService createMeetTraceSpeakerDiarizationService({
       minDurationOn: inference.minDurationOn,
       minDurationOff: inference.minDurationOff,
     ),
+  );
+}
+
+final class _ProfileEngineFactory implements ProfileAsrEngineFactory {
+  const _ProfileEngineFactory(this.local, this.credentials);
+  final AsrEngineFactory local;
+  final TranscriptionCredentialStore credentials;
+
+  @override
+  Future<AsrEngine> createForProfile(TranscriptionProfile profile) async =>
+      profile.isLocal
+      ? create(
+          modelId: profile.modelId,
+          modelVersion: profile.identityVersion,
+          language: profile.language,
+          useInverseTextNormalization: profile.useInverseTextNormalization,
+        )
+      : RemoteAsrEngine(profile: profile, credentials: credentials);
+
+  @override
+  Future<AsrEngine> create({
+    required String modelId,
+    required String modelVersion,
+    String language = 'auto',
+    bool useInverseTextNormalization = true,
+  }) => local.create(
+    modelId: modelId,
+    modelVersion: modelVersion,
+    language: language,
+    useInverseTextNormalization: useInverseTextNormalization,
   );
 }

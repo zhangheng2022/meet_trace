@@ -28,6 +28,8 @@ final class ModelSettingsView extends StatefulWidget {
     this.languageSettings,
     this.remoteDiagnostics,
     this.onBack,
+    this.onOpenTranscriptionSources,
+    this.onPrepareLocalModels,
     super.key,
   });
 
@@ -37,6 +39,8 @@ final class ModelSettingsView extends StatefulWidget {
   final LanguageSettingsViewModel? languageSettings;
   final RemoteDiagnosticsSettingsViewModel? remoteDiagnostics;
   final VoidCallback? onBack;
+  final VoidCallback? onOpenTranscriptionSources;
+  final VoidCallback? onPrepareLocalModels;
 
   @override
   State<ModelSettingsView> createState() => _ModelSettingsViewState();
@@ -85,6 +89,18 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
     final themeSettings = widget.themeSettings;
     final languageSettings = widget.languageSettings;
     final primarySections = <Widget>[
+      if (widget.onOpenTranscriptionSources != null)
+        FButton(
+          variant: FButtonVariant.outline,
+          onPress: widget.onOpenTranscriptionSources,
+          child: Text(context.l10n.transcriptionSources),
+        ),
+      if (widget.onPrepareLocalModels != null)
+        FButton(
+          variant: FButtonVariant.outline,
+          onPress: widget.onPrepareLocalModels,
+          child: Text(context.l10n.prepareLocalModels),
+        ),
       if (themeSettings != null || languageSettings != null)
         _SettingsSection(
           key: const ValueKey('appearance-language-section'),
@@ -119,14 +135,15 @@ final class _ModelSettingsViewState extends State<ModelSettingsView> {
             ],
           ),
         ),
-      _MeetingDefaultsSection(
-        descriptor: descriptor,
-        loading: viewModel.isLoading,
-        errorMessage: viewModel.errorMessage,
-      ),
+      if (widget.onOpenTranscriptionSources == null)
+        _MeetingDefaultsSection(
+          descriptor: descriptor,
+          loading: viewModel.isLoading,
+        ),
       _OfflineResourcesSection(
         option: option,
         loading: viewModel.isLoading,
+        errorMessage: viewModel.errorMessage,
         busy: viewModel.isBusy,
         onRepair: viewModel.actions.repair == null
             ? null
@@ -349,12 +366,10 @@ final class _MeetingDefaultsSection extends StatelessWidget {
   const _MeetingDefaultsSection({
     required this.descriptor,
     required this.loading,
-    required this.errorMessage,
   });
 
   final AsrModelDescriptor descriptor;
   final bool loading;
-  final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -362,26 +377,13 @@ final class _MeetingDefaultsSection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('meeting-defaults-section'),
       title: l10n.meetingDefaultsTitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: _SettingsTileGroup(
         children: [
-          if (errorMessage case final message?) ...[
-            FAlert(
-              variant: FAlertVariant.destructive,
-              title: Text(l10n.modelSettingsIncomplete),
-              subtitle: Text(l10n.localizeUiMessage(message)),
-            ),
-            SizedBox(height: context.theme.style.app.spaceMd),
-          ],
-          _SettingsTileGroup(
-            children: [
-              _SettingsValueRow(
-                key: const ValueKey('default-transcription-model'),
-                label: l10n.newMeetingTranscriptionModel,
-                value: loading ? l10n.reading : descriptor.displayName,
-                description: l10n.modelLockDescription,
-              ),
-            ],
+          _SettingsValueRow(
+            key: const ValueKey('default-transcription-model'),
+            label: l10n.newMeetingTranscriptionModel,
+            value: loading ? l10n.reading : descriptor.displayName,
+            description: l10n.modelLockDescription,
           ),
         ],
       ),
@@ -571,6 +573,7 @@ final class _OfflineResourcesSection extends StatelessWidget {
   const _OfflineResourcesSection({
     required this.option,
     required this.loading,
+    required this.errorMessage,
     required this.busy,
     required this.onRepair,
     required this.onPause,
@@ -578,6 +581,7 @@ final class _OfflineResourcesSection extends StatelessWidget {
 
   final AsrModelOption? option;
   final bool loading;
+  final String? errorMessage;
   final bool busy;
   final VoidCallback? onRepair;
   final VoidCallback? onPause;
@@ -589,19 +593,33 @@ final class _OfflineResourcesSection extends StatelessWidget {
     return _SettingsSection(
       key: const ValueKey('offline-resources-section'),
       title: l10n.offlineResourcesTitle,
-      child: option == null
-          ? Padding(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (errorMessage case final message?) ...[
+            FAlert(
+              variant: FAlertVariant.destructive,
+              title: Text(l10n.modelSettingsIncomplete),
+              subtitle: Text(l10n.localizeUiMessage(message)),
+            ),
+            SizedBox(height: appStyle.spaceMd),
+          ],
+          if (option == null)
+            Padding(
               padding: EdgeInsets.symmetric(vertical: appStyle.spaceSm),
               child: loading
                   ? FProgress(semanticsLabel: l10n.readingOfflineResources)
                   : Text(l10n.noOfflineResources),
             )
-          : _ModelResourceLedger(
+          else
+            _ModelResourceLedger(
               option: option!,
               busy: busy,
               onRepair: onRepair,
               onPause: onPause,
             ),
+        ],
+      ),
     );
   }
 }

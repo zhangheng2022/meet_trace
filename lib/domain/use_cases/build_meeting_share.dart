@@ -62,6 +62,7 @@ final class MeetingShareCopy {
     required this.speakerFallback,
     required this.exportFooter,
     required this.labelSeparator,
+    this.windowTimingNote = '时间为音频窗口范围，服务未返回精确时间戳。',
   });
 
   const MeetingShareCopy.chinese()
@@ -70,7 +71,8 @@ final class MeetingShareCopy {
       finalTranscriptTitle = '最终转录',
       speakerFallback = '说话人 1',
       exportFooter = '由会迹从本机最终转录导出；不包含原始音频。',
-      labelSeparator = '：';
+      labelSeparator = '：',
+      windowTimingNote = '时间为音频窗口范围，服务未返回精确时间戳。';
 
   final String untitledMeeting;
   final String meetingTimeLabel;
@@ -78,6 +80,7 @@ final class MeetingShareCopy {
   final String speakerFallback;
   final String exportFooter;
   final String labelSeparator;
+  final String windowTimingNote;
 }
 
 String _plainText(
@@ -92,6 +95,9 @@ String _plainText(
     ..writeln('${copy.meetingTimeLabel}${copy.labelSeparator}$startedAt')
     ..writeln()
     ..writeln(copy.finalTranscriptTitle);
+  if (snapshot.timingPrecision == TranscriptTimingPrecision.audioWindow) {
+    buffer.writeln(copy.windowTimingNote);
+  }
   for (final segment in snapshot.segments) {
     buffer.writeln(
       '[${_range(segment.startMs, segment.endMs)}] '
@@ -119,6 +125,9 @@ String _markdown(
     ..writeln()
     ..writeln('## ${copy.finalTranscriptTitle}')
     ..writeln();
+  if (snapshot.timingPrecision == TranscriptTimingPrecision.audioWindow) {
+    buffer.writeln(copy.windowTimingNote);
+  }
   for (final segment in snapshot.segments) {
     buffer.writeln(
       '- **${_range(segment.startMs, segment.endMs)} · '
