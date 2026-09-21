@@ -229,10 +229,10 @@ packages:
     dependency: transitive
     description:
       name: patrol_cli
-      sha256: ff793d5afeb15a78a1478e77dcac8ccb7467c5e6786ad2978388de21d0ba8ff2
+      sha256: "920e62775db68c5d01ba90103d21f893635a195c5c4dba2ecff5218622934eaa"
       url: "https://pub.dev"
     source: hosted
-    version: "4.7.0"
+    version: "4.8.0"
   patrol_log:
     dependency: transitive
     description:
@@ -245,10 +245,10 @@ packages:
     dependency: "direct main"
     description:
       name: patrol_mcp
-      sha256: "67ef1d95e39a7ad5076a63233d1b6e67a51a17d0ef57374dde63732b735bb8f9"
+      sha256: "90971474ef2c097c1d6ad9f6aee2fadc7dd7c587064435b86d1ce2e696a48da8"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.2.1"
   platform:
     dependency: transitive
     description:
