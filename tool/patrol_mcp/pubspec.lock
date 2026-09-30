@@ -21,10 +21,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: ace891da0862b0e4cabbb064ee3fd87b2728b898949fdb366d83fe98342c9f19
+      sha256: "6c5bcd986e06b94e3c40244af471750840a3d2341d1f9763a1100a14add517b4"
       url: "https://pub.dev"
     source: hosted
-    version: "4.2.0"
+    version: "4.3.0"
   args:
     dependency: transitive
     description:
@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: cli_completion
-      sha256: "72e8ccc4545f24efa7bbdf3bff7257dc9d62b072dee77513cc54295575bc9220"
+      sha256: d61bbbfccabe02fdad54eeb275586e15e31abdeb35ec7a0d68832fae473cc298
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.1"
+    version: "0.6.0"
   cli_config:
     dependency: transitive
     description:
@@ -113,6 +113,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  ffi_leak_tracker:
+    dependency: transitive
+    description:
+      name: ffi_leak_tracker
+      sha256: "4093d4ef9ca06ffe2786e73bfb25e22aa92112b9bb4ec941f11e3e6b61489a97"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.2"
   file:
     dependency: transitive
     description:
@@ -157,10 +165,10 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: "1976370a4df3091bb0f72409c187ad1f9132a818bc6b95ca59c0bae1c75c688e"
+      sha256: a1e7f4951e538a568e14b856702afc9ae1d2f4b202daced8d22c1b9cd211ce89
       url: "https://pub.dev"
     source: hosted
-    version: "4.9.2"
+    version: "4.10.1"
   io:
     dependency: transitive
     description:
@@ -189,18 +197,18 @@ packages:
     dependency: transitive
     description:
       name: mason_logger
-      sha256: "1d46102c6f299c0df7fe986dd3dd3271d57c2ec7c00ae590660b7c3018810048"
+      sha256: "495a2732647b1c861f75c8bcc36766b8af4c59999a6c8562d7e604cc6fba0fa3"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.5"
+    version: "0.3.6"
   mcp_dart:
     dependency: transitive
     description:
       name: mcp_dart
-      sha256: "777201efc190421e1c86502143379842ed42e16dc8b0ca1c4e8046dc7f7ee5f0"
+      sha256: "5a185c1c02e90239e6f3ebca05ef51e04ac0f9c2b1b7ec7ffbb1a671a6379729"
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.1"
+    version: "2.4.2"
   meta:
     dependency: transitive
     description:
@@ -213,10 +221,10 @@ packages:
     dependency: transitive
     description:
       name: package_config
-      sha256: f096c55ebb7deb7e384101542bfba8c52696c1b56fca2eb62827989ef2353bbc
+      sha256: ffcf4cf3d6c0b74ac43708d9f56625506e8a68aa935abe9d267a7330f320eb5d
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "3.0.0"
   path:
     dependency: transitive
     description:
@@ -285,10 +293,10 @@ packages:
     dependency: transitive
     description:
       name: pub_updater
-      sha256: "739a0161d73a6974c0675b864fb0cf5147305f7b077b7f03a58fa7a9ab3e7e7d"
+      sha256: "3aadeb8c68d15ef9d117b36474ddcc543b48ae1e64f7dd71407da26df66bf7c8"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.6.0"
   source_maps:
     dependency: transitive
     description:
@@ -373,10 +381,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: d7cb55e04cd34096cd3a79b3330245f54cb96a370a1c27adb3c84b917de8b08e
+      sha256: a0b93865d5644f11cf6a8c3f6db909f1ec168958b5805f6cc684adea957cd63d
       url: "https://pub.dev"
     source: hosted
-    version: "5.15.0"
+    version: "6.4.0"
   yaml:
     dependency: transitive
     description:

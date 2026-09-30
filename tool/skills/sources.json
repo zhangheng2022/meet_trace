@@ -1,0 +1,805 @@
+{
+  "version": 1,
+  "skillsCli": "1.7.0",
+  "skills": {
+    "create-github-action-workflow-specification": {
+      "source": "github/awesome-copilot",
+      "revision": "e62be9667aff87958ed94bee2b396433897d1529",
+      "skillsLock": {
+        "source": "github/awesome-copilot",
+        "sourceType": "github",
+        "skillPath": "skills/create-github-action-workflow-specification/SKILL.md",
+        "computedHash": "527e6c77d921d58a9d0059aa95d0d14b441d2166f9c20518263048a56ca8fbbb"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "25b57a8e4ed35e2e640dc9f6f255dc6c8f86574b98d2abc5153b5a8c9b22491c"
+        },
+        ".claude/skills": {
+          "SKILL.md": "25b57a8e4ed35e2e640dc9f6f255dc6c8f86574b98d2abc5153b5a8c9b22491c"
+        }
+      }
+    },
+    "dart-add-unit-test": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-add-unit-test/SKILL.md",
+        "computedHash": "55dabb37175bc8091a02b7d78d405f7e33173698c48a649ea29748f1186ac9c0"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "02428fa20c2cb90afcaf17a52c559641b85eb04f2765a54da2bc72ca858c1fce"
+        },
+        ".claude/skills": {
+          "SKILL.md": "02428fa20c2cb90afcaf17a52c559641b85eb04f2765a54da2bc72ca858c1fce"
+        }
+      }
+    },
+    "dart-build-cli-app": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-build-cli-app/SKILL.md",
+        "computedHash": "97f042ce6ff6f15fdba29b3acea44266f9e311fce8984002e1fd46bd25754cab"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "62880f343b3a927cc23a5ca6cfa65c2b77c35a5129755245e5a52f965fc54d73",
+          "examples/multi_command_runner.dart": "012c2553fa0d47ad4796ca6ba793301b0d6d81ac7f092b8142b43c1aa4c05044",
+          "examples/single_command_tool.dart": "fd13a1ea2e53f9a8aeb5b8e5e1f16d74ede205d985d6fad841da7929a2c2b80e",
+          "references/aot_sdk_discovery.md": "e20056e030a50aa1c4c42f1d151a2247b4d88cfebc6d67e52780fd54bb81e442",
+          "references/signals_and_terminal.md": "7af85efcfa62438e8651ea72fa203e57650aeff735e836f62298eb9bfdb1a63a"
+        },
+        ".claude/skills": {
+          "SKILL.md": "62880f343b3a927cc23a5ca6cfa65c2b77c35a5129755245e5a52f965fc54d73",
+          "examples/multi_command_runner.dart": "012c2553fa0d47ad4796ca6ba793301b0d6d81ac7f092b8142b43c1aa4c05044",
+          "examples/single_command_tool.dart": "fd13a1ea2e53f9a8aeb5b8e5e1f16d74ede205d985d6fad841da7929a2c2b80e",
+          "references/aot_sdk_discovery.md": "e20056e030a50aa1c4c42f1d151a2247b4d88cfebc6d67e52780fd54bb81e442",
+          "references/signals_and_terminal.md": "7af85efcfa62438e8651ea72fa203e57650aeff735e836f62298eb9bfdb1a63a"
+        }
+      }
+    },
+    "dart-collect-coverage": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-collect-coverage/SKILL.md",
+        "computedHash": "36d77c4ebc2edc7ade399ae8461776dd33a461899afda4b2b9d8e7f599d2ef6c"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "229035193bfd785368c48e3dd8ee059df43fcbdfe227dfd8a9a0178b995ee6c6"
+        },
+        ".claude/skills": {
+          "SKILL.md": "229035193bfd785368c48e3dd8ee059df43fcbdfe227dfd8a9a0178b995ee6c6"
+        }
+      }
+    },
+    "dart-fix-runtime-errors": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-fix-runtime-errors/SKILL.md",
+        "computedHash": "7b13cb0df76693d8c798432a1f86325b093a35e9687f231a012763fcad54fb2c"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "0c18be0cbda925cb1322c2c47a52c288cce1dc34218705a20c4c071eed1b066d"
+        },
+        ".claude/skills": {
+          "SKILL.md": "0c18be0cbda925cb1322c2c47a52c288cce1dc34218705a20c4c071eed1b066d"
+        }
+      }
+    },
+    "dart-generate-test-mocks": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-generate-test-mocks/SKILL.md",
+        "computedHash": "7bf12a98d63e96ed51ba077a24426be1b11a9fc508f7dfca60fc6e118c3fc923"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "ca58b0e0d045595aa99990715bbf48fc75b1c5dca4053bc1940ef289cbcf2f00"
+        },
+        ".claude/skills": {
+          "SKILL.md": "ca58b0e0d045595aa99990715bbf48fc75b1c5dca4053bc1940ef289cbcf2f00"
+        }
+      }
+    },
+    "dart-migrate-to-checks-package": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-migrate-to-checks-package/SKILL.md",
+        "computedHash": "00b7fa026dcf004421650f20147d020244886321f715ff57ee38a96b3a9945bc"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "005dbd697fcfb314e069a9954e46005f18b9333282057bad238b5e5a65976e77"
+        },
+        ".claude/skills": {
+          "SKILL.md": "005dbd697fcfb314e069a9954e46005f18b9333282057bad238b5e5a65976e77"
+        }
+      }
+    },
+    "dart-resolve-package-conflicts": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-resolve-package-conflicts/SKILL.md",
+        "computedHash": "e25c789387152d9d0c437610caa5746e337a789bcb8e9c9887b0425b94b734ef"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "967093ae2bca2784ba6a104dba3821ad809b399ca22071e9afc512915f60fa0a"
+        },
+        ".claude/skills": {
+          "SKILL.md": "967093ae2bca2784ba6a104dba3821ad809b399ca22071e9afc512915f60fa0a"
+        }
+      }
+    },
+    "dart-run-static-analysis": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-run-static-analysis/SKILL.md",
+        "computedHash": "e64ea092e216ecdc9b4a8b49b06d0b9a0b49f680c1116ada1d247b2de3fa6fe1"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "5e41a03011647bcaee182ddc5d4471122f45f93fec6570480c237077e7f9438c"
+        },
+        ".claude/skills": {
+          "SKILL.md": "5e41a03011647bcaee182ddc5d4471122f45f93fec6570480c237077e7f9438c"
+        }
+      }
+    },
+    "dart-setup-ffi-assets": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-setup-ffi-assets/SKILL.md",
+        "computedHash": "c27f5a4e79a4f291e09a9cfeab2842bb04d3570bb64c56bf309e573c3f244ef8"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "361b38a74d11abe5ba95aa9a6f0ad51e4850e5daf03acd7e1ab419bf0dfae0a8"
+        },
+        ".claude/skills": {
+          "SKILL.md": "361b38a74d11abe5ba95aa9a6f0ad51e4850e5daf03acd7e1ab419bf0dfae0a8"
+        }
+      }
+    },
+    "dart-use-ffigen": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-use-ffigen/SKILL.md",
+        "computedHash": "688ec3e0218b3a96437916be5bdcaea87fe4f90ba869c3deec2f3392f1c6b626"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "129ae526e854ea73e829dfa0f4f90fa5cb6e9b80a86aefd1bdd5d761afa4b676"
+        },
+        ".claude/skills": {
+          "SKILL.md": "129ae526e854ea73e829dfa0f4f90fa5cb6e9b80a86aefd1bdd5d761afa4b676"
+        }
+      }
+    },
+    "dart-use-pattern-matching": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-use-pattern-matching/SKILL.md",
+        "computedHash": "a727055e721da627f2eb0fc21292fb33bafbf3d84a617bf5b06f6895021b50b5"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "46d854da7d229a168747c3f45cd895a1b42086830a56ba9d6975c8e4d6692a52",
+          "examples/json_patterns.dart": "86c64977d44c5d066899118979a5c94a2b9bda8bc4cbca4bd56cc8e1310f91f8"
+        },
+        ".claude/skills": {
+          "SKILL.md": "46d854da7d229a168747c3f45cd895a1b42086830a56ba9d6975c8e4d6692a52",
+          "examples/json_patterns.dart": "86c64977d44c5d066899118979a5c94a2b9bda8bc4cbca4bd56cc8e1310f91f8"
+        }
+      }
+    },
+    "dart-use-primary-constructors": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/dart-use-primary-constructors/SKILL.md",
+        "computedHash": "7cf85926f3de62ed9357d4f1f58da3762ebba5850308945a4836114e6ac0b048"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "598d2fcb7641f6715861827840698450c3e8d077b4e92326e8bffe87e5b23c0c"
+        },
+        ".claude/skills": {
+          "SKILL.md": "598d2fcb7641f6715861827840698450c3e8d077b4e92326e8bffe87e5b23c0c"
+        }
+      }
+    },
+    "flutter-add-integration-test": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-add-integration-test/SKILL.md",
+        "computedHash": "9ead37fef54371fed6ad07a9ba3de7a908135a0867b05baf74c28b7095343999"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "8d81b053c5fdf5b61aa7d0165cbc35e7a9a1c5bdcd7a301b8293a108771e6bab"
+        },
+        ".claude/skills": {
+          "SKILL.md": "8d81b053c5fdf5b61aa7d0165cbc35e7a9a1c5bdcd7a301b8293a108771e6bab"
+        }
+      }
+    },
+    "flutter-add-widget-preview": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-add-widget-preview/SKILL.md",
+        "computedHash": "1b59c009558aab7a8e4b7b101fbe535b06054c0672780e9cea7e5c98a9c48dc4"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "88cfeb7084e798714f5ac59cff62e5441759bcbe096c0fdc37abd21111b20212"
+        },
+        ".claude/skills": {
+          "SKILL.md": "88cfeb7084e798714f5ac59cff62e5441759bcbe096c0fdc37abd21111b20212"
+        }
+      }
+    },
+    "flutter-add-widget-test": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-add-widget-test/SKILL.md",
+        "computedHash": "c4f263c59cfe331ef42dba2aa81e25142aa4f7284518907c6b847e04502676b0"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "6c449ebd844e331e661b12630b6ad2a218e84d1bd8ea8377ba9dbd62ffe2798a"
+        },
+        ".claude/skills": {
+          "SKILL.md": "6c449ebd844e331e661b12630b6ad2a218e84d1bd8ea8377ba9dbd62ffe2798a"
+        }
+      }
+    },
+    "flutter-apply-architecture-best-practices": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-apply-architecture-best-practices/SKILL.md",
+        "computedHash": "2b1b63214d6b153c50aacd4bbcb76ce91dece449de9e06f477f8aad3163d667f"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "00497869976a903c83f509a59d4b6a501d409fa711eb8e1f89945921e1983b65"
+        },
+        ".claude/skills": {
+          "SKILL.md": "00497869976a903c83f509a59d4b6a501d409fa711eb8e1f89945921e1983b65"
+        }
+      }
+    },
+    "flutter-build-responsive-layout": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-build-responsive-layout/SKILL.md",
+        "computedHash": "f762ea2ee83d4f1f35d9093b41d2520dd024ab80c9539d4860b9ae7f2a4dc6a0"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "c7a5d18071c625137cad2def9b13f3579d9bdf0aae29621a1825f12b560394c0"
+        },
+        ".claude/skills": {
+          "SKILL.md": "c7a5d18071c625137cad2def9b13f3579d9bdf0aae29621a1825f12b560394c0"
+        }
+      }
+    },
+    "flutter-fix-layout-issues": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-fix-layout-issues/SKILL.md",
+        "computedHash": "1aaba922c951159118f9b141788f7bb7b8167bdc0bd5c6f0738ebb90c29b9532"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "e82c82b4245ef502bd93bc543d4f5968f4ee8043fa7556ffebcb34f30651fc9b"
+        },
+        ".claude/skills": {
+          "SKILL.md": "e82c82b4245ef502bd93bc543d4f5968f4ee8043fa7556ffebcb34f30651fc9b"
+        }
+      }
+    },
+    "flutter-implement-json-serialization": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-implement-json-serialization/SKILL.md",
+        "computedHash": "0eed26f25308d78c6a9036ec936db93342f064d64f2cbac5e0e8648ba6b9db3f"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "05a4478e0a3d119f26ae6e6983da3d5c2ea134763aeff59a06cef346bef391b1"
+        },
+        ".claude/skills": {
+          "SKILL.md": "05a4478e0a3d119f26ae6e6983da3d5c2ea134763aeff59a06cef346bef391b1"
+        }
+      }
+    },
+    "flutter-setup-declarative-routing": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-setup-declarative-routing/SKILL.md",
+        "computedHash": "2341440c8bce0f176663695eaa71f9f7d7c967772a1dcd0d833c9778504b227e"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "3a52fc5663cf37d68b6e096ef3e59f5056a01e9151b64cdf0728672a13398953"
+        },
+        ".claude/skills": {
+          "SKILL.md": "3a52fc5663cf37d68b6e096ef3e59f5056a01e9151b64cdf0728672a13398953"
+        }
+      }
+    },
+    "flutter-setup-localization": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-setup-localization/SKILL.md",
+        "computedHash": "671bf254ca8f3172b6bda5287d9e756e9fd5b49165a815f710c5b707ebaa38f8"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "dda4ef8b74976a3e51faa43d7ad00f03eab64d6d5ed0ef89cf4184a04196da17"
+        },
+        ".claude/skills": {
+          "SKILL.md": "dda4ef8b74976a3e51faa43d7ad00f03eab64d6d5ed0ef89cf4184a04196da17"
+        }
+      }
+    },
+    "flutter-use-http-package": {
+      "source": "flutter/agent-plugins",
+      "revision": "8da8c54ecd740fded70f908ad9c46b72a1f21fb5",
+      "skillsLock": {
+        "source": "flutter/agent-plugins",
+        "sourceType": "github",
+        "skillPath": "skills/flutter-use-http-package/SKILL.md",
+        "computedHash": "17efcf4da9933afaf9c1d41940bd6b92f1ae73dcae4bf6c59cfe24f7e487ee9f"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "439fec047f07e9ec7cd387bf506801bb11b2b9037e5d2c5c03602360532980c4"
+        },
+        ".claude/skills": {
+          "SKILL.md": "439fec047f07e9ec7cd387bf506801bb11b2b9037e5d2c5c03602360532980c4"
+        }
+      }
+    },
+    "graphify": {
+      "source": "https://pypi.org/project/graphifyy/0.9.72/",
+      "version": "0.9.72",
+      "installer": "graphify install --project --platform agents; graphify install --project --platform claude",
+      "files": {
+        ".agents/skills": {
+          ".graphify_version": "8f7c75d522d7a84a90a97faee69e55bf2f0a4ca7a5796c2145d0b28780a8d9a6",
+          "SKILL.md": "d48013dc2284271397433035307b0cc7dcbe8470572abde60a08403f5a63561c",
+          "references/add-watch.md": "1e77351815547334c7e030f018dba513b303d397bf73d11fac47df03ace3b3f4",
+          "references/exports.md": "ee47fae477f106d8aed38798c58493b5a7f060a0d9d2581ce6132302827bc14b",
+          "references/extraction-spec.md": "f72a6d2dfa67446f06f27a8f0053af1adc8d53b02e393c8472045f6740c6183e",
+          "references/github-and-merge.md": "e5ebd90c7686f50363ff7a535556bc2f596d4c47ec1e6c8b95e11e36a0dfea2b",
+          "references/hooks.md": "7910939007ada7966681da02467302f6f1f7c392f42edecd35994aa639e4dee0",
+          "references/query.md": "e563ddcb1e155aa230f107e5ef9380bc1249c5cd8241128de7ed8a7bd9c20cf5",
+          "references/transcribe.md": "676a1e39aa6d43cdfcc416ec56616e36f7bad74066a82bd33a9485515b9a865c",
+          "references/update.md": "661f559b3ff4f3db7ba47bc2ba1c7e19f1c1d66a36f647e49221eecb174f2228"
+        },
+        ".claude/skills": {
+          ".graphify_version": "8f7c75d522d7a84a90a97faee69e55bf2f0a4ca7a5796c2145d0b28780a8d9a6",
+          "SKILL.md": "d2a94a8b49c04822ed0c924e8a7c3e61fac3caa59e36a91fd028348d4addd41b",
+          "references/add-watch.md": "1e77351815547334c7e030f018dba513b303d397bf73d11fac47df03ace3b3f4",
+          "references/exports.md": "ee47fae477f106d8aed38798c58493b5a7f060a0d9d2581ce6132302827bc14b",
+          "references/extraction-spec.md": "f72a6d2dfa67446f06f27a8f0053af1adc8d53b02e393c8472045f6740c6183e",
+          "references/github-and-merge.md": "e5ebd90c7686f50363ff7a535556bc2f596d4c47ec1e6c8b95e11e36a0dfea2b",
+          "references/hooks.md": "b9a4e9f66813c6fc720589f1071d1a03c95756ab7101447e14e57291fe7844e5",
+          "references/query.md": "e563ddcb1e155aa230f107e5ef9380bc1249c5cd8241128de7ed8a7bd9c20cf5",
+          "references/transcribe.md": "676a1e39aa6d43cdfcc416ec56616e36f7bad74066a82bd33a9485515b9a865c",
+          "references/update.md": "661f559b3ff4f3db7ba47bc2ba1c7e19f1c1d66a36f647e49221eecb174f2228"
+        }
+      },
+      "distributions": [
+        {
+          "filename": "graphifyy-0.9.72-py3-none-any.whl",
+          "sha256": "d193dcc43b07c9534826277fc92c8e54dc22aba102d58aaf424494a0906216c5",
+          "url": "https://files.pythonhosted.org/packages/2d/4b/1b96b22bd263447cfaa326a029543891369f4b5b484ec59f963b6cfb02fe/graphifyy-0.9.72-py3-none-any.whl"
+        },
+        {
+          "filename": "graphifyy-0.9.72.tar.gz",
+          "sha256": "88ed6c381e8ae3b42c7e6e4765489fd2e3a370cca531e08e997a3c49693c613f",
+          "url": "https://files.pythonhosted.org/packages/1e/dc/67ef4a9c558cc0d75927ee2e11d5492fcf57f07018d1901bb3ffa23f6ed3/graphifyy-0.9.72.tar.gz"
+        }
+      ]
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "revision": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
+      "skillsLock": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "skillPath": "skills/productivity/grill-me/SKILL.md",
+        "computedHash": "9cdbb4b8f7a3aeaef82e6230c9e823500d4a8a1214c726cf342cf9829d34fc7d"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637",
+          "agents/openai.yaml": "c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b"
+        },
+        ".claude/skills": {
+          "SKILL.md": "caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637",
+          "agents/openai.yaml": "c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b"
+        }
+      }
+    },
+    "grilling": {
+      "source": "mattpocock/skills",
+      "revision": "d81f3a183412e71a5b1e84ca21bc1a35eea03a60",
+      "skillsLock": {
+        "source": "mattpocock/skills",
+        "sourceType": "github",
+        "skillPath": "skills/productivity/grilling/SKILL.md",
+        "computedHash": "4dd886b0196bf43729d954ae326016f2bd9f5f79d892500b407c33a753362f14"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2",
+          "agents/openai.yaml": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
+        },
+        ".claude/skills": {
+          "SKILL.md": "10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2",
+          "agents/openai.yaml": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
+        }
+      }
+    },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "revision": "0d6b47ea19b63afe15e3f93a44d5d9fbbc6fd275",
+      "skillsLock": {
+        "source": "pbakaus/impeccable",
+        "sourceType": "github",
+        "skillPath": ".agents/skills/impeccable/SKILL.md",
+        "computedHash": "ab2e93b86777949d56ca8bb19530e6332e64e86d969127f7d1ab0a3ee7306702"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "6eeec6ef2028388a17de9f17a56c9cb7dbc7c8e7e1a8c15b831b0ba3e42168ac",
+          "agents/impeccable_asset_producer.toml": "d6a51f4df6d76f16b95ab81268a689f4c5936d505c5bb25c80ad7423f927bbc6",
+          "agents/impeccable_documenter.toml": "2feb3768125ba6469c92a50d516727e6d42f44579165ddfd33409948e2a3803d",
+          "agents/impeccable_finish_reviewer.toml": "d57c3e0453f601ad688911fca4471057c7b46b561fcd42a1e12a581101c5186c",
+          "agents/impeccable_manual_edit_applier.toml": "6c9ce3e27ec4520ead001da3aad2a2ebba481c4e5cd22873db8890259ee579fe",
+          "agents/openai.yaml": "cbd8bd68fa00935dd0f179adb169252629cf7ee443ea9dc7db77e7ef2cf77446",
+          "reference/adapt.md": "871a8e4d749b807c693ebabd83defbd6c76e1bd2a0f53a28a460cb1308ba8634",
+          "reference/adapt.native.md": "6acc0bf221a4ddc6e5c6438348920b2ca2393b29c4314dbde2cdc23f2b1a9639",
+          "reference/android.md": "058f81f256134841875fd3183e06b37a023de0c877fd2b9eecd97011640791fe",
+          "reference/animate.md": "d658c48ffbe0031e8e3b318996cad6ceafe29e40aa50d5bb25e4bf1d6839dc7c",
+          "reference/audit.md": "d5f83912eda93d42f93522bb74aeff0ea04d9c559577ec52fcccc130dd03166d",
+          "reference/audit.native.md": "960cb922bc934adbf9192e9428ff6bec1f382038166f02a785939c93b7391067",
+          "reference/bolder.md": "f964506c0fae87b3c2c1db7016ddc9be9ef970bbcf5548d684b997b5d5991586",
+          "reference/clarify.md": "173dd66abe65633910dcb04a51f40d6ff2a793f87088f022a02fc4cad24dd133",
+          "reference/colorize.md": "bc5f71f1129d0f2c310d913d07c8dc609a1d25644121bd78c308f42d52a0b9e9",
+          "reference/component-review.md": "e5e9d28a28d7313f65b5aa8e2f3a990bb825d8df8f1f853620e233e73af5f691",
+          "reference/craft-floor.md": "e802e4f7bdc89050a9c0f2ca506e1d493a2316e6e810c0336c57aa073717ef3e",
+          "reference/craft.md": "9205e222bc6565b37fb504ceec93233c2d2a456802b69d16e6b1c44723907c4c",
+          "reference/critique.md": "cb8caddbb3919e5bf7f252143b519fb16db28a244642d937b186cb89962d9201",
+          "reference/degraded/asset-producer.md": "b13ab14c1e2fee94a6c8b32361f400a0319a76537ee16fecbda79d5d1b26b681",
+          "reference/degraded/documenter.md": "bcc05ea92faebb5c74037a9d4263a5ce9a56f5ab07c8ab3c59ee704d8cade745",
+          "reference/degraded/finish-reviewer.md": "275dd1b6e63bbd30d2713227c4f79b880a8bc4e01cc48d392068bb86939d3afa",
+          "reference/degraded/manual-edit-applier.md": "5fae7f8a2fc3ddd49ad0a413446dc44daedef5b6b7de5eb935bd2fbfad646d58",
+          "reference/delight.md": "098a891028ce59c212b747d3c70468dd750aff7053a703d1336045ed31e0da7c",
+          "reference/distill.md": "ea8432c90c30ecb0426662a681ead5c0941113079704e1a766cda09e85b15b4f",
+          "reference/doctor.md": "a98b397cedeeaa1da57f3395b3d9b6c1fc477f4247fb9dc13e4da3da588283ff",
+          "reference/document.md": "3673248740bcdd1122ccc610093ba2fe52f3943a61ce0b7170b74dc49e5b6098",
+          "reference/extract.md": "31b90048c0b540daec46762a10c2b6b6434737a89af005054d8b848d829d003b",
+          "reference/generate.md": "53628d05b7eff0d4f48b95e48fad40266452fe1b42f398bd88dd9328353e0dd8",
+          "reference/harden.md": "16ba7fca1973c5faf53dd2ca523559129c0fe9e5f8d50b645f527afa78186cd2",
+          "reference/hooks.md": "56cc1bba51e6805de370160ce4a9399fef3740571204f13c3c751725870305e5",
+          "reference/init.md": "bb069b43c09109d7031b0374e31955749fec657b252d39782f11e8985aca2b51",
+          "reference/ios.md": "40c87038b5f75147a5952a96237acf312a327bf70c1bcd8e0a5f064625ae9668",
+          "reference/layout.md": "0bc7d7971b3edf2acd0580e847458dc6d84129d90715b452799ace3bed815c7c",
+          "reference/live-setup.md": "2b5b2fbf5f658f34ea1997fb1aeebe01604d05187f75c6a4f1f55a5bc78520a4",
+          "reference/live.md": "68c5636a7858dd0b5137a9229c15e25fdc2ee40a0f8a4e9d809f78e809256262",
+          "reference/new-work.md": "34b493a34672033c6f9b8aec8dd11b9151246319120cd16a1d897be548ab4e47",
+          "reference/onboard.md": "ef2dde00030580ed2765cbf7be9b2ea4a6f64cb915b804fd6f6abcf38051c7b9",
+          "reference/operate.md": "a9d2203acd45ca33a13d5c68b02b23ed512425ac15f0e8438318ed124b43729d",
+          "reference/optimize.md": "f672ef8251a3ed4051a053d30819664951b17540b2899acd27d20e500c234abc",
+          "reference/overdrive.md": "fce6688138d2ceb1e3d2cde5231f54b1d8dc8748b4c95a7919aa83b6f924cf96",
+          "reference/polish.md": "81666fc7f783b4e3514db6554e713dc0479bd9cdedb06e93d15f8b579aae869a",
+          "reference/quieter.md": "190a4e642ca362d7499f3c3ab123e21f18f75457d11f072b545a183f296e6495",
+          "reference/region-map.md": "778cedc9199b407d3e23fa1041e38d548b00b1101a33517aa2a2eb299f9d0edc",
+          "reference/routing.md": "77ae09542fbc10aa4e8b119d6fd19359908a47c13c30068d6a150bfdb50e3e10",
+          "reference/shape.md": "a55f016c046cb6a27c55bd7f346375aeb506a755c4fbca19a5f92dbd42309c23",
+          "reference/typeset.md": "442749aed338f51c1a3ccfb182c6ade9b74b90590b67984062ac94a5b100e914",
+          "reference/visualize.md": "80a052179f864136209eb530811d6a16e53a590c4db19a3a74fa9845d6432d33",
+          "scripts/VERSION": "76f81f64ece28d0bcfe39dd35f6d14f3c87fe000b77aee11561e18d1919f607e",
+          "scripts/command-metadata.json": "e8720f3aa41135211cc58cc299a39eeda86c75651f4279cc1ede8db10dcc0584",
+          "scripts/data/font-index-failures.json": "835f19a0a3812f3652dd6979a2ce5597f654fd01f26e1b420b92d5f42b997ce4",
+          "scripts/data/font-index.json": "47edbdfaf27073c47033d1ac7dfee881be49e2dcbda7671d1157300481dde6da",
+          "scripts/impeccable": "39d9600489073e227e4f4d55c451ce4252a6632ed7ae37923efbbcbc91f16d07",
+          "scripts/impeccable.cmd": "759bab1d8adc071fdde2efcf6e2157aa4026f3c2b4f3c342a8070bf328011616",
+          "scripts/live-browser-dom.js": "de1b7404f4cdfd7b515196afb17b74b1980f0bc88cb8681ae93a76ca48ec7bdb",
+          "scripts/live-browser-ignores.js": "c1cb6877ca99a0c1b38ba0c7d59f32702d3022f6821d8045f7133f7c40b6362f",
+          "scripts/live-browser-session.js": "edddeb3fad88adec9a055b1bf9d5c75418cbe97a13b1a7f6765e73249e482563",
+          "scripts/live-browser.js": "f68a3d68ac92606e91aa8878e003d9432ddd09aa97ca01c6b3ce46c937dca316",
+          "scripts/modern-screenshot.umd.js": "bb36665889124a0b6e15f16045265737449c3bdcf2712cdb08af3cfa01563e2b"
+        },
+        ".claude/skills": {
+          "SKILL.md": "6eeec6ef2028388a17de9f17a56c9cb7dbc7c8e7e1a8c15b831b0ba3e42168ac",
+          "agents/impeccable_asset_producer.toml": "d6a51f4df6d76f16b95ab81268a689f4c5936d505c5bb25c80ad7423f927bbc6",
+          "agents/impeccable_documenter.toml": "2feb3768125ba6469c92a50d516727e6d42f44579165ddfd33409948e2a3803d",
+          "agents/impeccable_finish_reviewer.toml": "d57c3e0453f601ad688911fca4471057c7b46b561fcd42a1e12a581101c5186c",
+          "agents/impeccable_manual_edit_applier.toml": "6c9ce3e27ec4520ead001da3aad2a2ebba481c4e5cd22873db8890259ee579fe",
+          "agents/openai.yaml": "cbd8bd68fa00935dd0f179adb169252629cf7ee443ea9dc7db77e7ef2cf77446",
+          "reference/adapt.md": "871a8e4d749b807c693ebabd83defbd6c76e1bd2a0f53a28a460cb1308ba8634",
+          "reference/adapt.native.md": "6acc0bf221a4ddc6e5c6438348920b2ca2393b29c4314dbde2cdc23f2b1a9639",
+          "reference/android.md": "058f81f256134841875fd3183e06b37a023de0c877fd2b9eecd97011640791fe",
+          "reference/animate.md": "d658c48ffbe0031e8e3b318996cad6ceafe29e40aa50d5bb25e4bf1d6839dc7c",
+          "reference/audit.md": "d5f83912eda93d42f93522bb74aeff0ea04d9c559577ec52fcccc130dd03166d",
+          "reference/audit.native.md": "960cb922bc934adbf9192e9428ff6bec1f382038166f02a785939c93b7391067",
+          "reference/bolder.md": "f964506c0fae87b3c2c1db7016ddc9be9ef970bbcf5548d684b997b5d5991586",
+          "reference/clarify.md": "173dd66abe65633910dcb04a51f40d6ff2a793f87088f022a02fc4cad24dd133",
+          "reference/colorize.md": "bc5f71f1129d0f2c310d913d07c8dc609a1d25644121bd78c308f42d52a0b9e9",
+          "reference/component-review.md": "e5e9d28a28d7313f65b5aa8e2f3a990bb825d8df8f1f853620e233e73af5f691",
+          "reference/craft-floor.md": "e802e4f7bdc89050a9c0f2ca506e1d493a2316e6e810c0336c57aa073717ef3e",
+          "reference/craft.md": "9205e222bc6565b37fb504ceec93233c2d2a456802b69d16e6b1c44723907c4c",
+          "reference/critique.md": "cb8caddbb3919e5bf7f252143b519fb16db28a244642d937b186cb89962d9201",
+          "reference/degraded/asset-producer.md": "b13ab14c1e2fee94a6c8b32361f400a0319a76537ee16fecbda79d5d1b26b681",
+          "reference/degraded/documenter.md": "bcc05ea92faebb5c74037a9d4263a5ce9a56f5ab07c8ab3c59ee704d8cade745",
+          "reference/degraded/finish-reviewer.md": "275dd1b6e63bbd30d2713227c4f79b880a8bc4e01cc48d392068bb86939d3afa",
+          "reference/degraded/manual-edit-applier.md": "5fae7f8a2fc3ddd49ad0a413446dc44daedef5b6b7de5eb935bd2fbfad646d58",
+          "reference/delight.md": "098a891028ce59c212b747d3c70468dd750aff7053a703d1336045ed31e0da7c",
+          "reference/distill.md": "ea8432c90c30ecb0426662a681ead5c0941113079704e1a766cda09e85b15b4f",
+          "reference/doctor.md": "a98b397cedeeaa1da57f3395b3d9b6c1fc477f4247fb9dc13e4da3da588283ff",
+          "reference/document.md": "3673248740bcdd1122ccc610093ba2fe52f3943a61ce0b7170b74dc49e5b6098",
+          "reference/extract.md": "31b90048c0b540daec46762a10c2b6b6434737a89af005054d8b848d829d003b",
+          "reference/generate.md": "53628d05b7eff0d4f48b95e48fad40266452fe1b42f398bd88dd9328353e0dd8",
+          "reference/harden.md": "16ba7fca1973c5faf53dd2ca523559129c0fe9e5f8d50b645f527afa78186cd2",
+          "reference/hooks.md": "56cc1bba51e6805de370160ce4a9399fef3740571204f13c3c751725870305e5",
+          "reference/init.md": "bb069b43c09109d7031b0374e31955749fec657b252d39782f11e8985aca2b51",
+          "reference/ios.md": "40c87038b5f75147a5952a96237acf312a327bf70c1bcd8e0a5f064625ae9668",
+          "reference/layout.md": "0bc7d7971b3edf2acd0580e847458dc6d84129d90715b452799ace3bed815c7c",
+          "reference/live-setup.md": "2b5b2fbf5f658f34ea1997fb1aeebe01604d05187f75c6a4f1f55a5bc78520a4",
+          "reference/live.md": "68c5636a7858dd0b5137a9229c15e25fdc2ee40a0f8a4e9d809f78e809256262",
+          "reference/new-work.md": "34b493a34672033c6f9b8aec8dd11b9151246319120cd16a1d897be548ab4e47",
+          "reference/onboard.md": "ef2dde00030580ed2765cbf7be9b2ea4a6f64cb915b804fd6f6abcf38051c7b9",
+          "reference/operate.md": "a9d2203acd45ca33a13d5c68b02b23ed512425ac15f0e8438318ed124b43729d",
+          "reference/optimize.md": "f672ef8251a3ed4051a053d30819664951b17540b2899acd27d20e500c234abc",
+          "reference/overdrive.md": "fce6688138d2ceb1e3d2cde5231f54b1d8dc8748b4c95a7919aa83b6f924cf96",
+          "reference/polish.md": "81666fc7f783b4e3514db6554e713dc0479bd9cdedb06e93d15f8b579aae869a",
+          "reference/quieter.md": "190a4e642ca362d7499f3c3ab123e21f18f75457d11f072b545a183f296e6495",
+          "reference/region-map.md": "778cedc9199b407d3e23fa1041e38d548b00b1101a33517aa2a2eb299f9d0edc",
+          "reference/routing.md": "77ae09542fbc10aa4e8b119d6fd19359908a47c13c30068d6a150bfdb50e3e10",
+          "reference/shape.md": "a55f016c046cb6a27c55bd7f346375aeb506a755c4fbca19a5f92dbd42309c23",
+          "reference/typeset.md": "442749aed338f51c1a3ccfb182c6ade9b74b90590b67984062ac94a5b100e914",
+          "reference/visualize.md": "80a052179f864136209eb530811d6a16e53a590c4db19a3a74fa9845d6432d33",
+          "scripts/VERSION": "76f81f64ece28d0bcfe39dd35f6d14f3c87fe000b77aee11561e18d1919f607e",
+          "scripts/command-metadata.json": "e8720f3aa41135211cc58cc299a39eeda86c75651f4279cc1ede8db10dcc0584",
+          "scripts/data/font-index-failures.json": "835f19a0a3812f3652dd6979a2ce5597f654fd01f26e1b420b92d5f42b997ce4",
+          "scripts/data/font-index.json": "47edbdfaf27073c47033d1ac7dfee881be49e2dcbda7671d1157300481dde6da",
+          "scripts/impeccable": "39d9600489073e227e4f4d55c451ce4252a6632ed7ae37923efbbcbc91f16d07",
+          "scripts/impeccable.cmd": "759bab1d8adc071fdde2efcf6e2157aa4026f3c2b4f3c342a8070bf328011616",
+          "scripts/live-browser-dom.js": "de1b7404f4cdfd7b515196afb17b74b1980f0bc88cb8681ae93a76ca48ec7bdb",
+          "scripts/live-browser-ignores.js": "c1cb6877ca99a0c1b38ba0c7d59f32702d3022f6821d8045f7133f7c40b6362f",
+          "scripts/live-browser-session.js": "edddeb3fad88adec9a055b1bf9d5c75418cbe97a13b1a7f6765e73249e482563",
+          "scripts/live-browser.js": "f68a3d68ac92606e91aa8878e003d9432ddd09aa97ca01c6b3ce46c937dca316",
+          "scripts/modern-screenshot.umd.js": "bb36665889124a0b6e15f16045265737449c3bdcf2712cdb08af3cfa01563e2b"
+        }
+      }
+    },
+    "msstore-cli": {
+      "source": "github/awesome-copilot",
+      "revision": "e62be9667aff87958ed94bee2b396433897d1529",
+      "skillsLock": {
+        "source": "github/awesome-copilot",
+        "sourceType": "github",
+        "skillPath": "skills/msstore-cli/SKILL.md",
+        "computedHash": "abaef9913fe8c0d039ed3a6966d513656882c538cc3088d9c709ad78c00c3c7e"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "21e91394eba73ae19bea53225da04f9a5273be5cf42df847aea0f839959daf68"
+        },
+        ".claude/skills": {
+          "SKILL.md": "21e91394eba73ae19bea53225da04f9a5273be5cf42df847aea0f839959daf68"
+        }
+      }
+    },
+    "open-code-review": {
+      "source": "alibaba/open-code-review",
+      "revision": "a758d9cbfb689937c7857ad64b2dd66adb58c0c2",
+      "skillsLock": {
+        "source": "alibaba/open-code-review",
+        "sourceType": "github",
+        "skillPath": "skills/open-code-review/SKILL.md",
+        "computedHash": "d3a3a06ec51a1b1d8c4ff4cb5fbc963269446b1627178c1106c606868f5a4d29"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "be45ee1303e5106cd36f20bd7854ea1a5bb41b0d6ae045953cb643201bcd715e"
+        },
+        ".claude/skills": {
+          "SKILL.md": "be45ee1303e5106cd36f20bd7854ea1a5bb41b0d6ae045953cb643201bcd715e"
+        }
+      }
+    },
+    "open-code-review-delegate": {
+      "source": "alibaba/open-code-review",
+      "revision": "a758d9cbfb689937c7857ad64b2dd66adb58c0c2",
+      "skillsLock": {
+        "source": "alibaba/open-code-review",
+        "sourceType": "github",
+        "skillPath": "skills/open-code-review-delegate/SKILL.md",
+        "computedHash": "8aff90347afaf66929c91860009cabb6e34dc01afeb6de5f3f655872836fb244"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "20828a50b05465496468c733270be2256c7764d2e5c29181a7706c58cfc64087"
+        },
+        ".claude/skills": {
+          "SKILL.md": "20828a50b05465496468c733270be2256c7764d2e5c29181a7706c58cfc64087"
+        }
+      }
+    },
+    "patrol-setup": {
+      "source": "leancodepl/patrol",
+      "revision": "c52c837957811addd36d8dd2efe337d895657ff3",
+      "skillsLock": {
+        "source": "leancodepl/patrol",
+        "sourceType": "github",
+        "skillPath": "skills/patrol-setup/SKILL.md",
+        "computedHash": "89c987df95e145bf4a94cb10dc20739ed4bf4626a4666ae3007071492d24e1d4"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "6a0143d357918e5052edf7528072bd0f8ee2b3d4a1427941ddfe0649dbc353ae"
+        },
+        ".claude/skills": {
+          "SKILL.md": "6a0143d357918e5052edf7528072bd0f8ee2b3d4a1427941ddfe0649dbc353ae"
+        }
+      }
+    },
+    "patrol-test-architecture": {
+      "source": "leancodepl/patrol",
+      "revision": "c52c837957811addd36d8dd2efe337d895657ff3",
+      "skillsLock": {
+        "source": "leancodepl/patrol",
+        "sourceType": "github",
+        "skillPath": "skills/patrol-test-architecture/SKILL.md",
+        "computedHash": "ece248d062dacc67e2dcb7a100b26d71e462f6dc1bc05aa83eb3be92fe31ee71"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "c1ccda48a7b2502cd7a10575756877a832e5111da655cfd73165eadf050630c2"
+        },
+        ".claude/skills": {
+          "SKILL.md": "c1ccda48a7b2502cd7a10575756877a832e5111da655cfd73165eadf050630c2"
+        }
+      }
+    },
+    "patrol-write-test": {
+      "source": "leancodepl/patrol",
+      "revision": "c52c837957811addd36d8dd2efe337d895657ff3",
+      "skillsLock": {
+        "source": "leancodepl/patrol",
+        "sourceType": "github",
+        "skillPath": "skills/patrol-write-test/SKILL.md",
+        "computedHash": "7763d82e3d0eaf1d08ab44e84780f4c49a34b536a6479d2cd6c92a7a12538775"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "b8cd5f482d19dddc8fbad422c391d865b4eee55b39c20fb65874e09a7bdea2ac"
+        },
+        ".claude/skills": {
+          "SKILL.md": "b8cd5f482d19dddc8fbad422c391d865b4eee55b39c20fb65874e09a7bdea2ac"
+        }
+      }
+    },
+    "sentry-flutter-sdk": {
+      "source": "getsentry/sentry-for-ai",
+      "revision": "1adb9ee6deb9a708b9bd09da536194cdd03ff71c",
+      "skillsLock": {
+        "source": "getsentry/sentry-for-ai",
+        "sourceType": "github",
+        "skillPath": "skills-legacy/sentry-flutter-sdk/SKILL.md",
+        "computedHash": "fa43808a64ede439bd075b46f1985f81a85a39efb2bdaf089edb05941ec32102"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "c9df31e9ea77c4dd0126cb0fe5245aaf4ad1ddcac414efd901f36936c18c925f",
+          "references/ecosystem-integrations.md": "61615fd82bf3e52e1e90df9847132ccbe22870fd99a888d4e612a3bfc36993e6",
+          "references/error-monitoring.md": "d2f954479f57f54428109fda0a747e7408a9d48070dbcdf1dc8e813d6c3e4817",
+          "references/logging.md": "3209f641c4ce75a4dcf9e0a4ac1d079af5463e5e039d62e05fb07efa6316c81b",
+          "references/metrics.md": "53244a541274103bfa3399cfd50ea91c118499260b4d8a2c078dca416a21377e",
+          "references/profiling.md": "1f85b05dd0037432ffeb0439a263aa8fc39a163f388f20a65a9eca221cbd72ee",
+          "references/session-replay.md": "b7222eecf2bb0065283f9f38066d88748e471459e02943bef79a267f4be01d35",
+          "references/tracing.md": "c36051a84110ba9169f19c5381465ba62cbfd9042d49643149af44c07d0d116d"
+        },
+        ".claude/skills": {
+          "SKILL.md": "c9df31e9ea77c4dd0126cb0fe5245aaf4ad1ddcac414efd901f36936c18c925f",
+          "references/ecosystem-integrations.md": "61615fd82bf3e52e1e90df9847132ccbe22870fd99a888d4e612a3bfc36993e6",
+          "references/error-monitoring.md": "d2f954479f57f54428109fda0a747e7408a9d48070dbcdf1dc8e813d6c3e4817",
+          "references/logging.md": "3209f641c4ce75a4dcf9e0a4ac1d079af5463e5e039d62e05fb07efa6316c81b",
+          "references/metrics.md": "53244a541274103bfa3399cfd50ea91c118499260b4d8a2c078dca416a21377e",
+          "references/profiling.md": "1f85b05dd0037432ffeb0439a263aa8fc39a163f388f20a65a9eca221cbd72ee",
+          "references/session-replay.md": "b7222eecf2bb0065283f9f38066d88748e471459e02943bef79a267f4be01d35",
+          "references/tracing.md": "c36051a84110ba9169f19c5381465ba62cbfd9042d49643149af44c07d0d116d"
+        }
+      }
+    },
+    "using-git-worktrees": {
+      "source": "obra/superpowers",
+      "revision": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+      "skillsLock": {
+        "source": "obra/superpowers",
+        "sourceType": "github",
+        "skillPath": "skills/using-git-worktrees/SKILL.md",
+        "computedHash": "48c8a1040e378e0cb7208107294e3afa9067b9370c3f33b49a443eb6b7528b0d"
+      },
+      "files": {
+        ".agents/skills": {
+          "SKILL.md": "8cfb86f121269e8f7f12361e6795c4f6738828340e28964c9229d365666c9edd"
+        },
+        ".claude/skills": {
+          "SKILL.md": "8cfb86f121269e8f7f12361e6795c4f6738828340e28964c9229d365666c9edd"
+        }
+      }
+    }
+  }
+}

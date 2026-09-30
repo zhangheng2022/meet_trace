@@ -18,7 +18,7 @@ permissions:
 jobs:
   flutter-core:
     name: Flutter core quality and optional Android audit
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
 
     steps:
@@ -27,13 +27,13 @@ jobs:
         with:
           ref: ${{ inputs.checkout_ref }}
 
-      - name: Set up Java 17
+      - name: Set up Java 25
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "25"
 
-      - name: Set up Flutter 3.47.0
+      - name: Set up Flutter from .fvmrc
         uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
