@@ -53,6 +53,7 @@ final class RemoteAsrPreviewSession
   int _dropped = 0;
   int _latestMs = 0;
   int _audioEpoch = 0;
+  int? _pendingFlushEpoch;
   int _coveredMs = 0;
   String? _lastError;
 
@@ -99,6 +100,7 @@ final class RemoteAsrPreviewSession
     if (!_active) return;
     try {
       await engine.initialize();
+      if (!_active) return;
       _initialized = true;
       _startDrain();
     } on Object catch (error) {
@@ -128,7 +130,10 @@ final class RemoteAsrPreviewSession
   }
 
   void _startDrain() {
-    if (!_initialized || !_active || _draining != null || _pending.isEmpty) {
+    if (!_initialized ||
+        !_active ||
+        _draining != null ||
+        (_pending.isEmpty && _pendingFlushEpoch == null)) {
       return;
     }
     _draining = _drain().whenComplete(() {
@@ -139,7 +144,11 @@ final class RemoteAsrPreviewSession
   }
 
   Future<void> _drain() async {
-    while (_active && _pending.isNotEmpty) {
+    while (_active && (_pending.isNotEmpty || _pendingFlushEpoch != null)) {
+      if (_pending.isEmpty) {
+        await _flushPending();
+        continue;
+      }
       final chunk = _pending.removeFirst();
       _queuedBytes -= chunk.bytes.length;
       try {
@@ -159,16 +168,32 @@ final class RemoteAsrPreviewSession
 
   @override
   Future<void> flush() async {
-    if (!_active || !_initialized) return;
+    if (!_active) return;
+    // 初始化前的暂停也保留提交意图；不等待联网，以免阻塞事实录音控制。
     final epoch = _audioEpoch;
-    await _draining;
-    if (!_active || epoch != _audioEpoch) return;
+    _pendingFlushEpoch = epoch;
+    _startDrain();
+    while (_active && _initialized && _pendingFlushEpoch == epoch) {
+      // 已完成 drain 的回调可能刚启动下一轮，不能提前报告本次提交完成。
+      final draining = _draining;
+      if (draining == null) return;
+      await draining;
+    }
+  }
+
+  Future<void> _flushPending() async {
+    final epoch = _pendingFlushEpoch;
     try {
+      // 恢复后收到新 PCM 时，旧暂停不能提交新一轮音频。
+      if (!_active || epoch != _audioEpoch) return;
       if (engine case final AsrPreviewControl control) {
         await control.flushPreview();
       }
     } on Object catch (error) {
       _fail(error);
+    } finally {
+      // 同一轮重复暂停合并；提交中收到的新暂停由下一轮 drain 处理。
+      if (_pendingFlushEpoch == epoch) _pendingFlushEpoch = null;
     }
   }
 
@@ -180,6 +205,7 @@ final class RemoteAsrPreviewSession
             ? error.failure.code
             : 'asr.remote.preview_failed');
     _state = AsrPreviewState.recordingOnly;
+    _pendingFlushEpoch = null;
     _dropped += _pending.length;
     _pending.clear();
     _completed.clear();
@@ -196,6 +222,7 @@ final class RemoteAsrPreviewSession
   Future<void> stop() async {
     if (_state == AsrPreviewState.disposed) return;
     _state = AsrPreviewState.disposed;
+    _pendingFlushEpoch = null;
     _dropped += _pending.length;
     _pending.clear();
     _completed.clear();

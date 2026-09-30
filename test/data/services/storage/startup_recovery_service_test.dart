@@ -15,6 +15,7 @@ import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(sqfliteFfiInit);
 
   late Directory root;
@@ -174,12 +175,27 @@ void main() {
     expect(report.recoveredRecordings, 1);
     expect(
       (await meetings.getById('meeting-bad'))?.status,
-      MeetingState.failed,
+      MeetingState.recording,
     );
     expect(
       (await meetings.getById('meeting-good'))?.status,
       MeetingState.processing,
     );
+
+    await database.close();
+    final secondStartup = StartupRecoveryService(
+      database: database,
+      layout: layout,
+    );
+    final retried = await secondStartup.recover(now: now);
+    final recovered = (await meetings.getById('meeting-bad'))!;
+    expect(retried.recoveredRecordings, 1);
+    expect(recovered.status, MeetingState.processing);
+    expect(recovered.audioPath, layout.meetingAudioPath('meeting-bad'));
+    expect(recovered.audioDurationMs, 1000);
+    expect(await File(recovered.audioPath!).length(), 32000);
+    expect(recovered.beginFinalTranscription().status, MeetingState.processing);
+    expect((await secondStartup.recover(now: now)).totalChanges, 0);
   });
 
   test('标记缺失录音失败时仍继续恢复后续会议', () async {
@@ -223,6 +239,121 @@ void main() {
       MeetingState.processing,
     );
   });
+
+  test('恢复数据库提交失败后下一次启动登记已封存的 PCM', () async {
+    final now = DateTime.utc(2026, 9, 30);
+    const id = 'meeting-db-failure';
+    await meetings.save(_recordingMeeting(id, now));
+    final audio = File(layout.meetingAudioTempPath(id));
+    await audio.parent.create(recursive: true);
+    await audio.writeAsBytes(List<int>.filled(32000, 3), flush: true);
+    final db = await database.open();
+    await db.execute('''
+      CREATE TRIGGER reject_audio_reference
+      BEFORE UPDATE ON meetings
+      WHEN NEW.id = '$id' AND NEW.audio_path IS NOT NULL
+      BEGIN
+        SELECT RAISE(FAIL, 'forced reference update failure');
+      END
+    ''');
+
+    expect((await recovery.recover(now: now)).failedRecordings, 1);
+    expect((await meetings.getById(id))!.status, MeetingState.recording);
+    expect(await File(layout.meetingAudioPath(id)).length(), 32000);
+    await db.execute('DROP TRIGGER reject_audio_reference');
+    await database.close();
+
+    final secondStartup = StartupRecoveryService(
+      database: database,
+      layout: layout,
+    );
+    expect((await secondStartup.recover(now: now)).recoveredRecordings, 1);
+    final recovered = (await meetings.getById(id))!;
+    expect(recovered.audioPath, layout.meetingAudioPath(id));
+    expect(recovered.audioDurationMs, 1000);
+    expect(recovered.beginFinalTranscription().status, MeetingState.processing);
+    expect((await secondStartup.recover(now: now)).totalChanges, 0);
+  });
+
+  test('找回已被标失败的录音但不自动重试最终转录失败', () async {
+    final now = DateTime.utc(2026, 9, 30);
+    for (final code in [
+      'recording.finalize_failed',
+      'recovery.unexpected',
+      'asr.failed',
+    ]) {
+      final id = code.replaceAll('.', '-');
+      await meetings.save(
+        _recordingMeeting(id, now).fail(errorCode: code, endedAt: now),
+      );
+      final audio = File(layout.meetingAudioTempPath(id));
+      await audio.parent.create(recursive: true);
+      await audio.writeAsBytes(List<int>.filled(32000, 1), flush: true);
+    }
+    await meetings.save(
+      _recordingMeeting(
+        'empty-failure',
+        now,
+      ).fail(errorCode: 'recording.audio_empty', endedAt: now),
+    );
+    await database.close();
+
+    expect((await recovery.recover(now: now)).recoveredRecordings, 2);
+    for (final id in ['recording-finalize_failed', 'recovery-unexpected']) {
+      final recovered = (await meetings.getById(id))!;
+      expect(recovered.audioPath, layout.meetingAudioPath(id));
+      expect(recovered.audioDurationMs, 1000);
+      expect(
+        recovered.beginFinalTranscription().status,
+        MeetingState.processing,
+      );
+    }
+    expect((await meetings.getById('asr-failed'))!.status, MeetingState.failed);
+    expect((await recovery.recover(now: now)).totalChanges, 0);
+  });
+
+  test('启动清理会议播放缓存和历史根级 WAV 不删除事实录音', () async {
+    const id = 'playback-crash';
+    final source = File(layout.meetingAudioPath(id));
+    await source.parent.create(recursive: true);
+    await source.writeAsBytes(List<int>.filled(32000, 1));
+    final cache = Directory(layout.meetingPlaybackTempDirectory(id));
+    await cache.create(recursive: true);
+    await File('${cache.path}/meettrace-audio-preview.wav')
+        .writeAsBytes([1, 2]);
+    final legacy = File('${layout.rootPath}/meettrace-audio-preview.wav');
+    await legacy.writeAsBytes([1, 2]);
+
+    final report = await recovery.recover(now: DateTime.utc(2026, 9, 30));
+    expect(report.removedPlaybackTempDirectories, 2);
+    expect(await cache.exists(), isFalse);
+    expect(await legacy.exists(), isFalse);
+    expect(await source.length(), 32000);
+    expect(
+      (await recovery.recover(now: DateTime.utc(2026, 9, 30))).totalChanges,
+      0,
+    );
+  });
+
+  test('播放缓存链接清理不遍历会议目录之外的内容', () async {
+    final outside = await Directory.systemTemp.createTemp(
+      'meettrace-playback-outside-',
+    );
+    addTearDown(() => outside.delete(recursive: true));
+    final keep = File('${outside.path}/keep.wav');
+    await keep.writeAsBytes([1, 2]);
+    await Directory(layout.meetingDirectory('linked')).create(recursive: true);
+    final cacheLink = Link(layout.meetingPlaybackTempDirectory('linked'));
+    final legacyLink = Link('${layout.rootPath}/meettrace-audio-preview.wav');
+    await cacheLink.create(outside.path);
+    await legacyLink.create(keep.path);
+
+    final report = await recovery.recover(now: DateTime.utc(2026, 9, 30));
+    expect(report.removedPlaybackTempDirectories, 2);
+    expect(await cacheLink.exists(), isFalse);
+    expect(await legacyLink.exists(), isFalse);
+    expect(await keep.readAsBytes(), [1, 2]);
+  }, skip: Platform.isWindows ? 'Windows 测试环境不保证符号链接权限' : false);
 
   test('数据库仍有会议时恢复已暂存的删除目录', () async {
     final now = DateTime.utc(2026, 7, 24, 11);
@@ -365,4 +496,16 @@ final class _SelectiveFailingCheckpointStore
     }
     return JsonRecordingCheckpointStore(layout).save(checkpoint);
   }
+}
+
+Meeting _recordingMeeting(String id, DateTime now) {
+  return Meeting(
+    id: id,
+    title: id,
+    createdAt: now,
+    status: MeetingState.created,
+    audioDurationMs: 0,
+    recordingModelId: 'sensevoice',
+    recordingModelVersion: '1',
+  ).startRecording(startedAt: now);
 }

@@ -40,6 +40,7 @@ final class ManageRecordingSessionUseCase {
   }
 
   Future<Meeting> finish(Meeting meeting) async {
+    var latest = meeting;
     try {
       final artifact = await recording.stop();
       final completed = meeting.finishRecording(
@@ -47,6 +48,8 @@ final class ManageRecordingSessionUseCase {
         audioPath: artifact.audioPath,
         audioDurationMs: artifact.duration.inMilliseconds,
       );
+      // 封存成功后，即使数据库提交暂时失败，也不能退回不含音频引用的对象。
+      latest = completed;
       await meetings.save(completed);
       try {
         await preview.stop();
@@ -59,7 +62,7 @@ final class ManageRecordingSessionUseCase {
         rethrow;
       }
       throw ManageRecordingSessionException(
-        meeting: await _saveFailure(meeting, error),
+        meeting: await _saveFailure(latest, error),
         cause: error,
       );
     }
@@ -70,7 +73,11 @@ final class ManageRecordingSessionUseCase {
       return meeting;
     }
     final failed = meeting.fail(errorCode: _errorCode(error), endedAt: now());
-    await meetings.save(failed);
+    try {
+      await meetings.save(failed);
+    } on Object {
+      // 保留原始错误与已封存引用。旧持久化状态仍由下次启动恢复重试。
+    }
     return failed;
   }
 
