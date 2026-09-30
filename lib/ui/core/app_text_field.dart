@@ -18,6 +18,7 @@ final class AppTextField extends StatelessWidget {
     this.counterVisibilityThreshold,
     this.autofocus = false,
     this.enabled = true,
+    this.obscureText = false,
     this.errorText,
     this.textInputAction,
     this.onChanged,
@@ -39,6 +40,7 @@ final class AppTextField extends StatelessWidget {
   final int? counterVisibilityThreshold;
   final bool autofocus;
   final bool enabled;
+  final bool obscureText;
   final String? errorText;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onChanged;
@@ -85,6 +87,9 @@ final class AppTextField extends StatelessWidget {
               },
         autofocus: autofocus,
         enabled: enabled,
+        obscureText: obscureText,
+        enableSuggestions: !obscureText,
+        autocorrect: !obscureText,
         textInputAction: textInputAction,
         onChanged: onChanged,
         onSubmitted: onSubmitted,

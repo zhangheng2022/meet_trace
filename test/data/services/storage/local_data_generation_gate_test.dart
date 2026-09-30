@@ -162,4 +162,41 @@ void main() {
     expect(await current.ensureCurrent(), isTrue);
     expect(await current.ensureCurrent(), isFalse);
   });
+
+  test('安全凭据清理先于数据删除，失败保留旧数据代并在下次重试', () async {
+    await seedLegacyInstallation();
+    const legacyMarker = '{"schemaVersion":1,"generation":0}';
+    await markerFile().writeAsString(legacyMarker);
+    var attempts = 0;
+    final current = LocalDataGenerationGate(
+      layout: layout,
+      beforeReset: () async {
+        attempts++;
+        expect(await File(layout.databasePath).readAsString(), 'legacy-db');
+        expect(await markerFile().readAsString(), legacyMarker);
+        if (attempts == 1) throw StateError('secure storage locked');
+      },
+    );
+    await expectLater(current.ensureCurrent(), throwsStateError);
+    expect(await markerFile().readAsString(), legacyMarker);
+    expect(await File(layout.databasePath).readAsString(), 'legacy-db');
+    expect(await current.ensureCurrent(), isTrue);
+    expect(await current.ensureCurrent(), isFalse);
+    expect(attempts, 2);
+    expect(await File(layout.databasePath).exists(), isFalse);
+  });
+
+  test('首次安装也清理跨重装残留凭据，当前数据代不重复清理', () async {
+    var calls = 0;
+    final current = LocalDataGenerationGate(
+      layout: layout,
+      beforeReset: () async {
+        calls++;
+      },
+    );
+    expect(await current.ensureCurrent(), isFalse);
+    expect(calls, 1);
+    expect(await current.ensureCurrent(), isFalse);
+    expect(calls, 1);
+  });
 }

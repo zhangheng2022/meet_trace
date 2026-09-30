@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart' show Database;
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/workflow_states.dart';
 import '../audio/recording_checkpoint_store.dart';
+import '../models/model_temp_recovery_service.dart';
 import 'app_database.dart';
 import 'app_file_layout.dart';
 import 'durable_file_committer.dart';
@@ -25,6 +26,7 @@ final class RecoveryReport {
     required this.removedModelTempDirectories,
     required this.reconciledModelRollbackDirectories,
     required this.removedShareTempDirectories,
+    this.removedPlaybackTempDirectories = 0,
     required this.removedStagedMeetingDirectories,
     required this.activatedSnapshots,
   });
@@ -35,6 +37,7 @@ final class RecoveryReport {
   final int removedModelTempDirectories;
   final int reconciledModelRollbackDirectories;
   final int removedShareTempDirectories;
+  final int removedPlaybackTempDirectories;
   final int removedStagedMeetingDirectories;
   final int activatedSnapshots;
 
@@ -45,6 +48,7 @@ final class RecoveryReport {
       removedModelTempDirectories +
       reconciledModelRollbackDirectories +
       removedShareTempDirectories +
+      removedPlaybackTempDirectories +
       removedStagedMeetingDirectories +
       activatedSnapshots;
 }
@@ -55,15 +59,19 @@ final class StartupRecoveryService {
     required this.layout,
     this.fileCommitter = const DurableFileCommitter(),
     RecordingCheckpointStore? recordingCheckpoints,
+    ModelTempRecoveryService? modelTempRecovery,
     StartupRecoveryErrorReporter? reportError,
   }) : recordingCheckpoints =
            recordingCheckpoints ?? JsonRecordingCheckpointStore(layout),
+       modelTempRecovery =
+           modelTempRecovery ?? const ModelTempRecoveryService(),
        reportError = reportError ?? _logRecoveryError;
 
   final AppDatabase database;
   final AppFileLayout layout;
   final DurableFileCommitter fileCommitter;
   final RecordingCheckpointStore recordingCheckpoints;
+  final ModelTempRecoveryService modelTempRecovery;
   final StartupRecoveryErrorReporter reportError;
 
   Future<RecoveryReport> recover({required DateTime now}) async {
@@ -92,6 +100,11 @@ final class StartupRecoveryService {
       _removeShareTempDirectories,
       0,
     );
+    final removedPlaybackTempDirectories = await _attempt(
+      'removePlaybackTempDirectories',
+      _removePlaybackTempDirectories,
+      0,
+    );
     final removedStagedMeetingDirectories = await _attempt(
       'removeStagedMeetingDirectories',
       _removeStagedMeetingDirectories,
@@ -110,6 +123,7 @@ final class StartupRecoveryService {
       removedModelTempDirectories: removedModelTempDirectories,
       reconciledModelRollbackDirectories: reconciledModelRollbackDirectories,
       removedShareTempDirectories: removedShareTempDirectories,
+      removedPlaybackTempDirectories: removedPlaybackTempDirectories,
       removedStagedMeetingDirectories: removedStagedMeetingDirectories,
       activatedSnapshots: activatedSnapshots,
     );
@@ -121,16 +135,29 @@ final class StartupRecoveryService {
     final db = await database.open();
     final rows = await db.query(
       'meetings',
-      columns: ['id'],
-      where: 'status = ?',
-      whereArgs: [MeetingState.recording.name],
+      columns: ['id', 'status', 'ended_at'],
+      where:
+          'status = ? OR (status = ? AND audio_path IS NULL AND '
+          '(last_error_code LIKE ? OR last_error_code LIKE ?))',
+      whereArgs: [
+        MeetingState.recording.name,
+        MeetingState.failed.name,
+        'recording.%',
+        'recovery.%',
+      ],
     );
     var successes = 0;
     var failures = 0;
 
     for (final row in rows) {
       final meetingId = row['id']! as String;
+      final previousStatus = row['status']! as String;
       try {
+        if (previousStatus == MeetingState.failed.name &&
+            !await _hasRecoverablePcm(meetingId)) {
+          // 已确认没有完整样本的失败录音不在每次启动时重复记为新失败。
+          continue;
+        }
         await _alignRecoverablePcm(meetingId);
         await fileCommitter.commit(
           tempPath: layout.meetingAudioTempPath(meetingId),
@@ -153,10 +180,11 @@ final class StartupRecoveryService {
                   'audio_duration_ms': recordingDurationForBytes(persistedBytes)
                       .inMilliseconds,
                   'status': MeetingState.processing.name,
+                  'ended_at': row['ended_at'] ?? now.millisecondsSinceEpoch,
                   'last_error_code': null,
                 },
                 where: 'id = ? AND status = ?',
-                whereArgs: [meetingId, MeetingState.recording.name],
+                whereArgs: [meetingId, previousStatus],
               );
               if (updated != 1) {
                 throw StateError('会议状态已变化，拒绝写入恢复音频引用：$meetingId');
@@ -171,21 +199,23 @@ final class StartupRecoveryService {
           () => _markRecordingRecoveryFailed(
             db,
             meetingId,
+            previousStatus,
             'recovery.audio_missing_or_empty',
           ),
           null,
         );
         failures++;
-      } on Object {
-        await _attempt(
-          'markRecordingRecoveryFailed:$meetingId',
-          () => _markRecordingRecoveryFailed(
-            db,
-            meetingId,
-            'recovery.unexpected',
-          ),
-          null,
-        );
+      } on Object catch (error, stackTrace) {
+        reportError('recoverRecording:$meetingId', error, stackTrace);
+        await _attempt('recordPendingRecovery:$meetingId', () async {
+          // checkpoint/数据库暂时不可写时保留待恢复状态，下一次启动重试。
+          await db.update(
+            'meetings',
+            {'last_error_code': 'recovery.unexpected'},
+            where: 'id = ? AND status = ?',
+            whereArgs: [meetingId, previousStatus],
+          );
+        }, null);
         failures++;
       }
     }
@@ -195,14 +225,29 @@ final class StartupRecoveryService {
   Future<void> _markRecordingRecoveryFailed(
     Database db,
     String meetingId,
+    String previousStatus,
     String errorCode,
   ) async {
     await db.update(
       'meetings',
       {'status': MeetingState.failed.name, 'last_error_code': errorCode},
       where: 'id = ? AND status = ?',
-      whereArgs: [meetingId, MeetingState.recording.name],
+      whereArgs: [meetingId, previousStatus],
     );
+  }
+
+  Future<bool> _hasRecoverablePcm(String meetingId) async {
+    for (final path in [
+      layout.meetingAudioPath(meetingId),
+      layout.meetingAudioTempPath(meetingId),
+    ]) {
+      final file = File(path);
+      if (await file.exists() &&
+          await file.length() >= recordingBytesPerSample) {
+        return true;
+      }
+    }
+    return false;
   }
 
   Future<void> _alignRecoverablePcm(String meetingId) async {
@@ -246,34 +291,8 @@ final class StartupRecoveryService {
     );
   }
 
-  Future<int> _removeIncompleteModelDirectories() async {
-    final tempRoot = Directory(layout.modelTempRoot);
-    if (!await tempRoot.exists()) {
-      return 0;
-    }
-    final normalizedRoot = p.normalize(p.absolute(tempRoot.path));
-    var removed = 0;
-
-    await for (final modelEntity in tempRoot.list(followLinks: false)) {
-      if (modelEntity is! Directory) {
-        continue;
-      }
-      await for (final versionEntity in modelEntity.list(followLinks: false)) {
-        if (versionEntity is! Directory) {
-          continue;
-        }
-        final target = p.normalize(p.absolute(versionEntity.path));
-        if (!p.isWithin(normalizedRoot, target)) {
-          throw StateError('拒绝清理模型临时根目录之外的路径：$target');
-        }
-        await versionEntity.delete(recursive: true);
-        removed++;
-      }
-      if (await modelEntity.list(followLinks: false).isEmpty) {
-        await modelEntity.delete();
-      }
-    }
-    return removed;
+  Future<int> _removeIncompleteModelDirectories() {
+    return modelTempRecovery.recover(layout: layout);
   }
 
   Future<int> _reconcileModelRollbackDirectories() async {
@@ -358,6 +377,44 @@ final class StartupRecoveryService {
       removed++;
     }
     return removed;
+  }
+
+  Future<int> _removePlaybackTempDirectories() async {
+    var removed = 0;
+    // 兼容旧版本在根目录生成的完整 WAV；只删除入口，不跟随符号链接。
+    if (await _deletePlaybackTempPath(
+      p.join(layout.rootPath, 'meettrace-audio-preview.wav'),
+    )) {
+      removed++;
+    }
+    final meetingsRoot = Directory(layout.meetingsRoot);
+    if (!await meetingsRoot.exists()) {
+      return removed;
+    }
+    await for (final entity in meetingsRoot.list(followLinks: false)) {
+      if (entity is Directory &&
+          await _deletePlaybackTempPath(p.join(entity.path, '.playback'))) {
+        removed++;
+      }
+    }
+    return removed;
+  }
+
+  Future<bool> _deletePlaybackTempPath(String path) async {
+    final type = await FileSystemEntity.type(path, followLinks: false);
+    switch (type) {
+      case FileSystemEntityType.notFound:
+        return false;
+      case FileSystemEntityType.directory:
+        await Directory(path).delete(recursive: true);
+      case FileSystemEntityType.link:
+        await Link(path).delete();
+      case FileSystemEntityType.file:
+        await File(path).delete();
+      default:
+        throw StateError('无法识别播放临时路径类型：$path');
+    }
+    return true;
   }
 
   Future<int> _removeStagedMeetingDirectories() async {

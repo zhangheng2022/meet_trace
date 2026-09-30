@@ -5,7 +5,7 @@ import 'meettrace_storage_dependencies.dart';
 import 'meettrace_update_dependencies.dart';
 
 final class MeetTraceDependencies {
-  const MeetTraceDependencies._({
+  MeetTraceDependencies._({
     required this.storage,
     required this.runtime,
     required this.meeting,
@@ -16,8 +16,16 @@ final class MeetTraceDependencies {
   final RuntimeAssetDependencies runtime;
   final MeetingDependencies meeting;
   final UpdateDependencies? updates;
+  Future<void>? _disposal;
 
-  static Future<MeetTraceDependencies> create() async {
+  static Future<MeetTraceDependencies> create({
+    MeetingDependencies Function({
+          required StorageDependencies storage,
+          required RuntimeAssetDependencies runtime,
+        })
+        createMeeting =
+        MeetingDependencies.create,
+  }) async {
     StorageDependencies? storage;
     RuntimeAssetDependencies? runtime;
     MeetingDependencies? meeting;
@@ -29,7 +37,7 @@ final class MeetTraceDependencies {
         registry: registry,
         storage: storage,
       );
-      meeting = MeetingDependencies.create(storage: storage, runtime: runtime);
+      meeting = createMeeting(storage: storage, runtime: runtime);
       try {
         updates = UpdateDependencies.create(storage: storage);
       } on Object {
@@ -52,13 +60,11 @@ final class MeetTraceDependencies {
     }
   }
 
-  Future<void> dispose() async {
-    await _disposeAll([
-      meeting.dispose,
-      if (updates != null) updates!.dispose,
-      storage.dispose,
-    ]);
-  }
+  Future<void> dispose() => _disposal ??= _disposeAll([
+    meeting.dispose,
+    if (updates != null) updates!.dispose,
+    storage.dispose,
+  ]);
 }
 
 Future<void> _disposeAll(

@@ -367,6 +367,10 @@ String _meetingFactDescription(AppLocalizations l10n, Meeting meeting) =>
     };
 
 String _modelDisplayLabel(AppLocalizations l10n, Meeting meeting) {
+  final profile = meeting.transcriptionProfile;
+  if (profile != null && !profile.isLocal) {
+    return '${profile.name} · ${profile.modelId} · ${profile.modelVersion ?? l10n.sourceVersionUnknown}';
+  }
   final descriptor = AsrModelRegistry.alpha.findById(meeting.recordingModelId);
   final displayName = descriptor?.displayName ?? l10n.localModel;
   return '$displayName · ${meeting.recordingModelVersion}';

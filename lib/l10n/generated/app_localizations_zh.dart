@@ -218,7 +218,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get localStoragePrivacyDescription =>
-      '会议录音、最终转录与运行资源只保存在本机；卸载应用可能永久删除这些数据。';
+      '会议录音与结果保存在本机；选择在线转录会向你指定的服务发送音频。卸载可能永久删除本地数据。';
 
   @override
   String get remoteDiagnosticsTitle => '远程诊断';
@@ -401,7 +401,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String audioLocalModelAvailable(String model) {
-    return '音频仅保存在本机 · $model可用';
+    return '事实音频保存在本机 · $model可用';
   }
 
   @override
@@ -562,7 +562,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recordingConditionsTitle => '录音条件';
 
   @override
-  String get recordingConditionsDescription => '开始会议前会再次检查；录音和转录资源只保存在本机。';
+  String get recordingConditionsDescription => '录音开始前会再次检查条件；每场会议可提前选择转录来源。';
 
   @override
   String get recordingConditionsDetails => '录音条件详情';
@@ -952,7 +952,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String recordingLocalDuration(String duration) {
-    return '录音仅保存在本机 · $duration';
+    return '事实录音保存在本机 · $duration';
   }
 
   @override
@@ -1281,7 +1281,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String destructiveUpdateMessage(String version, int build) {
-    return '版本 $version（构建 $build）提高了数据代。安装后首次启动会清除本机会议音频、转录、模型和设置，并重新初始化。请先分享或导出需要保留的内容。';
+    return '版本 $version（构建 $build）提高了数据代。安装后首次启动会清除本机会议音频、转录、模型、设置和在线转录凭据，并重新初始化。请先分享或导出需要保留的内容。';
   }
 
   @override
@@ -1597,4 +1597,148 @@ class AppLocalizationsZh extends AppLocalizations {
   String audioShareSystemTitle(String title) {
     return '分享会议录音：$title';
   }
+
+  @override
+  String get previewRecognizing => '识别中';
+
+  @override
+  String get previewTemporary => '临时字幕';
+
+  @override
+  String previewSkipped(int count) {
+    return '已跳过 $count 段临时字幕，录音完整保留';
+  }
+
+  @override
+  String get transcriptionSources => '转录来源';
+
+  @override
+  String get addOnlineSource => '添加在线来源';
+
+  @override
+  String get chooseTranscriptionSource => '选择转录来源';
+
+  @override
+  String get sourceLockedNotice => '本场开始后锁定来源；转录失败仍继续录音。';
+
+  @override
+  String get sourceLocal => '本地 · SenseVoice';
+
+  @override
+  String get sourceAfterMeeting => '仅会后转录 · 无实时字幕';
+
+  @override
+  String get sourceRealtime => '实时字幕 + 完整录音生成最终稿';
+
+  @override
+  String get sourceDefault => '默认';
+
+  @override
+  String get sourceSetDefault => '设为默认';
+
+  @override
+  String get sourceEdit => '编辑配置';
+
+  @override
+  String get sourceName => '配置名称';
+
+  @override
+  String get sourceProtocol => '接口协议';
+
+  @override
+  String get sourceEndpoint => '完整接口地址（不要包含密钥）';
+
+  @override
+  String get sourceModel => '模型 ID（自定义）';
+
+  @override
+  String get sourceApiKey => 'API Key';
+
+  @override
+  String get sourceHeaders => '认证头 JSON';
+
+  @override
+  String get sourceLanguage => '语言（auto / zh / en / …）';
+
+  @override
+  String get sourcePrompt => '术语 / 转录提示';
+
+  @override
+  String get sourceUploadLimit => '上传大小上限（MiB）';
+
+  @override
+  String get sourceTimeout => '请求超时（秒）';
+
+  @override
+  String get sourceTimeoutInvalid => '请输入 1 到 3600 之间的整数。';
+
+  @override
+  String get sourceAdvanced => '高级连接设置';
+
+  @override
+  String get sourceFailure => '操作未完成，请检查填写内容、连接和凭据。';
+
+  @override
+  String get sourceProbe => '测试协议连接';
+
+  @override
+  String get sourceProbeConfirm => '将向配置的地址发送一段生成的测试音频，可能产生少量费用；此测试不代表识别准确率。';
+
+  @override
+  String get sourceProbeSuccess => '协议测试通过；请用真实样本评估准确率。';
+
+  @override
+  String get sourceRemoveConfirm => '删除此配置入口？历史会议保留已锁定的配置和凭据，以便手动重试。';
+
+  @override
+  String sourceOnlineConsent(String host) {
+    return '向 $host 发送音频？';
+  }
+
+  @override
+  String sourceOnlineConsentMessage(String model) {
+    return '本场使用 $model。音频直接发送至你配置的服务商；结束后会重新转录完整录音，使用实时字幕时将另产生一次识别费用。服务商决定云端保留策略；转录失败仍保留本机录音。';
+  }
+
+  @override
+  String get sourceAcceptStart => '同意并继续';
+
+  @override
+  String get sourceSwitchRetranscribe => '换来源重转录';
+
+  @override
+  String get sourceRetranscribeNotice => '使用此来源重新转录完整录音；新结果成功前保留旧结果。';
+
+  @override
+  String get prepareLocalModels => '准备本地模型';
+
+  @override
+  String get localModelsReady => '本地模型已就绪';
+
+  @override
+  String get returnToMeetings => '返回会议';
+
+  @override
+  String get sourceTimingWindow => '音频窗口范围；服务未返回精确时间戳';
+
+  @override
+  String get sourceRemotePrivacy =>
+      '仅在选择在线来源并确认后发送音频，密钥保存在系统安全存储；私有协议需通过兼容网关接入。';
+
+  @override
+  String get sourceVersionUnknown => '服务未报告模型版本';
+
+  @override
+  String get sourceSelect => '选择';
+
+  @override
+  String get sourceProbeAction => '测试';
+
+  @override
+  String get sourceCredentialsHelp =>
+      '两项认证均留空且服务地址不变时，保留原认证。修改任一项会整体替换，请填齐所有必需认证头；清空认证请使用：';
+
+  @override
+  String get sourceCredentialsRequired =>
+      '接收服务已更改。请重新填写全部必需认证，或在认证头中输入空 JSON 对象明确清空。';
 }

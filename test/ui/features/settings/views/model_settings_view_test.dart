@@ -340,6 +340,47 @@ void main() {
     await installations.dispose();
   });
 
+  testWidgets('正式来源入口隐藏旧默认区域时仍在离线资源区展示修复失败', (tester) async {
+    final installations = TestActiveInstallations();
+    final viewModel = ModelSettingsViewModel(
+      preferences: TestModelPreferences(senseVoiceDefaultModelId),
+      installations: installations,
+      actions: ModelMaintenanceActions(
+        repair: () async => throw StateError('download failed'),
+      ),
+    );
+    await tester.pumpWidget(
+      Application(
+        home: ModelSettingsView(
+          viewModel: viewModel,
+          onOpenTranscriptionSources: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('meeting-defaults-section')),
+      findsNothing,
+    );
+    final repair = find.byKey(const ValueKey('repair-model-resource'));
+    await tester.ensureVisible(repair);
+    await tester.tap(repair);
+    await tester.pumpAndSettle();
+    expect(viewModel.errorMessage, '操作失败，请重试');
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('offline-resources-section')),
+        matching: find.byType(FAlert),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('操作失败，请重试'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    viewModel.dispose();
+    await installations.dispose();
+  });
+
   testWidgets('2.0 字体缩放下设置内容不溢出', (tester) async {
     await tester.binding.setSurfaceSize(const Size(370, 829));
     addTearDown(() => tester.binding.setSurfaceSize(null));

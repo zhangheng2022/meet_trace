@@ -93,6 +93,9 @@ final class _FakeVadRuntime implements SherpaOnnxVadRuntime {
   bool get isEmpty => pending.isEmpty;
 
   @override
+  bool get isSpeechDetected => pending.isNotEmpty;
+
+  @override
   sherpa.SpeechSegment get front => pending.first;
 
   @override

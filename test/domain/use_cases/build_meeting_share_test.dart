@@ -5,6 +5,42 @@ import 'package:meettrace/domain/models/workflow_states.dart';
 import 'package:meettrace/domain/use_cases/build_meeting_share.dart';
 
 void main() {
+  for (final format in MeetingShareFormat.values) {
+    test('${format.name} 的窗口级时间戳附本地化说明，精确片段不附说明', () {
+      const useCase = BuildMeetingShareUseCase(
+        copy: MeetingShareCopy(
+          untitledMeeting: 'Untitled',
+          meetingTimeLabel: 'Meeting time',
+          finalTranscriptTitle: 'Final transcript',
+          speakerFallback: 'Speaker 1',
+          exportFooter: 'Exported from MeetTrace.',
+          labelSeparator: ': ',
+          windowTimingNote:
+              'Times describe audio windows, not exact speech boundaries.',
+        ),
+      );
+      final coarse = useCase.execute(
+        meeting: _meeting(),
+        snapshot: _snapshot(
+          timingPrecision: TranscriptTimingPrecision.audioWindow,
+        ),
+        format: format,
+      );
+      final exact = useCase.execute(
+        meeting: _meeting(),
+        snapshot: _snapshot(),
+        format: format,
+      );
+      expect(
+        coarse.text,
+        contains('Times describe audio windows, not exact speech boundaries.'),
+      );
+      expect(coarse.text, contains('确认周五发布'));
+      expect(coarse.text, isNot(contains('服务未返回精确时间戳')));
+      expect(exact.text, isNot(contains('Times describe audio windows')));
+    });
+  }
+
   test('纯文本分享只包含带时间戳和说话人的最终转录', () {
     final document = const BuildMeetingShareUseCase().execute(
       meeting: _meeting(),
@@ -136,7 +172,10 @@ Meeting _meeting() => Meeting(
   activeTranscriptSnapshotId: 'final-1',
 );
 
-TranscriptSnapshot _snapshot({String? speakerId = '张三'}) => TranscriptSnapshot(
+TranscriptSnapshot _snapshot({
+  String? speakerId = '张三',
+  TranscriptTimingPrecision timingPrecision = TranscriptTimingPrecision.segment,
+}) => TranscriptSnapshot(
   id: 'final-1',
   meetingId: 'meeting-1',
   kind: TranscriptSnapshotKind.finalTranscript,
@@ -144,6 +183,7 @@ TranscriptSnapshot _snapshot({String? speakerId = '张三'}) => TranscriptSnapsh
   actualModelVersion: '1',
   createdAt: DateTime.utc(2026, 7, 25),
   status: TranscriptSnapshotStatus.complete,
+  timingPrecision: timingPrecision,
   segments: [
     TranscriptSegment(
       id: 'segment-1',

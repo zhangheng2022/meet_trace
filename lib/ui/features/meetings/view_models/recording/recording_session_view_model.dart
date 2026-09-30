@@ -311,7 +311,9 @@ final class RecordingSessionViewModel extends ChangeNotifier {
         ),
       );
       if (previous.state != metrics.state ||
-          previous.lastErrorCode != metrics.lastErrorCode) {
+          previous.isRecognizing != metrics.isRecognizing ||
+          previous.lastErrorCode != metrics.lastErrorCode ||
+          previous.droppedPreviewWindows != metrics.droppedPreviewWindows) {
         transcriptListenable.notifyListeners();
       }
     });
@@ -336,10 +338,19 @@ final class RecordingSessionViewModel extends ChangeNotifier {
     if (_disposed) {
       return;
     }
+    final previous = _segmentsById[segment.segmentId];
+    if (previous?.isFinalForWindow == true && !segment.isFinalForWindow) {
+      return;
+    }
     if (_segmentsById.containsKey(segment.segmentId)) {
       _orderedSegments.removeWhere(
         (candidate) => candidate.segmentId == segment.segmentId,
       );
+    }
+    if (segment.text.trim().isEmpty) {
+      _segmentsById.remove(segment.segmentId);
+      transcriptListenable.notifyListeners();
+      return;
     }
     _segmentsById[segment.segmentId] = segment;
     var low = 0;

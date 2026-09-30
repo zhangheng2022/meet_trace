@@ -7,10 +7,12 @@
 
 ## 不可破坏的产品边界
 
-- Android、iOS、Windows 自适应 Alpha；无登录、同步、云端 ASR 或 AI 总结。Windows 在 AT-21～AT-26 闭环前标记为规划中。
+- Android、iOS、Windows 自适应 Alpha；无登录、同步或 AI 总结。本地 SenseVoice 与用户自配在线 ASR 共存；Windows 在 AT-21～AT-26 闭环前标记为规划中。
 - 事实 PCM 优先；推理不得中断录音。封存后最终 ASR 与分离并行，分离失败降级为单一说话人。
-- ASR 仅用官方 `sherpa_onnx` 和固定 SenseVoice。SenseVoice、Silero VAD、Pyannote、3D-Speaker 权重不得进入 APK、IPA 或 MSIX；资源未齐阻断首页。
-- 设置只保存全局默认模型；会议开始后锁定同一 ASR 与分离配置，不得本场覆盖、自动切换或混合输出。
+- 本地 ASR 仅用官方 `sherpa_onnx` 和固定 SenseVoice。权重不得进入 APK、IPA 或 MSIX；资源按所选本地能力准备，不阻断首页、历史或在线配置。
+- 设置保存默认转录来源，会议开始前允许选择本地或在线；开始后锁定端点、模型、参数及分离配置，不自动切换或混合输出。会后手动换来源必须生成新任务和完整新快照，失败保留旧稿。
+- 在线模型名和厂商不设白名单；首批支持 Audio Transcriptions、Chat 音频输入与 Realtime Transcription 协议，私有协议经适配器或用户自有网关。文件接口不宣称实时。每场在线上传和会后完整音频再次识别需明确告知并确认，费用由用户服务账户承担。
+- API Key 与认证头仅存系统安全存储；会议/任务保存非秘密配置副本，编辑配置不得改变旧任务上传目标。事实 PCM 不改写，在线转换仅作用于发送副本。无服务端精确时间信息必须标记粗粒度；不得伪造模型版本或说话人。
 - 主题默认跟随系统，可切换浅色/深色并仅本机保存；异常回退系统主题，不阻断核心流程。
 - 应用语言支持简体中文/英文，默认跟随系统；任意 `zh-*` 使用简体中文，其他未支持语言回退英文。设置可即时切换并仅本机保存，且不得中断录音、ASR 或最终处理。
 - Android、iOS、Windows Release 默认开启可退出的 Sentry，首页不展示告知，设置页披露采集边界：错误 100%、进程级性能抽样 20%、录音期每 60 秒匿名窗口；禁用 PII、Replay、日志、截图、View Hierarchy、用户交互与 Production Profiling。Sentry 失败不得影响事实录音；三平台生产配置与符号化失败阻断统一发布。
@@ -19,7 +21,7 @@
 - 发布链仅含 `Alpha Release` 与 `Alpha Release Reconciler`。三平台同 SHA：Android 四包逐一验证签名、ABI、摘要、安装启动及 sherpa/ONNX 原生库加载，iOS 固定组 `Testing`，同一 MSIX 依次取得 Flight `Published` 与 production `Published/Public`；随后公开原 Draft、重验四个 APK、前移指针。无最终人工审批或专用 Windows runner，且 Store 回执不证明客户端生命周期。
 - 发布资产、tag 和撤回记录不可覆盖、移动或删除。SignPath 未接入；启用前更新 PRD、验证包身份并停止 Store 路线。
 - 共享构建号从 `2001` 连续递增；四个 Android APK 的实测 `versionCode` 必须与 iOS/Windows 共享构建号完全相同并写入清单，不得使用 ABI 偏移，客户端不得推导。
-- Alpha 仅支持当前公开版本，不承诺升级、降级、迁移或数据兼容。破坏性清理须安装前确认，录音或最终处理期间不得安装、退出或清理。
+- Alpha 仅支持当前公开版本，不承诺升级、降级、迁移或数据兼容。本次引入在线来源后经用户重新确认仍沿用全清策略；破坏性清理须安装前确认，并清理本应用凭据，录音或最终处理期间不得安装、退出或清理。
 
 ## 架构与 UI
 

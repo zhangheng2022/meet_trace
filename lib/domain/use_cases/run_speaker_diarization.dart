@@ -48,7 +48,9 @@ final class SpeakerDiarizationCoordinator implements SpeakerDiarizationRunner {
       meetingId: meetingId,
       snapshotId: snapshotId,
     );
-    if (!enabled) {
+    // 音频上传窗口无法精确对应发言边界，不能按重叠时长推断说话人。
+    if (!enabled ||
+        eligible.$2.timingPrecision == TranscriptTimingPrecision.audioWindow) {
       return SpeakerDiarizationResult(
         snapshot: eligible.$2,
         status: SpeakerDiarizationStatus.disabled,

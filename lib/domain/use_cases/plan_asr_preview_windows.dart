@@ -119,11 +119,24 @@ String mergeOverlappingTranscriptText(String earlier, String later) {
           _isOverlapSeparator(_runeAt(right, rightOffset))) {
         rightOffset += _runeWidth(_runeAt(right, rightOffset));
       }
-      return '$left${right.substring(rightOffset)}';
+      final suffix = right.substring(rightOffset);
+      final separator =
+          suffix.isNotEmpty &&
+              _isLatinWordRune(normalizedLeft.tokens.last.runes.single) &&
+              _isLatinWordRune(suffix.runes.first)
+          ? ' '
+          : '';
+      return '$left$separator$suffix';
     }
   }
   return '$left $right';
 }
+
+bool _isLatinWordRune(int rune) =>
+    (rune >= 0x30 && rune <= 0x39) ||
+    (rune >= 0x41 && rune <= 0x5A) ||
+    (rune >= 0x61 && rune <= 0x7A) ||
+    (rune >= 0xC0 && rune <= 0x24F);
 
 ({List<String> tokens, List<int> sourceEndOffsets}) _normalizeForOverlap(
   String source,

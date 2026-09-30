@@ -25,12 +25,14 @@ final class MeetingDetailView extends StatefulWidget {
     required this.viewModel,
     required this.onBack,
     this.onDeleted,
+    this.onChooseTranscriptionSource,
     super.key,
   });
 
   final MeetingDetailViewModel viewModel;
   final VoidCallback onBack;
   final VoidCallback? onDeleted;
+  final VoidCallback? onChooseTranscriptionSource;
 
   @override
   State<MeetingDetailView> createState() => _MeetingDetailViewState();
@@ -82,6 +84,16 @@ final class _MeetingDetailViewState extends State<MeetingDetailView> {
               ),
             ],
             suffixes: [
+              if (widget.onChooseTranscriptionSource != null &&
+                  viewModel.canChooseSource &&
+                  !_editingTranscript)
+                FHeaderAction(
+                  icon: Icon(
+                    FLucideIcons.refreshCw,
+                    semanticLabel: context.l10n.sourceSwitchRetranscribe,
+                  ),
+                  onPress: widget.onChooseTranscriptionSource,
+                ),
               if (viewModel.snapshot != null &&
                   !viewModel.isTranscribing &&
                   !_editingTranscript) ...[

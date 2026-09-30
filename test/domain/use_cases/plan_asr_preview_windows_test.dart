@@ -73,4 +73,25 @@ void main() {
     expect(mergeOverlappingTranscriptText('第一段', '第二段'), '第一段 第二段');
     expect(mergeOverlappingTranscriptText('可以开始', '开始录音'), '可以开始 开始录音');
   });
+
+  test('英文和中英混合重叠保留词边界', () {
+    // 少于四个字符的重合可能是真实重复；没有词时间戳时保守保留。
+    expect(mergeOverlappingTranscriptText('ok now', 'now go'), 'ok now now go');
+    expect(
+      mergeOverlappingTranscriptText('hello world', 'world again'),
+      'hello world again',
+    );
+    expect(
+      mergeOverlappingTranscriptText('hello world,', 'World again'),
+      'hello world, again',
+    );
+    expect(
+      mergeOverlappingTranscriptText('部署 Flutter', 'Flutter SDK'),
+      '部署 Flutter SDK',
+    );
+    expect(
+      mergeOverlappingTranscriptText('使用 Flutter', 'Flutter已经完成'),
+      '使用 Flutter已经完成',
+    );
+  });
 }

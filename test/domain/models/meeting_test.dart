@@ -2,10 +2,36 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meettrace/domain/models/domain_exception.dart';
 import 'package:meettrace/domain/models/meeting.dart';
 import 'package:meettrace/domain/models/transcript.dart';
+import 'package:meettrace/domain/models/transcription_profile.dart';
 import 'package:meettrace/domain/models/workflow_states.dart';
 
 void main() {
   group('Meeting 模型锁定', () {
+    test('已冻结来源的 created 会议以领域异常拒绝单独换模型', () {
+      final profile = TranscriptionProfile.local();
+      final meeting = Meeting(
+        id: 'frozen',
+        title: '周会',
+        createdAt: DateTime.utc(2026, 9, 8),
+        status: MeetingState.created,
+        audioDurationMs: 0,
+        recordingModelId: profile.modelId,
+        recordingModelVersion: profile.identityVersion,
+        transcriptionProfile: profile,
+      );
+
+      expect(meeting.isRecordingModelLocked, isTrue);
+      expect(
+        () => meeting.changeRecordingModel(
+          recordingModelId: 'another-model',
+          recordingModelVersion: '2',
+        ),
+        throwsA(isA<DomainInvariantViolation>()),
+      );
+      expect(meeting.transcriptionProfile, same(profile));
+      expect(meeting.recordingModelId, profile.modelId);
+    });
+
     test('录音开始后不能修改实际模型或版本', () {
       final recording = _meeting().startRecording(
         startedAt: DateTime.utc(2026, 7, 24, 3),

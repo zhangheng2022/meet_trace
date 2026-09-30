@@ -1,3 +1,10 @@
+import '../data/services/asr/remote/remote_asr_preview_session.dart';
+import '../data/services/asr/remote/remote_asr_probe.dart';
+import '../data/services/audio/recording_ports.dart';
+import '../domain/models/transcription_profile.dart';
+import '../domain/ports/asr_preview_session.dart';
+import '../ui/features/settings/view_models/transcription_sources_view_model.dart';
+
 import 'package:flutter/foundation.dart';
 
 import '../data/repositories/shared_preferences_remote_diagnostics_repository.dart';
@@ -103,12 +110,26 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       ),
       playback: PcmAudioPlaybackService(
         output: AudioplayersDeviceAudioOutput(),
-        temporaryDirectory: storage.fileLayout.rootPath,
+        layout: storage.fileLayout,
+        meetingId: selectedMeeting.id,
       ),
       shareBuilderProvider: shareBuilderProvider,
       speakerLabelBuilder: speakerLabelBuilder,
     );
   }
+
+  TranscriptionSourcesViewModel createTranscriptionSourcesViewModel() =>
+      TranscriptionSourcesViewModel(
+        profiles: storage.transcriptionProfiles,
+        credentials: storage.transcriptionCredentials,
+        probe: (profile) async {
+          final result = await probeRemoteAsr(
+            profile: profile,
+            credentials: storage.transcriptionCredentials,
+          );
+          if (!result.accepted) throw StateError('Protocol test failed');
+        },
+      );
 
   ModelSettingsViewModel createModelSettingsViewModel() {
     final model = runtime.registry.defaultModel;
@@ -209,10 +230,17 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
   RecordingSessionViewModel createRecordingSessionViewModel(
     StartedMeetingSession session,
   ) {
-    final preview = AsrPreviewCoordinator(
-      vad: SileroVadSegmenter.official(modelPath: runtime.vadModelPath),
-      engine: session.engine,
-    );
+    final profile = session.meeting.transcriptionProfile;
+    final AsrPreviewSession preview = profile == null || profile.isLocal
+        ? AsrPreviewCoordinator(
+            vad: SileroVadSegmenter.official(modelPath: runtime.vadModelPath),
+            engine: session.engine,
+          )
+        : RemoteAsrPreviewSession(
+            engine: session.engine,
+            enabled:
+                profile.protocol == TranscriptionProtocol.realtimeTranscription,
+          );
     final recording = ReliableRecordingService(
       capture: RecordPcmAudioCapture(),
       initialInput: session.recordingInput,
@@ -222,7 +250,7 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       continuityEvents: JsonRecordingContinuityEventStore(storage.fileLayout),
       storageCapacity: const DeviceRecordingStorageCapacityProvider(),
       foreground: createRecordingForegroundLifecycle(),
-      previewSink: preview,
+      previewSink: preview as RecordingPreviewSink,
       audioLevelMeter: PcmAudioLevelMeter(),
       telemetry: sentryRecordingTelemetryGate,
     );

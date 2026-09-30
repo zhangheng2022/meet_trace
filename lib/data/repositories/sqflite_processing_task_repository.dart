@@ -1,4 +1,5 @@
 import '../../domain/models/processing_task.dart';
+import '../../domain/models/domain_exception.dart';
 import '../models/storage/storage_mappers.dart';
 import '../services/storage/app_database.dart';
 import '../../domain/ports/repositories.dart';
@@ -38,6 +39,16 @@ final class SqfliteProcessingTaskRepository
     final db = await _appDatabase.open();
     final row = processingTaskToRow(task);
     await db.transaction((txn) async {
+      final existing = await txn.query(
+        'processing_tasks',
+        where: 'id = ?',
+        whereArgs: [task.id],
+      );
+      if (existing.isNotEmpty &&
+          existing.single['transcription_profile_json'] !=
+              row['transcription_profile_json']) {
+        throw const DomainInvariantViolation('同一任务不能修改已冻结的转录配置');
+      }
       final updated = await txn.update(
         'processing_tasks',
         row,

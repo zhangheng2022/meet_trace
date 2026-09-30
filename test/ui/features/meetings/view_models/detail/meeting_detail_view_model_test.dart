@@ -14,6 +14,37 @@ import 'package:meettrace/ui/features/meetings/view_models/detail/meeting_detail
 import '../../../../../support/final_transcription_fakes.dart';
 
 void main() {
+  test('粗窗口详情不提供自动分离或重试，但保留手动说话人命名', () async {
+    final active = _snapshot(
+      id: 'coarse',
+      timingPrecision: TranscriptTimingPrecision.audioWindow,
+    );
+    final diarization = _DiarizationRunner(
+      result: SpeakerDiarizationResult(
+        snapshot: active,
+        status: SpeakerDiarizationStatus.disabled,
+      ),
+    );
+    final fixture = _fixture(
+      _meeting(
+        status: MeetingState.completed,
+        activeTranscriptSnapshotId: active.id,
+      ),
+      active: active,
+      diarization: diarization,
+      diarizationEnabled: true,
+    );
+    await fixture.viewModel.load();
+    expect(fixture.viewModel.diarizationAvailable, isFalse);
+    expect(fixture.viewModel.canRetryDiarization, isFalse);
+    await fixture.viewModel.retryDiarization();
+    await fixture.viewModel.setDiarizationEnabled(true);
+    expect(diarization.processCalls, 0);
+    expect(await fixture.viewModel.renameSpeaker(null, '手动名称'), isTrue);
+    expect(diarization.renameCalls, [(null, '手动名称')]);
+    await fixture.dispose();
+  });
+
   test('processing 会议自动使用锁定模型并接收完整音频进度', () async {
     final fixture = _fixture(_meeting());
     final completed = _snapshot(id: 'final-1');
@@ -424,6 +455,7 @@ TranscriptSnapshot _snapshot({
   String modelId = senseVoiceDefaultModelId,
   String modelVersion = '2024-07-17',
   String? speakerId,
+  TranscriptTimingPrecision timingPrecision = TranscriptTimingPrecision.segment,
 }) {
   return TranscriptSnapshot(
     id: id,
@@ -433,6 +465,7 @@ TranscriptSnapshot _snapshot({
     actualModelVersion: modelVersion,
     createdAt: DateTime.utc(2026, 7, 25, 2),
     status: status,
+    timingPrecision: timingPrecision,
     segments: status == TranscriptSnapshotStatus.complete
         ? [
             TranscriptSegment(

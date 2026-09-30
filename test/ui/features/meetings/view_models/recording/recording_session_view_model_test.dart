@@ -20,6 +20,30 @@ import 'package:meettrace/ui/features/meetings/view_models/recording/recording_s
 import '../../../../../support/model_selection_fakes.dart';
 
 void main() {
+  test('稳定字幕拒绝迟到临时结果，空稳定结果删除临时行', () async {
+    final preview = _PreviewSession();
+    final recording = _RecordingService();
+    final viewModel = _viewModel(
+      meetings: TestMeetingRepository(),
+      recording: recording,
+      preview: preview,
+    );
+    await viewModel.start();
+    preview.emitSegment(id: 'one', startMs: 0, text: '临时', stable: false);
+    await Future<void>.delayed(Duration.zero);
+    expect(viewModel.segments.single.isFinalForWindow, isFalse);
+    preview.emitSegment(id: 'one', startMs: 0, text: '稳定');
+    preview.emitSegment(id: 'one', startMs: 0, text: '过期', stable: false);
+    await Future<void>.delayed(Duration.zero);
+    expect(viewModel.segments.single.text, '稳定');
+    preview.emitSegment(id: 'two', startMs: 1000, text: '误识别', stable: false);
+    preview.emitSegment(id: 'two', startMs: 1000, text: '');
+    await Future<void>.delayed(Duration.zero);
+    expect(viewModel.segments.map((segment) => segment.text), ['稳定']);
+    viewModel.dispose();
+    await recording.close();
+    await preview.close();
+  });
   test('暂停恢复后封存事实音频并进入处理状态', () async {
     final meetings = TestMeetingRepository();
     final recording = _RecordingService();
@@ -782,6 +806,7 @@ final class _PreviewSession implements AsrPreviewSession {
     required String id,
     required int startMs,
     required String text,
+    bool stable = true,
   }) {
     _events.add(
       TranscriptSegmentEvent(
@@ -791,7 +816,7 @@ final class _PreviewSession implements AsrPreviewSession {
         text: text,
         modelId: senseVoiceDefaultModelId,
         modelVersion: '1',
-        isFinalForWindow: true,
+        isFinalForWindow: stable,
       ),
     );
   }

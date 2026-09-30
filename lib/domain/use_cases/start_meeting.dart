@@ -3,6 +3,7 @@ import '../models/meeting.dart';
 import '../models/meeting_readiness.dart';
 import '../models/recording_input.dart';
 import '../models/workflow_states.dart';
+import '../models/transcription_profile.dart';
 import '../ports/asr_engine.dart';
 import '../ports/repositories.dart';
 import 'check_meeting_readiness.dart';
@@ -56,18 +57,44 @@ final class StartMeetingUseCase {
   final String Function(DateTime) meetingTitleFactory;
   final AsrModelRegistry registry;
 
-  Future<StartedMeetingSession> execute() async {
-    final readiness = await readinessChecker.check(
-      requestMicrophonePermission: true,
-    );
+  Future<StartedMeetingSession> execute({
+    TranscriptionProfile? selection,
+  }) async {
+    final checker = readinessChecker;
+    if (selection != null && checker is! SelectedMeetingReadinessChecker) {
+      throw StateError('就绪检查器不支持会议来源选择');
+    }
+    final readiness = selection == null
+        ? await checker.check(requestMicrophonePermission: true)
+        : await (checker as SelectedMeetingReadinessChecker).checkSelection(
+            selection,
+            requestMicrophonePermission: true,
+          );
     if (!readiness.canStart) {
       throw StartMeetingBlocked(
         StartMeetingBlockReason.readiness,
         readiness: readiness,
       );
     }
-    final descriptor = registry.requireById(readiness.defaultModelId);
-    if (readiness.defaultModelVersion != descriptor.version) {
+    final resolvedSelection = selection ?? readiness.transcriptionProfile;
+    final descriptor = resolvedSelection == null
+        ? registry.requireById(readiness.defaultModelId)
+        : null;
+    final profile =
+        resolvedSelection ??
+        TranscriptionProfile(
+          id: TranscriptionProfile.localProfileId,
+          name: descriptor!.displayName,
+          revision: 1,
+          protocol: TranscriptionProtocol.local,
+          modelId: descriptor.modelId,
+          modelVersion: descriptor.version,
+          language: descriptor.language,
+          useInverseTextNormalization: descriptor.useInverseTextNormalization,
+          diarizationEnabled: true,
+        );
+    if (readiness.defaultModelId != profile.modelId ||
+        readiness.defaultModelVersion != profile.identityVersion) {
       throw StateError(
         '就绪检查返回的模型版本与 Registry 不一致：'
         '${readiness.defaultModelId}@${readiness.defaultModelVersion}',
@@ -76,12 +103,7 @@ final class StartMeetingUseCase {
     AsrEngine? engine;
     try {
       final recordingInput = await _lockRecordingInput();
-      engine = await engineFactory.create(
-        modelId: descriptor.modelId,
-        modelVersion: descriptor.version,
-        language: descriptor.language,
-        useInverseTextNormalization: descriptor.useInverseTextNormalization,
-      );
+      engine = await createEngineForProfile(engineFactory, profile);
       final timestamp = now();
       final created = Meeting(
         id: meetingIdFactory(),
@@ -89,11 +111,12 @@ final class StartMeetingUseCase {
         createdAt: timestamp,
         status: MeetingState.created,
         audioDurationMs: 0,
-        recordingModelId: descriptor.modelId,
-        recordingModelVersion: descriptor.version,
-        recordingModelLanguage: descriptor.language,
+        recordingModelId: profile.modelId,
+        recordingModelVersion: profile.identityVersion,
+        recordingModelLanguage: profile.language,
         recordingModelUseInverseTextNormalization:
-            descriptor.useInverseTextNormalization,
+            profile.useInverseTextNormalization,
+        transcriptionProfile: profile,
       );
       final started = created.startRecording(startedAt: timestamp);
       await meetings.save(started);

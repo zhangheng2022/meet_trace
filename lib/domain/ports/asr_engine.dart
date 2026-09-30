@@ -4,6 +4,7 @@ import '../models/app_failure.dart';
 import '../models/asr_model.dart';
 import '../models/audio_source.dart';
 import '../models/transcript.dart';
+import '../models/transcription_profile.dart';
 
 final class AsrEngineException implements Exception {
   const AsrEngineException(this.failure);
@@ -171,4 +172,31 @@ abstract interface class AsrEngineFactory {
     String language = 'auto',
     bool useInverseTextNormalization = true,
   });
+}
+
+/// 创建阶段只组装已锁定配置，不进行在线握手；推理故障不能阻止事实录音。
+abstract interface class ProfileAsrEngineFactory implements AsrEngineFactory {
+  Future<AsrEngine> createForProfile(TranscriptionProfile profile);
+}
+
+abstract interface class AsrPreviewControl {
+  Future<void> flushPreview();
+}
+
+Future<AsrEngine> createEngineForProfile(
+  AsrEngineFactory factory,
+  TranscriptionProfile profile,
+) {
+  if (factory is ProfileAsrEngineFactory) {
+    return factory.createForProfile(profile);
+  }
+  if (!profile.isLocal) {
+    throw StateError('当前 Engine Factory 不支持在线转录配置');
+  }
+  return factory.create(
+    modelId: profile.modelId,
+    modelVersion: profile.identityVersion,
+    language: profile.language,
+    useInverseTextNormalization: profile.useInverseTextNormalization,
+  );
 }

@@ -10,6 +10,40 @@ import 'package:meettrace/domain/ports/repositories.dart';
 import 'package:meettrace/domain/use_cases/run_speaker_diarization.dart';
 
 void main() {
+  test('粗音频窗口不自动映射说话人，但仍允许手动命名且保留时间精度', () async {
+    final service = _FakeService(
+      turns: const [
+        SpeakerTurn(startMs: 0, endMs: 2000, speakerId: 'guessed-speaker'),
+      ],
+    );
+    final snapshot = _snapshot(
+      timingPrecision: TranscriptTimingPrecision.audioWindow,
+    );
+    final fixture = _fixture(service: service, snapshot: snapshot);
+    final result = await fixture.coordinator.process(
+      meetingId: fixture.meeting.id,
+      snapshotId: snapshot.id,
+      enabled: true,
+    );
+    expect(result.status, SpeakerDiarizationStatus.disabled);
+    expect(result.snapshot, same(snapshot));
+    expect(service.calls, 0);
+    expect(fixture.transcripts.updates, isEmpty);
+    expect(fixture.tasks.records, isEmpty);
+
+    final named = await fixture.coordinator.renameSpeaker(
+      meetingId: fixture.meeting.id,
+      snapshotId: snapshot.id,
+      currentSpeakerId: null,
+      newLabel: '用户确认的名称',
+    );
+    expect(named.segments.map((segment) => segment.speakerId).toSet(), {
+      '用户确认的名称',
+    });
+    expect(named.timingPrecision, TranscriptTimingPrecision.audioWindow);
+    expect(service.calls, 0);
+  });
+
   test('成功映射只更新说话人且保留原文、时间轴和模型归属', () async {
     final fixture = _fixture(
       service: _FakeService(
@@ -338,6 +372,9 @@ final class _TranscriptRepository implements TranscriptRepository {
       actualModelVersion: snapshot.actualModelVersion,
       createdAt: snapshot.createdAt,
       status: snapshot.status,
+      transcriptionProfile: snapshot.transcriptionProfile,
+      reportedModelVersion: snapshot.reportedModelVersion,
+      timingPrecision: snapshot.timingPrecision,
       segments: [
         for (final segment in snapshot.segments)
           TranscriptSegment(
@@ -402,6 +439,7 @@ TranscriptSnapshot _snapshot({
   TranscriptSnapshotKind kind = TranscriptSnapshotKind.finalTranscript,
   TranscriptSnapshotStatus status = TranscriptSnapshotStatus.complete,
   List<String?> speakerIds = const [null, null],
+  TranscriptTimingPrecision timingPrecision = TranscriptTimingPrecision.segment,
 }) {
   return TranscriptSnapshot(
     id: id,
@@ -411,6 +449,7 @@ TranscriptSnapshot _snapshot({
     actualModelVersion: '1',
     createdAt: DateTime.utc(2026, 7, 25, 2),
     status: status,
+    timingPrecision: timingPrecision,
     segments: status == TranscriptSnapshotStatus.complete
         ? [
             TranscriptSegment(

@@ -1,3 +1,5 @@
+import 'transcription_profile.dart';
+
 const minimumRecordingFreeBytes = 128 * 1024 * 1024;
 
 enum MeetingReadinessIssue {
@@ -14,6 +16,7 @@ final class MeetingReadiness {
     required this.defaultModelVersion,
     required this.defaultModelName,
     required this.defaultModelAvailable,
+    this.transcriptionProfile,
   });
 
   final bool microphonePermissionGranted;
@@ -22,6 +25,7 @@ final class MeetingReadiness {
   final String defaultModelVersion;
   final String defaultModelName;
   final bool defaultModelAvailable;
+  final TranscriptionProfile? transcriptionProfile;
 
   List<MeetingReadinessIssue> get issues => List.unmodifiable([
     if (!microphonePermissionGranted)

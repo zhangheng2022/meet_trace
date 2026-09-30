@@ -1,3 +1,5 @@
+import '../../../../../../domain/models/transcript.dart';
+
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -125,6 +127,20 @@ final class MeetingIdentity extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(viewModel.meeting.title, style: theme.typography.display.lg),
+        if (viewModel.snapshot?.timingPrecision ==
+            TranscriptTimingPrecision.audioWindow)
+          Padding(
+            padding: EdgeInsets.only(top: appStyle.spaceSm),
+            child: Text(
+              context.l10n.sourceTimingWindow,
+              style: theme.typography.body.sm,
+            ),
+          ),
+        if (viewModel.sourceProfile?.isLocal == false)
+          Text(
+            '${viewModel.sourceProfile!.modelId} · ${viewModel.snapshot?.reportedModelVersion ?? context.l10n.sourceVersionUnknown}',
+            style: theme.typography.body.sm,
+          ),
         SizedBox(height: appStyle.spaceSm),
         Text(
           key: keys.meetings.detailAudioDuration,

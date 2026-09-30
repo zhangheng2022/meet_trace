@@ -22,7 +22,7 @@ val meetTraceReleaseSigningConfigured =
 
 android {
     namespace = "com.meettrace.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37 // flutter_secure_storage 11 requires API 37; target/min unchanged.
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

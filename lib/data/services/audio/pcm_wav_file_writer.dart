@@ -10,6 +10,10 @@ const pcmBytesPerMillisecond =
 const wavHeaderBytes = 44;
 const maxWavPcmBytes = 0xffffffff - 36;
 
+/// 在线发送副本最多编码 60 秒，不能把整场会议读入内存。
+const maxInMemoryWavPcmBytes =
+    pcmSampleRate * pcmChannels * pcmBytesPerSample * 60;
+
 final class PcmWavWriteException implements Exception {
   const PcmWavWriteException(this.code);
 
@@ -26,6 +30,42 @@ final class PcmWavFileWriter {
       throw const PcmWavWriteException('wav.invalid_pcm_length');
     }
     return wavHeaderBytes + pcmBytes;
+  }
+
+  /// 仅返回有界发送副本；不创建文件，强杀或取消不会留下派生音频。
+  Future<Uint8List> readChunk({
+    required String sourcePath,
+    required int startByte,
+    required int endByte,
+  }) async {
+    final dataLength = endByte - startByte;
+    if (startByte < 0 ||
+        dataLength <= 0 ||
+        dataLength > maxInMemoryWavPcmBytes ||
+        startByte % pcmBytesPerSample != 0 ||
+        endByte % pcmBytesPerSample != 0) {
+      throw const PcmWavWriteException('wav.invalid_pcm_range');
+    }
+    final input = await File(sourcePath).open();
+    try {
+      if (endByte > await input.length()) {
+        throw const PcmWavWriteException('wav.invalid_pcm_range');
+      }
+      final bytes = Uint8List(wavLengthForPcm(dataLength));
+      _writeWavHeader(bytes, dataLength);
+      await input.setPosition(startByte);
+      var offset = wavHeaderBytes;
+      while (offset < bytes.length) {
+        final read = await input.readInto(bytes, offset);
+        if (read == 0) {
+          throw const PcmWavWriteException('wav.source_read_incomplete');
+        }
+        offset += read;
+      }
+      return bytes;
+    } finally {
+      await input.close();
+    }
   }
 
   Future<void> write({

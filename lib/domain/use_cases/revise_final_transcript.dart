@@ -114,6 +114,9 @@ final class ReviseFinalTranscriptUseCase {
       actualModelVersion: source.actualModelVersion,
       createdAt: createdAt,
       status: TranscriptSnapshotStatus.complete,
+      transcriptionProfile: source.transcriptionProfile,
+      reportedModelVersion: source.reportedModelVersion,
+      timingPrecision: source.timingPrecision,
       segments: [
         for (var index = 0; index < source.segments.length; index++)
           _revisedSegment(

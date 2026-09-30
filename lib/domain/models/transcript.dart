@@ -1,4 +1,8 @@
+import 'transcription_profile.dart';
+
 enum TranscriptSnapshotKind { temporary, finalTranscript }
+
+enum TranscriptTimingPrecision { audioWindow, segment, word }
 
 enum TranscriptSnapshotStatus { processing, complete, failed }
 
@@ -72,11 +76,20 @@ final class TranscriptSnapshot {
     required this.createdAt,
     required this.status,
     required List<TranscriptSegment> segments,
+    this.transcriptionProfile,
+    this.reportedModelVersion,
+    this.timingPrecision = TranscriptTimingPrecision.segment,
   }) : segments = List.unmodifiable(_sortedSegments(segments)) {
     _requireText(id, 'id');
     _requireText(meetingId, 'meetingId');
     _requireText(actualModelId, 'actualModelId');
     _requireText(actualModelVersion, 'actualModelVersion');
+    final profile = transcriptionProfile;
+    if (profile != null &&
+        (profile.modelId != actualModelId ||
+            profile.identityVersion != actualModelVersion)) {
+      throw ArgumentError('转录快照身份必须与本次冻结配置一致');
+    }
 
     final segmentIds = <String>{};
     for (final segment in this.segments) {
@@ -101,6 +114,9 @@ final class TranscriptSnapshot {
   final DateTime createdAt;
   final TranscriptSnapshotStatus status;
   final List<TranscriptSegment> segments;
+  final TranscriptionProfile? transcriptionProfile;
+  final String? reportedModelVersion;
+  final TranscriptTimingPrecision timingPrecision;
 
   bool isCurrentFinalTranscript({required String? activeSnapshotId}) {
     return kind == TranscriptSnapshotKind.finalTranscript &&

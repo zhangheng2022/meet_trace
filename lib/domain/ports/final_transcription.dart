@@ -1,6 +1,7 @@
 import '../models/meeting.dart';
 import '../models/speaker_diarization.dart';
 import '../models/transcript.dart';
+import '../models/transcription_profile.dart';
 import 'asr_engine.dart';
 
 typedef FinalTranscriptionProgressCallback = void Function(
@@ -25,6 +26,15 @@ abstract interface class FinalTranscriptionRunner {
   Future<FinalTranscriptionResult> transcribe({
     required String meetingId,
     String? retrySnapshotId,
+    FinalTranscriptionProgressCallback? onProgress,
+  });
+}
+
+abstract interface class ProfileFinalTranscriptionRunner
+    implements FinalTranscriptionRunner {
+  Future<FinalTranscriptionResult> transcribeWithProfile({
+    required String meetingId,
+    required TranscriptionProfile profile,
     FinalTranscriptionProgressCallback? onProgress,
   });
 }

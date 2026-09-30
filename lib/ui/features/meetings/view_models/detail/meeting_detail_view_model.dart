@@ -1,3 +1,5 @@
+import '../../../../../domain/models/transcription_profile.dart';
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -96,7 +98,9 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   bool get isTranscribing => _operation != null;
   bool get isDiarizing => _diarizationOperation != null;
   bool get diarizationEnabled => _diarizationEnabled;
-  bool get diarizationAvailable => diarization?.capability.isAvailable == true;
+  bool get diarizationAvailable =>
+      _snapshot?.timingPrecision != TranscriptTimingPrecision.audioWindow &&
+      diarization?.capability.isAvailable == true;
   bool get canRetryDiarization =>
       _diarizationEnabled &&
       diarizationAvailable &&
@@ -140,16 +144,34 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   bool get canRetranscribe =>
       !isProcessing && _meeting.status == MeetingState.completed;
 
-  AsrModelDescriptor get sourceModel => registry.requireById(
-    _snapshot?.actualModelId ??
-        _failedAttempt?.actualModelId ??
-        _meeting.recordingModelId,
-  );
+  TranscriptionProfile? get sourceProfile =>
+      _processingAttempt?.transcriptionProfile ??
+      _snapshot?.transcriptionProfile ??
+      _failedAttempt?.transcriptionProfile ??
+      _meeting.transcriptionProfile;
+  AsrModelDescriptor get sourceModel =>
+      sourceProfile?.descriptor ??
+      registry.requireById(
+        _snapshot?.actualModelId ??
+            _failedAttempt?.actualModelId ??
+            _meeting.recordingModelId,
+      );
+  bool get canChooseSource =>
+      !isLoading &&
+      !isProcessing &&
+      _meeting.audioPath != null &&
+      _meeting.audioDurationMs > 0 &&
+      (_meeting.status == MeetingState.completed ||
+          _meeting.status == MeetingState.failed);
+  Future<void> retranscribeWithProfile(TranscriptionProfile profile) =>
+      canChooseSource ? _runTranscription(profile: profile) : Future.value();
 
   Future<void> load() => _loading ??= _load();
 
   Future<void> retry() => _retry();
-  Future<void> retranscribe() => _runTranscription();
+  Future<void> retranscribe() => _runTranscription(
+    profile: _snapshot?.transcriptionProfile ?? _meeting.transcriptionProfile,
+  );
   Future<void> setDiarizationEnabled(bool enabled) =>
       _setDiarizationEnabled(enabled);
   Future<void> retryDiarization() => _runDiarization();
@@ -173,8 +195,12 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         _playbackState = state;
         _notify();
       });
-      _diarizationEnabled = await diarizationPreferences?.getEnabled() ?? true;
       await _refreshSnapshots();
+      _diarizationEnabled =
+          sourceProfile?.diarizationEnabled ??
+          await diarizationPreferences?.getEnabled() ??
+          true;
+
       await _refreshDiarizationTask();
       if (_meeting.status == MeetingState.processing &&
           _snapshot?.status != TranscriptSnapshotStatus.complete) {
@@ -205,6 +231,7 @@ final class MeetingDetailViewModel extends ChangeNotifier {
   }
 
   String? _lockedRetrySnapshotId(TranscriptSnapshot snapshot) {
+    if (snapshot.transcriptionProfile != null) return snapshot.id;
     return snapshot.actualModelId == _meeting.recordingModelId &&
             snapshot.actualModelVersion == _meeting.recordingModelVersion
         ? snapshot.id
@@ -283,12 +310,18 @@ final class MeetingDetailViewModel extends ChangeNotifier {
         _resultMessage = '转录修订已保存为新版本';
       }, failureMessage: '转录修订保存失败，请检查内容后重试');
 
-  Future<void> _runTranscription({String? retrySnapshotId}) {
+  Future<void> _runTranscription({
+    String? retrySnapshotId,
+    TranscriptionProfile? profile,
+  }) {
     final current = _operation;
     if (current != null) {
       return current;
     }
-    final operation = _transcribe(retrySnapshotId: retrySnapshotId);
+    final operation = _transcribe(
+      retrySnapshotId: retrySnapshotId,
+      profile: profile,
+    );
     _operation = operation;
     _notify();
     return operation.whenComplete(() {
@@ -297,16 +330,26 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     });
   }
 
-  Future<void> _transcribe({required String? retrySnapshotId}) async {
+  Future<void> _transcribe({
+    required String? retrySnapshotId,
+    TranscriptionProfile? profile,
+  }) async {
     _errorMessage = null;
     _progress = 0;
     _notify();
     try {
-      final result = await transcription.transcribe(
-        meetingId: _meeting.id,
-        retrySnapshotId: retrySnapshotId,
-        onProgress: _applyProgress,
-      );
+      final result = profile == null
+          ? await transcription.transcribe(
+              meetingId: _meeting.id,
+              retrySnapshotId: retrySnapshotId,
+              onProgress: _applyProgress,
+            )
+          : await (transcription as ProfileFinalTranscriptionRunner)
+                .transcribeWithProfile(
+                  meetingId: _meeting.id,
+                  profile: profile,
+                  onProgress: _applyProgress,
+                );
       _meeting = result.meeting;
       _snapshot = result.snapshot;
       _failedAttempt = null;
@@ -347,6 +390,8 @@ final class MeetingDetailViewModel extends ChangeNotifier {
     final currentSnapshot = _snapshot;
     if (runner == null ||
         currentSnapshot == null ||
+        currentSnapshot.timingPrecision ==
+            TranscriptTimingPrecision.audioWindow ||
         currentSnapshot.status != TranscriptSnapshotStatus.complete) {
       return Future.value();
     }

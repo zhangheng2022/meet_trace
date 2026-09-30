@@ -1,3 +1,5 @@
+import '../data/repositories/secure_transcription_credential_store.dart';
+import '../data/repositories/sqflite_transcription_profile_repository.dart';
 import '../data/repositories/sqflite_diarization_preference_repository.dart';
 import '../data/repositories/sqflite_language_preference_repository.dart';
 import '../data/repositories/sqflite_meeting_repository.dart';
@@ -29,8 +31,12 @@ final class StorageDependencies {
     required this.languagePreferences,
     required this.processingTasks,
     required this.leases,
+    required this.transcriptionProfiles,
+    required this.transcriptionCredentials,
   });
 
+  final SqfliteTranscriptionProfileRepository transcriptionProfiles;
+  final SecureTranscriptionCredentialStore transcriptionCredentials;
   final AppDatabase database;
   final AppFileLayout fileLayout;
   final SqfliteMeetingRepository meetings;
@@ -49,7 +55,11 @@ final class StorageDependencies {
   }) async {
     final fileLayout = await AppFileLayout.forApplication();
     // 数据代门必须先于数据库打开与运行资源初始化：旧数据代一律全清。
-    await LocalDataGenerationGate(layout: fileLayout).ensureCurrent();
+    const credentials = SecureTranscriptionCredentialStore();
+    await LocalDataGenerationGate(
+      layout: fileLayout,
+      beforeReset: credentials.deleteAll,
+    ).ensureCurrent();
     await fileLayout.createBaseDirectories();
     final database = AppDatabase(
       databaseFactory: createPlatformDatabaseFactory(),
@@ -88,6 +98,8 @@ final class StorageDependencies {
         languagePreferences: SqfliteLanguagePreferenceRepository(database),
         processingTasks: SqfliteProcessingTaskRepository(database),
         leases: SqfliteModelUsageLeaseRepository(database),
+        transcriptionProfiles: SqfliteTranscriptionProfileRepository(database),
+        transcriptionCredentials: credentials,
       );
     } on Object catch (error, stackTrace) {
       await _disposeStorage([
