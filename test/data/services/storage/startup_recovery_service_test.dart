@@ -312,6 +312,49 @@ void main() {
     expect((await recovery.recover(now: now)).totalChanges, 0);
   });
 
+  test('启动清理会议播放缓存和历史根级 WAV 不删除事实录音', () async {
+    const id = 'playback-crash';
+    final source = File(layout.meetingAudioPath(id));
+    await source.parent.create(recursive: true);
+    await source.writeAsBytes(List<int>.filled(32000, 1));
+    final cache = Directory(layout.meetingPlaybackTempDirectory(id));
+    await cache.create(recursive: true);
+    await File('${cache.path}/meettrace-audio-preview.wav')
+        .writeAsBytes([1, 2]);
+    final legacy = File('${layout.rootPath}/meettrace-audio-preview.wav');
+    await legacy.writeAsBytes([1, 2]);
+
+    final report = await recovery.recover(now: DateTime.utc(2026, 9, 30));
+    expect(report.removedPlaybackTempDirectories, 2);
+    expect(await cache.exists(), isFalse);
+    expect(await legacy.exists(), isFalse);
+    expect(await source.length(), 32000);
+    expect(
+      (await recovery.recover(now: DateTime.utc(2026, 9, 30))).totalChanges,
+      0,
+    );
+  });
+
+  test('播放缓存链接清理不遍历会议目录之外的内容', () async {
+    final outside = await Directory.systemTemp.createTemp(
+      'meettrace-playback-outside-',
+    );
+    addTearDown(() => outside.delete(recursive: true));
+    final keep = File('${outside.path}/keep.wav');
+    await keep.writeAsBytes([1, 2]);
+    await Directory(layout.meetingDirectory('linked')).create(recursive: true);
+    final cacheLink = Link(layout.meetingPlaybackTempDirectory('linked'));
+    final legacyLink = Link('${layout.rootPath}/meettrace-audio-preview.wav');
+    await cacheLink.create(outside.path);
+    await legacyLink.create(keep.path);
+
+    final report = await recovery.recover(now: DateTime.utc(2026, 9, 30));
+    expect(report.removedPlaybackTempDirectories, 2);
+    expect(await cacheLink.exists(), isFalse);
+    expect(await legacyLink.exists(), isFalse);
+    expect(await keep.readAsBytes(), [1, 2]);
+  }, skip: Platform.isWindows ? 'Windows 测试环境不保证符号链接权限' : false);
+
   test('数据库仍有会议时恢复已暂存的删除目录', () async {
     final now = DateTime.utc(2026, 7, 24, 11);
     const meetingId = 'meeting-survives-crash';

@@ -110,7 +110,8 @@ extension MeetTraceViewModelFactories on MeetTraceDependencies {
       ),
       playback: PcmAudioPlaybackService(
         output: AudioplayersDeviceAudioOutput(),
-        temporaryDirectory: storage.fileLayout.rootPath,
+        layout: storage.fileLayout,
+        meetingId: selectedMeeting.id,
       ),
       shareBuilderProvider: shareBuilderProvider,
       speakerLabelBuilder: speakerLabelBuilder,

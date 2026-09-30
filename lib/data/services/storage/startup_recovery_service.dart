@@ -25,6 +25,7 @@ final class RecoveryReport {
     required this.removedModelTempDirectories,
     required this.reconciledModelRollbackDirectories,
     required this.removedShareTempDirectories,
+    this.removedPlaybackTempDirectories = 0,
     required this.removedStagedMeetingDirectories,
     required this.activatedSnapshots,
   });
@@ -35,6 +36,7 @@ final class RecoveryReport {
   final int removedModelTempDirectories;
   final int reconciledModelRollbackDirectories;
   final int removedShareTempDirectories;
+  final int removedPlaybackTempDirectories;
   final int removedStagedMeetingDirectories;
   final int activatedSnapshots;
 
@@ -45,6 +47,7 @@ final class RecoveryReport {
       removedModelTempDirectories +
       reconciledModelRollbackDirectories +
       removedShareTempDirectories +
+      removedPlaybackTempDirectories +
       removedStagedMeetingDirectories +
       activatedSnapshots;
 }
@@ -92,6 +95,11 @@ final class StartupRecoveryService {
       _removeShareTempDirectories,
       0,
     );
+    final removedPlaybackTempDirectories = await _attempt(
+      'removePlaybackTempDirectories',
+      _removePlaybackTempDirectories,
+      0,
+    );
     final removedStagedMeetingDirectories = await _attempt(
       'removeStagedMeetingDirectories',
       _removeStagedMeetingDirectories,
@@ -110,6 +118,7 @@ final class StartupRecoveryService {
       removedModelTempDirectories: removedModelTempDirectories,
       reconciledModelRollbackDirectories: reconciledModelRollbackDirectories,
       removedShareTempDirectories: removedShareTempDirectories,
+      removedPlaybackTempDirectories: removedPlaybackTempDirectories,
       removedStagedMeetingDirectories: removedStagedMeetingDirectories,
       activatedSnapshots: activatedSnapshots,
     );
@@ -389,6 +398,44 @@ final class StartupRecoveryService {
       removed++;
     }
     return removed;
+  }
+
+  Future<int> _removePlaybackTempDirectories() async {
+    var removed = 0;
+    // 兼容旧版本在根目录生成的完整 WAV；只删除入口，不跟随符号链接。
+    if (await _deletePlaybackTempPath(
+      p.join(layout.rootPath, 'meettrace-audio-preview.wav'),
+    )) {
+      removed++;
+    }
+    final meetingsRoot = Directory(layout.meetingsRoot);
+    if (!await meetingsRoot.exists()) {
+      return removed;
+    }
+    await for (final entity in meetingsRoot.list(followLinks: false)) {
+      if (entity is Directory &&
+          await _deletePlaybackTempPath(p.join(entity.path, '.playback'))) {
+        removed++;
+      }
+    }
+    return removed;
+  }
+
+  Future<bool> _deletePlaybackTempPath(String path) async {
+    final type = await FileSystemEntity.type(path, followLinks: false);
+    switch (type) {
+      case FileSystemEntityType.notFound:
+        return false;
+      case FileSystemEntityType.directory:
+        await Directory(path).delete(recursive: true);
+      case FileSystemEntityType.link:
+        await Link(path).delete();
+      case FileSystemEntityType.file:
+        await File(path).delete();
+      default:
+        throw StateError('无法识别播放临时路径类型：$path');
+    }
+    return true;
   }
 
   Future<int> _removeStagedMeetingDirectories() async {

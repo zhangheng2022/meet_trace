@@ -65,6 +65,10 @@ final class AppFileLayout {
     return p.join(meetingDirectory(meetingId), '.share');
   }
 
+  String meetingPlaybackTempDirectory(String meetingId) {
+    return p.join(meetingDirectory(meetingId), '.playback');
+  }
+
   String modelTempDirectory(String modelId, String version) {
     return p.join(
       modelTempRoot,
