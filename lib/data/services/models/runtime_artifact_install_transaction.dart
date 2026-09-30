@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import '../../../domain/models/model_manifest.dart';
 import 'model_download_types.dart';
 import 'model_file_verifier.dart';
+import 'runtime_artifact_temp_state.dart';
 
 enum RuntimeArtifactInstallFailure {
   incomplete,
@@ -91,6 +92,20 @@ final class RuntimeArtifactInstallTransaction {
         '转换型安装必须隔离下载目录与安装目录',
       );
     }
+    const tempState = RuntimeArtifactTempState();
+    await tempState.prepare(
+      tempPath: tempPath,
+      tempRoot: tempRoot,
+      specification: RuntimeArtifactTempManifest(
+        manifest: manifest,
+        downloadSubdirectory: p.equals(tempPath, effectiveDownloadPath)
+            ? ''
+            : p
+                  .relative(effectiveDownloadPath, from: tempPath)
+                  .split(p.separator)
+                  .join('/'),
+      ),
+    );
     await Directory(effectiveDownloadPath).create(recursive: true);
     var completedBeforeFile = 0;
     var resumed = false;
@@ -130,6 +145,8 @@ final class RuntimeArtifactInstallTransaction {
       completedBeforeFile += file.bytes;
     }
 
+    // 完整文件可独立按 SHA-256 恢复；不将续传元数据带入安装目录。
+    await tempState.removeMarker(tempPath);
     await onVerifying?.call();
     final downloadVerification = await verifier.verifyDirectory(
       directoryPath: effectiveDownloadPath,

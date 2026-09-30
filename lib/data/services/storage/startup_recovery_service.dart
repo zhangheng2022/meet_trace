@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart' show Database;
 import '../../../domain/models/recording.dart';
 import '../../../domain/models/workflow_states.dart';
 import '../audio/recording_checkpoint_store.dart';
+import '../models/model_temp_recovery_service.dart';
 import 'app_database.dart';
 import 'app_file_layout.dart';
 import 'durable_file_committer.dart';
@@ -58,15 +59,19 @@ final class StartupRecoveryService {
     required this.layout,
     this.fileCommitter = const DurableFileCommitter(),
     RecordingCheckpointStore? recordingCheckpoints,
+    ModelTempRecoveryService? modelTempRecovery,
     StartupRecoveryErrorReporter? reportError,
   }) : recordingCheckpoints =
            recordingCheckpoints ?? JsonRecordingCheckpointStore(layout),
+       modelTempRecovery =
+           modelTempRecovery ?? const ModelTempRecoveryService(),
        reportError = reportError ?? _logRecoveryError;
 
   final AppDatabase database;
   final AppFileLayout layout;
   final DurableFileCommitter fileCommitter;
   final RecordingCheckpointStore recordingCheckpoints;
+  final ModelTempRecoveryService modelTempRecovery;
   final StartupRecoveryErrorReporter reportError;
 
   Future<RecoveryReport> recover({required DateTime now}) async {
@@ -286,34 +291,8 @@ final class StartupRecoveryService {
     );
   }
 
-  Future<int> _removeIncompleteModelDirectories() async {
-    final tempRoot = Directory(layout.modelTempRoot);
-    if (!await tempRoot.exists()) {
-      return 0;
-    }
-    final normalizedRoot = p.normalize(p.absolute(tempRoot.path));
-    var removed = 0;
-
-    await for (final modelEntity in tempRoot.list(followLinks: false)) {
-      if (modelEntity is! Directory) {
-        continue;
-      }
-      await for (final versionEntity in modelEntity.list(followLinks: false)) {
-        if (versionEntity is! Directory) {
-          continue;
-        }
-        final target = p.normalize(p.absolute(versionEntity.path));
-        if (!p.isWithin(normalizedRoot, target)) {
-          throw StateError('拒绝清理模型临时根目录之外的路径：$target');
-        }
-        await versionEntity.delete(recursive: true);
-        removed++;
-      }
-      if (await modelEntity.list(followLinks: false).isEmpty) {
-        await modelEntity.delete();
-      }
-    }
-    return removed;
+  Future<int> _removeIncompleteModelDirectories() {
+    return modelTempRecovery.recover(layout: layout);
   }
 
   Future<int> _reconcileModelRollbackDirectories() async {
