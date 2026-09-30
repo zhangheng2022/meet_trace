@@ -309,7 +309,7 @@ void main() {
 
   for (final firstStatus in [200, 401]) {
     test(
-      'temporary cleanup failure preserves HTTP $firstStatus and releases finalization',
+      'no temporary storage is needed for HTTP $firstStatus or the next request',
       () async {
         var calls = 0;
         final engine = RemoteAsrEngine(
@@ -317,14 +317,6 @@ void main() {
           credentials: TestCredentials(),
           client: MockClient((_) async {
             calls++;
-            // The upload has been consumed. Remove only its generated directory
-            // inside this test fixture so the engine's later cleanup fails.
-            final requestDirectory = await temporary
-                .list()
-                .where((entry) => entry is Directory)
-                .cast<Directory>()
-                .single;
-            await requestDirectory.delete(recursive: true);
             return http.Response(
               '{"text":"speech"}',
               calls == 1 ? firstStatus : 200,
@@ -332,28 +324,35 @@ void main() {
           }),
         );
         addTearDown(engine.dispose);
-        await IOOverrides.runZoned(() async {
-          final first = engine.finalizeMeeting(source(), meetingId: 'meeting');
-          if (firstStatus == 200) {
-            expect((await first).segments.single.text, 'speech');
-          } else {
-            await expectLater(
-              first,
-              throwsA(
-                isA<AsrEngineException>().having(
-                  (e) => e.failure.code,
-                  'original code',
-                  'asr.remote.http_401',
-                ),
-              ),
+        await IOOverrides.runZoned(
+          () async {
+            final first = engine.finalizeMeeting(
+              source(),
+              meetingId: 'meeting',
             );
-          }
-          final next = await engine.finalizeMeeting(
-            source(),
-            meetingId: 'meeting',
-          );
-          expect(next.segments.single.text, 'speech');
-        }, getSystemTempDirectory: () => temporary);
+            if (firstStatus == 200) {
+              expect((await first).segments.single.text, 'speech');
+            } else {
+              await expectLater(
+                first,
+                throwsA(
+                  isA<AsrEngineException>().having(
+                    (e) => e.failure.code,
+                    'original code',
+                    'asr.remote.http_401',
+                  ),
+                ),
+              );
+            }
+            final next = await engine.finalizeMeeting(
+              source(),
+              meetingId: 'meeting',
+            );
+            expect(next.segments.single.text, 'speech');
+          },
+          getSystemTempDirectory: () =>
+              throw StateError('temporary storage unavailable'),
+        );
         expect(calls, 2);
         expect(await pcm.readAsBytes(), raw);
       },

@@ -150,7 +150,6 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
       throw const RemoteAsrProtocolException('asr.remote.invalid_audio');
     }
     _finalizing = true;
-    Directory? temporary;
     try {
       await _loadHeaders();
       await _session?.close();
@@ -170,9 +169,7 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
       var allVersionsReported = true;
       // ponytail: 60秒完整连续块限制内存和请求；需长上下文时再接原生长文件协议。
       final maxPcmBytes = ((profile.maxUploadBytes - wavHeaderBytes) ~/ 32 * 32)
-          .clamp(32, 16000 * 2 * 60);
-      temporary = await Directory.systemTemp.createTemp('meettrace-asr-');
-      final wav = File('${temporary.path}${Platform.pathSeparator}request.wav');
+          .clamp(32, maxInMemoryWavPcmBytes);
       for (var startByte = 0; startByte < length;) {
         _check();
         var endByte = (startByte + maxPcmBytes).clamp(0, length);
@@ -191,12 +188,7 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
                   startMs,
                   '$id-$startByte',
                 )
-              : await _transcribeFileChunk(
-                  source.path,
-                  wav,
-                  startByte,
-                  endByte,
-                );
+              : await _transcribeFileChunk(source.path, startByte, endByte);
           _check();
           final parts = _parseParts(response, startMs, endMs);
           for (final part in parts) {
@@ -270,26 +262,18 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
         await _session?.close();
       } finally {
         _session = null;
-        try {
-          if (temporary != null) await temporary.delete(recursive: true);
-        } on FileSystemException {
-          // 临时文件清理失败不得覆盖识别结果或原始识别错误。
-        } finally {
-          _finalizing = false;
-        }
+        _finalizing = false;
       }
     }
   }, stage: FailureStage.finalTranscription);
 
   Future<Map<String, dynamic>> _transcribeFileChunk(
     String sourcePath,
-    File wav,
     int startByte,
     int endByte,
   ) async {
-    await const PcmWavFileWriter().write(
+    final wav = await const PcmWavFileWriter().readChunk(
       sourcePath: sourcePath,
-      targetPath: wav.path,
       startByte: startByte,
       endByte: endByte,
     );
@@ -310,11 +294,7 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
               if (profile.prompt.isNotEmpty) 'prompt': profile.prompt,
             });
       multipart.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          wav.path,
-          filename: 'audio.wav',
-        ),
+        http.MultipartFile.fromBytes('file', wav, filename: 'audio.wav'),
       );
       request = multipart;
     } else {
@@ -342,10 +322,7 @@ final class RemoteAsrEngine implements AsrEngine, AsrPreviewControl {
             'content': [
               {
                 'type': 'input_audio',
-                'input_audio': {
-                  'data': base64Encode(await wav.readAsBytes()),
-                  'format': 'wav',
-                },
+                'input_audio': {'data': base64Encode(wav), 'format': 'wav'},
               },
             ],
           },

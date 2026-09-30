@@ -12,7 +12,7 @@ Future<void> main(List<String> arguments) async {
 默认只监听 127.0.0.1:8765，POST /v1/chat/completions。
 MEETTRACE_GATEWAY_COMMAND: JSON argv 数组，例如 ["python","my_adapter.py"]。
 MEETTRACE_GATEWAY_TOKEN: 可选的本机网关 Bearer 令牌。
-MEETTRACE_GATEWAY_PORT: 可选端口，默认 8765。
+MEETTRACE_GATEWAY_PORT: 可选端口，默认 8765；--fixture 可用 0 自动分配。
 --fixture: 仅协议演示，返回明显标记的假文本，不调用在线模型。
 Ctrl+C 停止。私有协议适配及 TLS 部署责任见 docs/development/online_asr_protocols.md。''',
     );
@@ -46,7 +46,9 @@ Ctrl+C 停止。私有协议适配及 TLS 部署责任见 docs/development/onlin
     final port = int.parse(
       Platform.environment['MEETTRACE_GATEWAY_PORT'] ?? '8765',
     );
-    if (port < 1 || port > 65535) throw const FormatException();
+    if (port < (fixture ? 0 : 1) || port > 65535) {
+      throw const FormatException();
+    }
     final token = Platform.environment['MEETTRACE_GATEWAY_TOKEN'];
     if (token != null && token.trim().isEmpty) throw const FormatException();
     const adapterTimeout = Duration(seconds: 55);

@@ -300,6 +300,7 @@ void main() {
     for (final environment in [
       {'MEETTRACE_GATEWAY_COMMAND': 'invalid-json'},
       {'MEETTRACE_GATEWAY_PORT': 'not-a-number'},
+      {'MEETTRACE_GATEWAY_PORT': '-1'},
       {'MEETTRACE_GATEWAY_PORT': '65536'},
       {'MEETTRACE_GATEWAY_TOKEN': '   '},
     ]) {
@@ -315,50 +316,79 @@ void main() {
     }
   });
 
+  test('CLI requires a fixed nonzero port outside fixture mode', () async {
+    final result = await _runCli([], {'MEETTRACE_GATEWAY_PORT': '0'});
+    expect(result.code, 64);
+    expect(result.error, contains('gateway.invalid_configuration'));
+    expect(result.output, isEmpty);
+  });
+
   test(
-    'CLI fixture ignores malformed adapter configuration and never starts it',
+    'CLI reports an occupied port instead of announcing readiness',
     () async {
-      final reservation = await ServerSocket.bind(
-        InternetAddress.loopbackIPv4,
-        0,
-      );
-      final port = reservation.port;
-      await reservation.close();
-      final process = await _startCli(
+      final occupied = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(occupied.close);
+      final result = await _runCli(
         ['--fixture'],
-        {
-          'MEETTRACE_GATEWAY_COMMAND': 'invalid-json',
-          'MEETTRACE_GATEWAY_PORT': '$port',
-        },
+        {'MEETTRACE_GATEWAY_PORT': '${occupied.port}'},
       );
-      final lines = StreamIterator(
-        process.stdout.transform(utf8.decoder).transform(const LineSplitter()),
-      );
-      final errors = process.stderr.transform(utf8.decoder).join();
-      errors.ignore();
-      try {
-        expect(
-          await lines.moveNext().timeout(const Duration(seconds: 15)),
-          isTrue,
+      expect(result.code, 1);
+      expect(result.error, contains('gateway.failed'));
+      expect(result.output, isEmpty);
+    },
+  );
+
+  test(
+    'CLI fixtures allocate distinct ports and ignore malformed adapters',
+    () async {
+      final endpoints = <Uri>[];
+      for (var index = 0; index < 2; index++) {
+        // 由子进程原子绑定空闲端口，避免预留再释放后的并行抢占窗口。
+        final process = await _startCli(
+          ['--fixture'],
+          {
+            'MEETTRACE_GATEWAY_COMMAND': 'invalid-json',
+            'MEETTRACE_GATEWAY_PORT': '0',
+          },
         );
-        expect(
-          lines.current,
-          startsWith('gateway.ready http://127.0.0.1:$port/'),
+        final lines = StreamIterator(
+          process.stdout
+              .transform(utf8.decoder)
+              .transform(const LineSplitter()),
         );
+        final errors = process.stderr.transform(utf8.decoder).join();
+        errors.ignore();
+        addTearDown(() async {
+          await _stopFixtureProcess(process);
+          await lines.cancel();
+          expect(await errors, contains('gateway.fixture_only'));
+        });
+        if (!await lines.moveNext().timeout(const Duration(seconds: 15))) {
+          fail(
+            'Gateway CLI exited before ready '
+            '(exit ${await process.exitCode}): ${await errors}',
+          );
+        }
+        expect(lines.current, startsWith('gateway.ready http://127.0.0.1:'));
+        final endpoint = Uri.parse(
+          lines.current.substring('gateway.ready '.length),
+        );
+        expect(endpoint.port, inInclusiveRange(1, 65535));
+        expect(endpoint.path, '/v1/chat/completions');
+        endpoints.add(endpoint);
+      }
+      expect(endpoints.map((endpoint) => endpoint.port).toSet(), hasLength(2));
+      for (final endpoint in endpoints) {
         final response = await http
             .post(
-              Uri.parse('http://127.0.0.1:$port/v1/chat/completions'),
+              endpoint,
               headers: {'Authorization': 'Bearer fixture-cli-token'},
               body: _payload(),
             )
             .timeout(const Duration(seconds: 5));
         expect(response.statusCode, 200);
         expect(response.body, contains('fixture-only'));
-      } finally {
-        await _stopFixtureProcess(process);
-        await lines.cancel();
       }
-      expect(await errors, contains('gateway.fixture_only'));
     },
   );
 }

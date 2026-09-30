@@ -63,7 +63,7 @@ dart run tool/online_asr_gateway/bin/gateway.dart --fixture
 
 MeetTrace 中选择 Chat 音频输入，端点 `http://127.0.0.1:8765/v1/chat/completions`，模型名可填 `fixture`，点击测试连接。演示返回明确标记的假文本，不连接任何模型，不能用于真实转录或准确率评价。手机上的 `127.0.0.1` 指手机自身，不能用它访问电脑网关。
 
-真实接入时移除 `--fixture`，将 `MEETTRACE_GATEWAY_COMMAND` 配置为 JSON argv 数组，例如 `['python','my_adapter.py']` 对应 JSON 为 `["python","my_adapter.py"]`。命令通过 `Process.start(..., runInShell:false)` 执行；命令不能由请求指定，`--fixture` 忽略此配置。可选 `MEETTRACE_GATEWAY_TOKEN` 为网关 Bearer 凭据，设置后不得为空白；端口由 `MEETTRACE_GATEWAY_PORT` 控制，范围为 1～65535。错误配置以退出码 64 结束，启动或运行故障以退出码 1 结束。不要把真实凭据写入命令行、代码库或示例文件。
+真实接入时移除 `--fixture`，将 `MEETTRACE_GATEWAY_COMMAND` 配置为 JSON argv 数组，例如 `['python','my_adapter.py']` 对应 JSON 为 `["python","my_adapter.py"]`。命令通过 `Process.start(..., runInShell:false)` 执行；命令不能由请求指定，`--fixture` 忽略此配置。可选 `MEETTRACE_GATEWAY_TOKEN` 为网关 Bearer 凭据，设置后不得为空白；端口由 `MEETTRACE_GATEWAY_PORT` 控制，范围为 1～65535。仅 `--fixture` 额外允许端口 0，由系统原子分配空闲端口，实际端点以启动后的 `gateway.ready` 输出为准。错误配置以退出码 64 结束，启动或运行故障以退出码 1 结束。不要把真实凭据写入命令行、代码库或示例文件。
 
 适配进程从 stdin 读取一条 JSON：
 
