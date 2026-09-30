@@ -46,7 +46,7 @@ dependencies:
   path: 1.9.1
   path_provider: 2.1.6
   record: 7.1.1
-  sentry_flutter: 9.28.0
+  sentry_flutter: 9.29.0
   shared_preferences: 2.5.5
   sherpa_onnx: 1.13.7
   share_plus: 13.3.0
