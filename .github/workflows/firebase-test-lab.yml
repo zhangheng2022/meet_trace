@@ -17,7 +17,7 @@ concurrency:
 jobs:
   firebase-test-lab:
     name: Patrol ${{ matrix.patrol.name }} on Android ${{ matrix.android_version }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 75
     strategy:
       fail-fast: false
@@ -82,11 +82,11 @@ jobs:
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
         with:
           install_components: alpha
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
-          version: "580.0.0"
+          version: "587.0.0"
 
       - name: Validate Firebase device
         shell: bash
@@ -107,9 +107,9 @@ jobs:
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "25"
 
-      - name: Set up Flutter 3.47.0
+      - name: Set up Flutter from .fvmrc
         uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"

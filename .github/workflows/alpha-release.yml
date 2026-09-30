@@ -39,7 +39,7 @@ concurrency:
 jobs:
   prepare:
     name: Resolve release mode and candidate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       # Draft Releases hold reserved build numbers. GitHub only returns them
@@ -271,7 +271,7 @@ jobs:
       id-token: write
       attestations: write
     name: Build, sign, and stage Android Alpha
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 90
     environment: android-alpha
 
@@ -383,14 +383,14 @@ jobs:
           echo "reuse=true" >> "$GITHUB_OUTPUT"
           echo "Reusing immutable staged Android candidate $RELEASE_ID"
 
-      - name: Set up Java 17
+      - name: Set up Java 25
         if: steps.staged.outputs.reuse != 'true'
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "25"
 
-      - name: Set up Flutter 3.47.0
+      - name: Set up Flutter from .fvmrc
         if: steps.staged.outputs.reuse != 'true'
         uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
@@ -654,7 +654,7 @@ jobs:
     if: needs.prepare.outputs.mode == 'candidate'
     needs: [prepare, android]
     name: Validate complete signed Android candidate set
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment: android-alpha
     timeout-minutes: 60
     permissions:
@@ -726,10 +726,10 @@ jobs:
 
       - name: Set up Google Cloud SDK
         if: steps.prior.outputs.reuse != 'true' && steps.prior.outputs.firebase_reuse != 'true'
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
         with:
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
-          version: "580.0.0"
+          version: "587.0.0"
 
       - name: Verify Firebase targets are physical devices with required ABIs
         if: steps.prior.outputs.reuse != 'true' && steps.prior.outputs.firebase_reuse != 'true'
@@ -1025,11 +1025,11 @@ jobs:
 
       - name: Set up Ruby
         if: steps.staged.outputs.reuse != 'true'
-        uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
+        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           bundler-cache: true
 
-      - name: Set up Flutter 3.47.0
+      - name: Set up Flutter from .fvmrc
         if: steps.staged.outputs.reuse != 'true'
         uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
@@ -1798,14 +1798,14 @@ jobs:
 
           "reuse=false" | Add-Content -LiteralPath $env:GITHUB_OUTPUT -Encoding utf8
 
-      - name: Set up Java 17 for JNI headers
+      - name: Set up Java 25 for JNI headers
         if: steps.staged.outputs.reuse != 'true'
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "25"
 
-      - name: Set up Flutter 3.47.0
+      - name: Set up Flutter from .fvmrc
         if: steps.staged.outputs.reuse != 'true'
         uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
@@ -2026,7 +2026,7 @@ jobs:
     permissions:
       contents: write
     name: Queue automatic release reconciliation
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Dispatch immediate reconciliation
@@ -2054,7 +2054,7 @@ jobs:
       actions: read
       contents: write
     name: Automatically deploy verified public Alpha
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     environment: github-release
     steps:

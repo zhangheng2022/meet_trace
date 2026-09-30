@@ -16,7 +16,7 @@ concurrency:
 jobs:
   actions-lint:
     name: Actions Lint
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -24,6 +24,9 @@ jobs:
 
       - name: Validate changelog
         run: python3 tool/release/changelog.py --changelog CHANGELOG.md
+
+      - name: Verify third-party skill sources and content locks
+        run: python3 tool/skills/check_skills.py
 
       - name: Install actionlint 1.7.12
         shell: bash
@@ -39,7 +42,7 @@ jobs:
 
   classify:
     name: Classify changed paths
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     outputs:
       core: ${{ steps.changes.outputs.core }}
@@ -114,7 +117,7 @@ jobs:
       - name: Select Xcode 26.6
         run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
 
-      - name: Set up Flutter 3.47.0
+      - name: Set up Flutter from .fvmrc
         uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
@@ -144,13 +147,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Java 17 for JNI headers
+      - name: Set up Java 25 for JNI headers
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "25"
 
-      - name: Set up Flutter 3.47.0
+      - name: Set up Flutter from .fvmrc
         uses: axi92/flutter-action@36d2c2625bac6ea011cd7808d2a01bd8a7e5c766 # v2.23.0, cache v5.0.4 pinned
         with:
           flutter-version-file: ".fvmrc"
@@ -216,7 +219,7 @@ jobs:
     if: always()
     needs:
       [actions-lint, classify, flutter-quality, ios-unsigned, windows-msix-probe]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     env:
       CLASSIFY_RESULT: ${{ needs.classify.result }}

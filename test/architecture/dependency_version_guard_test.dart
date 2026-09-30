@@ -44,11 +44,11 @@ void main() {
       final iosInspector = await File('tool/benchmarks/inspect_ios_app.sh')
           .readAsString();
 
-      expect(fvmConfig['flutter'], '3.47.2');
+      expect(fvmConfig['flutter'], '3.47.5');
       expect(pubspec, contains('sdk: ^3.13.0'));
-      expect(pubspec, contains('forui: ^0.26.0'));
-      expect(pubspec, contains('forui_cli: ^0.26.1'));
-      expect(pubspec, contains('material_ui: ^1.1.1'));
+      expect(pubspec, contains('forui: ^0.27.3'));
+      expect(pubspec, contains('forui_cli: ^0.27.0'));
+      expect(pubspec, contains('material_ui: ^1.5.0'));
       _expectPatchLine(
         _versionFrom(
           androidSettings,
@@ -57,8 +57,8 @@ void main() {
           ),
         ),
         major: 9,
-        minor: 1,
-        minimumPatch: 0,
+        minor: 3,
+        minimumPatch: 1,
       );
       _expectPatchLine(
         _versionFrom(
@@ -69,7 +69,7 @@ void main() {
         ),
         major: 2,
         minor: 4,
-        minimumPatch: 10,
+        minimumPatch: 20,
       );
       _expectPatchLine(
         _versionFrom(
@@ -77,8 +77,8 @@ void main() {
           RegExp(r'gradle-(\d+)\.(\d+)\.(\d+)-all\.zip'),
         ),
         major: 9,
-        minor: 3,
-        minimumPatch: 1,
+        minor: 7,
+        minimumPatch: 0,
       );
       expect(
         RegExp(r'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;').allMatches(iosProject),
