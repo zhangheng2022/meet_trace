@@ -119,7 +119,7 @@ jobs:
         run: flutter pub get --enforce-lockfile
 
       - name: Install Patrol CLI
-        run: dart pub global activate patrol_cli 4.7.0
+        run: dart pub global activate patrol_cli 4.8.0
 
       - name: Build Firebase instrumentation APKs
         shell: bash

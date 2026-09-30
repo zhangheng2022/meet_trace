@@ -5,4 +5,4 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  patrol_mcp: ^0.2.0
+  patrol_mcp: ^0.2.1
