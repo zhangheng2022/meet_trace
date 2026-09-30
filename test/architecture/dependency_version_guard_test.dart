@@ -93,6 +93,9 @@ void main() {
 
     test('Patrol 包、CLI 与工具子项目保持兼容版本', () async {
       final pubspec = await File('pubspec.yaml').readAsString();
+      final rootLock = await File('pubspec.lock').readAsString();
+      final toolPubspec = await File('tool/patrol_mcp/pubspec.yaml')
+          .readAsString();
       final toolLock = await File('tool/patrol_mcp/pubspec.lock')
           .readAsString();
       final workflowFiles = await Directory('.github/workflows')
@@ -104,17 +107,43 @@ void main() {
         workflowFiles.map((file) => file.readAsString()),
       )).join('\n');
 
-      expect(pubspec, contains('patrol: 4.9.0'));
+      // https://patrol.leancode.co/documentation/compatibility-table
+      // Patrol 4.10 的完整功能与 CLI 4.8 配套；本地 MCP 和 CI 同步升级。
+      expect(pubspec, contains('patrol: 4.10.0'));
+      expect(
+        rootLock,
+        matches(
+          RegExp(
+            r'^  patrol:\n(?:    .*\n)*    version: "4\.10\.0"$',
+            multiLine: true,
+          ),
+        ),
+      );
+      expect(toolPubspec, contains('patrol_mcp: ^0.2.1'));
       expect(
         toolLock,
-        matches(RegExp(r'patrol_cli:\s+.*?version: "4\.7\.0"', dotAll: true)),
+        matches(
+          RegExp(
+            r'^  patrol_mcp:\n(?:    .*\n)*    version: "0\.2\.1"$',
+            multiLine: true,
+          ),
+        ),
+      );
+      expect(
+        toolLock,
+        matches(
+          RegExp(
+            r'^  patrol_cli:\n(?:    .*\n)*    version: "4\.8\.0"$',
+            multiLine: true,
+          ),
+        ),
       );
       expect(
         RegExp(r'dart pub global activate patrol_cli ([^\s]+)')
             .allMatches(workflows)
             .map((match) => match.group(1))
             .toSet(),
-        {'4.7.0'},
+        {'4.8.0'},
       );
     });
 
