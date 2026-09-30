@@ -9,7 +9,7 @@ void main() {
       'lib/data/services/models/local_runtime_asset_preparation_service.dart',
     ).readAsString();
 
-    expect(pubspec, contains('sherpa_onnx: 1.13.7'));
+    expect(pubspec, contains('sherpa_onnx: 1.13.8'));
     expect(runtimeGate, contains('initializeBindings()'));
   });
 
