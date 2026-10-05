@@ -37,7 +37,7 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
 
-  connectivity_plus: 7.3.1
+  connectivity_plus: 7.3.2
   crypto: 3.0.7
   disk_space_2: 1.0.13
   forui: ^0.27.3
@@ -49,7 +49,7 @@ dependencies:
   sentry_flutter: 9.30.1
   shared_preferences: 2.5.5
   sherpa_onnx: 1.13.8
-  share_plus: 13.3.0
+  share_plus: 13.3.1
   sqflite: 2.4.4
   sqflite_common_ffi: ^2.4.3
   cryptography: 2.9.0
