@@ -385,7 +385,7 @@ jobs:
 
       - name: Set up Java 25
         if: steps.staged.outputs.reuse != 'true'
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: "25"
@@ -631,7 +631,7 @@ jobs:
 
       - name: Upload non-sensitive Android candidate evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: meettrace-android-alpha-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -816,7 +816,7 @@ jobs:
 
       - name: Upload Android distribution evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: meettrace-android-distribution-${{ inputs.release_id }}
           path: |
@@ -1025,7 +1025,7 @@ jobs:
 
       - name: Set up Ruby
         if: steps.staged.outputs.reuse != 'true'
-        uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+        uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
         with:
           bundler-cache: true
 
@@ -1586,7 +1586,7 @@ jobs:
 
       - name: Upload signed build evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: meettrace-ios-testflight-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -1800,7 +1800,7 @@ jobs:
 
       - name: Set up Java 25 for JNI headers
         if: steps.staged.outputs.reuse != 'true'
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: "25"
@@ -2009,7 +2009,7 @@ jobs:
           subject-path: build/windows/msix/*.msix
 
       - name: Upload Microsoft Store candidate and evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: meettrace-windows-store-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -2335,7 +2335,7 @@ jobs:
       - name: Upload automatic publication receipts
         if: >-
           needs.prepare.outputs.mode == 'resume' && success()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: meettrace-windows-store-production-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
