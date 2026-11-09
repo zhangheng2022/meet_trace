@@ -253,10 +253,10 @@ packages:
     dependency: "direct main"
     description:
       name: patrol_mcp
-      sha256: "90971474ef2c097c1d6ad9f6aee2fadc7dd7c587064435b86d1ce2e696a48da8"
+      sha256: "278c755bd4acc8788fed73e099b99a5877bb3bd8a43f77f344d4c371a610252a"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.1"
+    version: "0.2.2"
   platform:
     dependency: transitive
     description:
